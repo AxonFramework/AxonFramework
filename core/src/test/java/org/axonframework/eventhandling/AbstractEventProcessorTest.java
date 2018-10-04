@@ -80,7 +80,7 @@ public class AbstractEventProcessorTest {
 
         // also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        testSubject.registerInterceptor((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> createEvent());
             return interceptorChain.proceed();
         });

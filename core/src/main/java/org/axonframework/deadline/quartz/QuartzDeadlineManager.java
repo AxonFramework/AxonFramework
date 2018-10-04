@@ -17,7 +17,6 @@
 package org.axonframework.deadline.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
@@ -108,39 +107,38 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         scheduler.getContext().put(DeadlineJob.TRANSACTION_MANAGER_KEY, transactionManager);
         scheduler.getContext().put(DeadlineJob.SCOPE_AWARE_RESOLVER, scopeAwareProvider);
         scheduler.getContext().put(DeadlineJob.JOB_DATA_SERIALIZER, serializer);
+        scheduler.getContext().put(DeadlineJob.HANDLER_INTERCEPTORS, handlerInterceptors());
     }
 
     @Override
-    public void schedule(Instant triggerDateTime,
-                         String deadlineName,
-                         Object messageOrPayload,
-                         ScopeDescriptor deadlineScope,
-                         String scheduleId) {
+    public String schedule(Instant triggerDateTime,
+                           String deadlineName,
+                           Object messageOrPayload,
+                           ScopeDescriptor deadlineScope) {
+        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+        String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
+
         runOnPrepareCommitOrNow(() -> {
-            DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+            DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             try {
-                JobDetail jobDetail = buildJobDetail(deadlineMessage,
+                JobDetail jobDetail = buildJobDetail(interceptedDeadlineMessage,
                                                      deadlineScope,
-                                                     new JobKey(scheduleId, deadlineName));
+                                                     new JobKey(deadlineId, deadlineName));
                 scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
             } catch (SchedulerException e) {
                 throw new DeadlineException("An error occurred while setting a timer for a deadline", e);
             }
         });
+
+        return deadlineId;
     }
 
     @Override
-    public void schedule(Duration triggerDuration,
+    public String schedule(Duration triggerDuration,
                          String deadlineName,
                          Object messageOrPayload,
-                         ScopeDescriptor deadlineScope,
-                         String scheduleId) {
-        schedule(Instant.now().plus(triggerDuration), deadlineName, messageOrPayload, deadlineScope, scheduleId);
-    }
-
-    @Override
-    public String generateScheduleId() {
-        return JOB_NAME_PREFIX + IdentifierFactory.getInstance().generateIdentifier();
+                         ScopeDescriptor deadlineScope) {
+        return schedule(Instant.now().plus(triggerDuration), deadlineName, messageOrPayload, deadlineScope);
     }
 
     @Override

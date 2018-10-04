@@ -25,16 +25,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.config.ModuleConfiguration;
-import org.axonframework.config.ProcessingGroup;
-import org.axonframework.config.SagaConfiguration;
+import org.axonframework.config.*;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
@@ -113,7 +104,6 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  * required components to operate the Aggregate or Saga are registered.
  *
  * @author Allard Buijze
- * @see EnableAxon
  * @since 3.0
  */
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {

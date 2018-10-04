@@ -35,6 +35,7 @@ import org.axonframework.commandhandling.distributed.ServiceRegistryException;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -54,6 +55,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -90,6 +93,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     private final Serializer serializer;
     private final RoutingStrategy routingStrategy;
     private final ConsistentHashChangeListener consistentHashChangeListener;
+    private ExecutorService executorService;
+    private final boolean executorProvided;
 
     private final CommandCallbackRepository<Address> callbackRepository = new CommandCallbackRepository<>();
     private final JoinCondition joinedCondition = new JoinCondition();
@@ -119,14 +124,23 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         this.serializer = builder.serializer;
         this.routingStrategy = builder.routingStrategy;
         this.consistentHashChangeListener = builder.consistentHashChangeListener;
+        ExecutorService executorService = builder.executorService;
+        if (executorService == null) {
+            this.executorProvided = false;
+        } else {
+            this.executorService = executorService;
+            this.executorProvided = true;
+        }
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link JGroupsConnector}.
      * <p>
      * The {@link RoutingStrategy} is defaulted to an {@link AnnotationRoutingStrategy}, and the
-     * {@link ConsistentHashChangeListener} to a no-op solution. The {@link CommandBus}, {@link JChannel},
-     * {@code clusterName} and {@link Serializer} are <b>hard requirements</b> and as such should be provided.
+     * {@link ConsistentHashChangeListener} to a no-op solution. The {@link ExecutorService} is defaulted to an
+     * {@link Executors#newCachedThreadPool}, using an {@link AxonThreadFactory} to create threads. The
+     * {@link CommandBus}, {@link JChannel}, {@code clusterName} and {@link Serializer} are <b>hard requirements</b> and
+     * as such should be provided.
      *
      * @return a Builder to be able to create a {@link JGroupsConnector}
      */
@@ -183,6 +197,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, LOCAL_MEMBER, null);
         members.put(localAddress, new VersionedMember(localMember, membershipVersion.getAndIncrement()));
         updateConsistentHash(ch -> ch.with(localMember, loadFactor, commandFilter));
+        if (!executorProvided) {
+            executorService = Executors.newCachedThreadPool(new AxonThreadFactory("JGroupsConnector - " + localName));
+        }
     }
 
     /**
@@ -190,6 +207,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      */
     public void disconnect() {
         channel.disconnect();
+        if (!executorProvided) {
+            executorService.shutdown();
+        }
     }
 
     /**
@@ -262,16 +282,18 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     @Override
     public void receive(Message msg) {
-        Object message = msg.getObject();
-        if (message instanceof JoinMessage) {
-            processJoinMessage(msg, (JoinMessage) message);
-        } else if (message instanceof JGroupsDispatchMessage) {
-            processDispatchMessage(msg, (JGroupsDispatchMessage) message);
-        } else if (message instanceof JGroupsReplyMessage) {
-            processReplyMessage((JGroupsReplyMessage) message);
-        } else {
-            logger.warn("Received unknown message: {}", message.getClass().getName());
-        }
+        executorService.execute(() -> {
+            Object message = msg.getObject();
+            if (message instanceof JoinMessage) {
+                processJoinMessage(msg, (JoinMessage) message);
+            } else if (message instanceof JGroupsDispatchMessage) {
+                processDispatchMessage(msg, (JGroupsDispatchMessage) message);
+            } else if (message instanceof JGroupsReplyMessage) {
+                processReplyMessage((JGroupsReplyMessage) message);
+            } else {
+                logger.warn("Received unknown message: {}", message.getClass().getName());
+            }
+        });
     }
 
     private void processReplyMessage(JGroupsReplyMessage message) {
@@ -505,6 +527,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         private Serializer serializer;
         private RoutingStrategy routingStrategy = new AnnotationRoutingStrategy();
         private ConsistentHashChangeListener consistentHashChangeListener = ConsistentHashChangeListener.noOp();
+        private ExecutorService executorService;
 
         /**
          * Sets the {@code localSegment} of type {@link CommandBus} commands on the local node.
@@ -581,6 +604,21 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         public Builder consistentHashChangeListener(ConsistentHashChangeListener consistentHashChangeListener) {
             assertNonNull(consistentHashChangeListener, "ConsistentHashChangeListener may not be null");
             this.consistentHashChangeListener = consistentHashChangeListener;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ExecutorService} used to create threads which deal with the message receiving process of this
+         * connector. If none is provided, this will be defaulted to an {@link Executors#newCachedThreadPool}, using an
+         * {@link AxonThreadFactory} for thread creation. It will be defaulted upon the
+         * {@link JGroupsConnector#connect()} call, to ensure it is not created without being used.
+         *
+         * @param executorService a {@link ExecutorService} used to create threads which deal with the message receiving
+         *                        process of this connector
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder executorService(ExecutorService executorService) {
+            this.executorService = executorService;
             return this;
         }
 

@@ -89,7 +89,7 @@ import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.S
  *
  * @author Marc Gathier
  */
-public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
+public class AxonServerQueryBus implements QueryBus {
     private final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
     private final AxonServerConfiguration configuration;
     private final QueryUpdateEmitter updateEmitter;
@@ -107,9 +107,11 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
 
     /**
      * Creates an instance of the AxonServerQueryBus
+     *
      * @param platformConnectionManager creates connection to AxonServer platform
-     * @param configuration             contains client and component names used to identify the application in AxonServer
-     * @param updateEmitter
+     * @param configuration             contains client and component names used to identify the application in
+     *                                  AxonServer
+     * @param updateEmitter             emits incremental updates to subscription queries
      * @param localSegment              handles incoming query requests
      * @param messageSerializer         serializer/deserializer for payload and metadata of query requests and responses
      * @param genericSerializer         serializer for communication of other objects than payload and metadata
@@ -138,7 +140,6 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
                 new SubscriptionQueryRequestTarget(localSegment, this::publish, subscriptionSerializer);
         this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
         platformConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
-
     }
 
 
@@ -239,22 +240,6 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
 
     public void disconnect() {
         queryProvider.disconnect();
-    }
-
-    @Override
-    public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         SubscriptionQueryUpdateMessage<U> update) {
-        this.updateEmitter.emit(filter, update);
-    }
-
-    @Override
-    public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        this.updateEmitter.complete(filter);
-    }
-
-    @Override
-    public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        this.updateEmitter.completeExceptionally(filter, cause);
     }
 
     class QueryProvider {
@@ -503,6 +488,11 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
                 () -> subscriptions.remove(subscriptionId));
 
         return new DeserializedResult<>(result.get(), subscriptionSerializer);
+    }
+
+    @Override
+    public QueryUpdateEmitter queryUpdateEmitter() {
+        return updateEmitter;
     }
 
     private Runnable interceptReconnectRequest(Runnable reconnect) {

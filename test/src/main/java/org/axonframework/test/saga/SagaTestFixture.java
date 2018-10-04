@@ -30,6 +30,8 @@ import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -144,15 +146,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      * @param sagaDescriptor  A {@link ScopeDescriptor} describing the saga under test
      * @param deadlineMessage The {@link DeadlineMessage} to be handled
      */
-    protected void handleDeadline(ScopeDescriptor sagaDescriptor, DeadlineMessage<?> deadlineMessage) {
+    protected void handleDeadline(ScopeDescriptor sagaDescriptor, DeadlineMessage<?> deadlineMessage) throws Exception {
         ensureSagaResourcesInitialized();
-        DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> {
-            try {
-                sagaManager.send(deadlineMessage, sagaDescriptor);
-            } catch (Exception e) {
-                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
-            }
-        });
+        sagaManager.send(deadlineMessage, sagaDescriptor);
     }
 
     /**
@@ -324,6 +320,20 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
         this.handlerDefinition = handlerDefinition;
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerDeadlineDispatchInterceptor(
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor) {
+        this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerDeadlineHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
+        this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
 

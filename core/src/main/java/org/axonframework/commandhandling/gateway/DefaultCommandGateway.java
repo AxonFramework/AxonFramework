@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FailureLoggingCallback;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.common.Registration;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -122,6 +123,12 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
         FutureCallback<Object, R> callback = new FutureCallback<>();
         send(command, new FailureLoggingCallback<>(logger, callback));
         return callback.thenApply(Message::getPayload);
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        return super.registerDispatchInterceptor(dispatchInterceptor);
     }
 
     /**

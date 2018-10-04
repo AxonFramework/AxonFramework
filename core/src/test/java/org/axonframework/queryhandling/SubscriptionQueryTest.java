@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -46,8 +47,11 @@ import static org.junit.Assert.*;
  */
 public class SubscriptionQueryTest {
 
-    private final SimpleQueryBus queryBus = new SimpleQueryBus();
-    private final ChatQueryHandler chatQueryHandler = new ChatQueryHandler(queryBus);
+    private final SimpleQueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+    private final SimpleQueryBus queryBus = SimpleQueryBus.builder()
+                                                          .queryUpdateEmitter(queryUpdateEmitter)
+                                                          .build();
+    private final ChatQueryHandler chatQueryHandler = new ChatQueryHandler(queryUpdateEmitter);
     private final AnnotationQueryHandlerAdapter<ChatQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             chatQueryHandler);
 
@@ -527,6 +531,32 @@ public class SubscriptionQueryTest {
     }
 
     @Test
+    public void testSubscriptionQueryUpdateWithInterceptors() {
+        // given
+        Map<String, String> metaData = Collections.singletonMap("key", "value");
+        queryUpdateEmitter.registerDispatchInterceptor(
+                messages -> (i, m) -> m.andMetaData(metaData)
+        );
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
+                .subscriptionQuery(queryMessage);
+
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        result.close();
+
+        // then
+        StepVerifier.create(result.updates())
+                    .expectNextMatches(m -> m.getMetaData().equals(metaData))
+                    .verifyComplete();
+    }
+
+    @Test
     public void testActiveSubscriptions() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
@@ -548,7 +578,7 @@ public class SubscriptionQueryTest {
         // then
         Set<SubscriptionQueryMessage<?, ?, ?>> expectedSubscriptions = new HashSet<>(Arrays.asList(queryMessage1,
                                                                                                    queryMessage2));
-        assertEquals(expectedSubscriptions, queryBus.activeSubscriptions());
+        assertEquals(expectedSubscriptions, queryUpdateEmitter.activeSubscriptions());
     }
 
     @Test
@@ -634,7 +664,7 @@ public class SubscriptionQueryTest {
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
         assertEquals(Collections.singletonList("Update1"), updates);
 
-        assertTrue("Expected subscriptions to be cancelled", queryBus.activeSubscriptions().isEmpty());
+        assertTrue("Expected subscriptions to be cancelled", queryUpdateEmitter.activeSubscriptions().isEmpty());
     }
 
     @Test
@@ -665,7 +695,7 @@ public class SubscriptionQueryTest {
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
         assertEquals(Collections.singletonList("Update1"), updates);
 
-        assertTrue("Expected subscriptions to be cancelled", queryBus.activeSubscriptions().isEmpty());
+        assertTrue("Expected subscriptions to be cancelled", queryUpdateEmitter.activeSubscriptions().isEmpty());
     }
 
     @Test

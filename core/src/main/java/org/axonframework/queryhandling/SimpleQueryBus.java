@@ -23,27 +23,21 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.EmitterProcessor;
-import reactor.core.publisher.FluxSink;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,12 +46,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
@@ -73,72 +66,41 @@ import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
  * @author Milan Savic
  * @since 3.1
  */
-public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
+public class SimpleQueryBus implements QueryBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
-    private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
-
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
-    private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
-    /**
-     * Initialize the query bus without monitoring on messages and a {@link LoggingQueryInvocationErrorHandler}.
-     */
-    public SimpleQueryBus() {
-        this(NoOpMessageMonitor.INSTANCE, NoTransactionManager.instance(),
-             new LoggingQueryInvocationErrorHandler(logger));
-    }
+    private final QueryUpdateEmitter queryUpdateEmitter;
 
     /**
-     * Initialize the query bus using given {@code transactionManager} to manage transactions around query execution
-     * with. No monitoring is applied to messages and a {@link LoggingQueryInvocationErrorHandler} is used
-     * to log errors on handlers during a scatter-gather query.
-     *
-     * @param transactionManager The transaction manager to manage transactions around query execution with
+     * Instantiate the query bus based on the fields contained in the {@link Builder}.
      */
-    public SimpleQueryBus(TransactionManager transactionManager) {
-        this(NoOpMessageMonitor.INSTANCE, transactionManager, new LoggingQueryInvocationErrorHandler(logger));
-    }
-
-    /**
-     * Initialize the query bus with the given {@code messageMonitor} and given {@code errorHandler}.
-     *
-     * @param messageMonitor     The message monitor notified for incoming messages and their result
-     * @param transactionManager The transaction manager to manage transactions around query execution with
-     * @param errorHandler       The error handler to invoke when query handler report an error
-     */
-    public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
-                          TransactionManager transactionManager,
-                          QueryInvocationErrorHandler errorHandler) {
-        this(messageMonitor, NoOpMessageMonitor.INSTANCE, transactionManager, errorHandler);
-    }
-
-    /**
-     * Initialize the query bus with the given {@code messageMonitor}, {@code updateMessageMonitor}, {@code
-     * transactionManager} and given {@code errorHandler}.
-     *
-     * @param messageMonitor       The message monitor notified for incoming messages and their result
-     * @param updateMessageMonitor The message monitor notified for incoming update message in regard to subscription
-     *                             queries
-     * @param transactionManager   The transaction manager to manage transactions around query execution with
-     * @param errorHandler         The error handler to invoke when query handler report an error
-     */
-    public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
-                          MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor,
-                          TransactionManager transactionManager,
-                          QueryInvocationErrorHandler errorHandler) {
-        this.messageMonitor = messageMonitor != null ? messageMonitor : NoOpMessageMonitor.instance();
-        this.updateMessageMonitor = updateMessageMonitor != null ? updateMessageMonitor : NoOpMessageMonitor.instance();
-        this.errorHandler = getOrDefault(errorHandler, () -> new LoggingQueryInvocationErrorHandler(logger));
-        if (transactionManager != null) {
-            registerHandlerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
+    protected SimpleQueryBus(Builder builder) {
+        builder.validate();
+        this.messageMonitor = builder.messageMonitor;
+        this.errorHandler = builder.errorHandler;
+        if (builder.transactionManager != NoTransactionManager.INSTANCE) {
+            registerHandlerInterceptor(new TransactionManagingInterceptor<>(builder.transactionManager));
         }
+        this.queryUpdateEmitter = builder.queryUpdateEmitter;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link SimpleQueryBus}.
+     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to {@link
+     * NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler}, and
+     * {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
+     *
+     * @return a Builder to be able to create a {@link SimpleQueryBus}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -235,10 +197,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
-        boolean alreadyExists = updateHandlers.keySet()
-                                              .stream()
-                                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
-        if (alreadyExists) {
+
+        if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
@@ -251,147 +211,17 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                     return null;
                 }));
 
-        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
-        FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
-        sink.onDispose(() -> updateHandlers.remove(query));
-        FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
-        updateHandlers.put(query, fluxSinkWrapper);
-
-        Registration registration = () -> {
-            fluxSinkWrapper.complete();
-            return true;
-        };
+        UpdateHandlerRegistration<U> updateHandlerRegistration = queryUpdateEmitter
+                .registerUpdateHandler(query, backpressure, updateBufferSize);
 
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
-                                                    processor.replay(updateBufferSize).autoConnect(),
-                                                    registration);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         SubscriptionQueryUpdateMessage<U> update) {
-        runOnAfterCommitOrNow(() -> doEmit(filter, update));
-    }
-
-    @SuppressWarnings("unchecked")
-    private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                            SubscriptionQueryUpdateMessage<U> update) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(uh -> doEmit(query, uh, update)));
+                                                    updateHandlerRegistration.getUpdates(),
+                                                    updateHandlerRegistration.getRegistration());
     }
 
     @Override
-    public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        runOnAfterCommitOrNow(() -> doComplete(filter));
-    }
-
-    private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(filter)
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(updateHandler -> {
-                                                    try {
-                                                        updateHandler.complete();
-                                                    } catch (Exception e) {
-                                                        emitError(query, e, updateHandler);
-                                                    }
-                                                }));
-    }
-
-    @Override
-    public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
-    }
-
-    private void doCompleteExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(filter)
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(updateHandler -> emitError(query, cause, updateHandler)));
-    }
-
-    /**
-     * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
-     * {@link UnitOfWork} if {@link SimpleQueryBus#inStartedPhaseOfUnitOfWork} returns {@code true}. This is done to
-     * ensure any emitter calls made from a message handling function are executed in the
-     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
-     * <p>
-     * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done
-     * to allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do
-     * this by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a
-     * different phase.
-     *
-     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if {@link
-     *                        SimpleQueryBus#inStartedPhaseOfUnitOfWork} returns {@code true}
-     */
-    private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
-        if (inStartedPhaseOfUnitOfWork()) {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            unitOfWork.getOrComputeResource(
-                    this.toString() + QUERY_UPDATE_TASKS_RESOURCE_KEY,
-                    resourceKey -> {
-                        List<Runnable> queryUpdateTasks = new ArrayList<>();
-                        unitOfWork.afterCommit(uow -> queryUpdateTasks.forEach(Runnable::run));
-                        return queryUpdateTasks;
-                    }
-            ).add(queryUpdateTask);
-        } else {
-            queryUpdateTask.run();
-        }
-    }
-
-    /**
-     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
-     *
-     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
-     */
-    private boolean inStartedPhaseOfUnitOfWork() {
-        return CurrentUnitOfWork.isStarted() && UnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
-    }
-
-    /**
-     * Provides the set of running subscription queries. If there are changes to subscriptions they will be reflected in
-     * the returned set of this method.
-     *
-     * @return the set of running subscription queries
-     */
-    public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
-        return Collections.unmodifiableSet(updateHandlers.keySet());
-    }
-
-    @SuppressWarnings("unchecked")
-    private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, FluxSinkWrapper<?> updateHandler,
-                            SubscriptionQueryUpdateMessage<U> update) {
-        MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
-        try {
-            ((FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
-            monitorCallback.reportSuccess();
-        } catch (Exception e) {
-            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                "The subscription will be cancelled. Exception summary: {}",
-                        query.getQueryName(), e.toString(), logger.isDebugEnabled() ? e : "");
-            monitorCallback.reportFailure(e);
-            updateHandlers.remove(query);
-            emitError(query, e, updateHandler);
-        }
-    }
-
-    private void emitError(SubscriptionQueryMessage<?, ?, ?> query, Throwable cause,
-                           FluxSinkWrapper<?> updateHandler) {
-        try {
-            updateHandler.error(cause);
-        } catch (Exception e) {
-            logger.error(format("An error happened while trying to inform update handler about the error. Query: %s",
-                                query));
-        }
+    public QueryUpdateEmitter queryUpdateEmitter() {
+        return queryUpdateEmitter;
     }
 
     @SuppressWarnings("unchecked")
@@ -481,5 +311,83 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                             .map((Function<QuerySubscription, MessageHandler>) QuerySubscription::getQueryHandler)
                             .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
                             .collect(Collectors.toList());
+    }
+
+    /**
+     * Builder class to instantiate a {@link SimpleQueryBus}.
+     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to {@link
+     * NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler}, and
+     * {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
+     */
+    public static class Builder {
+
+        private MessageMonitor<? super QueryMessage<?, ?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private TransactionManager transactionManager = NoTransactionManager.instance();
+        private QueryInvocationErrorHandler errorHandler = new LoggingQueryInvocationErrorHandler(logger);
+        private QueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+
+        /**
+         * Sets the message monitor to monitor query messages.
+         *
+         * @param messageMonitor The message monitor used to monitor query messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageMonitor(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor) {
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
+            this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Sets the transaction manager to handle transactions of handling queries.
+         *
+         * @param transactionManager The transaction manager to handle transactions of handling queries
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Sets the error handler to handle exceptions during query handler invocation.
+         *
+         * @param errorHandler The error handler to handle exceptions during query handler invocation
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder errorHandler(QueryInvocationErrorHandler errorHandler) {
+            assertNonNull(errorHandler, "QueryInvocationErrorHandler may not be null");
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
+        /**
+         * Sets the query update emitter to emits updates for subscription queries.
+         *
+         * @param queryUpdateEmitter The query update emitter to emits updates for subscription queries
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder queryUpdateEmitter(QueryUpdateEmitter queryUpdateEmitter) {
+            assertNonNull(queryUpdateEmitter, "QueryUpdateEmitter may not be null");
+            this.queryUpdateEmitter = queryUpdateEmitter;
+            return this;
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set properly.
+         */
+        protected void validate() {
+            // No assertions required, kept for overriding
+        }
+
+        /**
+         * Initializes a {@link SimpleQueryBus} as specified through this Builder.
+         *
+         * @return a {@link SimpleQueryBus} as specified through this Builder
+         */
+        public SimpleQueryBus build() {
+            return new SimpleQueryBus(this);
+        }
     }
 }

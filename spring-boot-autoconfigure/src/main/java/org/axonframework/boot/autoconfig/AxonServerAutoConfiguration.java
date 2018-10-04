@@ -132,12 +132,20 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
-        SimpleQueryBus simpleQueryBus = new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                                           txManager, queryInvocationErrorHandler);
+        SimpleQueryBus simpleQueryBus = SimpleQueryBus.builder()
+                                                      .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class,
+                                                                                                       "queryBus"))
+                                                      .transactionManager(txManager)
+                                                      .errorHandler(queryInvocationErrorHandler)
+                                                      .build();
         simpleQueryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
-        return new AxonServerQueryBus(platformConnectionManager, axonServerConfiguration,
-                                      simpleQueryBus, simpleQueryBus,
-                                      messageSerializer, genericSerializer, priorityCalculator);
+        return new AxonServerQueryBus(platformConnectionManager,
+                                      axonServerConfiguration,
+                                      simpleQueryBus.queryUpdateEmitter(),
+                                      simpleQueryBus,
+                                      messageSerializer,
+                                      genericSerializer,
+                                      priorityCalculator);
     }
 
     @Override

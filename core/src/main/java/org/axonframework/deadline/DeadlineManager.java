@@ -16,7 +16,8 @@
 
 package org.axonframework.deadline;
 
-import org.axonframework.common.IdentifierFactory;
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 
@@ -24,15 +25,14 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * Contract for deadline managers. There are two sets of methods for scheduling - ones which accept a specified
- * {@code scheduleId} and ones which generate and return the id themselves. For callers that want to use the auto
- * generated schedule id approach, it is recommended to use {@link #generateScheduleId()} method.
+ * Contract for deadline managers. Contains methods for scheduling a deadline and for cancelling a deadline.
  *
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface DeadlineManager {
+public interface DeadlineManager extends MessageDispatchInterceptorSupport<DeadlineMessage<?>>,
+        MessageHandlerInterceptorSupport<DeadlineMessage<?>> {
 
     /**
      * Schedules a deadline at given {@code triggerDateTime} with given {@code deadlineName}. The payload of this
@@ -90,42 +90,7 @@ public interface DeadlineManager {
                             String deadlineName,
                             Object messageOrPayload,
                             ScopeDescriptor deadlineScope) {
-        String scheduleId = generateScheduleId();
-        schedule(triggerDateTime, deadlineName, messageOrPayload, deadlineScope, scheduleId);
-        return scheduleId;
-    }
-
-    /**
-     * Schedules a deadline at given {@code triggerDateTime} with provided context. The provided {@code deadlineName} /
-     * {@code scheduleId} combination can be used to cancel the scheduled deadline.
-     * <p>
-     * The given {@code messageOrPayload} may be any object, as well as a DeadlineMessage. In the latter case, the
-     * instance provided is the donor for the payload and {@link org.axonframework.messaging.MetaData} of the actual
-     * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
-     * {@link DeadlineMessage}.
-     * </p>
-     * <p>
-     * Scheduling a deadline with the same {@code deadlineName} and {@code scheduleId} will replace the previous
-     * schedule with the new one.
-     * </p>
-     *
-     * @param triggerDateTime  A {@link Instant} denoting the moment to trigger the deadline handling
-     * @param deadlineName     A {@link String} representing the name of the deadline to schedule
-     * @param messageOrPayload A {@link org.axonframework.messaging.Message} or payload for a message as an
-     *                         {@link Object}
-     * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
-     * @param scheduleId       A {@link String} schedule id to use when cancelling the schedule
-     */
-    default void schedule(Instant triggerDateTime,
-                          String deadlineName,
-                          Object messageOrPayload,
-                          ScopeDescriptor deadlineScope,
-                          String scheduleId) {
-        schedule(Duration.between(Instant.now(), triggerDateTime),
-                 deadlineName,
-                 messageOrPayload,
-                 deadlineScope,
-                 scheduleId);
+        return schedule(triggerDateTime, deadlineName, messageOrPayload, deadlineScope);
     }
 
     /**
@@ -165,32 +130,6 @@ public interface DeadlineManager {
     }
 
     /**
-     * Schedules a deadline after the given {@code triggerDuration} with provided context. The returned
-     * {@code scheduleId} and provided {@code deadlineName} combination can be used to cancel the scheduled deadline.
-     * <p>
-     * The given {@code messageOrPayload} may be any object, as well as a DeadlineMessage. In the latter case, the
-     * instance provided is the donor for the payload and {@link org.axonframework.messaging.MetaData} of the actual
-     * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
-     * {@link DeadlineMessage}.
-     * </p>
-     *
-     * @param triggerDuration  A {@link Duration} describing the waiting period before handling the deadline
-     * @param deadlineName     A {@link String} representing the name of the deadline to schedule
-     * @param messageOrPayload A {@link org.axonframework.messaging.Message} or payload for a message as an
-     *                         {@link Object}
-     * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
-     * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
-     */
-    default String schedule(Duration triggerDuration,
-                            String deadlineName,
-                            Object messageOrPayload,
-                            ScopeDescriptor deadlineScope) {
-        String scheduleId = generateScheduleId();
-        schedule(triggerDuration, deadlineName, messageOrPayload, deadlineScope, scheduleId);
-        return scheduleId;
-    }
-
-    /**
      * Schedules a deadline after the given {@code triggerDuration} with provided context. The provided
      * {@code deadlineName} / {@code scheduleId} combination can be used to cancel the scheduled deadline.
      * <p>
@@ -209,22 +148,12 @@ public interface DeadlineManager {
      * @param messageOrPayload A {@link org.axonframework.messaging.Message} or payload for a message as an
      *                         {@link Object}
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
-     * @param scheduleId       A {@link String} schedule id to use when cancelling the schedule
+     * @return A schedule id to use when cancelling the schedule
      */
-    void schedule(Duration triggerDuration,
+    String schedule(Duration triggerDuration,
                   String deadlineName,
                   Object messageOrPayload,
-                  ScopeDescriptor deadlineScope,
-                  String scheduleId);
-
-    /**
-     * Generates a {@link String} schedule id.
-     *
-     * @return a {@link String} schedule id
-     */
-    default String generateScheduleId() {
-        return IdentifierFactory.getInstance().generateIdentifier();
-    }
+                  ScopeDescriptor deadlineScope);
 
     /**
      * Cancels the deadline corresponding to the given {@code deadlineName} / {@code scheduleId} combination.

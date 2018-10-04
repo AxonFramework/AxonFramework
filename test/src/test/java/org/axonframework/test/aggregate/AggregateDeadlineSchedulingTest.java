@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.junit.*;
@@ -75,6 +76,30 @@ public class AggregateDeadlineSchedulingTest {
                .andGivenCommands(new CreateMyAggregateCommand("id"))
                .when(new ResetAllTriggerCommand("id"))
                .expectNoScheduledDeadlines();
+    }
+
+    @Test
+    public void testDeadlineDispatcherInterceptor() {
+        fixture.registerDeadlineDispatchInterceptor(
+                messages -> (i, m) -> GenericDeadlineMessage
+                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails"))
+               .givenNoPriorActivity()
+               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .andThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectDeadlinesMet("fakeDeadlineDetails");
+    }
+
+    @Test
+    public void testDeadlineHandlerInterceptor() {
+        fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
+                    uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
+                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails"));
+                    return chain.proceed();
+                })
+               .givenNoPriorActivity()
+               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .andThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectDeadlinesMet("fakeDeadlineDetails");
     }
 
     private static class CreateMyAggregateCommand {
