@@ -38,7 +38,6 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.singletonList;
@@ -60,7 +59,7 @@ public class SpringCloudCommandRouterTest {
     private static final String ROUTING_KEY = "routingKey";
     private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
+    private static final CommandMessageFilter COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
     private static final boolean LOCAL_MEMBER = true;
     private static final boolean REMOTE_MEMBER = false;
     private static final boolean REGISTERED = true;
@@ -143,7 +142,7 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipUpdatesLocalServiceInstance() {
-        Predicate<? super CommandMessage<?>> commandNameFilter = new CommandNameFilter(String.class.getName());
+        CommandMessageFilter commandNameFilter = new CommandNameFilter(String.class.getName());
         String commandFilterData = new XStreamSerializer().serialize(commandNameFilter, String.class).getData();
         testSubject.updateMembership(LOAD_FACTOR, commandNameFilter);
 

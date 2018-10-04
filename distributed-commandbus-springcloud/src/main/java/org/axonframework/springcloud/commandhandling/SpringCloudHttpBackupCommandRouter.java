@@ -15,7 +15,7 @@
 
 package org.axonframework.springcloud.commandhandling;
 
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -112,7 +112,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     }
 
     @Override
-    public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
+    public void updateMembership(int loadFactor, CommandMessageFilter commandFilter) {
         messageRoutingInfo = new MessageRoutingInformation(loadFactor, commandFilter, serializer);
         super.updateMembership(loadFactor, commandFilter);
     }

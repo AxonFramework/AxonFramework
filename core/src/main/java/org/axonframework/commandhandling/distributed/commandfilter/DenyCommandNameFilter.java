@@ -17,13 +17,12 @@
 package org.axonframework.commandhandling.distributed.commandfilter;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,7 +32,7 @@ import java.util.stream.Stream;
  *
  * @author Koen Lavooij
  */
-public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Serializable {
+public class DenyCommandNameFilter implements CommandMessageFilter {
     private final Set<String> commandNames;
 
     /**
@@ -57,29 +56,29 @@ public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Seri
     }
 
     @Override
-    public boolean test(CommandMessage commandMessage) {
+    public boolean matches(CommandMessage commandMessage) {
         return !commandNames.contains(commandMessage.getCommandName());
     }
 
     @Override
-    public Predicate<CommandMessage<?>> and(Predicate<? super CommandMessage<?>> other) {
+    public CommandMessageFilter and(CommandMessageFilter other) {
         if (other instanceof DenyCommandNameFilter) {
             return new DenyCommandNameFilter(
                     Stream.concat(commandNames.stream(), ((DenyCommandNameFilter) other).commandNames.stream())
-                            .collect(Collectors.toSet()));
+                          .collect(Collectors.toSet()));
         } else {
-            return (t) -> test(t) && other.test(t);
+            return new AndCommandMessageFilter(this, other);
         }
     }
 
     @Override
-    public Predicate<CommandMessage<?>> or(Predicate<? super CommandMessage<?>> other) {
+    public CommandMessageFilter or(CommandMessageFilter other) {
         if (other instanceof DenyCommandNameFilter) {
             return new DenyCommandNameFilter(
                     commandNames.stream().filter(((DenyCommandNameFilter) other).commandNames::contains)
-                            .collect(Collectors.toSet()));
+                                .collect(Collectors.toSet()));
         } else {
-            return (t) -> test(t) || other.test(t);
+            return new OrCommandMessageFilter(this, other);
         }
     }
 
