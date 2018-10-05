@@ -7,6 +7,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.SerializedMetaData;
@@ -26,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -45,6 +47,7 @@ public class SpringHttpCommandBusConnectorTest {
     private static final Exception COMMAND_ERROR = new Exception();
     private static final byte[] SERIALIZED_ERROR_DATA = {};
 
+    @InjectMocks
     private SpringHttpCommandBusConnector testSubject;
     @Mock
     private CommandBus localCommandBus;
@@ -52,6 +55,8 @@ public class SpringHttpCommandBusConnectorTest {
     private RestTemplate restTemplate;
     @Mock
     private Serializer serializer;
+    @Spy
+    private Executor executor = new TestExecutor();
 
     private URI expectedUri;
     @Mock
@@ -110,7 +115,7 @@ public class SpringHttpCommandBusConnectorTest {
                 .thenReturn(COMMAND_MESSAGE.getMetaData());
         when(serializer.getConverter()).thenReturn(new ChainingConverter());
 
-        testSubject = new SpringHttpCommandBusConnector(localCommandBus, restTemplate, serializer);
+//        testSubject = new SpringHttpCommandBusConnector(localCommandBus, restTemplate, serializer);
     }
 
     @Test
@@ -119,6 +124,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST),
@@ -129,6 +135,7 @@ public class SpringHttpCommandBusConnectorTest {
     public void testSendWithoutCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE);
+        verify(executor).execute(any());
     }
 
     @Test
@@ -148,6 +155,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
@@ -173,6 +181,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
@@ -185,6 +194,7 @@ public class SpringHttpCommandBusConnectorTest {
     public void testSendWithCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE, new NoOpCallback());
+        verify(executor).execute(any());
     }
 
     @Test
@@ -311,6 +321,16 @@ public class SpringHttpCommandBusConnectorTest {
             return actual != null &&
                     actual.getType().getTypeName()
                           .equals(expected.getType().getTypeName());
+        }
+    }
+
+    private class TestExecutor implements Executor {
+
+        private final Executor executor = DirectExecutor.INSTANCE;
+
+        @Override
+        public void execute(Runnable command) {
+            executor.execute(command);
         }
     }
 }
