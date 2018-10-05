@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -42,6 +43,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
@@ -69,6 +71,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     private final CommandBus localCommandBus;
     private final RestOperations restOperations;
     private final Serializer serializer;
+    private final Executor executor;
 
     /**
      * Instantiate a {@link SpringHttpCommandBusConnector} based on the fields contained in the {@link Builder}.
@@ -103,7 +106,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage);
         } else {
-            sendRemotely(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+            executor.execute(() -> {
+                sendRemotely(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+            });
         }
     }
 
@@ -113,14 +118,15 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage, callback);
         } else {
-            SpringHttpReplyMessage<R> replyMessage =
-                    this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
-            if (replyMessage.isSuccess()) {
-                callback.onSuccess(commandMessage,
-                                   asCommandResultMessage(replyMessage.getCommandResultMessage(serializer)));
-            } else {
-                callback.onFailure(commandMessage, replyMessage.getError(serializer));
-            }
+            executor.execute(() -> {
+                SpringHttpReplyMessage<R> replyMessage =
+                        this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
+                if (replyMessage.isSuccess()) {
+                    callback.onSuccess(commandMessage, replyMessage.getReturnValue(serializer));
+                } else {
+                    callback.onFailure(commandMessage, replyMessage.getError(serializer));
+                }
+            });
         }
     }
 
