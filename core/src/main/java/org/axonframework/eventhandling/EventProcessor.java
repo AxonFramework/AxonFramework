@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,9 @@ import java.util.List;
 /**
  * An Event Processor processes event messages from an event queue or event bus.
  * <p/>
- * Typically, an Event Processor is in charge of publishing the events to a group of registered listeners. This allows
+ * Typically, an Event Processor is in charge of publishing the events to a group of registered handlers. This allows
  * attributes and behavior (e.g. transaction management, asynchronous processing, distribution) to be applied over
  * a whole group at once.
- * <p/>
- * Another use for Event Processors is to dispatch events to an exchange for remote processing.
  *
  * @author Allard Buijze
  * @since 1.2
@@ -50,9 +48,7 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
      *
      * @return the list of registered interceptors of this event processor
      */
-    default List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
-        throw new UnsupportedOperationException("No implementation found to get the HandlerInterceptors");
-    }
+    List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors();
 
     /**
      * Start processing events.

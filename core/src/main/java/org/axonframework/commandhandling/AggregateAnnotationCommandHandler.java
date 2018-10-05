@@ -29,11 +29,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -46,12 +42,29 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 1.2
  */
-public class AggregateAnnotationCommandHandler<T> implements MessageHandler<CommandMessage<?>>,
-        SupportedCommandNamesAware {
+public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandler {
 
     private final Repository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
-    private final Map<String, MessageHandler<CommandMessage<?>>> handlers;
+    private final List<MessageHandler<CommandMessage<?>>> handlers;
+    private final Set<String> supportedCommandNames;
+
+    /**
+     * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
+     * <p>
+     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver}
+     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
+     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
+     * aggregate). To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     *
+     * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
+     * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
+     */
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
+    }
 
     /**
      * Instantiate a {@link AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
@@ -70,24 +83,8 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         builder.validate();
         this.repository = builder.repository;
         this.commandTargetResolver = builder.commandTargetResolver;
+        this.supportedCommandNames = new HashSet<>();
         this.handlers = initializeHandlers(builder.buildAggregateModel());
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
-     * <p>
-     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver}
-     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
-     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
-     * aggregate). To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
-     *
-     * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
-     * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
-     */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
     }
 
     /**
@@ -111,30 +108,33 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         };
     }
 
-    private Map<String, MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
-        Map<String, MessageHandler<CommandMessage<?>>> handlersFound = new HashMap<>();
-        AggregateCommandHandler aggregateCommandHandler = new AggregateCommandHandler();
-        aggregateModel.commandHandlers().forEach((k, v) -> {
-            if (v.unwrap(CommandMessageHandlingMember.class)
-                 .map(CommandMessageHandlingMember::isFactoryHandler)
-                 .orElse(false)) {
-                handlersFound.put(k, new AggregateConstructorCommandHandler(v));
-            } else {
-                handlersFound.put(k, aggregateCommandHandler);
-            }
+    private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
+        List<MessageHandler<CommandMessage<?>>> handlersFound = new ArrayList<>();
+        aggregateModel.commandHandlers().forEach(handler -> {
+            handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
+                if (cmh.isFactoryHandler()) {
+                    handlersFound.add(new AggregateConstructorCommandHandler(handler));
+                    supportedCommandNames.add(cmh.commandName());
+                } else {
+                    handlersFound.add(new AggregateCommandHandler(handler));
+                    supportedCommandNames.add(cmh.commandName());
+                }
+            });
         });
         return handlersFound;
     }
 
     @Override
     public Object handle(CommandMessage<?> commandMessage) throws Exception {
-        return handlers.get(commandMessage.getCommandName()).handle(commandMessage);
+        return handlers.stream().filter(eh -> eh.canHandle(commandMessage))
+                       .findFirst()
+                       .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
+                       .handle(commandMessage);
     }
 
     @Override
     public boolean canHandle(CommandMessage<?> message) {
-        return handlers.containsKey(message.getCommandName())
-                && handlers.get(message.getCommandName()).canHandle(message);
+        return handlers.stream().anyMatch(ch -> ch.canHandle(message));
     }
 
     /**
@@ -153,33 +153,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
 
     @Override
     public Set<String> supportedCommandNames() {
-        return handlers.keySet();
-    }
-
-    private class AggregateConstructorCommandHandler implements MessageHandler<CommandMessage<?>> {
-
-        private final MessageHandlingMember<?> handler;
-
-        public AggregateConstructorCommandHandler(MessageHandlingMember<?> handler) {
-            this.handler = handler;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
-            Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
-            return resolveReturnValue(command, aggregate);
-        }
-    }
-
-    private class AggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
-            VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
-            return repository.load(iv.getIdentifier(), iv.getVersion()).handle(command);
-        }
+        return supportedCommandNames;
     }
 
     /**
@@ -343,6 +317,48 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
                     aggregateModel,
                     "No aggregateType is set, whilst either it or the AggregateModel is a hard requirement"
             );
+        }
+    }
+
+    private class AggregateConstructorCommandHandler implements MessageHandler<CommandMessage<?>> {
+
+        private final MessageHandlingMember<?> handler;
+
+        public AggregateConstructorCommandHandler(MessageHandlingMember<?> handler) {
+            this.handler = handler;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object handle(CommandMessage<?> command) throws Exception {
+            Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
+            return resolveReturnValue(command, aggregate);
+        }
+
+        @Override
+        public boolean canHandle(CommandMessage<?> message) {
+            return handler.canHandle(message);
+        }
+    }
+
+    private class AggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
+
+        private final MessageHandlingMember<? super T> handler;
+
+        public AggregateCommandHandler(MessageHandlingMember<? super T> handler) {
+            this.handler = handler;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object handle(CommandMessage<?> command) throws Exception {
+            VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
+            return repository.load(iv.getIdentifier(), iv.getVersion()).handle(command);
+        }
+
+        @Override
+        public boolean canHandle(CommandMessage<?> message) {
+            return handler.canHandle(message);
         }
     }
 }

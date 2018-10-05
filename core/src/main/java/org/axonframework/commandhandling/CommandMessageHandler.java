@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,17 +16,18 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.MessageHandler;
+
 import java.util.Set;
 
 /**
- * Describes a component capable of specifying which commands it is able to handle.
- *
- * @author Allard Buijze
+ * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandMessageHandlers
+ * also specify which command names they support.
  */
-public interface SupportedCommandNamesAware {
+public interface CommandMessageHandler extends MessageHandler<CommandMessage<?>> {
 
     /**
-     * Returns the set of command names this component supports.
+     * Returns the set of command names this handler supports.
      *
      * @return the set of supported command names
      */

@@ -39,7 +39,7 @@ import static java.lang.String.format;
  * @see CommandHandler
  * @since 0.5
  */
-public class AnnotationCommandHandlerAdapter<T> implements MessageHandler<CommandMessage<?>>, SupportedCommandNamesAware {
+public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
