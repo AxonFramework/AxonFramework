@@ -18,8 +18,9 @@ package org.axonframework.axonserver.connector.processor.grpc;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 
 /**
- * Created by Sara Pellegrini on 15/03/2018.
- * sara.pellegrini@gmail.com
+ * Supplier of {@link PlatformInboundInstruction}
+ *
+ * @author Sara Pellegrini
  */
 public interface PlatformInboundMessage {
 

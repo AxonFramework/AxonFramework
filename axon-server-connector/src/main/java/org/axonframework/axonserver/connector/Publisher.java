@@ -16,8 +16,9 @@
 package org.axonframework.axonserver.connector;
 
 /**
- * Created by Sara Pellegrini on 11/05/2018.
- * sara.pellegrini@gmail.com
+ * Interface that encapsulates the messages publication functionality to AxonServer.
+ *
+ * @author Sara Pellegrini
  */
 public interface Publisher<M> {
 

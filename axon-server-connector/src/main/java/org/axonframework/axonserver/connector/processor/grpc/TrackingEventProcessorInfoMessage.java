@@ -27,8 +27,9 @@ import java.util.Map;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Created by Sara Pellegrini on 15/03/2018.
- * sara.pellegrini@gmail.com
+ * Supplier of {@link PlatformInboundInstruction} that represent the status of a {@link TrackingEventProcessor}.
+ *
+ * @author Sara Pellegrini
  */
 public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage {
 

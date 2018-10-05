@@ -23,7 +23,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.PlatformConnectionManager;
 import org.axonframework.axonserver.connector.event.AppendEventTransaction;
-import org.axonframework.axonserver.connector.event.AxonDBClient;
+import org.axonframework.axonserver.connector.event.AxonServerEventStoreClient;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
@@ -86,7 +86,7 @@ public class AxonServerEventStore extends AbstractEventStore {
      */
     public AxonServerEventStore(AxonServerConfiguration configuration, PlatformConnectionManager platformConnectionManager,
                                 Serializer serializer, EventUpcaster upcasterChain) {
-        super(new AxonIQEventStorageEngine(serializer, upcasterChain, configuration, new AxonDBClient(configuration, platformConnectionManager)));
+        super(new AxonIQEventStorageEngine(serializer, upcasterChain, configuration, new AxonServerEventStoreClient(configuration, platformConnectionManager)));
     }
 
     /**
@@ -101,7 +101,7 @@ public class AxonServerEventStore extends AbstractEventStore {
      */
     public AxonServerEventStore(AxonServerConfiguration configuration, PlatformConnectionManager platformConnectionManager,
                                 Serializer snapshotSerializer, Serializer eventSerializer, EventUpcaster upcasterChain) {
-        super(new AxonIQEventStorageEngine(snapshotSerializer, eventSerializer, upcasterChain, configuration, new AxonDBClient(configuration, platformConnectionManager)));
+        super(new AxonIQEventStorageEngine(snapshotSerializer, eventSerializer, upcasterChain, configuration, new AxonServerEventStoreClient(configuration, platformConnectionManager)));
     }
     @Override
     public TrackingEventStream openStream(TrackingToken trackingToken) {
@@ -123,13 +123,13 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         private final EventUpcaster upcasterChain;
         private final AxonServerConfiguration configuration;
-        private final AxonDBClient eventStoreClient;
+        private final AxonServerEventStoreClient eventStoreClient;
         private final GrpcMetaDataConverter converter;
 
         private AxonIQEventStorageEngine(Serializer serializer,
                                          EventUpcaster upcasterChain,
                                          AxonServerConfiguration configuration,
-                                         AxonDBClient eventStoreClient) {
+                                         AxonServerEventStoreClient eventStoreClient) {
             super(serializer, upcasterChain, null, serializer);
             this.upcasterChain = getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE);
             this.configuration = configuration;
@@ -141,7 +141,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                          Serializer serializer,
                                          EventUpcaster upcasterChain,
                                          AxonServerConfiguration configuration,
-                                         AxonDBClient eventStoreClient) {
+                                         AxonServerEventStoreClient eventStoreClient) {
             super(snapshotSerializer, upcasterChain, null, serializer, null);
             this.upcasterChain = getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE);
             this.configuration = configuration;

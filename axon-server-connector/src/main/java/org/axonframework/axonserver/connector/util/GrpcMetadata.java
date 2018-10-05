@@ -29,8 +29,9 @@ import static org.axonframework.messaging.MetaData.emptyInstance;
 import static org.axonframework.messaging.MetaData.from;
 
 /**
- * Created by Sara Pellegrini on 12/05/2018.
- * sara.pellegrini@gmail.com
+ * Implementation that enables to access to a map of GRPC {@link MetaDataValue}s in the form of {@link MetaData}.
+ *
+ * @author Sara Pellegrini
  */
 public class GrpcMetadata implements Supplier<MetaData> {
 

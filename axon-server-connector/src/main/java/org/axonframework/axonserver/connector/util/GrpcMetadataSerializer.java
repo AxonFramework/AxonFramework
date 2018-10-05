@@ -23,8 +23,9 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Created by Sara Pellegrini on 11/05/2018.
- * sara.pellegrini@gmail.com
+ * Mapping that translates a {@link MetaData} into a map of GRPC {@link MetaDataValue}
+ *
+ * @author Sara Pellegrini
  */
 public class GrpcMetadataSerializer implements Function<MetaData, Map<String, MetaDataValue>> {
 

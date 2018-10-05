@@ -24,8 +24,9 @@ import java.util.Deque;
 import java.util.function.Consumer;
 
 /**
- * Created by Sara Pellegrini on 09/03/2018.
- * sara.pellegrini@gmail.com
+ * Controller for {@link EventProcessor}s
+ *
+ * @author Sara Pellegrini
  */
 public class EventProcessorController {
 

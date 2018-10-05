@@ -21,8 +21,9 @@ import org.axonframework.eventhandling.EventProcessor;
 import java.util.Iterator;
 
 /**
- * Created by Sara Pellegrini on 30/08/2018.
- * sara.pellegrini@gmail.com
+ * Iterable class for all registered {@link EventProcessor}s.
+ *
+ * @author Sara Pellegrini
  */
 public class EventProcessors implements Iterable<EventProcessor> {
 

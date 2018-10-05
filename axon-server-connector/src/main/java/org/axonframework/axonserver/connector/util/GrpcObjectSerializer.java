@@ -23,8 +23,9 @@ import java.util.function.Function;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Created by Sara Pellegrini on 11/05/2018.
- * sara.pellegrini@gmail.com
+ * Mapping that translates an object into a GRPC {@link io.axoniq.axonserver.grpc.SerializedObject}
+ *
+ * @author Sara Pellegrini
  */
 public class GrpcObjectSerializer<O> implements Function<O, io.axoniq.axonserver.grpc.SerializedObject> {
 
