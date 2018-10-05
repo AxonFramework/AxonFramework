@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ import java.lang.annotation.*;
  * Note: if there are two event handler methods accepting the same argument, the behavior is undefined.
  *
  * @author Allard Buijze
- * @see AnnotationEventListenerAdapter
+ * @see AnnotationEventHandlerAdapter
  * @see ParameterResolverFactory
  * @since 0.1
  */

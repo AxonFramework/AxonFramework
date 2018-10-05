@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,6 +129,12 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     @Override
     public Object handle(CommandMessage<?> commandMessage) throws Exception {
         return handlers.get(commandMessage.getCommandName()).handle(commandMessage);
+    }
+
+    @Override
+    public boolean canHandle(CommandMessage<?> message) {
+        return handlers.containsKey(message.getCommandName())
+                && handlers.get(message.getCommandName()).canHandle(message);
     }
 
     /**
