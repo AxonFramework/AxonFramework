@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.MessageHandler;
@@ -50,7 +51,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * Initialize the AsynchronousCommandBus, using a Cached Thread Pool.
      */
     public AsynchronousCommandBus() {
-        this(Executors.newCachedThreadPool());
+        this(Executors.newCachedThreadPool(new AxonThreadFactory(AsynchronousCommandBus.class.getSimpleName())));
     }
 
     /**

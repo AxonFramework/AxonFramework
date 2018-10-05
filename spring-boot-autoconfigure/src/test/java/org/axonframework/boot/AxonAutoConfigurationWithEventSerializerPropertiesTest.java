@@ -16,6 +16,7 @@
 
 package org.axonframework.boot;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -27,6 +28,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.junit.*;
 import org.junit.runner.*;
@@ -36,6 +38,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -45,7 +49,7 @@ import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
 
-@ContextConfiguration
+@ContextConfiguration(classes = AxonAutoConfigurationWithEventSerializerPropertiesTest.TestContext.class)
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class, RabbitMetricsAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 @TestPropertySource("classpath:application.serializertest.properties")
@@ -91,5 +95,26 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertTrue(messageSerializer instanceof JavaSerializer);
         assertEquals(serializer, engine.getSerializer());
         assertEquals(eventSerializer, engine.getEventSerializer());
+    }
+
+    @Test
+    public void testEventSerializerIsOfTypeJacksonSerializerAndUsesDefinedObjectMapperBean() {
+        final Serializer serializer = applicationContext.getBean(Serializer.class);
+        final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
+        final ObjectMapper objectMapper = applicationContext.getBean("testObjectMapper", ObjectMapper.class);
+
+        assertTrue(serializer instanceof JacksonSerializer);
+        assertEquals(objectMapper, ((JacksonSerializer) serializer).getObjectMapper());
+        assertTrue(eventSerializer instanceof JacksonSerializer);
+        assertEquals(objectMapper, ((JacksonSerializer) eventSerializer).getObjectMapper());
+    }
+
+    @Configuration
+    public static class TestContext {
+
+        @Bean("testObjectMapper")
+        public ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
     }
 }
