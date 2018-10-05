@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -40,6 +41,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @RestController
 @RequestMapping("/spring-command-bus-connector")
@@ -54,11 +56,22 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     private final CommandBus localCommandBus;
     private final RestOperations restOperations;
     private final Serializer serializer;
+    private final Executor executor;
 
-    public SpringHttpCommandBusConnector(CommandBus localCommandBus, RestOperations restOperations, Serializer serializer) {
+    public SpringHttpCommandBusConnector(CommandBus localCommandBus,
+                                         RestOperations restOperations,
+                                         Serializer serializer) {
+        this(localCommandBus, restOperations, serializer, DirectExecutor.INSTANCE);
+    }
+
+    public SpringHttpCommandBusConnector(CommandBus localCommandBus,
+                                         RestOperations restOperations,
+                                         Serializer serializer,
+                                         Executor executor) {
         this.localCommandBus = localCommandBus;
         this.restOperations = restOperations;
         this.serializer = serializer;
+        this.executor = executor;
     }
 
     @Override
@@ -66,7 +79,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage);
         } else {
-            sendRemotely(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+            executor.execute(() -> {
+                sendRemotely(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+            });
         }
     }
 
@@ -76,12 +91,15 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage, callback);
         } else {
-            SpringHttpReplyMessage<R> replyMessage = this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
-            if (replyMessage.isSuccess()) {
-                callback.onSuccess(commandMessage, replyMessage.getReturnValue(serializer));
-            } else {
-                callback.onFailure(commandMessage, replyMessage.getError(serializer));
-            }
+            executor.execute(() -> {
+                SpringHttpReplyMessage<R> replyMessage =
+                        this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
+                if (replyMessage.isSuccess()) {
+                    callback.onSuccess(commandMessage, replyMessage.getReturnValue(serializer));
+                } else {
+                    callback.onFailure(commandMessage, replyMessage.getError(serializer));
+                }
+            });
         }
     }
 
@@ -102,15 +120,19 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (optionalEndpoint.isPresent()) {
             URI endpointUri = optionalEndpoint.get();
             URI destinationUri = buildURIForPath(endpointUri.getScheme(), endpointUri.getUserInfo(),
-                    endpointUri.getHost(), endpointUri.getPort(), endpointUri.getPath());
+                                                 endpointUri.getHost(), endpointUri.getPort(), endpointUri.getPath());
 
             SpringHttpDispatchMessage<C> dispatchMessage =
                     new SpringHttpDispatchMessage<>(commandMessage, serializer, expectReply);
             return restOperations.exchange(destinationUri, HttpMethod.POST, new HttpEntity<>(dispatchMessage),
-                    new ParameterizedTypeReference<SpringHttpReplyMessage<R>>(){});
+                                           new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() {
+                                           });
         } else {
             String errorMessage = String.format("No Connection Endpoint found in Member [%s] for protocol [%s] " +
-                    "to send the command message [%s] to", destination, URI.class, commandMessage);
+                                                        "to send the command message [%s] to",
+                                                destination,
+                                                URI.class,
+                                                commandMessage);
             LOGGER.error(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
@@ -121,7 +143,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             return new URI(scheme, userInfo, host, port, path + COMMAND_BUS_CONNECTOR_PATH, null, null);
         } catch (URISyntaxException e) {
             LOGGER.error("Failed to build URI for [{}{}{}], with user info [{}] and path [{}]",
-                    scheme, host, port, userInfo, COMMAND_BUS_CONNECTOR_PATH, e);
+                         scheme, host, port, userInfo, COMMAND_BUS_CONNECTOR_PATH, e);
             throw new IllegalArgumentException(e);
         }
     }
@@ -165,7 +187,8 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return localCommandBus.registerHandlerInterceptor(handlerInterceptor);
     }
 
@@ -181,7 +204,5 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         public void onFailure(CommandMessage commandMessage, Throwable cause) {
             super.complete(createReply(commandMessage, false, cause));
         }
-
     }
-
 }
