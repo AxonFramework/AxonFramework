@@ -20,7 +20,10 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 /**
- * Filter that matches whenever both supplied filters matche
+ * Filter that matches whenever both supplied filters match
+ *
+ * @author Allard Buijze
+ * @since 4.0
  */
 public class AndCommandMessageFilter implements CommandMessageFilter {
 

@@ -21,6 +21,9 @@ import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 /**
  * Filter that matches whenever one of the two supplied filters matches
+ *
+ * @author Allard Buijze
+ * @since 4.0
  */
 public class OrCommandMessageFilter implements CommandMessageFilter {
     private final CommandMessageFilter first;

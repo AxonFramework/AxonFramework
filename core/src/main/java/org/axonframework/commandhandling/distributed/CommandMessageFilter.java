@@ -26,11 +26,14 @@ import java.io.Serializable;
 /**
  * Interface describing a filter that can be applied to commands to describe the type of commands supported by a node
  * in a cluster.
+ *
+ * @author Allard Buijze
+ * @since 4.0
  */
 public interface CommandMessageFilter extends Serializable {
 
     /**
-     * Indicates whether the given {@code commandMessage} matches this filter
+     * Indicates whether the given {@code commandMessage} matches this filter.
      *
      * @param commandMessage The message to match
      * @return {@code true} if the command matches, otherwise {@code false}
@@ -50,7 +53,7 @@ public interface CommandMessageFilter extends Serializable {
     /**
      * Returns a filter that matches when this instance doesn't, and vice versa.
      *
-     * @return A filter that negates the result of this instance
+     * @return a filter that negates the result of this instance
      */
     default CommandMessageFilter negate() {
         return new NegateCommandMessageFilter(this);
@@ -59,7 +62,7 @@ public interface CommandMessageFilter extends Serializable {
     /**
      * Returns a filter that matches when either this instance or the given {@code other} matches.
      *
-     * @param other The other filter to match against
+     * @param other the other filter to match against
      * @return a filter that matches when either this instance or the other matches
      */
     default CommandMessageFilter or(CommandMessageFilter other) {

@@ -21,6 +21,9 @@ import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 /**
  * Filter that negates the result of another matcher
+ *
+ * @author Allard Buijze
+ * @since 4.0
  */
 public class NegateCommandMessageFilter implements CommandMessageFilter {
 
