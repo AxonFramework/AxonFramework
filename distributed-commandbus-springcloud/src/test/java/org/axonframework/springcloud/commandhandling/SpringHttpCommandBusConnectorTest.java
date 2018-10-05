@@ -13,6 +13,7 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
@@ -47,12 +48,10 @@ public class SpringHttpCommandBusConnectorTest {
     private static final Exception COMMAND_ERROR = new Exception("oops");
 
     private SpringHttpCommandBusConnector testSubject;
-    @Mock
+
     private CommandBus localCommandBus;
-    @Mock
     private RestTemplate restTemplate;
     private Serializer serializer;
-    @Spy
     private Executor executor = new TestExecutor();
 
     private URI expectedUri;
@@ -63,7 +62,6 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        serializer = spy(new JacksonSerializer());
         expectedUri = new URI(ENDPOINT.getScheme(),
                               ENDPOINT.getUserInfo(),
                               ENDPOINT.getHost(),
@@ -72,10 +70,16 @@ public class SpringHttpCommandBusConnectorTest {
                               null,
                               null);
 
+        localCommandBus = mock(CommandBus.class);
+        restTemplate = mock(RestTemplate.class);
+        serializer = spy(new JacksonSerializer());
+        executor = spy(new TestExecutor());
+
         testSubject = SpringHttpCommandBusConnector.builder()
                                                    .localCommandBus(localCommandBus)
                                                    .restOperations(restTemplate)
                                                    .serializer(serializer)
+                                                   .executor(executor)
                                                    .build();
     }
 
@@ -319,7 +323,7 @@ public class SpringHttpCommandBusConnectorTest {
         private final Executor executor = DirectExecutor.INSTANCE;
 
         @Override
-        public void execute(Runnable command) {
+        public void execute(@SuppressWarnings("NullableProblems") Runnable command) {
             executor.execute(command);
         }
     }
