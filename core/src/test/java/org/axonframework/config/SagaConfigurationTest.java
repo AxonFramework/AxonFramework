@@ -57,7 +57,7 @@ public class SagaConfigurationTest {
                                                        .buildConfiguration();
         sagaConfiguration.initialize(configuration);
 
-        assertEquals("ObjectProcessor", sagaConfiguration.processingGroup());
+        assertFalse(sagaConfiguration.processingGroup().isPresent());
         assertEquals(Object.class, sagaConfiguration.type());
         assertEquals(store, sagaConfiguration.store().get());
         assertEquals(listenerInvocationErrorHandler, sagaConfiguration.listenerInvocationErrorHandler().get());
@@ -83,18 +83,11 @@ public class SagaConfigurationTest {
         sagaConfiguration.initialize(configuration);
 
         assertEquals(Object.class, sagaConfiguration.type());
-        assertEquals(processingGroup, sagaConfiguration.processingGroup());
+        assertEquals(processingGroup, sagaConfiguration.processingGroup().get());
         assertEquals(manager, sagaConfiguration.manager().get());
         assertEquals(repository, sagaConfiguration.repository().get());
         assertEquals(sagaStore, sagaConfiguration.store().get());
         assertEquals(loggingErrorHandler, sagaConfiguration.listenerInvocationErrorHandler().get());
-    }
-
-    @Test
-    public void testSagaWithProcessingGroupAnnotation() {
-        SagaConfiguration<MySaga> sagaConfiguration = SagaConfiguration.defaultConfiguration(MySaga.class);
-        sagaConfiguration.initialize(DefaultConfigurer.defaultConfiguration().buildConfiguration());
-        assertEquals("customProcessingGroup", sagaConfiguration.processingGroup());
     }
 
     private void assertConfigurerNullCheck(Runnable r, String message) {
@@ -104,10 +97,5 @@ public class SagaConfigurationTest {
         } catch (AxonConfigurationException ace) {
             // we expect this exception
         }
-    }
-
-    @ProcessingGroup("customProcessingGroup")
-    private static class MySaga {
-
     }
 }

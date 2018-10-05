@@ -17,7 +17,6 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DirectEventProcessingStrategy;
@@ -63,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * Event processing module configuration. Registers all configuration components within itself, builds the {@link
@@ -76,17 +76,41 @@ public class EventProcessingModule
 
 
     //<editor-fold desc="configuration state">
-    private static class ProcessorSelector {
+    private static class InstanceProcessingGroupSelector extends ProcessingGroupSelector<Object> {
+
+        private InstanceProcessingGroupSelector(int priority,
+                                                Function<Object, Optional<String>> selectorFunction) {
+            super(priority, selectorFunction);
+        }
+
+        private InstanceProcessingGroupSelector(String name, int priority, Predicate<Object> criteria) {
+            super(name, priority, criteria);
+        }
+    }
+
+    private static class TypeProcessingGroupSelector extends ProcessingGroupSelector<Class<?>> {
+
+        private TypeProcessingGroupSelector(int priority,
+                                            Function<Class<?>, Optional<String>> selectorFunction) {
+            super(priority, selectorFunction);
+        }
+
+        private TypeProcessingGroupSelector(String name, int priority, Predicate<Class<?>> criteria) {
+            super(name, priority, criteria);
+        }
+    }
+
+    private static class ProcessingGroupSelector<T> {
 
         private final int priority;
-        private final Function<Object, Optional<String>> function;
+        private final Function<T, Optional<String>> function;
 
-        private ProcessorSelector(int priority, Function<Object, Optional<String>> selectorFunction) {
+        private ProcessingGroupSelector(int priority, Function<T, Optional<String>> selectorFunction) {
             this.priority = priority;
             this.function = selectorFunction;
         }
 
-        private ProcessorSelector(String name, int priority, Predicate<Object> criteria) {
+        private ProcessingGroupSelector(String name, int priority, Predicate<T> criteria) {
             this(priority, handler -> {
                 if (criteria.test(handler)) {
                     return Optional.of(name);
@@ -95,7 +119,7 @@ public class EventProcessingModule
             });
         }
 
-        public Optional<String> select(Object handler) {
+        public Optional<String> select(T handler) {
             return function.apply(handler);
         }
 
@@ -103,6 +127,28 @@ public class EventProcessingModule
             return priority;
         }
     }
+
+    private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
+    private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
+    // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
+    // if no annotation is present, the package name is used
+    private Function<Class<?>, String> typeFallback = c -> c.getSimpleName() + "Processor";
+    private Function<Object, String> instanceFallback = o -> o.getClass().getPackage().getName();
+    private final TypeProcessingGroupSelector defaultTypeSelector = new TypeProcessingGroupSelector(
+            Integer.MIN_VALUE,
+            type -> {
+                Optional<Map<String, Object>> annAttr = findAnnotationAttributes(type, ProcessingGroup.class);
+                return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
+                                          .orElseGet(() -> typeFallback.apply(type)));
+            });
+    private final InstanceProcessingGroupSelector defaultInstanceSelector = new InstanceProcessingGroupSelector(
+            Integer.MIN_VALUE,
+            o -> {
+                Class<?> handlerType = o.getClass();
+                Optional<Map<String, Object>> annAttr = findAnnotationAttributes(handlerType, ProcessingGroup.class);
+                return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
+                                          .orElseGet(() -> instanceFallback.apply(o)));
+            });
 
     private Configuration configuration;
 
@@ -138,19 +184,7 @@ public class EventProcessingModule
             c -> SequentialPerAggregatePolicy.instance()
     );
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-    private final List<ProcessorSelector> selectors = new ArrayList<>();
-    // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
-    // if no annotation is present, the package name is used
-    private Function<Object, String> fallback = (o) -> o.getClass().getPackage().getName();
-    private final ProcessorSelector defaultSelector = new ProcessorSelector(
-            Integer.MIN_VALUE,
-            o -> {
-                Class<?> handlerType = o.getClass();
-                Optional<Map<String, Object>> annAttr = AnnotationUtils.findAnnotationAttributes(handlerType,
-                                                                                                 ProcessingGroup.class);
-                return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
-                                          .orElseGet(() -> fallback.apply(o)));
-            });
+
     private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     private final Component<TokenStore> defaultTokenStore = new Component<>(
             () -> configuration,
@@ -181,7 +215,7 @@ public class EventProcessingModule
     public void initialize(Configuration configuration) {
         this.configuration = configuration;
         eventProcessors.clear();
-        selectors.sort(comparing(ProcessorSelector::getPriority).reversed());
+        instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
         Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
         registerSimpleEventHandlerInvokers(handlerInvokers);
         registerSagaManagers(handlerInvokers);
@@ -203,21 +237,33 @@ public class EventProcessingModule
         eventProcessors.forEach((name, component) -> component.get().shutDown());
     }
 
+    private String selectProcessingGroupByType(Class<?> type) {
+        return typeSelectors.stream()
+                            .map(s -> s.select(type))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .findFirst()
+                            .orElseGet(() -> defaultTypeSelector.select(type)
+                                                                .orElseThrow(IllegalStateException::new));
+    }
+
     private void registerSimpleEventHandlerInvokers(
             Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
         Map<String, List<Object>> assignments = new HashMap<>();
         eventHandlerBuilders.stream()
                             .map(Component::get)
                             .forEach(handler -> {
-                                String processor =
-                                        selectors.stream()
-                                                 .map(s -> s.select(handler))
-                                                 .filter(Optional::isPresent)
-                                                 .map(Optional::get)
-                                                 .findFirst()
-                                                 .orElseGet(() -> defaultSelector.select(handler)
-                                                                                 .orElseThrow(IllegalStateException::new));
-                                assignments.computeIfAbsent(processor, k -> new ArrayList<>()).add(handler);
+                                String processingGroup =
+                                        instanceSelectors.stream()
+                                                         .map(s -> s.select(handler))
+                                                         .filter(Optional::isPresent)
+                                                         .map(Optional::get)
+                                                         .findFirst()
+                                                         .orElse(defaultInstanceSelector.select(handler)
+                                                                                        .orElse(selectProcessingGroupByType(
+                                                                                                handler.getClass())));
+                                assignments.computeIfAbsent(processingGroup, k -> new ArrayList<>())
+                                           .add(handler);
                             });
         assignments.forEach((processingGroup, handlers) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
@@ -230,12 +276,16 @@ public class EventProcessingModule
     }
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
-        sagaConfigurations.stream().map(Component::get).forEach(sc -> {
-            sc.initialize(configuration);
-            String processorName = processorNameForProcessingGroup(sc.processingGroup());
-            handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
-                           .add(c -> sc.manager().get());
-        });
+        sagaConfigurations.stream()
+                          .map(Component::get)
+                          .forEach(sc -> {
+                              sc.initialize(configuration);
+                              String processingGroup = sc.processingGroup()
+                                                         .orElse(selectProcessingGroupByType(sc.type()));
+                              String processorName = processorNameForProcessingGroup(processingGroup);
+                              handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
+                                             .add(c -> sc.manager().get());
+                          });
     }
 
     private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
@@ -260,11 +310,19 @@ public class EventProcessingModule
                                   .filter(Objects::nonNull)
                                   .forEach(eventProcessor::registerHandlerInterceptor);
 
-        eventProcessor.registerHandlerInterceptor(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
+        eventProcessor.registerHandlerInterceptor(new CorrelationDataInterceptor<>(configuration
+                                                                                           .correlationDataProviders()));
 
         return eventProcessor;
     }
     //</editor-fold>
+
+    @Override
+    public <EP extends EventProcessor> Optional<EP> eventProcessor(SagaConfiguration<?> sagaConfiguration) {
+        return eventProcessorByProcessingGroup(
+                sagaConfiguration.processingGroup()
+                                 .orElse(selectProcessingGroupByType(sagaConfiguration.type())));
+    }
 
     //<editor-fold desc="configuration methods">
     @SuppressWarnings("unchecked")
@@ -481,15 +539,28 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer byDefaultAssignTo(Function<Object, String> assignmentFunction) {
-        this.fallback = assignmentFunction;
+    public EventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction) {
+        this.instanceFallback = assignmentFunction;
         return this;
     }
 
     @Override
-    public EventProcessingConfigurer assignHandlersMatching(String processingGroup, int priority,
-                                                            Predicate<Object> criteria) {
-        this.selectors.add(new ProcessorSelector(processingGroup, priority, criteria));
+    public EventProcessingConfigurer byDefaultAssignHandlerTypesTo(Function<Class<?>, String> assignmentFunction) {
+        this.typeFallback = assignmentFunction;
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup, int priority,
+                                                                    Predicate<Object> criteria) {
+        this.instanceSelectors.add(new InstanceProcessingGroupSelector(processingGroup, priority, criteria));
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer assignHandlerTypesMatching(String processingGroup, int priority,
+                                                                Predicate<Class<?>> criteria) {
+        this.typeSelectors.add(new TypeProcessingGroupSelector(processingGroup, priority, criteria));
         return this;
     }
 

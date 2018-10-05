@@ -17,7 +17,6 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.AbstractSagaManager;
@@ -25,8 +24,8 @@ import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -118,17 +117,17 @@ public class SagaConfiguration<S> {
         ensureInitialized();
         //noinspection unchecked
         return (T) config.eventProcessingConfiguration()
-                         .eventProcessorByProcessingGroup(configurer.processingGroup)
+                         .eventProcessor(this)
                          .get();
     }
 
     /**
-     * Gets the Processing Group this Saga is assigned to.
+     * Gets the Processing Group this Saga is assigned to (if it is explicitly set).
      *
      * @return the Processing Group this Saga is assigned to
      */
-    public String processingGroup() {
-        return configurer.processingGroup;
+    public Optional<String> processingGroup() {
+        return Optional.ofNullable(configurer.processingGroup);
     }
 
     /**
@@ -139,9 +138,6 @@ public class SagaConfiguration<S> {
      */
     public void initialize(Configuration configuration) {
         this.config = configuration;
-        if (configurer.processingGroup == null) {
-            configurer.processingGroup = processingGroupName();
-        }
         String managerName = configurer.type.getSimpleName() + "Manager";
         String repositoryName = configurer.type.getSimpleName() + "Repository";
         listenerInvocationErrorHandler = new Component<>(configuration,
@@ -198,12 +194,6 @@ public class SagaConfiguration<S> {
 
     private void ensureInitialized() {
         Assert.state(config != null, () -> "Configuration is not initialized yet");
-    }
-
-    private String processingGroupName() {
-        return AnnotationUtils.findAnnotationAttributes(configurer.type, ProcessingGroup.class)
-                              .map(attrs -> (String) attrs.get("processingGroup"))
-                              .orElse(configurer.type.getSimpleName() + "Processor");
     }
 
     /**

@@ -201,7 +201,7 @@ public interface EventProcessingConfigurer {
      * messageSource} within this Configuration.
      *
      * @param name          The name of {@link org.axonframework.eventhandling.SubscribingEventProcessor}
-     * @param messageSource
+     * @param messageSource The function that builds Subscribable Message Source
      * @return an instance of Event Processing Configurer for fluent interfacing
      */
     EventProcessingConfigurer registerSubscribingEventProcessor(String name,
@@ -227,24 +227,34 @@ public interface EventProcessingConfigurer {
                                                    Function<Configuration, ErrorHandler> errorHandlerBuilder);
 
     /**
-     * Registers the Processing Group name to assign Event Handler beans to when no other, more explicit, rule matches
-     * and no {@link ProcessingGroup} annotation is found.
+     * Registers the Processing Group name to assign Event Handler and Saga beans to when no other, more explicit, rule
+     * matches and no {@link ProcessingGroup} annotation is found.
      *
      * @param processingGroup The name of processing group
      * @return an instance of Event Processing Configurer for fluent interfacing
      */
     default EventProcessingConfigurer byDefaultAssignTo(String processingGroup) {
-        return byDefaultAssignTo(o -> processingGroup);
+        byDefaultAssignHandlerTypesTo(c -> processingGroup);
+        return byDefaultAssignHandlerInstancesTo(o -> processingGroup);
     }
 
     /**
-     * Registers a function that defines the Event Processor name to assign Event Handler beans to when no other, more
-     * explicit, rule matches and no {@link ProcessingGroup} annotation is found.
+     * Registers a function that defines the Event Processing Group name to assign Event Handler beans to when no other,
+     * more explicit, rule matches and no {@link ProcessingGroup} annotation is found.
      *
      * @param assignmentFunction The function that returns the Processing Group for each Event Handler bean
      * @return an instance of Event Processing Configurer for fluent interfacing
      */
-    EventProcessingConfigurer byDefaultAssignTo(Function<Object, String> assignmentFunction);
+    EventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction);
+
+    /**
+     * Registers a function that defines the Event Processing Group name to assign Event Handler and Saga beans to when
+     * no other, more explicit, rule matches and no {@link ProcessingGroup} annotation is found.
+     *
+     * @param assignmentFunction The function that returns the Processing Group for each Event Handler or Saga bean
+     * @return an instance of Event Processing Configurer for fluent interfacing
+     */
+    EventProcessingConfigurer byDefaultAssignHandlerTypesTo(Function<Class<?>, String> assignmentFunction);
 
     /**
      * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
@@ -257,9 +267,25 @@ public interface EventProcessingConfigurer {
      * @param criteria        The criteria for Event Handler to match
      * @return an instance of Event Processing Configurer for fluent interfacing
      */
-    default EventProcessingConfigurer assignHandlersMatching(String processingGroup,
-                                                             Predicate<Object> criteria) {
-        return assignHandlersMatching(processingGroup, 0, criteria);
+    default EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
+                                                                     Predicate<Object> criteria) {
+        return assignHandlerInstancesMatching(processingGroup, 0, criteria);
+    }
+
+    /**
+     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
+     * with given {@code name}, with neutral priority (value 0).
+     * <p>
+     * Note that, when beans match multiple criteria for different Processing Groups with equal priority, the outcome is
+     * undefined.
+     *
+     * @param processingGroup The name of the Processing Group to assign matching Event Handlers or Sagas to
+     * @param criteria        The criteria for Event Handler or Saga to match
+     * @return an instance of Event Processing Configurer for fluent interfacing
+     */
+    default EventProcessingConfigurer assignHandlerTypesMatching(String processingGroup,
+                                                                 Predicate<Class<?>> criteria) {
+        return assignHandlerTypesMatching(processingGroup, 0, criteria);
     }
 
     /**
@@ -275,8 +301,24 @@ public interface EventProcessingConfigurer {
      * @param criteria        The criteria for Event Handler to match
      * @return an instance of Event Processing Configurer for fluent interfacing
      */
-    EventProcessingConfigurer assignHandlersMatching(String processingGroup, int priority,
-                                                     Predicate<Object> criteria);
+    EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup, int priority,
+                                                             Predicate<Object> criteria);
+
+    /**
+     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
+     * with given {@code name}, with given {@code priority}. Rules with higher value of {@code priority} take precedence
+     * over those with a lower value.
+     * <p>
+     * Note that, when beans match multiple criteria for different processing groups with equal priority, the outcome is
+     * undefined.
+     *
+     * @param processingGroup The name of the Processing Group to assign matching Event Handlers or Sagas to
+     * @param priority        The priority for this rule
+     * @param criteria        The criteria for Event Handler or Saga to match
+     * @return an instance of Event Processing Configurer for fluent interfacing
+     */
+    EventProcessingConfigurer assignHandlerTypesMatching(String processingGroup, int priority,
+                                                         Predicate<Class<?>> criteria);
 
     /**
      * Defines a mapping for assigning processing groups to processors.

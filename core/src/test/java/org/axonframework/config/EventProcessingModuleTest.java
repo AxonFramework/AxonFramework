@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -72,7 +73,7 @@ public class EventProcessingModuleTest {
                       processors.put(name, processor);
                       return processor;
                   })
-                  .assignHandlersMatching("java.util.concurrent", "concurrent"::equals)
+                  .assignHandlerInstancesMatching("java.util.concurrent", "concurrent"::equals)
                   .registerEventHandler(c -> new Object()) // --> java.lang
                   .registerEventHandler(c -> "") // --> java.lang
                   .registerEventHandler(c -> "concurrent") // --> java.util.concurrent
@@ -95,15 +96,14 @@ public class EventProcessingModuleTest {
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
         configurer.eventProcessing()
                   .registerEventProcessorFactory((name, config, handlers) -> {
-                      StubEventProcessor processor =
-                              new StubEventProcessor(name, handlers);
+                      StubEventProcessor processor = new StubEventProcessor(name, handlers);
                       processors.put(name, processor);
                       return processor;
                   })
-                  .assignHandlersMatching("java.util.concurrent", "concurrent"::equals)
-                  .assignHandlersMatching("java.util.concurrent2",
-                                          1,
-                                          "concurrent"::equals)
+                  .assignHandlerInstancesMatching("java.util.concurrent", "concurrent"::equals)
+                  .assignHandlerInstancesMatching("java.util.concurrent2",
+                                                  1,
+                                                  "concurrent"::equals)
                   .registerEventHandler(c -> new Object()) // --> java.lang
                   .registerEventHandler(c -> "") // --> java.lang
                   .registerEventHandler(c -> "concurrent") // --> java.util.concurrent2
@@ -133,17 +133,34 @@ public class EventProcessingModuleTest {
                       processors.put(name, processor);
                       return processor;
                   })
-                  .assignHandlersMatching("java.util.concurrent", "concurrent"::equals)
+                  .assignHandlerInstancesMatching("java.util.concurrent", "concurrent"::equals)
                   .byDefaultAssignTo("default")
                   .registerEventHandler(c -> object)        // --> default
                   .registerEventHandler(c -> "concurrent")  // --> java.util.concurrent
                   .registerEventHandler(c -> annotatedBean); // --> processingGroup
-        Configuration config = configurer.start();
+        configurer.start();
 
         assertEquals(3, processors.size());
         assertTrue(processors.get("default").getEventHandlers().contains(object));
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
+    }
+
+    @Test
+    public void testTypeAssignment() {
+        configurer.eventProcessing()
+                  .assignHandlerTypesMatching("myGroup", c -> "java.lang".equals(c.getPackage().getName()))
+                  .registerSagaConfiguration(c -> SagaConfiguration.defaultConfiguration(Object.class))
+                  .registerSagaConfiguration(c -> SagaConfiguration.defaultConfiguration(ConcurrentMap.class))
+                  .registerSagaConfiguration(c -> SagaConfiguration.defaultConfiguration(String.class))
+                  .registerEventHandler(c -> new HashMap<>());
+        EventProcessingConfiguration configuration = configurer.start()
+                                                               .eventProcessingConfiguration();
+
+        assertEquals(3, configuration.eventProcessors().size());
+        assertTrue(configuration.eventProcessor("myGroup").isPresent());
+        assertTrue(configuration.eventProcessor("java.util").isPresent());
+        assertTrue(configuration.eventProcessor("ConcurrentMapProcessor").isPresent());
     }
 
     @Test
@@ -155,7 +172,7 @@ public class EventProcessingModuleTest {
         configurer.eventProcessing()
                 .registerEventHandler(c -> mockHandler)
                 .registerEventHandler(c -> specialHandler)
-                .assignHandlersMatching("special", specialHandler::equals)
+                .assignHandlerInstancesMatching("special", specialHandler::equals)
                 .byDefaultAssignTo("default")
                 .registerDefaultSequencingPolicy(c -> sequentialPolicy)
                 .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
@@ -184,7 +201,7 @@ public class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerEventProcessor("default", (name, config, handlers) -> new StubEventProcessor(name, handlers))
                   .byDefaultAssignTo("default")
-                  .assignHandlersMatching("concurrent", 1, "concurrent"::equals)
+                  .assignHandlerInstancesMatching("concurrent", 1, "concurrent"::equals)
                   .registerEventHandler(c -> new Object()) // --> java.lang
                   .registerEventHandler(c -> "concurrent") // --> java.util.concurrent2
                   .registerHandlerInterceptor("default", c -> interceptor1)
@@ -338,9 +355,9 @@ public class EventProcessingModuleTest {
         configurer.eventProcessing()
                 .registerSubscribingEventProcessor("subscribing")
                 .registerTrackingEventProcessor("tracking")
-                .assignHandlersMatching("subscribing",
+                .assignHandlerInstancesMatching("subscribing",
                                         eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
-                .assignHandlersMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
+                .assignHandlerInstancesMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
                 .registerEventHandler(c -> new SubscribingEventHandler())
                 .registerEventHandler(c -> new TrackingEventHandler())
                 .registerTokenStore("tracking", c -> new InMemoryTokenStore() {

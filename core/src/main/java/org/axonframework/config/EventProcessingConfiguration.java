@@ -46,12 +46,21 @@ public interface EventProcessingConfiguration {
      *
      * @param name The name of the event processor
      * @param <T>  The type of processor expected
-     * @return optional whether event processor with given name exists
+     * @return an Optional whether event processor with given name exists
      */
     @SuppressWarnings("unchecked")
     default <T extends EventProcessor> Optional<T> eventProcessor(String name) {
         return (Optional<T>) Optional.ofNullable(eventProcessors().get(name));
     }
+
+    /**
+     * Obtains Event Processor for given {@code sagaConfiguration}.
+     *
+     * @param sagaConfiguration The Saga Configuration
+     * @param <EP>              The type of Event Processor
+     * @return an Optional whether Event Processor for given Saga Configuration exists
+     */
+    <EP extends EventProcessor> Optional<EP> eventProcessor(SagaConfiguration<?> sagaConfiguration);
 
     /**
      * Returns the Event Processor with the given {@code name}, if present and of the given {@code expectedType}.
