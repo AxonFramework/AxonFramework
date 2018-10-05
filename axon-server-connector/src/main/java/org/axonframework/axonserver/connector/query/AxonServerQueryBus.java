@@ -350,9 +350,12 @@ public class AxonServerQueryBus implements QueryBus {
                     }
 
                     @Override
-                    public void onError(Throwable throwable) {
-                        logger.warn("Received error from server: {}", throwable.getMessage());
+                    public void onError(Throwable ex){
+                        logger.warn("Received error from server: {}", ex.getMessage());
                         outboundStreamObserver = null;
+                        if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode().equals(Status.UNAVAILABLE.getCode())) {
+                            return;
+                        }
                         resubscribe();
                     }
 

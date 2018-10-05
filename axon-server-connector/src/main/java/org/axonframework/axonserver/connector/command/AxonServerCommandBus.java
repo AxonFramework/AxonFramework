@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.command.*;
 import io.grpc.ClientInterceptor;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
@@ -273,9 +275,13 @@ public class AxonServerCommandBus implements CommandBus {
                     }
 
                     @Override
-                    public void onError(Throwable throwable) {
-                        logger.warn("Received error from server: {}", throwable.getMessage());
+                    public void onError(Throwable ex) {
+                        logger.warn("Received error from server: {}", ex.getMessage());
                         subscriberStreamObserver = null;
+                        if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode().equals(
+                                Status.UNAVAILABLE.getCode())) {
+                            return;
+                        }
                         resubscribe();
                     }
 
