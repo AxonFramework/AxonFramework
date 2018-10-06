@@ -13,6 +13,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.saga.AnnotatedSaga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +45,22 @@ public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
 
     @Override
     public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
-        Class<?> eventListenerType = eventListener instanceof EventListenerProxy ? ((EventListenerProxy) eventListener).getTargetType() : eventListener.getClass();
+        Class<?> eventListenerType = getEventListenerType(eventListener);
         logger.error("EventListener [{}] failed to handle event [{}] ({}). " +
                              "Continuing processing with next listener",
                      eventListenerType.getSimpleName(),
                      event.getIdentifier(),
                      event.getPayloadType().getName(),
                      exception);
+    }
+
+    private Class<?> getEventListenerType(EventListener eventListener) {
+        if (eventListener instanceof EventListenerProxy) {
+            return ((EventListenerProxy) eventListener).getTargetType();
+        } else if (eventListener instanceof AnnotatedSaga) {
+            return ((AnnotatedSaga) eventListener).root().getClass();
+        } else {
+            return eventListener.getClass();
+        }
     }
 }
