@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.saga.repository.SagaStore;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -118,7 +119,9 @@ public class SagaConfiguration<S> {
         //noinspection unchecked
         return (T) config.eventProcessingConfiguration()
                          .eventProcessor(this)
-                         .get();
+                         .orElseThrow(() -> new IllegalStateException(format(
+                                 "Saga %s does not have a processor configured.",
+                                 configurer.type)));
     }
 
     /**
