@@ -536,35 +536,39 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
 
     private EventProcessor buildTrackingEventProcessor(String name, Configuration config,
                                                        EventHandlerInvoker eventHandlerInvoker) {
-        TrackingEventProcessor trackingEventProcessor = new TrackingEventProcessor(name,
-                                                                                   eventHandlerInvoker,
-                                                                                   streamableMessageSourceBuilder
-                                                                                           .apply(config),
-                                                                                   tokenStore.get(),
-                                                                                   transactionManager.get(),
-                                                                                   messageMonitor.get(),
-                                                                                   rollbackConfiguration.get(),
-                                                                                   errorHandler.get(),
-                                                                                   trackingEventProcessorConfiguration
-                                                                                           .get());
+        TrackingEventProcessor trackingEventProcessor =
+                TrackingEventProcessor.builder()
+                                      .name(name)
+                                      .eventHandlerInvoker(eventHandlerInvoker)
+                                      .rollbackConfiguration(rollbackConfiguration.get())
+                                      .errorHandler(errorHandler.get())
+                                      .messageMonitor(messageMonitor.get())
+                                      .messageSource(streamableMessageSourceBuilder.apply(config))
+                                      .tokenStore(tokenStore.get())
+                                      .transactionManager(transactionManager.get())
+                                      .trackingEventProcessorConfiguration(trackingEventProcessorConfiguration.get())
+                                      .build();
         trackingEventProcessor.registerHandlerInterceptor(
-                new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+                new CorrelationDataInterceptor<>(config.correlationDataProviders())
+        );
         return trackingEventProcessor;
     }
 
     private EventProcessor buildSubscribingEventProcessor(String name, Configuration config,
                                                           EventHandlerInvoker eventHandlerInvoker) {
-        SubscribingEventProcessor subscribingEventProcessor = new SubscribingEventProcessor(name,
-                                                                                            eventHandlerInvoker,
-                                                                                            rollbackConfiguration.get(),
-                                                                                            subscribableMessageSourceBuilder
-                                                                                                    .apply(config),
-                                                                                            processingStrategy
-                                                                                                    .apply(config),
-                                                                                            errorHandler.get(),
-                                                                                            messageMonitor.get());
-        subscribingEventProcessor
-                .registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+        SubscribingEventProcessor subscribingEventProcessor =
+                SubscribingEventProcessor.builder()
+                                         .name(name)
+                                         .eventHandlerInvoker(eventHandlerInvoker)
+                                         .rollbackConfiguration(rollbackConfiguration.get())
+                                         .errorHandler(errorHandler.get())
+                                         .messageMonitor(messageMonitor.get())
+                                         .messageSource(subscribableMessageSourceBuilder.apply(config))
+                                         .processingStrategy(processingStrategy.apply(config))
+                                         .build();
+        subscribingEventProcessor.registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(config.correlationDataProviders())
+        );
         return subscribingEventProcessor;
     }
 

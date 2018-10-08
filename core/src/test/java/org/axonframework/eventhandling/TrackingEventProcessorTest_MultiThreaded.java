@@ -25,8 +25,6 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -85,15 +83,14 @@ public class TrackingEventProcessorTest_MultiThreaded {
     }
 
     private void configureProcessor(TrackingEventProcessorConfiguration processorConfiguration) {
-        testSubject = new TrackingEventProcessor("test",
-                                                 eventHandlerInvoker,
-                                                 eventBus,
-                                                 tokenStore,
-                                                 NoTransactionManager.INSTANCE,
-                                                 NoOpMessageMonitor.INSTANCE,
-                                                 RollbackConfigurationType.ANY_THROWABLE,
-                                                 PropagatingErrorHandler.INSTANCE,
-                                                 processorConfiguration);
+        testSubject = TrackingEventProcessor.builder()
+                                            .name("test")
+                                            .eventHandlerInvoker(eventHandlerInvoker)
+                                            .messageSource(eventBus)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .trackingEventProcessorConfiguration(processorConfiguration)
+                                            .build();
     }
 
     @After
@@ -394,11 +391,13 @@ public class TrackingEventProcessorTest_MultiThreaded {
             return null;
         }).when(mockListener).handle(any());
 
-        testSubject = new TrackingEventProcessor("test",
-                                                 eventHandlerInvoker,
-                                                 eventBus,
-                                                 tokenStore,
-                                                 NoTransactionManager.INSTANCE);
+        testSubject = TrackingEventProcessor.builder()
+                                            .name("test")
+                                            .eventHandlerInvoker(eventHandlerInvoker)
+                                            .messageSource(eventBus)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .build();
         testSubject.start();
         assertTrue("Expected 5 invocations on event listener by now", countDownLatch.await(10, SECONDS));
         acknowledgeByThread.assertEventsAddUpTo(5);

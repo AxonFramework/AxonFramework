@@ -96,7 +96,11 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
                 .registerEventHandler(config -> new EventHandler1());
         EventProcessingConfiguration epr = new EventProcessingConfiguration()
                 .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                        new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()));
+                        SubscribingEventProcessor.builder()
+                                                 .name(name)
+                                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                                 .messageSource(conf.eventBus())
+                                                 .build());
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .registerModule(epr)
                                                        .registerModule(saga1Configuration)
@@ -125,7 +129,11 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.subscribingSagaManager(Saga3.class);
         EventProcessingConfiguration epr = new EventProcessingConfiguration()
                 .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                        new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
+                        SubscribingEventProcessor.builder()
+                                                 .name(name)
+                                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                                 .messageSource(conf.eventBus())
+                                                 .build())
                 .assignProcessingGroup("processor1", "myProcessor");
 
         DefaultConfigurer.defaultConfiguration()
@@ -149,7 +157,11 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
                                                                                                "processor1");
         EventProcessingConfiguration epr = new EventProcessingConfiguration()
                 .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                        new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
+                        SubscribingEventProcessor.builder()
+                                                 .name(name)
+                                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                                 .messageSource(conf.eventBus())
+                                                 .build())
                 .assignProcessingGroup(group -> "myProcessor");
 
         DefaultConfigurer.defaultConfiguration()

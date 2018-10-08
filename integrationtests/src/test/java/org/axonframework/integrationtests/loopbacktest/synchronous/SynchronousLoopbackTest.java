@@ -127,7 +127,12 @@ public class SynchronousLoopbackTest {
         SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
                                                                                  .eventListeners(eventListener)
                                                                                  .build();
-        new SubscribingEventProcessor("processor", eventHandlerInvoker, eventStore).start();
+        SubscribingEventProcessor.builder()
+                                 .name("processor")
+                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                 .messageSource(eventStore)
+                                 .build()
+                                 .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
@@ -169,7 +174,12 @@ public class SynchronousLoopbackTest {
                                          .eventListeners(eventListener)
                                          .listenerInvocationErrorHandler(PropagatingErrorHandler.INSTANCE)
                                          .build();
-        new SubscribingEventProcessor("processor", eventHandlerInvoker, eventStore).start();
+        SubscribingEventProcessor.builder()
+                                 .name("processor")
+                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                 .messageSource(eventStore)
+                                 .build()
+                                 .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 

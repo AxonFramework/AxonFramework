@@ -19,7 +19,6 @@ package org.axonframework.config;
 import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DirectEventProcessingStrategy;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -588,31 +587,36 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     private SubscribingEventProcessor subscribingEventProcessor(String name, Configuration conf,
                                                                 EventHandlerInvoker eventHandlerInvoker,
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
-        return new SubscribingEventProcessor(name,
-                                             eventHandlerInvoker,
-                                             getRollbackConfiguration(conf, name),
-                                             messageSource.apply(conf),
-                                             DirectEventProcessingStrategy.INSTANCE,
-                                             getErrorHandler(conf, name),
-                                             getMessageMonitor(conf, SubscribingEventProcessor.class, name));
+        return SubscribingEventProcessor.builder()
+                                        .name(name)
+                                        .eventHandlerInvoker(eventHandlerInvoker)
+                                        .rollbackConfiguration(getRollbackConfiguration(conf, name))
+                                        .errorHandler(getErrorHandler(conf, name))
+                                        .messageMonitor(getMessageMonitor(conf, SubscribingEventProcessor.class, name))
+                                        .messageSource(messageSource.apply(conf))
+                                        .build();
     }
 
     private TrackingEventProcessor trackingEventProcessor(Configuration conf, String name,
                                                           EventHandlerInvoker eventHandlerInvoker,
                                                           Function<Configuration, TrackingEventProcessorConfiguration> config,
                                                           Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return new TrackingEventProcessor(name,
-                                          eventHandlerInvoker,
-                                          source.apply(conf),
-                                          tokenStore.getOrDefault(
-                                                  name,
-                                                  c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
-                                          ).apply(conf),
-                                          getTransactionManager(conf, name),
-                                          getMessageMonitor(conf, EventProcessor.class, name),
-                                          getRollbackConfiguration(conf, name),
-                                          getErrorHandler(conf, name),
-                                          config.apply(conf));
+        return TrackingEventProcessor.builder()
+                                     .name(name)
+                                     .eventHandlerInvoker(eventHandlerInvoker)
+                                     .rollbackConfiguration(getRollbackConfiguration(conf, name))
+                                     .errorHandler(getErrorHandler(conf, name))
+                                     .messageMonitor(getMessageMonitor(conf, EventProcessor.class, name))
+                                     .messageSource(source.apply(conf))
+                                     .tokenStore(
+                                             tokenStore.getOrDefault(
+                                                     name,
+                                                     c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
+                                             ).apply(conf)
+                                     )
+                                     .transactionManager(getTransactionManager(conf, name))
+                                     .trackingEventProcessorConfiguration(config.apply(conf))
+                                     .build();
     }
 
     private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration config,

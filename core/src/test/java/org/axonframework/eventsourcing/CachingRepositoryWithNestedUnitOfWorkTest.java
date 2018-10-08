@@ -110,7 +110,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                                          .eventListeners(new LoggingEventListener(events))
                                          .build();
         SubscribingEventProcessor eventProcessor =
-                new SubscribingEventProcessor("test", eventHandlerInvoker, eventStore);
+                SubscribingEventProcessor.builder()
+                                         .name("test")
+                                         .eventHandlerInvoker(eventHandlerInvoker)
+                                         .messageSource(eventStore)
+                                         .build();
         eventProcessor.start();
         events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
@@ -172,7 +176,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                                          )
                                          .build();
         SubscribingEventProcessor eventProcessor =
-                new SubscribingEventProcessor("test", eventHandlerInvoker, eventStore);
+                SubscribingEventProcessor.builder()
+                                         .name("test")
+                                         .eventHandlerInvoker(eventHandlerInvoker)
+                                         .messageSource(eventStore)
+                                         .build();
         eventProcessor.start();
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
@@ -213,7 +221,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                                                          new CommandExecutingEventListener("UOW8", "UOW4", true)
                                          ).build();
         SubscribingEventProcessor eventProcessor =
-                new SubscribingEventProcessor("test", eventHandlerInvoker, eventStore);
+                SubscribingEventProcessor.builder()
+                                         .name("test")
+                                         .eventHandlerInvoker(eventHandlerInvoker)
+                                         .messageSource(eventStore)
+                                         .build();
         eventProcessor.start();
 
         // First command: Create Aggregate

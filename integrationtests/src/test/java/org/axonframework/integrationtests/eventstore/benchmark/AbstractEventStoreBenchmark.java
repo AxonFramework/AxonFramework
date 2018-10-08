@@ -77,11 +77,13 @@ public abstract class AbstractEventStoreBenchmark {
                                                      }
                                                  }
                                          ).build();
-        this.eventProcessor = new TrackingEventProcessor("benchmark",
-                                                         eventHandlerInvoker,
-                                                         eventStore,
-                                                         new InMemoryTokenStore(),
-                                                         NoTransactionManager.INSTANCE);
+        this.eventProcessor = TrackingEventProcessor.builder()
+                                                    .name("benchmark")
+                                                    .eventHandlerInvoker(eventHandlerInvoker)
+                                                    .messageSource(eventStore)
+                                                    .tokenStore(new InMemoryTokenStore())
+                                                    .transactionManager(NoTransactionManager.INSTANCE)
+                                                    .build();
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 

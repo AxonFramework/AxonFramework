@@ -16,10 +16,8 @@ import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
@@ -77,7 +75,11 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
         public void configure(EventHandlingConfiguration ehConfig, EventProcessingConfiguration epConfig) {
             ehConfig.byDefaultAssignTo("test");
             epConfig.registerEventProcessor("test", (name, c, eh) -> {
-                SubscribingEventProcessor processor = new SubscribingEventProcessor(name, eh, c.eventBus());
+                SubscribingEventProcessor processor = SubscribingEventProcessor.builder()
+                                                                               .name(name)
+                                                                               .eventHandlerInvoker(eh)
+                                                                               .messageSource(c.eventBus())
+                                                                               .build();
                 processor.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
                     unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
                     return interceptorChain.proceed();

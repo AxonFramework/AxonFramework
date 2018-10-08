@@ -144,3 +144,6 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventhandling.AbstractEventBus
 - org.axonframework.eventhandling.SimpleEventBus
 - org.axonframework.eventhandling.SimpleEventHandlerInvoker
+- org.axonframework.eventhandling.AbstractEventProcessor
+- org.axonframework.eventhandling.SubscribingEventProcessor
+- org.axonframework.eventhandling.TrackingEventProcessor

@@ -41,7 +41,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.ArrayList;
@@ -317,18 +316,22 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                          .listenerInvocationErrorHandler(getListenerInvocationErrorHandler(conf, name))
                                          .sequencingPolicy(sequencingPolicy.apply(conf))
                                          .build();
-        return new TrackingEventProcessor(name,
-                                          eventHandlerInvoker,
-                                          source.apply(conf),
-                                          tokenStore.getOrDefault(
-                                                  name,
-                                                  c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
-                                          ).apply(conf),
-                                          conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
-                                          getMessageMonitor(conf, EventProcessor.class, name),
-                                          RollbackConfigurationType.ANY_THROWABLE,
-                                          getErrorHandler(conf, name),
-                                          config.apply(conf));
+        return TrackingEventProcessor.builder()
+                                     .name(name)
+                                     .eventHandlerInvoker(eventHandlerInvoker)
+                                     .errorHandler(getErrorHandler(conf, name))
+                                     .messageMonitor(getMessageMonitor(conf, EventProcessor.class, name))
+                                     .messageSource(source.apply(conf))
+                                     .tokenStore(
+                                             tokenStore.getOrDefault(
+                                                     name,
+                                                     c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
+                                             ).apply(conf)
+                                     )
+                                     .transactionManager(conf.getComponent(TransactionManager.class,
+                                                                           NoTransactionManager::instance))
+                                     .trackingEventProcessorConfiguration(config.apply(conf))
+                                     .build();
     }
 
     private ListenerInvocationErrorHandler getListenerInvocationErrorHandler(Configuration config,
