@@ -16,7 +16,7 @@
 
 package org.axonframework.config;
 
-import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DirectEventProcessingStrategy;
@@ -62,7 +62,6 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
@@ -358,7 +357,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup) {
+    public SequencingPolicy sequencingPolicy(String processingGroup) {
         ensureInitialized();
         return sequencingPolicies.containsKey(processingGroup)
                 ? sequencingPolicies.get(processingGroup).get()
@@ -404,22 +403,20 @@ public class EventProcessingModule
 
     @Override
     public MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType,
-                                                             String eventProcessorName) {
+                                                             String componentName) {
         ensureInitialized();
-        if (messageMonitorFactories.containsKey(eventProcessorName)) {
-            return messageMonitorFactories.get(eventProcessorName).create(configuration,
-                                                                          componentType,
-                                                                          eventProcessorName);
+        if (messageMonitorFactories.containsKey(componentName)) {
+            return messageMonitorFactories.get(componentName).create(configuration, componentType, componentName);
         } else {
-            return configuration.messageMonitor(componentType, eventProcessorName);
+            return configuration.messageMonitor(componentType, componentName);
         }
     }
 
     @Override
-    public TokenStore tokenStore(String processorName) {
+    public TokenStore tokenStore(String processingGroup) {
         ensureInitialized();
-        return tokenStore.containsKey(processorName)
-                ? tokenStore.get(processorName).get()
+        return tokenStore.containsKey(processingGroup)
+                ? tokenStore.get(processingGroup).get()
                 : defaultTokenStore.get();
     }
 
@@ -432,7 +429,7 @@ public class EventProcessingModule
     }
 
     private void ensureInitialized() {
-        assertNonNull(configuration, "Configuration is not initialized yet");
+        Assert.state(configuration != null, () -> "Configuration is not initialized yet");
     }
 
     //</editor-fold>
@@ -496,7 +493,7 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerEventProcessor(String name,
                                                             EventProcessorBuilder eventProcessorBuilder) {
         if (this.eventProcessorBuilders.containsKey(name)) {
-            throw new AxonConfigurationException(format("Event processor with name %s already exists", name));
+            throw new IllegalArgumentException(format("Event processor with name %s already exists", name));
         }
         this.eventProcessorBuilders.put(name, eventProcessorBuilder);
         return this;
@@ -615,9 +612,9 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
+    public EventProcessingConfigurer registerMessageMonitorFactory(String name,
                                                                    MessageMonitorFactory messageMonitorFactory) {
-        this.messageMonitorFactories.put(eventProcessorName, messageMonitorFactory);
+        this.messageMonitorFactories.put(name, messageMonitorFactory);
         return this;
     }
 

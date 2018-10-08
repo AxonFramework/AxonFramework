@@ -177,11 +177,11 @@ public interface EventProcessingConfigurer {
     /**
      * Register a {@link Function} that builds a {@link TokenStore} for the given {@code processingGroup}.
      *
-     * @param processorName     a {@link String} specifying the name of a event processor
+     * @param processingGroup   a {@link String} specifying the name of a processing group
      * @param tokenStoreBuilder a {@link Function} that builds a {@link TokenStore}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerTokenStore(String processorName,
+    EventProcessingConfigurer registerTokenStore(String processingGroup,
                                                  Function<Configuration, TokenStore> tokenStoreBuilder);
 
     /**
@@ -411,14 +411,14 @@ public interface EventProcessingConfigurer {
      * Registers a builder {@link Function} to create the {@link MessageMonitor} for a {@link EventProcessor} of the
      * given {@code name}.
      *
-     * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
+     * @param name                  a {@link String} specifying the name of an {@link EventProcessor}
      * @param messageMonitorBuilder a builder {@link Function} to create a {@link MessageMonitor}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerMessageMonitor(String eventProcessorName,
+    default EventProcessingConfigurer registerMessageMonitor(String name,
                                                              Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return registerMessageMonitorFactory(
-                eventProcessorName,
+                name,
                 (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration)
         );
     }
@@ -427,11 +427,11 @@ public interface EventProcessingConfigurer {
      * Registers the factory to create the {@link MessageMonitor} for a {@link EventProcessor} of the given
      * {@code name}.
      *
-     * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
+     * @param name                  a {@link String} specifying the name of an {@link EventProcessor}
      * @param messageMonitorFactory a {@link MessageMonitorFactory} used to create a {@link MessageMonitor}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
+    EventProcessingConfigurer registerMessageMonitorFactory(String name,
                                                             MessageMonitorFactory messageMonitorFactory);
 
     /**
