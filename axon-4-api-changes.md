@@ -143,3 +143,4 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventsourcing.eventstore.EmbeddedEventStore
 - org.axonframework.eventhandling.AbstractEventBus
 - org.axonframework.eventhandling.SimpleEventBus
+- org.axonframework.eventhandling.SimpleEventHandlerInvoker

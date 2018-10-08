@@ -105,9 +105,12 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
 
         eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventListeners(new LoggingEventListener(events))
+                                         .build();
         SubscribingEventProcessor eventProcessor =
-                new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(new LoggingEventListener(events)),
-                                              eventStore);
+                new SubscribingEventProcessor("test", eventHandlerInvoker, eventStore);
         eventProcessor.start();
         events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
@@ -161,10 +164,15 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     @SuppressWarnings("unchecked")
     public void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
-                "test",
-                new SimpleEventHandlerInvoker(new CommandExecutingEventListener("1", null, true),
-                                              new CommandExecutingEventListener("2", null, true)), eventStore);
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventListeners(
+                                                 new CommandExecutingEventListener("1", null, true),
+                                                 new CommandExecutingEventListener("2", null, true)
+                                         )
+                                         .build();
+        SubscribingEventProcessor eventProcessor =
+                new SubscribingEventProcessor("test", eventHandlerInvoker, eventStore);
         eventProcessor.start();
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
@@ -191,19 +199,21 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         //
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
-                "test",
-                new SimpleEventHandlerInvoker(new CommandExecutingEventListener("UOW4", null, true),
-                                              new CommandExecutingEventListener("UOW5", null, true),
-                                              new CommandExecutingEventListener("UOW3", null, true),
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventListeners(new CommandExecutingEventListener("UOW4", null, true),
+                                                         new CommandExecutingEventListener("UOW5", null, true),
+                                                         new CommandExecutingEventListener("UOW3", null, true),
+                                                         // Execute commands to update after the previous update has been performed
+                                                         new CommandExecutingEventListener("UOW7", "UOW6", true),
+                                                         new CommandExecutingEventListener("UOW6", "UOW3", true),
 
-                                              // Execute commands to update after the previous update has been performed
-                                              new CommandExecutingEventListener("UOW7", "UOW6", true),
-                                              new CommandExecutingEventListener("UOW6", "UOW3", true),
-
-                                              new CommandExecutingEventListener("UOW10", "UOW8", false),
-                                              new CommandExecutingEventListener("UOW9", "UOW4", true),
-                                              new CommandExecutingEventListener("UOW8", "UOW4", true)), eventStore);
+                                                         new CommandExecutingEventListener("UOW10", "UOW8", false),
+                                                         new CommandExecutingEventListener("UOW9", "UOW4", true),
+                                                         new CommandExecutingEventListener("UOW8", "UOW4", true)
+                                         ).build();
+        SubscribingEventProcessor eventProcessor =
+                new SubscribingEventProcessor("test", eventHandlerInvoker, eventStore);
         eventProcessor.start();
 
         // First command: Create Aggregate

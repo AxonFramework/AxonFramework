@@ -13,15 +13,14 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.List;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
@@ -32,7 +31,10 @@ public class SimpleEventHandlerInvokerTest {
     public void testSingleEventPublication() throws Exception {
         EventListener mockListener1 = mock(EventListener.class);
         EventListener mockListener2 = mock(EventListener.class);
-        SimpleEventHandlerInvoker subject = new SimpleEventHandlerInvoker("test", mockListener1, mockListener2);
+        SimpleEventHandlerInvoker subject =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventListeners("test", mockListener1, mockListener2)
+                                         .build();
 
         EventMessage<?> event = createEvent();
         subject.handle(event, Segment.ROOT_SEGMENT);
@@ -46,7 +48,10 @@ public class SimpleEventHandlerInvokerTest {
     public void testRepeatedEventPublication() throws Exception {
         EventListener mockListener1 = mock(EventListener.class);
         EventListener mockListener2 = mock(EventListener.class);
-        SimpleEventHandlerInvoker subject = new SimpleEventHandlerInvoker("test", mockListener1, mockListener2);
+        SimpleEventHandlerInvoker subject =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventListeners("test", mockListener1, mockListener2)
+                                         .build();
 
         List<? extends EventMessage<?>> events = createEvents(2);
         for (EventMessage<?> event : events) {

@@ -66,14 +66,21 @@ public abstract class AbstractEventStoreBenchmark {
         this.batchCount = batchCount;
         this.remainingEvents = new CountDownLatch(getTotalEventCount());
 
-        this.eventProcessor = new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(
-                (EventListener) (e) -> {
-                    if (readEvents.add(e.getIdentifier())) {
-                        remainingEvents.countDown();
-                    } else {
-                        throw new IllegalStateException("Double event!");
-                    }
-                }), eventStore, new InMemoryTokenStore(),
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventListeners(
+                                                 (EventListener) (e) -> {
+                                                     if (readEvents.add(e.getIdentifier())) {
+                                                         remainingEvents.countDown();
+                                                     } else {
+                                                         throw new IllegalStateException("Double event!");
+                                                     }
+                                                 }
+                                         ).build();
+        this.eventProcessor = new TrackingEventProcessor("benchmark",
+                                                         eventHandlerInvoker,
+                                                         eventStore,
+                                                         new InMemoryTokenStore(),
                                                          NoTransactionManager.INSTANCE);
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }

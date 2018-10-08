@@ -43,7 +43,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -111,7 +110,7 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
         initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        EventListener eventListener = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -125,12 +124,16 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(el), eventStore).start();
+        SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                                 .eventListeners(eventListener)
+                                                                                 .build();
+        new SubscribingEventProcessor("processor", eventHandlerInvoker, eventStore).start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
         DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
+        //noinspection Duplicates
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
             if (next.getPayload() instanceof CounterChangedEvent) {
@@ -145,7 +148,7 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
         initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        EventListener eventListener = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -161,11 +164,12 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        new SubscribingEventProcessor("processor",
-                                      new SimpleEventHandlerInvoker(Collections.singletonList(el),
-                                                                    PropagatingErrorHandler.INSTANCE),
-                                      eventStore)
-                .start();
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventListeners(eventListener)
+                                         .listenerInvocationErrorHandler(PropagatingErrorHandler.INSTANCE)
+                                         .build();
+        new SubscribingEventProcessor("processor", eventHandlerInvoker, eventStore).start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 

@@ -68,14 +68,16 @@ public class TrackingEventProcessorTest_MultiThreaded {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
         when(mockListener.canHandle(any())).thenReturn(true);
-        eventHandlerInvoker = new SimpleEventHandlerInvoker(singletonList(mockListener), new LoggingErrorHandler(),
-                                                            event -> {
-                                                                if (event instanceof DomainEventMessage) {
-                                                                    return ((DomainEventMessage) event)
-                                                                            .getSequenceNumber();
-                                                                }
-                                                                return event.getIdentifier();
-                                                            });
+        eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                       .eventListeners(singletonList(mockListener))
+                                                       .sequencingPolicy(event -> {
+                                                           if (event instanceof DomainEventMessage) {
+                                                               return ((DomainEventMessage) event)
+                                                                       .getSequenceNumber();
+                                                           }
+                                                           return event.getIdentifier();
+                                                       })
+                                                       .build();
         eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
 
         // A processor config, with a policy which guarantees segmenting by using the sequence number.

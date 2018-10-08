@@ -77,7 +77,9 @@ public class GenericJpaRepositoryIntegrationTest implements EventListener {
 
     @Before
     public void setUp() {
-        eventProcessor = new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(this), eventBus);
+        eventProcessor = new SubscribingEventProcessor(
+                "test", SimpleEventHandlerInvoker.builder().eventListeners(this).build(), eventBus
+        );
         eventProcessor.start();
     }
 

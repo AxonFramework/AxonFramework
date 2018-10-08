@@ -114,7 +114,7 @@ public class TrackingEventProcessorTest {
         mockListener = mock(EventListener.class);
         when(mockListener.canHandle(any())).thenReturn(true);
         when(mockListener.supportsReset()).thenReturn(true);
-        eventHandlerInvoker = spy(new SimpleEventHandlerInvoker(mockListener));
+        eventHandlerInvoker = spy(SimpleEventHandlerInvoker.builder().eventListeners(mockListener).build());
         mockTransaction = mock(Transaction.class);
         mockTransactionManager = mock(TransactionManager.class);
         when(mockTransactionManager.startTransaction()).thenReturn(mockTransaction);

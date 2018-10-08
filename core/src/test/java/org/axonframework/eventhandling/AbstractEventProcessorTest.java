@@ -34,19 +34,25 @@ import static org.mockito.Mockito.*;
 public class AbstractEventProcessorTest {
 
     private static class TestEventProcessor extends AbstractEventProcessor {
-        TestEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, MessageMonitor<EventMessage<?>> messageMonitor) {
+
+        TestEventProcessor(String name,
+                           EventHandlerInvoker eventHandlerInvoker,
+                           MessageMonitor<EventMessage<?>> messageMonitor) {
             super(name,
                   eventHandlerInvoker,
                   RollbackConfigurationType.ANY_THROWABLE,
                   PropagatingErrorHandler.INSTANCE,
                   messageMonitor);
         }
+
         @Override
         public void start() {
         }
+
         @Override
         public void shutDown() {
         }
+
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
             processInUnitOfWork(eventMessages, new BatchingUnitOfWork<>(eventMessages), Segment.ROOT_SEGMENT);
         }
@@ -64,10 +70,12 @@ public class AbstractEventProcessorTest {
                 }
                 pending.remove(message);
             }
+
             @Override
             public void reportFailure(Throwable cause) {
                 fail("Test expects 'reportSuccess' to be called");
             }
+
             @Override
             public void reportIgnored() {
                 fail("Test expects 'reportSuccess' to be called");
@@ -75,7 +83,9 @@ public class AbstractEventProcessorTest {
         };
 
         EventListener mockListener = mock(EventListener.class);
-        EventHandlerInvoker eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
+        EventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                           .eventListeners(mockListener)
+                                                                           .build();
         TestEventProcessor testSubject = new TestEventProcessor("test", eventHandlerInvoker, messageMonitor);
 
         // also test that the mechanism used to call the monitor can deal with the message in the unit of work being

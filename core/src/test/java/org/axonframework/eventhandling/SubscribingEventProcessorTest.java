@@ -37,7 +37,7 @@ public class SubscribingEventProcessorTest {
     @Before
     public void setUp() {
         mockListener = mock(EventListener.class);
-        eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
+        eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventListeners(mockListener).build();
         eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         testSubject = new SubscribingEventProcessor("test", eventHandlerInvoker, eventBus);
     }
