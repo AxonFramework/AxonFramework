@@ -30,138 +30,146 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
 
     @Test
     public void testMultipleAssignmentsToTrackingProcessor() {
-        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.trackingSagaManager(Saga1.class);
-        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.trackingSagaManager(Saga2.class, "processor1");
-        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.trackingSagaManager(Saga3.class);
-        EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration()
-                .registerEventHandler(config -> new EventHandler1());
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerModule(new EventProcessingConfiguration()
-                                                                               .usingTrackingProcessors())
-                                                       .registerModule(saga1Configuration)
-                                                       .registerModule(saga2Configuration)
-                                                       .registerModule(saga3Configuration)
-                                                       .registerModule(eventHandlingConfiguration)
-                                                       .buildConfiguration();
+        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
+                                                                       .configure();
+        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
+                                                                       .configure();
+        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
+                                                                       .configure();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        configurer.eventProcessing()
+                  .registerEventHandler(config -> new EventHandler1())
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration);
 
-        assertNotNull(saga1Configuration.getProcessor());
-        assertNotNull(saga2Configuration.getProcessor());
-        assertNotNull(saga3Configuration.getProcessor());
+        Configuration configuration = configurer.buildConfiguration();
+
+        assertNotNull(saga1Configuration.eventProcessor());
+        assertNotNull(saga2Configuration.eventProcessor());
+        assertNotNull(saga3Configuration.eventProcessor());
         assertNotNull(configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
-        assertEquals(saga1Configuration.getProcessor(), saga2Configuration.getProcessor());
-        assertEquals(saga1Configuration.getProcessor(),
+        assertEquals(saga1Configuration.eventProcessor(), saga2Configuration.eventProcessor());
+        assertEquals(saga1Configuration.eventProcessor(),
                      configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
-        assertNotEquals(saga1Configuration.getProcessor(), saga3Configuration.getProcessor());
-        assertNotEquals(saga2Configuration.getProcessor(), saga3Configuration.getProcessor());
+        assertNotEquals(saga1Configuration.eventProcessor(), saga3Configuration.eventProcessor());
+        assertNotEquals(saga2Configuration.eventProcessor(), saga3Configuration.eventProcessor());
         assertNotEquals(configuration.eventProcessingConfiguration().eventProcessor("processor1").get(),
-                        saga3Configuration.getProcessor());
+                        saga3Configuration.eventProcessor());
     }
 
     @Test
     public void testMultipleAssignmentsToSubscribingProcessor() {
-        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.subscribingSagaManager(Saga1.class);
-        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration
-                .subscribingSagaManager(Saga2.class, "processor1");
-        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.subscribingSagaManager(Saga3.class);
-        EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration()
-                .registerEventHandler(config -> new EventHandler1());
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerModule(saga1Configuration)
-                                                       .registerModule(saga2Configuration)
-                                                       .registerModule(saga3Configuration)
-                                                       .registerModule(eventHandlingConfiguration)
-                                                       .buildConfiguration();
+        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
+                                                                       .configure();
+        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
+                                                                       .configure();
+        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
+                                                                       .configure();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        configurer.eventProcessing()
+                  .usingSubscribingEventProcessors()
+                  .registerEventHandler(config -> new EventHandler1())
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration);
+        Configuration configuration = configurer.buildConfiguration();
 
-        assertNotNull(saga1Configuration.getProcessor());
-        assertNotNull(saga2Configuration.getProcessor());
-        assertNotNull(saga3Configuration.getProcessor());
+        assertNotNull(saga1Configuration.eventProcessor());
+        assertNotNull(saga2Configuration.eventProcessor());
+        assertNotNull(saga3Configuration.eventProcessor());
         assertNotNull(configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
-        assertEquals(saga1Configuration.getProcessor(), saga2Configuration.getProcessor());
-        assertEquals(saga1Configuration.getProcessor(),
+        assertEquals(saga1Configuration.eventProcessor(), saga2Configuration.eventProcessor());
+        assertEquals(saga1Configuration.eventProcessor(),
                      configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
-        assertNotEquals(saga1Configuration.getProcessor(), saga3Configuration.getProcessor());
-        assertNotEquals(saga2Configuration.getProcessor(), saga3Configuration.getProcessor());
+        assertNotEquals(saga1Configuration.eventProcessor(), saga3Configuration.eventProcessor());
+        assertNotEquals(saga2Configuration.eventProcessor(), saga3Configuration.eventProcessor());
         assertNotEquals(configuration.eventProcessingConfiguration().eventProcessor("processor1").get(),
-                        saga3Configuration.getProcessor());
+                        saga3Configuration.eventProcessor());
     }
 
     @Test
     public void testMultipleAssignmentsWithProvidedProcessorName() {
-        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration
-                .subscribingSagaManager(Saga1.class, "myProcessor");
-        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.subscribingSagaManager(Saga2.class);
-        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration
-                .subscribingSagaManager(Saga3.class, "myProcessor");
-        EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration()
-                .registerEventHandler(config -> new EventHandler1());
-        EventProcessingConfiguration epr = new EventProcessingConfiguration()
-                .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                        new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()));
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerModule(epr)
-                                                       .registerModule(saga1Configuration)
-                                                       .registerModule(saga2Configuration)
-                                                       .registerModule(saga3Configuration)
-                                                       .registerModule(eventHandlingConfiguration)
-                                                       .buildConfiguration();
+        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
+                                                                       .processingGroup("myProcessor")
+                                                                       .configure();
+        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .configure();
+        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
+                                                                       .processingGroup("myProcessor")
+                                                                       .configure();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        configurer.eventProcessing()
+                  .registerEventHandler(config -> new EventHandler1())
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration)
+                  .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
+                          new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()));
+        Configuration configuration = configurer.buildConfiguration();
 
-        assertNotNull(saga1Configuration.getProcessor());
-        assertNotNull(saga2Configuration.getProcessor());
-        assertNotNull(saga3Configuration.getProcessor());
+        assertNotNull(saga1Configuration.eventProcessor());
+        assertNotNull(saga2Configuration.eventProcessor());
+        assertNotNull(saga3Configuration.eventProcessor());
         assertNotNull(configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
-        assertEquals(saga1Configuration.getProcessor(), saga3Configuration.getProcessor());
-        assertEquals(saga2Configuration.getProcessor(),
+        assertEquals(saga1Configuration.eventProcessor(), saga3Configuration.eventProcessor());
+        assertEquals(saga2Configuration.eventProcessor(),
                      configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
-        assertNotEquals(saga2Configuration.getProcessor(), saga3Configuration.getProcessor());
+        assertNotEquals(saga2Configuration.eventProcessor(), saga3Configuration.eventProcessor());
         assertNotEquals(configuration.eventProcessingConfiguration().eventProcessor("processor1").get(),
-                        saga3Configuration.getProcessor());
+                        saga3Configuration.eventProcessor());
     }
 
     @Test
     public void testProcessorGroupAssignment() {
-        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.subscribingSagaManager(Saga1.class);
-        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.subscribingSagaManager(Saga2.class,
-                                                                                               "processor1");
-        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.subscribingSagaManager(Saga3.class);
-        EventProcessingConfiguration epr = new EventProcessingConfiguration()
-                .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                        new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
-                .assignProcessingGroup("processor1", "myProcessor");
+        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
+                                                                       .configure();
+        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
+                                                                       .configure();
+        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
+                                                                       .configure();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        configurer.eventProcessing()
+                  .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
+                          new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
+                  .assignProcessingGroup("processor1", "myProcessor")
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration);
+        configurer.buildConfiguration();
 
-        DefaultConfigurer.defaultConfiguration()
-                         .registerModule(epr)
-                         .registerModule(saga1Configuration)
-                         .registerModule(saga2Configuration)
-                         .registerModule(saga3Configuration)
-                         .buildConfiguration();
-
-        assertEquals("myProcessor", saga1Configuration.getProcessor().getName());
-        assertEquals("myProcessor", saga2Configuration.getProcessor().getName());
-        assertEquals("Saga3Processor", saga3Configuration.getProcessor().getName());
+        assertEquals("myProcessor", saga1Configuration.eventProcessor().getName());
+        assertEquals("myProcessor", saga2Configuration.eventProcessor().getName());
+        assertEquals("Saga3Processor", saga3Configuration.eventProcessor().getName());
     }
 
     @Test
     public void testProcessorGroupAssignmentByRule() {
-        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.subscribingSagaManager(Saga1.class);
-        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.subscribingSagaManager(Saga2.class,
-                                                                                               "processor1");
-        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.subscribingSagaManager(Saga3.class,
-                                                                                               "processor1");
-        EventProcessingConfiguration epr = new EventProcessingConfiguration()
-                .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                        new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
-                .assignProcessingGroup(group -> "myProcessor");
+        SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
+                                                                       .configure();
+        SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
+                                                                       .configure();
+        SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
+                                                                       .processingGroup("processor1")
+                                                                       .configure();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        configurer.eventProcessing()
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration)
+                  .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
+                          new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
+                  .assignProcessingGroup(group -> "myProcessor");
 
-        DefaultConfigurer.defaultConfiguration()
-                         .registerModule(epr)
-                         .registerModule(saga1Configuration)
-                         .registerModule(saga2Configuration)
-                         .registerModule(saga3Configuration)
-                         .buildConfiguration();
+        configurer.buildConfiguration();
 
-        assertEquals("myProcessor", saga1Configuration.getProcessor().getName());
-        assertEquals("myProcessor", saga2Configuration.getProcessor().getName());
-        assertEquals("myProcessor", saga3Configuration.getProcessor().getName());
+        assertEquals("myProcessor", saga1Configuration.eventProcessor().getName());
+        assertEquals("myProcessor", saga2Configuration.eventProcessor().getName());
+        assertEquals("myProcessor", saga3Configuration.eventProcessor().getName());
     }
 
     @ProcessingGroup("processor1")

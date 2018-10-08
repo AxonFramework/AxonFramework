@@ -10,6 +10,8 @@ Other changes
 =============
 
 * TrackingToken removed from `AnnotatedSaga` and `SagaStore` implementations
+* EventProcessingConfiguration represents an interface for accessing event processing components
+* SagaConfiguration is a configuration component carrier only - does not start any processors
 
 ### Moved classes
 
@@ -30,6 +32,7 @@ Other changes
 | org.axonframework.serialization.SerializationAware                 | All messages are serializable now.           |
 | org.axonframework.serialization.UnknownSerializedTypeException     | Serializers now return UnknownSerializedType |
 | org.axonframework.commandhandling.disruptor.DisruptorConfiguration | Removed in favor DisruptorCommandBus.Builder |
+| org.axonframework.config.EventHandlingConfiguration                | Removed in favor of EventProcessingModule    |
 
 ### Classes for which the Constructor has been replaced for a Builder
 

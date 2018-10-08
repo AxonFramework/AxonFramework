@@ -21,8 +21,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -78,23 +77,28 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
     @Configuration
     public static class Context {
 
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            EventProcessingModule eventProcessingModule = new EventProcessingModule();
+            eventProcessingModule.usingSubscribingEventProcessors();
+            eventProcessingModule.byDefaultAssignTo("test")
+                                 .registerEventProcessor("test", (name, c, eh) -> {
+                                     SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
+                                                                                                         eh,
+                                                                                                         c.eventBus());
+                                     processor.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+                                         unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
+                                         return interceptorChain.proceed();
+                                     });
+                                     return processor;
+                                 });
+            return eventProcessingModule;
+        }
+
         @Primary
         @Bean(destroyMethod = "shutdown")
         public CommandBus commandBus() {
             return AsynchronousCommandBus.builder().build();
-        }
-
-        @Autowired
-        public void configure(EventHandlingConfiguration ehConfig, EventProcessingConfiguration epConfig) {
-            ehConfig.byDefaultAssignTo("test");
-            epConfig.registerEventProcessor("test", (name, c, eh) -> {
-                SubscribingEventProcessor processor = new SubscribingEventProcessor(name, eh, c.eventBus());
-                processor.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
-                    unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
-                    return interceptorChain.proceed();
-                });
-                return processor;
-            });
         }
 
         @Bean
