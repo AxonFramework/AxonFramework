@@ -18,7 +18,6 @@ package org.axonframework.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.SagaConfiguration.SagaConfigurer;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -34,11 +33,7 @@ public class SagaConfigurationTest {
     public void testNullChecksOnSagaConfigurer() {
         SagaConfigurer<Object> configurer = SagaConfiguration.forType(Object.class);
         assertConfigurerNullCheck(() -> configurer.type(null), "Saga type should be checked for null");
-        assertConfigurerNullCheck(() -> configurer.processingGroup(null),
-                                  "Processing group should be checked for null");
         assertConfigurerNullCheck(() -> configurer.storeBuilder(null), "Saga store builder should be checked for null");
-        assertConfigurerNullCheck(() -> configurer.listenerInvocationHandler(null),
-                                  "Saga listener invocation error handler should be checked for null");
         assertConfigurerNullCheck(() -> configurer.managerBuilder(null), "Saga manager should be checked for null");
         assertConfigurerNullCheck(() -> configurer.repositoryBuilder(null),
                                   "Saga repository should be checked for null");
@@ -57,37 +52,36 @@ public class SagaConfigurationTest {
                                                        .buildConfiguration();
         sagaConfiguration.initialize(configuration);
 
-        assertFalse(sagaConfiguration.processingGroup().isPresent());
+        assertEquals("ObjectProcessor", sagaConfiguration.processingGroup());
         assertEquals(Object.class, sagaConfiguration.type());
         assertEquals(store, sagaConfiguration.store().get());
-        assertEquals(listenerInvocationErrorHandler, sagaConfiguration.listenerInvocationErrorHandler().get());
+        assertEquals(listenerInvocationErrorHandler, sagaConfiguration.listenerInvocationErrorHandler());
     }
 
     @Test
     public void testCustomConfiguration() {
-        LoggingErrorHandler loggingErrorHandler = new LoggingErrorHandler();
         SagaStore<Object> sagaStore = new InMemorySagaStore();
         SagaRepository<Object> repository = mock(SagaRepository.class);
         AnnotatedSagaManager<Object> manager = mock(AnnotatedSagaManager.class);
         String processingGroup = "myProcessingGroup";
         SagaConfiguration<Object> sagaConfiguration = SagaConfiguration.forType(Object.class)
-                                                                       .processingGroup(processingGroup)
-                                                                       .listenerInvocationHandler(c -> loggingErrorHandler)
                                                                        .storeBuilder(c -> sagaStore)
                                                                        .repositoryBuilder(c -> repository)
                                                                        .managerBuilder(c -> manager)
                                                                        .configure();
+        EventProcessingModule eventProcessingModule = new EventProcessingModule();
+        eventProcessingModule.assignProcessingGroup("ObjectProcessor", processingGroup)
+                             .assignHandlerTypesMatching(processingGroup, clazz -> clazz.equals(Object.class));
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerModule(new EventProcessingModule())
+                                                       .registerModule(eventProcessingModule)
                                                        .buildConfiguration();
         sagaConfiguration.initialize(configuration);
 
         assertEquals(Object.class, sagaConfiguration.type());
-        assertEquals(processingGroup, sagaConfiguration.processingGroup().get());
+        assertEquals(processingGroup, sagaConfiguration.processingGroup());
         assertEquals(manager, sagaConfiguration.manager().get());
         assertEquals(repository, sagaConfiguration.repository().get());
         assertEquals(sagaStore, sagaConfiguration.store().get());
-        assertEquals(loggingErrorHandler, sagaConfiguration.listenerInvocationErrorHandler().get());
     }
 
     private void assertConfigurerNullCheck(Runnable r, String message) {

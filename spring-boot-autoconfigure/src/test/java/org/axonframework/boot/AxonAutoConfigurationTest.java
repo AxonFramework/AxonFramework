@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -102,7 +101,6 @@ public class AxonAutoConfigurationTest {
         assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
         assertNotNull(applicationContext.getBean(Context.MySaga.class));
         assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
-        assertNotNull(applicationContext.getBean("myDefaultConfigSagaConfiguration", SagaConfiguration.class));
         assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
 
         assertEquals(2, configuration.correlationDataProviders().size());
@@ -169,7 +167,7 @@ public class AxonAutoConfigurationTest {
             }
         }
 
-        @Saga(configurationBean = "myCustomNamedSagaConfiguration")
+        @Saga
         public static class MySaga {
             @SagaEventHandler(associationProperty = "toString")
             public void handle(String type, SomeComponent test) {
@@ -185,12 +183,6 @@ public class AxonAutoConfigurationTest {
 
             }
 
-        }
-
-        @Bean
-        public SagaConfiguration<MySaga> myCustomNamedSagaConfiguration() {
-            return SagaConfiguration.forType(MySaga.class)
-                                    .configure();
         }
 
         @Component
