@@ -17,8 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -41,7 +40,7 @@ public class SimpleEventBusTest {
         listener1 = mock(Consumer.class);
         listener2 = mock(Consumer.class);
         listener3 = mock(Consumer.class);
-        testSubject = new SimpleEventBus();
+        testSubject = SimpleEventBus.builder().build();
     }
 
     @Test

@@ -53,7 +53,7 @@ public class SpringAMQPPublisherTest {
 
     @Before
     public void setUp() {
-        eventBus = new SimpleEventBus();
+        eventBus = SimpleEventBus.builder().build();
         testSubject = new SpringAMQPPublisher(eventBus);
         connectionFactory = mock(ConnectionFactory.class);
         serializer = mock(Serializer.class);

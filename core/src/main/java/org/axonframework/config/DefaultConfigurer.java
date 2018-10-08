@@ -341,7 +341,9 @@ public class DefaultConfigurer implements Configurer {
      * @return The default EventBus to use.
      */
     protected EventBus defaultEventBus(Configuration config) {
-        return new SimpleEventBus(Integer.MAX_VALUE, config.messageMonitor(EventBus.class, "eventBus"));
+        return SimpleEventBus.builder()
+                             .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
+                             .build();
     }
 
     /**

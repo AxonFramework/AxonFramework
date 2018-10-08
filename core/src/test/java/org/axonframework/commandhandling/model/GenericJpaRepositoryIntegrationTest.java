@@ -218,7 +218,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventListener {
 
         @Bean
         public EventBus eventBus() {
-            return new SimpleEventBus();
+            return SimpleEventBus.builder().build();
         }
 
         @Bean("simpleRepository")

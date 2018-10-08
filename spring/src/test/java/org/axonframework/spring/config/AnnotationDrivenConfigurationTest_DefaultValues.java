@@ -73,7 +73,7 @@ public class AnnotationDrivenConfigurationTest_DefaultValues {
 
         @Bean
         public EventBus eventBus() {
-            return new SimpleEventBus();
+            return SimpleEventBus.builder().build();
         }
     }
 

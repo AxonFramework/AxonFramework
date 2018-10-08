@@ -29,8 +29,7 @@ import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -38,8 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -58,7 +56,7 @@ public class FixtureExecutionResultImplTest {
     @Before
     public void setUp() {
         commandBus = new RecordingCommandBus();
-        eventBus = new SimpleEventBus();
+        eventBus = SimpleEventBus.builder().build();
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
         sagaStore = new InMemorySagaStore();
@@ -267,42 +265,60 @@ public class FixtureExecutionResultImplTest {
 
     @Test(expected = AxonAssertionError.class)
     public void testAssociationWith_WrongValue() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class,
+                             "test",
+                             new StubSaga(),
+                             Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key", "value2");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testAssociationWith_WrongKey() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class,
+                             "test",
+                             new StubSaga(),
+                             Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key2", "value");
     }
 
     @Test
     public void testAssociationWith_Present() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class,
+                             "test",
+                             new StubSaga(),
+                             Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key", "value");
     }
 
     @Test
     public void testNoAssociationWith_WrongValue() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class,
+                             "test",
+                             new StubSaga(),
+                             Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key", "value2");
     }
 
     @Test
     public void testNoAssociationWith_WrongKey() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class,
+                             "test",
+                             new StubSaga(),
+                             Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key2", "value");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testNoAssociationWith_Present() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class,
+                             "test",
+                             new StubSaga(),
+                             Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key", "value");
     }

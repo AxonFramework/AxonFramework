@@ -54,7 +54,7 @@ public class KafkaIntegrationTest {
 
     @Test
     public void testPublishAndReadMessages() throws Exception {
-        eventBus = new SimpleEventBus();
+        eventBus = SimpleEventBus.builder().build();
         ProducerFactory<String, byte[]> producerFactory =
                 ProducerConfigUtil.ackProducerFactory(kafka, ByteArraySerializer.class);
         KafkaPublisher<String, byte[]> publisher = KafkaPublisher.<String, byte[]>builder()

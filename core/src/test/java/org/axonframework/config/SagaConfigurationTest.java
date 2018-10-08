@@ -17,7 +17,13 @@ package org.axonframework.config;
 
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -27,10 +33,9 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class SagaConfigurationTest {
@@ -88,14 +93,18 @@ public class SagaConfigurationTest {
     @Test
     public void testCreateTrackingProcessorWithCustomSettings() {
         InMemorySagaStore sagaStore = new InMemorySagaStore();
-        SagaConfiguration<Object> config = SagaConfiguration.trackingSagaManager(Object.class, configuration -> new SimpleEventBus())
-                .configureTrackingProcessor(c ->  TrackingEventProcessorConfiguration.forSingleThreadedProcessing())
-                .configureSagaStore(c -> sagaStore)
-                .configureMessageMonitor(c -> NoOpMessageMonitor.instance())
-                .configureRollbackConfiguration(c -> RollbackConfigurationType.ANY_THROWABLE)
-                .configureErrorHandler(c -> PropagatingErrorHandler.INSTANCE)
-                .configureTransactionManager(c -> NoTransactionManager.instance())
-                .configureTokenStore(c -> new InMemoryTokenStore());
+        SagaConfiguration<Object> config =
+                SagaConfiguration.trackingSagaManager(Object.class,
+                                                      configuration -> SimpleEventBus.builder().build())
+                                 .configureTrackingProcessor(
+                                         c -> TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                 )
+                                 .configureSagaStore(c -> sagaStore)
+                                 .configureMessageMonitor(c -> NoOpMessageMonitor.instance())
+                                 .configureRollbackConfiguration(c -> RollbackConfigurationType.ANY_THROWABLE)
+                                 .configureErrorHandler(c -> PropagatingErrorHandler.INSTANCE)
+                                 .configureTransactionManager(c -> NoTransactionManager.instance())
+                                 .configureTokenStore(c -> new InMemoryTokenStore());
 
         config.initialize(configuration);
         configuration.eventProcessingConfiguration().initialize(configuration);
