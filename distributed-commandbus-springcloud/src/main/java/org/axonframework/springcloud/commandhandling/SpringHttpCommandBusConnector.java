@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -42,16 +43,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * A {@link CommandBusConnector} implementation based on Spring Rest characteristics. Serves as a {@link RestController}
  * to receive Command Messages for its node, but also contains a {@link RestOperations} component to send Command
  * Messages to other nodes. Will use a {@code localCommandBus} of type {@link CommandBus} to publish any received
- * Command Messages to its local instance. Messages are de-/serialized using a {@link Serializer}.
+ * Command Messages to its local instance. Messages are de-/serialized using a {@link Serializer}. Lastly, an
+ * {@link Executor} is used to make the Command publishing calls asynchronous, by using
+ * {@link Executor#execute(Runnable)}, providing the usage of the RestOperations within the {@link Runnable}.
  *
  * @author Steven van Beelen
  * @since 3.0
@@ -69,6 +72,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     private final CommandBus localCommandBus;
     private final RestOperations restOperations;
     private final Serializer serializer;
+    private final Executor executor;
 
     /**
      * Instantiate a {@link SpringHttpCommandBusConnector} based on the fields contained in the {@link Builder}.
@@ -84,11 +88,13 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         this.localCommandBus = builder.localCommandBus;
         this.restOperations = builder.restOperations;
         this.serializer = builder.serializer;
+        this.executor = builder.executor;
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link SpringHttpCommandBusConnector}.
      * <p>
+     * The {@link Executor} is defaulted to a {@link DirectExecutor#INSTANCE}.
      * The {@code localCommandBus} of type (@link CommandBus}, {@link RestOperations} and {@link Serializer} are
      * <b>hard requirements</b> and as such should be provided.
      *
@@ -103,7 +109,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage);
         } else {
-            sendRemotely(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+            executor.execute(() -> {
+                sendRemotely(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+            });
         }
     }
 
@@ -113,14 +121,15 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage, callback);
         } else {
-            SpringHttpReplyMessage<R> replyMessage =
-                    this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
-            if (replyMessage.isSuccess()) {
-                callback.onSuccess(commandMessage,
-                                   asCommandResultMessage(replyMessage.getCommandResultMessage(serializer)));
-            } else {
-                callback.onFailure(commandMessage, replyMessage.getError(serializer));
-            }
+            executor.execute(() -> {
+                SpringHttpReplyMessage<R> replyMessage =
+                        this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
+                if (replyMessage.isSuccess()) {
+                    callback.onSuccess(commandMessage, replyMessage.getCommandResultMessage(serializer));
+                } else {
+                    callback.onFailure(commandMessage, replyMessage.getError(serializer));
+                }
+            });
         }
     }
 
@@ -235,6 +244,8 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
     /**
      * Builder class to instantiate a {@link SpringHttpCommandBusConnector}.
+     * <p>
+     * The {@link Executor} is defaulted to a {@link DirectExecutor#INSTANCE}.
      * The {@code localCommandBus} of type (@link CommandBus}, {@link RestOperations} and {@link Serializer} are
      * <b>hard requirements</b> and as such should be provided.
      */
@@ -243,6 +254,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         private CommandBus localCommandBus;
         private RestOperations restOperations;
         private Serializer serializer;
+        private Executor executor = DirectExecutor.INSTANCE;
 
         /**
          * Sets the {@code localCommandBus} of type {@link CommandBus} to publish received commands which to the local
@@ -278,6 +290,20 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
             this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Executor} used to asynchronously perform sending of the command messages to other nodes.
+         * Defaults to a {@link DirectExecutor#INSTANCE}.
+         *
+         * @param executor a {@link Executor} used to asynchronously perform sending of the command messages to other
+         *                 nodes
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder executor(Executor executor) {
+            assertNonNull(executor, "Executor may not be null");
+            this.executor = executor;
             return this;
         }
 

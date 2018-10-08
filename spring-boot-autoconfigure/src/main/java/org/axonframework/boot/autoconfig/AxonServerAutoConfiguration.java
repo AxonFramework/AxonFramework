@@ -138,6 +138,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                       .transactionManager(txManager)
                                                       .errorHandler(queryInvocationErrorHandler)
                                                       .build();
+        simpleQueryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
         return new AxonServerQueryBus(platformConnectionManager,
                                       axonServerConfiguration,
                                       simpleQueryBus.queryUpdateEmitter(),

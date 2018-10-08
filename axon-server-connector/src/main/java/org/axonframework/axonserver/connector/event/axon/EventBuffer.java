@@ -177,6 +177,7 @@ public class EventBuffer implements TrackingEventStream {
             TrackingToken trackingToken = new GlobalSequenceTrackingToken(event.getToken());
             events.put(new TrackedDomainEventData<>(trackingToken, new GrpcBackedDomainEventData(event.getEvent())));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             closeCallback.accept(this);
             return false;
         }

@@ -29,7 +29,7 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -43,7 +43,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.hamcrest.CoreMatchers;
 import org.junit.*;
-import org.mockito.*;
+import org.mockito.InOrder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -112,8 +112,7 @@ public class DefaultConfigurerTest {
                                                         .usingTrackingProcessors())
                                                 .registerModule(
                                                         new EventHandlingConfiguration()
-                                                                .registerEventHandler(c -> (EventListener) event -> {
-                                                                })
+                                                                .registerEventHandler(c -> (EventMessageHandler) event -> null)
                                                 )
                                                 .start();
         try {
@@ -134,8 +133,7 @@ public class DefaultConfigurerTest {
                                                                 .usingTrackingProcessors(
                                                                         c -> TrackingEventProcessorConfiguration.forParallelProcessing(2),
                                                                         c -> new FullConcurrencyPolicy())
-                                                                .registerEventHandler(c -> (EventListener) event -> {
-                                                                })
+                                                                .registerEventHandler(c -> (EventMessageHandler) event -> null)
                                                 )
                                                 .start();
         try {

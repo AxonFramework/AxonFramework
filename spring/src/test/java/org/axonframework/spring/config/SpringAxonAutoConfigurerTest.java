@@ -323,6 +323,28 @@ public class SpringAxonAutoConfigurerTest {
             return mock(CommandTargetResolver.class);
         }
 
+        @Bean
+        public SagaConfiguration mySagaConfiguration(
+                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
+            return SagaConfiguration.subscribingSagaManager(MySaga.class)
+                                    .configureSagaStore(c -> customSagaStore);
+        }
+
+        @Bean
+        public HandlerDefinition myHandlerDefinition1() {
+            return new MyHandlerDefinition();
+        }
+
+        @Bean
+        public HandlerDefinition myHandlerDefinition2() {
+            return new MyHandlerDefinition();
+        }
+
+        @Bean
+        public HandlerEnhancerDefinition myHandlerEnhancerDefinition() {
+            return new MyHandlerEnhancerDefinition();
+        }
+
         @Aggregate
         public static class MyAggregate {
 
@@ -495,31 +517,9 @@ public class SpringAxonAutoConfigurerTest {
             public List<Exception> received = new ArrayList<>();
 
             @Override
-            public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
+            public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
                 received.add(exception);
             }
-        }
-
-        @Bean
-        public SagaConfiguration mySagaConfiguration(
-                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
-            return SagaConfiguration.subscribingSagaManager(MySaga.class)
-                                    .configureSagaStore(c -> customSagaStore);
-        }
-
-        @Bean
-        public HandlerDefinition myHandlerDefinition1() {
-            return new MyHandlerDefinition();
-        }
-
-        @Bean
-        public HandlerDefinition myHandlerDefinition2() {
-            return new MyHandlerDefinition();
-        }
-
-        @Bean
-        public HandlerEnhancerDefinition myHandlerEnhancerDefinition() {
-            return new MyHandlerEnhancerDefinition();
         }
 
         @Component
