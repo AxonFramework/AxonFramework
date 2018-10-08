@@ -307,28 +307,17 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
             Class sagaType = beanFactory.getType(saga);
-            boolean explicitSagaConfig = !"".equals(sagaAnnotation.configurationBean());
-            String configName = explicitSagaConfig
-                    ? sagaAnnotation.configurationBean()
-                    : lcFirst(sagaType.getSimpleName()) + "Configuration";
-            boolean containsSagaConfigBean = beanFactory.containsBean(configName);
-            if (!explicitSagaConfig && !containsSagaConfigBean) {
-                ProcessingGroup processingGroupAnnotation =
-                        beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
-                SagaConfiguration.SagaConfigurer<?> sagaConfigurer = SagaConfiguration.forType(sagaType);
-                if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
-                    sagaConfigurer.processingGroup(processingGroupAnnotation.value());
-                }
-                if (!"".equals(sagaAnnotation.sagaStore())) {
-                    sagaConfigurer.storeBuilder(
-                            c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
-                }
-                SagaConfiguration<?> sagaConfiguration = sagaConfigurer.configure();
-                beanFactory.registerSingleton(configName, sagaConfiguration);
-                configurer.registerSagaConfiguration(c -> sagaConfiguration);
-            } else if (containsSagaConfigBean) {
-                configurer.registerSagaConfiguration(c -> beanFactory.getBean(configName, SagaConfiguration.class));
+            ProcessingGroup processingGroupAnnotation =
+                    beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
+            SagaConfiguration.SagaConfigurer<?> sagaConfigurer = SagaConfiguration.forType(sagaType);
+            if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
+                configurer.assignHandlerTypesMatching(processingGroupAnnotation.value(), sagaType::equals);
             }
+            if (sagaAnnotation != null && !"".equals(sagaAnnotation.sagaStore())) {
+                sagaConfigurer.storeBuilder(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+            }
+            SagaConfiguration<?> sagaConfiguration = sagaConfigurer.configure();
+            configurer.registerSagaConfiguration(sagaConfiguration);
         }
     }
 

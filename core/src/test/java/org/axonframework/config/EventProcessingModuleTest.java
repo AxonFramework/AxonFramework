@@ -141,9 +141,9 @@ public class EventProcessingModuleTest {
     public void testTypeAssignment() {
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myGroup", c -> "java.lang".equals(c.getPackage().getName()))
-                  .registerSagaConfiguration(c -> SagaConfiguration.defaultConfiguration(Object.class))
-                  .registerSagaConfiguration(c -> SagaConfiguration.defaultConfiguration(ConcurrentMap.class))
-                  .registerSagaConfiguration(c -> SagaConfiguration.defaultConfiguration(String.class))
+                  .registerSaga(Object.class)
+                  .registerSaga(ConcurrentMap.class)
+                  .registerSaga(String.class)
                   .registerEventHandler(c -> new HashMap<>());
         EventProcessingConfiguration configuration = configurer.start()
                                                                .eventProcessingConfiguration();

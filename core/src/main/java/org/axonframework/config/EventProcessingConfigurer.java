@@ -67,13 +67,25 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Registers a {@link Function} that builds a {@link SagaConfiguration}.
+     * Registers a Saga with default configuration within this Configurer.
      *
-     * @param sagaConfigurationBuilder a {@link Function} that builds a {@link SagaConfiguration}
+     * @param sagaType the type of Saga
+     * @param <T>      the type of Saga
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     *
+     * @see SagaConfiguration#defaultConfiguration(Class)
+     */
+    default <T> EventProcessingConfigurer registerSaga(Class<T> sagaType) {
+        return registerSagaConfiguration(SagaConfiguration.defaultConfiguration(sagaType));
+    }
+
+    /**
+     * Registers a {@link SagaConfiguration}.
+     *
+     * @param sagaConfiguration a {@link SagaConfiguration}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerSagaConfiguration(
-            Function<Configuration, SagaConfiguration<?>> sagaConfigurationBuilder);
+    EventProcessingConfigurer registerSagaConfiguration(SagaConfiguration<?> sagaConfiguration);
 
     /**
      * Registers a {@link Function} that builds a {@link SagaStore}.
