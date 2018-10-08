@@ -36,6 +36,7 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
@@ -136,6 +137,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                       .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class,
                                                                                                        "queryBus"))
                                                       .transactionManager(txManager)
+                                                      .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                                                       .errorHandler(queryInvocationErrorHandler)
                                                       .build();
         return new AxonServerQueryBus(platformConnectionManager,
