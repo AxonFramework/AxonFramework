@@ -80,7 +80,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_UnknownType() {
+    public void testSerializeAndDeserializeObjectUnknownType() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
