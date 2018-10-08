@@ -130,7 +130,7 @@ public interface EventProcessingConfiguration {
      * @param processingGroup a {@link String} specifying a processing group
      * @return the {@link SequencingPolicy} belonging to the given {@code processingGroup}
      */
-    SequencingPolicy sequencingPolicy(String processingGroup);
+    SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup);
 
     /**
      * Returns the {@link RollbackConfiguration} tied to the given {@code processingGroup}.
@@ -175,10 +175,10 @@ public interface EventProcessingConfiguration {
     /**
      * Returns the {@link TokenStore} tied to the given {@code processingGroup}.
      *
-     * @param processingGroup a {@link String} specifying a processing group
+     * @param processorName a {@link String} specifying a event processor
      * @return the {@link TokenStore} belonging to the given {@code processingGroup}
      */
-    TokenStore tokenStore(String processingGroup);
+    TokenStore tokenStore(String processorName);
 
     /**
      * Returns the {@link TransactionManager} tied to the given {@code processingGroup}.
