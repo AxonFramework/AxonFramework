@@ -33,15 +33,16 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
                                                                        .configure();
         SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
                                                                        .configure();
         SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
                                                                        .configure();
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventHandler(config -> new EventHandler1())
-                  .registerSagaConfiguration(saga1Configuration)
-                  .registerSagaConfiguration(saga2Configuration)
-                  .registerSagaConfiguration(saga3Configuration);
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration);
 
         Configuration configuration = configurer.buildConfiguration();
 
@@ -63,6 +64,7 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
                                                                        .configure();
         SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
                                                                        .configure();
         SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
                                                                        .configure();
@@ -70,9 +72,9 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
                   .registerEventHandler(config -> new EventHandler1())
-                  .registerSagaConfiguration(saga1Configuration)
-                  .registerSagaConfiguration(saga2Configuration)
-                  .registerSagaConfiguration(saga3Configuration);
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration);
         Configuration configuration = configurer.buildConfiguration();
 
         assertNotNull(saga1Configuration.eventProcessor());
@@ -91,21 +93,19 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
     @Test
     public void testMultipleAssignmentsWithProvidedProcessorName() {
         SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
+                                                                       .processingGroup("myProcessor")
                                                                        .configure();
         SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
                                                                        .configure();
         SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
+                                                                       .processingGroup("myProcessor")
                                                                        .configure();
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
-                  .assignHandlerTypesMatching("processor1", clazz -> clazz.equals(Saga3.class))
-                  .assignHandlerTypesMatching("processor1", clazz -> clazz.equals(Saga1.class))
-                  .assignHandlerTypesMatching("someOtherProcessor", clazz -> clazz.equals(Saga2.class))
-                  .assignProcessingGroup("processor1", "myProcessor")
                   .registerEventHandler(config -> new EventHandler1())
-                  .registerSagaConfiguration(saga1Configuration)
-                  .registerSagaConfiguration(saga2Configuration)
-                  .registerSagaConfiguration(saga3Configuration)
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
                           new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()));
         Configuration configuration = configurer.buildConfiguration();
@@ -113,14 +113,12 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         assertNotNull(saga1Configuration.eventProcessor());
         assertNotNull(saga2Configuration.eventProcessor());
         assertNotNull(saga3Configuration.eventProcessor());
-        assertNotNull(configuration.eventProcessingConfiguration().eventProcessor("myProcessor").get());
+        assertNotNull(configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
         assertEquals(saga1Configuration.eventProcessor(), saga3Configuration.eventProcessor());
         assertEquals(saga2Configuration.eventProcessor(),
-                     configuration.eventProcessingConfiguration().eventProcessor("someOtherProcessor").get());
+                     configuration.eventProcessingConfiguration().eventProcessor("processor1").get());
         assertNotEquals(saga2Configuration.eventProcessor(), saga3Configuration.eventProcessor());
-        assertEquals(configuration.eventProcessingConfiguration().eventProcessor("myProcessor").get(),
-                        saga3Configuration.eventProcessor());
-        assertNotEquals(configuration.eventProcessingConfiguration().eventProcessor("someOtherProcessor").get(),
+        assertNotEquals(configuration.eventProcessingConfiguration().eventProcessor("processor1").get(),
                         saga3Configuration.eventProcessor());
     }
 
@@ -129,6 +127,7 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
                                                                        .configure();
         SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
                                                                        .configure();
         SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
                                                                        .configure();
@@ -137,9 +136,9 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
                           new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
                   .assignProcessingGroup("processor1", "myProcessor")
-                  .registerSagaConfiguration(saga1Configuration)
-                  .registerSagaConfiguration(saga2Configuration)
-                  .registerSagaConfiguration(saga3Configuration);
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration);
         configurer.buildConfiguration();
 
         assertEquals("myProcessor", saga1Configuration.eventProcessor().getName());
@@ -152,15 +151,16 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         SagaConfiguration<Saga1> saga1Configuration = SagaConfiguration.forType(Saga1.class)
                                                                        .configure();
         SagaConfiguration<Saga2> saga2Configuration = SagaConfiguration.forType(Saga2.class)
+                                                                       .processingGroup("processor1")
                                                                        .configure();
         SagaConfiguration<Saga3> saga3Configuration = SagaConfiguration.forType(Saga3.class)
+                                                                       .processingGroup("processor1")
                                                                        .configure();
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
-                  .assignHandlerTypesMatching("myProcessor", clazz -> clazz.equals(Saga3.class))
-                  .registerSagaConfiguration(saga1Configuration)
-                  .registerSagaConfiguration(saga2Configuration)
-                  .registerSagaConfiguration(saga3Configuration)
+                  .registerSagaConfiguration(c -> saga1Configuration)
+                  .registerSagaConfiguration(c -> saga2Configuration)
+                  .registerSagaConfiguration(c -> saga3Configuration)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
                           new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
                   .assignProcessingGroup(group -> "myProcessor");

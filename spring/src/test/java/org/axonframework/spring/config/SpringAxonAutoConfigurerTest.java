@@ -120,6 +120,9 @@ public class SpringAxonAutoConfigurerTest {
     private ApplicationContext applicationContext;
 
     @Autowired
+    private SagaConfiguration<Context.MySaga> mySagaConfiguration;
+
+    @Autowired
     private EventUpcaster eventUpcaster;
 
     @Autowired
@@ -137,6 +140,7 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventBus);
         assertNotNull(eventStore);
         assertNotNull(commandBus);
+        assertNotNull(mySagaConfiguration);
         assertNotNull(eventProcessingConfigurer);
         assertNotNull(eventProcessingConfiguration);
         assertEquals(eventProcessingConfiguration, axonConfig.eventProcessingConfiguration());
@@ -282,13 +286,9 @@ public class SpringAxonAutoConfigurerTest {
     public static class Context {
 
         @Bean
-        public EventProcessingModule eventProcessingConfiguration(
-                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
+        public EventProcessingModule eventProcessingConfiguration() {
             EventProcessingModule eventProcessingModule = new EventProcessingModule();
-            eventProcessingModule.usingSubscribingEventProcessors()
-                                 .registerSagaConfiguration(SagaConfiguration.forType(MySaga.class)
-                                                                             .storeBuilder(conf -> customSagaStore)
-                                                                             .configure());
+            eventProcessingModule.usingSubscribingEventProcessors();
             return eventProcessingModule;
         }
 
@@ -430,6 +430,7 @@ public class SpringAxonAutoConfigurerTest {
             }
         }
 
+        @Saga
         public static class MySaga {
 
             private static List<String> events = new ArrayList<>();
@@ -510,6 +511,14 @@ public class SpringAxonAutoConfigurerTest {
             public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
                 received.add(exception);
             }
+        }
+
+        @Bean
+        public SagaConfiguration mySagaConfiguration(
+                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
+            return SagaConfiguration.forType(MySaga.class)
+                                    .storeBuilder(c -> customSagaStore)
+                                    .configure();
         }
 
         @Bean

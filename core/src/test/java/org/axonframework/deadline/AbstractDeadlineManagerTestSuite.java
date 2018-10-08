@@ -77,7 +77,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
-                  .registerSaga(MySaga.class);
+                  .registerSagaConfiguration(c -> SagaConfiguration.forType(MySaga.class)
+                                                                   .configure());
         configuration = configurer.configureEventStore(c -> eventStore)
                                   .configureAggregate(MyAggregate.class)
                                   .registerComponent(DeadlineManager.class, this::buildDeadlineManager)

@@ -54,16 +54,14 @@ public interface EventProcessingConfiguration {
     }
 
     /**
-     * Obtains an Saga {@link EventProcessor} implementation for the given {@code sagaType}.
+     * Obtains an {@link EventProcessor} implementation for the given {@code sagaConfiguration}.
      *
-     * @param sagaType the type of Saga for which to get the Event Processor
-     * @param <T>      the type of the expected {@link EventProcessor}
+     * @param sagaConfiguration the {@link SagaConfiguration} through which to retrieve an {@link EventProcessor}
+     * @param <T>               the type of the expected {@link EventProcessor}
      * @return an {@link Optional} specifying whether an {@link EventProcessor} for the given {@link SagaConfiguration}
      * exists
      */
-    default <T extends EventProcessor> Optional<T> sagaEventProcessor(Class<?> sagaType) {
-        return eventProcessorByProcessingGroup(sagaProcessingGroup(sagaType));
-    }
+    <T extends EventProcessor> Optional<T> eventProcessor(SagaConfiguration<?> sagaConfiguration);
 
     /**
      * Returns the {@link EventProcessor} with the given {@code name} if present, matching the given
@@ -109,14 +107,6 @@ public interface EventProcessingConfiguration {
      * keys
      */
     Map<String, EventProcessor> eventProcessors();
-
-    /**
-     * Gets the processing group for given {@code sagaType}.
-     *
-     * @param sagaType the type of Saga
-     * @return the processing group
-     */
-    String sagaProcessingGroup(Class<?> sagaType);
 
     /**
      * Returns a {@link List} of {@link MessageHandlerInterceptor}s for a processor with given {@code processorName}.

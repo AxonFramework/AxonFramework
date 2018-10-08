@@ -47,6 +47,7 @@ public class SagaConfiguration<S> {
     private Component<AbstractSagaManager<S>> manager;
     private Component<SagaRepository<S>> repository;
     private Component<SagaStore<? super S>> store;
+    private Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler;
 
     /**
      * Creates a Saga Configuration using the given {@link SagaConfigurer}.
@@ -102,10 +103,9 @@ public class SagaConfiguration<S> {
      *
      * @return the Saga's {@link ListenerInvocationErrorHandler}
      */
-    public ListenerInvocationErrorHandler listenerInvocationErrorHandler() {
+    public Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler() {
         ensureInitialized();
-        return config.eventProcessingConfiguration()
-                     .listenerInvocationErrorHandler(processingGroup());
+        return listenerInvocationErrorHandler;
     }
 
     /**
@@ -118,21 +118,19 @@ public class SagaConfiguration<S> {
         ensureInitialized();
         //noinspection unchecked
         return (T) config.eventProcessingConfiguration()
-                         .sagaEventProcessor(configurer.type)
+                         .eventProcessor(this)
                          .orElseThrow(() -> new IllegalStateException(format(
                                  "Saga %s does not have a processor configured.",
                                  configurer.type)));
     }
 
     /**
-     * Gets the Processing Group this Saga is assigned to.
+     * Gets the Processing Group this Saga is assigned to, if it is explicitly set.
      *
-     * @return the Processing Group this Saga is assigned to
+     * @return an {@link Optional} containing the Processing Group this Saga is assigned to, if it is explicitly set
      */
-    public String processingGroup() {
-        ensureInitialized();
-        return config.eventProcessingConfiguration()
-                     .sagaProcessingGroup(configurer.type);
+    public Optional<String> processingGroup() {
+        return Optional.ofNullable(configurer.processingGroup);
     }
 
     /**
@@ -145,6 +143,9 @@ public class SagaConfiguration<S> {
         this.config = configuration;
         String managerName = configurer.type.getSimpleName() + "Manager";
         String repositoryName = configurer.type.getSimpleName() + "Repository";
+        listenerInvocationErrorHandler = new Component<>(configuration,
+                                                         "listenerInvocationErrorHandler",
+                                                         configurer.listenerInvocationErrorHandlerBuilder);
         store = new Component<>(configuration, "sagaStore", configurer.storeBuilder);
         Function<Configuration, SagaRepository<S>> repositoryBuilder = configurer.repositoryBuilder;
         if (repositoryBuilder == null) {
@@ -160,17 +161,13 @@ public class SagaConfiguration<S> {
 
         Function<Configuration, AbstractSagaManager<S>> managerBuilder = configurer.managerBuilder;
         if (managerBuilder == null) {
-            managerBuilder = c -> {
-                EventProcessingConfiguration eventProcessingConfiguration = c.eventProcessingConfiguration();
-                return AnnotatedSagaManager.<S>builder()
-                        .sagaType(configurer.type)
-                        .sagaRepository(repository.get())
-                        .parameterResolverFactory(c.parameterResolverFactory())
-                        .handlerDefinition(c.handlerDefinition(configurer.type))
-                        .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
-                                processingGroup()))
-                        .build();
-            };
+            managerBuilder = c -> AnnotatedSagaManager.<S>builder()
+                    .sagaType(configurer.type)
+                    .sagaRepository(repository.get())
+                    .parameterResolverFactory(c.parameterResolverFactory())
+                    .handlerDefinition(c.handlerDefinition(configurer.type))
+                    .listenerInvocationErrorHandler(listenerInvocationErrorHandler.get())
+                    .build();
         }
         manager = new Component<>(configuration, managerName, managerBuilder);
     }
@@ -210,12 +207,16 @@ public class SagaConfiguration<S> {
     public static class SagaConfigurer<T> {
 
         private Class<T> type;
+        private String processingGroup;
         private Function<Configuration, AbstractSagaManager<T>> managerBuilder;
         private Function<Configuration, SagaRepository<T>> repositoryBuilder;
         @SuppressWarnings("unchecked")
         private Function<Configuration, SagaStore<? super T>> storeBuilder =
                 c -> c.eventProcessingConfiguration()
                       .sagaStore();
+        private Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder =
+                c -> c.eventProcessingConfiguration()
+                      .listenerInvocationErrorHandler(processingGroup);
 
         /**
          * Configures the Saga Type.
@@ -226,6 +227,18 @@ public class SagaConfiguration<S> {
         public SagaConfigurer<T> type(Class<T> type) {
             assertNonNull(type, "Saga type is not allowed to be null");
             this.type = type;
+            return this;
+        }
+
+        /**
+         * Configures the Processing Group for this Saga.
+         *
+         * @param processingGroup a {@link String} representing the Processing Group name
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
+         */
+        public SagaConfigurer<T> processingGroup(String processingGroup) {
+            assertNonNull(processingGroup, "Processing group is not allowed to be null");
+            this.processingGroup = processingGroup;
             return this;
         }
 
@@ -265,6 +278,21 @@ public class SagaConfiguration<S> {
                 Function<Configuration, SagaStore<? super T>> storeBuilder) {
             assertNonNull(storeBuilder, "SagaStore builder is not allowed to be null");
             this.storeBuilder = storeBuilder;
+            return this;
+        }
+
+        /**
+         * Configures a {@link ListenerInvocationErrorHandler} for this Saga.
+         *
+         * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds
+         *                                              {@link ListenerInvocationErrorHandler}
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
+         */
+        public SagaConfigurer<T> listenerInvocationHandler(
+                Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
+            assertNonNull(listenerInvocationErrorHandlerBuilder,
+                          "ListenerInvocationErrorHandler builder is not allowed to be null");
+            this.listenerInvocationErrorHandlerBuilder = listenerInvocationErrorHandlerBuilder;
             return this;
         }
 

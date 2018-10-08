@@ -153,7 +153,7 @@ public class EventProcessingModule
 
     private Configuration configuration;
 
-    private final List<SagaConfiguration<?>> sagaConfigurations = new ArrayList<>();
+    private final List<Component<SagaConfiguration<?>>> sagaConfigurations = new ArrayList<>();
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
 
     private final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
@@ -277,13 +277,16 @@ public class EventProcessingModule
     }
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
-        sagaConfigurations.forEach(sc -> {
-            sc.initialize(configuration);
-            String processingGroup = selectProcessingGroupByType(sc.type());
-            String processorName = processorNameForProcessingGroup(processingGroup);
-            handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
-                           .add(c -> sc.manager().get());
-        });
+        sagaConfigurations.stream()
+                          .map(Component::get)
+                          .forEach(sc -> {
+                              sc.initialize(configuration);
+                              String processingGroup = sc.processingGroup()
+                                                         .orElse(selectProcessingGroupByType(sc.type()));
+                              String processorName = processorNameForProcessingGroup(processingGroup);
+                              handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
+                                             .add(c -> sc.manager().get());
+                          });
     }
 
     private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
@@ -315,12 +318,20 @@ public class EventProcessingModule
     }
     //</editor-fold>
 
+    @Override
+    public <EP extends EventProcessor> Optional<EP> eventProcessor(SagaConfiguration<?> sagaConfiguration) {
+        return eventProcessorByProcessingGroup(
+                sagaConfiguration.processingGroup()
+                                 .orElse(selectProcessingGroupByType(sagaConfiguration.type())));
+    }
+
     //<editor-fold desc="configuration methods">
     @SuppressWarnings("unchecked")
     @Override
     public <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
         ensureInitialized();
-        return Optional.ofNullable((T) eventProcessors().get(processorNameForProcessingGroup(processingGroup)));
+        return (Optional<T>) Optional.ofNullable(eventProcessors()
+                                                         .get(processorNameForProcessingGroup(processingGroup)));
     }
 
     @Override
@@ -329,11 +340,6 @@ public class EventProcessingModule
         Map<String, EventProcessor> result = new HashMap<>(eventProcessors.size());
         eventProcessors.forEach((name, component) -> result.put(name, component.get()));
         return result;
-    }
-
-    @Override
-    public String sagaProcessingGroup(Class<?> sagaType) {
-        return selectProcessingGroupByType(sagaType);
     }
 
     @Override
@@ -384,7 +390,9 @@ public class EventProcessingModule
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
         ensureInitialized();
-        return new ArrayList<>(sagaConfigurations);
+        return sagaConfigurations.stream()
+                                 .map(Component::get)
+                                 .collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
@@ -431,8 +439,9 @@ public class EventProcessingModule
 
     //<editor-fold desc="configurer methods">
     @Override
-    public EventProcessingConfigurer registerSagaConfiguration(SagaConfiguration<?> sagaConfiguration) {
-        this.sagaConfigurations.add(sagaConfiguration);
+    public EventProcessingConfigurer registerSagaConfiguration(
+            Function<Configuration, SagaConfiguration<?>> sagaConfiguration) {
+        this.sagaConfigurations.add(new Component<>(() -> configuration, "sagaConfiguration", sagaConfiguration));
         return this;
     }
 
