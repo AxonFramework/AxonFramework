@@ -98,13 +98,13 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
-        return EventUtils.upcastAndDeserializeTrackedEvents(input, eventSerializer, upcasterChain, true);
+        return EventUtils.upcastAndDeserializeTrackedEvents(input, eventSerializer, upcasterChain);
     }
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
-        return EventUtils.upcastAndDeserializeDomainEvents(input, eventSerializer, upcasterChain, false);
+        return EventUtils.upcastAndDeserializeDomainEvents(input, eventSerializer, upcasterChain);
     }
 
     @Override
@@ -113,8 +113,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
                                                     .map(snapshot -> EventUtils
                                                             .upcastAndDeserializeDomainEvents(Stream.of(snapshot),
                                                                                               serializer,
-                                                                                              upcasterChain,
-                                                                                              false))
+                                                                                              upcasterChain
+                                                            ))
                                                     .flatMap(DomainEventStream::asStream)
                                                     .findFirst()
                                                     .map(event -> (DomainEventMessage<?>) event);

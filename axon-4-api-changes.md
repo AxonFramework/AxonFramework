@@ -1,6 +1,11 @@
 Major API Changes
 =================
 
+## Serialization
+Instead of throwing an `UnknownSerializedTypeException`, serializers now return an `UnknownSerializedType` object, 
+which provides access to the raw data in any supported intermediate representation, such as `JsonNode` or Dom4J 
+`Document`.
+
 Other changes
 =============
 
@@ -19,16 +24,12 @@ Other changes
 | org.axonframework.queryhandling.responsetypes.ResponseTypes                   | org.axonframework.messaging.responsetypes.ResponseTypes                    |
 
 ### Removed classes
-|                           Class                    |             Why                     |
-|----------------------------------------------------|-------------------------------------|
-| org.axonframework.serialization.MessageSerializer  | All messages are serializable now.  |
-| org.axonframework.serialization.SerializationAware | All messages are serializable now.  |
-
-### Removed classes
-
-|                           Class                                       |                       Why                     |
-|-----------------------------------------------------------------------|-----------------------------------------------|
-| org.axonframework.commandhandling.disruptor.DisruptorConfiguration    | Removed in favor DisruptorCommandBus.Builder  |
+|                           Class                                    |             Why                              |
+|--------------------------------------------------------------------|----------------------------------------------|
+| org.axonframework.serialization.MessageSerializer                  | All messages are serializable now.           |
+| org.axonframework.serialization.SerializationAware                 | All messages are serializable now.           |
+| org.axonframework.serialization.UnknownSerializedTypeException     | Serializers now return UnknownSerializedType |
+| org.axonframework.commandhandling.disruptor.DisruptorConfiguration | Removed in favor DisruptorCommandBus.Builder |
 
 ### Classes for which the Constructor has been replaced for a Builder
 

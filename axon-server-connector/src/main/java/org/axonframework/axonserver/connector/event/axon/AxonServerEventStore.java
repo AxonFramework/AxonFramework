@@ -326,8 +326,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                                                            new GrpcMetaDataAwareSerializer(
                                                                                                    isSnapshot(
                                                                                                            domainEventData) ? getSerializer() : getEventSerializer()),
-                                                                                           upcasterChain,
-                                                                                           false);
+                                                                                           upcasterChain
+            );
             return upcastedStream.hasNext() ? upcastedStream.next() : null;
         }
 

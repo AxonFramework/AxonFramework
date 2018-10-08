@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.UnknownSerializedTypeException;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -185,12 +185,13 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         testSubject.storeSnapshot(createEvent(1));
     }
 
-    @Test(expected = UnknownSerializedTypeException.class)
+    @Test
     public void testUnknownSerializedTypeCausesException() {
         testSubject.appendEvents(createEvent());
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                      .executeUpdate();
-        testSubject.readEvents(AGGREGATE).peek();
+        DomainEventMessage<?> actual = testSubject.readEvents(AGGREGATE).peek();
+        assertEquals(UnknownSerializedType.class, actual.getPayloadType());
     }
 
     @Test
@@ -236,7 +237,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testEventsWithUnknownPayloadTypeAreSkipped() throws InterruptedException {
+    public void testEventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
         List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
@@ -254,6 +255,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                  createEvent(AGGREGATE, 4, expectedPayloadTwo));
 
         List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
+                                                           .filter(m -> m.getPayload() instanceof String)
                                                            .map(m -> (String) m.getPayload())
                                                            .collect(toList());
         assertEquals(expected, eventStorageEngineResult);
@@ -261,6 +263,8 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
 
         assertTrue(eventStoreResult.hasNextAvailable());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
         assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
         assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
         assertFalse(eventStoreResult.hasNextAvailable());
