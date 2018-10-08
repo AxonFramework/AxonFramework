@@ -424,14 +424,13 @@ public interface Configurer {
     Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
 
     /**
-     * Gets Event Processing Configurer registered as a module with this Configurer. If there aren't any, it will
-     * create
-     * a {@link EventProcessingModule} and register it as a module. If there are more than one, {@link
-     * AxonConfigurationException} is thrown.
+     * Retrievee the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't
+     * any, it will create an {@link EventProcessingModule} and register it as a module. If there are multiple,
+     * an {@link AxonConfigurationException} is thrown.
      *
      * @return an instance of Event Processing Configurer
      *
-     * @throws AxonConfigurationException thrown if there are more Event Processing Configurers
+     * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
      */
     EventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
 

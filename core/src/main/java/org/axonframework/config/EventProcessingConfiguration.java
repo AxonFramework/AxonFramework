@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Defines a contract for accessor methods regarding event processing.
+ * Defines a contract for accessor methods regarding event processing configuration.
  *
  * @author Milan Savic
  * @since 4.0
@@ -42,11 +42,11 @@ import java.util.Optional;
 public interface EventProcessingConfiguration {
 
     /**
-     * Obtains Event Processor by name.
+     * Obtains an {@link EventProcessor} through the given {@code name}.
      *
-     * @param name The name of the event processor
-     * @param <T>  The type of processor expected
-     * @return an Optional whether event processor with given name exists
+     * @param name a {@link String} specifying the name of an {@link EventProcessor}
+     * @param <T>  the type of the expected {@link EventProcessor}
+     * @return an {@link Optional} specifying whether an {@link EventProcessor} with the given {@code name} exists
      */
     @SuppressWarnings("unchecked")
     default <T extends EventProcessor> Optional<T> eventProcessor(String name) {
@@ -54,43 +54,45 @@ public interface EventProcessingConfiguration {
     }
 
     /**
-     * Obtains Event Processor for given {@code sagaConfiguration}.
+     * Obtains an {@link EventProcessor} implementation for the given {@code sagaConfiguration}.
      *
-     * @param sagaConfiguration The Saga Configuration
-     * @param <EP>              The type of Event Processor
-     * @return an Optional whether Event Processor for given Saga Configuration exists
+     * @param sagaConfiguration the {@link SagaConfiguration} through which to retrieve an {@link EventProcessor}
+     * @param <T>               the type of the expected {@link EventProcessor}
+     * @return an {@link Optional} specifying whether an {@link EventProcessor} for the given {@link SagaConfiguration}
+     * exists
      */
-    <EP extends EventProcessor> Optional<EP> eventProcessor(SagaConfiguration<?> sagaConfiguration);
+    <T extends EventProcessor> Optional<T> eventProcessor(SagaConfiguration<?> sagaConfiguration);
 
     /**
-     * Returns the Event Processor with the given {@code name}, if present and of the given {@code expectedType}.
+     * Returns the {@link EventProcessor} with the given {@code name} if present, matching the given
+     * {@code expectedType}.
      *
-     * @param name         The name of the processor to return
-     * @param expectedType The type of processor expected
-     * @param <T>          The type of processor expected
-     * @return an Optional referencing the processor, if present and of expected type
+     * @param name         a {@link String} specifying the name of the {@link EventProcessor} to return
+     * @param expectedType the type of the {@link EventProcessor} to return
+     * @param <T>          the type of the expected {@link EventProcessor}
+     * @return an {@link Optional} referencing the {@link EventProcessor}, if present and of expected type
      */
     default <T extends EventProcessor> Optional<T> eventProcessor(String name, Class<T> expectedType) {
         return eventProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
     }
 
     /**
-     * Obtains Event Processor by processing group name.
+     * Obtains an {@link EventProcessor} by it's {@code processingGroup}.
      *
-     * @param processingGroup The name of the processing group
-     * @param <T>             The type of processor expected
-     * @return an Optional referencing the processor
+     * @param processingGroup a {@link String} specifying the processing group of an {@link EventProcessor}
+     * @param <T>             the type of the expected {@link EventProcessor}
+     * @return an {@link Optional} referencing the {@link EventProcessor}
      */
     <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup);
 
     /**
-     * Returns the Event Processor by the given {@code processingGroup}, if present and of the given {@code
-     * expectedType}.
+     * Returns an {@link EventProcessor} by the given {@code processingGroup} if present, matching the given
+     * {@code expectedType}.
      *
-     * @param processingGroup The name of the processing group
-     * @param expectedType    The type of processor expected
-     * @param <T>             The type of processor expected
-     * @return an Optional referencing the processor, if present and of expected type
+     * @param processingGroup a {@link String} specifying the processing group of an {@link EventProcessor}
+     * @param expectedType    the type of the {@link EventProcessor} to return
+     * @param <T>             the type of the expected {@link EventProcessor}
+     * @return an {@link Optional} referencing the {@link EventProcessor}, if present and of expected type
      */
     default <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup,
                                                                                    Class<T> expectedType) {
@@ -99,89 +101,90 @@ public interface EventProcessingConfiguration {
     }
 
     /**
-     * Obtains all registered event processors.
+     * Obtains all registered {@link EventProcessor}s.
      *
-     * @return map of registered event processors within this configuration where processor name is the key
+     * @return a {@link Map} of registered {@link EventProcessor}s within this configuration with the processor names as
+     * keys
      */
     Map<String, EventProcessor> eventProcessors();
 
     /**
-     * Returns a list of interceptors for a processor with given {@code processorName}.
+     * Returns a {@link List} of {@link MessageHandlerInterceptor}s for a processor with given {@code processorName}.
      *
-     * @param processorName The name of the processor
-     * @return a list of interceptors for a processor with given {@code processorName}
+     * @param processorName a {@link String} specifying a processing group
+     * @return a {@link List} of {@link MessageHandlerInterceptor}s for a processor with given {@code processorName}
      */
     List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName);
 
     /**
-     * Returns a Listener Invocation Error Handler for given {@code processingGroup}.
+     * Returns the {@link ListenerInvocationErrorHandler} tied to the given {@code processingGroup}.
      *
-     * @param processingGroup The name of processing group
-     * @return a Listener Invocation Error Handler for given {@code processingGroup}
+     * @param processingGroup a {@link String} specifying a processing group
+     * @return the {@link ListenerInvocationErrorHandler} belonging to the given {@code processingGroup}
      */
     ListenerInvocationErrorHandler listenerInvocationErrorHandler(String processingGroup);
 
     /**
-     * Returns a Sequencing Policy for given {@code processingGroup}.
+     * Returns the {@link SequencingPolicy} tied to the given {@code processingGroup}.
      *
-     * @param processingGroup The name of processing group
-     * @return a Sequencing Policy for given {@code processingGroup}
+     * @param processingGroup a {@link String} specifying a processing group
+     * @return the {@link SequencingPolicy} belonging to the given {@code processingGroup}
      */
     SequencingPolicy sequencingPolicy(String processingGroup);
 
     /**
-     * Returns a Rollback Configuration for given {@code processingGroup}.
+     * Returns the {@link RollbackConfiguration} tied to the given {@code processingGroup}.
      *
-     * @param processingGroup The name of processing group
-     * @return a Rollback Configuration for given {@code processingGroup}
+     * @param processingGroup a {@link String} specifying a processing group
+     * @return the {@link RollbackConfiguration} belonging to the given {@code processingGroup}
      */
     RollbackConfiguration rollbackConfiguration(String processingGroup);
 
     /**
-     * Returns an Error Handler for given {@code processingGroup}.
+     * Returns the {@link ErrorHandler} tied to the given {@code processingGroup}.
      *
-     * @param processingGroup The name of processing group
-     * @return an Error Handler for given {@code processingGroup}
+     * @param processingGroup a {@link String} specifying a processing group
+     * @return the {@link ErrorHandler} belonging to the given {@code processingGroup}
      */
     ErrorHandler errorHandler(String processingGroup);
 
     /**
-     * Returns a Saga Store registered within this configuration.
+     * Returns a {@link SagaStore} registered within this configuration.
      *
-     * @return a Saga Store registered within this configuration
+     * @return a {@link SagaStore} registered within this configuration
      */
     SagaStore sagaStore();
 
     /**
-     * Returns a list of Saga Configurations registered within this configuration.
+     * Returns a {@link List} of {@link SagaConfiguration}s registered within this configuration.
      *
-     * @return a list of Saga Configurations registered within this configuration
+     * @return a {@link List} of {@link SagaConfiguration}s registered within this configuration
      */
     List<SagaConfiguration<?>> sagaConfigurations();
 
     /**
-     * Returns a Message Monitor for given {@code componentType} and {@code componentName} registered within this
-     * configuration.
+     * Returns the {@link MessageMonitor} set to the given {@code componentType} and {@code componentName} registered
+     * within this configuration.
      *
-     * @param componentType The type of component to be monitored
-     * @param componentName The name of component to be monitored
-     * @return a Message Monitor registered within this configuration
+     * @param componentType a {@link Class} type of component to be monitored
+     * @param componentName a {@link String} specifying the name of the component to be monitored
+     * @return the {@link MessageMonitor} registered to the given {@code componentType} and {@code componentName}
      */
     MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType, String componentName);
 
     /**
-     * Returns a Token Store for given {@code processingGroup}.
+     * Returns the {@link TokenStore} tied to the given {@code processingGroup}.
      *
-     * @param processingGroup The name of processing group
-     * @return a Token Store for given {@code processingGroup}
+     * @param processingGroup a {@link String} specifying a processing group
+     * @return the {@link TokenStore} belonging to the given {@code processingGroup}
      */
     TokenStore tokenStore(String processingGroup);
 
     /**
-     * Returns a Transaction Manager for given {@code processingGroup}.
+     * Returns the {@link TransactionManager} tied to the given {@code processingGroup}.
      *
-     * @param processingGroup The name of processing group
-     * @return a Transaction Manager for given {@code processingGroup}
+     * @param processingGroup a {@link String} specifying a processing group
+     * @return the {@link TransactionManager}belonging to the given {@code processingGroup}
      */
     TransactionManager transactionManager(String processingGroup);
 }

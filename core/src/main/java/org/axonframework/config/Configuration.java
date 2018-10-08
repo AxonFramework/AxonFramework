@@ -131,11 +131,11 @@ public interface Configuration {
     }
 
     /**
-     * Returns Event Processing Configuration defined in this Configuration. If there aren't any defined, {@code null}
-     * will be returned. If there is exactly one, it will be returned. For case when there are more than one {@link
-     * AxonConfigurationException} is thrown and you should use {@link #getModules()} instead.
+     * Returns the {@link EventProcessingConfiguration} defined in this Configuration. If there aren't any defined,
+     * {@code null} will be returned. If there is exactly one, it will be returned. For case when there are multiple,
+     * an {@link AxonConfigurationException} is thrown and the {@link #getModules()} API should be used instead.
      *
-     * @return the EventProcessingConfiguration defined in this configuration
+     * @return the {@link EventProcessingConfiguration} defined in this Configuration
      *
      * @throws AxonConfigurationException thrown if there are more than one Event Processing Configurations defined with
      *                                    this configuration

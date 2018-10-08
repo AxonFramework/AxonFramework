@@ -66,9 +66,9 @@ public interface ModuleConfiguration {
     }
 
     /**
-     * Checks whether Module Configuration is of given {@code type}.
+     * Checks whether this Module Configuration is of the given {@code type}.
      *
-     * @param type The type to check the Module Configuration against
+     * @param type a {@link Class} type to check the Module Configuration against
      * @return whether Module Configuration is of given {@code type}
      */
     default boolean isType(Class<?> type) {

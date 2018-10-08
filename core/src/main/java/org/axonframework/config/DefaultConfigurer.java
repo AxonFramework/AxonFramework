@@ -351,7 +351,7 @@ public class DefaultConfigurer implements Configurer {
         List<EventProcessingConfigurer> eventProcessingConfigurers =
                 modules.stream()
                        .filter(module -> module.isType(EventProcessingConfigurer.class))
-                       .map(module -> (EventProcessingConfigurer) module.unwrap()) // it is safe to unwrap it since it is not dependent on anything else
+                       .map(module -> (EventProcessingConfigurer) module.unwrap()) // It's safe to unwrap it since it isn't dependent on anything else.
                        .collect(toList());
         switch (eventProcessingConfigurers.size()) {
             case 0:
@@ -361,7 +361,10 @@ public class DefaultConfigurer implements Configurer {
             case 1:
                 return eventProcessingConfigurers.get(0);
             default:
-                throw new AxonConfigurationException("There are several EventProcessingConfigurers defined. eventProcessing method is used to retrieve a 'singleton' EventProcessingConfigurer.");
+                throw new AxonConfigurationException(
+                        "There are several EventProcessingConfigurers defined. "
+                                + "The `eventProcessing()` method is used to retrieve a 'singleton' EventProcessingConfigurer."
+                );
         }
     }
 

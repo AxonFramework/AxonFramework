@@ -31,11 +31,11 @@ import java.util.function.Function;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Represents a set of components needed to configure a saga. Saga configuration should be built using {@link
- * #forType(Class)} method. Saga configuration should be initialized using {@link #initialize(Configuration)} after
- * building it.
+ * Represents a set of components needed to configure a Saga. This Saga Configuration should be built using the
+ * {@link #forType(Class)} method. This Saga Configuration should be initialized using
+ * {@link #initialize(Configuration)} after building it.
  *
- * @param <S> The type of saga
+ * @param <S> a generic specifying the Saga type
  * @author Milan Savic
  * @since 4.0
  */
@@ -49,9 +49,9 @@ public class SagaConfiguration<S> {
     private Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler;
 
     /**
-     * Creates a Saga Configuration using Saga Configurer.
+     * Creates a Saga Configuration using the given {@link SagaConfigurer}.
      *
-     * @param sagaConfigurer a configurer for Saga Configuration
+     * @param sagaConfigurer a {@link SagaConfigurer} to build a Saga Configuration with
      */
     protected SagaConfiguration(SagaConfigurer<S> sagaConfigurer) {
         sagaConfigurer.validate();
@@ -68,9 +68,9 @@ public class SagaConfiguration<S> {
     }
 
     /**
-     * Gets the Saga Manager.
+     * Retrieve the Saga Manager in this Configuration.
      *
-     * @return the Manager for this Saga
+     * @return the Manager for this Saga Configuration
      */
     public Component<AbstractSagaManager<S>> manager() {
         ensureInitialized();
@@ -78,9 +78,9 @@ public class SagaConfiguration<S> {
     }
 
     /**
-     * Gets the Saga Repository.
+     * Retrieve the {@link SagaRepository} in this Configuration.
      *
-     * @return the Saga Repository
+     * @return the {@link SagaRepository} in this Configuration
      */
     public Component<SagaRepository<S>> repository() {
         ensureInitialized();
@@ -88,9 +88,9 @@ public class SagaConfiguration<S> {
     }
 
     /**
-     * Gets the Saga Store.
+     * Retrieve the {@link SagaStore} in this Configuration.
      *
-     * @return the Saga Store
+     * @return the {@link SagaStore} in this Configuration
      */
     public Component<SagaStore<? super S>> store() {
         ensureInitialized();
@@ -98,9 +98,9 @@ public class SagaConfiguration<S> {
     }
 
     /**
-     * Gets the Saga Listener Invocation Error Handler.
+     * Retrieve the Saga's {@link ListenerInvocationErrorHandler}.
      *
-     * @return the Saga Listener Invocation Error Handler
+     * @return the Saga's {@link ListenerInvocationErrorHandler}
      */
     public Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler() {
         ensureInitialized();
@@ -108,10 +108,10 @@ public class SagaConfiguration<S> {
     }
 
     /**
-     * Gets the Event Processor for this Saga.
+     * Gets the {@link EventProcessor} for this Saga.
      *
-     * @param <T> The Event Processor type
-     * @return the Event Processor for this Saga
+     * @param <T> the type of the {@link EventProcessor}
+     * @return the {@link EventProcessor} for this Saga
      */
     public <T extends EventProcessor> T eventProcessor() {
         ensureInitialized();
@@ -122,19 +122,19 @@ public class SagaConfiguration<S> {
     }
 
     /**
-     * Gets the Processing Group this Saga is assigned to (if it is explicitly set).
+     * Gets the Processing Group this Saga is assigned to, if it is explicitly set.
      *
-     * @return the Processing Group this Saga is assigned to
+     * @return an {@link Optional} containing the Processing Group this Saga is assigned to, if it is explicitly set
      */
     public Optional<String> processingGroup() {
         return Optional.ofNullable(configurer.processingGroup);
     }
 
     /**
-     * Initializes Saga Configuration with main Configuration. After initializing it is safe to call accessor methods on
-     * this Configuration.
+     * Initializes Saga Configuration by using the main {@link Configuration}. After initialization, it is safe to call
+     * accessor methods on this Configuration.
      *
-     * @param configuration The main Configuration
+     * @param configuration the main {@link Configuration} used to provide components to this Saga Configuration
      */
     public void initialize(Configuration configuration) {
         this.config = configuration;
@@ -170,11 +170,11 @@ public class SagaConfiguration<S> {
     }
 
     /**
-     * Gets Saga Configurer for given {@code sagaType}.
+     * Retrieve the {@link SagaConfigurer} for given {@code sagaType}.
      *
-     * @param sagaType The type of the Saga
-     * @param <T>      The type of the Saga
-     * @return the Saga Configurer to configure a Saga
+     * @param sagaType the type of the Saga
+     * @param <T>      a generic specifying the Saga type
+     * @return a {@link SagaConfigurer} to configure a Saga with
      */
     public static <T> SagaConfigurer<T> forType(Class<T> sagaType) {
         return new SagaConfigurer<T>().type(sagaType);
@@ -184,9 +184,9 @@ public class SagaConfiguration<S> {
      * Builds the default Saga Configuration for given {@code sagaType}. Defaults are taken from {@link
      * EventProcessingConfiguration}.
      *
-     * @param sagaType The type of Saga
-     * @param <T>      The type of Saga
-     * @return default Saga Configuration
+     * @param sagaType the type of Saga
+     * @param <T>      a generic specifying the Saga type
+     * @return a default Saga Configuration
      */
     public static <T> SagaConfiguration<T> defaultConfiguration(Class<T> sagaType) {
         return forType(sagaType).configure();
@@ -199,7 +199,7 @@ public class SagaConfiguration<S> {
     /**
      * Provides mechanisms to configure a {@link SagaConfiguration}.
      *
-     * @param <T> The type of Saga
+     * @param <T> a generic specifying the Saga type
      */
     public static class SagaConfigurer<T> {
 
@@ -216,10 +216,10 @@ public class SagaConfiguration<S> {
                       .listenerInvocationErrorHandler(processingGroup);
 
         /**
-         * Configures a Saga Type.
+         * Configures the Saga Type.
          *
-         * @param type The type of Saga
-         * @return this Configurer for fluent interfacing
+         * @param type the type of Saga
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
          */
         public SagaConfigurer<T> type(Class<T> type) {
             assertNonNull(type, "Saga type is not allowed to be null");
@@ -228,10 +228,10 @@ public class SagaConfiguration<S> {
         }
 
         /**
-         * Configures a Processing Group.
+         * Configures the Processing Group for this Saga.
          *
-         * @param processingGroup The Processing Group name
-         * @return this Configurer for fluent interfacing
+         * @param processingGroup a {@link String} representing the Processing Group name
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
          */
         public SagaConfigurer<T> processingGroup(String processingGroup) {
             assertNonNull(processingGroup, "Processing group is not allowed to be null");
@@ -240,54 +240,55 @@ public class SagaConfiguration<S> {
         }
 
         /**
-         * Configures a Saga Manager.
+         * Configures a Saga Manager for this Saga.
          *
-         * @param managerBuilder A function that builds Saga Manager
-         * @return this Configurer for fluent interfacing
+         * @param managerBuilder a {@link Function} that builds a Saga Manager
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
          */
         public SagaConfigurer<T> managerBuilder(
                 Function<Configuration, AbstractSagaManager<T>> managerBuilder) {
-            assertNonNull(managerBuilder, "Saga manager builder is not allowed to be null");
+            assertNonNull(managerBuilder, "SagaManager builder is not allowed to be null");
             this.managerBuilder = managerBuilder;
             return this;
         }
 
         /**
-         * Configures a Saga Repository.
+         * Configures a {@link SagaRepository} for this Saga.
          *
-         * @param repositoryBuilder A function that builds Saga Repository
-         * @return this Configurer for fluent interfacing
+         * @param repositoryBuilder a {@link Function} that builds {@link SagaRepository}
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
          */
         public SagaConfigurer<T> repositoryBuilder(
                 Function<Configuration, SagaRepository<T>> repositoryBuilder) {
-            assertNonNull(repositoryBuilder, "Saga repository builder is not allowed to be null");
+            assertNonNull(repositoryBuilder, "SagaRepository builder is not allowed to be null");
             this.repositoryBuilder = repositoryBuilder;
             return this;
         }
 
         /**
-         * Configures a Saga Store.
+         * Configures a {@link SagaStore} for this Saga.
          *
-         * @param storeBuilder A function that builds Saga Store
-         * @return this Configurer for fluent interfacing
+         * @param storeBuilder a {@link Function} that builds {@link SagaStore}
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
          */
         public SagaConfigurer<T> storeBuilder(
                 Function<Configuration, SagaStore<? super T>> storeBuilder) {
-            assertNonNull(storeBuilder, "Saga store builder is not allowed to be null");
+            assertNonNull(storeBuilder, "SagaStore builder is not allowed to be null");
             this.storeBuilder = storeBuilder;
             return this;
         }
 
         /**
-         * Configures a Saga Listener Invocation Error Handler.
+         * Configures a {@link ListenerInvocationErrorHandler} for this Saga.
          *
-         * @param listenerInvocationErrorHandlerBuilder A function that builds Saga Listener Invocation Error Handler
-         * @return this Configurer for fluent interfacing
+         * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds
+         *                                              {@link ListenerInvocationErrorHandler}
+         * @return this {@link SagaConfigurer} instance, for fluent interfacing
          */
         public SagaConfigurer<T> listenerInvocationHandler(
                 Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
             assertNonNull(listenerInvocationErrorHandlerBuilder,
-                          "Listener invocation error handler builder is not allowed to be null");
+                          "ListenerInvocationErrorHandler builder is not allowed to be null");
             this.listenerInvocationErrorHandlerBuilder = listenerInvocationErrorHandlerBuilder;
             return this;
         }
@@ -302,7 +303,7 @@ public class SagaConfiguration<S> {
         }
 
         /**
-         * Validates this Configurer. {@code type} is the only required field.
+         * Validates this Configurer. The {@code type} is the only required field.
          */
         protected void validate() {
             assertNonNull(type, "Saga type is not allowed to be null");
