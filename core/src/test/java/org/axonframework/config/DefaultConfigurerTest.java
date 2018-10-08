@@ -29,7 +29,7 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -43,7 +43,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.hamcrest.CoreMatchers;
 import org.junit.*;
-import org.mockito.*;
+import org.mockito.InOrder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -104,8 +104,7 @@ public class DefaultConfigurerTest {
     public void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
-                  .registerEventHandler(c -> (EventListener) event -> {
-                  });
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
         Configuration config = configurer
                 .registerComponent(TrackingEventProcessorConfiguration.class,
                                    c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
@@ -130,8 +129,7 @@ public class DefaultConfigurerTest {
                                                   c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
-                  .registerEventHandler(c -> (EventListener) event -> {
-                  });
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
         Configuration config = configurer
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
@@ -37,7 +37,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  * @author Allard Buijze
  * @since 1.1
  */
-public class EventValidator implements EventListener {
+public class EventValidator implements EventMessageHandler {
 
     private final List<EventMessage> publishedEvents = new ArrayList<>();
     private final EventBus eventBus;
@@ -87,8 +87,9 @@ public class EventValidator implements EventListener {
     }
 
     @Override
-    public void handle(EventMessage event) {
+    public Object handle(EventMessage event) {
         publishedEvents.add(event);
+        return null;
     }
 
     /**

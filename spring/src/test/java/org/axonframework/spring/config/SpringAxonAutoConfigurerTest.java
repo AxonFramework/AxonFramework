@@ -508,7 +508,7 @@ public class SpringAxonAutoConfigurerTest {
             public List<Exception> received = new ArrayList<>();
 
             @Override
-            public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
+            public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
                 received.add(exception);
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,8 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeAnnotatedHandlers> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
         CommandMessage<?> message = asCommandMessage("ok");
-        assertEquals(true, inspector.commandHandler(message.getCommandName()).handle(message, new SomeAnnotatedHandlers()));
-        assertEquals(false, inspector.commandHandler(message.getCommandName()).handle(asCommandMessage("ko"), new SomeAnnotatedHandlers()));
+        assertEquals(true, getHandler(inspector, message).handle(message, new SomeAnnotatedHandlers()));
+        assertEquals(false, getHandler(inspector, message).handle(asCommandMessage("ko"), new SomeAnnotatedHandlers()));
     }
 
     @Test
@@ -61,15 +61,15 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
         SomeSubclass target = new SomeSubclass();
         CommandMessage<?> message = asCommandMessage("sub");
-        assertEquals(true, inspector.commandHandler(message.getCommandName()).handle(message, target));
-        assertEquals(false, inspector.commandHandler(message.getCommandName()).handle(asCommandMessage("ok"), target));
+        assertEquals(true, getHandler(inspector, message).handle(message, target));
+        assertEquals(false, getHandler(inspector, message).handle(asCommandMessage("ok"), target));
     }
 
     @Test
     public void testDetectFactoryMethodHandler() {
         AggregateModel<SomeAnnotatedFactoryMethodClass> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
         CommandMessage<?> message = asCommandMessage("string");
-        final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember = inspector.commandHandler(message.getCommandName());
+        final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember = getHandler(inspector, message);
         final Optional<CommandMessageHandlingMember> unwrap = messageHandlingMember.unwrap(CommandMessageHandlingMember.class);
         assertThat(unwrap, notNullValue());
         assertThat(unwrap.isPresent(), is(true));
@@ -85,7 +85,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
         // Create a hierarchy that we will use in this test.
         // The resulting hierarchy will look as follows:
-        // root 
+        // root
         //      child1
         //              child2
         //              child3
@@ -161,7 +161,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
         // Create a hierarchy that we will use in this test.
         // The resulting hierarchy will look as follows:
-        // root 
+        // root
         //      child1
         //              child2
         //                      child3
@@ -181,7 +181,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
         // Now move child3 up one level so it is a child of child1.
         // The resulting hierarchy will look as follows:
-        // root 
+        // root
         //      child1
         //              child2
         //              child3
@@ -207,7 +207,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
         GenericCommandMessage<?> message = new GenericCommandMessage<>(BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
-        MessageHandlingMember<? super SomeSubclass> handler = inspector.commandHandler(message.getCommandName());
+        MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
         assertEquals("1", handler.handle(message, target));
     }
 
@@ -246,6 +246,27 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<TypedIdentifierAggregate> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class);
 
         assertNotNull(inspector.getIdentifier(new TypedIdentifierAggregate()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> MessageHandlingMember<T> getHandler(AggregateModel<?> members, CommandMessage<?> message) {
+        return (MessageHandlingMember<T>) members.commandHandlers().stream().filter(ch -> ch.canHandle(message)).findFirst().orElseThrow(() -> new AssertionError("Expected handler for this message"));
+    }
+
+    @Documented
+    @EventHandler
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface MyCustomEventHandler {
+
+    }
+
+    @Documented
+    @CommandHandler
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface MyCustomCommandHandler {
+
     }
 
     private static class JavaxPersistenceAnnotatedHandlers {
@@ -395,34 +416,18 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         }
     }
 
-    @Documented
-    @EventHandler
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface MyCustomEventHandler {
-
-    }
-
-    @Documented
-    @CommandHandler
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface MyCustomCommandHandler {
-
-    }
-
     public static class SomeAnnotatedFactoryMethodClass {
 
         @AggregateIdentifier
         private String id = "id";
 
-        SomeAnnotatedFactoryMethodClass(String id) {
-            this.id = id;
-        }
-
         @CommandHandler
         public static SomeAnnotatedFactoryMethodClass factoryMethod(String id) {
             return new SomeAnnotatedFactoryMethodClass(id);
+        }
+
+        SomeAnnotatedFactoryMethodClass(String id) {
+            this.id = id;
         }
 
         public String getId() {
@@ -435,13 +440,13 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         @AggregateIdentifier
         private String id = "id";
 
-        SomeIllegalAnnotatedFactoryMethodClass(String id) {
-            this.id = id;
-        }
-
         @CommandHandler
         public static Object illegalFactoryMethod(String id) {
             return new SomeAnnotatedFactoryMethodClass(id);
+        }
+
+        SomeIllegalAnnotatedFactoryMethodClass(String id) {
+            this.id = id;
         }
 
         public String getId() {
