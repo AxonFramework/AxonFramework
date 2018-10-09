@@ -19,18 +19,13 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
@@ -44,7 +39,6 @@ import static org.junit.Assert.*;
 public class MysqlJdbcEventStorageEngineTest {
 
     private MysqlDataSource dataSource;
-    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
     private JdbcEventStorageEngine testSubject;
 
     @Before
@@ -58,12 +52,7 @@ public class MysqlJdbcEventStorageEngineTest {
         dataSource.setUser(properties.getProperty("jdbc.username"));
         dataSource.setPassword(properties.getProperty("jdbc.password"));
         try {
-            defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
-            testSubject = createEngine(NoOpEventUpcaster.INSTANCE,
-                                       defaultPersistenceExceptionResolver,
-                                       new EventSchema(),
-                                       byte[].class,
-                                       MySqlEventTableFactory.INSTANCE);
+            testSubject = createEngine(new SQLErrorCodesResolver(dataSource));
         } catch (Exception e) {
             Assume.assumeNoException("Ignoring this test, as no valid MySQL instance is configured", e);
         }
@@ -83,28 +72,19 @@ public class MysqlJdbcEventStorageEngineTest {
         assertFalse(testSubject.lastSequenceNumberFor("inexistent").isPresent());
     }
 
-    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                  PersistenceExceptionResolver persistenceExceptionResolver,
-                                                  EventSchema eventSchema, Class<?> dataType,
-                                                  EventTableFactory tableFactory) {
-        return createEngine(upcasterChain, persistenceExceptionResolver, null, eventSchema, dataType, tableFactory,
-                            100);
-    }
+    private JdbcEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
+        JdbcEventStorageEngine result = JdbcEventStorageEngine.builder()
+                                                              .persistenceExceptionResolver(persistenceExceptionResolver)
+                                                              .connectionProvider(dataSource::getConnection)
+                                                              .transactionManager(NoTransactionManager.INSTANCE)
+                                                              .build();
 
-    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                  PersistenceExceptionResolver persistenceExceptionResolver,
-                                                  Predicate<? super DomainEventData<?>> snapshotFilter, EventSchema eventSchema, Class<?> dataType,
-                                                  EventTableFactory tableFactory, int batchSize) {
-        XStreamSerializer serializer = XStreamSerializer.builder().build();
-        JdbcEventStorageEngine result = new JdbcEventStorageEngine(serializer, upcasterChain,
-                                                                   persistenceExceptionResolver, serializer, snapshotFilter, batchSize, dataSource::getConnection,
-                                                                   NoTransactionManager.INSTANCE, dataType, eventSchema, null, null);
-
+        //noinspection Duplicates
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
             connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-            result.createSchema(tableFactory);
+            result.createSchema(MySqlEventTableFactory.INSTANCE);
             return result;
         } catch (SQLException e) {
             throw new IllegalStateException(e);

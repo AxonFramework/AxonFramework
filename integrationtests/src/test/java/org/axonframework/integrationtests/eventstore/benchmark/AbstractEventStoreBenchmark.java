@@ -162,7 +162,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected Optional<Serializer> serializer() {
         return storageEngine instanceof AbstractEventStorageEngine ?
-                Optional.of(((AbstractEventStorageEngine) storageEngine).getSerializer()) : Optional.empty();
+                Optional.of(((AbstractEventStorageEngine) storageEngine).getSnapshotSerializer()) : Optional.empty();
     }
 
     public int getTotalEventCount() {

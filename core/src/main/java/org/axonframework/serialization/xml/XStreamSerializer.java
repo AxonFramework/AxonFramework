@@ -130,7 +130,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      */
     public static class Builder extends AbstractXStreamSerializer.Builder {
 
-        public Builder() {
+        private Builder() {
             xStream(new XStream(new CompactDriver()));
         }
 

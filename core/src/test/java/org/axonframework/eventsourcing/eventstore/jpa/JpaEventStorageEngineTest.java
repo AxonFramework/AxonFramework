@@ -204,10 +204,15 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @DirtiesContext
     public void testStoreEventsWithCustomEntity() {
         XStreamSerializer serializer = XStreamSerializer.builder().build();
-        testSubject = new JpaEventStorageEngine(
-                serializer, NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, serializer, 100,
-                entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, false
-        ) {
+        JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
+                JpaEventStorageEngine.builder()
+                                     .snapshotSerializer(serializer)
+                                     .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
+                                     .eventSerializer(serializer)
+                                     .entityManagerProvider(entityManagerProvider)
+                                     .transactionManager(NoTransactionManager.INSTANCE)
+                                     .explicitFlush(false);
+        testSubject = new JpaEventStorageEngine(jpaEventStorageEngineBuilder) {
 
             @Override
             protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
@@ -293,10 +298,12 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  int batchSize) {
-        XStreamSerializer serializer = XStreamSerializer.builder().build();
-        return new JpaEventStorageEngine(
-                serializer, upcasterChain, persistenceExceptionResolver, serializer, batchSize, entityManagerProvider,
-                NoTransactionManager.INSTANCE, 1L, 10000, true
-        );
+        return JpaEventStorageEngine.builder()
+                                    .upcasterChain(upcasterChain)
+                                    .persistenceExceptionResolver(persistenceExceptionResolver)
+                                    .batchSize(batchSize)
+                                    .entityManagerProvider(entityManagerProvider)
+                                    .transactionManager(NoTransactionManager.INSTANCE)
+                                    .build();
     }
 }

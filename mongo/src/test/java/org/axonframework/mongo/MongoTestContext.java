@@ -17,7 +17,7 @@ public class MongoTestContext {
 
     @Bean
     public MongoEventStorageEngine mongoEventStorageEngine(MongoTemplate mongoTemplate) {
-        return new MongoEventStorageEngine(mongoTemplate);
+        return MongoEventStorageEngine.builder().mongoTemplate(mongoTemplate).build();
     }
 
     @Bean

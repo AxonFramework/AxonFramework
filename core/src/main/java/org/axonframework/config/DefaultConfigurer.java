@@ -159,16 +159,18 @@ public class DefaultConfigurer implements Configurer {
         return new DefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .registerComponent(TransactionManager.class, c -> transactionManager)
-                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
-                        c.serializer(),
-                        c.upcasterChain(),
-                        c.getComponent(PersistenceExceptionResolver.class),
-                        c.eventSerializer(),
-                        null,
-                        c.getComponent(EntityManagerProvider.class),
-                        c.getComponent(TransactionManager.class),
-                        null, null, true
-                ))
+                .configureEmbeddedEventStore(
+                        c -> JpaEventStorageEngine.builder()
+                                                  .snapshotSerializer(c.serializer())
+                                                  .upcasterChain(c.upcasterChain())
+                                                  .persistenceExceptionResolver(
+                                                          c.getComponent(PersistenceExceptionResolver.class)
+                                                  )
+                                                  .eventSerializer(c.eventSerializer())
+                                                  .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                  .transactionManager(c.getComponent(TransactionManager.class))
+                                                  .build()
+                )
                 .registerComponent(TokenStore.class,
                                    c -> JpaTokenStore.builder()
                                                      .entityManagerProvider(c.getComponent(EntityManagerProvider.class))

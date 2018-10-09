@@ -147,16 +147,23 @@ public class DefaultConfigurerTest {
     @Test
     public void defaultConfigurationWithUpcaster() {
         AtomicInteger counter = new AtomicInteger();
-        Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(c.serializer(), c.upcasterChain(), c.getComponent(PersistenceExceptionResolver.class), () -> em, c.getComponent(TransactionManager.class)))
-                                                .configureAggregate(defaultConfiguration(StubAggregate.class)
-                                                                            .configureCommandTargetResolver(c -> command -> new VersionedAggregateIdentifier(command.getPayload().toString(), null)))
-                                                .registerEventUpcaster(c -> events -> {
-                                                    counter.incrementAndGet();
-                                                    return events;
-                                                })
-                                                .configureTransactionManager(c -> new EntityManagerTransactionManager(em))
-                                                .buildConfiguration();
+        Configuration config = DefaultConfigurer.defaultConfiguration().configureEmbeddedEventStore(
+                c -> JpaEventStorageEngine.builder()
+                                          .snapshotSerializer(c.serializer())
+                                          .upcasterChain(c.upcasterChain())
+                                          .persistenceExceptionResolver(c.getComponent(PersistenceExceptionResolver.class))
+                                          .entityManagerProvider(() -> em)
+                                          .transactionManager(c.getComponent(TransactionManager.class))
+                                          .build()
+        ).configureAggregate(
+                defaultConfiguration(StubAggregate.class).configureCommandTargetResolver(
+                        c -> command -> new VersionedAggregateIdentifier(command.getPayload().toString(), null)
+                )
+        ).registerEventUpcaster(c -> events -> {
+            counter.incrementAndGet();
+            return events;
+        }).configureTransactionManager(c -> new EntityManagerTransactionManager(em)).buildConfiguration();
+
         config.start();
 
         config.commandGateway().sendAndWait(GenericCommandMessage.asCommandMessage("test"));

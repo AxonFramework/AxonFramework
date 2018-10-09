@@ -24,12 +24,10 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.MongoTemplate;
-import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.serialization.DBObjectXStreamSerializer;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.junit.*;
 import org.junit.runner.*;
 import org.slf4j.Logger;
@@ -112,15 +110,23 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractM
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         Serializer serializer = context.getBean(Serializer.class);
-        return new MongoEventStorageEngine(serializer, upcasterChain, mongoTemplate,
-                                           new DocumentPerEventStorageStrategy());
+        return MongoEventStorageEngine.builder()
+                                      .snapshotSerializer(serializer)
+                                      .upcasterChain(upcasterChain)
+                                      .eventSerializer(serializer)
+                                      .mongoTemplate(mongoTemplate)
+                                      .build();
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
         Serializer serializer = context.getBean(Serializer.class);
-        return new MongoEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver,
-                                           serializer, 100, mongoTemplate, new DocumentPerEventStorageStrategy());
+        return MongoEventStorageEngine.builder()
+                                      .snapshotSerializer(serializer)
+                                      .persistenceExceptionResolver(persistenceExceptionResolver)
+                                      .eventSerializer(serializer)
+                                      .mongoTemplate(mongoTemplate)
+                                      .build();
     }
 
     @Configuration
@@ -128,10 +134,11 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractM
 
         @Bean
         public MongoEventStorageEngine mongoEventStorageEngine(Serializer serializer, MongoTemplate mongoTemplate) {
-            return new MongoEventStorageEngine(serializer,
-                                               NoOpEventUpcaster.INSTANCE,
-                                               mongoTemplate,
-                                               new DocumentPerEventStorageStrategy());
+            return MongoEventStorageEngine.builder()
+                                          .snapshotSerializer(serializer)
+                                          .eventSerializer(serializer)
+                                          .mongoTemplate(mongoTemplate)
+                                          .build();
         }
 
         @Bean
