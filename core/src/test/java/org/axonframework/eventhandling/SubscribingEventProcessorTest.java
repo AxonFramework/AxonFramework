@@ -18,9 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +39,7 @@ public class SubscribingEventProcessorTest {
     public void setUp() {
         mockListener = mock(EventMessageHandler.class);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
-        eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         testSubject = new SubscribingEventProcessor("test", eventHandlerInvoker, eventBus);
     }
 

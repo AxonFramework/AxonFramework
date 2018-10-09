@@ -42,6 +42,7 @@ import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.EventUtils;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
@@ -49,10 +50,12 @@ import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,68 +83,36 @@ public class AxonServerEventStore extends AbstractEventStore {
     private static final Logger logger = LoggerFactory.getLogger(AxonServerEventStore.class);
 
     /**
-     * Initialize the Event Store using given {@code configuration} and given {@link Serializer}. <b>Note</b> that the
-     * Serializer is used for serializing both Events and Snapshots.
+     * Instantiate a {@link AxonServerEventStore} based on the fields contained in the {@link Builder}.
      * <p>
-     * The Event Store will delay creating the connection until the first activity takes place.
+     * Will assert that the {@link EventStorageEngine} is set. If not, the {@link AxonServerConfiguration} and
+     * {@link PlatformConnectionManager} should minimally be provided to create an AxonServer specific
+     * EventStorageEngine implementation. If either of these {@code null} assertions fail, an
+     * {@link AxonConfigurationException} will be thrown.
      *
-     * @param configuration             the configuration describing the servers to connect with and how to manage flow
-     *                                  control
-     * @param platformConnectionManager manager for connections to AxonServer platform
-     * @param serializer                a {@link Serializer} used to de/serialize Event payloads, Meta Data and
-     *                                  Snapshots with
+     * @param builder the {@link Builder} used to instantiate a {@link AxonServerEventStore} instance
      */
-    public AxonServerEventStore(AxonServerConfiguration configuration,
-                                PlatformConnectionManager platformConnectionManager,
-                                Serializer serializer) {
-        this(configuration, platformConnectionManager, serializer, NoOpEventUpcaster.INSTANCE);
+    protected AxonServerEventStore(Builder builder) {
+        super(builder);
     }
 
     /**
-     * Initialize the Event Store using given {@code configuration}, {@link Serializer} and {@link EventUpcaster}.
-     * <b>Note</b> that the Serializer is used for serializing both Events and Snapshots.
+     * Instantiate a Builder to be able to create a {@link AxonServerEventStore}.
      * <p>
-     * The Event Store will delay creating the connection until the first activity takes place.
+     * The main goal of this Builder is to instantiate an AxonServer specific {@link EventStorageEngine}. The properties
+     * which may be provided through this Builder are thus all used to end up with that EventStorageEngine
+     * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
+     * {@link Builder#configuration} and {@link Builder#platformConnectionManager} functions to let it be created.
+     * <p>
+     * The snapshot {@link Serializer} is defaulted to a {@link XStreamSerializer}, the event Serializer also defaults
+     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}.
+     * The {@link AxonServerConfiguration} and {@link PlatformConnectionManager} are <b>hard requirements</b> if no
+     * EventStorageEngine is provided directly.
      *
-     * @param configuration             the configuration describing the servers to connect with and how to manage flow
-     *                                  control
-     * @param platformConnectionManager manager for connections to AxonServer platform
-     * @param serializer                a {@link Serializer} used to de/serialize Event payloads, Meta Data and
-     *                                  Snapshots with
-     * @param upcasterChain             the upcaster to modify received Event representations with
+     * @return a Builder to be able to create a {@link AxonServerEventStore}
      */
-    public AxonServerEventStore(AxonServerConfiguration configuration,
-                                PlatformConnectionManager platformConnectionManager,
-                                Serializer serializer,
-                                EventUpcaster upcasterChain) {
-        this(configuration, platformConnectionManager, serializer, serializer, upcasterChain);
-    }
-
-    /**
-     * Initialize the {@link org.axonframework.eventsourcing.eventstore.EventStore} using the given
-     * {@code configuration}, snapshot {@link Serializer}, event Serializer and {@code upcasterChain}. Allows for
-     * different serializers for snapshots and events (required for AxonFramework 3.3 or higher).
-     *
-     * @param configuration             the configuration describing the servers to connect with and how to manage flow
-     *                                  control
-     * @param platformConnectionManager manager for connections to AxonServer platform
-     * @param snapshotSerializer        the serializer to serialize Snapshot payloads with
-     * @param eventSerializer           the serializer to serialize Event payloads with
-     * @param upcasterChain             the upcaster to modify received Event representations with
-     */
-    public AxonServerEventStore(AxonServerConfiguration configuration,
-                                PlatformConnectionManager platformConnectionManager,
-                                Serializer snapshotSerializer,
-                                Serializer eventSerializer,
-                                EventUpcaster upcasterChain) {
-        super(AxonIQEventStorageEngine.builder()
-                                      .snapshotSerializer(snapshotSerializer)
-                                      .upcasterChain(upcasterChain)
-                                      .eventSerializer(eventSerializer)
-                                      .configuration(configuration)
-                                      .eventStoreClient(new AxonDBClient(configuration, platformConnectionManager))
-                                      .converter(new GrpcMetaDataConverter(eventSerializer))
-                                      .build());
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -156,6 +127,165 @@ public class AxonServerEventStore extends AbstractEventStore {
     @Override
     protected AxonIQEventStorageEngine storageEngine() {
         return (AxonIQEventStorageEngine) super.storageEngine();
+    }
+
+    /**
+     * Builder class to instantiate a {@link AxonServerEventStore}.
+     * <p>
+     * The main goal of this Builder is to instantiate an AxonServer specific {@link EventStorageEngine}. The properties
+     * which may be provided through this Builder are thus all used to end up with that EventStorageEngine
+     * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
+     * {@link Builder#configuration} and {@link Builder#platformConnectionManager} functions to let it be created.
+     * <p>
+     * The snapshot {@link Serializer} is defaulted to a {@link XStreamSerializer}, the event Serializer also defaults
+     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}.
+     * The {@link AxonServerConfiguration} and {@link PlatformConnectionManager} are <b>hard requirements</b> if no
+     * EventStorageEngine is provided directly.
+     */
+    public static class Builder extends AbstractEventStore.Builder {
+
+        private AxonServerConfiguration configuration;
+        private PlatformConnectionManager platformConnectionManager;
+        private Serializer snapshotSerializer = XStreamSerializer.builder().build();
+        private Serializer eventSerializer = XStreamSerializer.builder().build();
+        private EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
+
+        @Override
+        public Builder storageEngine(EventStorageEngine storageEngine) {
+            super.storageEngine(storageEngine);
+            return this;
+        }
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        /**
+         * Sets the {@link AxonServerConfiguration} describing the servers to connect with and how to manage flow
+         * control.
+         * <p>
+         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
+         * function to set the EventStorageEngine.
+         *
+         * @param configuration the {@link AxonServerConfiguration} describing the servers to connect with and how to
+         *                      manage flow control
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder configuration(AxonServerConfiguration configuration) {
+            assertNonNull(configuration, "AxonServerConfiguration may not be null");
+            this.configuration = configuration;
+            return this;
+        }
+
+        /**
+         * Sets the {@link PlatformConnectionManager} managing the connections to the AxonServer platform.
+         * <p>
+         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
+         * function to set the EventStorageEngine.
+         *
+         * @param platformConnectionManager the {@link PlatformConnectionManager} managing the connections to the
+         *                                  AxonServer platform
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder platformConnectionManager(PlatformConnectionManager platformConnectionManager) {
+            assertNonNull(platformConnectionManager, "PlatformConnectionManager may not be null");
+            this.platformConnectionManager = platformConnectionManager;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to serialize and deserialize snapshots. Defaults to a
+         * {@link XStreamSerializer}.
+         * <p>
+         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
+         * function to set the EventStorageEngine.
+         *
+         * @param snapshotSerializer a {@link Serializer} used to serialize and deserialize snapshots
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder snapshotSerializer(Serializer snapshotSerializer) {
+            assertNonNull(snapshotSerializer, "The Snapshot Serializer may not be null");
+            this.snapshotSerializer = snapshotSerializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and Meta Data
+         * with. Defaults to a {@link XStreamSerializer}.
+         * <p>
+         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
+         * function to set the EventStorageEngine.
+         *
+         * @param eventSerializer The serializer to serialize the Event Message's payload and Meta Data with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventSerializer(Serializer eventSerializer) {
+            assertNonNull(eventSerializer, "The Event Serializer may not be null");
+            this.eventSerializer = eventSerializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a
+         * {@link NoOpEventUpcaster}.
+         * <p>
+         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
+         * function to set the EventStorageEngine.
+         *
+         * @param upcasterChain an {@link EventUpcaster} used to deserialize events of older revisions
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder upcasterChain(EventUpcaster upcasterChain) {
+            assertNonNull(upcasterChain, "EventUpcaster may not be null");
+            this.upcasterChain = upcasterChain;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link AxonServerEventStore} as specified through this Builder.
+         *
+         * @return a {@link AxonServerEventStore} as specified through this Builder
+         */
+        public AxonServerEventStore build() {
+            if (storageEngine == null) {
+                buildStorageEngine();
+            }
+            return new AxonServerEventStore(this);
+        }
+
+        private void buildStorageEngine() {
+            assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");
+            assertNonNull(platformConnectionManager,
+                          "The PlatformConnectionManager is a hard requirement and should be provided");
+
+            AxonDBClient axonDBClient = new AxonDBClient(configuration, platformConnectionManager);
+            super.storageEngine(AxonIQEventStorageEngine.builder()
+                                                        .snapshotSerializer(snapshotSerializer)
+                                                        .upcasterChain(upcasterChain)
+                                                        .eventSerializer(eventSerializer)
+                                                        .configuration(configuration)
+                                                        .eventStoreClient(axonDBClient)
+                                                        .converter(new GrpcMetaDataConverter(eventSerializer))
+                                                        .build());
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+        }
     }
 
     private static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {

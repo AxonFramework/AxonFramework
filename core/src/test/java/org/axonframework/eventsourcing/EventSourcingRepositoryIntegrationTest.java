@@ -68,7 +68,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     private void initializeRepository() throws Exception {
-        eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         repository = EventSourcingRepository.<SimpleAggregateRoot>builder()
                 .aggregateType(SimpleAggregateRoot.class)
                 .aggregateFactory(new SimpleAggregateFactory())

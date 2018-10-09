@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -26,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executor;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.Snapshotter} that uses a task executor to
@@ -43,41 +46,18 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final TransactionManager transactionManager;
 
     /**
-     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create the
-     * snapshots in the process that triggers them, and save them into the Event Store without any transaction.
+     * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EventStore} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
      *
-     * @param eventStore the EventStore instance to store snapshots in
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractSnapshotter} instance
      */
-    protected AbstractSnapshotter(EventStore eventStore) {
-        this(eventStore, NoTransactionManager.INSTANCE);
-    }
-
-    /**
-     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create the
-     * snapshots in the process that triggers them, and save them into the Event Store in a transaction managed by the
-     * given {@code transactionManager}.
-     *
-     * @param eventStore the EventStore instance to store snapshots in
-     * @param transactionManager The transaction manager to create the surrounding transaction with
-     */
-    protected AbstractSnapshotter(EventStore eventStore, TransactionManager transactionManager) {
-        this(eventStore, DirectExecutor.INSTANCE, transactionManager);
-    }
-
-    /**
-     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create the
-     * snapshots in the process provided by the given {@code executor}, and save them into the Event Store in a
-     * transaction managed by the given {@code transactionManager}.
-     *
-     * @param eventStore The EventStore instance to store snapshots in
-     * @param executor           The executor that handles the actual snapshot creation process
-     * @param transactionManager The transaction manager to create the surrounding transaction with
-     */
-    protected AbstractSnapshotter(EventStore eventStore, Executor executor,
-                                  TransactionManager transactionManager) {
-        this.eventStore = eventStore;
-        this.executor = executor;
-        this.transactionManager = transactionManager;
+    protected AbstractSnapshotter(Builder builder) {
+        builder.validate();
+        this.eventStore = builder.eventStore;
+        this.executor = builder.executor;
+        this.transactionManager = builder.transactionManager;
     }
 
     @Override
@@ -125,6 +105,71 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      */
     protected Executor getExecutor() {
         return executor;
+    }
+
+    /**
+     * Abstract Builder class to instantiate {@link AbstractSnapshotter} implementations.
+     * <p>
+     * The {@link Executor} is defaulted to an {@link DirectExecutor#INSTANCE} and the {@link TransactionManager}
+     * defaults to a {@link NoTransactionManager}. The {@link EventStore} is a <b>hard requirement</b> and as such
+     * should be provided.
+     */
+    public abstract static class Builder {
+
+        private EventStore eventStore;
+        private Executor executor = DirectExecutor.INSTANCE;
+        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+
+        /**
+         * Sets the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will store
+         * snapshots in.
+         *
+         * @param eventStore the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will
+         *                   store snapshots in
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventStore(EventStore eventStore) {
+            assertNonNull(eventStore, "EventStore may not be null");
+            this.eventStore = eventStore;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Executor} which handles the actual snapshot creation process. Defaults to a
+         * {@link DirectExecutor}.
+         *
+         * @param executor an {@link Executor} which handles the actual snapshot creation process
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder executor(Executor executor) {
+            assertNonNull(executor, "Executor may not be null");
+            this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} used to manage the transaction around storing the snapshot. Defaults to a
+         * {@link NoTransactionManager}.
+         *
+         * @param transactionManager the {@link TransactionManager} used to manage the transaction around storing the
+         *                           snapshot
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(eventStore, "The EventStore is a hard requirement and should be provided");
+        }
     }
 
     private static class SilentTask implements Runnable {

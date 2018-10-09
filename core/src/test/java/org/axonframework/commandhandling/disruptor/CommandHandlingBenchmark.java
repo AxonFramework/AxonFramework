@@ -45,7 +45,7 @@ public class CommandHandlingBenchmark {
     private static final UUID aggregateIdentifier = UUID.randomUUID();
 
     public static void main(String[] args) {
-        EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        EventStore eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         CommandBus cb = SimpleCommandBus.builder().build();
         eventStore.publish(new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), 0, new SomeEvent()));
 

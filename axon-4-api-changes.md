@@ -49,6 +49,19 @@ the other Builder implementations introduced. This entails the following changes
  - withPayloadRevisionProperty(String) -> payloadRevisionProperty(String)
  - withPayloadProperty(String) -> payloadProperty(String)
  - withMetaDataProperty(String) -> metaDataProperty(String)
+* Renamed EventSchema.Builder functions to align with the new builder approach:
+ - withEventTable(String) -> eventTable(String)
+ - withSnapshotTable(String) -> snapshotTable(String)
+ - withGlobalIndexColumn(String) -> globalIndexColumn(String)
+ - withTimestampColumn(String) -> timestampColumn(String)
+ - withEventIdentifierColumn(String) -> eventIdentifierColumn(String)
+ - withAggregateIdentifierColumn(String) -> aggregateIdentifierColumn(String)
+ - withSequenceNumberColumn(String) -> sequenceNumberColumn(String)
+ - withTypeColumn(String) -> typeColumn(String)
+ - withPayloadTypeColumn(String) -> payloadTypeColumn(String)
+ - withPayloadRevisionColumn(String) -> payloadRevisionColumn(String)
+ - withPayloadColumn(String) -> payloadColumn(String)
+ - withMetaDataColumn(String) -> metaDataColumn(String)
 * Renamed AbstractEventStorageEngine#getSerializer() to AbstractEventStorageEngine#getSnapshotSerializer()
 
 ### Moved classes
@@ -128,3 +141,8 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine
 - org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine
 - org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine
+- org.axonframework.eventsourcing.AbstractSnapshotter
+- org.axonframework.eventsourcing.AggregateSnapshotter
+- org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter
+- org.axonframework.eventsourcing.eventstore.AbstractEventStore
+- org.axonframework.eventsourcing.eventstore.EmbeddedEventStore

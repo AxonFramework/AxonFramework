@@ -57,7 +57,7 @@ public class CommandHandlerInterceptorTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
-        eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
+        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         Repository<MyAggregate> myAggregateRepository = EventSourcingRepository.<MyAggregate>builder()
                 .aggregateType(MyAggregate.class)
                 .eventStore(eventStore)

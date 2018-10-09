@@ -127,7 +127,7 @@ public class TrackingEventProcessorTest {
             r.run();
             return null;
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
-        eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         sleepInstructions = new ArrayList<>();
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, mockTransactionManager) {
             @Override

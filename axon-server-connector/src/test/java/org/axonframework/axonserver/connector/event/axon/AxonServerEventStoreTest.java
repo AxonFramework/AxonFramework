@@ -24,17 +24,14 @@ import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class AxonServerEventStoreTest {
 
@@ -48,8 +45,10 @@ public class AxonServerEventStoreTest {
         AxonServerConfiguration config = AxonServerConfiguration.newBuilder("localhost:6123", "JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
-        PlatformConnectionManager platformConnectionManager = new PlatformConnectionManager(config);
-        testSubject = new AxonServerEventStore(config, platformConnectionManager, XStreamSerializer.builder().build());
+        testSubject = AxonServerEventStore.builder()
+                                          .configuration(config)
+                                          .platformConnectionManager(new PlatformConnectionManager(config))
+                                          .build();
     }
 
     @After
@@ -68,7 +67,7 @@ public class AxonServerEventStoreTest {
         TrackingEventStream stream = testSubject.openStream(null);
 
         List<String> received = new ArrayList<>();
-        while(stream.hasNextAvailable(100, TimeUnit.MILLISECONDS)) {
+        while (stream.hasNextAvailable(100, TimeUnit.MILLISECONDS)) {
             received.add(stream.nextAvailable().getPayload().toString());
         }
         stream.close();

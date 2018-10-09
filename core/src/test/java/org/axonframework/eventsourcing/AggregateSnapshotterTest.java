@@ -21,16 +21,14 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.markDeleted;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -44,10 +42,12 @@ public class AggregateSnapshotterTest {
     @Before
     @SuppressWarnings({"unchecked"})
     public void setUp() {
-        EventStore mockStorageEngine = mock(EventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
-        testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory));
+        testSubject = AggregateSnapshotter.builder()
+                                          .eventStore(mock(EventStore.class))
+                                          .aggregateFactories(singletonList(mockAggregateFactory))
+                                          .build();
     }
 
     @Test
@@ -140,6 +140,5 @@ public class AggregateSnapshotterTest {
                 markDeleted();
             }
         }
-
     }
 }

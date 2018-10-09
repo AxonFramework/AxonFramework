@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -37,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Implementation of a snapshotter that uses the actual aggregate and its state to create a snapshot event. The
  * motivation is that an aggregate always contains all relevant state. Therefore, storing the aggregate itself inside
@@ -47,165 +50,49 @@ import java.util.function.Supplier;
  */
 public class AggregateSnapshotter extends AbstractSnapshotter {
 
-    private final Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
-    private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
+    private final Map<Class<?>, AggregateFactory<?>> aggregateFactories;
     private final RepositoryProvider repositoryProvider;
     private final ParameterResolverFactory parameterResolverFactory;
     private final HandlerDefinition handlerDefinition;
 
+    private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
+
     /**
-     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
-     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
-     * which represent the snapshots.
+     * Instantiate a {@link AggregateSnapshotter} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EventStore}, {@link ParameterResolverFactory} and {@link HandlerDefinition} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param eventStore         The Event Store to store snapshots in
-     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
+     * @param builder the {@link Builder} used to instantiate a {@link AggregateSnapshotter} instance
+     */
+    protected AggregateSnapshotter(Builder builder) {
+        super(builder);
+        this.aggregateFactories = new ConcurrentHashMap<>(builder.aggregateFactories);
+        this.repositoryProvider = builder.repositoryProvider;
+        this.parameterResolverFactory = builder.buildParameterResolverFactory();
+        this.handlerDefinition = builder.buildHandlerDefinition();
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link AggregateSnapshotter}.
+     * <p>
+     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE} and the
+     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager}.
+     * Additionally, this Builder has convenience functions to default the {@link ParameterResolverFactory} and
+     * {@link HandlerDefinition} based on instances of these available on the classpath in case these are not provided
+     * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}).
+     * Upon instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those
+     * fields.
+     * <p>
+     * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link AggregateSnapshotter}
+     *
      * @see ClasspathParameterResolverFactory
+     * @see ClasspathHandlerDefinition
      */
-    public AggregateSnapshotter(EventStore eventStore, AggregateFactory<?>... aggregateFactories) {
-        this(eventStore, Arrays.asList(aggregateFactories));
-    }
-
-    /**
-     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
-     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
-     * which represent the snapshots.
-     *
-     * @param eventStore         The Event Store to store snapshots in
-     * @param repositoryProvider Provides repositories for specific aggregate types
-     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
-     * @see ClasspathParameterResolverFactory
-     */
-    public AggregateSnapshotter(EventStore eventStore, RepositoryProvider repositoryProvider,
-                                AggregateFactory<?>... aggregateFactories) {
-        this(eventStore, Arrays.asList(aggregateFactories), repositoryProvider);
-    }
-
-    /**
-     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
-     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
-     * which represent the snapshots.
-     *
-     * @param eventStore         The Event Store to store snapshots in
-     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
-     * @see ClasspathParameterResolverFactory
-     */
-    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories) {
-        this(eventStore,
-             aggregateFactories,
-             ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
-    }
-
-    /**
-     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
-     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
-     * which represent the snapshots.
-     *
-     * @param eventStore         The Event Store to store snapshots in
-     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
-     * @param repositoryProvider Provides repositories for specific aggregate types
-     * @see ClasspathParameterResolverFactory
-     */
-    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
-                                RepositoryProvider repositoryProvider) {
-        this(eventStore,
-             aggregateFactories,
-             ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class),
-             ClasspathHandlerDefinition.forClass(AggregateSnapshotter.class),
-             repositoryProvider);
-    }
-
-    /**
-     * Initializes a snapshotter using the given {@code parameterResolverFactory}. The given {@code aggregateFactories}
-     * are used to instantiate the relevant Aggregate Root instances, which represent the snapshots. Snapshots are
-     * stores in the given {@code eventStore}.
-     *
-     * @param eventStore               The Event Store to store snapshots in
-     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
-     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
-     *                                 handlers with
-     */
-    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
-                                ParameterResolverFactory parameterResolverFactory) {
-        this(eventStore,
-             aggregateFactories,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClassLoader(
-                     aggregateFactories.isEmpty() ? Thread.currentThread().getContextClassLoader()
-                             : aggregateFactories.get(0).getClass().getClassLoader()),
-             null);
-    }
-
-    /**
-     * Initializes a snapshotter using the given {@code parameterResolverFactory}. The given {@code aggregateFactories}
-     * are used to instantiate the relevant Aggregate Root instances, which represent the snapshots. Snapshots are
-     * stores in the given {@code eventStore}.
-     *
-     * @param eventStore               The Event Store to store snapshots in
-     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
-     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
-     *                                 handlers with
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     * @param repositoryProvider       Provides repositories for specific aggregate types
-     */
-    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
-                                ParameterResolverFactory parameterResolverFactory,
-                                HandlerDefinition handlerDefinition,
-                                RepositoryProvider repositoryProvider) {
-        super(eventStore);
-        aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
-        this.parameterResolverFactory = parameterResolverFactory;
-        this.repositoryProvider = repositoryProvider;
-        this.handlerDefinition = handlerDefinition;
-    }
-
-    /**
-     * Initializes a snapshotter that stores snapshots using the given {@code executor}.
-     *
-     * @param eventStore               The Event Store to store snapshots in
-     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
-     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
-     *                                 handlers with
-     * @param executor                 The executor to process the actual snapshot creation with
-     * @param transactionManager       The transaction manager to handle the transactions around the snapshot creation
-     *                                 process with
-     */
-    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
-                                ParameterResolverFactory parameterResolverFactory, Executor executor,
-                                TransactionManager transactionManager) {
-        this(eventStore,
-             aggregateFactories,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClassLoader(
-                     aggregateFactories.isEmpty() ? Thread.currentThread().getContextClassLoader()
-                             : aggregateFactories.get(0).getClass().getClassLoader()),
-             executor,
-             transactionManager,
-             null);
-    }
-
-    /**
-     * Initializes a snapshotter that stores snapshots using the given {@code executor}.
-     *
-     * @param eventStore               The Event Store to store snapshots in
-     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
-     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
-     *                                 handlers with
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     * @param executor                 The executor to process the actual snapshot creation with
-     * @param transactionManager       The transaction manager to handle the transactions around the snapshot creation
-     *                                 process with
-     * @param repositoryProvider       Provides repositories for specific aggregate types
-     */
-    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
-                                ParameterResolverFactory parameterResolverFactory,
-                                HandlerDefinition handlerDefinition, Executor executor,
-                                TransactionManager transactionManager, RepositoryProvider repositoryProvider) {
-        super(eventStore, executor, transactionManager);
-        aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
-        this.parameterResolverFactory = parameterResolverFactory;
-        this.repositoryProvider = repositoryProvider;
-        this.handlerDefinition = handlerDefinition;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @SuppressWarnings("unchecked")
@@ -216,7 +103,9 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         DomainEventMessage firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
-            throw new IllegalArgumentException("Aggregate Type is unknown in this snapshotter: " + aggregateType.getName());
+            throw new IllegalArgumentException(
+                    "Aggregate Type is unknown in this snapshotter: " + aggregateType.getName()
+            );
         }
         aggregateModels.computeIfAbsent(aggregateType,
                                         k -> AnnotatedAggregateMetaModelFactory
@@ -257,9 +146,182 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         aggregateFactories.put(aggregateFactory.getAggregateType(), aggregateFactory);
     }
 
+    /**
+     * Builder class to instantiate a {@link AggregateSnapshotter}.
+     * <p>
+     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE} and the
+     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager}.
+     * Additionally, this Builder has convenience functions to default the {@link ParameterResolverFactory} and
+     * {@link HandlerDefinition} based on instances of these available on the classpath in case these are not provided
+     * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}).
+     * Upon instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those
+     * fields.
+     * <p>
+     * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     *
+     * @see ClasspathParameterResolverFactory
+     * @see ClasspathHandlerDefinition
+     */
+    public static class Builder extends AbstractSnapshotter.Builder {
+
+        private Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
+        private RepositoryProvider repositoryProvider;
+        private ParameterResolverFactory parameterResolverFactory;
+        private HandlerDefinition handlerDefinition;
+
+        @Override
+        public Builder eventStore(EventStore eventStore) {
+            super.eventStore(eventStore);
+            return this;
+        }
+
+        @Override
+        public Builder executor(Executor executor) {
+            super.executor(executor);
+            return this;
+        }
+
+        @Override
+        public Builder transactionManager(TransactionManager transactionManager) {
+            super.transactionManager(transactionManager);
+            return this;
+        }
+
+        /**
+         * Sets the {@code aggregateFactories} supported by this snapshotter. The {@link AggregateFactory} instances are
+         * used to create the relevant Aggregate Root instance, which represent the snapshots.
+         *
+         * @param aggregateFactories an array of {@link AggregateFactory} instances which this snapshotter will support
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder aggregateFactories(AggregateFactory<?>... aggregateFactories) {
+            return aggregateFactories(Arrays.asList(aggregateFactories));
+        }
+
+        /**
+         * Sets the {@code aggregateFactories} supported by this snapshotter. The {@link AggregateFactory} instances are
+         * used to create the relevant Aggregate Root instance, which represent the snapshots.
+         *
+         * @param aggregateFactories a {@link List} of {@link AggregateFactory} instances which this snapshotter will
+         *                           support
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder aggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
+            assertNonNull(aggregateFactories, "AggregateFactories may not be null");
+            aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
+            return this;
+        }
+
+        /**
+         * Sets the {@link RepositoryProvider} provided to the snapshot aggregates this snapshotter creates for correct
+         * instantiation.
+         *
+         * @param repositoryProvider the {@link RepositoryProvider} provided to the snapshot aggregates this snapshotter
+         *                           creates for correct instantiation
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder repositoryProvider(RepositoryProvider repositoryProvider) {
+            this.repositoryProvider = repositoryProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ParameterResolverFactory} used to resolve parameter values for annotated handlers in the
+         * snapshot aggregate this snapshotter creates.
+         *
+         * @param parameterResolverFactory the {@link ParameterResolverFactory} used to resolve parameter values for
+         *                                 annotated handlers in the snapshot aggregate this snapshotter creates
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+            assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
+            this.parameterResolverFactory = parameterResolverFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link HandlerDefinition} used to create concrete handlers in the snapshot aggregate this
+         * snapshotter creates.
+         *
+         * @param handlerDefinition the {@link HandlerDefinition} used to create concrete handlers in the snapshot
+         *                          aggregate this snapshotter creates
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder handlerDefinition(HandlerDefinition handlerDefinition) {
+            assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
+            this.handlerDefinition = handlerDefinition;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link AggregateSnapshotter} as specified through this Builder.
+         *
+         * @return a {@link AggregateSnapshotter} as specified through this Builder
+         */
+        public AggregateSnapshotter build() {
+            return new AggregateSnapshotter(this);
+        }
+
+        /**
+         * Return the set {@link ParameterResolverFactory}, or create and return it if it is {@code null}. In case it
+         * has not been set yet, a ParameterResolverFactory is created by calling the
+         * {@link ClasspathParameterResolverFactory#forClass(Class)} function, either providing the
+         * {@link AggregateSnapshotter} type or the first {@link AggregateFactory} it's class as input.
+         * <p>
+         * <b>Note:</b> it is recommended to use this function when retrieving the  ParameterResolverFactory as it
+         * ensure it is non null.
+         *
+         * @return the set or instantiated {@link ParameterResolverFactory}
+         */
+        protected ParameterResolverFactory buildParameterResolverFactory() {
+            if (parameterResolverFactory == null) {
+                parameterResolverFactory = ClasspathParameterResolverFactory.forClass(
+                        aggregateFactories.isEmpty()
+                                ? AggregateSnapshotter.class
+                                : aggregateFactories.values().iterator().next().getClass()
+                );
+            }
+            return parameterResolverFactory;
+        }
+
+        /**
+         * Return the set {@link HandlerDefinition}, or create and return it if it is {@code null}. In case it
+         * has not been set yet, a HandlerDefinition is created by calling the
+         * {@link ClasspathHandlerDefinition#forClass(Class)} function, either providing the
+         * {@link AggregateSnapshotter} type or the first {@link AggregateFactory} it's class as input.
+         * <p>
+         * <b>Note:</b> it is recommended to use this function when retrieving the  HandlerDefinition as it
+         * ensure it is non null.
+         *
+         * @return the set or instantiated {@link ParameterResolverFactory}
+         */
+        protected HandlerDefinition buildHandlerDefinition() {
+            if (handlerDefinition == null) {
+                handlerDefinition = ClasspathHandlerDefinition.forClass(
+                        aggregateFactories.isEmpty()
+                                ? AggregateSnapshotter.class
+                                : aggregateFactories.values().iterator().next().getClass()
+                );
+            }
+            return handlerDefinition;
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+        }
+    }
+
     private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {
 
-        private SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel,
+        private SnapshotAggregate(T aggregateRoot,
+                                  AggregateModel<T> aggregateModel,
                                   RepositoryProvider repositoryProvider) {
             super(aggregateRoot, aggregateModel, null, repositoryProvider, NoSnapshotTriggerDefinition.TRIGGER);
         }
