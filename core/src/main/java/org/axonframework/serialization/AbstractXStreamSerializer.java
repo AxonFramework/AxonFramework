@@ -263,8 +263,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * <p>
      * The {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8} character set, the
      * {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link Converter} defaults to
-     * a {@link ChainingConverter}.
-     * The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
+     * a {@link ChainingConverter}. The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage}, the {@link AnnotatedSaga} and the
