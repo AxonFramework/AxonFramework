@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.spring.config.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.eventhandling.AnnotationEventListenerAdapter;
+import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -75,7 +75,7 @@ public class SpringBeanParameterResolverFactoryTest {
     @Test
     public void testMethodsAreProperlyInjected() throws Exception {
         assertNotNull(annotatedHandler);
-        new AnnotationEventListenerAdapter(annotatedHandler, parameterResolver).handle(asEventMessage("Hello"));
+        new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver).handle(asEventMessage("Hello"));
         // make sure the invocation actually happened
         assertEquals(1, counter.get());
     }
@@ -83,7 +83,7 @@ public class SpringBeanParameterResolverFactoryTest {
     @Test
     public void testNewInstanceIsCreatedEachTimePrototypeResourceIsInjected() throws Exception {
         Object handler = applicationContext.getBean("prototypeResourceHandler");
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(
+        AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
                 handler, applicationContext.getBean(ParameterResolverFactory.class)
         );
         adapter.handle(asEventMessage("Hello1"));
@@ -94,21 +94,21 @@ public class SpringBeanParameterResolverFactoryTest {
     @Test(expected = UnsupportedHandlerException.class)
     public void testMethodsAreProperlyInjected_ErrorOnMissingParameterType() {
         // this should generate an error
-        new AnnotationEventListenerAdapter(applicationContext.getBean("missingResourceHandler"), parameterResolver);
+        new AnnotationEventHandlerAdapter(applicationContext.getBean("missingResourceHandler"), parameterResolver);
     }
 
     @Test(expected = UnsupportedHandlerException.class)
     public void testMethodsAreProperlyInjected_ErrorOnDuplicateParameterType() {
         // this should generate an error
-        new AnnotationEventListenerAdapter(applicationContext.getBean("duplicateResourceHandler"), parameterResolver);
+        new AnnotationEventHandlerAdapter(applicationContext.getBean("duplicateResourceHandler"), parameterResolver);
     }
 
     @Test
     @DirtiesContext
     public void testMethodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() throws Exception {
         // this should generate an error
-        new AnnotationEventListenerAdapter(applicationContext.getBean("duplicateResourceHandlerWithPrimary"),
-                                           parameterResolver).handle(asEventMessage("Hi there"));
+        new AnnotationEventHandlerAdapter(applicationContext.getBean("duplicateResourceHandlerWithPrimary"),
+                                          parameterResolver).handle(asEventMessage("Hi there"));
 
         assertEquals(1, counter.get());
     }
@@ -116,8 +116,8 @@ public class SpringBeanParameterResolverFactoryTest {
     @Test
     @DirtiesContext
     public void testMethodsAreProperlyInjected_DuplicateParameterTypeWithQualifier() throws Exception {
-        new AnnotationEventListenerAdapter(applicationContext.getBean("duplicateResourceHandlerWithQualifier"),
-                                           parameterResolver).handle(asEventMessage("Hi there"));
+        new AnnotationEventHandlerAdapter(applicationContext.getBean("duplicateResourceHandlerWithQualifier"),
+                                          parameterResolver).handle(asEventMessage("Hi there"));
 
         assertEquals(1, counter.get());
     }
@@ -125,7 +125,7 @@ public class SpringBeanParameterResolverFactoryTest {
     @Test
     @DirtiesContext
     public void testMethodsAreProperlyInjected_QualifierPrecedesPrimary() throws Exception {
-        new AnnotationEventListenerAdapter(
+        new AnnotationEventHandlerAdapter(
                 applicationContext.getBean("duplicateResourceHandlerWithQualifierAndPrimary"),
                 parameterResolver
         ).handle(asEventMessage("Hi there"));

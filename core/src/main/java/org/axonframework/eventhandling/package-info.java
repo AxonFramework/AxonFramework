@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /**
- * Classes related to event handling and dispatching, such as {@link org.axonframework.eventhandling.EventListener
+ * Classes related to event handling and dispatching, such as {@link org.axonframework.eventhandling.EventMessageHandler
  * Event Listeners} and the {@link org.axonframework.eventhandling.EventBus Event Bus}.
  */
 package org.axonframework.eventhandling;

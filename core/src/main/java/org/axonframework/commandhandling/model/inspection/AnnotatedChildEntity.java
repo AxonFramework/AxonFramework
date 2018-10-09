@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,8 +20,8 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,7 +36,7 @@ import java.util.stream.Stream;
 public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
     private final EntityModel<C> entityModel;
-    private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
+    private final List<MessageHandlingMember<? super P>> commandHandlers;
     private final BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver;
 
     /**
@@ -54,11 +55,14 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
                                 BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver) {
         this.entityModel = entityModel;
         this.eventTargetResolver = eventTargetResolver;
-        this.commandHandlers = new HashMap<>();
+        this.commandHandlers = new ArrayList<>();
         if (forwardCommands) {
-            entityModel.commandHandlers().forEach(
-                    (commandType, childHandler) -> commandHandlers
-                            .put(commandType, new ChildForwardingCommandMessageHandlingMember<>(
+            entityModel.commandHandlers()
+                       .stream()
+                       .filter(eh -> eh.unwrap(CommandMessageHandlingMember.class).isPresent())
+                       .forEach(
+                    (childHandler) -> commandHandlers
+                            .add(new ChildForwardingCommandMessageHandlingMember<>(
                                     entityModel.commandHandlerInterceptors(),
                                     childHandler,
                                     commandTargetResolver)));
@@ -73,9 +77,8 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
                            .forEach(target -> entityModel.publish(msg, target));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
+    public List<MessageHandlingMember<? super P>> commandHandlers() {
         return commandHandlers;
     }
 }

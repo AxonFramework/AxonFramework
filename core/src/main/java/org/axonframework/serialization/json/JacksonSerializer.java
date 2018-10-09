@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializationException;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.UnknownSerializedTypeException;
+import org.axonframework.serialization.*;
 
 import java.io.IOException;
 
@@ -169,26 +159,30 @@ public class JacksonSerializer implements Serializer {
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
         try {
+            Class<?> type = classForType(serializedObject.getType());
+            if (UnknownSerializedType.class.isAssignableFrom(type)) {
+                return (T) new UnknownSerializedType(this, serializedObject);
+            }
             if (JsonNode.class.equals(serializedObject.getContentType())) {
-                return getReader(classForType(serializedObject.getType()))
+                return getReader(type)
                         .readValue((JsonNode) serializedObject.getData());
             }
             SerializedObject<byte[]> byteSerialized = converter.convert(serializedObject, byte[].class);
-            return getReader(classForType(serializedObject.getType())).readValue(byteSerialized.getData());
+            return getReader(type).readValue(byteSerialized.getData());
         } catch (IOException e) {
             throw new SerializationException("Error while deserializing object", e);
         }
     }
 
     @Override
-    public Class classForType(SerializedType type) throws UnknownSerializedTypeException {
+    public Class classForType(SerializedType type) {
         if (SimpleSerializedType.emptyType().equals(type)) {
             return Void.class;
         }
         try {
             return classLoader.loadClass(resolveClassName(type));
         } catch (ClassNotFoundException e) {
-            throw new UnknownSerializedTypeException(type, e);
+            return UnknownSerializedType.class;
         }
     }
 

@@ -69,7 +69,7 @@ public class TrackingEventProcessorTest {
     private EmbeddedEventStore eventBus;
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
-    private EventListener mockListener;
+    private EventMessageHandler mockListener;
     private List<Long> sleepInstructions;
     private TransactionManager mockTransactionManager;
     private Transaction mockTransaction;
@@ -117,7 +117,7 @@ public class TrackingEventProcessorTest {
     @Before
     public void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
-        mockListener = mock(EventListener.class);
+        mockListener = mock(EventMessageHandler.class);
         when(mockListener.canHandle(any())).thenReturn(true);
         when(mockListener.supportsReset()).thenReturn(true);
         eventHandlerInvoker = spy(SimpleEventHandlerInvoker.builder().eventListeners(mockListener).build());

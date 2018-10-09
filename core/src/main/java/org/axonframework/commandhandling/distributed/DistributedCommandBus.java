@@ -35,7 +35,6 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -65,7 +64,7 @@ public class DistributedCommandBus implements CommandBus {
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
 
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-    private final AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
+    private final AtomicReference<CommandMessageFilter> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
 
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
 
@@ -168,7 +167,7 @@ public class DistributedCommandBus implements CommandBus {
         };
     }
 
-    private void updateFilter(Predicate<CommandMessage<?>> newFilter) {
+    private void updateFilter(CommandMessageFilter newFilter) {
         if (!commandFilter.getAndSet(newFilter).equals(newFilter)) {
             commandRouter.updateMembership(loadFactor, newFilter);
         }

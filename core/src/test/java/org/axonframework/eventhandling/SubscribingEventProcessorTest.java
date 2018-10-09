@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,11 +32,11 @@ public class SubscribingEventProcessorTest {
     private SubscribingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;
     private EventHandlerInvoker eventHandlerInvoker;
-    private EventListener mockListener;
+    private EventMessageHandler mockListener;
 
     @Before
     public void setUp() {
-        mockListener = mock(EventListener.class);
+        mockListener = mock(EventMessageHandler.class);
         eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventListeners(mockListener).build();
         eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         testSubject = SubscribingEventProcessor.builder()

@@ -113,10 +113,13 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
      */
     public static class Builder extends AbstractXStreamSerializer.Builder {
 
-        public Builder() {
+        private Builder() {
             xStream(new XStream());
         }
 
+        /**
+         * {@inheritDoc} Defaults to a {@link XStream#XStream()} call.
+         */
         @Override
         public Builder xStream(XStream xStream) {
             super.xStream(xStream);

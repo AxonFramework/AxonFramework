@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.commandhandling;
+
+import org.axonframework.messaging.MessageHandler;
+
+import java.util.Set;
 
 /**
- * Specialist interface for implementations of an event listener that redirect actual processing to another instance.
- *
- * @author Allard Buijze
- * @since 0.6
+ * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandMessageHandlers
+ * also specify which command names they support.
  */
-public interface EventListenerProxy extends EventListener {
+public interface CommandMessageHandler extends MessageHandler<CommandMessage<?>> {
 
     /**
-     * Returns the instance type that this proxy delegates all event handling to.
+     * Returns the set of command names this handler supports.
      *
-     * @return the instance type that this proxy delegates all event handling to
+     * @return the set of supported command names
      */
-    Class<?> getTargetType();
+    Set<String> supportedCommandNames();
+
 }

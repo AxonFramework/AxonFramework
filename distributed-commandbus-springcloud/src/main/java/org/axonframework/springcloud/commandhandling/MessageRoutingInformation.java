@@ -18,13 +18,13 @@ package org.axonframework.springcloud.commandhandling;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 /**
  * Object containing the message routing information required by the
@@ -34,6 +34,7 @@ import java.util.function.Predicate;
  * CommandMessages a node can(not) handle.
  *
  * @author Steven van Beelen
+ * @since 3.1
  */
 public class MessageRoutingInformation implements Serializable {
 
@@ -55,7 +56,7 @@ public class MessageRoutingInformation implements Serializable {
     }
 
     public MessageRoutingInformation(int loadFactor,
-                                     Predicate<? super CommandMessage<?>> commandFilter,
+                                     CommandMessageFilter commandFilter,
                                      Serializer serializer) {
         this(loadFactor, serializer.serialize(commandFilter, String.class));
     }
@@ -72,7 +73,7 @@ public class MessageRoutingInformation implements Serializable {
         return serializedCommandFilterType;
     }
 
-    public Predicate<? super CommandMessage<?>> getCommandFilter(Serializer serializer) {
+    public CommandMessageFilter getCommandFilter(Serializer serializer) {
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 serializedCommandFilter, String.class, serializedCommandFilterType, null
         );

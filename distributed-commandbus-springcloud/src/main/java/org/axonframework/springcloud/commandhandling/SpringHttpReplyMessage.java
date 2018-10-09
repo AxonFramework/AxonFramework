@@ -23,6 +23,9 @@ import java.io.Serializable;
 
 /**
  * Spring Http Message representing a reply to a dispatched command.
+ *
+ * @author Steven van Beelen
+ * @since 3.0
  */
 public class SpringHttpReplyMessage<R> extends ReplyMessage implements Serializable {
 
@@ -52,5 +55,4 @@ public class SpringHttpReplyMessage<R> extends ReplyMessage implements Serializa
     public CommandResultMessage<R> getCommandResultMessage(Serializer serializer) {
         return (CommandResultMessage<R>) super.getCommandResultMessage(serializer);
     }
-
 }

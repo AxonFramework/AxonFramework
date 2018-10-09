@@ -59,12 +59,12 @@ public class TrackingEventProcessorTest_MultiThreaded {
     private EmbeddedEventStore eventBus;
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
-    private EventListener mockListener;
+    private EventMessageHandler mockListener;
 
     @Before
     public void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
-        mockListener = mock(EventListener.class);
+        mockListener = mock(EventMessageHandler.class);
         when(mockListener.canHandle(any())).thenReturn(true);
         eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
                                                        .eventListeners(singletonList(mockListener))

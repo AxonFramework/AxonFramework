@@ -22,7 +22,6 @@ import org.axonframework.common.digest.Digester;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Component used by command routers to find members capable of handling a given command. Members are selected based on
@@ -40,7 +39,17 @@ public class ConsistentHash {
     private final Map<String, ConsistentHashMember> members;
 
     /**
-     * Initializes a new {@link ConsistentHash}. To register members use {@link #with(Member, int, Predicate)}.
+     * Returns the hash of the given {@code routingKey}. By default this creates a MD5 hash with hex encoding.
+     *
+     * @param routingKey the routing key to hash
+     * @return a hash of the input key
+     */
+    protected static String hash(String routingKey) {
+        return Digester.md5Hex(routingKey);
+    }
+
+    /**
+     * Initializes a new {@link ConsistentHash}. To register members use {@link #with(Member, int, CommandMessageFilter)}.
      */
     public ConsistentHash() {
         this(ConsistentHash::hash);
@@ -48,7 +57,7 @@ public class ConsistentHash {
 
     /**
      * Initializes a new {@link ConsistentHash} using the given {@code hashFunction} to calculate positions for each
-     * member on the ring. To register members use {@link #with(Member, int, Predicate)}.
+     * member on the ring. To register members use {@link #with(Member, int, CommandMessageFilter)}.
      *
      * @param hashFunction The hash function to use to calculate each member's positions on the ring
      */
@@ -66,16 +75,6 @@ public class ConsistentHash {
         this.hashToMember = new TreeMap<>();
         this.members = members;
         members.values().forEach(m -> m.hashes().forEach(h -> hashToMember.put(h, m)));
-    }
-
-    /**
-     * Returns the hash of the given {@code routingKey}. By default this creates a MD5 hash with hex encoding.
-     *
-     * @param routingKey the routing key to hash
-     * @return a hash of the input key
-     */
-    protected static String hash(String routingKey) {
-        return Digester.md5Hex(routingKey);
     }
 
     /**
@@ -120,7 +119,7 @@ public class ConsistentHash {
                                                 Iterator<Map.Entry<String, ConsistentHashMember>> iterator) {
         while (iterator.hasNext()) {
             Map.Entry<String, ConsistentHashMember> entry = iterator.next();
-            if (entry.getValue().commandFilter.test(commandMessage)) {
+            if (entry.getValue().commandFilter.matches(commandMessage)) {
                 return Optional.of(entry.getValue());
             }
         }
@@ -148,7 +147,7 @@ public class ConsistentHash {
      * @param commandFilter filter describing which commands can be handled by the given member
      * @return a new {@link ConsistentHash} instance with updated memberships
      */
-    public ConsistentHash with(Member member, int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
+    public ConsistentHash with(Member member, int loadFactor, CommandMessageFilter commandFilter) {
         Assert.notNull(member, () -> "Member may not be null");
 
         ConsistentHashMember newMember = new ConsistentHashMember(member, loadFactor, commandFilter);
@@ -224,10 +223,10 @@ public class ConsistentHash {
 
         private final Member member;
         private final int segmentCount;
-        private final Predicate<? super CommandMessage<?>> commandFilter;
+        private final CommandMessageFilter commandFilter;
 
         private ConsistentHashMember(Member member, int segmentCount,
-                                     Predicate<? super CommandMessage<?>> commandFilter) {
+                                     CommandMessageFilter commandFilter) {
             if (member instanceof ConsistentHashMember) {
                 this.member = ((ConsistentHashMember) member).member;
             } else {
@@ -266,7 +265,7 @@ public class ConsistentHash {
          *
          * @return the filter that describes this member's supported commands
          */
-        public Predicate<? super CommandMessage<?>> getCommandFilter() {
+        public CommandMessageFilter getCommandFilter() {
             return commandFilter;
         }
 

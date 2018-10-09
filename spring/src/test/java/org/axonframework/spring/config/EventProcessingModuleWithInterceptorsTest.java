@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
@@ -25,25 +25,26 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
- * This test ensures that any handler interceptor registered via {@link EventHandlingConfiguration} is registered with
- * {@link org.axonframework.config.EventProcessingConfiguration}.
+ * This test ensures that any handler interceptor registered via {@link EventProcessingModule} is triggered.
  *
  * @author Milan Savic
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-public class EventHandlingConfigurationWithInterceptorsTest {
+public class EventProcessingModuleWithInterceptorsTest {
 
     @Autowired
     private EventBus eventBus;
@@ -56,16 +57,18 @@ public class EventHandlingConfigurationWithInterceptorsTest {
         assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
     }
 
-    @EnableAxon
+    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Configuration
     public static class Context {
 
-        @Autowired
-        public void configure(EventHandlingConfiguration eventHandlingConfiguration, MyInterceptor myInterceptor) {
-            eventHandlingConfiguration.registerHandlerInterceptor((a, b) -> myInterceptor);
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            EventProcessingModule eventProcessingModule = new EventProcessingModule();
+            eventProcessingModule.usingSubscribingEventProcessors();
+            eventProcessingModule.registerDefaultHandlerInterceptor((a, b) -> new MyInterceptor());
+            return eventProcessingModule;
         }
 
-        @Component
         public class MyInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
 
             @Override

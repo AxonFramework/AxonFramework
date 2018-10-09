@@ -119,8 +119,9 @@ public class MongoTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken)
-            throws UnableToClaimTokenException {
+    public void initializeTokenSegments(String processorName,
+                                        int segmentCount,
+                                        TrackingToken initialToken) throws UnableToClaimTokenException {
         if (fetchSegments(processorName).length > 0) {
             throw new UnableToClaimTokenException(
                     "Unable to initialize segments. Some tokens were already present for the given processor."

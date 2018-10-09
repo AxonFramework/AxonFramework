@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,14 +72,12 @@ public interface Serializer {
      * SerializedObject with the given {@code type} is an instance of the returned Class.
      * <p/>
      * If a class cannot be resolved (i.e. because the class is not available on this JVM's classpath) this method
-     * throws UnknownSerializedTypeException.
+     * returns an {@link UnknownSerializedType} instance which proides access to the raw underlying data.
      *
      * @param type The type identifier of the object
      * @return the Class representing the type of the serialized Object
-     *
-     * @throws UnknownSerializedTypeException if the {@code type} cannot be resolved to a class
      */
-    Class classForType(SerializedType type) throws UnknownSerializedTypeException;
+    Class classForType(SerializedType type);
 
     /**
      * Returns the type identifier for the given class. This is the type identifier of the Serialized object as

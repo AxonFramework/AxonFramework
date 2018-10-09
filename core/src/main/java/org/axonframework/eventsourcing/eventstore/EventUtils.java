@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +25,6 @@ import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.UnknownSerializedTypeException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -91,16 +93,14 @@ public abstract class EventUtils {
      * @param eventEntryStream the stream of entries containing the data of the serialized event
      * @param serializer       the serializer to deserialize the event with
      * @param upcasterChain    the chain containing the upcasters to upcast the events with
-     * @param skipUnknownTypes whether unknown serialized types should be ignored
      * @return a stream of lazy deserializing events
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public static DomainEventStream upcastAndDeserializeDomainEvents(
-            Stream<? extends DomainEventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain,
-            boolean skipUnknownTypes) {
+            Stream<? extends DomainEventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain) {
         AtomicReference<Long> currentSequenceNumber = new AtomicReference<>();
         Stream<IntermediateEventRepresentation> upcastResult =
-                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes, entry -> {
+                upcastAndDeserialize(eventEntryStream, upcasterChain, entry -> {
                     InitialEventRepresentation result = new InitialEventRepresentation(entry, serializer);
                     currentSequenceNumber.set(result.getSequenceNumber().get());
                     return result;
@@ -135,15 +135,13 @@ public abstract class EventUtils {
      * @param eventEntryStream the stream of entries containing the data of the serialized event
      * @param serializer       the serializer to deserialize the event with
      * @param upcasterChain    the chain containing the upcasters to upcast the events with
-     * @param skipUnknownTypes whether unknown serialized types should be ignored
      * @return a stream of lazy deserializing events
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public static Stream<TrackedEventMessage<?>> upcastAndDeserializeTrackedEvents(
-            Stream<? extends TrackedEventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain,
-            boolean skipUnknownTypes) {
+            Stream<? extends TrackedEventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain) {
         Stream<IntermediateEventRepresentation> upcastResult =
-                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes,
+                upcastAndDeserialize(eventEntryStream, upcasterChain,
                                      entry -> new InitialEventRepresentation(entry, serializer));
         return upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
@@ -175,21 +173,9 @@ public abstract class EventUtils {
     }
 
     private static Stream<IntermediateEventRepresentation> upcastAndDeserialize(
-            Stream<? extends EventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain,
-            boolean skipUnknownTypes, Function<EventData<?>, IntermediateEventRepresentation> entryConverter) {
-        Stream<IntermediateEventRepresentation> upcastResult =
-                upcasterChain.upcast(eventEntryStream.map(entryConverter));
-        if (skipUnknownTypes) {
-            upcastResult = upcastResult.filter(ir -> {
-                try {
-                    serializer.classForType(ir.getType());
-                    return true;
-                } catch (UnknownSerializedTypeException e) {
-                    return false;
-                }
-            });
-        }
-        return upcastResult;
+            Stream<? extends EventData<?>> eventEntryStream, EventUpcaster upcasterChain,
+            Function<EventData<?>, IntermediateEventRepresentation> entryConverter) {
+        return upcasterChain.upcast(eventEntryStream.map(entryConverter));
     }
 
     private EventUtils() {

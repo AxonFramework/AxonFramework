@@ -22,11 +22,7 @@ import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -34,7 +30,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered {@link EventListener
+ * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered {@link EventMessageHandler
  * EventListeners}.
  *
  * @author Rene de Waele
@@ -43,7 +39,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<?> eventListeners;
-    private final List<EventListener> wrappedEventListeners;
+    private final List<EventMessageHandler> wrappedEventHandlers;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
 
@@ -103,7 +99,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        for (EventListener listener : wrappedEventListeners) {
+        for (EventMessageHandler listener : wrappedEventHandlers) {
             try {
                 listener.handle(message);
             } catch (Exception e) {
@@ -121,8 +117,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     private boolean hasHandler(EventMessage<?> eventMessage) {
-        for (EventListener eventListener : wrappedEventListeners) {
-            if (eventListener.canHandle(eventMessage)) {
+        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+            if (eventHandler.canHandle(eventMessage)) {
                 return true;
             }
         }
@@ -131,8 +127,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean supportsReset() {
-        for (EventListener eventListener : wrappedEventListeners) {
-            if (!eventListener.supportsReset()) {
+        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+            if (!eventHandler.supportsReset()) {
                 return false;
             }
         }
@@ -141,8 +137,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void performReset() {
-        for (EventListener eventListener : wrappedEventListeners) {
-            eventListener.prepareReset();
+        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+            eventHandler.prepareReset();
         }
     }
 
