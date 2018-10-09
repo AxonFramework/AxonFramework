@@ -23,13 +23,13 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EventListener;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -70,14 +70,16 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     /**
-     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     * Checks if a {@link List} has been passed as first parameter. It is a common 'mistake', which is detected and
+     * fixed here.
      *
      * @param eventHandlers the event handlers to check whether it contains a {@link List}
      * @return a {@link List} of events handlers
      */
     private static List<?> detectList(Object[] eventHandlers) {
-        return eventHandlers.length == 1 && (eventHandlers[0] instanceof List) ? (List<?>) eventHandlers[0] :
-                Arrays.asList(eventHandlers);
+        return eventHandlers.length == 1 && (eventHandlers[0] instanceof List)
+                ? (List<?>) eventHandlers[0]
+                : asList(eventHandlers);
     }
 
     /**
@@ -271,8 +273,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         /**
          * Wrap a given {@code eventHandler} in an {@link AnnotationEventHandlerAdapter} to allow this
          * {@link EventHandlerInvoker} to correctly pass {@link EventMessage}s to it. If a
-         * {@link ParameterResolverFactory} or a ParameterResolverFactory and {@link HandlerDefinition} are provided,
-         * one/both will be given to the AnnotationEventHandlerAdapter
+         * {@link ParameterResolverFactory} or both a ParameterResolverFactory and {@link HandlerDefinition} are
+         * present, one/both will be given to the AnnotationEventHandlerAdapter
          *
          * @param eventHandler an {@link Object} which will be wrapped in an {@link AnnotationEventHandlerAdapter}
          * @return an {@link AnnotationEventHandlerAdapter} which the given {@code eventHandler} will be wrapped in

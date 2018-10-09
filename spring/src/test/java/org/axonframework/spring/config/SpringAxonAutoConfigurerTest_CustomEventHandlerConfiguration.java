@@ -86,12 +86,12 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             EventProcessingModule eventProcessingModule = new EventProcessingModule();
             eventProcessingModule.usingSubscribingEventProcessors();
             eventProcessingModule.byDefaultAssignTo("test")
-                                 .registerEventProcessor("test", (name, c, eh) -> {
+                                 .registerEventProcessor("test", (name, config, eventHandlerInvoker) -> {
                                      SubscribingEventProcessor processor =
                                              SubscribingEventProcessor.builder()
                                                                       .name(name)
-                                                                      .eventHandlerInvoker(eh)
-                                                                      .messageSource(c.eventBus())
+                                                                      .eventHandlerInvoker(eventHandlerInvoker)
+                                                                      .messageSource(config.eventBus())
                                                                       .build();
                                      processor.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
                                          unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));

@@ -123,9 +123,9 @@ public abstract class AbstractEventBus implements EventBus {
                                  "committed.");
 
             unitOfWork.afterCommit(u -> ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess));
-            unitOfWork.onRollback(
-                    u -> ingested.forEach(m -> m.reportFailure(u.getExecutionResult().getExceptionResult()))
-            );
+            unitOfWork.onRollback(uow -> ingested.forEach(
+                    message -> message.reportFailure(uow.getExecutionResult().getExceptionResult())
+            ));
 
             eventsQueue(unitOfWork).addAll(events);
         } else {
