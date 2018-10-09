@@ -385,7 +385,7 @@ public class EventProcessingModuleTest {
             return ((SimpleEventHandlerInvoker)((MultiEventHandlerInvoker)getEventHandlerInvoker())
                     .delegates()
                     .get(0))
-                    .eventListeners();
+                    .eventHandlers();
         }
 
         @Override

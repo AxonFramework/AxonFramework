@@ -107,7 +107,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
-                                         .eventListeners(new LoggingEventHandler(events))
+                                         .eventHandlers(new LoggingEventHandler(events))
                                          .build();
         SubscribingEventProcessor eventProcessor =
                 SubscribingEventProcessor.builder()
@@ -170,7 +170,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         // Execute commands to update this aggregate after the creation (previousToken = null)
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
-                                         .eventListeners(
+                                         .eventHandlers(
                                                  new CommandExecutingEventHandler("1", null, true),
                                                  new CommandExecutingEventHandler("2", null, true)
                                          )
@@ -209,16 +209,17 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         // Execute commands to update this aggregate after the creation (previousToken = null)
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
-                                         .eventListeners(new CommandExecutingEventHandler("UOW4", null, true),
-                                                         new CommandExecutingEventHandler("UOW5", null, true),
-                                                         new CommandExecutingEventHandler("UOW3", null, true),
-                                                         // Execute commands to update after the previous update has been performed
-                                                         new CommandExecutingEventHandler("UOW7", "UOW6", true),
-                                                         new CommandExecutingEventHandler("UOW6", "UOW3", true),
+                                         .eventHandlers(
+                                                 new CommandExecutingEventHandler("UOW4", null, true),
+                                                 new CommandExecutingEventHandler("UOW5", null, true),
+                                                 new CommandExecutingEventHandler("UOW3", null, true),
+                                                 // Execute commands to update after the previous update has been performed
+                                                 new CommandExecutingEventHandler("UOW7", "UOW6", true),
+                                                 new CommandExecutingEventHandler("UOW6", "UOW3", true),
 
-                                                         new CommandExecutingEventHandler("UOW10", "UOW8", false),
-                                                         new CommandExecutingEventHandler("UOW9", "UOW4", true),
-                                                         new CommandExecutingEventHandler("UOW8", "UOW4", true)
+                                                 new CommandExecutingEventHandler("UOW10", "UOW8", false),
+                                                 new CommandExecutingEventHandler("UOW9", "UOW4", true),
+                                                 new CommandExecutingEventHandler("UOW8", "UOW4", true)
                                          ).build();
         SubscribingEventProcessor eventProcessor =
                 SubscribingEventProcessor.builder()

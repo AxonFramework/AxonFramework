@@ -20,7 +20,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +30,7 @@ import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class AbstractEventProcessorTest {
 
@@ -58,9 +58,9 @@ public class AbstractEventProcessorTest {
             }
         };
 
-        EventMessageHandler mockListener = mock(EventMessageHandler.class);
+        EventMessageHandler mockHandler = mock(EventMessageHandler.class);
         EventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
-                                                                           .eventListeners(mockListener)
+                                                                           .eventHandlers(mockHandler)
                                                                            .build();
         TestEventProcessor testSubject = TestEventProcessor.builder()
                                                            .name("test")

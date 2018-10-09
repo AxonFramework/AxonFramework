@@ -32,39 +32,39 @@ public class SimpleEventHandlerInvokerTest {
 
     @Test
     public void testSingleEventPublication() throws Exception {
-        EventMessageHandler mockListener1 = mock(EventMessageHandler.class);
-        EventMessageHandler mockListener2 = mock(EventMessageHandler.class);
+        EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
+        EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
         SimpleEventHandlerInvoker subject =
                 SimpleEventHandlerInvoker.builder()
-                                         .eventListeners("test", mockListener1, mockListener2)
+                                         .eventHandlers("test", mockHandler1, mockHandler2)
                                          .build();
 
         EventMessage<?> event = createEvent();
         subject.handle(event, Segment.ROOT_SEGMENT);
-        InOrder inOrder = inOrder(mockListener1, mockListener2);
-        inOrder.verify(mockListener1).handle(event);
-        inOrder.verify(mockListener2).handle(event);
+        InOrder inOrder = inOrder(mockHandler1, mockHandler2);
+        inOrder.verify(mockHandler1).handle(event);
+        inOrder.verify(mockHandler2).handle(event);
         inOrder.verifyNoMoreInteractions();
     }
 
     @Test
     public void testRepeatedEventPublication() throws Exception {
-        EventMessageHandler mockListener1 = mock(EventMessageHandler.class);
-        EventMessageHandler mockListener2 = mock(EventMessageHandler.class);
+        EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
+        EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
         SimpleEventHandlerInvoker subject =
                 SimpleEventHandlerInvoker.builder()
-                                         .eventListeners("test", mockListener1, mockListener2)
+                                         .eventHandlers("test", mockHandler1, mockHandler2)
                                          .build();
 
         List<? extends EventMessage<?>> events = createEvents(2);
         for (EventMessage<?> event : events) {
             subject.handle(event, Segment.ROOT_SEGMENT);
         }
-        InOrder inOrder = inOrder(mockListener1, mockListener2);
-        inOrder.verify(mockListener1).handle(events.get(0));
-        inOrder.verify(mockListener2).handle(events.get(0));
-        inOrder.verify(mockListener1).handle(events.get(1));
-        inOrder.verify(mockListener2).handle(events.get(1));
+        InOrder inOrder = inOrder(mockHandler1, mockHandler2);
+        inOrder.verify(mockHandler1).handle(events.get(0));
+        inOrder.verify(mockHandler2).handle(events.get(0));
+        inOrder.verify(mockHandler1).handle(events.get(1));
+        inOrder.verify(mockHandler2).handle(events.get(1));
         inOrder.verifyNoMoreInteractions();
     }
 }

@@ -69,7 +69,7 @@ public class TrackingEventProcessorTest {
     private EmbeddedEventStore eventBus;
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
-    private EventMessageHandler mockListener;
+    private EventMessageHandler mockHandler;
     private List<Long> sleepInstructions;
     private TransactionManager mockTransactionManager;
     private Transaction mockTransaction;
@@ -117,10 +117,10 @@ public class TrackingEventProcessorTest {
     @Before
     public void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
-        mockListener = mock(EventMessageHandler.class);
-        when(mockListener.canHandle(any())).thenReturn(true);
-        when(mockListener.supportsReset()).thenReturn(true);
-        eventHandlerInvoker = spy(SimpleEventHandlerInvoker.builder().eventListeners(mockListener).build());
+        mockHandler = mock(EventMessageHandler.class);
+        when(mockHandler.canHandle(any())).thenReturn(true);
+        when(mockHandler.supportsReset()).thenReturn(true);
+        eventHandlerInvoker = spy(SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build());
         mockTransaction = mock(Transaction.class);
         mockTransactionManager = mock(TransactionManager.class);
         when(mockTransactionManager.startTransaction()).thenReturn(mockTransaction);
@@ -159,21 +159,21 @@ public class TrackingEventProcessorTest {
     }
 
     @Test
-    public void testPublishedEventsGetPassedToListener() throws Exception {
+    public void testPublishedEventsGetPassedToHandler() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
-        assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testListenerIsInvokedInTransactionScope() throws Exception {
+    public void testHandlerIsInvokedInTransactionScope() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         AtomicInteger counterAtHandle = new AtomicInteger();
@@ -187,12 +187,12 @@ public class TrackingEventProcessorTest {
             counterAtHandle.set(counter.get());
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
-        assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(1, counterAtHandle.get());
     }
 
@@ -219,7 +219,7 @@ public class TrackingEventProcessorTest {
         doAnswer(invocation -> {
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         when(tokenStore.fetchToken("test", 0)).thenThrow(new RuntimeException("Faking a recoverable issue"))
                                               .thenCallRealMethod();
@@ -230,7 +230,7 @@ public class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvent());
 
-        assertTrue("Expected listener to have received published event", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected Handler to have received published event", countDownLatch.await(5, TimeUnit.SECONDS));
         assertTrue(testSubject.isRunning());
         assertFalse(testSubject.isError());
         assertEquals(Collections.singletonList(5000L), sleepInstructions);
@@ -317,7 +317,7 @@ public class TrackingEventProcessorTest {
             ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -329,7 +329,7 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
-        assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected 9 invocations on Event Handler by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());
     }
 
@@ -342,14 +342,14 @@ public class TrackingEventProcessorTest {
             ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
 
         eventBus.publish(createEvents(2));
 
-        assertTrue("Expected 2 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected 2 invocations on Event Handler by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(2, ackedEvents.size());
 
         testSubject.shutDown();
@@ -364,7 +364,7 @@ public class TrackingEventProcessorTest {
             ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch2.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         eventBus.publish(createEvents(2));
 
@@ -373,7 +373,7 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
-        assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected 4 invocations on Event Handler by now", countDownLatch2.await(5, TimeUnit.SECONDS));
         assertEquals(4, ackedEvents.size());
     }
 
@@ -392,7 +392,7 @@ public class TrackingEventProcessorTest {
             ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -404,7 +404,7 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
-        assertTrue("Expected 5 invocations on event listener by now", countDownLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("Expected 5 invocations on Event Handler by now", countDownLatch.await(10, TimeUnit.SECONDS));
         assertEquals(5, ackedEvents.size());
         verify(eventBus, times(2)).openStream(any());
     }
@@ -481,7 +481,7 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testResetCausesEventsToBeReplayed() throws Exception {
-        when(mockListener.supportsReset()).thenReturn(true);
+        when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
         //noinspection Duplicates
@@ -492,7 +492,7 @@ public class TrackingEventProcessorTest {
                 handledInRedelivery.add(message.getIdentifier());
             }
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
@@ -512,7 +512,7 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testResetToPositionCausesCertainEventsToBeReplayed() throws Exception {
-        when(mockListener.supportsReset()).thenReturn(true);
+        when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
         //noinspection Duplicates
@@ -523,7 +523,7 @@ public class TrackingEventProcessorTest {
                 handledInRedelivery.add(message.getIdentifier());
             }
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
@@ -562,7 +562,7 @@ public class TrackingEventProcessorTest {
                 }
             }
         };
-        when(mockListener.supportsReset()).thenReturn(true);
+        when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
         //noinspection Duplicates
@@ -573,7 +573,7 @@ public class TrackingEventProcessorTest {
                 handledInRedelivery.add(message.getIdentifier());
             }
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
@@ -591,7 +591,7 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testResetBeforeStartingPerformsANormalRun() throws Exception {
-        when(mockListener.supportsReset()).thenReturn(true);
+        when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
         //noinspection Duplicates
@@ -602,7 +602,7 @@ public class TrackingEventProcessorTest {
                 handledInRedelivery.add(message.getIdentifier());
             }
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         testSubject.start();
         testSubject.shutDown();
@@ -666,13 +666,13 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testResetNotSupportedWhenInvokerDoesNotSupportReset() {
-        when(mockListener.supportsReset()).thenReturn(false);
+        when(mockHandler.supportsReset()).thenReturn(false);
         assertFalse(testSubject.supportsReset());
     }
 
     @Test(expected = IllegalStateException.class)
     public void testResetRejectedWhenInvokerDoesNotSupportReset() {
-        when(mockListener.supportsReset()).thenReturn(false);
+        when(mockHandler.supportsReset()).thenReturn(false);
         testSubject.resetTokens();
     }
 

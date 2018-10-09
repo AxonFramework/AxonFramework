@@ -73,7 +73,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
     @Before
     public void setUp() {
         SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
-                                                                                 .eventListeners(this)
+                                                                                 .eventHandlers(this)
                                                                                  .build();
         eventProcessor = SubscribingEventProcessor.builder()
                                                   .name("test")

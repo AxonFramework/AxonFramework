@@ -63,6 +63,7 @@ the other Builder implementations introduced. This entails the following changes
  - withPayloadColumn(String) -> payloadColumn(String)
  - withMetaDataColumn(String) -> metaDataColumn(String)
 * Renamed AbstractEventStorageEngine#getSerializer() to AbstractEventStorageEngine#getSnapshotSerializer()
+* Renamed SimpleEventHandlerInvoker#eventListeners() to SimpleEventHandlerInvoker#eventHandlers()
 
 ### Moved classes
 

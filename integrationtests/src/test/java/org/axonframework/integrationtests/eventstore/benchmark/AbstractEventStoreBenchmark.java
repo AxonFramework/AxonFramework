@@ -84,14 +84,17 @@ public abstract class AbstractEventStoreBenchmark {
 
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
-                                         .eventListeners(
-                                                 (EventMessageHandler) (e) -> {
-                                                     if (readEvents.add(e.getIdentifier())) {
+                                         .eventHandlers(
+                                                 (EventMessageHandler) eventHandler -> {
+                                                     if (readEvents.add(eventHandler.getIdentifier())) {
                                                          remainingEvents.countDown();
                                                      } else {
                                                          throw new IllegalStateException("Double event!");
                                                      }
+                                                     // We aren't interested in the event handling result
+                                                     return null;
                                                  }
+
                                          ).build();
         this.eventProcessor = TrackingEventProcessor.builder()
                                                     .name("benchmark")

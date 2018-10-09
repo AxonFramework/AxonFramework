@@ -107,7 +107,12 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSagaConfiguration(saga2Configuration)
                   .registerSagaConfiguration(saga3Configuration)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()));
+                          SubscribingEventProcessor.builder()
+                                                   .name(name)
+                                                   .eventHandlerInvoker(eventHandlerInvoker)
+                                                   .messageSource(conf.eventBus())
+                                                   .build()
+                  );
         Configuration configuration = configurer.buildConfiguration();
 
         assertNotNull(saga1Configuration.eventProcessor());
@@ -119,7 +124,7 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
                      configuration.eventProcessingConfiguration().eventProcessor("someOtherProcessor").get());
         assertNotEquals(saga2Configuration.eventProcessor(), saga3Configuration.eventProcessor());
         assertEquals(configuration.eventProcessingConfiguration().eventProcessor("myProcessor").get(),
-                        saga3Configuration.eventProcessor());
+                     saga3Configuration.eventProcessor());
         assertNotEquals(configuration.eventProcessingConfiguration().eventProcessor("someOtherProcessor").get(),
                         saga3Configuration.eventProcessor());
     }
@@ -135,7 +140,11 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
+                          SubscribingEventProcessor.builder()
+                                                   .name(name)
+                                                   .eventHandlerInvoker(eventHandlerInvoker)
+                                                   .messageSource(conf.eventBus())
+                                                   .build())
                   .assignProcessingGroup("processor1", "myProcessor")
                   .registerSagaConfiguration(saga1Configuration)
                   .registerSagaConfiguration(saga2Configuration)
@@ -162,7 +171,11 @@ public class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSagaConfiguration(saga2Configuration)
                   .registerSagaConfiguration(saga3Configuration)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          new SubscribingEventProcessor(name, eventHandlerInvoker, conf.eventBus()))
+                          SubscribingEventProcessor.builder()
+                                                   .name(name)
+                                                   .eventHandlerInvoker(eventHandlerInvoker)
+                                                   .messageSource(conf.eventBus())
+                                                   .build())
                   .assignProcessingGroup(group -> "myProcessor");
 
         configurer.buildConfiguration();

@@ -268,11 +268,15 @@ public class EventProcessingModule
                             });
         assignments.forEach((processingGroup, handlers) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
-            handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
-                           .add(c -> new SimpleEventHandlerInvoker(handlers,
-                                                                   configuration.parameterResolverFactory(),
-                                                                   listenerInvocationErrorHandler(processingGroup),
-                                                                   sequencingPolicy(processingGroup)));
+            handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
+                    c -> SimpleEventHandlerInvoker.builder()
+                                                  .eventHandlers(handlers)
+                                                  .parameterResolverFactory(configuration.parameterResolverFactory())
+                                                  .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
+                                                          processingGroup
+                                                  ))
+                                                  .sequencingPolicy(sequencingPolicy(processingGroup))
+                                                  .build());
         });
     }
 
@@ -649,28 +653,32 @@ public class EventProcessingModule
     private SubscribingEventProcessor subscribingEventProcessor(String name, Configuration conf,
                                                                 EventHandlerInvoker eventHandlerInvoker,
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
-        return new SubscribingEventProcessor(name,
-                                             eventHandlerInvoker,
-                                             rollbackConfiguration(name),
-                                             messageSource.apply(conf),
-                                             DirectEventProcessingStrategy.INSTANCE,
-                                             errorHandler(name),
-                                             messageMonitor(SubscribingEventProcessor.class, name));
+        return SubscribingEventProcessor.builder()
+                                        .name(name)
+                                        .eventHandlerInvoker(eventHandlerInvoker)
+                                        .rollbackConfiguration(rollbackConfiguration(name))
+                                        .errorHandler(errorHandler(name))
+                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+                                        .messageSource(messageSource.apply(conf))
+                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                                        .build();
     }
 
     private TrackingEventProcessor trackingEventProcessor(Configuration conf, String name,
                                                           EventHandlerInvoker eventHandlerInvoker,
                                                           Function<Configuration, TrackingEventProcessorConfiguration> config,
                                                           Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return new TrackingEventProcessor(name,
-                                          eventHandlerInvoker,
-                                          source.apply(conf),
-                                          tokenStore(name),
-                                          transactionManager(name),
-                                          messageMonitor(TrackingEventProcessor.class, name),
-                                          rollbackConfiguration(name),
-                                          errorHandler(name),
-                                          config.apply(conf));
+        return TrackingEventProcessor.builder()
+                                     .name(name)
+                                     .eventHandlerInvoker(eventHandlerInvoker)
+                                     .rollbackConfiguration(rollbackConfiguration(name))
+                                     .errorHandler(errorHandler(name))
+                                     .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
+                                     .messageSource(source.apply(conf))
+                                     .tokenStore(tokenStore(name))
+                                     .transactionManager(transactionManager(name))
+                                     .trackingEventProcessorConfiguration(config.apply(conf))
+                                     .build();
     }
     //</editor-fold>
 }
