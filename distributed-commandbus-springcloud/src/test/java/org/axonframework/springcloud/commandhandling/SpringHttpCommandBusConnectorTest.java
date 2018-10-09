@@ -73,7 +73,6 @@ public class SpringHttpCommandBusConnectorTest {
 
         localCommandBus = mock(CommandBus.class);
         restTemplate = mock(RestTemplate.class);
-        serializer = spy(new JacksonSerializer());
         executor = spy(new TestExecutor());
 
         testSubject = SpringHttpCommandBusConnector.builder()

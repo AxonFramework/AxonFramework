@@ -27,6 +27,7 @@ import org.axonframework.serialization.ContentTypeConverter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.junit.*;
 
 import java.io.InputStream;
@@ -90,10 +91,13 @@ public class JacksonSerializerTest {
 
         SerializedObject<byte[]> serialized = testSubject.serialize(toSerialize, byte[].class);
 
-        Object actual = testSubject.deserialize(new SimpleSerializedObject<>(serialized.getData(), byte[].class, "someUnknownType", "42.1"));
+        Object actual = testSubject.deserialize(new SimpleSerializedObject<>(serialized.getData(),
+                                                                             byte[].class,
+                                                                             "someUnknownType",
+                                                                             "42.1"));
 
         assertTrue(actual instanceof UnknownSerializedType);
-        UnknownSerializedType actualUnknown = ((UnknownSerializedType)actual);
+        UnknownSerializedType actualUnknown = ((UnknownSerializedType) actual);
 
         assertTrue(actualUnknown.supportsFormat(JsonNode.class));
         JsonNode actualJson = actualUnknown.readData(JsonNode.class);
