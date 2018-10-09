@@ -9,6 +9,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -26,6 +27,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.concurrent.Executor;
 
 import static java.util.Collections.singletonMap;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -46,11 +48,11 @@ public class SpringHttpCommandBusConnectorTest {
     private static final Exception COMMAND_ERROR = new Exception("oops");
 
     private SpringHttpCommandBusConnector testSubject;
-    @Mock
+
     private CommandBus localCommandBus;
-    @Mock
     private RestTemplate restTemplate;
     private Serializer serializer;
+    private Executor executor = new TestExecutor();
 
     private URI expectedUri;
     @Mock
@@ -60,7 +62,6 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        serializer = spy(new JacksonSerializer());
         expectedUri = new URI(ENDPOINT.getScheme(),
                               ENDPOINT.getUserInfo(),
                               ENDPOINT.getHost(),
@@ -69,10 +70,16 @@ public class SpringHttpCommandBusConnectorTest {
                               null,
                               null);
 
+        localCommandBus = mock(CommandBus.class);
+        restTemplate = mock(RestTemplate.class);
+        serializer = spy(new JacksonSerializer());
+        executor = spy(new TestExecutor());
+
         testSubject = SpringHttpCommandBusConnector.builder()
                                                    .localCommandBus(localCommandBus)
                                                    .restOperations(restTemplate)
                                                    .serializer(serializer)
+                                                   .executor(executor)
                                                    .build();
     }
 
@@ -82,6 +89,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST),
@@ -92,6 +100,7 @@ public class SpringHttpCommandBusConnectorTest {
     public void testSendWithoutCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE);
+        verify(executor).execute(any());
     }
 
     @Test
@@ -109,6 +118,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
@@ -126,7 +136,8 @@ public class SpringHttpCommandBusConnectorTest {
         assertTrue(Arrays.equals(serializedPayload.getData(), serializedObjectCaptor.getAllValues().get(0).getData()));
 
         assertEquals(serializedMetaData.getType(), serializedObjectCaptor.getAllValues().get(1).getType());
-        assertEquals(serializedMetaData.getContentType(), serializedObjectCaptor.getAllValues().get(1).getContentType());
+        assertEquals(serializedMetaData.getContentType(),
+                     serializedObjectCaptor.getAllValues().get(1).getContentType());
         assertTrue(Arrays.equals(serializedMetaData.getData(), serializedObjectCaptor.getAllValues().get(1).getData()));
 
         //noinspection unchecked
@@ -161,6 +172,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
@@ -180,6 +192,7 @@ public class SpringHttpCommandBusConnectorTest {
     public void testSendWithCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE, new NoOpCallback());
+        verify(executor).execute(any());
     }
 
     @Test
@@ -302,6 +315,16 @@ public class SpringHttpCommandBusConnectorTest {
             return actual != null &&
                     actual.getType().getTypeName()
                           .equals(expected.getType().getTypeName());
+        }
+    }
+
+    private class TestExecutor implements Executor {
+
+        private final Executor executor = DirectExecutor.INSTANCE;
+
+        @Override
+        public void execute(@SuppressWarnings("NullableProblems") Runnable command) {
+            executor.execute(command);
         }
     }
 }

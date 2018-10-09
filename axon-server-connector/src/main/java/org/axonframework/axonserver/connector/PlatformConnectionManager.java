@@ -125,6 +125,7 @@ public class PlatformConnectionManager {
         try {
             managedChannel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.debug("Interrupted during shutdown");
         }
     }

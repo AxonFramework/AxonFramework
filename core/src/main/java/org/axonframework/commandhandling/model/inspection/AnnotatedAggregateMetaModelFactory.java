@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
-import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.AggregateRoot;
 import org.axonframework.commandhandling.model.AggregateVersion;
 import org.axonframework.commandhandling.model.EntityId;
@@ -26,22 +25,10 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
@@ -153,7 +140,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private final List<ChildEntity<T>> children;
         private final AnnotatedHandlerInspector<T> handlerInspector;
         private final List<MessageHandlingMember<? super T>> commandHandlerInterceptors;
-        private final Map<String, MessageHandlingMember<? super T>> commandHandlers;
+        private final List<MessageHandlingMember<? super T>> commandHandlers;
         private final List<MessageHandlingMember<? super T>> eventHandlers;
 
         private String aggregateType;
@@ -164,7 +151,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         public AnnotatedAggregateModel(Class<? extends T> aggregateType, AnnotatedHandlerInspector<T> handlerInspector) {
             this.inspectedType = aggregateType;
             this.commandHandlerInterceptors = new ArrayList<>();
-            this.commandHandlers = new HashMap<>();
+            this.commandHandlers = new ArrayList<>();
             this.eventHandlers = new ArrayList<>();
             this.children = new ArrayList<>();
             this.handlerInspector = handlerInspector;
@@ -179,13 +166,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         @SuppressWarnings("unchecked")
         private void prepareHandlers() {
             for (MessageHandlingMember<? super T> handler : handlerInspector.getHandlers()) {
-                Optional<CommandMessageHandlingMember> commandHandler = handler
-                        .unwrap(CommandMessageHandlingMember.class);
-                Optional<CommandHandlerInterceptorHandlingMember> unwrappedCommandHandlerInterceptor = handler.unwrap(
-                        CommandHandlerInterceptorHandlingMember.class);
-                if (commandHandler.isPresent()) {
-                    commandHandlers.putIfAbsent(commandHandler.get().commandName(), handler);
-                } else if (unwrappedCommandHandlerInterceptor.isPresent()) {
+                if (handler.unwrap(CommandMessageHandlingMember.class).isPresent()) {
+                    commandHandlers.add(handler);
+                } else if (handler.unwrap(CommandHandlerInterceptorHandlingMember.class).isPresent()) {
                     commandHandlerInterceptors.add(handler);
                 } else {
                     eventHandlers.add(handler);
@@ -204,7 +187,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             for (Field field : ReflectionUtils.fieldsOf(inspectedType)) {
                 childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
                     children.add(child);
-                    child.commandHandlers().forEach(commandHandlers::putIfAbsent);
+                    commandHandlers.addAll(child.commandHandlers());
                 }));
 
                 AnnotationUtils.findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> {
@@ -238,17 +221,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         @Override
-        public Map<String, MessageHandlingMember<? super T>> commandHandlers() {
-            return Collections.unmodifiableMap(commandHandlers);
-        }
-
-        @Override
-        public MessageHandlingMember<? super T> commandHandler(String commandName) {
-            MessageHandlingMember<? super T> handler = commandHandlers.get(commandName);
-            if (handler == null) {
-                throw new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandName));
-            }
-            return handler;
+        public List<MessageHandlingMember<? super T>> commandHandlers() {
+            return Collections.unmodifiableList(commandHandlers);
         }
 
         @Override

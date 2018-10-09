@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,40 +20,28 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 /**
- * A command filter that accepts all CommandMessages
+ * Filter that matches whenever one of the two supplied filters matches
  *
- * @author Koen Lavooij
+ * @author Allard Buijze
+ * @since 4.0
  */
-public enum AcceptAll implements CommandMessageFilter {
+public class OrCommandMessageFilter implements CommandMessageFilter {
+    private final CommandMessageFilter first;
+    private final CommandMessageFilter second;
 
     /**
-     * Singleton instance of the {@link AcceptAll} filter
+     * Initialize the filter to match when either the {@code first} or the {@code second} filter matches.
+     *
+     * @param first  The first filter to match
+     * @param second The second filter to match
      */
-    INSTANCE;
-
-    @Override
-    public boolean matches(CommandMessage<?> message) {
-        return true;
+    public OrCommandMessageFilter(CommandMessageFilter first, CommandMessageFilter second) {
+        this.first = first;
+        this.second = second;
     }
 
     @Override
-    public CommandMessageFilter and(CommandMessageFilter other) {
-        return other;
-    }
-
-    @Override
-    public CommandMessageFilter negate() {
-        return DenyAll.INSTANCE;
-    }
-
-
-    @Override
-    public CommandMessageFilter or(CommandMessageFilter other) {
-        return this;
-    }
-
-    @Override
-    public String toString() {
-        return "AcceptAll{}";
+    public boolean matches(CommandMessage<?> commandMessage) {
+        return first.matches(commandMessage) || second.matches(commandMessage);
     }
 }

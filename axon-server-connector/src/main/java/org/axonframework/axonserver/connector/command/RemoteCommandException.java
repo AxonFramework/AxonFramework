@@ -19,7 +19,7 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 /**
  * @author Marc Gathier
  */
-public class RemoteCommandException extends Throwable {
+public class RemoteCommandException extends RuntimeException {
 
     private final String errorCode;
     private final String location;
