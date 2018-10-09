@@ -63,8 +63,8 @@ public class MongoSagaStore implements SagaStore<Object> {
     /**
      * Instantiate a Builder to be able to create a {@link MongoSagaStore}.
      * <p>
-     * The {@link Serializer} is defaulted to a {@link XStreamSerializer}.
-     * The {@link MongoTemplate} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link Serializer} is defaulted to a {@link XStreamSerializer}. The {@link MongoTemplate} is a
+     * <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link MongoSagaStore}
      */
@@ -150,8 +150,8 @@ public class MongoSagaStore implements SagaStore<Object> {
     /**
      * Builder class to instantiate a {@link MongoSagaStore}.
      * <p>
-     * The {@link Serializer} is defaulted to a {@link XStreamSerializer}.
-     * The {@link MongoTemplate} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link Serializer} is defaulted to a {@link XStreamSerializer}. The {@link MongoTemplate} is a
+     * <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder {
 
