@@ -61,6 +61,12 @@ public class AxonServerEventStoreClient {
 
     private boolean shutdown;
 
+    /**
+     * Initialize the Event Store Client using given {@code eventStoreConfiguration} and given {@code platformConnectionManager}.
+     *
+     * @param eventStoreConfiguration The configuration describing the bounded context that this application operates in
+     * @param platformConnectionManager manager for connections to AxonServer platform
+     */
     public AxonServerEventStoreClient(AxonServerConfiguration eventStoreConfiguration, PlatformConnectionManager platformConnectionManager) {
         this.tokenAddingInterceptor = new TokenAddingInterceptor(eventStoreConfiguration.getToken());
         this.eventCipher = eventStoreConfiguration.getEventCipher();
