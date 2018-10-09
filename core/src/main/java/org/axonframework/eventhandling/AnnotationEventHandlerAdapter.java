@@ -16,22 +16,17 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
- * org.axonframework.eventhandling.EventListener}.
+ * EventMessageHandler}.
  *
  * @author Allard Buijze
- * @see org.axonframework.eventhandling.EventListener
+ * @see EventMessageHandler
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter implements EventListenerProxy {
+public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     private final AnnotatedHandlerInspector<Object> inspector;
     private final Class<?> listenerType;
@@ -42,7 +37,7 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
      *
      * @param annotatedEventListener the annotated event listener
      */
-    public AnnotationEventListenerAdapter(Object annotatedEventListener) {
+    public AnnotationEventHandlerAdapter(Object annotatedEventListener) {
         this(annotatedEventListener, ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()));
     }
 
@@ -53,8 +48,8 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
      */
-    public AnnotationEventListenerAdapter(Object annotatedEventListener,
-                                          ParameterResolverFactory parameterResolverFactory) {
+    public AnnotationEventHandlerAdapter(Object annotatedEventListener,
+                                         ParameterResolverFactory parameterResolverFactory) {
         this(annotatedEventListener,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedEventListener.getClass()));
@@ -69,9 +64,9 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
      * @param handlerDefinition        the handler definition used to create concrete handlers
      */
-    public AnnotationEventListenerAdapter(Object annotatedEventListener,
-                                          ParameterResolverFactory parameterResolverFactory,
-                                          HandlerDefinition handlerDefinition) {
+    public AnnotationEventHandlerAdapter(Object annotatedEventListener,
+                                         ParameterResolverFactory parameterResolverFactory,
+                                         HandlerDefinition handlerDefinition) {
         this.annotatedEventListener = annotatedEventListener;
         this.listenerType = annotatedEventListener.getClass();
         this.inspector = AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
@@ -80,13 +75,13 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
     }
 
     @Override
-    public void handle(EventMessage<?> event) throws Exception {
+    public Object handle(EventMessage<?> event) throws Exception {
         for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
             if (handler.canHandle(event)) {
-                handler.handle(event, annotatedEventListener);
-                break;
+                return handler.handle(event, annotatedEventListener);
             }
         }
+        return null;
     }
 
     @Override

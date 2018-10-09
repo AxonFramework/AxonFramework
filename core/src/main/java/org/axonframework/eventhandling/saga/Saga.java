@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 
 import java.util.function.Consumer;
@@ -34,7 +34,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga<T> extends EventListener {
+public interface Saga<T> extends EventMessageHandler {
 
     /**
      * Returns the unique identifier of this saga.

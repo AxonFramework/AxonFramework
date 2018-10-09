@@ -16,7 +16,12 @@
 
 package org.axonframework.axonserver.connector.command;
 
-import io.axoniq.axonserver.grpc.command.*;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.ClientInterceptor;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
@@ -27,7 +32,12 @@ import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -39,7 +49,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -114,11 +128,11 @@ public class AxonServerCommandBus implements CommandBus {
                                             public void onNext(CommandResponse commandResponse) {
                                                 if (!commandResponse.hasMessage()) {
                                                     logger.debug("response received - {}", commandResponse);
-                                                    R payload = null;
+                                                    GenericCommandResultMessage<R> resultMessage = null;
                                                     if (commandResponse.hasPayload()) {
                                                         try {
                                                             //noinspection unchecked
-                                                            payload = (R) serializer.deserialize(commandResponse);
+                                                            resultMessage = serializer.deserialize(commandResponse);
                                                         } catch (Exception ex) {
                                                             logger.info("Failed to deserialize payload - {} - {}",
                                                                         commandResponse.getPayload().getData(),
@@ -126,7 +140,7 @@ public class AxonServerCommandBus implements CommandBus {
                                                         }
                                                     }
 
-                                                    commandCallback.onSuccess(command, new GenericCommandResultMessage<>(payload));
+                                                    commandCallback.onSuccess(command, resultMessage);
                                                 } else {
                                                     commandCallback.onFailure(command,
                                                                               new CommandExecutionException(
@@ -186,7 +200,8 @@ public class AxonServerCommandBus implements CommandBus {
 
         private void commandExecutor() {
             logger.debug("Starting command Executor");
-            while(true) {
+            boolean interrupted = false;
+            while(!interrupted) {
                 try {
                     Command command = commandQueue.poll(10, TimeUnit.SECONDS);
                     if( command != null) {
@@ -194,8 +209,9 @@ public class AxonServerCommandBus implements CommandBus {
                         processCommand(command);
                     }
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     logger.warn("Interrupted queryExecutor", e);
-                    return;
+                    interrupted = true;
                 }
             }
         }
@@ -204,8 +220,8 @@ public class AxonServerCommandBus implements CommandBus {
             if( subscribedCommands.isEmpty() || subscribing) return;
 
             try {
-                StreamObserver<CommandProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
-                subscribedCommands.forEach(command -> subscriberStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
+                StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
+                subscribedCommands.forEach(command -> outboundStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
                         CommandSubscription.newBuilder()
                                 .setCommand(command)
                                 .setComponentName(configuration.getComponentName())
@@ -222,8 +238,8 @@ public class AxonServerCommandBus implements CommandBus {
             subscribing = true;
             subscribedCommands.add(command);
             try {
-                StreamObserver<CommandProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
-                subscriberStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
+                StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
+                outboundStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
                         CommandSubscription.newBuilder()
                                 .setCommand(command)
                                 .setClientName(configuration.getClientName())
@@ -241,10 +257,10 @@ public class AxonServerCommandBus implements CommandBus {
 
 
         private void processCommand(Command command) {
-            StreamObserver<CommandProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
+            StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
             try {
-                dispatchLocal(serializer.deserialize(command), subscriberStreamObserver);
-            } catch (Throwable throwable) {
+                dispatchLocal(serializer.deserialize(command), outboundStreamObserver);
+            } catch (RuntimeException throwable) {
                 logger.error("Error while dispatching command {} - {}", command.getName(), throwable.getMessage(), throwable);
                 CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
                         CommandResponse.newBuilder()
@@ -254,7 +270,7 @@ public class AxonServerCommandBus implements CommandBus {
                                        .setMessage(ExceptionSerializer.serialize(configuration.getClientName(), throwable))
                 ).build();
 
-                subscriberStreamObserver.onNext(response);
+                outboundStreamObserver.onNext(response);
             }
         }
 
@@ -331,7 +347,7 @@ public class AxonServerCommandBus implements CommandBus {
                 @Override
                 public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<?> commandResultMessage) {
                     logger.debug("DispatchLocal: done {}", command.getCommandName());
-                    responseObserver.onNext(serializer.serialize(commandResultMessage.getPayload(), command.getIdentifier()));
+                    responseObserver.onNext(serializer.serialize(commandResultMessage, command.getIdentifier()));
                 }
 
                 @Override
@@ -352,7 +368,7 @@ public class AxonServerCommandBus implements CommandBus {
 
         public void disconnect() {
             if( subscriberStreamObserver != null)
-                subscriberStreamObserver.onCompleted(); //onError(new AxonServerException("AXONIQ-0001", "Cancelled by client"));
+                subscriberStreamObserver.onCompleted();
         }
     }
 

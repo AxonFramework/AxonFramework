@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,6 +27,7 @@ import org.axonframework.serialization.ContentTypeConverter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.junit.*;
 
 import java.io.InputStream;
@@ -80,6 +82,28 @@ public class JacksonSerializerTest {
 
         assertEquals(toSerialize.getValue(), actual.getValue());
         assertEquals(toSerialize.getNested().getValue(), actual.getNested().getValue());
+    }
+
+    @Test
+    public void testSerializeAndDeserializeObjectUnknownType() {
+        SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
+                                                                        new SimpleSerializableType("nested"));
+
+        SerializedObject<byte[]> serialized = testSubject.serialize(toSerialize, byte[].class);
+
+        Object actual = testSubject.deserialize(new SimpleSerializedObject<>(serialized.getData(),
+                                                                             byte[].class,
+                                                                             "someUnknownType",
+                                                                             "42.1"));
+
+        assertTrue(actual instanceof UnknownSerializedType);
+        UnknownSerializedType actualUnknown = ((UnknownSerializedType) actual);
+
+        assertTrue(actualUnknown.supportsFormat(JsonNode.class));
+        JsonNode actualJson = actualUnknown.readData(JsonNode.class);
+
+        assertEquals("first", actualJson.get("value").asText());
+        assertEquals("nested", actualJson.path("nested").path("value").asText());
     }
 
     @Test

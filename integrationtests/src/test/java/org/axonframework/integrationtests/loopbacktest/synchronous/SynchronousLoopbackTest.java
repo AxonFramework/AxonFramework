@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,23 @@
 
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
@@ -64,6 +55,11 @@ public class SynchronousLoopbackTest {
     private EventStore eventStore;
     private VoidCallback reportErrorCallback;
     private CommandCallback<Object, Object> expectErrorCallback;
+
+    @SuppressWarnings("unchecked")
+    private static List<DomainEventMessage<?>> anyEventList() {
+        return anyList();
+    }
 
     @Before
     public void setUp() {
@@ -111,7 +107,7 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
         initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        EventMessageHandler el = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -124,6 +120,7 @@ public class SynchronousLoopbackTest {
                                                                                           2)), reportErrorCallback);
                 }
             }
+            return null;
         };
         new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(el), eventStore).start();
 
@@ -145,7 +142,7 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
         initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        EventMessageHandler el = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -160,6 +157,7 @@ public class SynchronousLoopbackTest {
                     throw new RuntimeException("Mock exception");
                 }
             }
+            return null;
         };
         new SubscribingEventProcessor("processor",
                                       new SimpleEventHandlerInvoker(Collections.singletonList(el),
@@ -180,11 +178,6 @@ public class SynchronousLoopbackTest {
         }
 
         verify(eventStore, times(3)).publish(anyEventList());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<DomainEventMessage<?>> anyEventList() {
-        return anyList();
     }
 
     private static class CounterCommandHandler {

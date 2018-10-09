@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,10 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
-import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.List;
-import java.util.Map;
-
-import static java.lang.String.format;
 
 /**
  * Interface of an entity model that describes the properties and capabilities of an entity of type {@code T}. The
@@ -63,7 +59,7 @@ public interface EntityModel<T> {
      *
      * @return Map of message handler to command name
      */
-    Map<String, MessageHandlingMember<? super T>> commandHandlers();
+    List<MessageHandlingMember<? super T>> commandHandlers();
 
     /**
      * Gets a list of command handler interceptors for this entity.
@@ -71,23 +67,6 @@ public interface EntityModel<T> {
      * @return list of command handler interceptors
      */
     List<MessageHandlingMember<? super T>> commandHandlerInterceptors();
-
-    /**
-     * Get the {@link MessageHandlingMember} capable of handling commands with given {@code commandName} (see {@link
-     * org.axonframework.commandhandling.CommandMessage#getCommandName()}). If the entity is not capable of handling
-     * such commands an exception is raised.
-     *
-     * @param commandName The name of the command
-     * @return The handler for the command
-     * @throws NoHandlerForCommandException In case the entity is not capable of handling commands of given name
-     */
-    default MessageHandlingMember<? super T> commandHandler(String commandName) {
-        MessageHandlingMember<? super T> handler = commandHandlers().get(commandName);
-        if (handler == null) {
-            throw new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandName));
-        }
-        return handler;
-    }
 
     /**
      * Get the EntityModel of an entity of type {@code childEntityType} in case it is the child of the modeled entity.

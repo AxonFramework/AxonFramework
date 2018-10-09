@@ -16,15 +16,18 @@
 package org.axonframework.springcloud.commandhandling;
 
 import com.google.common.collect.ImmutableList;
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -40,7 +43,6 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -51,7 +53,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     private static final int LOAD_FACTOR = 1;
     private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
+    private static final CommandMessageFilter COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
 
     private SpringCloudHttpBackupCommandRouter testSubject;
 

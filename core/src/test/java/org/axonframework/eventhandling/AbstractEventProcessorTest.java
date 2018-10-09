@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +20,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,7 @@ import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 public class AbstractEventProcessorTest {
 
@@ -74,7 +75,7 @@ public class AbstractEventProcessorTest {
             }
         };
 
-        EventListener mockListener = mock(EventListener.class);
+        EventMessageHandler mockListener = mock(EventMessageHandler.class);
         EventHandlerInvoker eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         TestEventProcessor testSubject = new TestEventProcessor("test", eventHandlerInvoker, messageMonitor);
 

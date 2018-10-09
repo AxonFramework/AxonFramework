@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -411,7 +412,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
         MessageHandlingMember<? super T> handler = inspector.commandHandlers()
-                                                            .get(commandMessage.getCommandName());
+                                                            .stream()
+                                                            .filter(mh -> mh.canHandle(commandMessage))
+                                                            .findFirst()
+                                                            .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandMessage.getCommandName())));
 
         Object result;
         if (interceptors.isEmpty()) {

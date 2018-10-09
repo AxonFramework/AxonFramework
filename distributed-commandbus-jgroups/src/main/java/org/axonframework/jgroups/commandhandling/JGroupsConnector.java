@@ -20,19 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.CommandBusConnectorCommunicationException;
-import org.axonframework.commandhandling.distributed.CommandCallbackRepository;
-import org.axonframework.commandhandling.distributed.CommandCallbackWrapper;
-import org.axonframework.commandhandling.distributed.CommandRouter;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
-import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.Member;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.ServiceRegistryException;
-import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
@@ -104,7 +92,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     private volatile View currentView;
     private volatile int loadFactor = 0;
-    private volatile Predicate<? super CommandMessage<?>> commandFilter = DenyAll.INSTANCE;
+    private volatile CommandMessageFilter commandFilter = DenyAll.INSTANCE;
 
     /**
      * Instantiate a {@link JGroupsConnector} based on the fields contained in the {@link Builder}.
@@ -149,7 +137,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
+    public void updateMembership(int loadFactor, CommandMessageFilter commandFilter) {
         this.loadFactor = loadFactor;
         this.commandFilter = commandFilter;
         broadCastMembership(membershipVersion.getAndIncrement(), false);
@@ -365,7 +353,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         String joinedMember = message.getSrc().toString();
         if (channel.getView().containsMember(message.getSrc())) {
             int loadFactor = joinMessage.getLoadFactor();
-            Predicate<? super CommandMessage<?>> commandFilter = joinMessage.messageFilter();
+            CommandMessageFilter commandFilter = joinMessage.messageFilter();
             SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), NON_LOCAL_MEMBER, s -> {
             });
 

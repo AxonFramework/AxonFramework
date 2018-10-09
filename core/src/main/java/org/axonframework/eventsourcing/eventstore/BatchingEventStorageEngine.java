@@ -34,7 +34,7 @@ import java.util.stream.StreamSupport;
 import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
- * Abstract {@link EventStorageEngine} implementation that fetches events in batches from the backing database.
+ * {@link AbstractEventStorageEngine} implementation that fetches events in batches from the backing database.
  *
  * @author Rene de Waele
  * @since 3.0
