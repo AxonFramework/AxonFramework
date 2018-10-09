@@ -60,18 +60,18 @@ public class DirectEventJobDataBinderTest {
         return Arrays.asList(new Object[][]{
                 {
                         "JavaSerializer",
-                        new JavaSerializer(),
+                        JavaSerializer.builder().build(),
                         (Function<Class, String>) Class::getName,
                         (Predicate<Object>) Objects::nonNull},
                 {
                         "XStreamSerializer",
-                        new XStreamSerializer(),
+                        XStreamSerializer.builder().build(),
                         (Function<Class, String>) clazz -> clazz.getSimpleName().toLowerCase(),
                         (Predicate<Object>) Objects::isNull
                 },
                 {
                         "JacksonSerializer",
-                        new JacksonSerializer(),
+                        JacksonSerializer.builder().build(),
                         (Function<Class, String>) Class::getName,
                         (Predicate<Object>) Objects::isNull
                 }

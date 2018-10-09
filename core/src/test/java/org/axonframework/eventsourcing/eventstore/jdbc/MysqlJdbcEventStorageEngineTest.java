@@ -24,9 +24,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -36,7 +34,7 @@ import java.util.function.Predicate;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 /**
  * Tests the JdbcEventStorageEngine using the MySQL database.
@@ -61,8 +59,11 @@ public class MysqlJdbcEventStorageEngineTest {
         dataSource.setPassword(properties.getProperty("jdbc.password"));
         try {
             defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
-            testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, new EventSchema(),
-                                       byte[].class, MySqlEventTableFactory.INSTANCE);
+            testSubject = createEngine(NoOpEventUpcaster.INSTANCE,
+                                       defaultPersistenceExceptionResolver,
+                                       new EventSchema(),
+                                       byte[].class,
+                                       MySqlEventTableFactory.INSTANCE);
         } catch (Exception e) {
             Assume.assumeNoException("Ignoring this test, as no valid MySQL instance is configured", e);
         }
@@ -83,7 +84,8 @@ public class MysqlJdbcEventStorageEngineTest {
     }
 
     protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                  PersistenceExceptionResolver persistenceExceptionResolver, EventSchema eventSchema, Class<?> dataType,
+                                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                                  EventSchema eventSchema, Class<?> dataType,
                                                   EventTableFactory tableFactory) {
         return createEngine(upcasterChain, persistenceExceptionResolver, null, eventSchema, dataType, tableFactory,
                             100);
@@ -93,7 +95,7 @@ public class MysqlJdbcEventStorageEngineTest {
                                                   PersistenceExceptionResolver persistenceExceptionResolver,
                                                   Predicate<? super DomainEventData<?>> snapshotFilter, EventSchema eventSchema, Class<?> dataType,
                                                   EventTableFactory tableFactory, int batchSize) {
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(serializer, upcasterChain,
                                                                    persistenceExceptionResolver, serializer, snapshotFilter, batchSize, dataSource::getConnection,
                                                                    NoTransactionManager.INSTANCE, dataType, eventSchema, null, null);

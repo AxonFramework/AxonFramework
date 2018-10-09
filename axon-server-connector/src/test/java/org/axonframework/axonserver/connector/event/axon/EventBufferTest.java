@@ -50,7 +50,7 @@ public class EventBufferTest {
     public void setUp() {
         stubUpcaster = mock(EventUpcaster.class);
         when(stubUpcaster.upcast(any())).thenAnswer((Answer<Stream<IntermediateEventRepresentation>>) invocationOnMock -> (Stream<IntermediateEventRepresentation>) invocationOnMock.getArguments()[0]);
-        serializer = new XStreamSerializer();
+        serializer = XStreamSerializer.builder().build();
 
         serializedObject = serializer.serialize("some object", byte[].class);
     }

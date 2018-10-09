@@ -15,9 +15,9 @@
 
 package org.axonframework.serialization.upcasting;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.stream.Stream;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract implementation of an {@link Upcaster} that eases the common process of upcasting one intermediate
@@ -28,8 +28,8 @@ import java.util.stream.Stream;
  *
  * @param <T> the type of entry to be upcasted as {@code T}
  * @param <C> the type of context used as {@code C}
- *
  * @author Steven van Beelen
+ * @since 3.1
  */
 public abstract class ContextAwareSingleEntryMultiUpcaster<T, C> implements Upcaster<T> {
 
@@ -77,5 +77,4 @@ public abstract class ContextAwareSingleEntryMultiUpcaster<T, C> implements Upca
      * @return a context of generic type {@code C}
      */
     protected abstract C buildContext();
-
 }

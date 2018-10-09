@@ -61,6 +61,7 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -235,7 +236,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default query gateway.
      */
     protected QueryGateway defaultQueryGateway(Configuration config) {
-        return new DefaultQueryGateway(config.queryBus());
+        return DefaultQueryGateway.builder().queryBus(config.queryBus()).build();
     }
 
     /**
@@ -249,8 +250,10 @@ public class DefaultConfigurer implements Configurer {
                              .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
                              .transactionManager(config.getComponent(TransactionManager.class,
                                                                      NoTransactionManager::instance))
-                             .errorHandler(config.getComponent(QueryInvocationErrorHandler.class,
-                                                               LoggingQueryInvocationErrorHandler::new))
+                             .errorHandler(config.getComponent(
+                                     QueryInvocationErrorHandler.class,
+                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
+                             ))
                              .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
                              .build();
     }
@@ -263,7 +266,11 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryUpdateEmitter to use
      */
     protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
-        return new SimpleQueryUpdateEmitter(config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"));
+        MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
+                config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
+        return SimpleQueryUpdateEmitter.builder()
+                                       .updateMessageMonitor(updateMessageMonitor)
+                                       .build();
     }
 
     /**
@@ -343,7 +350,10 @@ public class DefaultConfigurer implements Configurer {
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(Configuration config) {
-        return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
+        return XStreamSerializer.builder()
+                                .revisionResolver(config.getComponent(RevisionResolver.class,
+                                                                      AnnotationRevisionResolver::new))
+                                .build();
     }
 
     @Override

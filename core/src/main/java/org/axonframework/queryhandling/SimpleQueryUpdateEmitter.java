@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -38,6 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of {@link QueryUpdateEmitter} that uses Project Reactor to implement Update Handlers.
@@ -47,29 +49,36 @@ import static java.lang.String.format;
  */
 public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
-    private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
-    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleQueryUpdateEmitter.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimpleQueryUpdateEmitter.class);
 
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
+    private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
+
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
 
-    private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers =
+            new ConcurrentHashMap<>();
+    private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>>> dispatchInterceptors =
+            new CopyOnWriteArrayList<>();
 
     /**
-     * Constructs {@link SimpleQueryUpdateEmitter} using {@link NoOpMessageMonitor}.
+     * Instantiate a {@link SimpleQueryUpdateEmitter} based on the fields contained in the {@link Builder}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleQueryUpdateEmitter} instance
      */
-    public SimpleQueryUpdateEmitter() {
-        this(NoOpMessageMonitor.instance());
+    protected SimpleQueryUpdateEmitter(Builder builder) {
+        builder.validate();
+        this.updateMessageMonitor = builder.updateMessageMonitor;
     }
 
     /**
-     * Constructs {@link SimpleQueryUpdateEmitter} using given {@code updateMessageMonitor}.
+     * Instantiate a Builder to be able to create a {@link SimpleQueryUpdateEmitter}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
      *
-     * @param updateMessageMonitor used to monitory query update messages
+     * @return a Builder to be able to create a {@link SimpleQueryUpdateEmitter}
      */
-    public SimpleQueryUpdateEmitter(
-            MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor) {
-        this.updateMessageMonitor = updateMessageMonitor != null ? updateMessageMonitor : NoOpMessageMonitor.instance();
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -149,9 +158,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             ((FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
             monitorCallback.reportSuccess();
         } catch (Exception e) {
-            LOGGER.info("An error occurred while trying to emit an update to a query '{}'. " +
+            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
                                 "The subscription will be cancelled. Exception summary: {}",
-                        query.getQueryName(), e.toString(), LOGGER.isDebugEnabled() ? e : "");
+                        query.getQueryName(), e.toString(), logger.isDebugEnabled() ? e : "");
             monitorCallback.reportFailure(e);
             updateHandlers.remove(query);
             emitError(query, e, updateHandler);
@@ -177,7 +186,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         try {
             updateHandler.error(cause);
         } catch (Exception e) {
-            LOGGER.error(format("An error happened while trying to inform update handler about the error. Query: %s",
+            logger.error(format("An error happened while trying to inform update handler about the error. Query: %s",
                                 query));
         }
     }
@@ -240,5 +249,50 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
      */
     public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
         return Collections.unmodifiableSet(updateHandlers.keySet());
+    }
+
+    /**
+     * Builder class to instantiate a {@link SimpleQueryUpdateEmitter}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     */
+    public static class Builder {
+
+        private MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
+                NoOpMessageMonitor.INSTANCE;
+
+        /**
+         * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
+         * Defaults to a {@link NoOpMessageMonitor}.
+         *
+         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s
+         *                             being processed
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder updateMessageMonitor(
+                MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor) {
+            assertNonNull(updateMessageMonitor, "MessageMonitor may not be null");
+            this.updateMessageMonitor = updateMessageMonitor;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SimpleQueryUpdateEmitter} as specified through this Builder.
+         *
+         * @return a {@link SimpleQueryUpdateEmitter} as specified through this Builder
+         */
+        public SimpleQueryUpdateEmitter build() {
+            return new SimpleQueryUpdateEmitter(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
+        }
     }
 }

@@ -21,13 +21,13 @@ import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Instant;
 import java.util.Collections;
 
 import static java.util.UUID.randomUUID;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -36,7 +36,7 @@ public class DomainEventEntryTest {
 
     @Test
     public void testDomainEventEntry_WrapEventsCorrectly() {
-        Serializer serializer = new XStreamSerializer();
+        Serializer serializer = XStreamSerializer.builder().build();
 
         String payload = "Payload";
         MetaData metaData = new MetaData(Collections.singletonMap("Key", "Value"));

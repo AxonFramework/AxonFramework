@@ -135,7 +135,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @NoBeanOfType(QueryGateway.class)
     @Bean
     public QueryGateway queryGateway(QueryBus queryBus) {
-        return new DefaultQueryGateway(queryBus);
+        return DefaultQueryGateway.builder().queryBus(queryBus).build();
     }
 
     @Override

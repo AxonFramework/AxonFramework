@@ -16,8 +16,7 @@
 
 package org.axonframework.serialization;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 
@@ -32,7 +31,7 @@ public class JavaSerializerTest {
 
     @Before
     public void setUp() {
-        testSubject = new JavaSerializer();
+        testSubject = JavaSerializer.builder().build();
     }
 
     @Test
@@ -56,7 +55,9 @@ public class JavaSerializerTest {
 
     @Test
     public void testClassForType_CustomRevisionResolver() {
-        testSubject = new JavaSerializer(new FixedValueRevisionResolver("fixed"));
+        testSubject = JavaSerializer.builder()
+                                    .revisionResolver(new FixedValueRevisionResolver("fixed"))
+                                    .build();
         Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(),
                                                                          "fixed"));
         assertEquals(MySerializableObject.class, actual);
@@ -70,7 +71,9 @@ public class JavaSerializerTest {
     @Test
     public void testDeserializeNullValue() {
         SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
-        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class));
+        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(
+                serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class)
+        );
         assertNull(testSubject.deserialize(serializedNull));
         assertNull(testSubject.deserialize(serializedNullString));
     }

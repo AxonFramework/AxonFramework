@@ -315,9 +315,10 @@ public class KafkaPublisherTests {
     }
 
     private KafkaPublisher<?, ?> publisher(String topic, ProducerFactory<String, byte[]> producerFactory) {
-        DefaultKafkaMessageConverter messageConverter = DefaultKafkaMessageConverter.builder()
-                                                                                    .serializer(new XStreamSerializer())
-                                                                                    .build();
+        DefaultKafkaMessageConverter messageConverter =
+                DefaultKafkaMessageConverter.builder()
+                                            .serializer(XStreamSerializer.builder().build())
+                                            .build();
         KafkaPublisher<?, ?> testSubject = KafkaPublisher.<String, byte[]>builder()
                 .messageSource(eventBus)
                 .producerFactory(producerFactory)

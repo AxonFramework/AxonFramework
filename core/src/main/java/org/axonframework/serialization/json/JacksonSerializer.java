@@ -23,11 +23,14 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.*;
 
 import java.io.IOException;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Serializer implementation that uses Jackson to serialize objects into a JSON format. Although the Jackson serializer
@@ -45,85 +48,47 @@ public class JacksonSerializer implements Serializer {
     private final ClassLoader classLoader;
 
     /**
-     * Initialize the serializer with a default ObjectMapper instance. Revisions are resolved using {@link
-     * org.axonframework.serialization.Revision @Revision} annotations on the serialized classes.
-     */
-    public JacksonSerializer() {
-        this(new AnnotationRevisionResolver(), new ChainingConverter());
-    }
-
-    /**
-     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
-     * This objectMapper allows for customization of the serialized form.
+     * Instantiate a {@link JacksonSerializer} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
+     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
+     * {@link JsonNodeToByteArrayConverter) and {@link ByteArrayToJsonNodeConverter).
      *
-     * @param objectMapper The objectMapper to serialize objects and parse JSON with
+     * @param builder the {@link Builder} used to instantiate a {@link JacksonSerializer} instance
      */
-    public JacksonSerializer(ObjectMapper objectMapper) {
-        this(objectMapper, new AnnotationRevisionResolver(),
-             new ChainingConverter());
-    }
+    protected JacksonSerializer(Builder builder) {
+        builder.validate();
+        this.revisionResolver = builder.revisionResolver;
+        this.converter = builder.converter;
+        this.objectMapper = builder.objectMapper;
+        this.classLoader = builder.classLoader;
 
-    /**
-     * Initialize the serializer using a default ObjectMapper instance, using the given {@code revisionResolver}
-     * to define revision for each object to serialize, and given {@code converter} to be used by
-     * upcasters.
-     *
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converter        The factory providing the converter instances for upcasters
-     */
-    public JacksonSerializer(RevisionResolver revisionResolver, Converter converter) {
-        this(new ObjectMapper(), revisionResolver, converter);
-    }
-
-    /**
-     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
-     * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
-     * used to resolve the revision from an object to be serialized.
-     *
-     * @param objectMapper     The objectMapper to serialize objects and parse JSON with
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     */
-    public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver) {
-        this(objectMapper, revisionResolver, new ChainingConverter());
-    }
-
-    /**
-     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
-     * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
-     * used to resolve the revision from an object to be serialized. The given {@code converter} is the
-     * converter factory used by upcasters to convert between content types.
-     *
-     * @param objectMapper     The objectMapper to serialize objects and parse JSON with
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converter        The factory providing the converter instances for upcasters
-     */
-    public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver, Converter converter) {
-        this(objectMapper, revisionResolver, converter, null);
-    }
-
-    /**
-     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
-     * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
-     * used to resolve the revision from an object to be serialized. The given {@code converter} is the
-     * converter factory used by upcasters to convert between content types.
-     *
-     * @param objectMapper     The objectMapper to serialize objects and parse JSON with
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converter        The factory providing the converter instances for upcasters
-     * @param classLoader      The class loader to load classes with when deserializing
-     */
-    public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver, Converter converter,
-                             ClassLoader classLoader) {
-        this.revisionResolver = revisionResolver;
-        this.converter = converter;
-        this.objectMapper = objectMapper;
-        this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
         this.objectMapper.registerModule(
-                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer()));
+                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
+        );
         this.objectMapper.registerModule(new JavaTimeModule());
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link JacksonSerializer}.
+     * <p>
+     * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
+     * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
+     * the {@link ClassLoader} to the result of an {@link Object#getClass()#getClassLoader()} call.
+     * <p>
+     * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
+     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
+     * {@link JsonNodeToByteArrayConverter) and {@link ByteArrayToJsonNodeConverter).
+     *
+     * @return a Builder to be able to create a {@link JacksonSerializer}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -252,5 +217,99 @@ public class JacksonSerializer implements Serializer {
      */
     protected RevisionResolver getRevisionResolver() {
         return revisionResolver;
+    }
+
+    /**
+     * Builder class to instantiate a {@link JacksonSerializer}.
+     * <p>
+     * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
+     * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
+     * the {@link ClassLoader} to the result of an {@link Object#getClass()#getClassLoader()} call.
+     * <p>
+     * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
+     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
+     * {@link JsonNodeToByteArrayConverter) and {@link ByteArrayToJsonNodeConverter).
+     */
+    public static class Builder {
+
+        private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
+        private Converter converter = new ChainingConverter();
+        private ObjectMapper objectMapper = new ObjectMapper();
+        private ClassLoader classLoader = getClass().getClassLoader();
+
+        /**
+         * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
+         * an {@link AnnotationRevisionResolver} which resolves the revision based on the contents of the
+         * {@link org.axonframework.serialization.Revision} annotation on the serialized classes.
+         *
+         * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
+         *                         serialized
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder revisionResolver(RevisionResolver revisionResolver) {
+            assertNonNull(revisionResolver, "RevisionResolver may not be null");
+            this.revisionResolver = revisionResolver;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters
+         * to convert between different content types. Defaults to a {@link ChainingConverter}.
+         *
+         * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
+         *                  upcasters to convert between different content types
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder converter(Converter converter) {
+            assertNonNull(converter, "Converter may not be null");
+            this.converter = converter;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ObjectMapper} used to serialize and parse the objects to JSON. This ObjectMapper allows for
+         * customization of the serialized form. Defaults to the output of {@link ObjectMapper#ObjectMapper()}.
+         *
+         * @param objectMapper an {@link ObjectMapper} used to serialize and parse the objects to JSON
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder objectMapper(ObjectMapper objectMapper) {
+            assertNonNull(objectMapper, "ObjectMapper may not be null");
+            this.objectMapper = objectMapper;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ClassLoader} used to load classes with when deserializing. Defaults to the result of an
+         * {@link Object#getClass()#getClassLoader()} call.
+         *
+         * @param classLoader the {@link ClassLoader} used to load classes with when deserializing
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder classLoader(ClassLoader classLoader) {
+            assertNonNull(classLoader, "ClassLoader may not be null");
+            this.classLoader = classLoader;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link JacksonSerializer} as specified through this Builder.
+         *
+         * @return a {@link JacksonSerializer} as specified through this Builder
+         */
+        public JacksonSerializer build() {
+            return new JacksonSerializer(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
+        }
     }
 }

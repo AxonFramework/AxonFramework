@@ -149,7 +149,8 @@ public class AsyncFetcher<K, V> implements Fetcher {
         @SuppressWarnings("unchecked")
         private KafkaMessageConverter<K, V> messageConverter =
                 (KafkaMessageConverter<K, V>) DefaultKafkaMessageConverter.builder()
-                                                                          .serializer(new XStreamSerializer())
+                                                                          .serializer(XStreamSerializer.builder()
+                                                                                                       .build())
                                                                           .build();
         private String topic = "Axon.Events";
         private BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> consumerRecordCallback = (r, t) -> null;

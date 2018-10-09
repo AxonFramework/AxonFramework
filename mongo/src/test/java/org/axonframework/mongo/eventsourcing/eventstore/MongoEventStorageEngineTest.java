@@ -126,13 +126,15 @@ public class MongoEventStorageEngineTest extends AbstractMongoEventStorageEngine
 
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), upcasterChain, mongoTemplate,
+        return new MongoEventStorageEngine(XStreamSerializer.builder().build(),
+                                           upcasterChain,
+                                           mongoTemplate,
                                            new DocumentPerEventStorageStrategy());
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         return new MongoEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE,
                                            persistenceExceptionResolver, serializer, 100, mongoTemplate,
                                            new DocumentPerEventStorageStrategy());

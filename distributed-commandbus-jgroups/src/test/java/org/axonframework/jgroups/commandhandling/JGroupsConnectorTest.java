@@ -74,7 +74,7 @@ public class JGroupsConnectorTest {
         mockCommandBus1 = spy(SimpleCommandBus.builder().build());
         mockCommandBus2 = spy(SimpleCommandBus.builder().build());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        serializer = new XStreamSerializer();
+        serializer = XStreamSerializer.builder().build();
         connector1 = JGroupsConnector.builder()
                                      .localSegment(mockCommandBus1)
                                      .channel(channel1)
@@ -324,7 +324,7 @@ public class JGroupsConnectorTest {
 
     @Test
     public void testUnserializableResponseConvertedToNull() throws Exception {
-        serializer = spy(new XStreamSerializer());
+        serializer = spy(XStreamSerializer.builder().build());
         Object successResponse = new Object();
         Exception failureResponse = new MockException("This cannot be serialized");
         when(serializer.serialize(successResponse, byte[].class)).thenThrow(new SerializationException(

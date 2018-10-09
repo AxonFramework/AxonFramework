@@ -69,7 +69,7 @@ public class AbstractEventMultiUpcasterTest {
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
-        serializer = new JacksonSerializer(objectMapper);
+        serializer = JacksonSerializer.builder().objectMapper(objectMapper).build();
         upcaster = new StubEventMultiUpcaster(expectedNewString, expectedNewInteger, expectedNewBooleans);
     }
 

@@ -253,8 +253,10 @@ public class MongoSagaStoreTest {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga();
         AssociationValue associationValue = new AssociationValue("key", "value");
-        mongoTemplate.sagaCollection().insertOne(new SagaEntry<>(identifier, saga, singleton(associationValue),
-                                                                 new XStreamSerializer()).asDocument());
+        SagaEntry<MyTestSaga> testSagaEntry = new SagaEntry<>(
+                identifier, saga, singleton(associationValue), XStreamSerializer.builder().build()
+        );
+        mongoTemplate.sagaCollection().insertOne(testSagaEntry.asDocument());
 
         SagaStore.Entry<MyTestSaga> loaded = sagaStore.loadSaga(MyTestSaga.class, identifier);
         AssociationValues av = new AssociationValuesImpl(loaded.associationValues());
@@ -269,7 +271,7 @@ public class MongoSagaStoreTest {
     public void testSaveSaga() {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga();
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         mongoTemplate.sagaCollection()
                      .insertOne(new SagaEntry<>(identifier, saga, emptySet(), serializer).asDocument());
         SagaStore.Entry<MyTestSaga> loaded = sagaStore.loadSaga(MyTestSaga.class, identifier);
@@ -293,10 +295,10 @@ public class MongoSagaStoreTest {
         String identifier = UUID.randomUUID().toString();
         MyTestSaga saga = new MyTestSaga();
         AssociationValue associationValue = new AssociationValue("key", "value");
-        mongoTemplate.sagaCollection().insertOne(new SagaEntry<>(identifier,
-                                                                 saga,
-                                                                 singleton(associationValue),
-                                                                 new XStreamSerializer()).asDocument());
+        SagaEntry<MyTestSaga> testSagaEntry = new SagaEntry<>(
+                identifier, saga, singleton(associationValue), XStreamSerializer.builder().build()
+        );
+        mongoTemplate.sagaCollection().insertOne(testSagaEntry.asDocument());
         sagaStore.deleteSaga(MyTestSaga.class, identifier, singleton(associationValue));
 
         assertNull(mongoTemplate.sagaCollection().find(SagaEntry.queryByIdentifier(identifier)).first());

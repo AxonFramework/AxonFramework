@@ -357,7 +357,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     public static class Builder {
 
         private EntityManagerProvider entityManagerProvider;
-        private Serializer serializer = new XStreamSerializer();
+        private Serializer serializer = XStreamSerializer.builder().build();
 
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the

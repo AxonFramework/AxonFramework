@@ -15,16 +15,19 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+
+import static java.util.Arrays.asList;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of the QueryGateway interface that allows the registration of dispatchInterceptors.
@@ -37,21 +40,34 @@ import java.util.stream.Stream;
 public class DefaultQueryGateway implements QueryGateway {
 
     private final QueryBus queryBus;
-    private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors;
 
     /**
-     * Initializes the gateway to send queries to the given {@code queryBus} and invoking given
-     * {@code dispatchInterceptors} prior to publication ont he query bus.
+     * Instantiate a {@link DefaultQueryGateway} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link QueryBus} is not {@code null}, and will throw an {@link AxonConfigurationException}
+     * if it is {@code null}.
      *
-     * @param queryBus             The bus to deliver messages on
-     * @param dispatchInterceptors The interceptors to invoke prior to publication on the bus
+     * @param builder the {@link Builder} used to instantiate a {@link DefaultQueryGateway} instance
      */
-    @SafeVarargs
-    public DefaultQueryGateway(QueryBus queryBus,
-                               MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
-        this.queryBus = queryBus;
-        Arrays.stream(dispatchInterceptors).forEach(this::registerDispatchInterceptor);
+    protected DefaultQueryGateway(Builder builder) {
+        builder.validate();
+        this.queryBus = builder.queryBus;
+        this.dispatchInterceptors = builder.dispatchInterceptors;
     }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link DefaultQueryGateway}.
+     * <p>
+     * The {@code dispatchInterceptors} is defaulted to an empty list. The {@link QueryBus} is a
+     * <b>hard requirement</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link DefaultQueryGateway}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
 
     @Override
     public <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType) {
@@ -96,5 +112,78 @@ public class DefaultQueryGateway implements QueryGateway {
             intercepted = (T) interceptor.handle(intercepted);
         }
         return intercepted;
+    }
+
+    /**
+     * Builder class to instantiate a {@link DefaultQueryGateway}.
+     * <p>
+     * The {@code dispatchInterceptors} is defaulted to an empty list. The {@link QueryBus} is a
+     * <b>hard requirement</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private QueryBus queryBus;
+        private List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors =
+                new CopyOnWriteArrayList<>();
+
+        /**
+         * Sets the {@link QueryBus} to deliver {@link QueryMessage}s on received in this {@link QueryGateway}
+         * implementation.
+         *
+         * @param queryBus a {@link QueryBus} to deliver {@link QueryMessage}s on received in this {@link QueryGateway}
+         *                 implementation
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder queryBus(QueryBus queryBus) {
+            assertNonNull(queryBus, "QueryBus may not be null");
+            this.queryBus = queryBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s.
+         * Are invoked when a query is being dispatched.
+         *
+         * @param dispatchInterceptors which are invoked when a query is being dispatched
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder dispatchInterceptors(
+                MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
+            return dispatchInterceptors(asList(dispatchInterceptors));
+        }
+
+        /**
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s.
+         * Are invoked when a query is being dispatched.
+         *
+         * @param dispatchInterceptors which are invoked when a query is being dispatched
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder dispatchInterceptors(
+                List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors) {
+            this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
+                    ? new CopyOnWriteArrayList<>(dispatchInterceptors)
+                    : new CopyOnWriteArrayList<>();
+            return this;
+        }
+
+        /**
+         * Initializes a {@link DefaultQueryGateway} as specified through this Builder.
+         *
+         * @return a {@link DefaultQueryGateway} as specified through this Builder
+         */
+        public DefaultQueryGateway build() {
+            return new DefaultQueryGateway(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(queryBus, "The QueryBus is a hard requirement and should be provided");
+        }
     }
 }

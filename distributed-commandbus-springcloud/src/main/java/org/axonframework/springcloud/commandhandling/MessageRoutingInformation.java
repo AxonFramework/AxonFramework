@@ -34,6 +34,7 @@ import java.util.Objects;
  * CommandMessages a node can(not) handle.
  *
  * @author Steven van Beelen
+ * @since 3.1
  */
 public class MessageRoutingInformation implements Serializable {
 

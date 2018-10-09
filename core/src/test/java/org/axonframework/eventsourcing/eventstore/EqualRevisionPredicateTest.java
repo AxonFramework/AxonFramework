@@ -20,13 +20,11 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Instant;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class EqualRevisionPredicateTest {
 
@@ -35,7 +33,7 @@ public class EqualRevisionPredicateTest {
 
     @Before
     public void setUp() {
-        testSubject = new EqualRevisionPredicate(new AnnotationRevisionResolver(), new XStreamSerializer());
+        testSubject = new EqualRevisionPredicate(new AnnotationRevisionResolver(), XStreamSerializer.builder().build());
     }
 
     @Test
@@ -69,8 +67,8 @@ public class EqualRevisionPredicateTest {
 
     private static DomainEventData<?> createEntry(String payloadType, String payloadRevision) {
         return new GenericDomainEventEntry<>(TYPE, AGGREGATE, 0,
-                IdentifierFactory.getInstance().generateIdentifier(), Instant.now(),
-                payloadType, payloadRevision, PAYLOAD, METADATA);
+                                             IdentifierFactory.getInstance().generateIdentifier(), Instant.now(),
+                                             payloadType, payloadRevision, PAYLOAD, METADATA);
     }
 
     @Revision("2.3-TEST")

@@ -98,13 +98,13 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         @Bean
         @Primary
         public Serializer mySerializer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
 
         @Bean
         @Qualifier("eventSerializer")
         public Serializer myEventSerializer() {
-            return new JacksonSerializer();
+            return JacksonSerializer.builder().build();
         }
     }
 }

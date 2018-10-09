@@ -28,6 +28,7 @@ import java.util.stream.Stream;
  *
  * @param <T> The data format that this upcaster uses to represent the data
  * @author Rene de Waele
+ * @since 3.0
  */
 @FunctionalInterface
 public interface Upcaster<T> {

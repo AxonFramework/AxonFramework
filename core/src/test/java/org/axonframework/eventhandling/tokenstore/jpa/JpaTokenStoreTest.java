@@ -100,7 +100,7 @@ public class JpaTokenStoreTest {
                                                .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.get(0).getOwner());
-        assertNull(tokens.get(0).getToken(new XStreamSerializer()));
+        assertNull(tokens.get(0).getToken(XStreamSerializer.builder().build()));
     }
 
     @Transactional
@@ -328,7 +328,7 @@ public class JpaTokenStoreTest {
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return JpaTokenStore.builder()
                                 .entityManagerProvider(entityManagerProvider)
-                                .serializer(new XStreamSerializer())
+                                .serializer(XStreamSerializer.builder().build())
                                 .nodeId("local")
                                 .build();
         }
@@ -337,7 +337,7 @@ public class JpaTokenStoreTest {
         public JpaTokenStore concurrentJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return JpaTokenStore.builder()
                                 .entityManagerProvider(entityManagerProvider)
-                                .serializer(new XStreamSerializer())
+                                .serializer(XStreamSerializer.builder().build())
                                 .claimTimeout(Duration.ofSeconds(2))
                                 .nodeId("concurrent")
                                 .build();
@@ -347,7 +347,7 @@ public class JpaTokenStoreTest {
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return JpaTokenStore.builder()
                                 .entityManagerProvider(entityManagerProvider)
-                                .serializer(new XStreamSerializer())
+                                .serializer(XStreamSerializer.builder().build())
                                 .claimTimeout(Duration.ofSeconds(-1))
                                 .nodeId("stealing")
                                 .build();

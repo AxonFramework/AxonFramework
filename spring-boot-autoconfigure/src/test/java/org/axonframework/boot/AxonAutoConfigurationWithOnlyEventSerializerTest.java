@@ -19,8 +19,8 @@ package org.axonframework.boot;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -70,13 +70,13 @@ public class AxonAutoConfigurationWithOnlyEventSerializerTest {
         @Bean
         @Qualifier("eventSerializer")
         public Serializer myEventSerializer() {
-            return new JacksonSerializer();
+            return JacksonSerializer.builder().build();
         }
 
         @Bean
         @Qualifier("messageSerializer")
         public Serializer myMessageSerializer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
     }
 }

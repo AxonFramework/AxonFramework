@@ -21,9 +21,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.UnknownSerializedType;
+import org.junit.*;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -43,7 +48,7 @@ public class JacksonSerializerTest {
 
     @Before
     public void setUp() {
-        testSubject = new JacksonSerializer();
+        testSubject = JacksonSerializer.builder().build();
         time = Instant.now();
     }
 
@@ -86,10 +91,13 @@ public class JacksonSerializerTest {
 
         SerializedObject<byte[]> serialized = testSubject.serialize(toSerialize, byte[].class);
 
-        Object actual = testSubject.deserialize(new SimpleSerializedObject<>(serialized.getData(), byte[].class, "someUnknownType", "42.1"));
+        Object actual = testSubject.deserialize(new SimpleSerializedObject<>(serialized.getData(),
+                                                                             byte[].class,
+                                                                             "someUnknownType",
+                                                                             "42.1"));
 
         assertTrue(actual instanceof UnknownSerializedType);
-        UnknownSerializedType actualUnknown = ((UnknownSerializedType)actual);
+        UnknownSerializedType actualUnknown = ((UnknownSerializedType) actual);
 
         assertTrue(actualUnknown.supportsFormat(JsonNode.class));
         JsonNode actualJson = actualUnknown.readData(JsonNode.class);
@@ -112,11 +120,15 @@ public class JacksonSerializerTest {
 
     @Test
     public void testCustomObjectMapperRevisionResolverAndConverter() {
-        ObjectMapper objectMapper = spy(new ObjectMapper());
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
         ChainingConverter converter = spy(new ChainingConverter());
+        ObjectMapper objectMapper = spy(new ObjectMapper());
 
-        testSubject = new JacksonSerializer(objectMapper, revisionResolver, converter);
+        testSubject = JacksonSerializer.builder()
+                                       .revisionResolver(revisionResolver)
+                                       .converter(converter)
+                                       .objectMapper(objectMapper)
+                                       .build();
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new SimpleSerializableType("test"),
                                                                     byte[].class);
@@ -135,7 +147,10 @@ public class JacksonSerializerTest {
         ObjectMapper objectMapper = spy(new ObjectMapper());
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
 
-        testSubject = new JacksonSerializer(objectMapper, revisionResolver);
+        testSubject = JacksonSerializer.builder()
+                                       .revisionResolver(revisionResolver)
+                                       .objectMapper(objectMapper)
+                                       .build();
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new SimpleSerializableType("test"),
                                                                     byte[].class);
@@ -152,7 +167,9 @@ public class JacksonSerializerTest {
     public void testCustomObjectMapper() {
         ObjectMapper objectMapper = spy(new ObjectMapper());
 
-        testSubject = new JacksonSerializer(objectMapper);
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(objectMapper)
+                                       .build();
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new SimpleSerializableType("test"),
                                                                     byte[].class);
@@ -166,7 +183,7 @@ public class JacksonSerializerTest {
 
     @Test
     public void testSerializeMetaData() {
-        testSubject = new JacksonSerializer();
+        testSubject = JacksonSerializer.builder().build();
 
         SerializedObject<byte[]> serialized = testSubject.serialize(MetaData.from(singletonMap("test", "test")),
                                                                     byte[].class);
@@ -180,7 +197,8 @@ public class JacksonSerializerTest {
     @Test
     public void testSerializeMetaDataWithComplexObjects() {
         // typing must be enabled for this (which we expect end-users to do
-        testSubject.getObjectMapper().enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
+        testSubject.getObjectMapper()
+                   .enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
 
         MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
         SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
@@ -192,12 +210,15 @@ public class JacksonSerializerTest {
     @Test
     public void testDeserializeNullValue() {
         SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
-        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class));
+        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(
+                serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class)
+        );
         assertNull(testSubject.deserialize(serializedNull));
         assertNull(testSubject.deserialize(serializedNullString));
     }
 
     public static class ComplexObject {
+
         private final String value1;
         private final String value2;
         private final int value3;

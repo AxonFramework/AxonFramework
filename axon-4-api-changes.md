@@ -115,3 +115,10 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.mongo.eventsourcing.tokenstore.MongoTokenStore
 - org.axonframework.mongo.AbstractMongoTemplate
 - org.axonframework.mongo.DefaultMongoTemplate
+- org.axonframework.queryhandling.DefaultQueryGateway
+- org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler
+- org.axonframework.serialization.json.JacksonSerializer
+- org.axonframework.serialization.JavaSerializer
+- org.axonframework.serialization.AbstractXStreamSerializer
+- org.axonframework.mongo.serialization.DBObjectXStreamSerializer
+- org.axonframework.serialization.xml.XStreamSerializer

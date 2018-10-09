@@ -88,10 +88,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
                                          PersistenceExceptionResolver persistenceExceptionResolver,
                                          Serializer eventSerializer,
                                          Predicate<? super DomainEventData<?>> snapshotFilter) {
-        this.serializer = getOrDefault(snapshotSerializer, XStreamSerializer::new);
+        this.serializer = getOrDefault(snapshotSerializer, XStreamSerializer.builder().build());
         this.upcasterChain = getOrDefault(upcasterChain, () -> NoOpEventUpcaster.INSTANCE);
         this.persistenceExceptionResolver = persistenceExceptionResolver;
-        this.eventSerializer = getOrDefault(eventSerializer, XStreamSerializer::new);
+        this.eventSerializer = getOrDefault(eventSerializer, XStreamSerializer.builder().build());
         this.snapshotFilter = getOrDefault(snapshotFilter, i -> true);
     }
 

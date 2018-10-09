@@ -64,7 +64,7 @@ public class GenericMessageTest {
     @Test
     public void testMessageSerialization() {
         GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
-        Serializer jacksonSerializer = new JacksonSerializer();
+        Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
         SerializedObject<String> serializedPayload = message.serializePayload(jacksonSerializer, String.class);
         SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);

@@ -297,7 +297,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
 
         private ConnectionProvider connectionProvider;
         private SagaSqlSchema sqlSchema = new GenericSagaSqlSchema();
-        private Serializer serializer = new XStreamSerializer();
+        private Serializer serializer = XStreamSerializer.builder().build();
 
         /**
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.

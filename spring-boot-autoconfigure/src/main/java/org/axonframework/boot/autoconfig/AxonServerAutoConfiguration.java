@@ -122,7 +122,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean
     public QueryInvocationErrorHandler queryInvocationErrorHandler() {
-        return new LoggingQueryInvocationErrorHandler();
+        return LoggingQueryInvocationErrorHandler.builder().build();
     }
 
     @Bean

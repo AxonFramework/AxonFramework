@@ -149,13 +149,19 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                                    "com/fasterxml/jackson/databind/ObjectMapper"
                                            ));
                 ChainingConverter converter = new ChainingConverter(beanClassLoader);
-                return new JacksonSerializer(objectMapper, revisionResolver, converter);
+                return JacksonSerializer.builder()
+                                        .revisionResolver(revisionResolver)
+                                        .converter(converter)
+                                        .objectMapper(objectMapper)
+                                        .build();
             case JAVA:
-                return new JavaSerializer(revisionResolver);
+                return JavaSerializer.builder().revisionResolver(revisionResolver).build();
             case XSTREAM:
             case DEFAULT:
             default:
-                XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
+                XStreamSerializer xStreamSerializer = XStreamSerializer.builder()
+                                                                       .revisionResolver(revisionResolver)
+                                                                       .build();
                 xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
                 return xStreamSerializer;
         }
@@ -261,8 +267,10 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return SimpleQueryBus.builder()
                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                              .transactionManager(transactionManager)
-                             .errorHandler(axonConfiguration.getComponent(QueryInvocationErrorHandler.class,
-                                                                          LoggingQueryInvocationErrorHandler::new))
+                             .errorHandler(axonConfiguration.getComponent(
+                                     QueryInvocationErrorHandler.class,
+                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
+                             ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                              .build();
     }

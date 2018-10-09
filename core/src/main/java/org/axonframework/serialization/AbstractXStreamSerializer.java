@@ -25,7 +25,7 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.AnnotatedSaga;
@@ -40,6 +40,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Abstract implementation for XStream based serializers. It provides some helper methods and configuration features
  * independent of the actual format used to marshal to.
@@ -49,81 +51,23 @@ import java.util.UUID;
  */
 public abstract class AbstractXStreamSerializer implements Serializer {
 
-    private static final Charset DEFAULT_CHARSET_NAME = Charset.forName("UTF-8");
-
     private final XStream xStream;
     private final Charset charset;
     private final RevisionResolver revisionResolver;
     private final Converter converter;
 
     /**
-     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
-     * the serialization.
-     * <p/>
-     * An {@link AnnotationRevisionResolver} is used to resolve the revision for serialized objects.
+     * Instantiate a {@link AbstractXStreamSerializer} based on the fields contained in the {@link Builder}.
      *
-     * @param xStream XStream instance to use
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractXStreamSerializer} instance
      */
-    protected AbstractXStreamSerializer(XStream xStream) {
-        this(xStream, new AnnotationRevisionResolver());
-    }
+    protected AbstractXStreamSerializer(Builder builder) {
+        builder.validate();
+        this.charset = builder.charset;
+        this.xStream = builder.xStream;
+        this.converter = builder.converter;
+        this.revisionResolver = builder.revisionResolver;
 
-    /**
-     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance is used to perform
-     * the serialization.
-     *
-     * @param xStream          XStream instance to use
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     */
-    protected AbstractXStreamSerializer(XStream xStream, RevisionResolver revisionResolver) {
-        this(DEFAULT_CHARSET_NAME, xStream, revisionResolver);
-    }
-
-    /**
-     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
-     * {@code xStream} instance is configured with several converters for the most common types in Axon.
-     * <p/>
-     * An {@link AnnotationRevisionResolver} is used to resolve revision for serialized objects.
-     *
-     * @param charset The character set to use
-     * @param xStream The XStream instance to use
-     */
-    protected AbstractXStreamSerializer(Charset charset, XStream xStream) {
-        this(charset, xStream, new AnnotationRevisionResolver(), new ChainingConverter());
-    }
-
-    /**
-     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
-     * {@code xStream} instance is configured with several converters for the most common types in Axon.
-     *
-     * @param charset          The character set to use
-     * @param xStream          The XStream instance to use
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     */
-    protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
-        this(charset, xStream, revisionResolver, new ChainingConverter());
-    }
-
-    /**
-     * Initialize the serializer using the given {@code charset}, {@code xStream} instance,
-     * {@code revisionResolver} and {@code converter}. The {@code xStream} instance is configured
-     * with several converters for the most common types in Axon.
-     *
-     * @param charset          The character set to use
-     * @param xStream          The XStream instance to use
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converter        The converter providing the necessary content converters
-     */
-    protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
-                                        Converter converter) {
-        Assert.notNull(charset, () -> "charset may not be null");
-        Assert.notNull(xStream, () -> "xStream may not be null");
-        Assert.notNull(converter, () -> "converter may not be null");
-        Assert.notNull(revisionResolver, () -> "revisionResolver may not be null");
-        this.charset = charset;
-        this.xStream = xStream;
-        this.converter = converter;
-        this.revisionResolver = revisionResolver;
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
@@ -277,6 +221,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
+     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
@@ -313,6 +258,92 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return xStream.getMapper().serializedClass(type);
     }
 
+    /**
+     * Abstract Builder class to instantiate {@link AbstractXStreamSerializer}.
+     * <p>
+     * The {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8} character set, the
+     * {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link Converter} defaults to
+     * a {@link ChainingConverter}. The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
+     * <p>
+     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
+     * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage}, the {@link AnnotatedSaga} and the
+     * {@link MetaData} objects among others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if
+     * the provided Converter instance is of type ChainingConverter, then the
+     * {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)} function will be called. Depending on the
+     * AbstractXStreamSerializer, this will add a number of Converter instances to the chain.
+     */
+    public abstract static class Builder {
+
+        private XStream xStream;
+        private Charset charset = Charset.forName("UTF-8");
+        private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
+        private Converter converter = new ChainingConverter();
+
+        /**
+         * Sets the {@link XStream} used to perform the serialization of objects to XML, and vice versa.
+         *
+         * @param xStream the {@link XStream} used to perform the serialization of objects to XML, and vice versa
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder xStream(XStream xStream) {
+            assertNonNull(xStream, "XStream may not be null");
+            this.xStream = xStream;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Charset} used for the in- and output streams required by {@link XStream} for the to and from
+         * xml function calls. Defaults to a {@link Charset#forName(String)} using the {@code UTF-8} character set.
+         *
+         * @param charset the {@link Charset} used for the in- and output streams required by {@link XStream}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder charset(Charset charset) {
+            assertNonNull(charset, "Charset may not be null");
+            this.charset = charset;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
+         * an {@link AnnotationRevisionResolver} which resolves the revision based on the contents of the
+         * {@link org.axonframework.serialization.Revision} annotation on the serialized classes.
+         *
+         * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
+         *                         serialized
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder revisionResolver(RevisionResolver revisionResolver) {
+            assertNonNull(revisionResolver, "RevisionResolver may not be null");
+            this.revisionResolver = revisionResolver;
+            return this;
+        }
+
+
+        /**
+         * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters
+         * to convert between different content types. Defaults to a {@link ChainingConverter}.
+         *
+         * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
+         *                  upcasters to convert between different content types
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder converter(Converter converter) {
+            assertNonNull(converter, "Converter may not be null");
+            this.converter = converter;
+            return this;
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(xStream, "The XStream is a hard requirement and should be provided");
+        }
+    }
 
     /**
      * Class that marshals MetaData in the least verbose way.
