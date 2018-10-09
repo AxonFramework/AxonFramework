@@ -29,20 +29,28 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.DefaultMongoTemplate;
+import org.axonframework.mongo.MongoTemplate;
+import org.axonframework.mongo.eventhandling.saga.repository.MongoSagaStore;
 import org.axonframework.mongo.eventsourcing.eventstore.documentpercommit.DocumentPerCommitStorageStrategy;
+import org.axonframework.mongo.serialization.DBObjectXStreamSerializer;
 import org.axonframework.mongo.utils.MongoLauncher;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.spring.saga.SpringResourceInjector;
 import org.junit.*;
-import org.junit.runner.RunWith;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -52,15 +60,14 @@ import java.util.List;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context_doc_per_commit.xml"})
+@ContextConfiguration(classes = MongoEventStorageEngineTest_DocPerCommit.TestContext.class)
 public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEventStorageEngineTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStorageEngineTest_DocPerCommit.class);
@@ -101,7 +108,7 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
-        mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate = DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
         mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
         mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
         mongoTemplate.eventCollection().dropIndexes();
@@ -140,7 +147,7 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
         List<? extends TrackedEventData<?>> actual = testSubject.fetchTrackedEvents(last.trackingToken(), 2);
         assertFalse("Expected to retrieve some events", actual.isEmpty());
         // we want to make sure we get the first event from the next commit
-        assertEquals(result.size(), ((DomainEventData<?>)actual.get(0)).getSequenceNumber());
+        assertEquals(result.size(), ((DomainEventData<?>) actual.get(0)).getSequenceNumber());
     }
 
     @Test
@@ -157,7 +164,7 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
         List<? extends TrackedEventData<?>> actual = testSubject.fetchTrackedEvents(last.trackingToken(), 2);
         assertFalse("Expected to retrieve some events", actual.isEmpty());
         // we want to make sure we get the last event from the commit
-        assertEquals(result.size() - 1, ((DomainEventData<?>)actual.get(0)).getSequenceNumber());
+        assertEquals(result.size() - 1, ((DomainEventData<?>) actual.get(0)).getSequenceNumber());
     }
 
     @Test(expected = ConcurrencyException.class)
@@ -224,5 +231,68 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
                                                       .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event1, event2, event3, event4, event5), readEvents);
+    }
+
+    @Configuration
+    public static class TestContext {
+
+        @Bean
+        public MongoEventStorageEngine mongoEventStorageEngine(Serializer serializer, MongoTemplate mongoTemplate) {
+            return new MongoEventStorageEngine(serializer,
+                                               NoOpEventUpcaster.INSTANCE,
+                                               mongoTemplate,
+                                               new DocumentPerCommitStorageStrategy());
+        }
+
+        @Bean
+        public Serializer serializer() {
+            return new DBObjectXStreamSerializer();
+        }
+
+        @Bean
+        public MongoTemplate mongoTemplate(MongoClient mongoClient) {
+            return DefaultMongoTemplate.builder()
+                                       .mongoDatabase(mongoClient)
+                                       .build();
+        }
+
+        @Bean
+        public MongoClient mongoClient(MongoFactory mongoFactory) {
+            return mongoFactory.createMongo();
+        }
+
+        @Bean
+        public MongoFactory mongoFactoryBean(MongoOptionsFactory mongoOptionsFactory) {
+            MongoFactory mongoFactory = new MongoFactory();
+            mongoFactory.setMongoOptions(mongoOptionsFactory.createMongoOptions());
+            return mongoFactory;
+        }
+
+        @Bean
+        public MongoOptionsFactory mongoOptionsFactory() {
+            MongoOptionsFactory mongoOptionsFactory = new MongoOptionsFactory();
+            mongoOptionsFactory.setConnectionsPerHost(100);
+            return mongoOptionsFactory;
+        }
+
+        @Bean
+        public SpringResourceInjector springResourceInjector() {
+            return new SpringResourceInjector();
+        }
+
+        @Bean
+        public MongoSagaStore mongoSagaStore(MongoTemplate sagaMongoTemplate) {
+            return MongoSagaStore.builder().mongoTemplate(sagaMongoTemplate).build();
+        }
+
+        @Bean
+        public MongoTemplate sagaMongoTemplate(MongoClient mongoClient) {
+            return DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
+        }
+
+        @Bean
+        public PlatformTransactionManager transactionManager() {
+            return mock(PlatformTransactionManager.class);
+        }
     }
 }

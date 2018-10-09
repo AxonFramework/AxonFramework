@@ -32,8 +32,23 @@ the other Builder implementations introduced. This entails the following changes
  - DefaultProducerFactory.Builder#withCloseTimeout(int, TimeUnit) has been renamed to DefaultProducerFactory.Builder#closeTimeout(int, TimeUnit) 
  - DefaultProducerFactory.Builder#withProducerCacheSize(int) has been renamed to DefaultProducerFactory.Builder#producerCacheSize(int) 
  - DefaultProducerFactory.Builder#withConfirmationMode(ConfirmationMode) has been renamed to DefaultProducerFactory.Builder#confirmationMode(ConfirmationMode) 
- - DefaultProducerFactory.Builder#withTransactionalIdPrefix(String) has been renamed to DefaultProducerFactory.Builder#transactionalIdPrefix(String) 
- 
+ - DefaultProducerFactory.Builder#withTransactionalIdPrefix(String) has been renamed to DefaultProducerFactory.Builder#transactionalIdPrefix(String)
+* Renamed CommitEntryConfiguration.Builder functions to align with new builder approach:
+ - withFirstTimestampProperty(String) -> firstTimestampProperty(String) 
+ - withLastTimestampProperty(String) -> lastTimestampProperty(String) 
+ - withFirstSequenceNumberProperty(String) -> firstSequenceNumberProperty(String) 
+ - withLastSequenceNumberProperty(String) -> lastSequenceNumberProperty(String) 
+ - withEventsProperty(String) -> eventsProperty(String)  
+* Renamed EventEntryConfiguration.Builder functions to align with new builder approach:
+ - withTimestampProperty(String) -> timestampProperty(String)
+ - withEventIdentifierProperty(String) -> eventIdentifierProperty(String)
+ - withAggregateIdentifierProperty(String) -> aggregateIdentifierProperty(String)
+ - withSequenceNumberProperty(String) -> sequenceNumberProperty(String)
+ - withTypeProperty(String) -> typeProperty(String)
+ - withPayloadTypeProperty(String) -> payloadTypeProperty(String)
+ - withPayloadRevisionProperty(String) -> payloadRevisionProperty(String)
+ - withPayloadProperty(String) -> payloadProperty(String)
+ - withMetaDataProperty(String) -> metaDataProperty(String)
 
 ### Moved classes
 
@@ -46,9 +61,10 @@ the other Builder implementations introduced. This entails the following changes
 | org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType   | org.axonframework.messaging.responsetypes.MultipleInstancesResponseType    |
 | org.axonframework.queryhandling.responsetypes.ResponseType                    | org.axonframework.messaging.responsetypes.ResponseType                     |
 | org.axonframework.queryhandling.responsetypes.ResponseTypes                   | org.axonframework.messaging.responsetypes.ResponseTypes                    |
+| org.axonframework.boot.autoconfig.KafkaProperties                             | org.axonframework.boot.KafkaProperties                                     |
 
 ### Removed classes
-|                                       Class                                   |                      Why                     |
+|                           Class                                               |             Why                              |
 |-------------------------------------------------------------------------------|----------------------------------------------|
 | org.axonframework.serialization.MessageSerializer                             | All messages are serializable now.           |
 | org.axonframework.serialization.SerializationAware                            | All messages are serializable now.           |
@@ -95,3 +111,7 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.kafka.eventhandling.consumer.AsyncFetcher
 - org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory
 - org.axonframework.kafka.eventhandling.producer.KafkaPublisher
+- org.axonframework.mongo.eventhandling.saga.repository.MongoSagaStore
+- org.axonframework.mongo.eventsourcing.tokenstore.MongoTokenStore
+- org.axonframework.mongo.AbstractMongoTemplate
+- org.axonframework.mongo.DefaultMongoTemplate

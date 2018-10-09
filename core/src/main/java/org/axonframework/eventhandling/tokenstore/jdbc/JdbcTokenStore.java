@@ -447,7 +447,7 @@ public class JdbcTokenStore implements TokenStore {
      * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
      * {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
      * {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and {@link Serializer} are
-     * a <b>hard requirements</b> and as such should be provided.
+     * <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 

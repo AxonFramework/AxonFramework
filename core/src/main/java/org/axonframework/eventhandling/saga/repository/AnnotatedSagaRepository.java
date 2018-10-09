@@ -391,6 +391,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
+            super.validate();
             assertNonNull(sagaType, "The sagaType is a hard requirement and should be provided");
             assertNonNull(sagaStore, "The SagaStore is a hard requirement and should be provided");
         }
