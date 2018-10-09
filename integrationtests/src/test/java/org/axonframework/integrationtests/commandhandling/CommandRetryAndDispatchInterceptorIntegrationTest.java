@@ -52,7 +52,11 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     public void setUp() {
         this.commandBus = SimpleCommandBus.builder().build();
         scheduledThreadPool = Executors.newScheduledThreadPool(1);
-        retryScheduler = new IntervalRetryScheduler(scheduledThreadPool, 0, 1);
+        retryScheduler = IntervalRetryScheduler.builder()
+                                               .retryExecutor(scheduledThreadPool)
+                                               .retryInterval(0)
+                                               .maxRetryCount(1)
+                                               .build();
     }
 
     @After
