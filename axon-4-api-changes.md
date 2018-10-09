@@ -1,10 +1,17 @@
 Major API Changes
 =================
 
+## Serialization
+Instead of throwing an `UnknownSerializedTypeException`, serializers now return an `UnknownSerializedType` object, 
+which provides access to the raw data in any supported intermediate representation, such as `JsonNode` or Dom4J 
+`Document`.
+
 Other changes
 =============
 
 * TrackingToken removed from `AnnotatedSaga` and `SagaStore` implementations
+* EventProcessingConfiguration represents an interface for accessing event processing components
+* SagaConfiguration is a configuration component carrier only - does not start any processors
 * The org.axonframework.kafka.eventhandling.consumer.AsyncFetcher it's Builder solution has been made equal to the other
 Builder implementations introduced. This entails the following changes:
  - The AsyncFetcher constructor has been made protected for overriding
@@ -57,17 +64,14 @@ the other Builder implementations introduced. This entails the following changes
 | org.axonframework.boot.autoconfig.KafkaProperties                             | org.axonframework.boot.KafkaProperties                                     |
 
 ### Removed classes
-|                           Class                    |             Why                     |
-|----------------------------------------------------|-------------------------------------|
-| org.axonframework.serialization.MessageSerializer  | All messages are serializable now.  |
-| org.axonframework.serialization.SerializationAware | All messages are serializable now.  |
-
-### Removed classes
-
-|                                   Class                                       |                       Why                     |
-|-------------------------------------------------------------------------------|-----------------------------------------------|
-| org.axonframework.commandhandling.disruptor.DisruptorConfiguration            | Removed in favor DisruptorCommandBus.Builder  |
-| org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration    | Removed in favor KafkaPublisher.Builder       |
+|                           Class                                               |             Why                              |
+|-------------------------------------------------------------------------------|----------------------------------------------|
+| org.axonframework.serialization.MessageSerializer                             | All messages are serializable now.           |
+| org.axonframework.serialization.SerializationAware                            | All messages are serializable now.           |
+| org.axonframework.serialization.UnknownSerializedTypeException                | Serializers now return UnknownSerializedType |
+| org.axonframework.commandhandling.disruptor.DisruptorConfiguration            | Removed in favor DisruptorCommandBus.Builder |
+| org.axonframework.config.EventHandlingConfiguration                           | Removed in favor of EventProcessingModule    |
+| org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration    | Removed in favor KafkaPublisher.Builder      |
 
 ### Classes for which the Constructor has been replaced for a Builder
 

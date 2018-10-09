@@ -82,26 +82,9 @@ public interface Configuration {
     @SuppressWarnings("unchecked")
     default <T extends ModuleConfiguration> List<T> findModules(Class<T> moduleType) {
         return getModules().stream()
-                           .filter(m -> moduleType.isInstance(m.unwrap()))
+                           .filter(m -> m.isType(moduleType))
                            .map(m -> (T) m.unwrap())
                            .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns the Event Processing Configuration in this Configuration.
-     *
-     * @return the Event Processing Configuration defined in this Configuration
-     */
-    default EventProcessingConfiguration eventProcessingConfiguration() {
-        List<EventProcessingConfiguration> modules = findModules(EventProcessingConfiguration.class);
-        switch (modules.size()) {
-            case 0:
-                return null;
-            case 1:
-                return modules.get(0);
-            default:
-                throw new AxonConfigurationException("Found more than one EventProcessingConfiguration modules");
-        }
     }
 
     /**
@@ -145,6 +128,33 @@ public interface Configuration {
      */
     default CommandGateway commandGateway() {
         return getComponent(CommandGateway.class);
+    }
+
+    /**
+     * Returns the {@link EventProcessingConfiguration} defined in this Configuration. If there aren't any defined,
+     * {@code null} will be returned. If there is exactly one, it will be returned. For case when there are multiple,
+     * an {@link AxonConfigurationException} is thrown and the {@link #getModules()} API should be used instead.
+     *
+     * @return the {@link EventProcessingConfiguration} defined in this Configuration
+     *
+     * @throws AxonConfigurationException thrown if there are more than one Event Processing Configurations defined with
+     *                                    this configuration
+     */
+    default EventProcessingConfiguration eventProcessingConfiguration() throws AxonConfigurationException {
+        List<EventProcessingConfiguration> eventProcessingModules =
+                getModules().stream()
+                            .filter(module -> module.isType(EventProcessingConfiguration.class))
+                            .map(module -> (EventProcessingConfiguration) module.unwrap())
+                            .collect(Collectors.toList());
+        switch (eventProcessingModules.size()) {
+            case 0:
+                return null;
+            case 1:
+                return eventProcessingModules.get(0);
+            default:
+                throw new AxonConfigurationException(
+                        "There are several EventProcessingConfigurations defined. Use findModules(Class<T>) method instead.");
+        }
     }
 
     /**

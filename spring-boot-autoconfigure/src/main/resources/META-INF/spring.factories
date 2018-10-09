@@ -1,5 +1,6 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.boot.autoconfig.MetricsAutoConfiguration,\
+  org.axonframework.boot.autoconfig.EventProcessingAutoConfiguration,\
   org.axonframework.boot.autoconfig.AxonAutoConfiguration,\
   org.axonframework.boot.autoconfig.RoutingStrategyAutoConfiguration,\
   org.axonframework.boot.autoconfig.SpringCloudAutoConfiguration,\

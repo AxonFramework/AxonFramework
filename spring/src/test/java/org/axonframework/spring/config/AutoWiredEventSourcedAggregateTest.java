@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -52,7 +54,7 @@ public class AutoWiredEventSourcedAggregateTest {
         assertEquals(EventSourcingRepository.class, myAggregateRepository.getClass());
     }
 
-    @EnableAxon
+    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Scope
     @Configuration
     public static class Context {
@@ -65,6 +67,11 @@ public class AutoWiredEventSourcedAggregateTest {
         @Bean
         public EntityManagerProvider entityManagerProvider() {
             return mock(EntityManagerProvider.class);
+        }
+
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            return new EventProcessingModule();
         }
 
         @Aggregate

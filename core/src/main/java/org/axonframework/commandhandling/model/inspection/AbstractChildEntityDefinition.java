@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,6 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
                                                                              EntityModel<Object> childEntityModel) {
         return childEntityModel.commandHandlers()
-                               .values()
                                .stream()
                                .map(commandHandler -> commandHandler.unwrap(CommandMessageHandlingMember.class)
                                                                     .orElse(null))

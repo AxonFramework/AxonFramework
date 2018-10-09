@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
@@ -25,27 +25,30 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Tests configuration of {@link EventProcessingConfiguration}.
+ * Tests configuration of {@link EventProcessingModule}.
  *
  * @author Milan Savic
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-public class EventProcessingConfigurationConfigTest {
+public class EventProcessingModuleConfigTest {
 
     @Autowired
-    private EventProcessingConfiguration eventProcessingConfiguration;
+    private EventProcessingModule eventProcessingConfiguration;
 
     @Test
     public void testEventProcessingConfiguration() {
@@ -71,17 +74,18 @@ public class EventProcessingConfigurationConfigTest {
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor4").get().getName());
     }
 
-    @EnableAxon
+    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Configuration
     public static class Context {
 
-        @Autowired
-        public void configure(EventProcessingConfiguration config) {
-            config.usingTrackingProcessors();
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            EventProcessingModule config = new EventProcessingModule();
             config.assignProcessingGroup("processor1", "processor2");
             config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : group);
             config.registerSubscribingEventProcessor("subscribingProcessor");
-            config.registerHandlerInterceptor((configuration, name) -> new LoggingInterceptor<>());
+            config.registerDefaultHandlerInterceptor((configuration, name) -> new LoggingInterceptor<>());
+            return config;
         }
 
         @Saga

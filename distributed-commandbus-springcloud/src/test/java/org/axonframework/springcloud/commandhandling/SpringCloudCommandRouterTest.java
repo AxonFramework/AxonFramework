@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,17 +19,15 @@ package org.axonframework.springcloud.commandhandling;
 import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
-import org.axonframework.commandhandling.distributed.Member;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -37,13 +36,8 @@ import org.springframework.cloud.client.serviceregistry.Registration;
 
 import java.lang.reflect.Field;
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.singletonList;
@@ -65,7 +59,7 @@ public class SpringCloudCommandRouterTest {
     private static final String ROUTING_KEY = "routingKey";
     private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
+    private static final CommandMessageFilter COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
     private static final boolean LOCAL_MEMBER = true;
     private static final boolean REMOTE_MEMBER = false;
     private static final boolean REGISTERED = true;
@@ -148,7 +142,7 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipUpdatesLocalServiceInstance() {
-        Predicate<? super CommandMessage<?>> commandNameFilter = new CommandNameFilter(String.class.getName());
+        CommandMessageFilter commandNameFilter = new CommandNameFilter(String.class.getName());
         String commandFilterData = new XStreamSerializer().serialize(commandNameFilter, String.class).getData();
         testSubject.updateMembership(LOAD_FACTOR, commandNameFilter);
 

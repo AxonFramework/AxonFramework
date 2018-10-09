@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.UnknownSerializedTypeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -47,7 +46,7 @@ import java.util.function.Consumer;
  * @since 3.0
  */
 public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
-        SubscribableMessageSource<EventMessage<?>> {
+                                                SubscribableMessageSource<EventMessage<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAMQPMessageSource.class);
 
@@ -85,14 +84,10 @@ public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
     @Override
     public void onMessage(Message message, Channel channel) {
         if (!eventProcessors.isEmpty()) {
-            try {
-                messageConverter.readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders())
-                                .ifPresent(event -> eventProcessors.forEach(
-                                        ep -> ep.accept(Collections.singletonList(event))
-                                ));
-            } catch (UnknownSerializedTypeException e) {
-                logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
-            }
+            messageConverter.readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders())
+                            .ifPresent(event -> eventProcessors.forEach(
+                                    ep -> ep.accept(Collections.singletonList(event))
+                            ));
         }
     }
 }
