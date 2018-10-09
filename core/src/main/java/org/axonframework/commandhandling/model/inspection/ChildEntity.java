@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.model.inspection;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * Interface describing en entity that is a child of another entity.
@@ -37,9 +37,9 @@ public interface ChildEntity<T> {
     void publish(EventMessage<?> msg, T declaringInstance);
 
     /**
-     * Returns the commands and their respective handler that this entity declares
+     * Returns the command handlers declared in this entity
      *
-     * @return a map containing with the Command Names as keys and the handlers as values.
+     * @return a list of message handling members that are capable of processing command messages
      */
-    Map<String, MessageHandlingMember<? super T>> commandHandlers();
+    List<MessageHandlingMember<? super T>> commandHandlers();
 }

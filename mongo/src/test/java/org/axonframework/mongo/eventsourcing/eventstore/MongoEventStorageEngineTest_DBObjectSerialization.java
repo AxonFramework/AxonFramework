@@ -46,7 +46,6 @@ import java.io.IOException;
 
 import static org.mockito.Mockito.*;
 
-
 /**
  * @author Rene de Waele
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.AxonNonTransientException;
 
+import static java.lang.String.format;
+
 /**
  * Exception indicating that no suitable handler could be found for the given command.
  *
@@ -35,5 +37,14 @@ public class NoHandlerForCommandException extends AxonNonTransientException {
      */
     public NoHandlerForCommandException(String message) {
         super(message);
+    }
+
+    /**
+     * Initialize a NoHandlerForCommandException with a message describing the given {@code CommandMessage}.
+     *
+     * @param commandMessage The command for which no handler was found
+     */
+    public NoHandlerForCommandException(CommandMessage<?> commandMessage) {
+        this(format("No handler available to handle command [%s]", commandMessage.getCommandName()));
     }
 }

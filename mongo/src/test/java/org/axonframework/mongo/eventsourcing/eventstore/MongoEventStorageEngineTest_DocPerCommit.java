@@ -63,7 +63,6 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.cre
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-
 /**
  * @author Rene de Waele
  */

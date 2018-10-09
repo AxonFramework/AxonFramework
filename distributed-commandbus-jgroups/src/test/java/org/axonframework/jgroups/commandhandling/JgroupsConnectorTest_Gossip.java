@@ -169,7 +169,7 @@ public class JgroupsConnectorTest_Gossip {
     }
 
     private void waitForConnectorSync() throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 10000;
+        long deadline = System.currentTimeMillis() + 20000;
         while ((connector1.getConsistentHash().getMembers().isEmpty())
                 || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer

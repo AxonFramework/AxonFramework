@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -157,7 +158,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testEventsWithUnknownPayloadTypeAreSkipped() throws SQLException, InterruptedException {
+    public void testEventsWithUnknownPayloadTypeDoNotResultInError() throws SQLException, InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
         List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
@@ -180,12 +181,15 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                  createEvent(AGGREGATE, 4, expectedPayloadTwo));
 
         List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
+                                                           .filter(m -> m.getPayload() instanceof String)
                                                            .map(m -> (String) m.getPayload())
                                                            .collect(toList());
         assertEquals(expected, eventStorageEngineResult);
 
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
         assertTrue(eventStoreResult.hasNextAvailable());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
         assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
         assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
     }

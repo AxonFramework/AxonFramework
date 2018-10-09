@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,13 +15,12 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import io.axoniq.axonserver.grpc.MetaDataValue;
+import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.UnknownSerializedTypeException;
 
 import java.util.Map;
 
@@ -59,7 +59,7 @@ class GrpcMetaDataAwareSerializer implements Serializer {
     }
 
     @Override
-    public Class classForType(SerializedType type) throws UnknownSerializedTypeException {
+    public Class classForType(SerializedType type) {
         return delegate.classForType(type);
     }
 

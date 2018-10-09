@@ -38,10 +38,4 @@ public @interface Saga {
      * global Axon Configuration.
      */
     String sagaStore() default "";
-
-    /**
-     * Defines the name of the bean that configures this Saga type. When defined, a bean of type {@link org.axonframework.config.SagaConfiguration} with such name must exist. If not defined, Axon will attempt to locate a bean named `&lt;sagaSimpleClassName&gt;Configuration`, creating a default configuration if none is found.
-     */
-    String configurationBean() default "";
-
 }
