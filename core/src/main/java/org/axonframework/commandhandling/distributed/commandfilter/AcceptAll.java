@@ -17,16 +17,14 @@
 package org.axonframework.commandhandling.distributed.commandfilter;
 
 import org.axonframework.commandhandling.CommandMessage;
-
-import java.io.Serializable;
-import java.util.function.Predicate;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 /**
  * A command filter that accepts all CommandMessages
  *
  * @author Koen Lavooij
  */
-public enum AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
+public enum AcceptAll implements CommandMessageFilter {
 
     /**
      * Singleton instance of the {@link AcceptAll} filter
@@ -34,23 +32,23 @@ public enum AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
     INSTANCE;
 
     @Override
-    public boolean test(CommandMessage commandMessage) {
+    public boolean matches(CommandMessage<?> message) {
         return true;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Predicate<CommandMessage<?>> and(Predicate<? super CommandMessage<?>> other) {
-        return (Predicate<CommandMessage<?>>) other;
+    public CommandMessageFilter and(CommandMessageFilter other) {
+        return other;
     }
 
     @Override
-    public Predicate<CommandMessage<?>> negate() {
+    public CommandMessageFilter negate() {
         return DenyAll.INSTANCE;
     }
 
+
     @Override
-    public Predicate<CommandMessage<?>> or(Predicate<? super CommandMessage<?>> other) {
+    public CommandMessageFilter or(CommandMessageFilter other) {
         return this;
     }
 

@@ -113,7 +113,8 @@ public class SimpleResourceInjectorTest {
         }
 
         @Override
-        public void handle(EventMessage event) {
+        public Object handle(EventMessage event) {
+            return null;
         }
 
         @Override

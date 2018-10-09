@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,15 +152,21 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (UnknownSerializedType.class.isAssignableFrom(classForType(serializedObject.getType()))) {
+            return (T) new UnknownSerializedType(this, serializedObject);
+        }
         return (T) doDeserialize(serializedObject, xStream);
     }
 
     @Override
     public Class classForType(SerializedType type) {
+        if (SimpleSerializedType.emptyType().equals(type)) {
+            return Void.class;
+        }
         try {
             return xStream.getMapper().realClass(type.getName());
         } catch (CannotResolveClassException e) {
-            throw new UnknownSerializedTypeException(type, e);
+            return UnknownSerializedType.class;
         }
     }
 
@@ -257,8 +263,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * <p>
      * The {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8} character set, the
      * {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link Converter} defaults to
-     * a {@link ChainingConverter}.
-     * The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
+     * a {@link ChainingConverter}. The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage}, the {@link AnnotatedSaga} and the

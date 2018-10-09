@@ -181,7 +181,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * AbstractBuilder class to instantiate a {@link AbstractEventProcessor}.
+     * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
      * <p>
      * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler} and the {@link MessageMonitor}
      * defaults to a {@link NoOpMessageMonitor}. The Event Processor {@code name}, {@link EventHandlerInvoker} and

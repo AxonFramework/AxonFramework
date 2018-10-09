@@ -171,7 +171,8 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
         }
 
         /**
-         * Sets the {@code domainEventsCollectionName} to use as the collection name for Domain Events.
+         * Sets the {@code domainEventsCollectionName} to use as the collection name for Domain Events. Defaults to a
+         * {@code "domainevents"} {@link String}.
          *
          * @param domainEventsCollectionName a {@link String} specifying the collection name for Domain Events
          * @return the current Builder instance, for fluent interfacing
@@ -183,7 +184,8 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
         }
 
         /**
-         * Sets the {@code snapshotEventsCollectionName} to use as the collection name for Snapshot Events.
+         * Sets the {@code snapshotEventsCollectionName} to use as the collection name for Snapshot Events. Defaults to
+         * a {@code "snapshotevents"} {@link String}.
          *
          * @param snapshotEventsCollectionName a {@link String} specifying the collection name for Snapshot Events
          * @return the current Builder instance, for fluent interfacing
@@ -195,7 +197,8 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
         }
 
         /**
-         * Sets the {@code trackingTokensCollectionName} to use as the collection name for Tracking Tokens.
+         * Sets the {@code trackingTokensCollectionName} to use as the collection name for Tracking Tokens. Defaults to
+         * a {@code "trackingtokens"} {@link String}.
          *
          * @param trackingTokensCollectionName a {@link String} specifying the collection name for Tracking Tokens
          * @return the current Builder instance, for fluent interfacing
@@ -207,7 +210,8 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
         }
 
         /**
-         * Sets the {@code sagasCollectionName} to use as the collection name for Saga instances.
+         * Sets the {@code sagasCollectionName} to use as the collection name for Saga instances. Defaults to a
+         * {@code "sagas"} {@link String}.
          *
          * @param sagasCollectionName a {@link String} specifying the collection name for Sagas
          * @return the current Builder instance, for fluent interfacing

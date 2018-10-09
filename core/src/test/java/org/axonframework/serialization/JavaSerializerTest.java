@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,13 +65,7 @@ public class JavaSerializerTest {
 
     @Test
     public void testClassForType_UnknownClass() {
-        try {
-            testSubject.classForType(new SimpleSerializedType("unknown", "0"));
-            fail("Expected UnknownSerializedTypeException");
-        } catch (UnknownSerializedTypeException e) {
-            assertTrue("Wrong message in exception", e.getMessage().contains("unknown"));
-            assertTrue("Wrong message in exception", e.getMessage().contains("0"));
-        }
+        assertEquals(UnknownSerializedType.class, testSubject.classForType(new SimpleSerializedType("unknown", "0")));
     }
 
     @Test

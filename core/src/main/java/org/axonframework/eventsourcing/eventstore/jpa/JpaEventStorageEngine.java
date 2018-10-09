@@ -123,7 +123,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * </ul>
      * <p>
-     * The {@link EntityManagerProvider} and {@link TransactionManager} are a <b>hard requirements</b> and as such
+     * The {@link EntityManagerProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such
      * should be provided.
      *
      * @return a Builder to be able to create a {@link JpaEventStorageEngine}
@@ -311,16 +311,16 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     public TrackingToken createTailToken() {
         List<Long> results = entityManager().createQuery(
-                "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class)
-                                            .getResultList();
+                "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
+        ).getResultList();
         return createToken(results);
     }
 
     @Override
     public TrackingToken createHeadToken() {
         List<Long> results = entityManager().createQuery(
-                "SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
-                                            .getResultList();
+                "SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class
+        ).getResultList();
         return createToken(results);
     }
 
@@ -328,8 +328,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     public TrackingToken createTokenAt(Instant dateTime) {
         List<Long> results = entityManager().createQuery(
                 "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName()
-                        + " e WHERE e.timeStamp >= :dateTime", Long.class)
-                                            .setParameter("dateTime", formatInstant(dateTime))
+                        + " e WHERE e.timeStamp >= :dateTime", Long.class
+        ).setParameter("dateTime", formatInstant(dateTime))
                                             .getResultList();
         return createToken(results);
     }
@@ -449,7 +449,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * </ul>
      * <p>
-     * The {@link EntityManagerProvider} and {@link TransactionManager} are a <b>hard requirements</b> and as such
+     * The {@link EntityManagerProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such
      * should be provided.
      */
     public static class Builder extends BatchingEventStorageEngine.Builder {

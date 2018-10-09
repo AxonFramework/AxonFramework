@@ -30,7 +30,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -84,9 +84,11 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @Primary
     @ConditionalOnMissingBean(CommandBus.class)
-    public AxonServerCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration,
+    public AxonServerCommandBus commandBus(TransactionManager txManager,
+                                           AxonConfiguration axonConfiguration,
                                            AxonServerConfiguration axonServerConfiguration,
-                                           Serializer serializer, PlatformConnectionManager platformConnectionManager,
+                                           Serializer serializer,
+                                           PlatformConnectionManager platformConnectionManager,
                                            RoutingStrategy routingStrategy,
                                            CommandPriorityCalculator priorityCalculator) {
 
@@ -150,7 +152,8 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                               .transactionManager(txManager)
                               .errorHandler(queryInvocationErrorHandler)
                               .build();
-
+        simpleQueryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration
+                                                                                           .correlationDataProviders()));
         return new AxonServerQueryBus(platformConnectionManager,
                                       axonServerConfiguration,
                                       simpleQueryBus.queryUpdateEmitter(),
@@ -167,10 +170,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @Bean
     public EventProcessorInfoConfiguration processorInfoConfiguration(
-            EventHandlingConfiguration eventHandlingConfiguration,
+            EventProcessingConfiguration eventProcessingConfiguration,
             PlatformConnectionManager connectionManager,
             AxonServerConfiguration configuration) {
-        return new EventProcessorInfoConfiguration(eventHandlingConfiguration, connectionManager, configuration);
+        return new EventProcessorInfoConfiguration(eventProcessingConfiguration, connectionManager, configuration);
     }
 
     @Bean

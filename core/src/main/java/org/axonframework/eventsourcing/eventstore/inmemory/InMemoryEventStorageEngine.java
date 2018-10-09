@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,7 @@ import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -102,7 +98,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return snapshots.get(aggregateIdentifier)
+        return snapshots.getOrDefault(aggregateIdentifier, Collections.emptyList())
                         .stream()
                         .max(Comparator.comparingLong(DomainEventMessage::getSequenceNumber));
     }

@@ -134,7 +134,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * </ul>
      * <p>
-     * The {@link ConnectionProvider} and {@link TransactionManager} are a <b>hard requirements</b> and as such should
+     * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should
      * be provided.
      *
      * @return a Builder to be able to create a {@link JdbcEventStorageEngine}
@@ -716,7 +716,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * </ul>
      * <p>
-     * The {@link ConnectionProvider} and {@link TransactionManager} are a <b>hard requirements</b> and as such should
+     * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should
      * be provided.
      */
     public static class Builder extends BatchingEventStorageEngine.Builder {
@@ -746,6 +746,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
             return this;
         }
 
+        /**
+         * {@inheritDoc} Defaults to a {@link JdbcSQLErrorCodesResolver}.
+         */
         @Override
         public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);

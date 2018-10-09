@@ -27,13 +27,13 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
-public class AnnotationEventListenerAdapterTest {
+public class AnnotationEventMessageHandlerAdapterTest {
 
     @Test
     public void testInvokeResetHandler() {
         SomeHandler annotatedEventListener = new SomeHandler();
-        new AnnotationEventListenerAdapter(annotatedEventListener,
-                                           MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
+        new AnnotationEventHandlerAdapter(annotatedEventListener,
+                                          MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
                                                                                  new SimpleResourceParameterResolverFactory(singletonList(new SomeResource())))).prepareReset();
 
         assertEquals(singletonList("reset"), annotatedEventListener.invocations);

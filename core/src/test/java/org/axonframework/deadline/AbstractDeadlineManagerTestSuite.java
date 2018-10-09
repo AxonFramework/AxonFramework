@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.EntityId;
 import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.annotation.DeadlineHandler;
@@ -75,12 +76,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventStore eventStore = spy(EmbeddedEventStore.builder()
                                                       .storageEngine(new InMemoryEventStorageEngine())
                                                       .build());
-        configuration = DefaultConfigurer.defaultConfiguration()
-                                         .configureEventStore(c -> eventStore)
-                                         .configureAggregate(MyAggregate.class)
-                                         .registerModule(SagaConfiguration.subscribingSagaManager(MySaga.class))
-                                         .registerComponent(DeadlineManager.class, this::buildDeadlineManager)
-                                         .start();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        configurer.eventProcessing()
+                  .usingSubscribingEventProcessors()
+                  .registerSaga(MySaga.class);
+        configuration = configurer.configureEventStore(c -> eventStore)
+                                  .configureAggregate(MyAggregate.class)
+                                  .registerComponent(DeadlineManager.class, this::buildDeadlineManager)
+                                  .start();
 
         published = new CopyOnWriteArrayList<>();
         configuration.eventBus().subscribe(msgs -> msgs.forEach(msg -> published.add(msg.getPayload())));

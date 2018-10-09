@@ -59,8 +59,8 @@ public class DefaultQueryGateway implements QueryGateway {
     /**
      * Instantiate a Builder to be able to create a {@link DefaultQueryGateway}.
      * <p>
-     * The {@code dispatchInterceptors} is defaulted to an empty list.
-     * The {@link QueryBus} is a <b>hard requirement</b> and as such should be provided.
+     * The {@code dispatchInterceptors} is defaulted to an empty list. The {@link QueryBus} is a
+     * <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link DefaultQueryGateway}
      */
@@ -117,8 +117,8 @@ public class DefaultQueryGateway implements QueryGateway {
     /**
      * Builder class to instantiate a {@link DefaultQueryGateway}.
      * <p>
-     * The {@code dispatchInterceptors} is defaulted to an empty list. The {@link QueryBus} is a <b>hard
-     * requirement</b> and as such should be provided.
+     * The {@code dispatchInterceptors} is defaulted to an empty list. The {@link QueryBus} is a
+     * <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder {
 

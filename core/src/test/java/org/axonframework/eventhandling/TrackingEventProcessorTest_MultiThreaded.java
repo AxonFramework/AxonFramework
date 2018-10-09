@@ -59,15 +59,15 @@ public class TrackingEventProcessorTest_MultiThreaded {
     private EmbeddedEventStore eventBus;
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
-    private EventListener mockListener;
+    private EventMessageHandler mockHandler;
 
     @Before
     public void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
-        mockListener = mock(EventListener.class);
-        when(mockListener.canHandle(any())).thenReturn(true);
+        mockHandler = mock(EventMessageHandler.class);
+        when(mockHandler.canHandle(any())).thenReturn(true);
         eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
-                                                       .eventListeners(singletonList(mockListener))
+                                                       .eventHandlers(singletonList(mockHandler))
                                                        .sequencingPolicy(event -> {
                                                            if (event instanceof DomainEventMessage) {
                                                                return ((DomainEventMessage) event)
@@ -244,28 +244,28 @@ public class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         testSubject.start();
         eventBus.publish(createEvents(3));
 
-        assertTrue("Expected listener to have received (only) 2 out of 3 published events",
+        assertTrue("Expected Handler to have received (only) 2 out of 3 published events",
                    countDownLatch.await(5, SECONDS));
         acknowledgeByThread.assertEventsAddUpTo(2);
     }
 
     @Test
-    public void testMultiThreadPublishedEventsGetPassedToListener() throws Exception {
+    public void testMultiThreadPublishedEventsGetPassedToHandler() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
         doAnswer(invocation -> {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
         testSubject.start();
         eventBus.publish(createEvents(2));
-        assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, SECONDS));
+        assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, SECONDS));
         acknowledgeByThread.assertEventsAckedByMultipleThreads();
         acknowledgeByThread.assertEventsAddUpTo(2);
     }
@@ -302,12 +302,12 @@ public class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         testSubject.start();
 
-        assertTrue("Expected 9 invocations on event listener by now, missing " + countDownLatch.getCount(),
+        assertTrue("Expected 9 invocations on Event Handler by now, missing " + countDownLatch.getCount(),
                    countDownLatch.await(60, SECONDS));
 
         acknowledgeByThread.assertEventsAckedByMultipleThreads();
@@ -326,12 +326,12 @@ public class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
         testSubject.start();
 
         eventBus.publish(events.subList(0, 2));
 
-        assertTrue("Expected 2 invocations on event listener by now", countDownLatch.await(5, SECONDS));
+        assertTrue("Expected 2 invocations on Event Handler by now", countDownLatch.await(5, SECONDS));
         acknowledgeByThread.assertEventsAddUpTo(2);
 
         assertWithin(
@@ -355,14 +355,14 @@ public class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch2.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         eventBus.publish(events.subList(2, 4));
 
         assertEquals(2, countDownLatch2.getCount());
 
         testSubject.start();
-        assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, SECONDS));
+        assertTrue("Expected 4 invocations on Event Handler by now", countDownLatch2.await(5, SECONDS));
         acknowledgeByThread.assertEventsAddUpTo(4);
 
         assertWithin(
@@ -389,7 +389,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
             acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -399,7 +399,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
         testSubject.start();
-        assertTrue("Expected 5 invocations on event listener by now", countDownLatch.await(10, SECONDS));
+        assertTrue("Expected 5 invocations on Event Handler by now", countDownLatch.await(10, SECONDS));
         acknowledgeByThread.assertEventsAddUpTo(5);
         verify(eventBus, times(2)).openStream(any());
     }

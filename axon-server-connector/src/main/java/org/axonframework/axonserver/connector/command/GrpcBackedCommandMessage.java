@@ -18,13 +18,13 @@ package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.command.Command;
+import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -54,7 +54,7 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     @Override
     public MetaData getMetaData() {
         if( metaData == null) {
-            metaData = this.deserializeMetaData(request.getMetaDataMap());
+            metaData = deserializeMetaData(request.getMetaDataMap());
         }
         return metaData;
     }
@@ -91,33 +91,7 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
         if (metaDataMap.isEmpty()) {
             return MetaData.emptyInstance();
         }
-        Map<String, Object> metaData = new HashMap<>(metaDataMap.size());
-        metaDataMap.forEach((k, v) -> metaData.put(k, convertFromMetaDataValue(v)));
-        return MetaData.from(metaData);
+        GrpcMetaDataConverter grpcMetaDataConverter = new GrpcMetaDataConverter(serializer);
+        return MetaData.from(grpcMetaDataConverter.convert(metaDataMap));
     }
-
-    private Object convertFromMetaDataValue(MetaDataValue value) {
-        switch (value.getDataCase()) {
-            case TEXT_VALUE:
-                return value.getTextValue();
-            case BYTES_VALUE:
-                io.axoniq.axonserver.grpc.SerializedObject bytesValue = value.getBytesValue();
-                return serializer.deserialize(new SimpleSerializedObject<>(bytesValue.getData().toByteArray(),
-                        byte[].class,
-                        bytesValue.getType(),
-                        bytesValue.getRevision()));
-
-            case DATA_NOT_SET:
-                return null;
-            case DOUBLE_VALUE:
-                return value.getDoubleValue();
-            case NUMBER_VALUE:
-                return value.getNumberValue();
-            case BOOLEAN_VALUE:
-                return value.getBooleanValue();
-        }
-        return null;
-    }
-
-
 }

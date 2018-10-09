@@ -60,7 +60,7 @@ public abstract class AbstractMongoTemplate {
     }
 
     /**
-     * Builder class to instantiate a {@link AbstractMongoTemplate}.
+     * Abstract Builder class to instantiate a {@link AbstractMongoTemplate}.
      * <p>
      * The {@link MongoDatabase} is a <b>hard requirement</b> and as such should be provided. Can either be provided
      * directly, or by setting a {@link MongoClient}. When choosing the latter approach, the MongoDatabase name can be

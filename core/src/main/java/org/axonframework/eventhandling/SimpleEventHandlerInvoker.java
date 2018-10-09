@@ -23,67 +23,70 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.EventListener;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered {@link EventListener
- * EventListeners}.
+ * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered
+ * {@link EventMessageHandler}.
  *
  * @author Rene de Waele
  * @since 3.0
  */
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
-    private final List<?> eventListeners;
-    private final List<EventListener> wrappedEventListeners;
+    private final List<?> eventHandlers;
+    private final List<EventMessageHandler> wrappedEventHandlers;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
 
     /**
      * Instantiate a {@link SimpleEventHandlerInvoker} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that at least one {@link EventListener} is provided, and will throw an
+     * Will assert that at least one {@link EventMessageHandler} is provided, and will throw an
      * {@link AxonConfigurationException} if this is not the case.
      *
      * @param builder the {@link Builder} used to instantiate a {@link SimpleEventHandlerInvoker} instance
      */
     protected SimpleEventHandlerInvoker(Builder builder) {
         builder.validate();
-        this.eventListeners = builder.eventListeners;
-        this.wrappedEventListeners =
-                eventListeners.stream()
-                              .map(listener -> listener instanceof EventListener
-                                      ? (EventListener) listener
-                                      : builder.wrapEventListener(listener))
-                              .collect(Collectors.toCollection(ArrayList::new));
+        this.eventHandlers = builder.eventHandlers;
+        this.wrappedEventHandlers =
+                eventHandlers.stream()
+                             .map(handler -> handler instanceof EventMessageHandler
+                                     ? (EventMessageHandler) handler
+                                     : builder.wrapEventMessageHandler(handler))
+                             .collect(Collectors.toCollection(ArrayList::new));
         this.sequencingPolicy = builder.sequencingPolicy;
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
     }
 
     /**
-     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     * Checks if a {@link List} has been passed as first parameter. It is a common 'mistake', which is detected and
+     * fixed here.
      *
-     * @param eventListeners the event listeners to check whether it contains a {@link List}
-     * @return a {@link List} of events listeners
+     * @param eventHandlers the event handlers to check whether it contains a {@link List}
+     * @return a {@link List} of events handlers
      */
-    private static List<?> detectList(Object[] eventListeners) {
-        return eventListeners.length == 1 && (eventListeners[0] instanceof List) ? (List<?>) eventListeners[0] :
-                Arrays.asList(eventListeners);
+    private static List<?> detectList(Object[] eventHandlers) {
+        return eventHandlers.length == 1 && (eventHandlers[0] instanceof List)
+                ? (List<?>) eventHandlers[0]
+                : asList(eventHandlers);
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleEventHandlerInvoker}.
      * <p>
      * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the
-     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event listener is a
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a
      * <b>hard requirement</b> and thus should be accounted for.
      *
      * @return a Builder to be able to create a {@link SimpleEventHandlerInvoker}
@@ -93,21 +96,21 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     /**
-     * Gets the list of event listener delegates. This delegates are the end point of event handling.
+     * Gets the list of Event Handler delegates. This delegates are the end point of event handling.
      *
-     * @return the list of event listener delegates
+     * @return the list of Event Handler delegates
      */
-    public List<?> eventListeners() {
-        return Collections.unmodifiableList(eventListeners);
+    public List<?> eventHandlers() {
+        return Collections.unmodifiableList(eventHandlers);
     }
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        for (EventListener listener : wrappedEventListeners) {
+        for (EventMessageHandler handler : wrappedEventHandlers) {
             try {
-                listener.handle(message);
+                handler.handle(message);
             } catch (Exception e) {
-                listenerInvocationErrorHandler.onError(e, message, listener);
+                listenerInvocationErrorHandler.onError(e, message, handler);
             }
         }
     }
@@ -121,8 +124,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     private boolean hasHandler(EventMessage<?> eventMessage) {
-        for (EventListener eventListener : wrappedEventListeners) {
-            if (eventListener.canHandle(eventMessage)) {
+        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+            if (eventHandler.canHandle(eventMessage)) {
                 return true;
             }
         }
@@ -131,8 +134,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean supportsReset() {
-        for (EventListener eventListener : wrappedEventListeners) {
-            if (!eventListener.supportsReset()) {
+        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+            if (!eventHandler.supportsReset()) {
                 return false;
             }
         }
@@ -141,8 +144,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void performReset() {
-        for (EventListener eventListener : wrappedEventListeners) {
-            eventListener.prepareReset();
+        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+            eventHandler.prepareReset();
         }
     }
 
@@ -158,51 +161,51 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * Builder class to instantiate a {@link SimpleEventHandlerInvoker}.
      * <p>
      * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the
-     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event listener is a
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a
      * <b>hard requirement</b> and thus should be accounted for.
      */
     public static class Builder {
 
-        private List<?> eventListeners;
+        private List<?> eventHandlers;
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
         private SequencingPolicy<? super EventMessage<?>> sequencingPolicy = SequentialPerAggregatePolicy.instance();
 
         /**
-         * Sets the {@code eventListeners} this {@link EventHandlerInvoker} will forward all its events to. If an event
-         * listener is assignable to {@link EventListener} it will registered as is. If not, it will be wrapped by a new
-         * {@link AnnotationEventListenerAdapter}.
+         * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
+         * handler is assignable to {@link EventMessageHandler} it will registered as is. If not, it will be wrapped by
+         * a new {@link AnnotationEventHandlerAdapter}.
          *
-         * @param eventListeners an array of {@link Object}s which can handle events
+         * @param eventHandlers an array of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventListeners(Object... eventListeners) {
-            return eventListeners(detectList(eventListeners));
+        public Builder eventHandlers(Object... eventHandlers) {
+            return eventHandlers(detectList(eventHandlers));
         }
 
         /**
-         * Sets the {@code eventListeners} this {@link EventHandlerInvoker} will forward all its events to. If an event
-         * listener is assignable to {@link EventListener} it will registered as is. If not, it will be wrapped by a new
-         * {@link AnnotationEventListenerAdapter}.
+         * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
+         * handler is assignable to {@link EventMessageHandler} it will registered as is. If not, it will be wrapped by
+         * a new {@link AnnotationEventHandlerAdapter}.
          *
-         * @param eventListeners a {@link List} of {@link Object}s which can handle events
+         * @param eventHandlers a {@link List} of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventListeners(List<?> eventListeners) {
-            assertThat(eventListeners, list -> !list.isEmpty(), "At least one Event Listener should be provided");
-            this.eventListeners = eventListeners;
+        public Builder eventHandlers(List<?> eventHandlers) {
+            assertThat(eventHandlers, list -> !list.isEmpty(), "At least one EventMessageHandler should be provided");
+            this.eventHandlers = eventHandlers;
             return this;
         }
 
         /**
          * Sets the {@link ParameterResolverFactory} used to resolve parameter values for annotated handlers in the
-         * {@link AnnotationEventListenerAdapter} this {@link EventHandlerInvoker} instantiates. This invoker will only
-         * instantiate a new {@link EventListener} if a given Event Listener (through {@link #eventListeners(Object...)}
-         * or {@link #eventListeners(List)}) is not assignable to EventListener.
+         * {@link AnnotationEventHandlerAdapter} this {@link EventHandlerInvoker} instantiates. This invoker will only
+         * instantiate a new {@link EventMessageHandler} if a given Event Handler (through
+         * {@link #eventHandlers(Object...)} or {@link #eventHandlers(List)}) is not assignable to EventMessageHandler.
          *
          * @param parameterResolverFactory the {@link ParameterResolverFactory} used to resolve parameter values for
-         *                                 instantiated {@link AnnotationEventListenerAdapter}s
+         *                                 instantiated {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
@@ -213,12 +216,13 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
         /**
          * Sets the {@link HandlerDefinition} used to create concrete handlers in the annotated handlers in the
-         * {@link AnnotationEventListenerAdapter} this {@link EventHandlerInvoker} instantiates. This invoker will only
-         * instantiate a new {@link EventListener} if a given Event Listener (through {@link #eventListeners(Object...)}
-         * or {@link #eventListeners(List)}) is not assignable to EventListener.
+         * {@link AnnotationEventHandlerAdapter} this {@link EventHandlerInvoker} instantiates. This invoker will only
+         * instantiate a new {@link EventMessageHandler} if a given Event Handler
+         * (through {@link #eventHandlers(Object...)} or {@link #eventHandlers(List)}) is not assignable to
+         * EventMessageHandler.
          *
          * @param handlerDefinition the {@link HandlerDefinition} used to create concrete handlers in the instantiated
-         *                          {@link AnnotationEventListenerAdapter}s
+         *                          {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder handlerDefinition(HandlerDefinition handlerDefinition) {
@@ -267,21 +271,21 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * Wrap a given {@code eventListener} in an {@link AnnotationEventListenerAdapter} to allow this
+         * Wrap a given {@code eventHandler} in an {@link AnnotationEventHandlerAdapter} to allow this
          * {@link EventHandlerInvoker} to correctly pass {@link EventMessage}s to it. If a
-         * {@link ParameterResolverFactory} or a ParameterResolverFactory and {@link HandlerDefinition} are provided,
-         * one/both will be given to the AnnotationEventListenerAdapter
+         * {@link ParameterResolverFactory} or both a ParameterResolverFactory and {@link HandlerDefinition} are
+         * present, one/both will be given to the AnnotationEventHandlerAdapter
          *
-         * @param eventListener an {@link Object} which will be wrapped in an {@link AnnotationEventListenerAdapter}
-         * @return an {@link AnnotationEventListenerAdapter} which the given {@code eventListener} will be wrapped in
+         * @param eventHandler an {@link Object} which will be wrapped in an {@link AnnotationEventHandlerAdapter}
+         * @return an {@link AnnotationEventHandlerAdapter} which the given {@code eventHandler} will be wrapped in
          */
-        public AnnotationEventListenerAdapter wrapEventListener(Object eventListener) {
+        public AnnotationEventHandlerAdapter wrapEventMessageHandler(Object eventHandler) {
             if (parameterResolverFactory == null && handlerDefinition == null) {
-                return new AnnotationEventListenerAdapter(eventListener);
+                return new AnnotationEventHandlerAdapter(eventHandler);
             } else if (parameterResolverFactory != null && handlerDefinition == null) {
-                return new AnnotationEventListenerAdapter(eventListener, parameterResolverFactory);
+                return new AnnotationEventHandlerAdapter(eventHandler, parameterResolverFactory);
             } else {
-                return new AnnotationEventListenerAdapter(eventListener, parameterResolverFactory, handlerDefinition);
+                return new AnnotationEventHandlerAdapter(eventHandler, parameterResolverFactory, handlerDefinition);
             }
         }
 
@@ -292,7 +296,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            assertThat(eventListeners, list -> !list.isEmpty(), "At least one Event Listener should be provided");
+            assertThat(eventHandlers, list -> !list.isEmpty(), "At least one EventMessageHandler should be provided");
         }
     }
 }

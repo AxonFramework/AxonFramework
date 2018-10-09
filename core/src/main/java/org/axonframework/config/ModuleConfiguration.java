@@ -64,4 +64,14 @@ public interface ModuleConfiguration {
     default ModuleConfiguration unwrap() {
         return this;
     }
+
+    /**
+     * Checks whether this Module Configuration is of the given {@code type}.
+     *
+     * @param type a {@link Class} type to check the Module Configuration against
+     * @return whether Module Configuration is of given {@code type}
+     */
+    default boolean isType(Class<?> type) {
+        return type.isInstance(this);
+    }
 }
