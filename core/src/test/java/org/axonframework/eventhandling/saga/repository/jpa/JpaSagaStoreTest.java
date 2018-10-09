@@ -122,7 +122,8 @@ public class JpaSagaStoreTest {
     @Test
     public void testAddAndLoadSaga_ByIdentifier() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
-                IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier());
+                IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
+                .getPayload();
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute(() -> {
@@ -140,7 +141,7 @@ public class JpaSagaStoreTest {
                                                             StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
-        });
+        }).getPayload();
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute(() -> {
@@ -165,7 +166,7 @@ public class JpaSagaStoreTest {
                                                             StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
-        });
+        }).getPayload();
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute(() -> {
@@ -174,7 +175,8 @@ public class JpaSagaStoreTest {
         });
         entityManager.clear();
         startUnitOfWork();
-        Set<String> found = unitOfWork.executeWithResult(() -> repository.find(new AssociationValue("key", "value")));
+        Set<String> found = unitOfWork.executeWithResult(() -> repository.find(new AssociationValue("key", "value")))
+                .getPayload();
         assertEquals(0, found.size());
     }
 
@@ -186,7 +188,7 @@ public class JpaSagaStoreTest {
                                                             StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
-        });
+        }).getPayload();
         entityManager.clear();
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
                                  .setParameter("id", identifier).getResultList().isEmpty());
@@ -227,7 +229,8 @@ public class JpaSagaStoreTest {
         repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
-                IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier());
+                IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
+                .getPayload();
 
         assertFalse(entityManager.createQuery("SELECT e FROM CustomSagaEntry e").getResultList().isEmpty());
 

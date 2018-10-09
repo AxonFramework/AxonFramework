@@ -91,7 +91,7 @@ public class TrackingEventProcessorIntegrationTest {
         publishEvent("test3");
         publishEvent("test4");
         assertTrue("Expected all 4 events to have been delivered", countDownLatch1.await(2, TimeUnit.SECONDS));
-        assertTrue("Expected all 4 events to have been delivered", countDownLatch2.await(1, TimeUnit.SECONDS));
+        assertTrue("Expected all 4 events to have been delivered", countDownLatch2.await(2, TimeUnit.SECONDS));
 
         eventProcessingConfiguration.eventProcessors().forEach((name, ep) -> assertFalse(((TrackingEventProcessor) ep)
                                                                                            .isError()));

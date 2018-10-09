@@ -14,24 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
-
-import org.axonframework.messaging.ResultMessage;
+package org.axonframework.messaging;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Message that represents a result from handling a {@link CommandMessage}.
+ * Message that represents a result of handling some form of request message.
  *
  * @param <R> The type of payload contained in this Message
  * @author Milan Savic
  * @since 4.0
  */
-public interface CommandResultMessage<R> extends ResultMessage<R> {
+public interface ResultMessage<R> extends Message<R> {
+
+    default boolean isExceptional() {
+        return Throwable.class.isAssignableFrom(getPayloadType());
+    }
+
+    default Optional<Throwable> exceptionResult() {
+        return isExceptional() ? Optional.ofNullable((Throwable) getPayload()) : Optional.empty();
+    }
 
     @Override
-    CommandResultMessage<R> withMetaData(Map<String, ?> metaData);
+    ResultMessage<R> withMetaData(Map<String, ?> metaData);
 
     @Override
-    CommandResultMessage<R> andMetaData(Map<String, ?> metaData);
+    ResultMessage<R> andMetaData(Map<String, ?> metaData);
 }
