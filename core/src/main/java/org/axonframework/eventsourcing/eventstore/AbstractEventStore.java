@@ -54,7 +54,6 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
      */
     protected AbstractEventStore(Builder builder) {
         super(builder);
-        builder.validate();
         this.storageEngine = builder.storageEngine;
     }
 
