@@ -148,3 +148,4 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventhandling.SubscribingEventProcessor
 - org.axonframework.eventhandling.TrackingEventProcessor
 - org.axonframework.commandhandling.gateway.IntervalRetryScheduler
+- org.axonframework.commandhandling.gateway.CommandGatewayFactory

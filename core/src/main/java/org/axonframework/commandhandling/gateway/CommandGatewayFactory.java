@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -46,8 +46,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
@@ -98,67 +98,38 @@ public class CommandGatewayFactory {
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
+
     private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
-     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
-     * given {@code dispatchInterceptors}.
-     * <p/>
-     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
-     * have been created using this factory.
+     * Instantiate a {@link CommandGatewayFactory} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link CommandBus} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param commandBus           The CommandBus on which to dispatch the Command Messages
-     * @param dispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param builder the {@link Builder} used to instantiate a {@link CommandGatewayFactory} instance
      */
-    @SafeVarargs
-    public CommandGatewayFactory(CommandBus commandBus,
-                                 MessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
-        this(commandBus, null, dispatchInterceptors);
-    }
-
-    /**
-     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
-     * given {@code dispatchInterceptors}. The given {@code retryScheduler} will reschedule commands for
-     * dispatching if a previous attempt resulted in an exception.
-     * <p/>
-     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
-     * have been created using this factory.
-     *
-     * @param commandBus                  The CommandBus on which to dispatch the Command Messages
-     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be {@code
-     *                                    null} to report failures without rescheduling
-     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
-     */
-    @SafeVarargs
-    public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                                 MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
-        this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
-    }
-
-    /**
-     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
-     * given {@code dispatchInterceptors}. The given {@code retryScheduler} will reschedule commands for
-     * dispatching if a previous attempt resulted in an exception.
-     * <p/>
-     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
-     * have been created using this factory.
-     *
-     * @param commandBus                  The CommandBus on which to dispatch the Command Messages
-     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be {@code
-     *                                    null} to report failures without rescheduling
-     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
-     */
-    public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                                 List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
-        Assert.notNull(commandBus, () -> "commandBus may not be null");
-        this.retryScheduler = retryScheduler;
-        this.commandBus = commandBus;
-        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new CopyOnWriteArrayList<>(messageDispatchInterceptors);
+    protected CommandGatewayFactory(Builder builder) {
+        builder.validate();
+        this.commandBus = builder.commandBus;
+        this.retryScheduler = builder.retryScheduler;
+        if (builder.dispatchInterceptors != null && !builder.dispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new CopyOnWriteArrayList<>(builder.dispatchInterceptors);
         } else {
             this.dispatchInterceptors = new CopyOnWriteArrayList<>();
         }
         this.commandCallbacks = new CopyOnWriteArrayList<>();
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link CommandGatewayFactory}.
+     * <p>
+     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link CommandGatewayFactory}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -861,6 +832,90 @@ public class CommandGatewayFactory {
         @Override
         public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
             delegate.onFailure(commandMessage, cause);
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link CommandGatewayFactory}.
+     * <p>
+     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private CommandBus commandBus;
+        private RetryScheduler retryScheduler;
+        private List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
+
+        /**
+         * Sets the {@link CommandBus} on which to dispatch {@link CommandMessage}s.
+         *
+         * @param commandBus the {@link CommandBus} on which to dispatch {@link CommandMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder commandBus(CommandBus commandBus) {
+            assertNonNull(commandBus, "CommandBus may not be null");
+            this.commandBus = commandBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RetryScheduler} which will decide whether to reschedule commands. May be {@code null} to
+         * report failures without rescheduling.
+         *
+         * @param retryScheduler the {@link RetryScheduler} which will decide whether to reschedule commands
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder retryScheduler(RetryScheduler retryScheduler) {
+            this.retryScheduler = retryScheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageDispatchInterceptor}s which are invoked before dispatching a {@link CommandMessage} on
+         * the {@link CommandBus}. Note that the given {@code dispatchInterceptors} are applied only on commands sent
+         * through gateways that have been created using this factory.
+         *
+         * @param dispatchInterceptors an array of {@link MessageDispatchInterceptor}s which are invoked before
+         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder dispatchInterceptors(
+                MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
+            return dispatchInterceptors(Arrays.asList(dispatchInterceptors));
+        }
+
+        /**
+         * Sets the {@link MessageDispatchInterceptor}s which are invoked before dispatching a {@link CommandMessage} on
+         * the {@link CommandBus}. Note that the given {@code dispatchInterceptors} are applied only on commands sent
+         * through gateways that have been created using this factory.
+         *
+         * @param dispatchInterceptors a {@link List} of {@link MessageDispatchInterceptor}s which are invoked before
+         *                             dispatching a {@link CommandMessage} on the {@link CommandBus}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder dispatchInterceptors(
+                List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+            this.dispatchInterceptors = dispatchInterceptors;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link CommandGatewayFactory} as specified through this Builder.
+         *
+         * @return a {@link CommandGatewayFactory} as specified through this Builder
+         */
+        public CommandGatewayFactory build() {
+            return new CommandGatewayFactory(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(commandBus, "The CommandBus is a hard requirement and should be provided");
         }
     }
 }
