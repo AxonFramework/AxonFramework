@@ -23,9 +23,10 @@ import org.axonframework.serialization.Serializer;
 import java.util.function.Function;
 
 /**
- * Mapping that translates a {@link Message} into a GRPC {@link io.axoniq.axonserver.grpc.SerializedObject}
+ * Mapping that translates a {@link Message} into a GRPC {@link io.axoniq.axonserver.grpc.SerializedObject}.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class GrpcPayloadSerializer implements Function<Message, io.axoniq.axonserver.grpc.SerializedObject> {
 

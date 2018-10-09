@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.processor;
  * Interface that encapsulates the {@link org.axonframework.eventhandling.EventProcessor}'s status notification functionality to AxonServer.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public interface EventProcessorInfoSource {
 

@@ -32,6 +32,7 @@ import static org.axonframework.messaging.MetaData.from;
  * Implementation that enables to access to a map of GRPC {@link MetaDataValue}s in the form of {@link MetaData}.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class GrpcMetadata implements Supplier<MetaData> {
 

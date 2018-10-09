@@ -31,9 +31,10 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 
 /**
- * Wrapper that allows clients to access a GRPC {@link SubscriptionQuery} Message as a {@link SubscriptionQueryMessage}
+ * Wrapper that allows clients to access a GRPC {@link SubscriptionQuery} Message as a {@link SubscriptionQueryMessage}.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class GrpcBackedSubscriptionQueryMessage<Q,I,U> implements SubscriptionQueryMessage<Q,I,U> {
 

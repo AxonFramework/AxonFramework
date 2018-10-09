@@ -24,9 +24,10 @@ import java.util.Deque;
 import java.util.function.Consumer;
 
 /**
- * Controller for {@link EventProcessor}s
+ * Controller for {@link EventProcessor}s.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class EventProcessorController {
 

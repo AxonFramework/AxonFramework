@@ -19,9 +19,10 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 
 /**
- * Wrapper that allows clients to access a GRPC {@link io.axoniq.axonserver.grpc.SerializedObject} Message as a {@link SerializedObject}
+ * Wrapper that allows clients to access a GRPC {@link io.axoniq.axonserver.grpc.SerializedObject} Message as a {@link SerializedObject}.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class GrpcSerializedObject implements SerializedObject<byte[]> {
 

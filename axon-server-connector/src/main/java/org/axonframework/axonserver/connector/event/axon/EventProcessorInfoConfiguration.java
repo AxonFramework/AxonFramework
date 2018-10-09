@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.EventProcessor;
  * control and monitor the {@link EventProcessor}s with AxonServer.
  *
  * @author Sara Pellegrini
- *
+ * @since 4.0
  */
 public class EventProcessorInfoConfiguration implements ModuleConfiguration {
 

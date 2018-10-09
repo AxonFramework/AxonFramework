@@ -20,9 +20,10 @@ import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 
 /**
- * Supplier of {@link PlatformInboundInstruction} that represent the status of a {@link SubscribingEventProcessor}
+ * Supplier of {@link PlatformInboundInstruction} that represent the status of a {@link SubscribingEventProcessor}.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class SubscribingEventProcessorInfoMessage implements PlatformInboundMessage {
 

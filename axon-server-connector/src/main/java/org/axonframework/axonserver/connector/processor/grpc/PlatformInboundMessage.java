@@ -18,10 +18,12 @@ package org.axonframework.axonserver.connector.processor.grpc;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 
 /**
- * Supplier of {@link PlatformInboundInstruction}
+ * Supplier of {@link PlatformInboundInstruction}.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
+@FunctionalInterface
 public interface PlatformInboundMessage {
 
     PlatformInboundInstruction instruction();

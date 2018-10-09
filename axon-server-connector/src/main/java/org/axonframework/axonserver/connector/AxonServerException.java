@@ -20,6 +20,7 @@ package org.axonframework.axonserver.connector;
  * Generic exception indicating an error related to AxonServer.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class AxonServerException extends RuntimeException {
 

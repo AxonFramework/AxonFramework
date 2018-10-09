@@ -30,7 +30,7 @@ import java.util.function.Function;
  * Implementation of {@link EventProcessorInfoSource} that send {@link EventProcessor}'s status to AxonServer using GRPC messages.
  *
  * @author Sara Pellegrini
- *
+ * @since 4.0
  */
 public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
 

@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Composite of {@link MessageDispatchInterceptor}s that apply all interceptors in the order of registration.
  *
  * @author Sara Pellegrini
- *
+ * @since 4.0
  */
 public class DispatchInterceptors<M extends Message<?>> {
 

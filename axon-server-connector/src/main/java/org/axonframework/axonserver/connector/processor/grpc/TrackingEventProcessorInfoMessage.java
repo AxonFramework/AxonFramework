@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toList;
  * Supplier of {@link PlatformInboundInstruction} that represent the status of a {@link TrackingEventProcessor}.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage {
 

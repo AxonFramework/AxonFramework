@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * Implementation of {@link EventProcessorInfoSource} that schedule the notification of {@link org.axonframework.eventhandling.EventProcessor}s status.
  *
  * @author Sara Pellegrini
- *
+ * @since 4.0
  **/
 public class ScheduledEventProcessorInfoSource implements EventProcessorInfoSource {
 

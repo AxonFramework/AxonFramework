@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector;
  * Interface that encapsulates the messages publication functionality to AxonServer.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public interface Publisher<M> {
 

@@ -24,6 +24,7 @@ import java.util.Iterator;
  * Iterable class for all registered {@link EventProcessor}s.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class EventProcessors implements Iterable<EventProcessor> {
 
