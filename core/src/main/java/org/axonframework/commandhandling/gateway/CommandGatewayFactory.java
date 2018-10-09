@@ -104,8 +104,8 @@ public class CommandGatewayFactory {
     /**
      * Instantiate a {@link CommandGatewayFactory} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link CommandBus} are not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the {@link CommandBus} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link CommandGatewayFactory} instance
      */
@@ -909,7 +909,7 @@ public class CommandGatewayFactory {
         }
 
         /**
-         * Validate whether the fields contained in this Builder are set accordingly.
+         * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications

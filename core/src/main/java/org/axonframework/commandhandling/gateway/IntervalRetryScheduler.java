@@ -185,7 +185,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
         }
 
         /**
-         * Validate whether the fields contained in this Builder are set accordingly.
+         * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
@@ -197,7 +197,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
         }
 
         private void assertPositive(int integer, String exceptionDescription) {
-            assertThat(integer, number -> number > 0, exceptionDescription);
+            assertThat(integer, number -> number >= 0, exceptionDescription);
         }
     }
 }
