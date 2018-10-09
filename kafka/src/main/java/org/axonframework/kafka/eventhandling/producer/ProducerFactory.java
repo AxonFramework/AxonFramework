@@ -26,7 +26,6 @@ import org.apache.kafka.clients.producer.Producer;
  * @author Nakul Mishra
  * @since 3.0
  */
-
 public interface ProducerFactory<K, V> {
 
     Producer<K, V> createProducer();

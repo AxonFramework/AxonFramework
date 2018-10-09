@@ -12,6 +12,28 @@ Other changes
 * TrackingToken removed from `AnnotatedSaga` and `SagaStore` implementations
 * EventProcessingConfiguration represents an interface for accessing event processing components
 * SagaConfiguration is a configuration component carrier only - does not start any processors
+* The org.axonframework.kafka.eventhandling.consumer.AsyncFetcher it's Builder solution has been made equal to the other
+Builder implementations introduced. This entails the following changes:
+ - The AsyncFetcher constructor has been made protected for overriding
+ - The AsyncFetcher#builder(Map<String, Object>) function is removed in favor of AsyncFetcher.Builder#consumerFactory(Map<String, Object>)
+ - The AsyncFetcher#builder(ConsumerFactory<K, V>) function is removed in favor of AsyncFetcher.Builder#consumerFactory(ConsumerFactory<K, V>)
+ - A AsyncFetcher#builder() is added to instantiate the AsyncFetcher.Builder
+ - AsyncFetcher.Builder#withPool(ExecutorService) has been renamed to AsyncFetcher.Builder#executorService(ExecutorService) 
+ - AsyncFetcher.Builder#withMessageConverter(KafkaMessageConverter<K, V>) has been renamed to AsyncFetcher.Builder#messageConverter(KafkaMessageConverter<K, V>) 
+ - AsyncFetcher.Builder#withBufferFactory(Supplier<Buffer<KafkaEventMessage>>) has been renamed to AsyncFetcher.Builder#bufferFactory(Supplier<Buffer<KafkaEventMessage>>) 
+ - AsyncFetcher.Builder#withTopic(String) has been renamed to AsyncFetcher.Builder#topic(String) 
+ - AsyncFetcher.Builder#onRecordPublished(BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void>) has been renamed to AsyncFetcher.Builder#consumerRecordCallback(BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void>) 
+ - AsyncFetcher.Builder#withPollTimeout(long, TimeUnit) has been renamed to AsyncFetcher.Builder#pollTimeout(long, TimeUnit)
+* The org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory it's Builder solution has been made equal to 
+the other Builder implementations introduced. This entails the following changes:
+ - The DefaultProducerFactory constructor has been made protected for overriding
+ - The DefaultProducerFactory#builder(Map<String, Object>) function is removed in favor of DefaultProducerFactory.Builder#configuration(Map<String, Object>)
+ - A DefaultProducerFactory#builder() is added to instantiate the DefaultProducerFactory.Builder
+ - DefaultProducerFactory.Builder#withCloseTimeout(int, TimeUnit) has been renamed to DefaultProducerFactory.Builder#closeTimeout(int, TimeUnit) 
+ - DefaultProducerFactory.Builder#withProducerCacheSize(int) has been renamed to DefaultProducerFactory.Builder#producerCacheSize(int) 
+ - DefaultProducerFactory.Builder#withConfirmationMode(ConfirmationMode) has been renamed to DefaultProducerFactory.Builder#confirmationMode(ConfirmationMode) 
+ - DefaultProducerFactory.Builder#withTransactionalIdPrefix(String) has been renamed to DefaultProducerFactory.Builder#transactionalIdPrefix(String) 
+ 
 
 ### Moved classes
 
@@ -26,13 +48,14 @@ Other changes
 | org.axonframework.queryhandling.responsetypes.ResponseTypes                   | org.axonframework.messaging.responsetypes.ResponseTypes                    |
 
 ### Removed classes
-|                           Class                                    |             Why                              |
-|--------------------------------------------------------------------|----------------------------------------------|
-| org.axonframework.serialization.MessageSerializer                  | All messages are serializable now.           |
-| org.axonframework.serialization.SerializationAware                 | All messages are serializable now.           |
-| org.axonframework.serialization.UnknownSerializedTypeException     | Serializers now return UnknownSerializedType |
-| org.axonframework.commandhandling.disruptor.DisruptorConfiguration | Removed in favor DisruptorCommandBus.Builder |
-| org.axonframework.config.EventHandlingConfiguration                | Removed in favor of EventProcessingModule    |
+|                                       Class                                   |                      Why                     |
+|-------------------------------------------------------------------------------|----------------------------------------------|
+| org.axonframework.serialization.MessageSerializer                             | All messages are serializable now.           |
+| org.axonframework.serialization.SerializationAware                            | All messages are serializable now.           |
+| org.axonframework.serialization.UnknownSerializedTypeException                | Serializers now return UnknownSerializedType |
+| org.axonframework.commandhandling.disruptor.DisruptorConfiguration            | Removed in favor DisruptorCommandBus.Builder |
+| org.axonframework.config.EventHandlingConfiguration                           | Removed in favor of EventProcessingModule    |
+| org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration    | Removed in favor KafkaPublisher.Builder      |
 
 ### Classes for which the Constructor has been replaced for a Builder
 
@@ -68,3 +91,7 @@ Other changes
 - org.axonframework.eventhandling.saga.repository.LockingSagaRepository
 - org.axonframework.eventhandling.saga.AbstractSagaManager
 - org.axonframework.eventhandling.saga.AnnotatedSagaManager
+- org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter
+- org.axonframework.kafka.eventhandling.consumer.AsyncFetcher
+- org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory
+- org.axonframework.kafka.eventhandling.producer.KafkaPublisher

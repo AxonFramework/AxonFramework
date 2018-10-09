@@ -21,12 +21,15 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.kafka.eventhandling.consumer.*;
+import org.axonframework.kafka.eventhandling.consumer.AsyncFetcher;
+import org.axonframework.kafka.eventhandling.consumer.ConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.Fetcher;
+import org.axonframework.kafka.eventhandling.consumer.KafkaMessageSource;
 import org.axonframework.kafka.eventhandling.producer.KafkaPublisher;
-import org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration;
 import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
@@ -37,8 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.kafka.eventhandling.ConsumerConfigUtil.minimal;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @DirtiesContext
@@ -52,18 +54,22 @@ public class KafkaIntegrationTest {
     @Test
     public void testPublishAndReadMessages() throws Exception {
         eventBus = new SimpleEventBus();
-        ProducerFactory<String, byte[]> producerFactory = ProducerConfigUtil.ackProducerFactory(kafka, ByteArraySerializer.class);
-        KafkaPublisher<String, byte[]> publisher = new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
-                                                                                .withProducerFactory(producerFactory)
-                                                                                .withTopic("integration")
-                                                                                .withMessageSource(eventBus)
-                                                                                .build());
+        ProducerFactory<String, byte[]> producerFactory =
+                ProducerConfigUtil.ackProducerFactory(kafka, ByteArraySerializer.class);
+        KafkaPublisher<String, byte[]> publisher = KafkaPublisher.<String, byte[]>builder()
+                .messageSource(eventBus)
+                .producerFactory(producerFactory)
+                .topic("integration")
+                .build();
         publisher.start();
-        ConsumerFactory<String, byte[]> cf = new DefaultConsumerFactory<>(minimal(kafka, "consumer1", ByteArrayDeserializer.class));
-        Fetcher fetcher = AsyncFetcher.builder(cf)
-                                      .withTopic("integration")
-                                      .withPollTimeout(300, TimeUnit.MILLISECONDS)
-                                      .build();
+        ConsumerFactory<String, byte[]> consumerFactory =
+                new DefaultConsumerFactory<>(minimal(kafka, "consumer1", ByteArrayDeserializer.class));
+
+        Fetcher fetcher = AsyncFetcher.<String, byte[]>builder()
+                .consumerFactory(consumerFactory)
+                .topic("integration")
+                .pollTimeout(300, TimeUnit.MILLISECONDS)
+                .build();
         KafkaMessageSource messageSource = new KafkaMessageSource(fetcher);
         BlockingStream<TrackedEventMessage<?>> stream1 = messageSource.openStream(null);
         stream1.close();

@@ -377,7 +377,7 @@ public class JpaSagaStore implements SagaStore<Object> {
          * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
          *
          * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");

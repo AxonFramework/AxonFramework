@@ -18,7 +18,7 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -27,72 +27,76 @@ import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static java.util.concurrent.Executors.newCachedThreadPool;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Async implementation of the {@link Fetcher} that uses an in-memory bufferFactory.
  *
- * @param <K> The key of the Kafka entries
- * @param <V> The value type of Kafka entries
+ * @param <K> the key of the Kafka entries
+ * @param <V> the value type of Kafka entries
+ * @author Nakul Mishra
+ * @since 3.3
  */
 public class AsyncFetcher<K, V> implements Fetcher {
 
-    private final Supplier<Buffer<KafkaEventMessage>> bufferFactory;
-    private final ExecutorService pool;
-    private final KafkaMessageConverter<K, V> converter;
     private final ConsumerFactory<K, V> consumerFactory;
-    private final String topic;
-    private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
-    private final long pollTimeout;
+    private final Supplier<Buffer<KafkaEventMessage>> bufferFactory;
+    private final ExecutorService executorService;
     private final boolean requirePoolShutdown;
+    private final KafkaMessageConverter<K, V> messageConverter;
+    private final String topic;
+    private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> consumerRecordCallback;
+    private final long pollTimeout;
+
     private final Set<FetchEventsTask> activeFetchers = ConcurrentHashMap.newKeySet();
 
-    private AsyncFetcher(Builder<K, V> builder) {
-        this.bufferFactory = builder.bufferFactory;
+    /**
+     * Instantiate a {@link AsyncFetcher} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link ConsumerFactory} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link AsyncFetcher} instance
+     */
+    protected AsyncFetcher(Builder<K, V> builder) {
+        builder.validate();
         this.consumerFactory = builder.consumerFactory;
-        this.converter = builder.converter;
-        this.topic = builder.topic;
+        this.bufferFactory = builder.bufferFactory;
+        this.executorService = builder.executorService;
         this.requirePoolShutdown = builder.requirePoolShutdown;
-        this.pool = builder.pool;
-        this.callback = builder.callback;
+        this.messageConverter = builder.messageConverter;
+        this.topic = builder.topic;
+        this.consumerRecordCallback = builder.consumerRecordCallback;
         this.pollTimeout = builder.pollTimeout;
     }
 
     /**
-     * Initialize a builder for configuring an AsyncFetcher, using given Kafka {@code consumerConfig}.
+     * Instantiate a Builder to be able to create a {@link AsyncFetcher}.
      * <p>
-     * Note that configuring a MessageConverter on the builder is mandatory if the value type is not {@code byte[]}.
+     * The {@code bufferFactory} is defaulted to a {@link SortedKafkaMessageBuffer}, the {@link ExecutorService} to an
+     * {@link Executors#newCachedThreadPool()} using an {@link AxonThreadFactory}, the {@link KafkaMessageConverter} to
+     * a {@link DefaultKafkaMessageConverter}, the {@code topic} to {@code Axon.Events}, the
+     * {@code consumerRecordCallback} to a no-op function and the {@code pollTimeout} to {@code 5000} milliseconds.
+     * The {@link ConsumerFactory} is a <b>hard requirements</b> and as such should be provided.
      *
-     * @param <K>            key type.
-     * @param <V>            value type.
-     * @param consumerConfig The configuration of KafkaConsumers to use when creating consumers
-     * @return the builder.
+     * @param <K> a generic type for the key of the {@link ConsumerFactory}, {@link ConsumerRecord} and {@link
+     *            KafkaMessageConverter}
+     * @param <V> a generic type for the value of the {@link ConsumerFactory}, {@link ConsumerRecord} and {@link
+     *            KafkaMessageConverter}
+     * @return a Builder to be able to create a {@link []}
      */
-    public static <K, V> Builder<K, V> builder(Map<String, Object> consumerConfig) {
-        return builder(new DefaultConsumerFactory<>(consumerConfig));
-    }
-
-    /**
-     * Initialize a builder for configuring an AsyncFetcher, using given {@code consumerFactory} for creating Kafka
-     * Consumers.
-     * <p>
-     * Note that configuring a MessageConverter on the builder is mandatory if the value type is not {@code byte[]}.
-     *
-     * @param <K>             key type.
-     * @param <V>             value type.
-     * @param consumerFactory The factory providing Kafka Consumer instances
-     * @return the builder.
-     */
-    public static <K, V> Builder<K, V> builder(ConsumerFactory<K, V> consumerFactory) {
-        return new Builder<>(consumerFactory);
+    public static <K, V> Builder<K, V> builder() {
+        return new Builder<>();
     }
 
     @Override
@@ -103,11 +107,12 @@ public class AsyncFetcher<K, V> implements Fetcher {
             token = KafkaTrackingToken.emptyToken();
         }
         Buffer<KafkaEventMessage> buffer = bufferFactory.get();
-        FetchEventsTask<K, V> fetcherTask = new FetchEventsTask<>(consumer, token, buffer, this.converter,
-                                                                  this.callback, this.pollTimeout,
-                                                                  activeFetchers::remove);
+        FetchEventsTask<K, V> fetcherTask = new FetchEventsTask<>(
+                consumer, token, buffer, this.messageConverter, this.consumerRecordCallback, this.pollTimeout,
+                activeFetchers::remove
+        );
         activeFetchers.add(fetcherTask);
-        pool.execute(fetcherTask);
+        executorService.execute(fetcherTask);
 
         return new KafkaMessageStream(buffer, fetcherTask::close);
     }
@@ -116,119 +121,176 @@ public class AsyncFetcher<K, V> implements Fetcher {
     public void shutdown() {
         activeFetchers.forEach(FetchEventsTask::close);
         if (requirePoolShutdown) {
-            pool.shutdown();
+            executorService.shutdown();
         }
     }
 
     /**
-     * Builder for the AsyncFetcher.
+     * Builder class to instantiate an {@link AsyncFetcher}.
+     * <p>
+     * The {@code bufferFactory} is defaulted to an {@link SortedKafkaMessageBuffer}, the {@link ExecutorService} to an
+     * {@link Executors#newCachedThreadPool()} using an {@link AxonThreadFactory}, the {@link KafkaMessageConverter} to
+     * a {@link DefaultKafkaMessageConverter}, the {@code topic} to {@code Axon.Events}, the
+     * {@code consumerRecordCallback} to a no-op function and the {@code pollTimeout} to {@code 5000} milliseconds.
+     * The {@link ConsumerFactory} is a <b>hard requirements</b> and as such should be provided.
      *
-     * @param <K> key type.
-     * @param <V> value type.
+     * @param <K> a generic type for the key of the {@link ConsumerFactory}, {@link ConsumerRecord} and {@link
+     *            KafkaMessageConverter}
+     * @param <V> a generic type for the value of the {@link ConsumerFactory}, {@link ConsumerRecord} and {@link
+     *            KafkaMessageConverter}
      */
     public static final class Builder<K, V> {
 
-        private final ConsumerFactory<K, V> consumerFactory;
+        private ConsumerFactory<K, V> consumerFactory;
         private Supplier<Buffer<KafkaEventMessage>> bufferFactory = SortedKafkaMessageBuffer::new;
-        private KafkaMessageConverter<K, V> converter =
-                (KafkaMessageConverter<K, V>) new DefaultKafkaMessageConverter(new XStreamSerializer());
+        private ExecutorService executorService =
+                Executors.newCachedThreadPool(new AxonThreadFactory("AsyncFetcher-pool-thread"));
+        private boolean requirePoolShutdown = true;
+        @SuppressWarnings("unchecked")
+        private KafkaMessageConverter<K, V> messageConverter =
+                (KafkaMessageConverter<K, V>) DefaultKafkaMessageConverter.builder()
+                                                                          .serializer(new XStreamSerializer())
+                                                                          .build();
         private String topic = "Axon.Events";
+        private BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> consumerRecordCallback = (r, t) -> null;
         private long pollTimeout = 5_000;
 
-        private ExecutorService pool = newCachedThreadPool(new AxonThreadFactory("AsyncFetcher-pool-thread"));
-        private BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback = (r, t) -> null;
-        private boolean requirePoolShutdown = true;
 
-        private Builder(ConsumerFactory<K, V> consumerFactory) {
-            Assert.notNull(consumerFactory, () -> "ConsumerFactory may not be null");
+        /**
+         * Sets the {@link ConsumerFactory} to be used by this {@link Fetcher} implementation to create {@link Consumer}
+         * instances.
+         *
+         * @param consumerFactory a {@link ConsumerFactory} to be used by this {@link Fetcher} implementation to create
+         *                        {@link Consumer} instances
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> consumerFactory(ConsumerFactory<K, V> consumerFactory) {
+            assertNonNull(consumerFactory, "ConsumerFactory may not be null");
             this.consumerFactory = consumerFactory;
+            return this;
         }
 
         /**
-         * Configure {@link ExecutorService} that uses {@link Consumer} for fetching Kafka records. Note that the pool
-         * should contain sufficient threads to run the necessary fetcher processes concurrently.
+         * Instantiate a {@link DefaultConsumerFactory} with the provided {@code consumerConfiguration}. Used by this
+         * {@link Fetcher} implementation to create {@link Consumer} instances.
+         *
+         * @param consumerConfiguration a {@link DefaultConsumerFactory} with the given {@code consumerConfiguration},
+         *                              to be used by this {@link Fetcher} implementation to create {@link Consumer}
+         *                              instances
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> consumerFactory(Map<String, Object> consumerConfiguration) {
+            this.consumerFactory = new DefaultConsumerFactory<>(consumerConfiguration);
+            return this;
+        }
+
+        /**
+         * Sets the {@link ExecutorService} used to start {@link Consumer} instances for fetching Kafka records.
+         * Note that the executorService should contain sufficient threads to run the necessary fetcher processes
+         * concurrently. Defaults to an {@link Executors#newCachedThreadPool()} with an {@link AxonThreadFactory}.
          * <p>
-         * Note that the provided pool will <em>not</em> be shut down when the fetcher is terminated.
+         * Note that the provided executorService will <em>not</em> be shut down when the fetcher is terminated.
          *
-         * @param sevice ExecutorService.
-         * @return the builder.
+         * @param executorService a {@link ExecutorService} used to start {@link Consumer} instances for fetching Kafka
+         *                        records
+         * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<K, V> withPool(ExecutorService sevice) {
-            Assert.notNull(sevice, () -> "Pool may not be null");
+        public Builder<K, V> executorService(ExecutorService executorService) {
+            assertNonNull(executorService, "ExecutorService may not be null");
             this.requirePoolShutdown = false;
-            this.pool = sevice;
+            this.executorService = executorService;
             return this;
         }
 
         /**
-         * Configure {@link Function} to invoke once a {@link ConsumerRecord} is inserted into the {@link
-         * Buffer}.
+         * Sets the {@code bufferFactory} of type {@link Supplier} with a generic type {@link Buffer} with
+         * {@link KafkaEventMessage}s. Used to create a buffer for the Kafka records fetcher. Defaults to a
+         * {@link SortedKafkaMessageBuffer}.
          *
-         * @param callback function type.
-         * @return the builder.
+         * @param bufferFactory a {@link Supplier} to create a buffer for the Kafka records fetcher
+         * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<K, V> onRecordPublished(
-                BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback) {
-            Assert.notNull(callback, () -> "Callback may not be null");
-            this.callback = callback;
-            return this;
-        }
-
-        /**
-         * Configure {@link ExecutorService} that uses {@link Consumer} for fetching Kafka records.
-         *
-         * @param timeout the timeout when reading message from the topic.
-         * @param unit    the unit in which the timeout is expressed.
-         * @return this builder for method chaining.
-         */
-        public Builder<K, V> withPollTimeout(long timeout, TimeUnit unit) {
-            this.pollTimeout = unit.toMillis(timeout);
-            return this;
-        }
-
-        /**
-         * Configure the converter which converts Kafka messages to Axon messages.
-         *
-         * @param converter the converter.
-         * @return this builder for method chaining.
-         */
-        public Builder<K, V> withMessageConverter(KafkaMessageConverter<K, V> converter) {
-            Assert.notNull(converter, () -> "Converter may not be null");
-            this.converter = converter;
-            return this;
-        }
-
-        /**
-         * Configure Kafka topic to read events from.
-         *
-         * @param topic the topic.
-         * @return this builder for method chaining.
-         */
-        public Builder<K, V> withTopic(String topic) {
-            Assert.notNull(topic, () -> "Topic may not be null");
-            this.topic = topic;
-            return this;
-        }
-
-        /**
-         * Configure the factory for creating buffer that is used for each connection.
-         *
-         * @param bufferFactory the bufferFactory.
-         * @return this builder for method chaining.
-         */
-        public Builder<K, V> withBufferFactory(Supplier<Buffer<KafkaEventMessage>> bufferFactory) {
-            Assert.notNull(bufferFactory, () -> "Buffer factory may not be null");
+        public Builder<K, V> bufferFactory(Supplier<Buffer<KafkaEventMessage>> bufferFactory) {
+            assertNonNull(bufferFactory, "Buffer factory may not be null");
             this.bufferFactory = bufferFactory;
             return this;
         }
 
         /**
-         * Builds the fetcher
+         * Sets the {@link KafkaMessageConverter} used to convert Kafka messages into
+         * {@link org.axonframework.eventhandling.EventMessage}s. Defaults to a {@link DefaultKafkaMessageConverter}
+         * using the {@link XStreamSerializer}.
+         * <p>
+         * Note that configuring a MessageConverter on the builder is mandatory if the value type is not {@code byte[]}.
          *
-         * @return the Fetcher
+         * @param messageConverter a {@link KafkaMessageConverter} used to convert Kafka messages into
+         *                         {@link org.axonframework.eventhandling.EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
          */
-        public Fetcher build() {
+        public Builder<K, V> messageConverter(KafkaMessageConverter<K, V> messageConverter) {
+            assertNonNull(messageConverter, "MessageConverter may not be null");
+            this.messageConverter = messageConverter;
+            return this;
+        }
+
+        /**
+         * Set the Kafka {@code topic} to read {@link org.axonframework.eventhandling.EventMessage}s from. Defaults to
+         * {@code Axon.Events}.
+         *
+         * @param topic the Kafka {@code topic} to read {@link org.axonframework.eventhandling.EventMessage}s from
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> topic(String topic) {
+            assertThat(topic, name -> Objects.nonNull(name) && !"".equals(name), "The topic may not be null or empty");
+            this.topic = topic;
+            return this;
+        }
+
+        /**
+         * Sets the {@code consumerRecordCallback} {@link BiFunction} used to invoke once a {@link ConsumerRecord} is
+         * inserted into the {@link Buffer}. Defaults to a no-op function.
+         *
+         * @param consumerRecordCallback a {@code consumerRecordCallback} {@link BiFunction} used to invoke once a
+         *                               {@link ConsumerRecord} is inserted into the {@link Buffer}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> consumerRecordCallback(
+                BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> consumerRecordCallback) {
+            assertNonNull(consumerRecordCallback, "The consumerRecordCallback may not be null");
+            this.consumerRecordCallback = consumerRecordCallback;
+            return this;
+        }
+
+        /**
+         * Set the {@code pollTimeout} in milliseconds for reading messages from a topic. Defaults to {@code 5000}
+         * milliseconds.
+         *
+         * @param timeout  the timeout as a {@code long} when reading message from the topic
+         * @param timeUnit the {@link TimeUnit} in which the timeout is expressed
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> pollTimeout(long timeout, TimeUnit timeUnit) {
+            this.pollTimeout = timeUnit.toMillis(timeout);
+            return this;
+        }
+
+        /**
+         * Initializes a {@link AsyncFetcher} as specified through this Builder.
+         *
+         * @return a {@link AsyncFetcher} as specified through this Builder
+         */
+        public AsyncFetcher build() {
             return new AsyncFetcher<>(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(consumerFactory, "The ConsumerFactory is a hard requirement and should be provided");
         }
     }
 }

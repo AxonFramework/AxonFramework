@@ -19,8 +19,16 @@ package org.axonframework.boot.autoconfig;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
-import org.axonframework.kafka.eventhandling.consumer.*;
-import org.axonframework.kafka.eventhandling.producer.*;
+import org.axonframework.kafka.eventhandling.consumer.AsyncFetcher;
+import org.axonframework.kafka.eventhandling.consumer.ConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.Fetcher;
+import org.axonframework.kafka.eventhandling.consumer.KafkaMessageSource;
+import org.axonframework.kafka.eventhandling.consumer.SortedKafkaMessageBuffer;
+import org.axonframework.kafka.eventhandling.producer.ConfirmationMode;
+import org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory;
+import org.axonframework.kafka.eventhandling.producer.KafkaPublisher;
+import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,7 +52,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @author Nakul Mishra
  * @since 3.0
  */
-
 @Configuration
 @ConditionalOnClass(KafkaPublisher.class)
 @EnableConfigurationProperties(KafkaProperties.class)
@@ -66,9 +73,10 @@ public class KafkaAutoConfiguration {
         if (transactionIdPrefix == null) {
             throw new IllegalStateException("transactionalIdPrefix cannot be empty");
         }
-        return DefaultProducerFactory.<String, byte[]>builder(producer)
-                .withConfirmationMode(ConfirmationMode.TRANSACTIONAL)
-                .withTransactionalIdPrefix(transactionIdPrefix)
+        return DefaultProducerFactory.<String, byte[]>builder()
+                .configuration(producer)
+                .confirmationMode(ConfirmationMode.TRANSACTIONAL)
+                .transactionalIdPrefix(transactionIdPrefix)
                 .build();
     }
 
@@ -83,7 +91,7 @@ public class KafkaAutoConfiguration {
     @Bean
     public KafkaMessageConverter<String, byte[]> kafkaMessageConverter(
             @Qualifier("eventSerializer") Serializer eventSerializer) {
-        return new DefaultKafkaMessageConverter(eventSerializer);
+        return DefaultKafkaMessageConverter.builder().serializer(eventSerializer).build();
     }
 
     @ConditionalOnMissingBean
@@ -93,14 +101,13 @@ public class KafkaAutoConfiguration {
                                                          EventBus eventBus,
                                                          KafkaMessageConverter<String, byte[]> kafkaMessageConverter,
                                                          AxonConfiguration configuration) {
-        return new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
-                                            .withTopic(properties.getDefaultTopic())
-                                            .withMessageConverter(kafkaMessageConverter)
-                                            .withProducerFactory(kafkaProducerFactory)
-                                            .withMessageSource(eventBus)
-                                            .withMessageMonitor(configuration
-                                                                        .messageMonitor(KafkaPublisher.class, "kafkaPublisher"))
-                                            .build());
+        return KafkaPublisher.<String, byte[]>builder()
+                .messageSource(eventBus)
+                .producerFactory(kafkaProducerFactory)
+                .messageConverter(kafkaMessageConverter)
+                .messageMonitor(configuration.messageMonitor(KafkaPublisher.class, "kafkaPublisher"))
+                .topic(properties.getDefaultTopic())
+                .build();
     }
 
     @ConditionalOnMissingBean
@@ -108,13 +115,13 @@ public class KafkaAutoConfiguration {
     @Bean(destroyMethod = "shutdown")
     public Fetcher kafkaFetcher(ConsumerFactory<String, byte[]> kafkaConsumerFactory,
                                 KafkaMessageConverter<String, byte[]> kafkaMessageConverter) {
-        return AsyncFetcher.builder(kafkaConsumerFactory)
-                           .withTopic(properties.getDefaultTopic())
-                           .withPollTimeout(properties.getFetcher().getPollTimeout(), MILLISECONDS)
-                           .withMessageConverter(kafkaMessageConverter)
-                           .withBufferFactory(() -> new SortedKafkaMessageBuffer<>(properties.getFetcher().getBufferSize()))
-                           .build();
-
+        return AsyncFetcher.<String, byte[]>builder()
+                .consumerFactory(kafkaConsumerFactory)
+                .bufferFactory(() -> new SortedKafkaMessageBuffer<>(properties.getFetcher().getBufferSize()))
+                .messageConverter(kafkaMessageConverter)
+                .topic(properties.getDefaultTopic())
+                .pollTimeout(properties.getFetcher().getPollTimeout(), MILLISECONDS)
+                .build();
     }
 
     @ConditionalOnMissingBean
