@@ -288,8 +288,8 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
      * <p>
      * The {@code closeTimeout} is defaulted to {@code 30}, the {@link TimeUnit} for the {@code closeTimeout} is
      * defaulted to {@link TimeUnit#SECONDS}, the {@code producerCacheSize} defaults to {@code 10} and the
-     * {@link ConfirmationMode} is defaulted to {@link ConfirmationMode#NONE}.
-     * The {@code configuration} is a <b>hard requirement</b> and as such should be provided.
+     * {@link ConfirmationMode} is defaulted to {@link ConfirmationMode#NONE}. The {@code configuration} is a
+     * <b>hard requirement</b> and as such should be provided.
      *
      * @param <K> a generic type for the key of the {@link Producer} this {@link ProducerFactory} will create
      * @param <V> a generic type for the value of the {@link Producer} this {@link ProducerFactory} will create
@@ -307,7 +307,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          * Set the {@code closeTimeout} specifying how long to wait when {@link Producer#close(long, TimeUnit)} is
          * invoked. Defaults to {@code 30} {@link TimeUnit#SECONDS}.
          *
-         * @param timeout  the time to wait before invoking {@link Producer#close(long, TimeUnit)}. in units of
+         * @param timeout  the time to wait before invoking {@link Producer#close(long, TimeUnit)} in units of
          *                 {@code timeUnit}.
          * @param timeUnit a {@code TimeUnit} determining how to interpret the {@code timeout} parameter
          * @return the current Builder instance, for fluent interfacing
