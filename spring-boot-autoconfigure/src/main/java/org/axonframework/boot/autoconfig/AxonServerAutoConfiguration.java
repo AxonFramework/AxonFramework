@@ -84,9 +84,11 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @Primary
     @ConditionalOnMissingBean(CommandBus.class)
-    public AxonServerCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration,
+    public AxonServerCommandBus commandBus(TransactionManager txManager,
+                                           AxonConfiguration axonConfiguration,
                                            AxonServerConfiguration axonServerConfiguration,
-                                           Serializer serializer, PlatformConnectionManager platformConnectionManager,
+                                           Serializer serializer,
+                                           PlatformConnectionManager platformConnectionManager,
                                            RoutingStrategy routingStrategy,
                                            CommandPriorityCalculator priorityCalculator) {
 

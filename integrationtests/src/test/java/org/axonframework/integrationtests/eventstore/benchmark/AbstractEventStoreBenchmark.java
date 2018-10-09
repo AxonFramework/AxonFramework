@@ -18,12 +18,11 @@ package org.axonframework.integrationtests.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
