@@ -100,8 +100,6 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.commandhandling.disruptor.DisruptorCommandBus
 - org.axonframework.commandhandling.distributed.DistributedCommandBus
 - org.axonframework.commandhandling.gateway.AbstractCommandGateway
-- org.axonframework.commandhandling.gatewayCommandGatewayFactory.GatewayInvocationHandler
-- org.axonframework.commandhandling.gatewayCommandGatewayFactory.DispatchOnInvocationHandler
 - org.axonframework.commandhandling.gateway.DefaultCommandGateway
 - org.axonframework.commandhandling.model.AbstractRepository
 - org.axonframework.commandhandling.model.LockingRepository
@@ -153,3 +151,5 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventhandling.AbstractEventProcessor
 - org.axonframework.eventhandling.SubscribingEventProcessor
 - org.axonframework.eventhandling.TrackingEventProcessor
+- org.axonframework.commandhandling.gateway.IntervalRetryScheduler
+- org.axonframework.commandhandling.gateway.CommandGatewayFactory
