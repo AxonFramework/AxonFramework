@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandMessage;
 
 import java.util.Optional;
-import java.util.function.Predicate;
 
 /**
  * Interface describing a mechanism used to find a suitable member of a cluster capable of handling given command
@@ -43,5 +42,5 @@ public interface CommandRouter {
      * @param loadFactor    the new load factor of the member for this endpoint
      * @param commandFilter the new capabilities of the member for this endpoint
      */
-    void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter);
+    void updateMembership(int loadFactor, CommandMessageFilter commandFilter);
 }

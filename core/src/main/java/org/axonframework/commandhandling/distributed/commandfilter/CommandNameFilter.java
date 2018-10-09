@@ -17,13 +17,12 @@
 package org.axonframework.commandhandling.distributed.commandfilter;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,7 +32,7 @@ import java.util.stream.Stream;
  *
  * @author Koen Lavooij
  */
-public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializable {
+public class CommandNameFilter implements CommandMessageFilter {
 
     private final Set<String> commandNames;
 
@@ -56,28 +55,28 @@ public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializ
     }
 
     @Override
-    public boolean test(CommandMessage commandMessage) {
+    public boolean matches(CommandMessage<?> commandMessage) {
         return commandNames.contains(commandMessage.getCommandName());
     }
 
     @Override
-    public Predicate<CommandMessage<?>> negate() {
+    public CommandMessageFilter negate() {
         return new DenyCommandNameFilter(commandNames);
     }
 
     @Override
-    public Predicate<CommandMessage<?>> and(Predicate<? super CommandMessage<?>> other) {
+    public CommandMessageFilter and(CommandMessageFilter other) {
         if (other instanceof CommandNameFilter) {
             return new CommandNameFilter(commandNames.stream()
                                                      .filter(((CommandNameFilter) other).commandNames::contains)
                                                      .collect(Collectors.toSet()));
         } else {
-            return (t) -> test(t) && other.test(t);
+            return (t) -> matches(t) && other.matches(t);
         }
     }
 
     @Override
-    public Predicate<CommandMessage<?>> or(Predicate<? super CommandMessage<?>> other) {
+    public CommandMessageFilter or(CommandMessageFilter other) {
         if (other instanceof CommandNameFilter) {
             return new CommandNameFilter(
                     Stream.concat(
@@ -85,7 +84,7 @@ public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializ
                             ((CommandNameFilter) other).commandNames.stream())
                           .collect(Collectors.toSet()));
         } else {
-            return (t) -> test(t) || other.test(t);
+            return new OrCommandMessageFilter(this, other);
         }
     }
 

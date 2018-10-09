@@ -5,7 +5,7 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 /**
  * Author: marc
  */
-public class RemoteQueryException extends Throwable {
+public class RemoteQueryException extends RuntimeException {
     private final String errorCode;
     private final String location;
     private final Iterable<String> details;

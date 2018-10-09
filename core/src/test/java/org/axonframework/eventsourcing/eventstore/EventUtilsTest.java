@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,7 +46,7 @@ public class EventUtilsTest {
     public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntry() {
         DomainEventStream eventStream = EventUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
-                                                  NoOpEventUpcaster.INSTANCE, false);
+                                                  NoOpEventUpcaster.INSTANCE);
         assertNull(eventStream.getLastSequenceNumber());
         eventStream.forEachRemaining(Objects::requireNonNull);
         assertEquals(Long.valueOf(1L), eventStream.getLastSequenceNumber());
@@ -56,8 +57,8 @@ public class EventUtilsTest {
         DomainEventStream eventStream = EventUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1), createEntry(2), createEntry(3)), serializer,
                                                   new EventUpcasterChain(e -> e
-                                                          .filter(entry -> entry.getSequenceNumber().get() < 2L)),
-                                                  false);
+                                                          .filter(entry -> entry.getSequenceNumber().get() < 2L))
+                );
         assertNull(eventStream.getLastSequenceNumber());
         assertTrue(eventStream.hasNext());
         eventStream.forEachRemaining(Objects::requireNonNull);
@@ -68,7 +69,7 @@ public class EventUtilsTest {
     public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterUpcastingToEmptyStream() {
         DomainEventStream eventStream = EventUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
-                                                  new EventUpcasterChain(s -> s.filter(e -> false)), false);
+                                                  new EventUpcasterChain(s -> s.filter(e -> false)));
         assertNull(eventStream.getLastSequenceNumber());
         assertFalse(eventStream.hasNext());
         eventStream.forEachRemaining(Objects::requireNonNull);
@@ -78,7 +79,7 @@ public class EventUtilsTest {
     @Test(expected = NullPointerException.class)
     public void testDomainEventStream_nullPointerExceptionOnEmptyEventStream() {
         DomainEventStream eventStream = EventUtils.upcastAndDeserializeDomainEvents(Stream.empty(),
-            serializer, NoOpEventUpcaster.INSTANCE, false);
+            serializer, NoOpEventUpcaster.INSTANCE);
         long lastSequenceNumber = eventStream.getLastSequenceNumber();
     }
 

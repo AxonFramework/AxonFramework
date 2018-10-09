@@ -117,6 +117,9 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
             xStream(new XStream());
         }
 
+        /**
+         * {@inheritDoc} Defaults to a {@link XStream#XStream()} call.
+         */
         @Override
         public Builder xStream(XStream xStream) {
             super.xStream(xStream);

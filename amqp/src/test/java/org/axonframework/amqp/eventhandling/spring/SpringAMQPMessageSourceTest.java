@@ -59,7 +59,7 @@ public class SpringAMQPMessageSourceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testMessageListenerIgnoredOnDeserializationFailure() {
+    public void testMessageListenerIgnoredOnUnsupportedMessageType() {
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
         DefaultAMQPMessageConverter messageConverter =
                 DefaultAMQPMessageConverter.builder()
@@ -73,9 +73,31 @@ public class SpringAMQPMessageSourceTest {
         MessageProperties messageProperties = new MessageProperties();
         message.getProperties().getHeaders().forEach(messageProperties::setHeader);
         // we make the message unreadable
-        messageProperties.setHeader("axon-message-type", "strong");
+        messageProperties.getHeaders().remove("axon-message-type");
         testSubject.onMessage(new Message(message.getBody(), messageProperties), mock(Channel.class));
 
         verify(eventProcessor, never()).accept(any(List.class));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMessageListenerInvokedOnUnknownSerializedType() {
+        Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
+        DefaultAMQPMessageConverter messageConverter = DefaultAMQPMessageConverter.builder()
+                                                                                  .serializer(serializer)
+                                                                                  .build();
+        SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(messageConverter);
+        testSubject.subscribe(eventProcessor);
+
+        AMQPMessage message = messageConverter.createAMQPMessage(GenericEventMessage.asEventMessage("test"));
+
+        MessageProperties messageProperties = new MessageProperties();
+        message.getProperties().getHeaders().forEach(messageProperties::setHeader);
+        // we make the type unknown
+        messageProperties.setHeader("axon-message-type", "strong");
+        testSubject.onMessage(new Message(message.getBody(), messageProperties), mock(Channel.class));
+
+        verify(eventProcessor).accept(any(List.class));
     }
 }

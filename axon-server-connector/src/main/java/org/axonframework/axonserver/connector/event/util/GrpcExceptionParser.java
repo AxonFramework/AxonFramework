@@ -23,7 +23,7 @@ import io.grpc.StatusRuntimeException;
  * Converts GRPC Exceptions to EventStoreClientException
  */
 public class GrpcExceptionParser {
-    private static Metadata.Key<String> ERROR_CODE_KEY = Metadata.Key.of("AxonIQ-ErrorCode", Metadata.ASCII_STRING_MARSHALLER);
+    private static final Metadata.Key<String> ERROR_CODE_KEY = Metadata.Key.of("AxonIQ-ErrorCode", Metadata.ASCII_STRING_MARSHALLER);
 
     public static RuntimeException parse(Throwable ex) {
         String code = "AXONIQ-0001";

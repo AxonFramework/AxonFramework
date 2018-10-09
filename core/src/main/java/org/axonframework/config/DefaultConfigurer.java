@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -358,6 +359,28 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
+    public EventProcessingConfigurer eventProcessing() {
+        List<EventProcessingConfigurer> eventProcessingConfigurers =
+                modules.stream()
+                       .filter(module -> module.isType(EventProcessingConfigurer.class))
+                       .map(module -> (EventProcessingConfigurer) module.unwrap()) // It's safe to unwrap it since it isn't dependent on anything else.
+                       .collect(toList());
+        switch (eventProcessingConfigurers.size()) {
+            case 0:
+                EventProcessingModule eventProcessingModule = new EventProcessingModule();
+                registerModule(eventProcessingModule);
+                return eventProcessingModule;
+            case 1:
+                return eventProcessingConfigurers.get(0);
+            default:
+                throw new AxonConfigurationException(
+                        "There are several EventProcessingConfigurers defined. "
+                                + "The `eventProcessing()` method is used to retrieve a 'singleton' EventProcessingConfigurer."
+                );
+        }
+    }
+
+    @Override
     public Configurer registerEventUpcaster(Function<Configuration, EventUpcaster> upcasterBuilder) {
         upcasters.add(new Component<>(config, "upcaster", upcasterBuilder));
         return this;
@@ -488,12 +511,6 @@ public class DefaultConfigurer implements Configurer {
     public Configuration buildConfiguration() {
         if (!initialized) {
             verifyIdentifierFactory();
-            boolean missingEventProcessingConfiguration =
-                    modules.stream()
-                           .noneMatch(m -> m.unwrap() instanceof EventProcessingConfiguration);
-            if (missingEventProcessingConfiguration) {
-                registerModule(new EventProcessingConfiguration());
-            }
             prepareModules();
             invokeInitHandlers();
         }

@@ -16,14 +16,13 @@
 
 package org.axonframework.jgroups.commandhandling;
 
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 import org.jgroups.util.Streamable;
 
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.function.Predicate;
 
 /**
  * This message represents a notification of a Member joining the DistributedCommandBus with a given
@@ -36,7 +35,7 @@ import java.util.function.Predicate;
 public class JoinMessage implements Externalizable {
 
     private static final long serialVersionUID = 1456658552741424773L;
-    private Predicate<? super CommandMessage<?>> messageFilter;
+    private CommandMessageFilter messageFilter;
     private boolean expectReply;
     private int loadFactor;
     private int order;
@@ -58,7 +57,7 @@ public class JoinMessage implements Externalizable {
      * @param order         The index of this update, allowing recipients to order them
      * @param expectReply   Indicates whether the sending member expects a reply with membership information
      */
-    public JoinMessage(int loadFactor, Predicate<? super CommandMessage<?>> messageFilter, int order,
+    public JoinMessage(int loadFactor, CommandMessageFilter messageFilter, int order,
                        boolean expectReply) {
         this.loadFactor = loadFactor;
         this.messageFilter = messageFilter;
@@ -105,7 +104,7 @@ public class JoinMessage implements Externalizable {
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         loadFactor = in.readInt();
-        messageFilter = (Predicate<CommandMessage<?>>) in.readObject();
+        messageFilter = (CommandMessageFilter) in.readObject();
         order = in.readInt();
         expectReply = in.readBoolean();
     }
@@ -115,7 +114,7 @@ public class JoinMessage implements Externalizable {
      *
      * @return the member's message filter
      */
-    public Predicate<? super CommandMessage<?>> messageFilter() {
+    public CommandMessageFilter messageFilter() {
         return messageFilter;
     }
 }

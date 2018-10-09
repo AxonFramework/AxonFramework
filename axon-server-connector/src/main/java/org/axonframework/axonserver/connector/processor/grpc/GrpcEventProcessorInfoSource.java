@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.processor.grpc;
 import org.axonframework.axonserver.connector.PlatformConnectionManager;
 import org.axonframework.axonserver.connector.processor.EventProcessorInfoSource;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
-import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 
 import java.util.HashMap;
@@ -40,9 +40,9 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
 
     private final Function<EventProcessor, PlatformInboundMessage> mapping;
 
-    public GrpcEventProcessorInfoSource(EventHandlingConfiguration eventHandlingConfiguration,
+    public GrpcEventProcessorInfoSource(EventProcessingConfiguration eventProcessingConfiguration,
                                         PlatformConnectionManager platformConnectionManager) {
-        this(new EventProcessors(eventHandlingConfiguration),
+        this(new EventProcessors(eventProcessingConfiguration),
              platformConnectionManager::send,
              new GrpcEventProcessorMapping());
         platformConnectionManager.addReconnectListener(lastProcessorsInfo::clear);

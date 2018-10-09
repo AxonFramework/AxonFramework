@@ -76,16 +76,15 @@ public class AbstractSingleEventUpcasterTest {
         Serializer serializer = XStreamSerializer.builder().build();
         Object payload = new StubEvent("oldName");
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
-        EventData<?> eventData =
-                new TrackedDomainEventData<>(trackingToken,
-                                             new GenericDomainEventEntry<>(aggregateType, aggregateId, sequenceNumber,
-                                                                           "eventId", Instant.now(),
-                                                                           serializedPayload.getType().getName(),
-                                                                           serializedPayload.getType().getRevision(),
-                                                                           serializedPayload,
-                                                                           serializer
-                                                                                   .serialize(MetaData.emptyInstance(),
-                                                                                              String.class)));
+        EventData<?> eventData = new TrackedDomainEventData<>(
+                trackingToken,
+                new GenericDomainEventEntry<>(aggregateType, aggregateId, sequenceNumber,
+                                              "eventId", Instant.now(),
+                                              serializedPayload.getType().getName(),
+                                              serializedPayload.getType().getRevision(),
+                                              serializedPayload,
+                                              serializer.serialize(MetaData.emptyInstance(), String.class))
+        );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
