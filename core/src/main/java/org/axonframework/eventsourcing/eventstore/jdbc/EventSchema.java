@@ -17,8 +17,10 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
  * Schema of an event entry to be stored using Jdbc.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class EventSchema {
+
     private final String domainEventTable, snapshotTable, globalIndexColumn, timestampColumn, eventIdentifierColumn,
             aggregateIdentifierColumn, sequenceNumberColumn, typeColumn, payloadTypeColumn, payloadRevisionColumn,
             payloadColumn, metaDataColumn;
@@ -167,6 +169,7 @@ public class EventSchema {
      */
     @SuppressWarnings("SqlResolve")
     public static class Builder {
+
         private String domainEventTable = "DomainEventEntry";
         private String snapshotTable = "SnapshotEventEntry";
         private String globalIndexColumn = "globalIndex";

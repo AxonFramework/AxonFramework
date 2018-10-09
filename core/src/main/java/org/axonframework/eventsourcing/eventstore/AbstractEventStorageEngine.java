@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -32,92 +33,59 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract event storage implementation that takes care of event serialization and upcasting.
+ * Abstract {@link EventStorageEngine} implementation that takes care of event serialization and upcasting.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
-    private final Serializer serializer;
-    private final EventUpcaster upcasterChain;
+    private final Serializer snapshotSerializer;
+    protected final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final Serializer eventSerializer;
     private final Predicate<? super DomainEventData<?>> snapshotFilter;
 
     /**
-     * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
-     * persistenceExceptionResolver}.
+     * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
      *
-     * @param snapshotSerializer           Used to serialize and deserialize snapshots. If {@code null}
-     *                                     a new {@link XStreamSerializer} is used.
-     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
-     *                                     null} a {@link NoOpEventUpcaster} is used.
-     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
-     *                                     persistence exceptions are not explicitly resolved.
-     * @param eventSerializer              Used to serialize and deserialize event payload and metadata. If {@code null}
-     *                                     a new {@link XStreamSerializer} is used.
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStorageEngine} instance
      */
-    protected AbstractEventStorageEngine(Serializer snapshotSerializer,
-                                         EventUpcaster upcasterChain,
-                                         PersistenceExceptionResolver persistenceExceptionResolver,
-                                         Serializer eventSerializer) {
-        this(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null);
-    }
-
-    /**
-     * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
-     * persistenceExceptionResolver}. The given {@code snapshotFilter} is used to define which snapshots are accepted
-     * for this version of the application.
-     *
-     * @param snapshotSerializer           Used to serialize and deserialize snapshots. If {@code null}
-     *                                     a new {@link XStreamSerializer} is used.
-     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
-     *                                     null} a {@link NoOpEventUpcaster} is used.
-     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
-     *                                     persistence exceptions are not explicitly resolved.
-     * @param eventSerializer              Used to serialize and deserialize event payload and metadata. If {@code null}
-     *                                     a new {@link XStreamSerializer} is used.
-     * @param snapshotFilter               Decides whether to use a snapshot or not. If {@code null}, every snapshot is
-     *                                     accepted as viable.
-     */
-    protected AbstractEventStorageEngine(Serializer snapshotSerializer,
-                                         EventUpcaster upcasterChain,
-                                         PersistenceExceptionResolver persistenceExceptionResolver,
-                                         Serializer eventSerializer,
-                                         Predicate<? super DomainEventData<?>> snapshotFilter) {
-        this.serializer = getOrDefault(snapshotSerializer, XStreamSerializer::new);
-        this.upcasterChain = getOrDefault(upcasterChain, () -> NoOpEventUpcaster.INSTANCE);
-        this.persistenceExceptionResolver = persistenceExceptionResolver;
-        this.eventSerializer = getOrDefault(eventSerializer, XStreamSerializer::new);
-        this.snapshotFilter = getOrDefault(snapshotFilter, i -> true);
+    protected AbstractEventStorageEngine(Builder builder) {
+        builder.validate();
+        this.snapshotSerializer = builder.snapshotSerializer;
+        this.upcasterChain = builder.upcasterChain;
+        this.persistenceExceptionResolver = builder.persistenceExceptionResolver;
+        this.eventSerializer = builder.eventSerializer;
+        this.snapshotFilter = builder.snapshotFilter;
     }
 
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
-        return EventUtils.upcastAndDeserializeTrackedEvents(input, eventSerializer, upcasterChain, true);
+        return EventUtils.upcastAndDeserializeTrackedEvents(input, eventSerializer, upcasterChain);
     }
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
-        return EventUtils.upcastAndDeserializeDomainEvents(input, eventSerializer, upcasterChain, false);
+        return EventUtils.upcastAndDeserializeDomainEvents(input, eventSerializer, upcasterChain);
     }
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier).filter(snapshotFilter)
-                                                    .map(snapshot -> EventUtils
-                                                            .upcastAndDeserializeDomainEvents(Stream.of(snapshot),
-                                                                                              serializer,
-                                                                                              upcasterChain,
-                                                                                              false))
-                                                    .flatMap(DomainEventStream::asStream)
-                                                    .findFirst()
-                                                    .map(event -> (DomainEventMessage<?>) event);
+        return readSnapshotData(aggregateIdentifier)
+                .filter(snapshotFilter)
+                .map(snapshot -> EventUtils.upcastAndDeserializeDomainEvents(Stream.of(snapshot),
+                                                                             snapshotSerializer,
+                                                                             upcasterChain
+                ))
+                .flatMap(DomainEventStream::asStream)
+                .findFirst()
+                .map(event -> (DomainEventMessage<?>) event);
     }
 
     @Override
@@ -127,7 +95,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     @Override
     public void storeSnapshot(DomainEventMessage<?> snapshot) {
-        storeSnapshot(snapshot, serializer);
+        storeSnapshot(snapshot, snapshotSerializer);
     }
 
     /**
@@ -217,8 +185,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      *
      * @return the serializer used by this storage
      */
-    public Serializer getSerializer() {
-        return serializer;
+    public Serializer getSnapshotSerializer() {
+        return snapshotSerializer;
     }
 
     /**
@@ -228,5 +196,98 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     public Serializer getEventSerializer() {
         return eventSerializer;
+    }
+
+    /**
+     * Abstract Builder class to instantiate an {@link AbstractEventStorageEngine}.
+     * <p>
+     * The {@link Serializer} used for snapshots is defaulted to a {@link XStreamSerializer}, the {@link EventUpcaster}
+     * defaults to a {@link NoOpEventUpcaster}, the Serializer used for events is also defaulted to a XStreamSerializer
+     * and the {@code snapshotFilter} defaults to a {@link Predicate} which returns {@code true} regardless.
+     */
+    public abstract static class Builder {
+
+        private Serializer snapshotSerializer = XStreamSerializer.builder().build();
+        protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
+        private PersistenceExceptionResolver persistenceExceptionResolver;
+        private Serializer eventSerializer = XStreamSerializer.builder().build();
+        private Predicate<? super DomainEventData<?>> snapshotFilter = i -> true;
+
+        /**
+         * Sets the {@link Serializer} used to serialize and deserialize snapshots. Defaults to a
+         * {@link XStreamSerializer}.
+         *
+         * @param snapshotSerializer a {@link Serializer} used to serialize and deserialize snapshots
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder snapshotSerializer(Serializer snapshotSerializer) {
+            assertNonNull(snapshotSerializer, "The Snapshot Serializer may not be null");
+            this.snapshotSerializer = snapshotSerializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a
+         * {@link NoOpEventUpcaster}.
+         *
+         * @param upcasterChain an {@link EventUpcaster} used to deserialize events of older revisions
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder upcasterChain(EventUpcaster upcasterChain) {
+            assertNonNull(upcasterChain, "EventUpcaster may not be null");
+            this.upcasterChain = upcasterChain;
+            return this;
+        }
+
+        /**
+         * Sets the {@link PersistenceExceptionResolver} used to detect concurrency exceptions from the backing
+         * database. If the {@code persistenceExceptionResolver} is not specified, persistence exceptions are not
+         * explicitly resolved.
+         *
+         * @param persistenceExceptionResolver the {@link PersistenceExceptionResolver} used to detect concurrency
+         *                                     exceptions from the backing database
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+            this.persistenceExceptionResolver = persistenceExceptionResolver;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and Meta Data with.
+         * Defaults to a {@link XStreamSerializer}.
+         *
+         * @param eventSerializer The serializer to serialize the Event Message's payload and Meta Data with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventSerializer(Serializer eventSerializer) {
+            assertNonNull(eventSerializer, "The Event Serializer may not be null");
+            this.eventSerializer = eventSerializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@code snapshotFilter} deciding whether to take a snapshot into account. Can be set to filter out
+         * specific snapshot revisions which should not be applied. Defaults to a {@link Predicate} which returns
+         * {@code true} regardless.
+         *
+         * @param snapshotFilter a {@link Predicate} which decides whether to take a snapshot into account
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
+            assertNonNull(snapshotFilter, "The snapshotFilter may not be null");
+            this.snapshotFilter = snapshotFilter;
+            return this;
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
+        }
     }
 }

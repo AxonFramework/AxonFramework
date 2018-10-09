@@ -37,7 +37,7 @@ import static org.junit.Assert.*;
  */
 public class CommandSerializerTest {
 
-    private final Serializer jacksonSerializer = new JacksonSerializer();
+    private final Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
     private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
         this.setClientName("client");

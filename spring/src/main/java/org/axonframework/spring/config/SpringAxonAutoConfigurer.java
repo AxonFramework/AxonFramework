@@ -20,12 +20,23 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.*;
+import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.ProcessingGroup;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
@@ -185,18 +196,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(DeadlineManager.class).ifPresent(deadlineManager -> configurer
                 .registerComponent(DeadlineManager.class, c -> getBean(deadlineManager, c)));
 
-        Optional<String> eventHandlingConfiguration = findComponent(EventHandlingConfiguration.class);
-        String ehConfigBeanName = eventHandlingConfiguration.orElse("eventHandlingConfiguration");
-        if (!eventHandlingConfiguration.isPresent()) {
-            registry.registerBeanDefinition(ehConfigBeanName, genericBeanDefinition(EventHandlingConfiguration.class)
-                    .getBeanDefinition());
-        }
-
-        Optional<String> eventProcessingConfiguration = findComponent(EventProcessingConfiguration.class);
-        String eventProcessorRegistryBeanName = eventProcessingConfiguration.orElse("eventProcessingConfiguration");
-        if (!eventProcessingConfiguration.isPresent()) {
-            registry.registerBeanDefinition(eventProcessorRegistryBeanName,
-                                            genericBeanDefinition(EventProcessingConfiguration.class)
+        EventProcessingModule eventProcessingModule = new EventProcessingModule();
+        Optional<String> eventProcessingConfigurerOptional = findComponent(EventProcessingConfigurer.class);
+        String eventProcessingConfigurerBeanName = eventProcessingConfigurerOptional
+                .orElse("eventProcessingConfigurer");
+        if (!eventProcessingConfigurerOptional.isPresent()) {
+            registry.registerBeanDefinition(eventProcessingConfigurerBeanName,
+                                            genericBeanDefinition(EventProcessingConfigurer.class,
+                                                                  () -> eventProcessingModule)
                                                     .getBeanDefinition());
         }
 
@@ -204,12 +211,24 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         registerCorrelationDataProviders(configurer);
         registerEventUpcasters(configurer);
         registerAggregateBeanDefinitions(configurer, registry);
-        registerSagaBeanDefinitions(configurer);
+
+        String eventProcessingConfigurationName = findComponent(EventProcessingConfiguration.class)
+                .orElseThrow(() -> new AxonConfigurationException("Missing EventProcessingConfiguration bean"));
 
         beanFactory.registerSingleton(AXON_CONFIGURER_BEAN, configurer);
         registry.registerBeanDefinition(AXON_CONFIGURATION_BEAN, genericBeanDefinition(AxonConfiguration.class)
                 .addConstructorArgReference(AXON_CONFIGURER_BEAN).getBeanDefinition());
-        registerEventHandlerRegistrar(ehConfigBeanName, registry);
+        try {
+            EventProcessingConfigurer eventProcessingConfigurer = configurer.eventProcessing();
+            registerSagaBeanDefinitions(eventProcessingConfigurer);
+            registerEventHandlerRegistrar(eventProcessingConfigurationName,
+                                          eventProcessingConfigurerBeanName,
+                                          registry);
+        } catch (AxonConfigurationException ace) {
+            logger.warn(
+                    "There are several EventProcessingConfigurers registered, Axon will not automatically register sagas and event handlers.",
+                    ace);
+        }
     }
 
     private void registerCorrelationDataProviders(Configurer configurer) {
@@ -233,7 +252,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         return (T) configuration.getComponent(ApplicationContext.class).getBean(beanName);
     }
 
-    private void registerEventHandlerRegistrar(String ehConfigBeanName, BeanDefinitionRegistry registry) {
+    private void registerEventHandlerRegistrar(String epConfigurationBeanName, String epConfigurerBeanName,
+                                               BeanDefinitionRegistry registry) {
         List<RuntimeBeanReference> beans = new ManagedList<>();
         beanFactory.getBeanNamesIterator().forEachRemaining(bean -> {
             if (!beanFactory.isFactoryBean(bean)) {
@@ -253,7 +273,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             }
         });
         registry.registerBeanDefinition("eventHandlerRegistrar", genericBeanDefinition(EventHandlerRegistrar.class)
-                .addConstructorArgReference(AXON_CONFIGURATION_BEAN).addConstructorArgReference(ehConfigBeanName)
+                .addConstructorArgReference(AXON_CONFIGURATION_BEAN)
+                .addConstructorArgReference(epConfigurationBeanName)
+                .addConstructorArgReference(epConfigurerBeanName)
                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }
 
@@ -274,39 +296,28 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         String[] moduleConfigurations = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
         for (String moduleConfiguration : moduleConfigurations) {
             configurer.registerModule(new LazyRetrievedModuleConfiguration(
-                    () -> beanFactory.getBean(moduleConfiguration, ModuleConfiguration.class)
+                    () -> beanFactory.getBean(moduleConfiguration, ModuleConfiguration.class),
+                    beanFactory.getType(moduleConfiguration)
             ));
         }
     }
 
-    private void registerSagaBeanDefinitions(Configurer configurer) {
+    private void registerSagaBeanDefinitions(EventProcessingConfigurer configurer) {
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
-            Class<?> sagaType = beanFactory.getType(saga);
-            boolean explicitSagaConfig = !"".equals(sagaAnnotation.configurationBean());
-            String configName = explicitSagaConfig
-                    ? sagaAnnotation.configurationBean()
-                    : lcFirst(sagaType.getSimpleName()) + "Configuration";
-            if (!explicitSagaConfig && !beanFactory.containsBean(configName)) {
-                ProcessingGroup processingGroupAnnotation =
-                        beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
-                SagaConfiguration<?> sagaConfiguration;
-                if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
-                    sagaConfiguration = SagaConfiguration.subscribingSagaManager(sagaType,
-                                                                                 processingGroupAnnotation.value());
-                } else {
-                    sagaConfiguration = SagaConfiguration.subscribingSagaManager(sagaType);
-                }
-                beanFactory.registerSingleton(configName, sagaConfiguration);
-
-                if (!"".equals(sagaAnnotation.sagaStore())) {
-                    //noinspection unchecked
-                    sagaConfiguration.configureSagaStore(
-                            c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
-                }
-                configurer.registerModule(sagaConfiguration);
+            Class sagaType = beanFactory.getType(saga);
+            ProcessingGroup processingGroupAnnotation =
+                    beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
+            SagaConfiguration.SagaConfigurer<?> sagaConfigurer = SagaConfiguration.forType(sagaType);
+            if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
+                configurer.assignHandlerTypesMatching(processingGroupAnnotation.value(), sagaType::equals);
             }
+            if (sagaAnnotation != null && !"".equals(sagaAnnotation.sagaStore())) {
+                sagaConfigurer.storeBuilder(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+            }
+            SagaConfiguration<?> sagaConfiguration = sagaConfigurer.configure();
+            configurer.registerSagaConfiguration(sagaConfiguration);
         }
     }
 
@@ -444,10 +455,12 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     private static class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
 
         private final Supplier<ModuleConfiguration> delegateSupplier;
+        private final Class<?> moduleType;
         private ModuleConfiguration delegate;
 
-        LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier) {
+        LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier, Class<?> moduleType) {
             this.delegateSupplier = delegateSupplier;
+            this.moduleType = moduleType;
         }
 
         @Override
@@ -473,6 +486,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         @Override
         public ModuleConfiguration unwrap() {
             return getDelegate();
+        }
+
+        @Override
+        public boolean isType(Class<?> type) {
+            return type.isAssignableFrom(moduleType);
         }
 
         private ModuleConfiguration getDelegate() {

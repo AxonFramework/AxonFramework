@@ -324,7 +324,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
          * Sets the {@link SagaStore} used to save and load saga instances.
          *
          * @param sagaStore the {@link SagaStore} used to save and load saga instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaStore(SagaStore<? super T> sagaStore) {
             assertNonNull(sagaStore, "SagaStore may not be null");
@@ -338,7 +338,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
          *
          * @param resourceInjector a {@link ResourceInjector} used to initialize {@link Saga} instances after a target
          *                         instance is created or loaded from the store
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> resourceInjector(ResourceInjector resourceInjector) {
             assertNonNull(resourceInjector, "ResourceInjector may not be null");
@@ -391,6 +391,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
+            super.validate();
             assertNonNull(sagaType, "The sagaType is a hard requirement and should be provided");
             assertNonNull(sagaStore, "The SagaStore is a hard requirement and should be provided");
         }

@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -67,6 +68,11 @@ public class AutoWiredStateStoredAggregateTest {
         @Bean
         public EntityManagerProvider entityManagerProvider() {
             return mock(EntityManagerProvider.class);
+        }
+
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            return new EventProcessingModule();
         }
 
         @Entity

@@ -28,5 +28,9 @@ import org.axonframework.serialization.upcasting.Upcaster;
  *
  * @param <C> the type of context used as {@code C}
  * @author Steven van Beelen
+ * @since 3.1
  */
-public abstract class ContextAwareSingleEventUpcaster<C> extends ContextAwareSingleEntryUpcaster<IntermediateEventRepresentation, C> implements EventUpcaster { }
+public abstract class ContextAwareSingleEventUpcaster<C>
+        extends ContextAwareSingleEntryUpcaster<IntermediateEventRepresentation, C> implements EventUpcaster {
+
+}

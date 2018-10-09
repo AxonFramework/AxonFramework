@@ -73,7 +73,7 @@ public class AxonServerQueryBusTest {
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
         localSegment = SimpleQueryBus.builder().build();
-        ser = new XStreamSerializer();
+        ser = XStreamSerializer.builder().build();
         queryBus = new AxonServerQueryBus(new PlatformConnectionManager(conf),
                                           conf,
                                           localSegment.queryUpdateEmitter(),

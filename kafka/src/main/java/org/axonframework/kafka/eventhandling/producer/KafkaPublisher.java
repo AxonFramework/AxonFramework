@@ -19,8 +19,10 @@ package org.axonframework.kafka.eventhandling.producer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.errors.ProducerFencedException;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.axonframework.messaging.EventPublicationFailedException;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -28,26 +30,34 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.MessageMonitor.MonitorCallback;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
+
 /**
- * Publisher implementation that uses Kafka Message Broker to dispatch event messages. All
- * outgoing messages are sent to a configured topics.
+ * Publisher implementation that uses Kafka Message Broker to dispatch event messages. All outgoing messages are sent to
+ * a configured topics.
  * <p>
  * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own Kafka
  * Topic.
  *
- * @param <K> the key type.
- * @param <V> the value type.
+ * @param <K> a generic type for the key of the {@link ProducerFactory}, {@link Producer} and
+ *            {@link KafkaMessageConverter}
+ * @param <V> a generic type for the value of the {@link ProducerFactory}, {@link Producer} and
+ *            {@link KafkaMessageConverter}
  * @author Nakul Mishra
  * @since 3.0
  */
@@ -65,17 +75,39 @@ public class KafkaPublisher<K, V> {
     private Registration eventBusRegistration;
 
     /**
-     * Initialize this instance to publish message as they are published on the given {@code messageSource}.
+     * Instantiate a {@link KafkaPublisher} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link SubscribableMessageSource} and {@link ProducerFactory} are not {@code null}, and will
+     * throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param config Publisher configuration used for initialization
+     * @param builder the {@link Builder} used to instantiate a {@link KafkaPublisher} instance
      */
-    public KafkaPublisher(KafkaPublisherConfiguration<K, V> config) {
-        this.messageSource = config.getMessageSource();
-        this.producerFactory = config.getProducerFactory();
-        this.messageConverter = config.getMessageConverter();
-        this.messageMonitor = config.getMessageMonitor();
-        this.topic = config.getTopic();
-        this.publisherAckTimeout = config.getPublisherAckTimeout();
+    protected KafkaPublisher(Builder<K, V> builder) {
+        builder.validate();
+        this.messageSource = builder.messageSource;
+        this.producerFactory = builder.producerFactory;
+        this.messageConverter = builder.messageConverter;
+        this.messageMonitor = builder.messageMonitor;
+        this.topic = builder.topic;
+        this.publisherAckTimeout = builder.publisherAckTimeout;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link KafkaPublisher}.
+     * <p>
+     * The {@link KafkaMessageConverter} is defaulted to a {@link DefaultKafkaMessageConverter}, the
+     * {@link MessageMonitor} to a {@link NoOpMessageMonitor}, the {@code topic} to {code Axon.Events} and the
+     * {@code publisherAckTimeout} to {@code 1000} milliseconds. The {@link SubscribableMessageSource} and
+     * {@link ProducerFactory} are <b>hard requirements</b> and as such should be provided.
+     *
+     * @param <K> a generic type for the key of the {@link ProducerFactory}, {@link Producer} and
+     *            {@link KafkaMessageConverter}
+     * @param <V> a generic type for the value of the {@link ProducerFactory}, {@link Producer} and
+     *            {@link KafkaMessageConverter}
+     * @return a Builder to be able to create a {@link KafkaPublisher}
+     */
+    public static <K, V> Builder<K, V> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -97,15 +129,14 @@ public class KafkaPublisher<K, V> {
     }
 
     /**
-     * Send {@code events} to the configured Kafka {@code topic}.
-     * It takes the current Unit of Work into account when available.
+     * Send {@code events} to the configured Kafka {@code topic}. It takes the current Unit of Work into account when
+     * available.
      * <p>
      * If {@link ProducerFactory} is configured to use:
      * <ul>
      * <li>Transactions: use kafka transactions for publishing events</li>
-     * <li>Ack: send messages and wait for acknowledgement from Kafka. Acknowledgement timeout can be
-     * configured via
-     * {@link KafkaPublisherConfiguration.Builder#withPublisherAckTimeout(long)}).</li>
+     * <li>Ack: send messages and wait for acknowledgement from Kafka. Acknowledgement timeout can be configured via
+     * {@link KafkaPublisher.Builder#publisherAckTimeout(long)}).</li>
      * <li>None: fire and forget.</li>
      * </ul>
      *
@@ -239,5 +270,137 @@ public class KafkaPublisher<K, V> {
             //not re-throwing exception, its too late
         }
     }
-}
 
+    /**
+     * Builder class to instantiate a {@link KafkaPublisher}.
+     * <p>
+     * The {@link KafkaMessageConverter} is defaulted to a {@link DefaultKafkaMessageConverter}, the
+     * {@link MessageMonitor} to a {@link NoOpMessageMonitor}, the {@code topic} to {code Axon.Events} and the
+     * {@code publisherAckTimeout} to {@code 1000} milliseconds. The {@link SubscribableMessageSource} and
+     * {@link ProducerFactory} are a <b>hard requirements</b> and as such should be provided.
+     *
+     * @param <K> a generic type for the key of the {@link ProducerFactory}, {@link Producer} and
+     *            {@link KafkaMessageConverter}
+     * @param <V> a generic type for the value of the {@link ProducerFactory}, {@link Producer} and
+     *            {@link KafkaMessageConverter}
+     */
+    public static class Builder<K, V> {
+
+        private SubscribableMessageSource<EventMessage<?>> messageSource;
+        private ProducerFactory<K, V> producerFactory;
+        @SuppressWarnings("unchecked")
+        private KafkaMessageConverter<K, V> messageConverter =
+                (KafkaMessageConverter<K, V>) DefaultKafkaMessageConverter.builder()
+                                                                          .serializer(XStreamSerializer.builder()
+                                                                                                       .build())
+                                                                          .build();
+        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.instance();
+        private String topic = "Axon.Events";
+        private long publisherAckTimeout = 1_000;
+
+        /**
+         * Sets the {@link SubscribableMessageSource} of type {@link EventMessage} which will provide the EventMessages
+         * to be published on the Kafka topic.
+         *
+         * @param messageSource a {@link SubscribableMessageSource} of type {@link EventMessage} which will provide the
+         *                      EventMessages to be published on the Kafka topic
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> messageSource(SubscribableMessageSource<EventMessage<?>> messageSource) {
+            assertNonNull(messageSource, "SubscribableMessageSource may not be null");
+            this.messageSource = messageSource;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ProducerFactory} which will instantiate {@link Producer} instances to publish
+         * {@link EventMessage}s on the Kafka topic.
+         *
+         * @param producerFactory a {@link ProducerFactory} which will instantiate {@link Producer} instances to publish
+         *                        {@link EventMessage}s on the Kafka topic
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> producerFactory(ProducerFactory<K, V> producerFactory) {
+            assertNonNull(producerFactory, "ProducerFactory may not be null");
+            this.producerFactory = producerFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link KafkaMessageConverter} used to convert {@link EventMessage}s into Kafka messages. Defaults to
+         * a {@link DefaultKafkaMessageConverter} using the {@link XStreamSerializer}.
+         * <p>
+         * Note that configuring a MessageConverter on the builder is mandatory if the value type is not {@code byte[]}.
+         *
+         * @param messageConverter a {@link KafkaMessageConverter} used to convert {@link EventMessage}s into Kafka
+         *                         messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> messageConverter(KafkaMessageConverter<K, V> messageConverter) {
+            assertNonNull(messageConverter, "MessageConverter may not be null");
+            this.messageConverter = messageConverter;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageMonitor} of generic type {@link EventMessage} used the to monitor this Kafka
+         * publisher. Defaults to a {@link NoOpMessageMonitor}.
+         *
+         * @param messageMonitor a {@link MessageMonitor} used to monitor this Kafka publisher
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
+            this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Set the Kafka {@code topic} to publish {@link EventMessage}s on. Defaults to {@code Axon.Events}.
+         *
+         * @param topic the Kafka {@code topic} to publish {@link EventMessage}s on
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> topic(String topic) {
+            assertThat(topic, name -> Objects.nonNull(name) && !"".equals(name), "The topic may not be null or empty");
+            this.topic = topic;
+            return this;
+        }
+
+        /**
+         * Sets the publisher acknowledge timeout in milliseconds specifying how long to wait for a publisher to
+         * acknowledge a message has been sent. Defaults to {@code 1000} milliseconds.
+         *
+         * @param publisherAckTimeout a {@code long} specifying how long to wait for a publisher to acknowledge a
+         *                            message has been sent
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<K, V> publisherAckTimeout(long publisherAckTimeout) {
+            assertThat(publisherAckTimeout,
+                       timeout -> timeout >= 0,
+                       "The publisherAckTimeout should be a positive number or zero");
+            this.publisherAckTimeout = publisherAckTimeout;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link KafkaPublisher} as specified through this Builder.
+         *
+         * @return a {@link KafkaPublisher} as specified through this Builder
+         */
+        public KafkaPublisher<K, V> build() {
+            return new KafkaPublisher<>(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(messageSource, "The SubscribableMessageSource is a hard requirement and should be provided");
+            assertNonNull(producerFactory, "The ProducerFactory is a hard requirement and should be provided");
+        }
+    }
+}

@@ -34,18 +34,20 @@ public class JdbcAutoConfiguration {
 
     @ConditionalOnMissingBean({EventStorageEngine.class, EventStore.class})
     @Bean
-    public EventStorageEngine eventStorageEngine(Serializer serializer,
+    public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
                                                  AxonConfiguration configuration,
                                                  ConnectionProvider connectionProvider,
                                                  TransactionManager transactionManager) {
-        return new JdbcEventStorageEngine(serializer,
-                                          configuration.upcasterChain(),
-                                          persistenceExceptionResolver,
-                                          eventSerializer,
-                                          connectionProvider,
-                                          transactionManager);
+        return JdbcEventStorageEngine.builder()
+                                     .snapshotSerializer(defaultSerializer)
+                                     .upcasterChain(configuration.upcasterChain())
+                                     .persistenceExceptionResolver(persistenceExceptionResolver)
+                                     .eventSerializer(eventSerializer)
+                                     .connectionProvider(connectionProvider)
+                                     .transactionManager(transactionManager)
+                                     .build();
     }
 
     @ConditionalOnMissingBean

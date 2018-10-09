@@ -45,7 +45,7 @@ public class JGroupsConnectorFactoryBeanTest {
         mockApplicationContext = mock(ApplicationContext.class);
         mockChannel = mock(JChannel.class);
         mockConnector = mock(JGroupsConnector.class);
-        when(mockApplicationContext.getBean(Serializer.class)).thenReturn(new XStreamSerializer());
+        when(mockApplicationContext.getBean(Serializer.class)).thenReturn(XStreamSerializer.builder().build());
         testSubject = spy(new ConnectorInstantiationExposingFactoryBean());
         testSubject.setChannelFactory(() -> mockChannel);
         testSubject.setBeanName("beanName");
@@ -76,7 +76,7 @@ public class JGroupsConnectorFactoryBeanTest {
     @Test
     public void testCreateWithSpecifiedValues() throws Exception {
         testSubject.setClusterName("ClusterName");
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         testSubject.setSerializer(serializer);
         SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
         testSubject.setLocalSegment(localSegment);
@@ -108,7 +108,7 @@ public class JGroupsConnectorFactoryBeanTest {
     public void testCreateWithCustomConfigurationFile() {
         testSubject.setConfiguration("does-not-exist");
         testSubject.setClusterName("ClusterName");
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         testSubject.setSerializer(serializer);
         SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
         testSubject.setLocalSegment(localSegment);

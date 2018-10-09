@@ -297,13 +297,13 @@ public class JdbcSagaStore implements SagaStore<Object> {
 
         private ConnectionProvider connectionProvider;
         private SagaSqlSchema sqlSchema = new GenericSagaSqlSchema();
-        private Serializer serializer = new XStreamSerializer();
+        private Serializer serializer = XStreamSerializer.builder().build();
 
         /**
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
          *
          * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder connectionProvider(ConnectionProvider connectionProvider) {
             assertNonNull(connectionProvider, "ConnectionProvider may not be null");
@@ -320,7 +320,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
          * @param dataSource a {@link DataSource} which ends up in a {@link DataSourceConnectionProvider}, wrapped by a
          *                   {@link UnitOfWorkAwareConnectionProviderWrapper} as the {@link ConnectionProvider} for this
          *                   {@link SagaStore} implementation
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder dataSource(DataSource dataSource) {
             assertNonNull(dataSource, "DataSource used to instantiate a ConnectionProvider may not be null");
@@ -335,7 +335,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
          *
          * @param sqlSchema the {@link SagaSqlSchema} defining the SQL operations to execute for this {@link SagaStore}
          *                  implementation
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder sqlSchema(SagaSqlSchema sqlSchema) {
             assertNonNull(sqlSchema, "SagaSqlSchema may not be null");
@@ -347,7 +347,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
          * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
          *
          * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");

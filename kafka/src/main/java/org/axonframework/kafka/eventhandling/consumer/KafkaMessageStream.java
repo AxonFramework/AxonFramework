@@ -27,13 +27,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Create message stream from a specific kafka topic. Messages are fetch in bulk and stored in an in-memory buffer. We
- * try
- * to introduce some sort
- * and stored them in a local buffer.
- * Consumer position is tracked via {@link KafkaTrackingToken}Records are fetched from kafka and stored in-memory
- * buffer.
+ * try to introduce some sort and stored them in a local buffer. Consumer position is tracked via
+ * {@link KafkaTrackingToken}. Records are fetched from kafka and stored in-memory buffer.
  * <p>
- * This is not thread safe
+ * This is not thread safe.
  *
  * @author Allard Buijze
  * @author Nakul Mishra

@@ -17,8 +17,10 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
  * Jdbc event entry table factory for MySql databases.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class MySqlEventTableFactory extends AbstractEventTableFactory {
+
     /**
      * Singleton MySqlEventTableFactory instance
      */
@@ -33,5 +35,4 @@ public class MySqlEventTableFactory extends AbstractEventTableFactory {
     protected String payloadType() {
         return "blob";
     }
-
 }

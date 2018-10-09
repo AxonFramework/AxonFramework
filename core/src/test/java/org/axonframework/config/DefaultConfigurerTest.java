@@ -95,26 +95,21 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(2, config.getModules().size());
+        assertEquals(1, config.getModules().size());
         assertExpectedModules(config,
-                              AggregateConfiguration.class,
-                              EventProcessingConfiguration.class);
+                              AggregateConfiguration.class);
     }
 
     @Test
     public void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
-        Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .registerComponent(TrackingEventProcessorConfiguration.class,
-                                                                   c -> TrackingEventProcessorConfiguration
-                                                                           .forParallelProcessing(2))
-                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                .registerModule(new EventProcessingConfiguration()
-                                                        .usingTrackingProcessors())
-                                                .registerModule(
-                                                        new EventHandlingConfiguration()
-                                                                .registerEventHandler(c -> (EventMessageHandler) event -> null)
-                                                )
-                                                .start();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        configurer.eventProcessing()
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+        Configuration config = configurer
+                .registerComponent(TrackingEventProcessorConfiguration.class,
+                                   c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
         try {
             TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
                                                      .orElseThrow(RuntimeException::new);
@@ -126,20 +121,24 @@ public class DefaultConfigurerTest {
 
     @Test
     public void defaultConfigurationWithTrackingProcessorExplicitlyConfigured() {
-        Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                .registerModule(
-                                                        new EventHandlingConfiguration()
-                                                                .usingTrackingProcessors(
-                                                                        c -> TrackingEventProcessorConfiguration.forParallelProcessing(2),
-                                                                        c -> new FullConcurrencyPolicy())
-                                                                .registerEventHandler(c -> (EventMessageHandler) event -> null)
-                                                )
-                                                .start();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        String processorName = "myProcessor";
+        configurer.eventProcessing()
+                  .registerTrackingEventProcessor(processorName,
+                                                  Configuration::eventBus,
+                                                  c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
+                  .byDefaultAssignTo(processorName)
+                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+        Configuration config = configurer
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
         try {
-            TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
+            TrackingEventProcessor processor = config.eventProcessingConfiguration()
+                                                     .eventProcessor(processorName, TrackingEventProcessor.class)
                                                      .orElseThrow(RuntimeException::new);
-            assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
+            assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class)
+                                                                          .fetchSegments(processor.getName()).length));
         } finally {
             config.shutdown();
         }
@@ -148,16 +147,23 @@ public class DefaultConfigurerTest {
     @Test
     public void defaultConfigurationWithUpcaster() {
         AtomicInteger counter = new AtomicInteger();
-        Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(c.serializer(), c.upcasterChain(), c.getComponent(PersistenceExceptionResolver.class), () -> em, c.getComponent(TransactionManager.class)))
-                                                .configureAggregate(defaultConfiguration(StubAggregate.class)
-                                                                            .configureCommandTargetResolver(c -> command -> new VersionedAggregateIdentifier(command.getPayload().toString(), null)))
-                                                .registerEventUpcaster(c -> events -> {
-                                                    counter.incrementAndGet();
-                                                    return events;
-                                                })
-                                                .configureTransactionManager(c -> new EntityManagerTransactionManager(em))
-                                                .buildConfiguration();
+        Configuration config = DefaultConfigurer.defaultConfiguration().configureEmbeddedEventStore(
+                c -> JpaEventStorageEngine.builder()
+                                          .snapshotSerializer(c.serializer())
+                                          .upcasterChain(c.upcasterChain())
+                                          .persistenceExceptionResolver(c.getComponent(PersistenceExceptionResolver.class))
+                                          .entityManagerProvider(() -> em)
+                                          .transactionManager(c.getComponent(TransactionManager.class))
+                                          .build()
+        ).configureAggregate(
+                defaultConfiguration(StubAggregate.class).configureCommandTargetResolver(
+                        c -> command -> new VersionedAggregateIdentifier(command.getPayload().toString(), null)
+                )
+        ).registerEventUpcaster(c -> events -> {
+            counter.incrementAndGet();
+            return events;
+        }).configureTransactionManager(c -> new EntityManagerTransactionManager(em)).buildConfiguration();
+
         config.start();
 
         config.commandGateway().sendAndWait(GenericCommandMessage.asCommandMessage("test"));
@@ -192,9 +198,8 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(2, config.getModules().size());
+        assertEquals(1, config.getModules().size());
         assertExpectedModules(config,
-                              EventProcessingConfiguration.class,
                               AggregateConfiguration.class);
         verify(transactionManager).startTransaction();
     }
@@ -270,9 +275,8 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(2, config.getModules().size());
+        assertEquals(1, config.getModules().size());
         assertExpectedModules(config,
-                              EventProcessingConfiguration.class,
                               AggregateConfiguration.class);
         verify(transactionManager).startTransaction();
     }
@@ -300,18 +304,15 @@ public class DefaultConfigurerTest {
     @Test
     public void testRegisterSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .registerModule(new EventHandlingConfiguration())
-                                                .registerModule(new EventHandlingConfiguration())
                                                 .configureAggregate(StubAggregate.class)
+                                                .configureAggregate(Object.class)
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                                 .start();
 
-        assertThat(config.getModules().size(), CoreMatchers.is(4));
+        assertThat(config.getModules().size(), CoreMatchers.is(2));
         assertExpectedModules(config,
-                              EventHandlingConfiguration.class,
-                              EventHandlingConfiguration.class,
                               AggregateConfiguration.class,
-                              EventProcessingConfiguration.class);
+                              AggregateConfiguration.class);
     }
 
     @Test
@@ -372,7 +373,7 @@ public class DefaultConfigurerTest {
 
     @Test
     public void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
-        QueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+        QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureQueryUpdateEmitter(c -> queryUpdateEmitter)
                                                        .buildConfiguration();

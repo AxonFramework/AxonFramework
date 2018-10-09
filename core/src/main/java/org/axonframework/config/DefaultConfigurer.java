@@ -61,6 +61,7 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -158,16 +159,18 @@ public class DefaultConfigurer implements Configurer {
         return new DefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .registerComponent(TransactionManager.class, c -> transactionManager)
-                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
-                        c.serializer(),
-                        c.upcasterChain(),
-                        c.getComponent(PersistenceExceptionResolver.class),
-                        c.eventSerializer(),
-                        null,
-                        c.getComponent(EntityManagerProvider.class),
-                        c.getComponent(TransactionManager.class),
-                        null, null, true
-                ))
+                .configureEmbeddedEventStore(
+                        c -> JpaEventStorageEngine.builder()
+                                                  .snapshotSerializer(c.serializer())
+                                                  .upcasterChain(c.upcasterChain())
+                                                  .persistenceExceptionResolver(
+                                                          c.getComponent(PersistenceExceptionResolver.class)
+                                                  )
+                                                  .eventSerializer(c.eventSerializer())
+                                                  .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                  .transactionManager(c.getComponent(TransactionManager.class))
+                                                  .build()
+                )
                 .registerComponent(TokenStore.class,
                                    c -> JpaTokenStore.builder()
                                                      .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
@@ -235,7 +238,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default query gateway.
      */
     protected QueryGateway defaultQueryGateway(Configuration config) {
-        return new DefaultQueryGateway(config.queryBus());
+        return DefaultQueryGateway.builder().queryBus(config.queryBus()).build();
     }
 
     /**
@@ -249,8 +252,10 @@ public class DefaultConfigurer implements Configurer {
                              .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
                              .transactionManager(config.getComponent(TransactionManager.class,
                                                                      NoTransactionManager::instance))
-                             .errorHandler(config.getComponent(QueryInvocationErrorHandler.class,
-                                                               LoggingQueryInvocationErrorHandler::new))
+                             .errorHandler(config.getComponent(
+                                     QueryInvocationErrorHandler.class,
+                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
+                             ))
                              .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
                              .build();
     }
@@ -263,7 +268,11 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryUpdateEmitter to use
      */
     protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
-        return new SimpleQueryUpdateEmitter(config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"));
+        MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
+                config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
+        return SimpleQueryUpdateEmitter.builder()
+                                       .updateMessageMonitor(updateMessageMonitor)
+                                       .build();
     }
 
     /**
@@ -343,7 +352,32 @@ public class DefaultConfigurer implements Configurer {
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(Configuration config) {
-        return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
+        return XStreamSerializer.builder()
+                                .revisionResolver(config.getComponent(RevisionResolver.class,
+                                                                      AnnotationRevisionResolver::new))
+                                .build();
+    }
+
+    @Override
+    public EventProcessingConfigurer eventProcessing() {
+        List<EventProcessingConfigurer> eventProcessingConfigurers =
+                modules.stream()
+                       .filter(module -> module.isType(EventProcessingConfigurer.class))
+                       .map(module -> (EventProcessingConfigurer) module.unwrap()) // It's safe to unwrap it since it isn't dependent on anything else.
+                       .collect(toList());
+        switch (eventProcessingConfigurers.size()) {
+            case 0:
+                EventProcessingModule eventProcessingModule = new EventProcessingModule();
+                registerModule(eventProcessingModule);
+                return eventProcessingModule;
+            case 1:
+                return eventProcessingConfigurers.get(0);
+            default:
+                throw new AxonConfigurationException(
+                        "There are several EventProcessingConfigurers defined. "
+                                + "The `eventProcessing()` method is used to retrieve a 'singleton' EventProcessingConfigurer."
+                );
+        }
     }
 
     @Override
@@ -477,12 +511,6 @@ public class DefaultConfigurer implements Configurer {
     public Configuration buildConfiguration() {
         if (!initialized) {
             verifyIdentifierFactory();
-            boolean missingEventProcessingConfiguration =
-                    modules.stream()
-                           .noneMatch(m -> m.unwrap() instanceof EventProcessingConfiguration);
-            if (missingEventProcessingConfiguration) {
-                registerModule(new EventProcessingConfiguration());
-            }
             prepareModules();
             invokeInitHandlers();
         }

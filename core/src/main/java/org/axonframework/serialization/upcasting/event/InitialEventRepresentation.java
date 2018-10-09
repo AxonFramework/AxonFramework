@@ -21,7 +21,12 @@ import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.CachingSupplier;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -34,6 +39,7 @@ import java.util.function.Supplier;
  * from the data store.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class InitialEventRepresentation implements IntermediateEventRepresentation {
 

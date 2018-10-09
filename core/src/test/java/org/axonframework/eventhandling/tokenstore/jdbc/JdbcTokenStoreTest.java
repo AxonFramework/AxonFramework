@@ -249,7 +249,7 @@ public class JdbcTokenStoreTest {
         public JdbcTokenStore tokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(new XStreamSerializer())
+                                 .serializer(XStreamSerializer.builder().build())
                                  .build();
         }
 
@@ -257,7 +257,7 @@ public class JdbcTokenStoreTest {
         public JdbcTokenStore concurrentTokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(new XStreamSerializer())
+                                 .serializer(XStreamSerializer.builder().build())
                                  .claimTimeout(Duration.ofSeconds(2))
                                  .nodeId("concurrent")
                                  .build();
@@ -267,7 +267,7 @@ public class JdbcTokenStoreTest {
         public JdbcTokenStore stealingTokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(new XStreamSerializer())
+                                 .serializer(XStreamSerializer.builder().build())
                                  .claimTimeout(Duration.ofSeconds(-1))
                                  .nodeId("stealing")
                                  .build();

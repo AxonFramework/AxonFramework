@@ -148,7 +148,7 @@ public class SpringAMQPIntegrationTest {
 
         @Bean
         public Serializer seralizer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
 
         @Bean

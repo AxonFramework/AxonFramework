@@ -64,7 +64,7 @@ public class AggregateScopeDescriptorSerializationTest {
 
     @Test
     public void testXStreamSerializationWorksAsExpected() {
-        XStreamSerializer xStreamSerializer = new XStreamSerializer();
+        XStreamSerializer xStreamSerializer = XStreamSerializer.builder().build();
         xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
 
         SerializedObject<String> serializedObject =

@@ -88,7 +88,7 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         final Serializer eventSerializer = applicationContext.getBean("myEventSerializer", Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
 
-        assertEquals(serializer, engine.getSerializer());
+        assertEquals(serializer, engine.getSnapshotSerializer());
         assertEquals(eventSerializer, engine.getEventSerializer());
     }
 
@@ -98,13 +98,13 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         @Bean
         @Primary
         public Serializer mySerializer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
 
         @Bean
         @Qualifier("eventSerializer")
         public Serializer myEventSerializer() {
-            return new JacksonSerializer();
+            return JacksonSerializer.builder().build();
         }
     }
 }
