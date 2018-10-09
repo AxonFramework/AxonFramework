@@ -113,7 +113,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
      */
     public static class Builder extends AbstractXStreamSerializer.Builder {
 
-        public Builder() {
+        private Builder() {
             xStream(new XStream());
         }
 

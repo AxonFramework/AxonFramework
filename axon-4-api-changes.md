@@ -49,6 +49,7 @@ the other Builder implementations introduced. This entails the following changes
  - withPayloadRevisionProperty(String) -> payloadRevisionProperty(String)
  - withPayloadProperty(String) -> payloadProperty(String)
  - withMetaDataProperty(String) -> metaDataProperty(String)
+* Renamed AbstractEventStorageEngine#getSerializer() to AbstractEventStorageEngine#getSnapshotSerializer()
 
 ### Moved classes
 

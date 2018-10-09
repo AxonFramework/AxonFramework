@@ -120,8 +120,7 @@ public class AxonServerEventStore extends AbstractEventStore {
     /**
      * Initialize the {@link org.axonframework.eventsourcing.eventstore.EventStore} using the given
      * {@code configuration}, snapshot {@link Serializer}, event Serializer and {@code upcasterChain}. Allows for
-     * different serializers for snapshots and events
-     * (required for AxonFramework 3.3 or higher).
+     * different serializers for snapshots and events (required for AxonFramework 3.3 or higher).
      *
      * @param configuration             the configuration describing the servers to connect with and how to manage flow
      *                                  control
