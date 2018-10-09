@@ -32,15 +32,18 @@ public class SubscribingEventProcessorTest {
     private SubscribingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;
     private EventHandlerInvoker eventHandlerInvoker;
-    private EventMessageHandler mockListener;
-
+    private EventMessageHandler mockHandler;
 
     @Before
     public void setUp() {
-        mockListener = mock(EventMessageHandler.class);
-        eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
+        mockHandler = mock(EventMessageHandler.class);
+        eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build();
         eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
-        testSubject = new SubscribingEventProcessor("test", eventHandlerInvoker, eventBus);
+        testSubject = SubscribingEventProcessor.builder()
+                                               .name("test")
+                                               .eventHandlerInvoker(eventHandlerInvoker)
+                                               .messageSource(eventBus)
+                                               .build();
     }
 
     @After
@@ -55,13 +58,13 @@ public class SubscribingEventProcessorTest {
         doAnswer(invocation -> {
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         testSubject.start();
         testSubject.shutDown();
         testSubject.start();
 
         eventBus.publish(createEvents(2));
-        assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
 }

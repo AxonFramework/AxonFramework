@@ -101,7 +101,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        EventBus eventBus = new SimpleEventBus();
+        EventBus eventBus = SimpleEventBus.builder().build();
         sagaStore = new InMemorySagaStore();
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();

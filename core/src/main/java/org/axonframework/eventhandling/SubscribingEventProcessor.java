@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -28,6 +29,8 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Event processor implementation that {@link EventBus#subscribe(Consumer) subscribes} to the {@link EventBus} for
  * events. Events published on the event bus are supplied to this processor in the publishing thread.
@@ -36,94 +39,43 @@ import java.util.function.Consumer;
  * or asynchronously.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class SubscribingEventProcessor extends AbstractEventProcessor {
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
+
     private volatile Registration eventBusRegistration;
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
-     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link PropagatingErrorHandler} and a
-     * {@link RollbackConfigurationType#ANY_THROWABLE}.
+     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and
+     * {@link SubscribableMessageSource} are not {@code null}, and will throw an {@link AxonConfigurationException} if
+     * any of them is {@code null}.
      *
-     * @param name                The name of the event processor
-     * @param eventHandlerInvoker The component that handles the individual events
-     * @param messageSource       The EventBus to which this event processor will subscribe
+     * @param builder the {@link Builder} used to instantiate a {@link SubscribingEventProcessor} instance
      */
-    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                     SubscribableMessageSource<EventMessage<?>> messageSource) {
-        this(name, eventHandlerInvoker, messageSource,
-             DirectEventProcessingStrategy.INSTANCE,
-             PropagatingErrorHandler.INSTANCE);
+    protected SubscribingEventProcessor(Builder builder) {
+        super(builder);
+        this.messageSource = builder.messageSource;
+        this.processingStrategy = builder.processingStrategy;
     }
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
-     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Instantiate a Builder to be able to create a {@link SubscribingEventProcessor}.
      * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link PropagatingErrorHandler} and a
-     * {@link RollbackConfigurationType#ANY_THROWABLE}.
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor} and the {@link EventProcessingStrategy} defaults to a
+     * {@link DirectEventProcessingStrategy}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
+     * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
      *
-     * @param name                The name of the event processor
-     * @param eventHandlerInvoker The component that handles the individual events
-     * @param messageSource       The EventBus to which this event processor will subscribe
-     * @param processingStrategy  Strategy that determines whether events are processed directly or asynchronously
-     * @param errorHandler        The handler to invoke when an error occurs in the processor
+     * @return a Builder to be able to create a {@link SubscribingEventProcessor}
      */
-    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                     SubscribableMessageSource<EventMessage<?>> messageSource,
-                                     EventProcessingStrategy processingStrategy,
-                                     ErrorHandler errorHandler) {
-        this(name, eventHandlerInvoker, messageSource, processingStrategy, errorHandler, NoOpMessageMonitor.INSTANCE);
-    }
-
-    /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
-     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
-     * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link PropagatingErrorHandler} and a
-     * {@link RollbackConfigurationType#ANY_THROWABLE}.
-     *
-     * @param name                The name of the event processor
-     * @param eventHandlerInvoker The component that handles the individual events
-     * @param messageSource       The EventBus to which this event processor will subscribe
-     * @param processingStrategy  Strategy that determines whether events are processed directly or asynchronously
-     * @param errorHandler        The handler to invoke when an error occurs in the processor
-     * @param messageMonitor      Monitor to be invoked before and after event processing
-     */
-    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                     SubscribableMessageSource<? extends EventMessage<?>> messageSource,
-                                     EventProcessingStrategy processingStrategy,
-                                     ErrorHandler errorHandler,
-                                     MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, messageSource, processingStrategy,
-             errorHandler, messageMonitor);
-    }
-
-    /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
-     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
-     *
-     * @param name                  The name of the event processor
-     * @param eventHandlerInvoker   The component that handles the individual events
-     * @param rollbackConfiguration Determines rollback behavior of the UnitOfWork while processing a batch of events
-     * @param messageSource         The EventBus to which this event processor will subscribe
-     * @param processingStrategy    Strategy that determines whether events are processed directly or asynchronously
-     * @param errorHandler          Invoked when a UnitOfWork is rolled back during processing
-     * @param messageMonitor        Monitor to be invoked before and after event processing
-     */
-    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                     RollbackConfiguration rollbackConfiguration,
-                                     SubscribableMessageSource<? extends EventMessage<?>> messageSource,
-                                     EventProcessingStrategy processingStrategy, ErrorHandler errorHandler,
-                                     MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
-        this.messageSource = messageSource;
-        this.processingStrategy = processingStrategy;
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -164,5 +116,107 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     public void shutDown() {
         IOUtils.closeQuietly(eventBusRegistration);
         eventBusRegistration = null;
+    }
+
+    /**
+     * Builder class to instantiate a {@link SubscribingEventProcessor}.
+     * <p>
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor} and the {@link EventProcessingStrategy} defaults to a
+     * {@link DirectEventProcessingStrategy}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
+     * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder extends AbstractEventProcessor.Builder {
+
+        private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
+        private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
+
+        public Builder() {
+            super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+        }
+
+        @Override
+        public Builder name(String name) {
+            super.name(name);
+            return this;
+        }
+
+        @Override
+        public Builder eventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+            super.eventHandlerInvoker(eventHandlerInvoker);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}. Defaults to a {@link RollbackConfigurationType#ANY_THROWABLE})
+         */
+        @Override
+        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+            super.rollbackConfiguration(rollbackConfiguration);
+            return this;
+        }
+
+        @Override
+        public Builder errorHandler(ErrorHandler errorHandler) {
+            super.errorHandler(errorHandler);
+            return this;
+        }
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        /**
+         * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
+         * implementation will subscribe itself to receive {@link EventMessage}s.
+         *
+         * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
+         *                      {@link EventProcessor} implementation will subscribe itself to receive
+         *                      {@link EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageSource(SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+            assertNonNull(messageSource, "SubscribableMessageSource may not be null");
+            this.messageSource = messageSource;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventProcessingStrategy} determining whether events are processed directly or asynchronously.
+         * Defaults to a {@link DirectEventProcessingStrategy}.
+         *
+         * @param processingStrategy the {@link EventProcessingStrategy} determining whether events are processed
+         *                           directly or asynchronously
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder processingStrategy(EventProcessingStrategy processingStrategy) {
+            assertNonNull(processingStrategy, "EventProcessingStrategy may not be null");
+            this.processingStrategy = processingStrategy;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SubscribingEventProcessor} as specified through this Builder.
+         *
+         * @return a {@link SubscribingEventProcessor} as specified through this Builder
+         */
+        public SubscribingEventProcessor build() {
+            return new SubscribingEventProcessor(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+            assertNonNull(messageSource, "The SubscribableMessageSource is a hard requirement and should be provided");
+        }
     }
 }

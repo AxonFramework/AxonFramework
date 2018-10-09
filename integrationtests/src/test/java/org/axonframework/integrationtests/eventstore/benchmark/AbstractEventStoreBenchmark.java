@@ -82,16 +82,27 @@ public abstract class AbstractEventStoreBenchmark {
         this.batchCount = batchCount;
         this.remainingEvents = new CountDownLatch(getTotalEventCount());
 
-        this.eventProcessor = new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(
-                (EventMessageHandler) (e) -> {
-                    if (readEvents.add(e.getIdentifier())) {
-                        remainingEvents.countDown();
-                    } else {
-                        throw new IllegalStateException("Double event!");
-                    }
-                    return null;
-                }), eventStore, new InMemoryTokenStore(),
-                                                         NoTransactionManager.INSTANCE);
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers(
+                                                 (EventMessageHandler) eventHandler -> {
+                                                     if (readEvents.add(eventHandler.getIdentifier())) {
+                                                         remainingEvents.countDown();
+                                                     } else {
+                                                         throw new IllegalStateException("Double event!");
+                                                     }
+                                                     // We aren't interested in the event handling result
+                                                     return null;
+                                                 }
+
+                                         ).build();
+        this.eventProcessor = TrackingEventProcessor.builder()
+                                                    .name("benchmark")
+                                                    .eventHandlerInvoker(eventHandlerInvoker)
+                                                    .messageSource(eventStore)
+                                                    .tokenStore(new InMemoryTokenStore())
+                                                    .transactionManager(NoTransactionManager.INSTANCE)
+                                                    .build();
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 

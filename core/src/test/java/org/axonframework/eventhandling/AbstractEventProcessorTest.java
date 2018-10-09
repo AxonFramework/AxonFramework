@@ -20,7 +20,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -30,28 +30,9 @@ import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class AbstractEventProcessorTest {
-
-    private static class TestEventProcessor extends AbstractEventProcessor {
-        TestEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, MessageMonitor<EventMessage<?>> messageMonitor) {
-            super(name,
-                  eventHandlerInvoker,
-                  RollbackConfigurationType.ANY_THROWABLE,
-                  PropagatingErrorHandler.INSTANCE,
-                  messageMonitor);
-        }
-        @Override
-        public void start() {
-        }
-        @Override
-        public void shutDown() {
-        }
-        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            processInUnitOfWork(eventMessages, new BatchingUnitOfWork<>(eventMessages), Segment.ROOT_SEGMENT);
-        }
-    }
 
     @Test
     public void expectCallbackForAllMessages() throws Exception {
@@ -65,21 +46,29 @@ public class AbstractEventProcessorTest {
                 }
                 pending.remove(message);
             }
+
             @Override
             public void reportFailure(Throwable cause) {
                 fail("Test expects 'reportSuccess' to be called");
             }
+
             @Override
             public void reportIgnored() {
                 fail("Test expects 'reportSuccess' to be called");
             }
         };
 
-        EventMessageHandler mockListener = mock(EventMessageHandler.class);
-        EventHandlerInvoker eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
-        TestEventProcessor testSubject = new TestEventProcessor("test", eventHandlerInvoker, messageMonitor);
+        EventMessageHandler mockHandler = mock(EventMessageHandler.class);
+        EventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                           .eventHandlers(mockHandler)
+                                                                           .build();
+        TestEventProcessor testSubject = TestEventProcessor.builder()
+                                                           .name("test")
+                                                           .eventHandlerInvoker(eventHandlerInvoker)
+                                                           .messageMonitor(messageMonitor)
+                                                           .build();
 
-        // also test that the mechanism used to call the monitor can deal with the message in the unit of work being
+        // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
         testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> createEvent());
@@ -90,4 +79,57 @@ public class AbstractEventProcessorTest {
 
         assertTrue("Not all events were presented to monitor", pending.isEmpty());
     }
+
+    private static class TestEventProcessor extends AbstractEventProcessor {
+
+        private TestEventProcessor(Builder builder) {
+            super(builder);
+        }
+
+        private static Builder builder() {
+            return new Builder();
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void shutDown() {
+        }
+
+        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
+            processInUnitOfWork(eventMessages, new BatchingUnitOfWork<>(eventMessages), Segment.ROOT_SEGMENT);
+        }
+
+        private static class Builder extends AbstractEventProcessor.Builder {
+
+            public Builder() {
+                super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+            }
+
+            @Override
+            public Builder name(String name) {
+                super.name(name);
+                return this;
+            }
+
+            @Override
+            public Builder eventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+                super.eventHandlerInvoker(eventHandlerInvoker);
+                return this;
+            }
+
+            @Override
+            public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+                super.messageMonitor(messageMonitor);
+                return this;
+            }
+
+            private TestEventProcessor build() {
+                return new TestEventProcessor(this);
+            }
+        }
+    }
 }
+

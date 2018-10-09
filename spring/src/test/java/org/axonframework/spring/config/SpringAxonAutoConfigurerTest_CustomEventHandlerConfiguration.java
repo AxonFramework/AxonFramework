@@ -35,10 +35,14 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -82,10 +86,13 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             EventProcessingModule eventProcessingModule = new EventProcessingModule();
             eventProcessingModule.usingSubscribingEventProcessors();
             eventProcessingModule.byDefaultAssignTo("test")
-                                 .registerEventProcessor("test", (name, c, eh) -> {
-                                     SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
-                                                                                                         eh,
-                                                                                                         c.eventBus());
+                                 .registerEventProcessor("test", (name, config, eventHandlerInvoker) -> {
+                                     SubscribingEventProcessor processor =
+                                             SubscribingEventProcessor.builder()
+                                                                      .name(name)
+                                                                      .eventHandlerInvoker(eventHandlerInvoker)
+                                                                      .messageSource(config.eventBus())
+                                                                      .build();
                                      processor.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
                                          unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
                                          return interceptorChain.proceed();

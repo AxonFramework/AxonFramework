@@ -63,6 +63,7 @@ the other Builder implementations introduced. This entails the following changes
  - withPayloadColumn(String) -> payloadColumn(String)
  - withMetaDataColumn(String) -> metaDataColumn(String)
 * Renamed AbstractEventStorageEngine#getSerializer() to AbstractEventStorageEngine#getSnapshotSerializer()
+* Renamed SimpleEventHandlerInvoker#eventListeners() to SimpleEventHandlerInvoker#eventHandlers()
 
 ### Moved classes
 
@@ -146,3 +147,9 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter
 - org.axonframework.eventsourcing.eventstore.AbstractEventStore
 - org.axonframework.eventsourcing.eventstore.EmbeddedEventStore
+- org.axonframework.eventhandling.AbstractEventBus
+- org.axonframework.eventhandling.SimpleEventBus
+- org.axonframework.eventhandling.SimpleEventHandlerInvoker
+- org.axonframework.eventhandling.AbstractEventProcessor
+- org.axonframework.eventhandling.SubscribingEventProcessor
+- org.axonframework.eventhandling.TrackingEventProcessor

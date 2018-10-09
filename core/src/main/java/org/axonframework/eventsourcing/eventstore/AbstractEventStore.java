@@ -53,8 +53,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
      * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStore} instance
      */
     protected AbstractEventStore(Builder builder) {
-        super(builder.messageMonitor);
-        builder.validate();
+        super(builder);
         this.storageEngine = builder.storageEngine;
     }
 
@@ -184,10 +183,15 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
      * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor}. The {@link EventStorageEngine} is a
      * <b>hard requirement</b> and as such should be provided.
      */
-    public abstract static class Builder {
+    public abstract static class Builder extends AbstractEventBus.Builder {
 
         protected EventStorageEngine storageEngine;
-        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
 
         /**
          * Sets the {@link EventStorageEngine} used to store and load events.
@@ -202,24 +206,14 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         }
 
         /**
-         * Sets the {@link MessageMonitor} to monitor {@link EventMessage}s. Defaults to a {@link NoOpMessageMonitor}.
-         *
-         * @param messageMonitor The message monitor used to monitor query messages
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
-            assertNonNull(messageMonitor, "MessageMonitor may not be null");
-            this.messageMonitor = messageMonitor;
-            return this;
-        }
-
-        /**
          * Validate whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
          */
+        @Override
         protected void validate() throws AxonConfigurationException {
+            super.validate();
             assertNonNull(storageEngine, "The EventStorageEngine is a hard requirement and should be provided");
         }
     }

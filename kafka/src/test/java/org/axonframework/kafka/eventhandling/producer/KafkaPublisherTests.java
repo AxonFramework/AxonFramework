@@ -85,7 +85,7 @@ public class KafkaPublisherTests {
 
     @Before
     public void setUp() {
-        this.eventBus = new SimpleEventBus();
+        this.eventBus = SimpleEventBus.builder().build();
         this.monitor = new MessageCollector();
     }
 

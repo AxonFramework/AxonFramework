@@ -30,22 +30,24 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ComplexAggregateStructureTest {
 
     @Test
     public void testCommandsAreRoutedToCorrectEntity() throws Exception {
         AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
-        EventBus mockEventBus = new SimpleEventBus();
+        EventBus mockEventBus = SimpleEventBus.builder().build();
         mockEventBus.subscribe(m -> m.forEach(i -> System.out.println(i.getPayloadType().getName())));
-        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Book) null, bookAggregateModel, mockEventBus);
+        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Book) null,
+                                                                               bookAggregateModel,
+                                                                               mockEventBus);
         bookAggregate.handle(command(new CreateBookCommand("book1")));
         bookAggregate.handle(command(new CreatePageCommand("book1")));
         bookAggregate.handle(command(new CreateParagraphCommand("book1", 0)));
@@ -53,8 +55,10 @@ public class ComplexAggregateStructureTest {
         bookAggregate.handle(command(new UpdateParagraphCommand("book1", 0, 0, "Hello world")));
         bookAggregate.handle(command(new UpdateParagraphCommand("book1", 0, 1, "Hello world2")));
 
-        assertEquals("Hello world", bookAggregate.getAggregateRoot().getPages().get(0).getParagraphs().get(0).getText());
-        assertEquals("Hello world2", bookAggregate.getAggregateRoot().getPages().get(0).getParagraphs().get(1).getText());
+        assertEquals("Hello world",
+                     bookAggregate.getAggregateRoot().getPages().get(0).getParagraphs().get(0).getText());
+        assertEquals("Hello world2",
+                     bookAggregate.getAggregateRoot().getPages().get(0).getParagraphs().get(1).getText());
     }
 
     private CommandMessage command(Object payload) {
@@ -179,7 +183,6 @@ public class ComplexAggregateStructureTest {
         public String getBookId() {
             return bookId;
         }
-
     }
 
     public static class BookCreatedEvent {
@@ -193,7 +196,6 @@ public class ComplexAggregateStructureTest {
         public String getBookId() {
             return bookId;
         }
-
     }
 
     public static class CreatePageCommand {
@@ -208,7 +210,6 @@ public class ComplexAggregateStructureTest {
         public String getBookId() {
             return bookId;
         }
-
     }
 
     public static class PageCreatedEvent {
@@ -229,7 +230,6 @@ public class ComplexAggregateStructureTest {
         public int getPageId() {
             return pageId;
         }
-
     }
 
     public static class CreateParagraphCommand {
@@ -250,7 +250,6 @@ public class ComplexAggregateStructureTest {
         public int getPageNumber() {
             return pageNumber;
         }
-
     }
 
     public static class ParagraphCreatedEvent {
@@ -276,7 +275,6 @@ public class ComplexAggregateStructureTest {
         public int getParagraphId() {
             return paragraphId;
         }
-
     }
 
     public static class UpdateParagraphCommand {
@@ -310,10 +308,10 @@ public class ComplexAggregateStructureTest {
         public String getText() {
             return text;
         }
-
     }
 
     public static class ParagraphUpdatedEvent {
+
         private final String bookId;
         private final int pageNumber;
         private final int paragraphId;

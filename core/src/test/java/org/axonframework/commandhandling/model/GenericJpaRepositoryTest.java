@@ -62,7 +62,7 @@ public class GenericJpaRepositoryTest {
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
-        eventBus = new SimpleEventBus();
+        eventBus = SimpleEventBus.builder().build();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
                 .aggregateType(StubJpaAggregate.class)
