@@ -37,6 +37,7 @@
         <module>legacy</module>
         <module>axon-server-connector</module>
         <module>config</module>
+        <module>messaging</module>
     </modules>
     <packaging>pom</packaging>
 
