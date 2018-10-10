@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -100,13 +100,13 @@ public class HeadersTests {
             put(MESSAGE_TIMESTAMP, message.getTimestamp());
         }};
 
-        assertThat(Headers.defaultHeaders(message, serializedObject), is(expected));
+        assertThat(defaultHeaders(message, serializedObject), is(expected));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testGeneratingDefaultMessagingHeaders_InvalidSerializedObject() {
         EventMessage<Object> message = asEventMessage("foo");
-        Headers.defaultHeaders(message, null);
+        defaultHeaders(message, null);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class HeadersTests {
             put(AGGREGATE_TYPE, message.getType());
         }};
 
-        assertThat(Headers.defaultHeaders(message, serializedObject), is(expected));
+        assertThat(defaultHeaders(message, serializedObject), is(expected));
     }
 
     private GenericDomainEventMessage<String> domainMessage() {

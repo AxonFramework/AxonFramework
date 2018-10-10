@@ -40,7 +40,6 @@ import org.axonframework.serialization.upcasting.Upcaster;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
