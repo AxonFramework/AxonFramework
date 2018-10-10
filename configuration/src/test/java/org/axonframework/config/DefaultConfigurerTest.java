@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,7 +43,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.hamcrest.CoreMatchers;
 import org.junit.*;
-import org.mockito.InOrder;
+import org.mockito.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +57,7 @@ import javax.persistence.Id;
 import javax.persistence.Persistence;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.axonframework.common.AssertUtils.assertWithin;
+import static org.axonframework.common.Assert.assertWithin;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
@@ -113,7 +113,11 @@ public class DefaultConfigurerTest {
         try {
             TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
                                                      .orElseThrow(RuntimeException::new);
-            assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
+            assertWithin(
+                    5, TimeUnit.SECONDS,
+                    () -> assertEquals(2, config.getComponent(TokenStore.class)
+                                                .fetchSegments(processor.getName()).length)
+            );
         } finally {
             config.shutdown();
         }
@@ -408,6 +412,7 @@ public class DefaultConfigurerTest {
     }
 
     private static class EntityManagerTransactionManager implements TransactionManager {
+
         private final EntityManager em;
 
         public EntityManagerTransactionManager(EntityManager em) {
