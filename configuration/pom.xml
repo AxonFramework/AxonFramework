@@ -32,8 +32,6 @@
         Contains all the necessary components to configure an Axon application.
     </description>
 
-    <packaging>bundle</packaging>
-
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
