@@ -113,6 +113,13 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>${jackson.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>
