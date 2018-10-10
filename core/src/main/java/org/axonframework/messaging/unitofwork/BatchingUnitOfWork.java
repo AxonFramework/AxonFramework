@@ -83,7 +83,9 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
             this.processingContext = processingContext;
             try {
                 result = task.call();
-                if(result instanceof Message) {
+                if (result instanceof ResultMessage) {
+                    resultMessage = (ResultMessage) result;
+                } else if(result instanceof Message) {
                     resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
                 } else {
                     resultMessage = new GenericResultMessage<>(result);

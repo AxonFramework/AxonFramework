@@ -70,7 +70,9 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         ResultMessage<R> resultMessage;
         try {
             result = task.call();
-            if(result instanceof Message) {
+            if (result instanceof ResultMessage) {
+                resultMessage = (ResultMessage<R>) result;
+            } else if(result instanceof Message) {
                 resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
             } else {
                 resultMessage = new GenericResultMessage<>(result);

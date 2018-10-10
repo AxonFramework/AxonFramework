@@ -13,7 +13,6 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Objects;
@@ -41,7 +40,7 @@ public class ExecutionResult {
      *
      * @return the execution result message
      */
-    public Message<?> getResult() {
+    public ResultMessage<?> getResult() {
         return result;
     }
 
@@ -61,7 +60,7 @@ public class ExecutionResult {
      * @return {@code true} if execution of the task gave rise to an exception, {@code false} otherwise.
      */
     public boolean isExceptionResult() {
-        return result.getPayload() instanceof Throwable;
+        return result.isExceptional();
     }
 
     @Override

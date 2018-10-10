@@ -128,19 +128,17 @@ public class AxonServerCommandBus implements CommandBus {
                                             public void onNext(CommandResponse commandResponse) {
                                                 if (!commandResponse.hasMessage()) {
                                                     logger.debug("response received - {}", commandResponse);
-                                                    GenericCommandResultMessage<R> resultMessage = null;
-                                                    if (commandResponse.hasPayload()) {
-                                                        try {
-                                                            //noinspection unchecked
-                                                            resultMessage = serializer.deserialize(commandResponse);
-                                                        } catch (Exception ex) {
-                                                            logger.info("Failed to deserialize payload - {} - {}",
-                                                                        commandResponse.getPayload().getData(),
-                                                                        ex.getCause().getMessage());
-                                                        }
+                                                    try {
+                                                        //noinspection unchecked
+                                                        GenericCommandResultMessage<R> resultMessage = serializer
+                                                                .deserialize(commandResponse);
+                                                        commandCallback.onSuccess(command, resultMessage);
+                                                    } catch (Exception ex) {
+                                                        commandCallback.onFailure(command, ex);
+                                                        logger.info("Failed to deserialize payload - {} - {}",
+                                                                    commandResponse.getPayload().getData(),
+                                                                    ex.getCause().getMessage());
                                                     }
-
-                                                    commandCallback.onSuccess(command, resultMessage);
                                                 } else {
                                                     commandCallback.onFailure(command,
                                                                               new CommandExecutionException(
