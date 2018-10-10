@@ -36,7 +36,7 @@
         <module>spring-boot-starter-jgroups</module>
         <module>legacy</module>
         <module>axon-server-connector</module>
-        <module>configuration</module>
+        <module>config</module>
     </modules>
     <packaging>pom</packaging>
 
