@@ -26,7 +26,6 @@ package org.axonframework.commandhandling;
  * @author Allard Buijze
  * @since 0.6
  */
-// TODO: 10/10/2018 functional
 public interface CommandCallback<C, R> {
 
     /**
@@ -35,7 +34,6 @@ public interface CommandCallback<C, R> {
      * @param commandMessage       The message that was dispatched
      * @param commandResultMessage The result message of the command handling execution, if any.
      */
-    // TODO: 10/10/2018 onResult
     void onSuccess(CommandMessage<? extends C> commandMessage,
                    CommandResultMessage<? extends R> commandResultMessage);
 
@@ -45,6 +43,5 @@ public interface CommandCallback<C, R> {
      * @param commandMessage The message that was dispatched
      * @param cause The exception raised during command handling
      */
-    // TODO: 10/10/2018 remove
     void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause);
 }
