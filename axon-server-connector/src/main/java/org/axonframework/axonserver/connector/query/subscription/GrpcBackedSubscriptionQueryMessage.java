@@ -17,20 +17,24 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 
 /**
- * Created by Sara Pellegrini on 04/05/2018.
- * sara.pellegrini@gmail.com
+ * Wrapper that allows clients to access a GRPC {@link SubscriptionQuery} Message as a {@link SubscriptionQueryMessage}.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class GrpcBackedSubscriptionQueryMessage<Q,I,U> implements SubscriptionQueryMessage<Q,I,U> {
 

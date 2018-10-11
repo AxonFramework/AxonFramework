@@ -33,8 +33,10 @@ import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.Requ
 
 
 /**
- * Created by Sara Pellegrini on 09/03/2018.
- * sara.pellegrini@gmail.com
+ * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when requested by AxonServer.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class EventProcessorControlService {
 

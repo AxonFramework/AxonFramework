@@ -15,9 +15,12 @@
 
 package org.axonframework.axonserver.connector;
 
+
 /**
- * Created by Sara Pellegrini on 15/05/2018.
- * sara.pellegrini@gmail.com
+ * Generic exception indicating an error related to AxonServer.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class AxonServerException extends RuntimeException {
 
