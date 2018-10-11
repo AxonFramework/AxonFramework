@@ -131,6 +131,7 @@ public class PlatformConnectionManager {
     }
 
     private boolean isPrimary(NodeInfo nodeInfo, PlatformInfo clusterInfo) {
+        if( ! clusterInfo.getRedirected()) return true;
         return clusterInfo.getPrimary().getGrpcPort() == nodeInfo.getGrpcPort() && clusterInfo.getPrimary().getHostName().equals(nodeInfo.getHostName());
     }
 
