@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,17 +20,17 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;

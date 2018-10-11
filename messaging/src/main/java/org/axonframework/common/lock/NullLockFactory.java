@@ -16,12 +16,10 @@
 
 package org.axonframework.common.lock;
 
-import org.axonframework.commandhandling.model.LockingRepository;
-
 /**
- * LockFactory implementation that does nothing. Can be useful in cases where a repository extending from the {@link
- * LockingRepository} needs to be configured to ignore locks, for example in scenario's
- * where an underlying storage mechanism already performs the necessary locking.
+ * LockFactory implementation that does nothing. Can be useful in cases where a Locking Repository implementation  needs
+ * to be configured to ignore locks, for example in scenario's where an underlying storage mechanism already performs
+ * the necessary locking.
  *
  * @author Allard Buijze
  * @since 0.6

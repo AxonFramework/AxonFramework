@@ -6,7 +6,7 @@
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~    http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -156,11 +156,11 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-            <version>3.3.6</version>
-            <optional>true</optional>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
         </dependency>
+
 
         <!-- Used for class mocking -->
         <dependency>
@@ -187,50 +187,6 @@
             <version>1</version>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>com.thoughtworks.xstream</groupId>
-            <artifactId>xstream</artifactId>
-            <version>1.4.10</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>xpp3</groupId>
-                    <artifactId>xpp3_min</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xmlpull</groupId>
-                    <artifactId>xmlpull</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>xpp3</groupId>
-            <artifactId>xpp3</artifactId>
-            <version>1.1.4c</version>
-        </dependency>
-        <dependency>
-            <groupId>dom4j</groupId>
-            <artifactId>dom4j</artifactId>
-            <version>1.6.1</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>xom</groupId>
-            <artifactId>xom</artifactId>
-            <version>1.2.5</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
 
         <!-- Optional dependencies -->
         <dependency>
@@ -239,18 +195,14 @@
             <version>${jackson.version}</version>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-            <optional>true</optional>
-        </dependency>
+
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
             <version>2.2.1</version>
             <optional>true</optional>
         </dependency>
+        
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
@@ -268,11 +220,6 @@
             <artifactId>el-impl</artifactId>
             <version>2.2</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-core</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- JPA support -->
@@ -348,17 +295,6 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
             <version>${spring.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-parameter-names</artifactId>
-            <version>${jackson.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
 

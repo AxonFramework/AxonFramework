@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,9 +18,9 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +30,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele

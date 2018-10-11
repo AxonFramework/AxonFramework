@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling.conflictresolution;
 
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.DomainEventMessage;
 
 import java.util.List;
 
@@ -24,6 +24,7 @@ import java.util.List;
  * {@link ConflictDescription} implementation that takes the necessary information in the Constructor.
  */
 public class DefaultConflictDescription implements ConflictDescription {
+
     private final String aggregateIdentifier;
     private final long expectedVersion;
     private final long actualVersion;

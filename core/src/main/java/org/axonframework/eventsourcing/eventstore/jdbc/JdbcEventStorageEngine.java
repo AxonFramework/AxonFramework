@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,17 +24,17 @@ import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.TrackedDomainEventData;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -66,7 +66,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
+import static org.axonframework.eventhandling.EventUtils.asDomainEventMessage;
 
 /**
  * EventStorageEngine implementation that uses JDBC to store and fetch events.

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,16 +20,19 @@ import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import static org.mockito.Mockito.*;
 

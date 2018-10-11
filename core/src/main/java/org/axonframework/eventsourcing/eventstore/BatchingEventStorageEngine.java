@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,9 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 

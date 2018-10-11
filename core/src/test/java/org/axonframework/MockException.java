@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.jpa;
-
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
-import org.axonframework.serialization.Serializer;
-
-import javax.persistence.Entity;
+package org.axonframework;
 
 /**
+ * Mock exception that provides no stack trace.
+ * TODO deduplicate
  * @author Allard Buijze
+ * @since 2.0
  */
-@Entity
-public class CustomSnapshotEventEntry extends AbstractSnapshotEventEntry<String> {
+public class MockException extends RuntimeException {
 
-    public CustomSnapshotEventEntry(DomainEventMessage event, Serializer serializer) {
-        super(event, serializer, String.class);
+    public MockException(String message) {
+        super(message);
     }
 
-    /**
-     * Default constructor required by JPA
-     */
-    protected CustomSnapshotEventEntry() {
+    public MockException() {
+        super("Mock");
+    }
+
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        return this;
+    }
+
+    @Override
+    public StackTraceElement[] getStackTrace() {
+        return new StackTraceElement[]{};
     }
 }

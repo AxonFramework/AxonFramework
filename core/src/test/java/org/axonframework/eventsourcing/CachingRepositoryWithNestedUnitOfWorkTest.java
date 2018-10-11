@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;

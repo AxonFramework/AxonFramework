@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 
@@ -76,12 +76,12 @@ public class AggregateScopeDescriptorSerializationTest {
     }
 
     @Test
-    public void testJacksonSerializationWorksAsExpected() throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
+    public void testJacksonSerializationWorksAsExpected() {
+        JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
 
-        String serializedString = objectMapper.writeValueAsString(testSubject);
 
-        AggregateScopeDescriptor result = objectMapper.readValue(serializedString, AggregateScopeDescriptor.class);
+        SerializedObject<String> serializedObject = jacksonSerializer.serialize(testSubject, String.class);
+        AggregateScopeDescriptor result = jacksonSerializer.deserialize(serializedObject);
 
         assertEquals(expectedType, result.getType());
         assertEquals(expectedIdentifier, result.getIdentifier());

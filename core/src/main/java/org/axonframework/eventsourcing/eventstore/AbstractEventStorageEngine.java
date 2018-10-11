@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,9 +19,12 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
@@ -34,6 +37,8 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTrackedEvents;
+import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserializeDomainEvents;
 
 /**
  * Abstract {@link EventStorageEngine} implementation that takes care of event serialization and upcasting.
@@ -66,20 +71,20 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
-        return EventUtils.upcastAndDeserializeTrackedEvents(input, eventSerializer, upcasterChain);
+        return upcastAndDeserializeTrackedEvents(input, eventSerializer, upcasterChain);
     }
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
-        return EventUtils.upcastAndDeserializeDomainEvents(input, eventSerializer, upcasterChain);
+        return upcastAndDeserializeDomainEvents(input, eventSerializer, upcasterChain);
     }
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
         return readSnapshotData(aggregateIdentifier)
                 .filter(snapshotFilter)
-                .map(snapshot -> EventUtils.upcastAndDeserializeDomainEvents(Stream.of(snapshot),
+                .map(snapshot -> upcastAndDeserializeDomainEvents(Stream.of(snapshot),
                                                                              snapshotSerializer,
                                                                              upcasterChain
                 ))

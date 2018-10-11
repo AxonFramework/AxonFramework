@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -29,9 +28,9 @@ import java.util.concurrent.Callable;
 public abstract class AggregateLifecycle extends Scope {
 
     /**
-     * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from interceptors will be combined
-     * with the provided metadata). Applying events means they are immediately applied (published) to the aggregate and
-     * scheduled for publication to other event handlers.
+     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload and metadata (metadata
+     * from interceptors will be combined with the provided metadata). Applying events means they are immediately
+     * applied (published) to the aggregate and scheduled for publication to other event handlers.
      * <p/>
      * The event is applied on all entities part of this aggregate. If the event is applied from an event handler of the
      * aggregate and additional events need to be applied that depends on state changes brought about by the first event
@@ -47,9 +46,9 @@ public abstract class AggregateLifecycle extends Scope {
     }
 
     /**
-     * Apply a {@link DomainEventMessage} with given payload without metadata (though interceptors can also be used to
-     * provide metadata). Applying events means they are immediately applied (published) to the aggregate and scheduled
-     * for publication to other event handlers.
+     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload without metadata (though
+     * interceptors can also be used to provide metadata). Applying events means they are immediately applied
+     * (published) to the aggregate and scheduled for publication to other event handlers.
      * <p/>
      * The event is applied on all entities part of this aggregate. If the event is applied from an event handler of the
      * aggregate and additional events need to be applied that depends on state changes brought about by the first event
@@ -149,9 +148,9 @@ public abstract class AggregateLifecycle extends Scope {
     protected abstract void doMarkDeleted();
 
     /**
-     * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from interceptors will be combined
-     * with the provided metadata). The event should be applied to the aggregate immediately and scheduled for
-     * publication to other event handlers.
+     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload and metadata (metadata from
+     * interceptors will be combined with the provided metadata). The event should be applied to the aggregate
+     * immediately and scheduled for publication to other event handlers.
      * <p/>
      * The event should be applied on all entities part of this aggregate. If the event is applied from an event handler
      * of the aggregate and additional events need to be applied that depends on state changes brought about by the
