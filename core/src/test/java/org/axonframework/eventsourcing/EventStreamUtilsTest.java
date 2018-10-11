@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,26 +14,28 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventsourcing;
 
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.GenericDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static junit.framework.TestCase.*;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
-public class EventUtilsTest {
+public class EventStreamUtilsTest {
 
     private Serializer serializer;
 
@@ -44,7 +46,7 @@ public class EventUtilsTest {
 
     @Test
     public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntry() {
-        DomainEventStream eventStream = EventUtils
+        DomainEventStream eventStream = EventStreamUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
                                                   NoOpEventUpcaster.INSTANCE);
         assertNull(eventStream.getLastSequenceNumber());
@@ -54,7 +56,7 @@ public class EventUtilsTest {
 
     @Test
     public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterIgnoringLastEntry() {
-        DomainEventStream eventStream = EventUtils
+        DomainEventStream eventStream = EventStreamUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1), createEntry(2), createEntry(3)), serializer,
                                                   new EventUpcasterChain(e -> e
                                                           .filter(entry -> entry.getSequenceNumber().get() < 2L))
@@ -67,7 +69,7 @@ public class EventUtilsTest {
 
     @Test
     public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterUpcastingToEmptyStream() {
-        DomainEventStream eventStream = EventUtils
+        DomainEventStream eventStream = EventStreamUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
                                                   new EventUpcasterChain(s -> s.filter(e -> false)));
         assertNull(eventStream.getLastSequenceNumber());
@@ -78,7 +80,7 @@ public class EventUtilsTest {
 
     @Test(expected = NullPointerException.class)
     public void testDomainEventStream_nullPointerExceptionOnEmptyEventStream() {
-        DomainEventStream eventStream = EventUtils.upcastAndDeserializeDomainEvents(Stream.empty(),
+        DomainEventStream eventStream = EventStreamUtils.upcastAndDeserializeDomainEvents(Stream.empty(),
             serializer, NoOpEventUpcaster.INSTANCE);
         long lastSequenceNumber = eventStream.getLastSequenceNumber();
     }
