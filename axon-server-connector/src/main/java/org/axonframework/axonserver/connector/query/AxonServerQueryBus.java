@@ -255,7 +255,9 @@ public class AxonServerQueryBus implements QueryBus {
 
         private void queryExecutor() {
             logger.debug("Starting Query Executor");
-            while (true) {
+            boolean interrupted = false;
+
+            while (!interrupted) {
                 try {
                     QueryRequest query = queryQueue.poll(10, TimeUnit.SECONDS);
                     if (query != null) {
@@ -263,8 +265,9 @@ public class AxonServerQueryBus implements QueryBus {
                         processQuery(query);
                     }
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     logger.warn("Interrupted queryExecutor", e);
-                    return;
+                    interrupted = true;
                 }
             }
 

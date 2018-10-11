@@ -52,7 +52,11 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     public void setUp() {
         this.commandBus = SimpleCommandBus.builder().build();
         scheduledThreadPool = Executors.newScheduledThreadPool(1);
-        retryScheduler = new IntervalRetryScheduler(scheduledThreadPool, 0, 1);
+        retryScheduler = IntervalRetryScheduler.builder()
+                                               .retryExecutor(scheduledThreadPool)
+                                               .retryInterval(0)
+                                               .maxRetryCount(1)
+                                               .build();
     }
 
     @After
@@ -75,7 +79,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
             SecurityException.class, // per documentation, an unchecked exception (theoretically
             // the only kind throwable by an interceptor) is returned unwrapped
             timeout = 10000) // bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
-    public void testCommandDipatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
+    public void testCommandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)
                                               .retryScheduler(retryScheduler)
@@ -149,7 +153,6 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         assertEquals("myUserSession",
                      ((MetaData) commandGateway.sendAndWait("command")).get("gatewayMetaData"));
     }
-
 
     /**
      * It'd be nice if metadata added by a

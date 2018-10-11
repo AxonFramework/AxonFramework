@@ -227,7 +227,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          * de-/serializing event messages.
          */
         public DirectEventJobDataBinder() {
-            this(new XStreamSerializer());
+            this(XStreamSerializer.builder().build());
         }
 
         /**
@@ -392,7 +392,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         }
 
         /**
-         * Validate whether the fields contained in this Builder are set accordingly.
+         * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications

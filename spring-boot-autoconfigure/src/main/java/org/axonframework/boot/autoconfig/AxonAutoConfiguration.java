@@ -28,8 +28,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -77,11 +76,7 @@ import java.util.function.Function;
  * @author Josh Long
  */
 @org.springframework.context.annotation.Configuration
-@AutoConfigureAfter(name = {
-        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
-        "org.axonframework.boot.autoconfig.JpaAutoConfiguration",
-        "org.axonframework.boot.autoconfig.ObjectMapperAutoConfiguration"
-})
+@AutoConfigureAfter(EventProcessingAutoConfiguration.class)
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
         DistributedCommandBusProperties.class,
@@ -154,13 +149,19 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                                    "com/fasterxml/jackson/databind/ObjectMapper"
                                            ));
                 ChainingConverter converter = new ChainingConverter(beanClassLoader);
-                return new JacksonSerializer(objectMapper, revisionResolver, converter);
+                return JacksonSerializer.builder()
+                                        .revisionResolver(revisionResolver)
+                                        .converter(converter)
+                                        .objectMapper(objectMapper)
+                                        .build();
             case JAVA:
-                return new JavaSerializer(revisionResolver);
+                return JavaSerializer.builder().revisionResolver(revisionResolver).build();
             case XSTREAM:
             case DEFAULT:
             default:
-                XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
+                XStreamSerializer xStreamSerializer = XStreamSerializer.builder()
+                                                                       .revisionResolver(revisionResolver)
+                                                                       .build();
                 xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
                 return xStreamSerializer;
         }
@@ -177,7 +178,10 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(EventBus.class)
     @ConditionalOnBean(EventStorageEngine.class)
     public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
-        return new EmbeddedEventStore(storageEngine, configuration.messageMonitor(EventStore.class, "eventStore"));
+        return EmbeddedEventStore.builder()
+                                 .storageEngine(storageEngine)
+                                 .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                                 .build();
     }
 
     @ConditionalOnMissingBean
@@ -189,35 +193,34 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
     public SimpleEventBus eventBus(AxonConfiguration configuration) {
-        return new SimpleEventBus(Integer.MAX_VALUE, configuration.messageMonitor(EventStore.class, "eventStore"));
+        return SimpleEventBus.builder()
+                             .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                             .build();
     }
 
     @SuppressWarnings("unchecked")
     @Autowired
-    public void configureEventHandling(EventHandlingConfiguration eventHandlingConfiguration,
-                                       EventProcessingConfiguration eventProcessingConfiguration,
+    public void configureEventHandling(EventProcessingConfigurer eventProcessingConfigurer,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
 
             Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
                     resolveSequencingPolicy(applicationContext, v);
-            eventHandlingConfiguration.configureSequencingPolicy(k, sequencingPolicy);
+            eventProcessingConfigurer.registerSequencingPolicy(k, sequencingPolicy);
 
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
                 TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
                         .forParallelProcessing(v.getThreadCount())
                         .andBatchSize(v.getBatchSize())
                         .andInitialSegmentsCount(v.getInitialSegmentCount());
-                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource =
-                        resolveMessageSource(applicationContext, v);
-                eventProcessingConfiguration.registerTrackingEventProcessor(k, messageSource, c -> config);
+                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource = resolveMessageSource(applicationContext, v);
+                eventProcessingConfigurer.registerTrackingEventProcessor(k, messageSource, c -> config);
             } else {
                 if (v.getSource() == null) {
-                    eventProcessingConfiguration.registerSubscribingEventProcessor(k);
+                    eventProcessingConfigurer.registerSubscribingEventProcessor(k);
                 } else {
-                    eventProcessingConfiguration.registerSubscribingEventProcessor(
-                            k, c -> applicationContext.getBean(v.getSource(), SubscribableMessageSource.class)
-                    );
+                    eventProcessingConfigurer.registerSubscribingEventProcessor(k, c -> applicationContext
+                            .getBean(v.getSource(), SubscribableMessageSource.class));
                 }
             }
         });
@@ -269,8 +272,10 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return SimpleQueryBus.builder()
                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                              .transactionManager(transactionManager)
-                             .errorHandler(axonConfiguration.getComponent(QueryInvocationErrorHandler.class,
-                                                                          LoggingQueryInvocationErrorHandler::new))
+                             .errorHandler(axonConfiguration.getComponent(
+                                     QueryInvocationErrorHandler.class,
+                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
+                             ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                              .build();
     }

@@ -551,4 +551,15 @@ public class SimpleQueryBusTest {
         verify(monitorCallback, times(1)).reportSuccess();
         verify(monitorCallback, times(1)).reportFailure(isA(MockException.class));
     }
+
+    @Test
+    public void testQueryResponseMessageCorrelationData() throws ExecutionException, InterruptedException {
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        testSubject.registerHandlerInterceptor(new CorrelationDataInterceptor<>(new MessageOriginProvider()));
+        QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("Hello, World", singleStringResponse);
+        QueryResponseMessage<String> queryResponseMessage = testSubject.query(testQueryMessage).get();
+        assertEquals(testQueryMessage.getIdentifier(), queryResponseMessage.getMetaData().get("traceId"));
+        assertEquals(testQueryMessage.getIdentifier(), queryResponseMessage.getMetaData().get("correlationId"));
+        assertEquals("Hello, World1234", queryResponseMessage.getPayload());
+    }
 }

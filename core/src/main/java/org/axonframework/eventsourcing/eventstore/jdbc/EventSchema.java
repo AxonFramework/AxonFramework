@@ -17,8 +17,10 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
  * Schema of an event entry to be stored using Jdbc.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class EventSchema {
+
     private final String domainEventTable, snapshotTable, globalIndexColumn, timestampColumn, eventIdentifierColumn,
             aggregateIdentifierColumn, sequenceNumberColumn, typeColumn, payloadTypeColumn, payloadRevisionColumn,
             payloadColumn, metaDataColumn;
@@ -167,6 +169,7 @@ public class EventSchema {
      */
     @SuppressWarnings("SqlResolve")
     public static class Builder {
+
         private String domainEventTable = "DomainEventEntry";
         private String snapshotTable = "SnapshotEventEntry";
         private String globalIndexColumn = "globalIndex";
@@ -186,7 +189,7 @@ public class EventSchema {
          * @param eventTable the event table name
          * @return the modified Builder instance
          */
-        public Builder withEventTable(String eventTable) {
+        public Builder eventTable(String eventTable) {
             this.domainEventTable = eventTable;
             return this;
         }
@@ -197,7 +200,7 @@ public class EventSchema {
          * @param snapshotTable the snapshot table name
          * @return the modified Builder instance
          */
-        public Builder withSnapshotTable(String snapshotTable) {
+        public Builder snapshotTable(String snapshotTable) {
             this.snapshotTable = snapshotTable;
             return this;
         }
@@ -208,7 +211,7 @@ public class EventSchema {
          * @param globalIndexColumn the name of the global index column.
          * @return the modified Builder instance
          */
-        public Builder withGlobalIndexColumn(String globalIndexColumn) {
+        public Builder globalIndexColumn(String globalIndexColumn) {
             this.globalIndexColumn = globalIndexColumn;
             return this;
         }
@@ -219,7 +222,7 @@ public class EventSchema {
          * @param timestampColumn the name of the timestamp column.
          * @return the modified Builder instance
          */
-        public Builder withTimestampColumn(String timestampColumn) {
+        public Builder timestampColumn(String timestampColumn) {
             this.timestampColumn = timestampColumn;
             return this;
         }
@@ -230,7 +233,7 @@ public class EventSchema {
          * @param eventIdentifierColumn the name of the event identifier column.
          * @return the modified Builder instance
          */
-        public Builder withEventIdentifierColumn(String eventIdentifierColumn) {
+        public Builder eventIdentifierColumn(String eventIdentifierColumn) {
             this.eventIdentifierColumn = eventIdentifierColumn;
             return this;
         }
@@ -241,7 +244,7 @@ public class EventSchema {
          * @param aggregateIdentifierColumn the name of the aggregate identifier column.
          * @return the modified Builder instance
          */
-        public Builder withAggregateIdentifierColumn(String aggregateIdentifierColumn) {
+        public Builder aggregateIdentifierColumn(String aggregateIdentifierColumn) {
             this.aggregateIdentifierColumn = aggregateIdentifierColumn;
             return this;
         }
@@ -252,7 +255,7 @@ public class EventSchema {
          * @param sequenceNumberColumn the name of the sequence number column.
          * @return the modified Builder instance
          */
-        public Builder withSequenceNumberColumn(String sequenceNumberColumn) {
+        public Builder sequenceNumberColumn(String sequenceNumberColumn) {
             this.sequenceNumberColumn = sequenceNumberColumn;
             return this;
         }
@@ -263,7 +266,7 @@ public class EventSchema {
          * @param typeColumn the name of the aggregate type column.
          * @return the modified Builder instance
          */
-        public Builder withTypeColumn(String typeColumn) {
+        public Builder typeColumn(String typeColumn) {
             this.typeColumn = typeColumn;
             return this;
         }
@@ -274,7 +277,7 @@ public class EventSchema {
          * @param payloadTypeColumn the name of the payload type column.
          * @return the modified Builder instance
          */
-        public Builder withPayloadTypeColumn(String payloadTypeColumn) {
+        public Builder payloadTypeColumn(String payloadTypeColumn) {
             this.payloadTypeColumn = payloadTypeColumn;
             return this;
         }
@@ -285,7 +288,7 @@ public class EventSchema {
          * @param payloadRevisionColumn the name of the payload revision column.
          * @return the modified Builder instance
          */
-        public Builder withPayloadRevisionColumn(String payloadRevisionColumn) {
+        public Builder payloadRevisionColumn(String payloadRevisionColumn) {
             this.payloadRevisionColumn = payloadRevisionColumn;
             return this;
         }
@@ -296,7 +299,7 @@ public class EventSchema {
          * @param payloadColumn the name of the payload column.
          * @return the modified Builder instance
          */
-        public Builder withPayloadColumn(String payloadColumn) {
+        public Builder payloadColumn(String payloadColumn) {
             this.payloadColumn = payloadColumn;
             return this;
         }
@@ -307,7 +310,7 @@ public class EventSchema {
          * @param metaDataColumn the name of the metadata column.
          * @return the modified Builder instance
          */
-        public Builder withMetaDataColumn(String metaDataColumn) {
+        public Builder metaDataColumn(String metaDataColumn) {
             this.metaDataColumn = metaDataColumn;
             return this;
         }

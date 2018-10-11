@@ -18,18 +18,15 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,38 +43,43 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = GenericJpaRepositoryIntegrationTest.TestContext.class)
 @TestPropertySource("classpath:hsqldb.database.properties")
 @Transactional
-public class GenericJpaRepositoryIntegrationTest implements EventListener {
+public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
+    private final List<EventMessage> capturedEvents = new ArrayList<>();
     @Autowired
     @Qualifier("simpleRepository")
     private GenericJpaRepository<JpaAggregate> repository;
-
     @Autowired
     private EventBus eventBus;
-
     @PersistenceContext
     private EntityManager entityManager;
-
-    private final List<EventMessage> capturedEvents = new ArrayList<>();
     private SubscribingEventProcessor eventProcessor;
 
     @Before
     public void setUp() {
-        eventProcessor = new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(this), eventBus);
+        SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                                 .eventHandlers(this)
+                                                                                 .build();
+        eventProcessor = SubscribingEventProcessor.builder()
+                                                  .name("test")
+                                                  .eventHandlerInvoker(eventHandlerInvoker)
+                                                  .messageSource(eventBus)
+                                                  .build();
         eventProcessor.start();
     }
 
@@ -150,8 +152,9 @@ public class GenericJpaRepositoryIntegrationTest implements EventListener {
     }
 
     @Override
-    public void handle(EventMessage event) {
+    public Object handle(EventMessage event) {
         this.capturedEvents.add(event);
+        return null;
     }
 
     private UnitOfWork<?> startAndGetUnitOfWork() {
@@ -218,7 +221,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventListener {
 
         @Bean
         public EventBus eventBus() {
-            return new SimpleEventBus();
+            return SimpleEventBus.builder().build();
         }
 
         @Bean("simpleRepository")

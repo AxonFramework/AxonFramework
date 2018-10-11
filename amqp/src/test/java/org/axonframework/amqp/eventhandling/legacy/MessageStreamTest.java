@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,8 +29,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -40,12 +39,11 @@ public class MessageStreamTest {
     @Test
     public void testStreamEventMessage() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        GenericEventMessage<String> message = new GenericEventMessage<>("This is the payload",
-                                                                              Collections.<String, Object>singletonMap(
-                                                                                      "metaKey",
-                                                                                      "MetaValue"));
+        GenericEventMessage<String> message = new GenericEventMessage<>(
+                "This is the payload", Collections.<String, Object>singletonMap("metaKey", "MetaValue")
+        );
         out.writeEventMessage(message);
         EventMessageReader in = new EventMessageReader(new DataInputStream(
                 new ByteArrayInputStream(baos.toByteArray())), serializer);
@@ -61,11 +59,15 @@ public class MessageStreamTest {
     @Test
     public void testStreamDomainEventMessage() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
         GenericDomainEventMessage<String> message = new GenericDomainEventMessage<>(
-                "type", "AggregateID", 1L, "This is the payload", Collections.<String, Object>singletonMap("metaKey",
-                                                                                                   "MetaValue"));
+                "type",
+                "AggregateID",
+                1L,
+                "This is the payload",
+                Collections.<String, Object>singletonMap("metaKey", "MetaValue")
+        );
         out.writeEventMessage(message);
         EventMessageReader in = new EventMessageReader(
                 new DataInputStream(new ByteArrayInputStream(baos.toByteArray())), serializer);

@@ -18,11 +18,11 @@ package org.axonframework.mongo.serialization;
 
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedObject;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
@@ -43,7 +43,7 @@ public class DBObjectXStreamSerializerTest {
 
     @Before
     public void setUp() {
-        this.testSubject = new DBObjectXStreamSerializer();
+        this.testSubject = DBObjectXStreamSerializer.builder().build();
     }
 
     @Test
@@ -100,7 +100,7 @@ public class DBObjectXStreamSerializerTest {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
-        String asString = new String(serialized.getData(), "UTF-8");
+        String asString = new String(serialized.getData(), StandardCharsets.UTF_8);
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("\"stub"));
         StubDomainEvent deserialized = testSubject.deserialize(serialized);
@@ -112,7 +112,7 @@ public class DBObjectXStreamSerializerTest {
         testSubject.addFieldAlias("relevantPeriod", TestEvent.class, "period");
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent("hello"), byte[].class);
-        String asString = new String(serialized.getData(), "UTF-8");
+        String asString = new String(serialized.getData(), StandardCharsets.UTF_8);
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("\"relevantPeriod"));
         TestEvent deserialized = testSubject.deserialize(serialized);
@@ -127,6 +127,7 @@ public class DBObjectXStreamSerializerTest {
         assertEquals(RevisionSpecifiedEvent.class.getName(), serialized.getType().getName());
     }
 
+    @SuppressWarnings("Duplicates")
     @Test
     public void testSerializedTypeUsesClassAlias() {
         testSubject.addAlias("rse", RevisionSpecifiedEvent.class);

@@ -32,14 +32,14 @@ import static org.junit.Assert.assertTrue;
 public class ReplayAwareMessageHandlerWrapperTest {
 
     private SomeHandler handler;
-    private AnnotationEventListenerAdapter testSubject;
+    private AnnotationEventHandlerAdapter testSubject;
     private ReplayToken replayToken;
     private GlobalSequenceTrackingToken regularToken;
 
     @Before
     public void setUp() {
         handler = new SomeHandler();
-        testSubject = new AnnotationEventListenerAdapter(handler);
+        testSubject = new AnnotationEventHandlerAdapter(handler);
         regularToken = new GlobalSequenceTrackingToken(1L);
         replayToken = new ReplayToken(regularToken);
     }

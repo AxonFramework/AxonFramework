@@ -1,9 +1,28 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.integrationtests.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -16,8 +35,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
 import java.text.DecimalFormat;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -46,21 +74,35 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected AbstractEventStoreBenchmark(EventStorageEngine storageEngine, int threadCount, int batchSize,
                                           int batchCount) {
-        this.eventStore = new EmbeddedEventStore(this.storageEngine = storageEngine);
+        this.eventStore = EmbeddedEventStore.builder()
+                                            .storageEngine(this.storageEngine = storageEngine)
+                                            .build();
         this.threadCount = threadCount;
         this.batchSize = batchSize;
         this.batchCount = batchCount;
         this.remainingEvents = new CountDownLatch(getTotalEventCount());
 
-        this.eventProcessor = new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(
-                (EventListener) (e) -> {
-                    if (readEvents.add(e.getIdentifier())) {
-                        remainingEvents.countDown();
-                    } else {
-                        throw new IllegalStateException("Double event!");
-                    }
-                }), eventStore, new InMemoryTokenStore(),
-                                                         NoTransactionManager.INSTANCE);
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers(
+                                                 (EventMessageHandler) eventHandler -> {
+                                                     if (readEvents.add(eventHandler.getIdentifier())) {
+                                                         remainingEvents.countDown();
+                                                     } else {
+                                                         throw new IllegalStateException("Double event!");
+                                                     }
+                                                     // We aren't interested in the event handling result
+                                                     return null;
+                                                 }
+
+                                         ).build();
+        this.eventProcessor = TrackingEventProcessor.builder()
+                                                    .name("benchmark")
+                                                    .eventHandlerInvoker(eventHandlerInvoker)
+                                                    .messageSource(eventStore)
+                                                    .tokenStore(new InMemoryTokenStore())
+                                                    .transactionManager(NoTransactionManager.INSTANCE)
+                                                    .build();
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 
@@ -75,7 +117,7 @@ public abstract class AbstractEventStoreBenchmark {
         stopWatch.start("Storing events");
         try {
             executorService.invokeAll(storageJobs);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new IllegalStateException("Benchmark was interrupted", e);
         }
         stopWatch.stop();
@@ -86,7 +128,7 @@ public abstract class AbstractEventStoreBenchmark {
         stopWatch.start("Waiting for event processor to catch up");
         try {
             remainingEvents.await(1, TimeUnit.MINUTES);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new IllegalStateException("Benchmark was interrupted", e);
         }
         stopWatch.stop();
@@ -101,7 +143,7 @@ public abstract class AbstractEventStoreBenchmark {
         eventProcessor.start();
         try {
             Thread.sleep(1000);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new IllegalStateException("Benchmark was interrupted", e);
         }
     }
@@ -114,7 +156,8 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected List<Callable<Object>> createStorageJobs(int threadCount, int batchSize, int batchCount) {
         return IntStream.range(0, threadCount)
-                        .mapToObj(i -> createStorageJobs(String.valueOf(i), batchSize, batchCount)).flatMap(Collection::stream)
+                        .mapToObj(i -> createStorageJobs(String.valueOf(i), batchSize, batchCount))
+                        .flatMap(Collection::stream)
                         .collect(Collectors.toList());
     }
 
@@ -146,7 +189,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected Optional<Serializer> serializer() {
         return storageEngine instanceof AbstractEventStorageEngine ?
-                Optional.of(((AbstractEventStorageEngine) storageEngine).getSerializer()) : Optional.empty();
+                Optional.of(((AbstractEventStorageEngine) storageEngine).getSnapshotSerializer()) : Optional.empty();
     }
 
     public int getTotalEventCount() {
@@ -156,5 +199,4 @@ public abstract class AbstractEventStoreBenchmark {
     protected EventStorageEngine getStorageEngine() {
         return storageEngine;
     }
-
 }

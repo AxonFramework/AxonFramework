@@ -23,6 +23,7 @@ import java.util.stream.Stream;
  * stream of intermediate objects.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class GenericUpcasterChain<T> implements Upcaster<T> {
 
@@ -64,5 +65,4 @@ public class GenericUpcasterChain<T> implements Upcaster<T> {
     protected List<? extends Upcaster<T>> getUpcasters() {
         return upcasters;
     }
-
 }

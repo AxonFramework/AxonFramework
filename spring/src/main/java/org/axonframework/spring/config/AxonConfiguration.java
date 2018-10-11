@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
@@ -114,6 +115,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.resourceInjector();
     }
 
+    @Override
+    public EventProcessingConfiguration eventProcessingConfiguration() {
+        return config.eventProcessingConfiguration();
+    }
+
     /**
      * Returns the CommandGateway used to send commands to command handlers.
      *
@@ -129,7 +135,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @NoBeanOfType(QueryGateway.class)
     @Bean
     public QueryGateway queryGateway(QueryBus queryBus) {
-        return new DefaultQueryGateway(queryBus);
+        return DefaultQueryGateway.builder().queryBus(queryBus).build();
     }
 
     @Override

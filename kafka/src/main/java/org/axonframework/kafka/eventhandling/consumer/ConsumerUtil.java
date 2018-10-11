@@ -28,6 +28,7 @@ import java.util.Collections;
  * Utility for {@link Consumer}.
  *
  * @author Nakul Mishra
+ * @since 3.3
  */
 public class ConsumerUtil {
 

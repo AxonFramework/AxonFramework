@@ -36,12 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertDomainHeaders;
 import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertEventHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.byteMapper;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.toHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsString;
-import static org.axonframework.messaging.Headers.MESSAGE_ID;
-import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
-import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
+import static org.axonframework.kafka.eventhandling.HeaderUtils.*;
+import static org.axonframework.messaging.Headers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -62,8 +58,10 @@ public class DefaultKafkaMessageConverterTests {
 
     @Before
     public void setUp() {
-        serializer = new XStreamSerializer(new FixedValueRevisionResolver("stub-revision"));
-        testSubject = new DefaultKafkaMessageConverter(serializer);
+        serializer = XStreamSerializer.builder()
+                                      .revisionResolver(new FixedValueRevisionResolver("stub-revision"))
+                                      .build();
+        testSubject = DefaultKafkaMessageConverter.builder().serializer(serializer).build();
     }
 
     @Test
@@ -160,7 +158,9 @@ public class DefaultKafkaMessageConverterTests {
 
     @Test
     public void testWriting_EventMessageWithNullRevision_ShouldWriteRevisionAsNull() {
-        testSubject = new DefaultKafkaMessageConverter(new XStreamSerializer());
+        testSubject = DefaultKafkaMessageConverter.builder()
+                                                  .serializer(XStreamSerializer.builder().build())
+                                                  .build();
         EventMessage<?> eventMessage = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(eventMessage, SOME_TOPIC);
 

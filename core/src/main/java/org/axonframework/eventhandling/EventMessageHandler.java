@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.messaging.MessageHandler;
 
 /**
  * Interface to be implemented by classes that can handle events.
@@ -27,27 +28,17 @@ import org.axonframework.eventsourcing.DomainEventMessage;
  * @see EventHandler
  * @since 0.1
  */
-@FunctionalInterface
-public interface EventListener {
+public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
 
     /**
      * Process the given event. The implementation may decide to process or skip the given event. It is highly
      * unrecommended to throw any exception during the event handling process.
      *
      * @param event the event to handle
+     * @return the result of the event handler invocation. Is generally ignored
      * @throws Exception when an exception is raised during event handling
      */
-    void handle(EventMessage<?> event) throws Exception;
-
-    /**
-     * Indicates whether this listener can handle the given event message
-     *
-     * @param event The event message to verify
-     * @return {@code true} if this listener can handle the event, otherwise {@code false}
-     */
-    default boolean canHandle(EventMessage<?> event) {
-        return true;
-    }
+    Object handle(EventMessage<?> event) throws Exception;
 
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.

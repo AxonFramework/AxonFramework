@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -29,10 +30,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Abstract implementation of an {@link EventStore} that uses a {@link EventStorageEngine} to store and load events.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public abstract class AbstractEventStore extends AbstractEventBus implements EventStore {
 
@@ -41,24 +45,16 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     private final EventStorageEngine storageEngine;
 
     /**
-     * Initializes an event store with given {@code storageEngine} and {@link NoOpMessageMonitor}.
+     * Instantiate an {@link AbstractEventStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
      *
-     * @param storageEngine The storage engine used to store and load events
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStore} instance
      */
-    protected AbstractEventStore(EventStorageEngine storageEngine) {
-        this(storageEngine, NoOpMessageMonitor.INSTANCE);
-    }
-
-    /**
-     * Initialize an event store with given {@code storageEngine} and {@code messageMonitor}.
-     *
-     * @param storageEngine  The storage engine used to store and load events
-     * @param messageMonitor The monitor used to record event publications
-     */
-    protected AbstractEventStore(EventStorageEngine storageEngine,
-                                 MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        super(messageMonitor);
-        this.storageEngine = storageEngine;
+    protected AbstractEventStore(Builder builder) {
+        super(builder);
+        this.storageEngine = builder.storageEngine;
     }
 
     @Override
@@ -110,6 +106,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
      * @param aggregateIdentifier The identifier of the aggregate for which an snapshot failed to load
      * @param e                   The exception or error that occurred while loading or deserializing the snapshot
      * @return An optional DomainEventMessage to use as the snapshot for this aggregate
+     *
      * @throws RuntimeException any runtimeException to fail loading the
      */
     protected Optional<DomainEventMessage<?>> handleSnapshotReadingError(String aggregateIdentifier, Throwable e) {
@@ -178,5 +175,46 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     @Override
     public TrackingToken createTokenAt(Instant dateTime) {
         return storageEngine.createTokenAt(dateTime);
+    }
+
+    /**
+     * Abstract Builder class to instantiate an {@link AbstractEventStore}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor}. The {@link EventStorageEngine} is a
+     * <b>hard requirement</b> and as such should be provided.
+     */
+    public abstract static class Builder extends AbstractEventBus.Builder {
+
+        protected EventStorageEngine storageEngine;
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventStorageEngine} used to store and load events.
+         *
+         * @param storageEngine the {@link EventStorageEngine} used to store and load events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder storageEngine(EventStorageEngine storageEngine) {
+            assertNonNull(storageEngine, "EventStorageEngine may not be null");
+            this.storageEngine = storageEngine;
+            return this;
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+            assertNonNull(storageEngine, "The EventStorageEngine is a hard requirement and should be provided");
+        }
     }
 }

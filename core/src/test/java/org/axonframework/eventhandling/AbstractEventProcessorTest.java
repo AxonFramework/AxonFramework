@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,25 +34,6 @@ import static org.mockito.Mockito.*;
 
 public class AbstractEventProcessorTest {
 
-    private static class TestEventProcessor extends AbstractEventProcessor {
-        TestEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, MessageMonitor<EventMessage<?>> messageMonitor) {
-            super(name,
-                  eventHandlerInvoker,
-                  RollbackConfigurationType.ANY_THROWABLE,
-                  PropagatingErrorHandler.INSTANCE,
-                  messageMonitor);
-        }
-        @Override
-        public void start() {
-        }
-        @Override
-        public void shutDown() {
-        }
-        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            processInUnitOfWork(eventMessages, new BatchingUnitOfWork<>(eventMessages), Segment.ROOT_SEGMENT);
-        }
-    }
-
     @Test
     public void expectCallbackForAllMessages() throws Exception {
         List<DomainEventMessage<?>> events = createEvents(2);
@@ -64,21 +46,29 @@ public class AbstractEventProcessorTest {
                 }
                 pending.remove(message);
             }
+
             @Override
             public void reportFailure(Throwable cause) {
                 fail("Test expects 'reportSuccess' to be called");
             }
+
             @Override
             public void reportIgnored() {
                 fail("Test expects 'reportSuccess' to be called");
             }
         };
 
-        EventListener mockListener = mock(EventListener.class);
-        EventHandlerInvoker eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
-        TestEventProcessor testSubject = new TestEventProcessor("test", eventHandlerInvoker, messageMonitor);
+        EventMessageHandler mockHandler = mock(EventMessageHandler.class);
+        EventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                           .eventHandlers(mockHandler)
+                                                                           .build();
+        TestEventProcessor testSubject = TestEventProcessor.builder()
+                                                           .name("test")
+                                                           .eventHandlerInvoker(eventHandlerInvoker)
+                                                           .messageMonitor(messageMonitor)
+                                                           .build();
 
-        // also test that the mechanism used to call the monitor can deal with the message in the unit of work being
+        // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
         testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> createEvent());
@@ -89,4 +79,57 @@ public class AbstractEventProcessorTest {
 
         assertTrue("Not all events were presented to monitor", pending.isEmpty());
     }
+
+    private static class TestEventProcessor extends AbstractEventProcessor {
+
+        private TestEventProcessor(Builder builder) {
+            super(builder);
+        }
+
+        private static Builder builder() {
+            return new Builder();
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void shutDown() {
+        }
+
+        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
+            processInUnitOfWork(eventMessages, new BatchingUnitOfWork<>(eventMessages), Segment.ROOT_SEGMENT);
+        }
+
+        private static class Builder extends AbstractEventProcessor.Builder {
+
+            public Builder() {
+                super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+            }
+
+            @Override
+            public Builder name(String name) {
+                super.name(name);
+                return this;
+            }
+
+            @Override
+            public Builder eventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+                super.eventHandlerInvoker(eventHandlerInvoker);
+                return this;
+            }
+
+            @Override
+            public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+                super.messageMonitor(messageMonitor);
+                return this;
+            }
+
+            private TestEventProcessor build() {
+                return new TestEventProcessor(this);
+            }
+        }
+    }
 }
+

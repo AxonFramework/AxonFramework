@@ -64,7 +64,7 @@ public class AxonServerCommandBusTest {
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
         localSegment = SimpleCommandBus.builder().build();
-        ser = new XStreamSerializer();
+        ser = XStreamSerializer.builder().build();
         testSubject = new AxonServerCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);

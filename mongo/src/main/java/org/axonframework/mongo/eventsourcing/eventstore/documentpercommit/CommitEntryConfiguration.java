@@ -23,6 +23,7 @@ import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.EventEn
  * of the same UnitOfWork commit.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class CommitEntryConfiguration {
 
@@ -102,31 +103,33 @@ public class CommitEntryConfiguration {
 
     private static class Builder {
 
-        private String firstTimestampProperty = "firstTimestamp", lastTimestampProperty = "lastTimestamp",
-                firstSequenceNumberProperty = "firstSequenceNumber", lastSequenceNumberProperty = "lastSequenceNumber",
-                eventsProperty = "events";
+        private String firstTimestampProperty = "firstTimestamp";
+        private String lastTimestampProperty = "lastTimestamp";
+        private String firstSequenceNumberProperty = "firstSequenceNumber";
+        private String lastSequenceNumberProperty = "lastSequenceNumber";
+        private String eventsProperty = "events";
 
-        public Builder withFirstTimestampProperty(String firstTimestampProperty) {
+        public Builder firstTimestampProperty(String firstTimestampProperty) {
             this.firstTimestampProperty = firstTimestampProperty;
             return this;
         }
 
-        public Builder withLastTimestampProperty(String lastTimestampProperty) {
+        public Builder lastTimestampProperty(String lastTimestampProperty) {
             this.lastTimestampProperty = lastTimestampProperty;
             return this;
         }
 
-        public Builder withFirstSequenceNumberProperty(String firstSequenceNumberProperty) {
+        public Builder firstSequenceNumberProperty(String firstSequenceNumberProperty) {
             this.firstSequenceNumberProperty = firstSequenceNumberProperty;
             return this;
         }
 
-        public Builder withLastSequenceNumberProperty(String lastSequenceNumberProperty) {
+        public Builder lastSequenceNumberProperty(String lastSequenceNumberProperty) {
             this.lastSequenceNumberProperty = lastSequenceNumberProperty;
             return this;
         }
 
-        public Builder withEventsProperty(String eventsProperty) {
+        public Builder eventsProperty(String eventsProperty) {
             this.eventsProperty = eventsProperty;
             return this;
         }

@@ -24,7 +24,6 @@ import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.*;
@@ -39,7 +38,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -57,7 +55,8 @@ import static org.junit.Assert.*;
 public class JpaStorageEngineInsertionReadOrderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
-    private final Serializer serializer = new XStreamSerializer();
+
+    private final Serializer serializer = XStreamSerializer.builder().build();
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -75,11 +74,13 @@ public class JpaStorageEngineInsertionReadOrderTest {
             entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
             return null;
         });
-
-        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, serializer, 20,
-                                                new SimpleEntityManagerProvider(entityManager),
-                                                new SpringTransactionManager(tx),
-                                                1L, 10000, true);
+        testSubject = JpaEventStorageEngine.builder()
+                                           .snapshotSerializer(serializer)
+                                           .eventSerializer(serializer)
+                                           .batchSize(20)
+                                           .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                           .transactionManager(new SpringTransactionManager(tx))
+                                           .build();
     }
 
     @Test(timeout = 30000)
@@ -102,7 +103,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject);
+        EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {
@@ -119,20 +120,23 @@ public class JpaStorageEngineInsertionReadOrderTest {
 
     @Test(timeout = 30000)
     public void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
-        //increase batch size to 100
-        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, serializer, 100,
-                                                new SimpleEntityManagerProvider(entityManager),
-                                                new SpringTransactionManager(tx), 1L, 10000, true);
+        // Increase batch size to 100, which is the default of the JpaEventStorageEngine
+        testSubject = JpaEventStorageEngine.builder()
+                                           .snapshotSerializer(serializer)
+                                           .eventSerializer(serializer)
+                                           .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                           .transactionManager(new SpringTransactionManager(tx))
+                                           .build();
         int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject,
-                                                                       null,
-                                                                       20,
-                                                                       1000,
-                                                                       100,
-                                                                       TimeUnit.MILLISECONDS);
+        EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder()
+                                                                  .storageEngine(testSubject)
+                                                                  .cachedEvents(20)
+                                                                  .fetchDelay(100)
+                                                                  .cleanupDelay(1000)
+                                                                  .build();
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {
@@ -196,5 +200,4 @@ public class JpaStorageEngineInsertionReadOrderTest {
         }
         return result;
     }
-
 }

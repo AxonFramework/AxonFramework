@@ -25,6 +25,7 @@ import org.bson.Document;
  * EventMessage events}.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class EventEntryConfiguration {
 
@@ -145,52 +146,57 @@ public class EventEntryConfiguration {
 
     public static class Builder {
 
-        private String timestampProperty = "timestamp", eventIdentifierProperty = "eventIdentifier",
-                aggregateIdentifierProperty = "aggregateIdentifier", sequenceNumberProperty = "sequenceNumber",
-                typeProperty = "type", payloadTypeProperty = "payloadType", payloadRevisionProperty = "payloadRevision",
-                payloadProperty = "serializedPayload", metaDataProperty = "serializedMetaData";
+        private String timestampProperty = "timestamp";
+        private String eventIdentifierProperty = "eventIdentifier";
+        private String aggregateIdentifierProperty = "aggregateIdentifier";
+        private String sequenceNumberProperty = "sequenceNumber";
+        private String typeProperty = "type";
+        private String payloadTypeProperty = "payloadType";
+        private String payloadRevisionProperty = "payloadRevision";
+        private String payloadProperty = "serializedPayload";
+        private String metaDataProperty = "serializedMetaData";
 
-        public Builder withTimestampProperty(String timestampProperty) {
+        public Builder timestampProperty(String timestampProperty) {
             this.timestampProperty = timestampProperty;
             return this;
         }
 
-        public Builder withEventIdentifierProperty(String eventIdentifierProperty) {
+        public Builder eventIdentifierProperty(String eventIdentifierProperty) {
             this.eventIdentifierProperty = eventIdentifierProperty;
             return this;
         }
 
-        public Builder withAggregateIdentifierProperty(String aggregateIdentifierProperty) {
+        public Builder aggregateIdentifierProperty(String aggregateIdentifierProperty) {
             this.aggregateIdentifierProperty = aggregateIdentifierProperty;
             return this;
         }
 
-        public Builder withSequenceNumberProperty(String sequenceNumberProperty) {
+        public Builder sequenceNumberProperty(String sequenceNumberProperty) {
             this.sequenceNumberProperty = sequenceNumberProperty;
             return this;
         }
 
-        public Builder withTypeProperty(String typeProperty) {
+        public Builder typeProperty(String typeProperty) {
             this.typeProperty = typeProperty;
             return this;
         }
 
-        public Builder withPayloadTypeProperty(String payloadTypeProperty) {
+        public Builder payloadTypeProperty(String payloadTypeProperty) {
             this.payloadTypeProperty = payloadTypeProperty;
             return this;
         }
 
-        public Builder withPayloadRevisionProperty(String payloadRevisionProperty) {
+        public Builder payloadRevisionProperty(String payloadRevisionProperty) {
             this.payloadRevisionProperty = payloadRevisionProperty;
             return this;
         }
 
-        public Builder withPayloadProperty(String payloadProperty) {
+        public Builder payloadProperty(String payloadProperty) {
             this.payloadProperty = payloadProperty;
             return this;
         }
 
-        public Builder withMetaDataProperty(String metaDataProperty) {
+        public Builder metaDataProperty(String metaDataProperty) {
             this.metaDataProperty = metaDataProperty;
             return this;
         }

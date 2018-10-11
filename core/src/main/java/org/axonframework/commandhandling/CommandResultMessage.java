@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ import java.util.Map;
  * @author Milan Savic
  * @since 4.0
  */
-public interface CommandResultMessage<R> extends Message<R> {
+public interface CommandResultMessage<R> extends ResultMessage<R> {
 
     @Override
     CommandResultMessage<R> withMetaData(Map<String, ?> metaData);

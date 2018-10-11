@@ -94,7 +94,7 @@ public class AxonAutoConfigurationWithHibernateTest {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
 
-        assertEquals(serializer, engine.getSerializer());
+        assertEquals(serializer, engine.getSnapshotSerializer());
 
         engine.appendEvents(asEventMessage("hello"));
         List<? extends TrackedEventMessage<?>> events = engine.readEvents(null, false).collect(Collectors.toList());

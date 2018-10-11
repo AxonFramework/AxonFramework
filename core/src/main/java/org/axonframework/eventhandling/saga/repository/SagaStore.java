@@ -83,7 +83,6 @@ public interface SagaStore<T> {
      * @param sagaType          The type of the Saga
      * @param sagaIdentifier    The identifier of the Saga
      * @param saga              The Saga instance
-     * @param token             The tracking token of the event last handled by the Saga. May be {@code null}.
      * @param associationValues The initial association values of the Saga
      */
     void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, AssociationValues associationValues);

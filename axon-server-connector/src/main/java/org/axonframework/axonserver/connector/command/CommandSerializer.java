@@ -28,9 +28,13 @@ import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.serialization.Serializer;
 
 import java.util.UUID;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Converter between Axon CommandMessage and AxonServer GRPC message.
@@ -79,16 +83,19 @@ public class CommandSerializer {
         return new GrpcBackedCommandMessage(request, messageSerializer);
     }
 
-    public Object deserialize(CommandResponse response) {
-        return messageSerializer.deserialize(new GrpcSerializedObject(response.getPayload()));
+    public <R> GenericCommandResultMessage<R> deserialize(CommandResponse response) {
+        return new GenericCommandResultMessage<> (response.hasPayload() ? messageSerializer.deserialize(new GrpcSerializedObject(response.getPayload())) : null,
+                                                  new GrpcMetaDataConverter(messageSerializer).convert(response.getMetaDataMap()));
+
     }
 
-    CommandProviderOutbound serialize(Object payload, String requestIdentifier) {
+    public CommandProviderOutbound serialize(CommandResultMessage commandResultMessage, String requestIdentifier) {
         CommandResponse.Builder responseBuilder = CommandResponse.newBuilder()
-                                                                 .setMessageIdentifier(UUID.randomUUID().toString())
+                                                                 .setMessageIdentifier(getOrDefault(commandResultMessage.getIdentifier(),UUID.randomUUID().toString()))
+                                                                 .putAllMetaData(metadataSerializer.apply(commandResultMessage.getMetaData()))
                                                                  .setRequestIdentifier(requestIdentifier);
-        if (payload != null) {
-            responseBuilder.setPayload(objectSerializer.apply(payload));
+        if (commandResultMessage.getPayload() != null) {
+            responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
         }
         return CommandProviderOutbound.newBuilder().setCommandResponse(responseBuilder).build();
     }

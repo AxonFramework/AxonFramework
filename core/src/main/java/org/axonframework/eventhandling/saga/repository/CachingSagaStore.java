@@ -175,7 +175,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
          * Sets the {@link SagaStore} instance providing access to (persisted) entries.
          *
          * @param delegateSagaStore the {@link SagaStore} instance providing access to (persisted) entries
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> delegateSagaStore(SagaStore<T> delegateSagaStore) {
             assertNonNull(delegateSagaStore, "Delegate SagaStore may not be null");
@@ -187,7 +187,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
          * Sets the {@code associationsCache} of type {@link Cache} used to store Saga associations with.
          *
          * @param associationsCache a {@link Cache} used to store Saga associations with
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> associationsCache(Cache associationsCache) {
             assertNonNull(associationsCache, "AssociationsCache may not be null");
@@ -199,7 +199,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
          * Sets the {@code sagaCache} of type {@link Cache} used to store Sagas with.
          *
          * @param sagaCache a {@link Cache} used to store Sagas with
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaCache(Cache sagaCache) {
             assertNonNull(sagaCache, "SagaCache may not be null");
@@ -217,7 +217,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
         }
 
         /**
-         * Validate whether the fields contained in this Builder are set accordingly.
+         * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications

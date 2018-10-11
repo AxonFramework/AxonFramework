@@ -23,12 +23,14 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.*;
+import org.mockito.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -47,7 +49,7 @@ public class AbstractEventBusTest {
     @Before
     public void setUp() {
         (unitOfWork = spy(new DefaultUnitOfWork<>(null))).start();
-        testSubject = spy(new StubPublishingEventBus());
+        testSubject = spy(StubPublishingEventBus.builder().build());
     }
 
     @After
@@ -109,11 +111,11 @@ public class AbstractEventBusTest {
     }
 
     @Test
-     public void testPublicationWithNestedUow() {
+    public void testPublicationWithNestedUow() {
         testSubject.publish(numberedEvent(5));
         unitOfWork.commit();
         assertEquals(Arrays.asList(numberedEvent(5), numberedEvent(4), numberedEvent(3), numberedEvent(2),
-                numberedEvent(1), numberedEvent(0)), testSubject.committedEvents);
+                                   numberedEvent(1), numberedEvent(0)), testSubject.committedEvents);
         verify(testSubject, times(6)).prepareCommit(any());
         verify(testSubject, times(6)).commit(any());
         verify(testSubject, times(6)).afterCommit(any());
@@ -126,13 +128,17 @@ public class AbstractEventBusTest {
 
     @Test(expected = IllegalStateException.class)
     public void testPublicationForbiddenDuringUowCommitPhase() {
-        new StubPublishingEventBus(UnitOfWork.Phase.COMMIT, false).publish(numberedEvent(5));
+        StubPublishingEventBus.builder()
+                              .publicationPhase(UnitOfWork.Phase.COMMIT)
+                              .startNewUowBeforePublishing(false)
+                              .build()
+                              .publish(numberedEvent(5));
         unitOfWork.commit();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testPublicationForbiddenDuringRootUowCommitPhase() {
-        testSubject = spy(new StubPublishingEventBus(UnitOfWork.Phase.COMMIT, true));
+        testSubject = spy(StubPublishingEventBus.builder().publicationPhase(UnitOfWork.Phase.COMMIT).build());
         testSubject.publish(numberedEvent(1));
         unitOfWork.commit();
     }
@@ -174,16 +180,18 @@ public class AbstractEventBusTest {
     private static class StubPublishingEventBus extends AbstractEventBus {
 
         private final List<EventMessage<?>> committedEvents = new ArrayList<>();
-        private final boolean startNewUowBeforePublishing;
-        private final UnitOfWork.Phase publicationPhase;
 
-        public StubPublishingEventBus() {
-            this(UnitOfWork.Phase.PREPARE_COMMIT, true);
+        private final UnitOfWork.Phase publicationPhase;
+        private final boolean startNewUowBeforePublishing;
+
+        private StubPublishingEventBus(Builder builder) {
+            super(builder);
+            this.publicationPhase = builder.publicationPhase;
+            this.startNewUowBeforePublishing = builder.startNewUowBeforePublishing;
         }
 
-        public StubPublishingEventBus(UnitOfWork.Phase publicationPhase, boolean startNewUowBeforePublishing) {
-            this.startNewUowBeforePublishing = startNewUowBeforePublishing;
-            this.publicationPhase = publicationPhase;
+        private static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -238,17 +246,42 @@ public class AbstractEventBusTest {
         public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
+
+        private static class Builder extends AbstractEventBus.Builder {
+
+            private UnitOfWork.Phase publicationPhase = UnitOfWork.Phase.PREPARE_COMMIT;
+            private boolean startNewUowBeforePublishing = true;
+
+            private Builder publicationPhase(UnitOfWork.Phase publicationPhase) {
+                this.publicationPhase = publicationPhase;
+                return this;
+            }
+
+            private Builder startNewUowBeforePublishing(boolean startNewUowBeforePublishing) {
+                this.startNewUowBeforePublishing = startNewUowBeforePublishing;
+                return this;
+            }
+
+            private StubPublishingEventBus build() {
+                return new StubPublishingEventBus(this);
+            }
+        }
     }
 
     private static class StubNumberedEvent extends GenericEventMessage<Integer> {
+
         public StubNumberedEvent(Integer payload) {
             super(payload);
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             StubNumberedEvent that = (StubNumberedEvent) o;
             return Objects.equals(getPayload(), that.getPayload());
         }
@@ -260,7 +293,7 @@ public class AbstractEventBusTest {
 
         @Override
         public String toString() {
-            return "StubNumberedEvent{"+ getPayload() +"}";
+            return "StubNumberedEvent{" + getPayload() + "}";
         }
     }
 }

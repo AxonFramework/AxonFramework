@@ -22,8 +22,10 @@ import java.sql.SQLException;
  * with most databases.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public abstract class AbstractEventTableFactory implements EventTableFactory {
+
     @Override
     public PreparedStatement createDomainEventTable(Connection connection,
                                                     EventSchema schema) throws SQLException {
@@ -40,7 +42,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
                 "PRIMARY KEY (" + schema.globalIndexColumn() + "),\n" +
                 "UNIQUE (" + schema.aggregateIdentifierColumn() + ", " +
-                schema.sequenceNumberColumn()+ "),\n" +
+                schema.sequenceNumberColumn() + "),\n" +
                 "UNIQUE (" + schema.eventIdentifierColumn() + ")\n" +
                 ")";
         return connection.prepareStatement(sql);

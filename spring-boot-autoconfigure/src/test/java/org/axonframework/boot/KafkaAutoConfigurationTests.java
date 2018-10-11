@@ -277,7 +277,7 @@ public class KafkaAutoConfigurationTests {
 
         @Bean
         public Serializer eventSerializer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
 
         @Bean
