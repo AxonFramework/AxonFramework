@@ -73,16 +73,25 @@ Additionally, adjusted the AnnotationRoutingStrategy to check for a (meta-)annot
 
 ### Moved classes
 
-|                                 Axon 3                                        |                                  Axon 4                                    |
-|-------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| org.axonframework.messaging.MessageStream                                     | org.axonframework.common.stream.BlockingStream                             |
-| org.axonframework.messaging.StreamUtils                                       | org.axonframework.common.stream.StreamUtils                                |
-| org.axonframework.queryhandling.responsetypes.AbstractResponseType            | org.axonframework.messaging.responsetypes.AbstractResponseType             |
-| org.axonframework.queryhandling.responsetypes.InstanceResponseType            | org.axonframework.messaging.responsetypes.InstanceResponseType             |
-| org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType   | org.axonframework.messaging.responsetypes.MultipleInstancesResponseType    |
-| org.axonframework.queryhandling.responsetypes.ResponseType                    | org.axonframework.messaging.responsetypes.ResponseType                     |
-| org.axonframework.queryhandling.responsetypes.ResponseTypes                   | org.axonframework.messaging.responsetypes.ResponseTypes                    |
-| org.axonframework.boot.autoconfig.KafkaProperties                             | org.axonframework.boot.KafkaProperties                                     |
+|                                 Axon 3                                        |                                  Axon 4                                       |
+|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| org.axonframework.messaging.MessageStream                                     | org.axonframework.common.stream.BlockingStream                                |
+| org.axonframework.messaging.StreamUtils                                       | org.axonframework.common.stream.StreamUtils                                   |
+| org.axonframework.queryhandling.responsetypes.AbstractResponseType            | org.axonframework.messaging.responsetypes.AbstractResponseType                |
+| org.axonframework.queryhandling.responsetypes.InstanceResponseType            | org.axonframework.messaging.responsetypes.InstanceResponseType                |
+| org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType   | org.axonframework.messaging.responsetypes.MultipleInstancesResponseType       |
+| org.axonframework.queryhandling.responsetypes.ResponseType                    | org.axonframework.messaging.responsetypes.ResponseType                        |
+| org.axonframework.queryhandling.responsetypes.ResponseTypes                   | org.axonframework.messaging.responsetypes.ResponseTypes                       |
+| org.axonframework.boot.autoconfig.KafkaProperties                             | org.axonframework.boot.KafkaProperties                                        |
+| org.axonframework.commandhandling.disruptor.AggregateBlacklistedException     | org.axonframework.disruptor.commandhandling.AggregateBlacklistedException     |
+| org.axonframework.commandhandling.disruptor.AggregateStateCorruptedException  | org.axonframework.disruptor.commandhandling.AggregateStateCorruptedException  |
+| org.axonframework.commandhandling.disruptor.BlacklistDetectingCallback        | org.axonframework.disruptor.commandhandling.BlacklistDetectingCallback        |
+| org.axonframework.commandhandling.disruptor.CommandHandlerInvoker             | org.axonframework.disruptor.commandhandling.CommandHandlerInvoker             |
+| org.axonframework.commandhandling.disruptor.CommandHandlingEntry              | org.axonframework.disruptor.commandhandling.CommandHandlingEntry              |
+| org.axonframework.commandhandling.disruptor.DisruptorCommandBus               | org.axonframework.disruptor.commandhandling.DisruptorCommandBus               |
+| org.axonframework.commandhandling.disruptor.DisruptorUnitOfWork               | org.axonframework.disruptor.commandhandling.DisruptorUnitOfWork               |
+| org.axonframework.commandhandling.disruptor.EventPublisher                    | org.axonframework.disruptor.commandhandling.EventPublisher                    |
+| org.axonframework.commandhandling.disruptor.FirstLevelCache                   | org.axonframework.disruptor.commandhandling.FirstLevelCache                   |
 
 ### Removed classes
 |                           Class                                               |             Why                              |
