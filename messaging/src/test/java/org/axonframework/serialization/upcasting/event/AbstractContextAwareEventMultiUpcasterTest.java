@@ -24,17 +24,15 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
+import org.axonframework.eventhandling.EventData;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,13 +86,13 @@ public class AbstractContextAwareEventMultiUpcasterTest {
                 "test", "aggregateId", 0, new SecondStubEvent(expectedContextEventString, expectedContextEventNumber),
                 testMetaData
         );
-        EventData<?> firstTestEventData = new DomainEventEntry(firstTestEventMessage, serializer);
+        EventData<?> firstTestEventData = new TestDomainEventEntry(firstTestEventMessage, serializer);
         InitialEventRepresentation firstTestRepresentation =
                 new InitialEventRepresentation(firstTestEventData, serializer);
 
         GenericDomainEventMessage<StubEvent> secondTestEventMessage =
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"), testMetaData);
-        EventData<?> secondTestEventData = new DomainEventEntry(secondTestEventMessage, serializer);
+        EventData<?> secondTestEventData = new TestDomainEventEntry(secondTestEventMessage, serializer);
         InitialEventRepresentation secondTestRepresentation =
                 new InitialEventRepresentation(secondTestEventData, serializer);
 

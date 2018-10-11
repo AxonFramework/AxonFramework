@@ -24,12 +24,11 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
+import org.axonframework.eventhandling.EventData;
+import org.axonframework.eventhandling.GenericDomainEventEntry;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -37,8 +36,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -76,7 +74,7 @@ public class AbstractEventMultiUpcasterTest {
     public void testUpcasterIgnoresWrongEventType() {
         GenericDomainEventMessage<String> testEventMessage =
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString");
-        EventData<?> testEventData = new DomainEventEntry(testEventMessage, serializer);
+        EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation =
                 spy(new InitialEventRepresentation(testEventData, serializer));
 
@@ -95,7 +93,7 @@ public class AbstractEventMultiUpcasterTest {
 
         GenericDomainEventMessage<StubEvent> testEventMessage =
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"));
-        EventData<?> testEventData = new DomainEventEntry(testEventMessage, serializer);
+        EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
@@ -162,7 +160,7 @@ public class AbstractEventMultiUpcasterTest {
         MetaData testMetaData = MetaData.with("key", "value");
         GenericDomainEventMessage<StubEvent> testEventMessage =
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"), testMetaData);
-        EventData<?> testEventData = new DomainEventEntry(testEventMessage, serializer);
+        EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))

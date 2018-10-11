@@ -16,12 +16,11 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
+import org.axonframework.eventhandling.EventData;
+import org.axonframework.eventhandling.GenericDomainEventEntry;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -50,7 +49,7 @@ public class AbstractSingleEventUpcasterTest {
         String newValue = "newNameValue";
         Serializer serializer = XStreamSerializer.builder().build();
         MetaData metaData = MetaData.with("key", "value");
-        EventData<?> eventData = new DomainEventEntry(
+        EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"), metaData),
                 serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster(newValue);
@@ -99,9 +98,9 @@ public class AbstractSingleEventUpcasterTest {
     @Test
     public void testIgnoresUnknownType() {
         Serializer serializer = XStreamSerializer.builder().build();
-        EventData<?> eventData =
-                new DomainEventEntry(new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"),
-                                     serializer);
+        EventData<?> eventData = new TestDomainEventEntry(
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
+        );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = spy(new InitialEventRepresentation(eventData, serializer));
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
@@ -114,8 +113,9 @@ public class AbstractSingleEventUpcasterTest {
     @Test
     public void testIgnoresWrongVersion() {
         Serializer serializer = XStreamSerializer.builder().build();
-        EventData<?> eventData = new DomainEventEntry(
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName")), serializer);
+        EventData<?> eventData = new TestDomainEventEntry(
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName")), serializer
+        );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
