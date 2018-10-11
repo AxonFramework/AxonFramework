@@ -20,6 +20,7 @@ import org.axonframework.common.MockException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.ResultMessage;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -125,17 +127,26 @@ public class AbstractUnitOfWorkTest {
     @Test
     public void testExecuteTaskWithResult() throws Exception {
         Object taskResult = new Object();
-        Callable<?> task = mock(Callable.class);
+        Callable<Object> task = mock(Callable.class);
         when(task.call()).thenReturn(taskResult);
-        Object result = subject.executeWithResult(task);
+        ResultMessage result = subject.executeWithResult(task);
         InOrder inOrder = inOrder(task, subject);
         inOrder.verify(subject).start();
         inOrder.verify(task).call();
         inOrder.verify(subject).commit();
         assertFalse(subject.isActive());
-        assertSame(taskResult, result);
+        assertSame(taskResult, result.getPayload());
         assertNotNull(subject.getExecutionResult());
-        assertSame(taskResult, subject.getExecutionResult().getResult());
+        assertSame(taskResult, subject.getExecutionResult().getResult().getPayload());
+    }
+
+    @Test
+    public void testExecuteTaskReturnsResultMessage() throws Exception {
+        ResultMessage<Object> resultMessage = asResultMessage(new Object());
+        Callable<ResultMessage<Object>> task = mock(Callable.class);
+        when(task.call()).thenReturn(resultMessage);
+        ResultMessage actualResultMessage = subject.executeWithResult(task);
+        assertSame(resultMessage, actualResultMessage);
     }
 
     @Test

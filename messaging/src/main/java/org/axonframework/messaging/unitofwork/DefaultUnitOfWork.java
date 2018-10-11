@@ -17,7 +17,9 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -59,31 +61,39 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
         Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result;
+        ResultMessage<R> resultMessage;
         try {
             result = task.call();
+            if (result instanceof ResultMessage) {
+                resultMessage = (ResultMessage<R>) result;
+            } else if(result instanceof Message) {
+                resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
+            } else {
+                resultMessage = new GenericResultMessage<>(result);
+            }
         } catch (Error | Exception e) {
             if (rollbackConfiguration.rollBackOn(e)) {
                 rollback(e);
             } else {
-                setExecutionResult(new ExecutionResult(e));
+                setExecutionResult(new ExecutionResult(new GenericResultMessage<>(e)));
                 commit();
             }
             throw e;
         }
-        setExecutionResult(new ExecutionResult(result));
+        setExecutionResult(new ExecutionResult(resultMessage));
         commit();
-        return result;
+        return resultMessage;
     }
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        setExecutionResult(new ExecutionResult(cause));
+        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(cause)));
     }
 
     @Override

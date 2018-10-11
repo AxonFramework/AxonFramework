@@ -17,12 +17,15 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.*;
 
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
 /**
  * Specialized UnitOfWork instance for the {@link DisruptorCommandBus}. It expects the executing command message to
@@ -101,7 +104,7 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        setExecutionResult(new ExecutionResult(cause));
+        setExecutionResult(new ExecutionResult(asResultMessage(cause)));
     }
 
     /**
@@ -110,7 +113,7 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
      * This feature is not supported by this Unit of Work.
      */
     @Override
-    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
         throw new UnsupportedOperationException();
     }
 

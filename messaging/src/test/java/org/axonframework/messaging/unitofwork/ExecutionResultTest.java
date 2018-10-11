@@ -16,10 +16,11 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.ResultMessage;
 import org.junit.Test;
 
 import static junit.framework.TestCase.*;
+import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
 /**
  * @author Rene de Waele
@@ -28,7 +29,8 @@ public class ExecutionResultTest {
 
     @Test
     public void testNormalExecutionResult() {
-        Object result = new Object();
+        Object resultPayload = new Object();
+        ResultMessage<Object> result = asResultMessage(resultPayload);
         ExecutionResult subject = new ExecutionResult(result);
         assertSame(result, subject.getResult());
         assertFalse(subject.isExceptionResult());
@@ -38,30 +40,20 @@ public class ExecutionResultTest {
     @Test
     public void testUncheckedExceptionResult() {
         RuntimeException mockException = new RuntimeException();
-        ExecutionResult subject = new ExecutionResult(mockException);
+        ResultMessage<RuntimeException> resultMessage = asResultMessage(mockException);
+        ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
-        try {
-            subject.getResult();
-        } catch (Throwable e) {
-            assertSame(mockException, e);
-            return;
-        }
-        throw new AssertionError();
+        assertSame(mockException, subject.getResult().getPayload());
     }
 
     @Test
     public void testCheckedExceptionResult() {
         Exception mockException = new Exception();
-        ExecutionResult subject = new ExecutionResult(mockException);
+        ResultMessage<Exception> resultMessage = asResultMessage(mockException);
+        ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
-        try {
-            subject.getResult();
-        } catch (ExecutionException e) {
-            assertSame(mockException, e.getCause());
-            return;
-        }
-        throw new AssertionError();
+        assertSame(mockException, subject.getResult().getPayload());
     }
 }

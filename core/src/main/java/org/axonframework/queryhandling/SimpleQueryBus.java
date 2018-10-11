@@ -248,7 +248,7 @@ public class SimpleQueryBus implements QueryBus {
                 });
             }
             return buildCompletableFuture(responseType, queryResponse);
-        });
+        }).getPayload();
     }
 
     private <R> CompletableFuture<QueryResponseMessage<R>> buildCompletableFuture(ResponseType<R> responseType,

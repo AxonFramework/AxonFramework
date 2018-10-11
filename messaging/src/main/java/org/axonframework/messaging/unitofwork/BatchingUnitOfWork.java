@@ -17,13 +17,17 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
 /**
  * Unit of Work implementation that is able to process a batch of Messages instead of just a single Message.
@@ -67,24 +71,32 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
      * result of the last executed task.
      */
     @Override
-    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
         Assert.state(phase() == Phase.STARTED,
                      () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
-        R result = null;
+        R result;
+        ResultMessage<R> resultMessage = asResultMessage(null);
         Exception exception = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
             try {
                 result = task.call();
+                if (result instanceof ResultMessage) {
+                    resultMessage = (ResultMessage) result;
+                } else if(result instanceof Message) {
+                    resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
+                } else {
+                    resultMessage = new GenericResultMessage<>(result);
+                }
             } catch (Exception e) {
                 if (rollbackConfiguration.rollBackOn(e)) {
                     rollback(e);
                     throw e;
                 }
-                setExecutionResult(new ExecutionResult(e));
+                setExecutionResult(new ExecutionResult(new GenericResultMessage<>(e)));
                 if (exception != null) {
                     exception.addSuppressed(e);
                 } else {
@@ -92,13 +104,13 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
                 }
                 continue;
             }
-            setExecutionResult(new ExecutionResult(result));
+            setExecutionResult(new ExecutionResult(resultMessage));
         }
         commit();
         if (exception != null) {
             throw exception;
         }
-        return result;
+        return resultMessage;
     }
 
     /**
@@ -143,7 +155,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
 
     @Override
     protected void setRollbackCause(Throwable cause) {
-        processingContexts.forEach(context -> context.setExecutionResult(new ExecutionResult(cause)));
+        processingContexts.forEach(context -> context
+                .setExecutionResult(new ExecutionResult(new GenericResultMessage<>(cause))));
     }
 
     @Override
