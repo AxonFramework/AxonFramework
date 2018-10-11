@@ -16,12 +16,21 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.common.MockException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.junit.Before;
-import org.junit.Test;
+import org.axonframework.messaging.MetaData;
+import org.junit.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static junit.framework.TestCase.*;
+import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 
 /**
@@ -47,8 +56,8 @@ public class BatchingUnitOfWorkTest {
         });
         validatePhaseTransitions(Arrays.asList(PREPARE_COMMIT, COMMIT, AFTER_COMMIT, CLEANUP), messages);
         Map<Message<?>, ExecutionResult> expectedResults = new HashMap<>();
-        messages.forEach(m -> expectedResults.put(m, new ExecutionResult(resultFor(m))));
-        assertEquals(expectedResults, subject.getExecutionResults());
+        messages.forEach(m -> expectedResults.put(m, new ExecutionResult(asResultMessage(resultFor(m)))));
+        assertExecutionResults(expectedResults, subject.getExecutionResults());
     }
 
     @Test
@@ -68,8 +77,8 @@ public class BatchingUnitOfWorkTest {
         }
         validatePhaseTransitions(Arrays.asList(ROLLBACK, CLEANUP), messages.subList(0, 2));
         Map<Message<?>, ExecutionResult> expectedResult = new HashMap<>();
-        messages.forEach(m -> expectedResult.put(m, new ExecutionResult(e)));
-        assertEquals(expectedResult, subject.getExecutionResults());
+        messages.forEach(m -> expectedResult.put(m, new ExecutionResult(asResultMessage(e))));
+        assertExecutionResults(expectedResult, subject.getExecutionResults());
     }
 
     @Test
@@ -93,10 +102,10 @@ public class BatchingUnitOfWorkTest {
         }
         validatePhaseTransitions(Arrays.asList(PREPARE_COMMIT, ROLLBACK, CLEANUP), messages);
         Map<Message<?>, ExecutionResult> expectedResult = new HashMap<>();
-        expectedResult.put(messages.get(0), new ExecutionResult(commitException));
-        expectedResult.put(messages.get(1), new ExecutionResult(commitException));
-        expectedResult.put(messages.get(2), new ExecutionResult(taskException));
-        assertEquals(expectedResult, subject.getExecutionResults());
+        expectedResult.put(messages.get(0), new ExecutionResult(asResultMessage(commitException)));
+        expectedResult.put(messages.get(1), new ExecutionResult(asResultMessage(commitException)));
+        expectedResult.put(messages.get(2), new ExecutionResult(asResultMessage(taskException)));
+        assertExecutionResults(expectedResult, subject.getExecutionResults());
         assertSame(commitException, taskException.getSuppressed()[0]);
     }
 
@@ -128,6 +137,34 @@ public class BatchingUnitOfWorkTest {
                 assertEquals(expected, actual);
             });
         }
+    }
+
+    private void assertExecutionResults(Map<Message<?>, ExecutionResult> expected,
+                                        Map<Message<?>, ExecutionResult> actual) {
+        assertEquals(expected.keySet(), actual.keySet());
+        List<Message<?>> expectedMessages = expected.values()
+                                                    .stream()
+                                                    .map(ExecutionResult::getResult)
+                                                    .collect(Collectors.toList());
+
+        List<Message<?>> actualMessages = actual.values()
+                                                .stream()
+                                                .map(ExecutionResult::getResult)
+                                                .collect(Collectors.toList());
+        List<?> expectedPayloads = expectedMessages.stream()
+                                    .map(Message::getPayload)
+                                    .collect(Collectors.toList());
+        List<?> actualPayloads = actualMessages.stream()
+                                  .map(Message::getPayload)
+                                  .collect(Collectors.toList());
+        List<MetaData> expectedMetaData = expectedMessages.stream()
+                                                 .map(Message::getMetaData)
+                                                 .collect(Collectors.toList());
+        List<MetaData> actualMetaData = actualMessages.stream()
+                                               .map(Message::getMetaData)
+                                               .collect(Collectors.toList());
+        assertTrue(expectedPayloads.containsAll(actualPayloads));
+        assertTrue(expectedMetaData.containsAll(actualMetaData));
     }
 
     private static class PhaseTransition {
