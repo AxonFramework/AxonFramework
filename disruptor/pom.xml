@@ -32,4 +32,30 @@
         Module containing a specific CommandBus and Command Handling solution based on the Disruptor paradigm.
     </description>
 
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!--TODO temp, should be other way around!-->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--<dependency>-->
+        <!--<groupId>${project.groupId}</groupId>-->
+        <!--<artifactId>axon-modeling</artifactId>-->
+        <!--<version>${project.version}</version>-->
+        <!--</dependency>-->
+
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.3.6</version>
+        </dependency>
+    </dependencies>
+
 </project>
