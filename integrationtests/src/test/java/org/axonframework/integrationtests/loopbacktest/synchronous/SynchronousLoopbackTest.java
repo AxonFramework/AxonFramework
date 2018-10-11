@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -43,7 +43,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,11 +64,16 @@ public class SynchronousLoopbackTest {
     private VoidCallback reportErrorCallback;
     private CommandCallback<Object, Object> expectErrorCallback;
 
+    @SuppressWarnings("unchecked")
+    private static List<DomainEventMessage<?>> anyEventList() {
+        return anyList();
+    }
+
     @Before
     public void setUp() {
         aggregateIdentifier = UUID.randomUUID().toString();
         commandBus = SimpleCommandBus.builder().build();
-        eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
+        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         eventStore.publish(new GenericDomainEventMessage<>("test", aggregateIdentifier, 0,
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
@@ -111,7 +115,7 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
         initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -124,13 +128,23 @@ public class SynchronousLoopbackTest {
                                                                                           2)), reportErrorCallback);
                 }
             }
+            return null;
         };
-        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(el), eventStore).start();
+        SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                                 .eventHandlers(eventHandler)
+                                                                                 .build();
+        SubscribingEventProcessor.builder()
+                                 .name("processor")
+                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                 .messageSource(eventStore)
+                                 .build()
+                                 .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
         DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
+        //noinspection Duplicates
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
             if (next.getPayload() instanceof CounterChangedEvent) {
@@ -145,7 +159,7 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
         initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -160,12 +174,19 @@ public class SynchronousLoopbackTest {
                     throw new RuntimeException("Mock exception");
                 }
             }
+            return null;
         };
-        new SubscribingEventProcessor("processor",
-                                      new SimpleEventHandlerInvoker(Collections.singletonList(el),
-                                                                    PropagatingErrorHandler.INSTANCE),
-                                      eventStore)
-                .start();
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers(eventHandler)
+                                         .listenerInvocationErrorHandler(PropagatingErrorHandler.INSTANCE)
+                                         .build();
+        SubscribingEventProcessor.builder()
+                                 .name("processor")
+                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                 .messageSource(eventStore)
+                                 .build()
+                                 .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
@@ -180,11 +201,6 @@ public class SynchronousLoopbackTest {
         }
 
         verify(eventStore, times(3)).publish(anyEventList());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<DomainEventMessage<?>> anyEventList() {
-        return anyList();
     }
 
     private static class CounterCommandHandler {

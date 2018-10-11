@@ -1,7 +1,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.AbstractSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.junit.*;
@@ -11,7 +11,7 @@ import org.mockito.junit.*;
 
 import java.util.List;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,37 +38,44 @@ public class ConfigurationScopeAwareProviderTest {
     private SagaConfiguration sagaConfiguration;
 
     @Mock
-    private AnnotatedSagaManager sagaManager;
+    private AbstractSagaManager sagaManager;
+
+    @Mock
+    private EventProcessingModule eventProcessingConfiguration;
 
     private ConfigurationScopeAwareProvider scopeAwareProvider;
 
     @Before
     public void setUp() {
+        when(configuration.eventProcessingConfiguration()).thenReturn(eventProcessingConfiguration);
         scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
     }
 
     @Test
     public void providesScopeAwareAggregatesFromModuleConfiguration() {
         when(configuration.findModules(AggregateConfiguration.class)).thenCallRealMethod();
-        when(configuration.getModules()).thenReturn(asList(new WrappingModuleConfiguration(aggregateConfiguration)));
+        when(configuration.getModules())
+                .thenReturn(singletonList(new WrappingModuleConfiguration(aggregateConfiguration)));
         when(aggregateConfiguration.repository()).thenReturn(aggregateRepository);
 
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                                                         .collect(toList());
 
-        assertThat(components, equalTo(asList(aggregateRepository)));
+        assertThat(components, equalTo(singletonList(aggregateRepository)));
     }
 
     @Test
     public void providesScopeAwareSagasFromModuleConfiguration() {
-        when(configuration.findModules(SagaConfiguration.class)).thenCallRealMethod();
-        when(configuration.getModules()).thenReturn(asList(new WrappingModuleConfiguration(sagaConfiguration)));
-        when(sagaConfiguration.getSagaManager()).thenReturn(sagaManager);
+        when(eventProcessingConfiguration.sagaConfigurations())
+                .thenReturn(singletonList(sagaConfiguration));
+        when(sagaConfiguration.manager()).thenReturn(new Component<>(() -> configuration,
+                                                                     "sagaManager",
+                                                                     c -> sagaManager));
 
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                                                         .collect(toList());
 
-        assertThat(components, equalTo(asList(sagaManager)));
+        assertThat(components, equalTo(singletonList(sagaManager)));
     }
 
     @Test
@@ -81,7 +88,8 @@ public class ConfigurationScopeAwareProviderTest {
     @Test
     public void cachesScopeAwareComponentsOnceProvisioned() {
         when(configuration.findModules(AggregateConfiguration.class)).thenCallRealMethod();
-        when(configuration.getModules()).thenReturn(asList(new WrappingModuleConfiguration(aggregateConfiguration)));
+        when(configuration.getModules())
+                .thenReturn(singletonList(new WrappingModuleConfiguration(aggregateConfiguration)));
         when(aggregateConfiguration.repository()).thenReturn(aggregateRepository);
 
         // provision once
@@ -129,6 +137,11 @@ public class ConfigurationScopeAwareProviderTest {
         @Override
         public ModuleConfiguration unwrap() {
             return delegate == null ? this : delegate;
+        }
+
+        @Override
+        public boolean isType(Class<?> type) {
+            return type.isAssignableFrom(unwrap().getClass());
         }
     }
 }

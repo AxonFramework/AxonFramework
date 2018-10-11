@@ -24,15 +24,19 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.lock.DeadlockException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singletonMap;
@@ -57,7 +61,10 @@ public class CommandGatewayFactoryTest {
     public void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
-        testSubject = new CommandGatewayFactory(mockCommandBus, mockRetryScheduler);
+        testSubject = CommandGatewayFactory.builder()
+                                           .commandBus(mockCommandBus)
+                                           .retryScheduler(mockRetryScheduler)
+                                           .build();
         callback = spy(new StringCommandCallback());
         testSubject.registerCommandCallback(new CommandCallback<Object, String>() {
             @Override
@@ -74,7 +81,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test//(timeout = 2000)
-    public void testGateway_FireAndForget() {
+    public void testGatewayFireAndForget() {
         doAnswer(i -> {
             ((CommandCallback) i.getArguments()[1]).onSuccess((CommandMessage) i.getArguments()[0],
                                                               asCommandResultMessage(null));
@@ -93,9 +100,9 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testGateway_FireAndForgetWithoutRetryScheduler() {
+    public void testGatewayFireAndForgetWithoutRetryScheduler() {
         final Object metaTest = new Object();
-        CommandGatewayFactory testSubject = new CommandGatewayFactory(mockCommandBus);
+        CommandGatewayFactory testSubject = CommandGatewayFactory.builder().commandBus(mockCommandBus).build();
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
         gateway.fireAndForget("Command",
                               MetaData.from(singletonMap("otherKey", "otherVal")),
@@ -108,7 +115,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testGateway_Timeout() throws InterruptedException {
+    public void testGatewayTimeout() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new CountDown(cdl)).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                    isA(CommandCallback.class));
@@ -120,12 +127,12 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testGatewayWithReturnValue_Returns() throws InterruptedException {
+    public void testGatewayWithReturnValueReturns() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
         CommandResultMessage<String> returnValue = asCommandResultMessage("ReturnValue");
         doAnswer(new Success(cdl, returnValue)).when(mockCommandBus).dispatch(isA(CommandMessage.class),
-                                                                                isA(CommandCallback.class));
+                                                                              isA(CommandCallback.class));
         Thread t = new Thread(() -> result.set(gateway.waitForReturnValue("Command")));
         t.start();
         assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
@@ -135,7 +142,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testGatewayWithReturnValue_UndeclaredException() throws InterruptedException {
+    public void testGatewayWithReturnValueUndeclaredException() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -158,7 +165,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testGatewayWithReturnValue_Interrupted() throws InterruptedException {
+    public void testGatewayWithReturnValueInterrupted() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -176,7 +183,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test
-    public void testGatewayWithReturnValue_RuntimeException() {
+    public void testGatewayWithReturnValueRuntimeException() {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         RuntimeException runtimeException = new RuntimeException();
@@ -193,7 +200,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testGatewayWaitForException_Interrupted() throws InterruptedException {
+    public void testGatewayWaitForExceptionInterrupted() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -211,7 +218,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameter_Returns() throws InterruptedException {
+    public void testFireAndWaitWithTimeoutParameterReturns() throws InterruptedException {
         CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new Success(cdl, asCommandResultMessage("OK!")))
                 .when(mockCommandBus)
@@ -234,7 +241,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameter_Timeout() throws InterruptedException {
+    public void testFireAndWaitWithTimeoutParameterTimeout() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -251,7 +258,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameter_TimeoutException() throws InterruptedException {
+    public void testFireAndWaitWithTimeoutParameterTimeoutException() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -268,7 +275,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameter_Interrupted() throws InterruptedException {
+    public void testFireAndWaitWithTimeoutParameterInterrupted() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -445,7 +452,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_WaitForResultAndInvokeCallbacks_Success() {
+    public void testCreateGatewayWaitForResultAndInvokeCallbacksSuccess() {
         CountDownLatch cdl = new CountDownLatch(1);
 
         final CommandCallback callback1 = mock(CommandCallback.class);
@@ -464,7 +471,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_WaitForResultAndInvokeCallbacks_Failure() {
+    public void testCreateGatewayWaitForResultAndInvokeCallbacksFailure() {
         final CommandCallback callback1 = mock(CommandCallback.class);
         final CommandCallback callback2 = mock(CommandCallback.class);
 
@@ -481,7 +488,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_AsyncWithCallbacks_Success() {
+    public void testCreateGatewayAsyncWithCallbacksSuccess() {
         CountDownLatch cdl = new CountDownLatch(1);
 
         final CommandCallback callback1 = mock(CommandCallback.class);
@@ -499,7 +506,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_AsyncWithCallbacks_Success_ButReturnTypeDoesntMatchCallback() {
+    public void testCreateGatewayAsyncWithCallbacksSuccessButReturnTypeDoesNotMatchCallback() {
         CountDownLatch cdl = new CountDownLatch(1);
 
         final CommandCallback callback1 = mock(CommandCallback.class);
@@ -514,11 +521,11 @@ public class CommandGatewayFactoryTest {
 
         verify(callback1).onSuccess(any(), eq(resultMessage));
         verify(callback2).onSuccess(any(), eq(resultMessage));
-        verify(callback, never()).onSuccess(any(), anyObject());
+        verify(callback, never()).onSuccess(any(), any());
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_AsyncWithCallbacks_Failure() {
+    public void testCreateGatewayAsyncWithCallbacksFailure() {
         final CommandCallback callback1 = mock(CommandCallback.class);
         final CommandCallback callback2 = mock(CommandCallback.class);
 
@@ -532,7 +539,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_CompletableFuture_Failure() {
+    public void testCreateGatewayCompletableFutureFailure() {
         final RuntimeException exception = new RuntimeException();
         doAnswer(new Failure(exception))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
@@ -543,7 +550,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_CompletableFuture_SuccessfulResult() throws Throwable {
+    public void testCreateGatewayCompletableFutureSuccessfulResult() throws Throwable {
         doAnswer(invocationOnMock -> {
             ((CommandCallback) invocationOnMock.getArguments()[1])
                     .onSuccess((CommandMessage) invocationOnMock.getArguments()[0],
@@ -557,7 +564,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_Future_SuccessfulResult() throws Throwable {
+    public void testCreateGatewayFutureSuccessfulResult() throws Throwable {
         doAnswer(invocationOnMock -> {
             ((CommandCallback) invocationOnMock.getArguments()[1])
                     .onSuccess((CommandMessage) invocationOnMock.getArguments()[0],
@@ -593,13 +600,14 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_EqualsAndHashCode() {
+    public void testCreateGatewayEqualsAndHashCode() {
         CompleteGateway gateway2 = testSubject.createGateway(CompleteGateway.class);
 
         assertNotSame(gateway, gateway2);
         assertNotEquals(gateway, gateway2);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     private interface CompleteGateway {
 
         void fireAndForget(Object command, MetaData meta,
@@ -632,7 +640,7 @@ public class CommandGatewayFactoryTest {
         void fireAsyncWithCallbacks(Object command, CommandCallback first, CommandCallback second);
     }
 
-    public static class ExpectedException extends Exception {
+    private static class ExpectedException extends Exception {
 
     }
 
@@ -640,7 +648,7 @@ public class CommandGatewayFactoryTest {
 
         private final CountDownLatch cdl;
 
-        public CountDown(CountDownLatch cdl) {
+        CountDown(CountDownLatch cdl) {
             this.cdl = cdl;
         }
 
@@ -656,7 +664,7 @@ public class CommandGatewayFactoryTest {
         private final CountDownLatch cdl;
         private final CommandResultMessage<?> returnValue;
 
-        public Success(CountDownLatch cdl, CommandResultMessage<?> returnValue) {
+        Success(CountDownLatch cdl, CommandResultMessage<?> returnValue) {
             this.cdl = cdl;
             this.returnValue = returnValue;
         }
@@ -687,12 +695,12 @@ public class CommandGatewayFactoryTest {
         private final CountDownLatch cdl;
         private final Exception e;
 
-        public Failure(CountDownLatch cdl, Exception e) {
+        Failure(CountDownLatch cdl, Exception e) {
             this.cdl = cdl;
             this.e = e;
         }
 
-        public Failure(Exception e) {
+        Failure(Exception e) {
             this(null, e);
         }
 

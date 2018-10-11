@@ -135,9 +135,9 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
 
     @Override
     public String schedule(Duration triggerDuration,
-                         String deadlineName,
-                         Object messageOrPayload,
-                         ScopeDescriptor deadlineScope) {
+                           String deadlineName,
+                           Object messageOrPayload,
+                           ScopeDescriptor deadlineScope) {
         return schedule(Instant.now().plus(triggerDuration), deadlineName, messageOrPayload, deadlineScope);
     }
 
@@ -196,7 +196,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         private Scheduler scheduler;
         private ScopeAwareProvider scopeAwareProvider;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private Serializer serializer = new XStreamSerializer();
+        private Serializer serializer = XStreamSerializer.builder().build();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
@@ -262,7 +262,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         }
 
         /**
-         * Validate whether the fields contained in this Builder are set accordingly.
+         * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications

@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
@@ -101,7 +102,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        EventBus eventBus = new SimpleEventBus();
+        EventBus eventBus = SimpleEventBus.builder().build();
         sagaStore = new InMemorySagaStore();
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
@@ -299,8 +300,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public <I> I registerCommandGateway(Class<I> gatewayInterface, final I stubImplementation) {
-        CommandGatewayFactory factory = new StubAwareCommandGatewayFactory(stubImplementation,
-                                                                           SagaTestFixture.this.commandBus);
+        CommandGatewayFactory factory = StubAwareCommandGatewayFactory.builder()
+                                                                      .commandBus(SagaTestFixture.this.commandBus)
+                                                                      .stubImplementation(stubImplementation)
+                                                                      .build();
         final I gateway = factory.createGateway(gatewayInterface);
         registerResource(gateway);
         return gateway;
@@ -351,9 +354,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         private final Object stubImplementation;
 
-        public StubAwareCommandGatewayFactory(Object stubImplementation, RecordingCommandBus commandBus) {
-            super(commandBus);
-            this.stubImplementation = stubImplementation;
+        protected StubAwareCommandGatewayFactory(Builder builder) {
+            super(builder);
+            this.stubImplementation = builder.stubImplementation;
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -373,6 +380,26 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                 InvocationHandler<CompletableFuture<R>> delegate,
                 int timeoutIndex, int timeUnitIndex) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
+        }
+
+        public static class Builder extends CommandGatewayFactory.Builder {
+
+            private Object stubImplementation;
+
+            @Override
+            public Builder commandBus(CommandBus commandBus) {
+                super.commandBus(commandBus);
+                return this;
+            }
+
+            private Builder stubImplementation(Object stubImplementation) {
+                this.stubImplementation = stubImplementation;
+                return this;
+            }
+
+            public StubAwareCommandGatewayFactory build() {
+                return new StubAwareCommandGatewayFactory(this);
+            }
         }
     }
 

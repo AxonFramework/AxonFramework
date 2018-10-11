@@ -18,7 +18,11 @@ package org.axonframework.serialization.upcasting.event;
 
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -33,6 +37,7 @@ import java.util.function.Function;
  * @param <T> the required type of the serialized data. If the data is not of this type the representation uses a {@link
  *            Converter} to convert to the required type.
  * @author Rene de Waele
+ * @since 3.0
  */
 public class UpcastedEventRepresentation<T> implements IntermediateEventRepresentation {
 
@@ -49,12 +54,12 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
      * metadata. The given {@code converter} is used to convert to the serialized data format required by the
      * upcast functions.
      *
-     * @param outputType the output type of the payload data after upcasting
-     * @param source the intermediate representation that will be upcast
-     * @param upcastFunction the function to upcast the payload data
+     * @param outputType             the output type of the payload data after upcasting
+     * @param source                 the intermediate representation that will be upcast
+     * @param upcastFunction         the function to upcast the payload data
      * @param metaDataUpcastFunction the function to upcast the metadata
-     * @param requiredType the type that is needed for the upcastFunction
-     * @param converter produces converters to convert the serialized data type if required
+     * @param requiredType           the type that is needed for the upcastFunction
+     * @param converter              produces converters to convert the serialized data type if required
      */
     public UpcastedEventRepresentation(SerializedType outputType, IntermediateEventRepresentation source,
                                        Function<T, T> upcastFunction,

@@ -38,9 +38,9 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private final SagaModel<T> metaModel;
 
     private final AssociationValues associationValues;
-    private volatile boolean isActive = true;
     private final String sagaId;
     private final T sagaInstance;
+    private volatile boolean isActive = true;
 
     /**
      * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
@@ -102,21 +102,23 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final void handle(EventMessage<?> event) {
+    public final Object handle(EventMessage<?> event) {
         if (isActive) {
-            metaModel.findHandlerMethods(event).stream()
-                     .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)
-                                               .map(sh -> getAssociationValues()
-                                                       .contains(sh.getAssociationValue(event)))
-                                               .orElse(true))
-                     .findFirst()
-                     .ifPresent(handler -> handle(handler, event));
+            return metaModel.findHandlerMethods(event).stream()
+                            .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)
+                                                      .map(sh -> getAssociationValues()
+                                                              .contains(sh.getAssociationValue(event)))
+                                                      .orElse(true))
+                            .findFirst()
+                            .map(handler -> handle(handler, event))
+                            .orElse(null);
         }
+        return null;
     }
 
-    private void handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
+    private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
         try {
-            executeWithResult(() -> handler.handle(event, sagaInstance));
+            return  executeWithResult(() -> handler.handle(event, sagaInstance));
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {

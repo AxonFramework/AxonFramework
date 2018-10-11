@@ -26,13 +26,9 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.Iterator;
 import java.util.List;
@@ -72,8 +68,13 @@ public class EmbeddedEventStoreTest {
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
-                                             cleanupDelay, MILLISECONDS, threadFactory);
+        testSubject = EmbeddedEventStore.builder()
+                                        .storageEngine(storageEngine)
+                                        .cachedEvents(cachedEvents)
+                                        .fetchDelay(fetchDelay)
+                                        .cleanupDelay(cleanupDelay)
+                                        .threadFactory(threadFactory)
+                                        .build();
     }
 
     @After
@@ -225,7 +226,8 @@ public class EmbeddedEventStoreTest {
                 .thenReturn(mockStream);
         when(mockIterator.hasNext()).thenAnswer(new SynchronizedBooleanAnswer(false))
                                     .thenAnswer(new SynchronizedBooleanAnswer(true));
-        when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1), createEvent()));
+        when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1),
+                                                                              createEvent()));
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable());
         testSubject.publish(createEvent());

@@ -30,6 +30,7 @@ import java.util.function.Function;
  * Interface describing the intermediate representation of an event during upcasting.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public interface IntermediateEventRepresentation {
 
@@ -139,5 +140,4 @@ public interface IntermediateEventRepresentation {
      * @return the MetaData of the message wrapping the object to upcast, if available
      */
     LazyDeserializingObject<MetaData> getMetaData();
-
 }

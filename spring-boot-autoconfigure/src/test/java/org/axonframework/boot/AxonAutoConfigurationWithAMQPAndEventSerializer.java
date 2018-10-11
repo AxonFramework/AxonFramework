@@ -26,9 +26,8 @@ import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -85,7 +84,8 @@ public class AxonAutoConfigurationWithAMQPAndEventSerializer {
         assertNotNull(applicationContext.getBean(SpringAMQPPublisher.class));
 
         assertEquals(JavaSerializer.class, applicationContext.getBean(Serializer.class).getClass());
-        assertEquals(XStreamSerializer.class, applicationContext.getBean("myEventSerializer", Serializer.class).getClass());
+        assertEquals(XStreamSerializer.class,
+                     applicationContext.getBean("myEventSerializer", Serializer.class).getClass());
     }
 
     @org.springframework.context.annotation.Configuration
@@ -94,13 +94,13 @@ public class AxonAutoConfigurationWithAMQPAndEventSerializer {
         @Bean
         @Primary
         public Serializer mySerializer() {
-            return new JavaSerializer();
+            return JavaSerializer.builder().build();
         }
 
         @Bean
         @Qualifier("eventSerializer")
         public Serializer myEventSerializer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
     }
 }

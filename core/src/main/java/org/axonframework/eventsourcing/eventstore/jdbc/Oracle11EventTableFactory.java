@@ -24,6 +24,9 @@ import java.sql.SQLException;
 /**
  * Oracle 11 doesn't support the data type BIGINT, so NUMBER(19) is used as a substitute instead. Also Oracle doesn't
  * seem to like colons in create table statements, so those have been removed.
+ *
+ * @author Rene de Waele
+ * @since 3.0
  */
 public class Oracle11EventTableFactory extends AbstractEventTableFactory {
 

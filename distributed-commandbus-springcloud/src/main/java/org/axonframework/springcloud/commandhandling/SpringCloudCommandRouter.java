@@ -16,12 +16,7 @@
 package org.axonframework.springcloud.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.CommandRouter;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
-import org.axonframework.commandhandling.distributed.Member;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -74,7 +69,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private static final String SERIALIZED_COMMAND_FILTER = "serializedCommandFilter";
     private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = "serializedCommandFilterClassName";
 
-    protected final XStreamSerializer serializer = new XStreamSerializer();
+    protected final XStreamSerializer serializer = XStreamSerializer.builder().build();
 
     private final DiscoveryClient discoveryClient;
     private final Registration localServiceInstance;
@@ -142,7 +137,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     @Override
-    public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
+    public void updateMembership(int loadFactor, CommandMessageFilter commandFilter) {
         Map<String, String> localServiceInstanceMetadata = localServiceInstance.getMetadata();
         localServiceInstanceMetadata.put(LOAD_FACTOR, Integer.toString(loadFactor));
         SerializedObject<String> serializedCommandFilter = serializer.serialize(commandFilter, String.class);

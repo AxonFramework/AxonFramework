@@ -248,7 +248,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
          * Sets the {@link SagaRepository} of generic type {@code T} used to save and load Saga instances.
          *
          * @param sagaRepository a {@link SagaRepository} of generic type {@code T} used to save and load Saga instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaRepository(SagaRepository<T> sagaRepository) {
             assertNonNull(sagaRepository, "SagaRepository may not be null");
@@ -273,7 +273,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
          * Defaults to a {@code sagaType.newInstance()} call throwing a {@link SagaInstantiationException} if it fails.
          *
          * @param sagaFactory a {@link Supplier} of Saga type {@code T} responsible for creating new Saga instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaFactory(Supplier<T> sagaFactory) {
             assertNonNull(sagaFactory, "The sagaFactory may not be null");
@@ -286,7 +286,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
          * {@link LoggingErrorHandler}.
          *
          * @param listenerInvocationErrorHandler a {@link ListenerInvocationErrorHandler} invoked when an error occurs
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> listenerInvocationErrorHandler(
                 ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
@@ -296,7 +296,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         }
 
         /**
-         * Validate whether the fields contained in this Builder are set accordingly.
+         * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications

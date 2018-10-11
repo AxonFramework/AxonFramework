@@ -42,9 +42,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class QuerySerializerTest {
 
-    private final Serializer xStreamSerializer = new XStreamSerializer();
+    private final Serializer xStreamSerializer = XStreamSerializer.builder().build();
 
-    private final Serializer jacksonSerializer = new JacksonSerializer();
+    private final Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
     private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
         this.setClientName("client");

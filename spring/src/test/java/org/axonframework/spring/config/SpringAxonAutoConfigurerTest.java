@@ -22,6 +22,8 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.*;
@@ -99,6 +101,9 @@ public class SpringAxonAutoConfigurerTest {
     @Autowired(required = false)
     private EventProcessingConfiguration eventProcessingConfiguration;
 
+    @Autowired(required = false)
+    private EventProcessingConfigurer eventProcessingConfigurer;
+
     @Autowired
     private org.axonframework.config.Configuration axonConfig;
 
@@ -113,9 +118,6 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired
     private ApplicationContext applicationContext;
-
-    @Autowired
-    private SagaConfiguration<Context.MySaga> mySagaConfiguration;
 
     @Autowired
     private EventUpcaster eventUpcaster;
@@ -135,7 +137,7 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventBus);
         assertNotNull(eventStore);
         assertNotNull(commandBus);
-        assertNotNull(mySagaConfiguration);
+        assertNotNull(eventProcessingConfigurer);
         assertNotNull(eventProcessingConfiguration);
         assertEquals(eventProcessingConfiguration, axonConfig.eventProcessingConfiguration());
         assertTrue("Expected Axon to have configured an EventStore", eventBus instanceof EventStore);
@@ -157,7 +159,7 @@ public class SpringAxonAutoConfigurerTest {
     @Test
     public void testSagaIsConfigured() {
         AtomicInteger counter = new AtomicInteger();
-        eventProcessingConfiguration.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
+        eventProcessingConfigurer.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
             counter.incrementAndGet();
             return chain.proceed();
         });
@@ -278,6 +280,17 @@ public class SpringAxonAutoConfigurerTest {
     @Scope
     @Configuration
     public static class Context {
+
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration(
+                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
+            EventProcessingModule eventProcessingModule = new EventProcessingModule();
+            eventProcessingModule.usingSubscribingEventProcessors()
+                                 .registerSagaConfiguration(SagaConfiguration.forType(MySaga.class)
+                                                                             .storeBuilder(conf -> customSagaStore)
+                                                                             .configure());
+            return eventProcessingModule;
+        }
 
         @Primary
         @Bean(destroyMethod = "shutdown")
@@ -417,7 +430,6 @@ public class SpringAxonAutoConfigurerTest {
             }
         }
 
-        @Saga
         public static class MySaga {
 
             private static List<String> events = new ArrayList<>();
@@ -495,16 +507,9 @@ public class SpringAxonAutoConfigurerTest {
             public List<Exception> received = new ArrayList<>();
 
             @Override
-            public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
+            public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
                 received.add(exception);
             }
-        }
-
-        @Bean
-        public SagaConfiguration mySagaConfiguration(
-                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
-            return SagaConfiguration.subscribingSagaManager(MySaga.class)
-                                    .configureSagaStore(c -> customSagaStore);
         }
 
         @Bean

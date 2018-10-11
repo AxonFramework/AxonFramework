@@ -25,9 +25,9 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 /**
  * @author Rene de Waele
@@ -44,8 +44,10 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
     }
 
     public JdbcEventStoreBenchmark(DataSource dataSource, PlatformTransactionManager transactionManager) {
-        super(new JdbcEventStorageEngine(new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection),
-                                         NoTransactionManager.INSTANCE));
+        super(JdbcEventStorageEngine.builder()
+                                    .connectionProvider(new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection))
+                                    .transactionManager(NoTransactionManager.INSTANCE)
+                                    .build());
         this.dataSource = dataSource;
         this.transactionManager = transactionManager;
     }

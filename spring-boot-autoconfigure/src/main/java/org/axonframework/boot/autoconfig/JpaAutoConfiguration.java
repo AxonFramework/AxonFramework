@@ -39,23 +39,30 @@ import org.springframework.context.annotation.Configuration;
 import javax.persistence.EntityManagerFactory;
 
 @ConditionalOnBean(EntityManagerFactory.class)
-@RegisterDefaultEntities(packages = {"org.axonframework.eventsourcing.eventstore.jpa",
+@RegisterDefaultEntities(packages = {
+        "org.axonframework.eventsourcing.eventstore.jpa",
         "org.axonframework.eventhandling.tokenstore",
-        "org.axonframework.eventhandling.saga.repository.jpa"})
+        "org.axonframework.eventhandling.saga.repository.jpa"
+})
 @Configuration
 public class JpaAutoConfiguration {
 
     @ConditionalOnMissingBean({EventStorageEngine.class, EventStore.class})
     @Bean
-    public EventStorageEngine eventStorageEngine(Serializer serializer,
+    public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
                                                  AxonConfiguration configuration,
                                                  EntityManagerProvider entityManagerProvider,
                                                  TransactionManager transactionManager) {
-        return new JpaEventStorageEngine(serializer, configuration.upcasterChain(),
-                                         persistenceExceptionResolver, eventSerializer, null, entityManagerProvider,
-                                         transactionManager, null, null, true);
+        return JpaEventStorageEngine.builder()
+                                    .snapshotSerializer(defaultSerializer)
+                                    .upcasterChain(configuration.upcasterChain())
+                                    .persistenceExceptionResolver(persistenceExceptionResolver)
+                                    .eventSerializer(eventSerializer)
+                                    .entityManagerProvider(entityManagerProvider)
+                                    .transactionManager(transactionManager)
+                                    .build();
     }
 
     @ConditionalOnMissingBean

@@ -25,7 +25,11 @@ import java.util.Comparator;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
- * @author Nakul Mishra.
+ * Wrapper around an {@link TrackedEventMessage} containing additional required information to correctly publish it over
+ * a Kafka topic.
+ *
+ * @author Nakul Mishra
+ * @since 3.3
  */
 public class KafkaEventMessage
         implements KafkaMetadataProvider<TrackedEventMessage<?>>, Comparable<KafkaEventMessage> {
@@ -84,7 +88,8 @@ public class KafkaEventMessage
     @Override
     public int compareTo(KafkaEventMessage other) {
         return COMPARATOR.compare(this, other);
-        }
+    }
+
     @Override
     public String toString() {
         return "KafkaEventMessage{" +

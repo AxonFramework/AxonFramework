@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -79,7 +80,9 @@ public class SimpleQueryBus implements QueryBus {
     private final QueryUpdateEmitter queryUpdateEmitter;
 
     /**
-     * Instantiate the query bus based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link SimpleQueryBus} based on the fields contained in the {@link Builder}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleQueryBus} instance
      */
     protected SimpleQueryBus(Builder builder) {
         builder.validate();
@@ -93,6 +96,7 @@ public class SimpleQueryBus implements QueryBus {
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleQueryBus}.
+     * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to {@link
      * NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler}, and
      * {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
@@ -244,7 +248,7 @@ public class SimpleQueryBus implements QueryBus {
                 });
             }
             return buildCompletableFuture(responseType, queryResponse);
-        });
+        }).getPayload();
     }
 
     private <R> CompletableFuture<QueryResponseMessage<R>> buildCompletableFuture(ResponseType<R> responseType,
@@ -315,6 +319,7 @@ public class SimpleQueryBus implements QueryBus {
 
     /**
      * Builder class to instantiate a {@link SimpleQueryBus}.
+     * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to {@link
      * NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler}, and
      * {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
@@ -323,13 +328,15 @@ public class SimpleQueryBus implements QueryBus {
 
         private MessageMonitor<? super QueryMessage<?, ?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.instance();
-        private QueryInvocationErrorHandler errorHandler = new LoggingQueryInvocationErrorHandler(logger);
-        private QueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+        private QueryInvocationErrorHandler errorHandler = LoggingQueryInvocationErrorHandler.builder()
+                                                                                             .logger(logger)
+                                                                                             .build();
+        private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
 
         /**
-         * Sets the message monitor to monitor query messages.
+         * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
          *
-         * @param messageMonitor The message monitor used to monitor query messages
+         * @param messageMonitor a {@link MessageMonitor} used to monitor query messages
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageMonitor(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor) {
@@ -339,9 +346,10 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the transaction manager to handle transactions of handling queries.
+         * Sets the {@link TransactionManager} used to manage the query handling transactions. Defaults to a
+         * {@link NoTransactionManager}.
          *
-         * @param transactionManager The transaction manager to handle transactions of handling queries
+         * @param transactionManager a {@link TransactionManager} used to manage the query handling transactions
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
@@ -351,9 +359,11 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the error handler to handle exceptions during query handler invocation.
+         * Sets the {@link QueryInvocationErrorHandler} to handle exceptions during query handler invocation. Defaults
+         * to a {@link LoggingQueryInvocationErrorHandler} using this instance it's {@link Logger}.
          *
-         * @param errorHandler The error handler to handle exceptions during query handler invocation
+         * @param errorHandler a {@link QueryInvocationErrorHandler} to handle exceptions during query handler
+         *                     invocation
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder errorHandler(QueryInvocationErrorHandler errorHandler) {
@@ -363,9 +373,11 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the query update emitter to emits updates for subscription queries.
+         * Sets the {@link QueryUpdateEmitter} used to emits updates for the
+         * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}. Defaults to a {@link SimpleQueryUpdateEmitter}.
          *
-         * @param queryUpdateEmitter The query update emitter to emits updates for subscription queries
+         * @param queryUpdateEmitter the {@link QueryUpdateEmitter} used to emits updates for the
+         *                           {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder queryUpdateEmitter(QueryUpdateEmitter queryUpdateEmitter) {
@@ -375,19 +387,22 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Validates whether the fields contained in this Builder are set properly.
-         */
-        protected void validate() {
-            // No assertions required, kept for overriding
-        }
-
-        /**
          * Initializes a {@link SimpleQueryBus} as specified through this Builder.
          *
          * @return a {@link SimpleQueryBus} as specified through this Builder
          */
         public SimpleQueryBus build() {
             return new SimpleQueryBus(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
         }
     }
 }

@@ -105,7 +105,7 @@ public class SpringAMQPIntegrationTest {
     @DirtiesContext
     @Test
     public void testPublishMessagesFromEventBus() throws Exception {
-        SimpleEventBus messageSource = new SimpleEventBus();
+        SimpleEventBus messageSource = SimpleEventBus.builder().build();
         SpringAMQPPublisher publisher = new SpringAMQPPublisher(messageSource);
         publisher.setConnectionFactory(connectionFactory);
         publisher.setExchangeName("testExchange");
@@ -148,7 +148,7 @@ public class SpringAMQPIntegrationTest {
 
         @Bean
         public Serializer seralizer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
 
         @Bean

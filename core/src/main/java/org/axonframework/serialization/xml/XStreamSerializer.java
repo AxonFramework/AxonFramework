@@ -17,9 +17,15 @@
 package org.axonframework.serialization.xml;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.HierarchicalStreamDriver;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.io.xml.XomReader;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AbstractXStreamSerializer;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializedObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -42,79 +48,37 @@ import java.nio.charset.Charset;
 public class XStreamSerializer extends AbstractXStreamSerializer {
 
     /**
-     * Initialize a generic serializer using the UTF-8 character set. A default XStream instance (with {@link
-     * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
+     * Instantiate a {@link XStreamSerializer} based on the fields contained in the {@link Builder}.
+     * The {@link XStream} instance is configured with several converters for the most common types in Axon.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link XStreamSerializer} instance
      */
-    public XStreamSerializer() {
-        super(new XStream(new CompactDriver()));
+    protected XStreamSerializer(Builder builder) {
+        super(builder);
     }
 
     /**
-     * Initialize a generic serializer using the UTF-8 character set. A default XStream instance (with {@link
-     * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
+     * Instantiate a Builder to be able to create a {@link XStreamSerializer}.
+     * <p>
+     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a
+     * {@link CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the
+     * {@code UTF-8} character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and
+     * the {@link Converter} defaults to a {@link ChainingConverter}.
+     * <p>
+     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
+     * {@link org.axonframework.eventsourcing.GenericDomainEventMessage}, the
+     * {@link org.axonframework.commandhandling.GenericCommandMessage}, the
+     * {@link org.axonframework.eventhandling.saga.AnnotatedSaga} and the {@link org.axonframework.messaging.MetaData}
+     * objects among others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if the
+     * provided Converter instance is of type ChainingConverter, then the
+     * {@link XStreamSerializer#registerConverters(ChainingConverter)} function will be called. This will register the
+     * {@link Dom4JToByteArrayConverter}, {@link InputStreamToDom4jConverter}, {@link XomToStringConverter} and
+     * {@link InputStreamToXomConverter} to the Converter chain.
      *
-     * @param revisionResolver The strategy to use to resolve the revision of an object
+     * @return a Builder to be able to create a {@link XStreamSerializer}
      */
-    public XStreamSerializer(RevisionResolver revisionResolver) {
-        this(new XStream(new CompactDriver()), revisionResolver);
-    }
-
-    /**
-     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
-     * the serialization.
-     *
-     * @param xStream XStream instance to use
-     */
-    public XStreamSerializer(XStream xStream) {
-        super(xStream);
-    }
-
-    /**
-     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
-     * the serialization.
-     *
-     * @param xStream          XStream instance to use
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     */
-    public XStreamSerializer(XStream xStream, RevisionResolver revisionResolver) {
-        super(xStream, revisionResolver);
-    }
-
-    /**
-     * Initialize the serializer using the given {@code charset}. A default XStream instance (with {@link
-     * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
-     *
-     * @param charset The character set to use
-     */
-    public XStreamSerializer(Charset charset) {
-        super(charset, new XStream(new CompactDriver()));
-    }
-
-    /**
-     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
-     * {@code xStream} instance is configured with several converters for the most common types in Axon.
-     *
-     * @param charset          The character set to use
-     * @param xStream          The XStream instance to use
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     */
-    public XStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
-        super(charset, xStream, revisionResolver);
-    }
-
-    /**
-     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The given
-     * {@code converter} is used to convert serialized objects for use by Upcasters. The
-     * {@code xStream} instance is configured with several converters for the most common types in Axon.
-     *
-     * @param charset          The character set to use
-     * @param xStream          The XStream instance to use
-     * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converter The factory providing the converter instances for upcasters
-     */
-    public XStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
-                             Converter converter) {
-        super(charset, xStream, revisionResolver, converter);
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -130,7 +94,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         if ("org.dom4j.Document".equals(serializedObject.getContentType().getName())) {
             return xStream.unmarshal(new Dom4JReader((org.dom4j.Document) serializedObject.getData()));
         }
-        if("nu.xom.Document".equals(serializedObject.getContentType().getName())) {
+        if ("nu.xom.Document".equals(serializedObject.getContentType().getName())) {
             return xStream.unmarshal(new XomReader((nu.xom.Document) serializedObject.getData()));
         }
         InputStream serializedData = convert(serializedObject.getData(), serializedObject.getContentType(),
@@ -144,5 +108,67 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         converter.registerConverter(InputStreamToDom4jConverter.class);
         converter.registerConverter(XomToStringConverter.class);
         converter.registerConverter(InputStreamToXomConverter.class);
+    }
+
+    /**
+     * Builder class to instantiate a {@link XStreamSerializer}.
+     * <p>
+     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a
+     * {@link CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the
+     * {@code UTF-8} character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and
+     * the {@link Converter} defaults to a {@link ChainingConverter}.
+     * <p>
+     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
+     * {@link org.axonframework.eventsourcing.GenericDomainEventMessage}, the
+     * {@link org.axonframework.commandhandling.GenericCommandMessage}, the
+     * {@link org.axonframework.eventhandling.saga.AnnotatedSaga} and the {@link org.axonframework.messaging.MetaData}
+     * objects among others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if the
+     * provided Converter instance is of type ChainingConverter, then the
+     * {@link XStreamSerializer#registerConverters(ChainingConverter)} function will be called. This will register the
+     * {@link Dom4JToByteArrayConverter}, {@link InputStreamToDom4jConverter}, {@link XomToStringConverter} and
+     * {@link InputStreamToXomConverter} to the Converter chain.
+     */
+    public static class Builder extends AbstractXStreamSerializer.Builder {
+
+        private Builder() {
+            xStream(new XStream(new CompactDriver()));
+        }
+
+        /**
+         * {@inheritDoc} Defaults to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing the
+         * {@link CompactDriver}.
+         */
+        @Override
+        public Builder xStream(XStream xStream) {
+            super.xStream(xStream);
+            return this;
+        }
+
+        @Override
+        public Builder charset(Charset charset) {
+            super.charset(charset);
+            return this;
+        }
+
+        @Override
+        public Builder revisionResolver(RevisionResolver revisionResolver) {
+            super.revisionResolver(revisionResolver);
+            return this;
+        }
+
+        @Override
+        public Builder converter(Converter converter) {
+            super.converter(converter);
+            return this;
+        }
+
+        /**
+         * Initializes a {@link XStreamSerializer} as specified through this Builder.
+         *
+         * @return a {@link XStreamSerializer} as specified through this Builder
+         */
+        public XStreamSerializer build() {
+            return new XStreamSerializer(this);
+        }
     }
 }

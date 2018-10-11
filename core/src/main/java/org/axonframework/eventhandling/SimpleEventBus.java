@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.monitoring.MessageMonitor;
@@ -31,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
@@ -47,26 +49,29 @@ public class SimpleEventBus extends AbstractEventBus {
     private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
     private final Collection<EventConsumer> eventStreams = new CopyOnWriteArraySet<>();
+
     private final int queueCapacity;
 
     /**
-     * Initializes an event bus using a {@link NoOpMessageMonitor} and default queue capacity of {@link
-     * Integer#MAX_VALUE}.
+     * Instantiate a {@link SimpleEventBus} based on the fields contained in the {@link Builder}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleEventBus} instance
      */
-    public SimpleEventBus() {
-        this.queueCapacity = DEFAULT_QUEUE_CAPACITY;
+    protected SimpleEventBus(Builder builder) {
+        super(builder);
+        this.queueCapacity = builder.queueCapacity;
     }
 
     /**
-     * Initializes an event bus. Uses the given {@code messageMonitor} to report ingested messages and report the
-     * result of processing the message.
+     * Instantiate a Builder to be able to create a {@link SimpleEventBus}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@code queueCapacity} to
+     * {@link Integer#MAX_VALUE}.
      *
-     * @param queueCapacity  The maximum number of events to hold in memory for event tracking
-     * @param messageMonitor The monitor used to monitor the ingested messages
+     * @return a Builder to be able to create a {@link SimpleEventBus}
      */
-    public SimpleEventBus(int queueCapacity, MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        super(messageMonitor);
-        this.queueCapacity = queueCapacity;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -93,7 +98,59 @@ public class SimpleEventBus extends AbstractEventBus {
         return eventStream;
     }
 
+    /**
+     * Builder class to instantiate a {@link SimpleEventBus}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@code queueCapacity} to
+     * {@link Integer#MAX_VALUE}.
+     */
+    public static class Builder extends AbstractEventBus.Builder {
+
+        private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        /**
+         * Sets the {@code queueCapacity}, specifying the maximum number of events to hold in memory for event tracking.
+         * Must be a positive number. Defaults to {@link Integer#MAX_VALUE}.
+         *
+         * @param queueCapacity an {@code int} specifying the maximum number of events to hold in memory for event
+         *                      tracking
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder queueCapacity(int queueCapacity) {
+            assertThat(queueCapacity, capacity -> capacity > 0, "The queueCapacity must be a positive number");
+            this.queueCapacity = queueCapacity;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SimpleEventBus} as specified through this Builder.
+         *
+         * @return a {@link SimpleEventBus} as specified through this Builder
+         */
+        public SimpleEventBus build() {
+            return new SimpleEventBus(this);
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+        }
+    }
+
     private class EventConsumer implements TrackingEventStream {
+
         private final BlockingQueue<TrackedEventMessage<?>> eventQueue;
         private TrackedEventMessage<?> peekEvent;
 
@@ -102,7 +159,7 @@ public class SimpleEventBus extends AbstractEventBus {
         }
 
         private void addEvents(List<? extends EventMessage<?>> events) {
-            //add one by one because bulk operations on LinkedBlockingQueues are not thread-safe
+            // Add one by one because bulk operations on LinkedBlockingQueues are not thread-safe
             events.forEach(eventMessage -> {
                 try {
                     eventQueue.put(asTrackedEventMessage(eventMessage, null));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.serialization;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 
@@ -32,7 +31,7 @@ public class JavaSerializerTest {
 
     @Before
     public void setUp() {
-        testSubject = new JavaSerializer();
+        testSubject = JavaSerializer.builder().build();
     }
 
     @Test
@@ -56,7 +55,9 @@ public class JavaSerializerTest {
 
     @Test
     public void testClassForType_CustomRevisionResolver() {
-        testSubject = new JavaSerializer(new FixedValueRevisionResolver("fixed"));
+        testSubject = JavaSerializer.builder()
+                                    .revisionResolver(new FixedValueRevisionResolver("fixed"))
+                                    .build();
         Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(),
                                                                          "fixed"));
         assertEquals(MySerializableObject.class, actual);
@@ -64,19 +65,15 @@ public class JavaSerializerTest {
 
     @Test
     public void testClassForType_UnknownClass() {
-        try {
-            testSubject.classForType(new SimpleSerializedType("unknown", "0"));
-            fail("Expected UnknownSerializedTypeException");
-        } catch (UnknownSerializedTypeException e) {
-            assertTrue("Wrong message in exception", e.getMessage().contains("unknown"));
-            assertTrue("Wrong message in exception", e.getMessage().contains("0"));
-        }
+        assertEquals(UnknownSerializedType.class, testSubject.classForType(new SimpleSerializedType("unknown", "0")));
     }
 
     @Test
     public void testDeserializeNullValue() {
         SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
-        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class));
+        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(
+                serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class)
+        );
         assertNull(testSubject.deserialize(serializedNull));
         assertNull(testSubject.deserialize(serializedNullString));
     }

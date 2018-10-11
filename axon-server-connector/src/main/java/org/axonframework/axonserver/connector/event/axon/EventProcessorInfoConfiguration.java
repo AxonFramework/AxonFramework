@@ -22,7 +22,7 @@ import org.axonframework.axonserver.connector.processor.EventProcessorController
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorInfoSource;
 import org.axonframework.axonserver.connector.processor.schedule.ScheduledEventProcessorInfoSource;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 
@@ -40,11 +40,11 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
     private final ScheduledEventProcessorInfoSource processorInfoSource;
 
     public EventProcessorInfoConfiguration(
-            EventHandlingConfiguration eventHandlinConf,
+            EventProcessingConfiguration eventProcessingConfiguration,
             PlatformConnectionManager connectionManager,
             AxonServerConfiguration configuration) {
-        EventProcessorController controller = new EventProcessorController(eventHandlinConf);
-        GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(eventHandlinConf, connectionManager);
+        EventProcessorController controller = new EventProcessorController(eventProcessingConfiguration);
+        GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(eventProcessingConfiguration, connectionManager);
 
         this.eventProcessorControlService = new EventProcessorControlService(connectionManager, controller);
         this.processorInfoSource = new ScheduledEventProcessorInfoSource(

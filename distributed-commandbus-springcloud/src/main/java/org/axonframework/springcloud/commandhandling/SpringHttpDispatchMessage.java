@@ -28,6 +28,9 @@ import java.io.Serializable;
 
 /**
  * Spring Http message that contains a CommandMessage that needs to be dispatched on a remote command bus segment.
+ *
+ * @author Steven van Beelen
+ * @since 3.0
  */
 public class SpringHttpDispatchMessage<C> extends DispatchMessage implements Serializable {
 

@@ -40,6 +40,7 @@ import static java.util.Collections.unmodifiableSet;
  * with the highest timestamp but are published at a later time (due to time differences between nodes).
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class MongoTrackingToken implements TrackingToken, Serializable {
 

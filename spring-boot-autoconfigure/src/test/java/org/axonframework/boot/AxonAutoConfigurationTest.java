@@ -20,7 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configurer;
-import org.axonframework.config.SagaConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -32,7 +33,11 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
@@ -41,8 +46,8 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -64,11 +69,11 @@ import java.util.List;
 import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 @ContextConfiguration(classes = AxonAutoConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
-                                    HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
+        HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationTest {
 
@@ -95,12 +100,13 @@ public class AxonAutoConfigurationTest {
         assertNotNull(applicationContext.getBean(EventStore.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
-        assertEquals(MultiParameterResolverFactory.class, applicationContext.getBean(ParameterResolverFactory.class).getClass());
+        assertEquals(MultiParameterResolverFactory.class,
+                     applicationContext.getBean(ParameterResolverFactory.class).getClass());
         assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
         assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
         assertNotNull(applicationContext.getBean(Context.MySaga.class));
         assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
-        assertNotNull(applicationContext.getBean("myDefaultConfigSagaConfiguration", SagaConfiguration.class));
+        assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
 
         assertEquals(2, configuration.correlationDataProviders().size());
 
@@ -117,6 +123,11 @@ public class AxonAutoConfigurationTest {
     @Configuration
     public static class Context {
 
+        @Autowired
+        public void configure(EventProcessingConfigurer eventProcessingConfigurer) {
+            eventProcessingConfigurer.usingSubscribingEventProcessors();
+        }
+
         @Bean
         public SnapshotTriggerDefinition snapshotTriggerDefinition() {
             return new EventCountSnapshotTriggerDefinition(mock(Snapshotter.class), 2);
@@ -129,7 +140,7 @@ public class AxonAutoConfigurationTest {
 
         @Bean
         public EventStore eventStore() {
-            return new EmbeddedEventStore(storageEngine());
+            return EmbeddedEventStore.builder().storageEngine(storageEngine()).build();
         }
 
         @Bean
@@ -161,27 +172,22 @@ public class AxonAutoConfigurationTest {
             }
         }
 
-        @Saga(configurationBean = "myCustomNamedSagaConfiguration")
+        @Saga
         public static class MySaga {
+
             @SagaEventHandler(associationProperty = "toString")
             public void handle(String type, SomeComponent test) {
 
             }
-
         }
 
         @Saga
         public static class MyDefaultConfigSaga {
+
             @SagaEventHandler(associationProperty = "toString")
             public void handle(String type, SomeComponent test) {
 
             }
-
-        }
-
-        @Bean
-        public SagaConfiguration<MySaga> myCustomNamedSagaConfiguration() {
-            return SagaConfiguration.subscribingSagaManager(MySaga.class);
         }
 
         @Component
@@ -212,15 +218,14 @@ public class AxonAutoConfigurationTest {
             public void handle(String event, SomeOtherComponent test, Integer testing) {
                 invocations.add(event);
             }
-
         }
 
         @Component
         public static class SomeOtherComponent {
+
         }
-
-
     }
+
     public static class CustomResource {
 
     }

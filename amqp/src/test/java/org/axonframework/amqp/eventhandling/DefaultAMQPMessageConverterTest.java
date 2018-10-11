@@ -41,7 +41,7 @@ public class DefaultAMQPMessageConverterTest {
     @Before
     public void setUp() {
         testSubject = DefaultAMQPMessageConverter.builder()
-                                                 .serializer(new XStreamSerializer())
+                                                 .serializer(XStreamSerializer.builder().build())
                                                  .build();
     }
 

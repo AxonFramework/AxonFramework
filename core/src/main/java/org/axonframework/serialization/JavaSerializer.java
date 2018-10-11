@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,16 @@
 
 package org.axonframework.serialization;
 
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.io.IOUtils;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Serializer implementation that uses Java serialization to serialize and deserialize object instances. This
@@ -32,25 +38,29 @@ import java.io.*;
  */
 public class JavaSerializer implements Serializer {
 
-    private final Converter converter = new ChainingConverter();
     private final RevisionResolver revisionResolver;
 
+    private final Converter converter = new ChainingConverter();
+
     /**
-     * Initialize the serializer using a SerialVersionUIDRevisionResolver, which uses the SerialVersionUID field of the
-     * serializable object as the Revision.
+     * Instantiate a {@link JavaSerializer} based on the fields contained in the {@link Builder}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link JavaSerializer} instance
      */
-    public JavaSerializer() {
-        this(new SerialVersionUIDRevisionResolver());
+    protected JavaSerializer(Builder builder) {
+        builder.validate();
+        this.revisionResolver = builder.revisionResolver;
     }
 
     /**
-     * Initialize the serializer using a SerialVersionUIDRevisionResolver.
+     * Instantiate a Builder to be able to create a {@link JavaSerializer}.
+     * <p>
+     * The {@link RevisionResolver} is defaulted to an {@link SerialVersionUIDRevisionResolver}.
      *
-     * @param revisionResolver The revision resolver providing the revision numbers for a given class
+     * @return a Builder to be able to create a {@link JavaSerializer}
      */
-    public JavaSerializer(RevisionResolver revisionResolver) {
-        Assert.notNull(revisionResolver, () -> "revisionResolver may not be null");
-        this.revisionResolver = revisionResolver;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @SuppressWarnings({"NonSerializableObjectPassedToObjectStream", "ThrowFromFinallyBlock"})
@@ -89,6 +99,10 @@ public class JavaSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (UnknownSerializedType.class.isAssignableFrom(classForType(serializedObject.getType()))) {
+            return (T) new UnknownSerializedType(this, serializedObject);
+        }
+
         SerializedObject<InputStream> converted =
                 converter.convert(serializedObject, InputStream.class);
         ObjectInputStream ois = null;
@@ -104,10 +118,14 @@ public class JavaSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) {
+        if (SimpleSerializedType.emptyType().equals(type)) {
+            return Void.class;
+        }
+
         try {
             return Class.forName(type.getName());
         } catch (ClassNotFoundException e) {
-            throw new UnknownSerializedTypeException(type, e);
+            return UnknownSerializedType.class;
         }
     }
 
@@ -123,5 +141,49 @@ public class JavaSerializer implements Serializer {
 
     private String revisionOf(Class<?> type) {
         return revisionResolver.revisionOf(type);
+    }
+
+    /**
+     * Builder class to instantiate a {@link JavaSerializer}.
+     * <p>
+     * The {@link RevisionResolver} is defaulted to an {@link SerialVersionUIDRevisionResolver}.
+     */
+    public static class Builder {
+
+        private RevisionResolver revisionResolver = new SerialVersionUIDRevisionResolver();
+
+        /**
+         * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
+         * an {@link SerialVersionUIDRevisionResolver} which resolves {@code serialVersionUID} of a class as the
+         * revision.
+         *
+         * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
+         *                         serialized
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder revisionResolver(RevisionResolver revisionResolver) {
+            assertNonNull(revisionResolver, "RevisionResolver may not be null");
+            this.revisionResolver = revisionResolver;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link JavaSerializer} as specified through this Builder.
+         *
+         * @return a {@link JavaSerializer} as specified through this Builder
+         */
+        public JavaSerializer build() {
+            return new JavaSerializer(this);
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
+        }
     }
 }

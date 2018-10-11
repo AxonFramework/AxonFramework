@@ -15,7 +15,8 @@
 
 package org.axonframework.axonserver.connector.processor;
 
-import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 
@@ -31,19 +32,19 @@ import java.util.function.Consumer;
  */
 public class EventProcessorController {
 
-    private final EventHandlingConfiguration eventHandlingConfiguration;
+    private final EventProcessingConfiguration eventProcessingConfiguration;
 
     private final Deque<Consumer<String>> pauseHandlers = new ArrayDeque<>();
 
     private final Deque<Consumer<String>> startHandlers = new ArrayDeque<>();
 
-    public EventProcessorController(EventHandlingConfiguration eventHandlingConfiguration) {
-        this.eventHandlingConfiguration = eventHandlingConfiguration;
+    public EventProcessorController(EventProcessingConfiguration eventProcessingConfiguration) {
+        this.eventProcessingConfiguration = eventProcessingConfiguration;
     }
 
     public EventProcessor getEventProcessor(String processorName){
-        return this.eventHandlingConfiguration
-                .getProcessor(processorName)
+        return this.eventProcessingConfiguration
+                .eventProcessor(processorName)
                 .orElseThrow(() -> new RuntimeException("Processor not found"));
     }
 

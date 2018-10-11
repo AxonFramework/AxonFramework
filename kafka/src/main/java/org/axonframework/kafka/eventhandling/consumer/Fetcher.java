@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
  * Interface describing the component responsible for reading messages from Kafka.
  *
  * @author Nakul Mishra
+ * @since 3.3
  */
 public interface Fetcher {
 

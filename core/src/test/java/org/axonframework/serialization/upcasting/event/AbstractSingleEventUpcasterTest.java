@@ -30,7 +30,7 @@ import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.dom4j.Document;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -48,7 +48,7 @@ public class AbstractSingleEventUpcasterTest {
     @Test
     public void testUpcastsKnownType() {
         String newValue = "newNameValue";
-        Serializer serializer = new XStreamSerializer();
+        Serializer serializer = XStreamSerializer.builder().build();
         MetaData metaData = MetaData.with("key", "value");
         EventData<?> eventData = new DomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"), metaData),
@@ -73,18 +73,18 @@ public class AbstractSingleEventUpcasterTest {
         String aggregateId = "aggregateId";
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(10);
         long sequenceNumber = 100;
-        Serializer serializer = new XStreamSerializer();
+        Serializer serializer = XStreamSerializer.builder().build();
         Object payload = new StubEvent("oldName");
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
-        EventData<?> eventData =
-                new TrackedDomainEventData<>(trackingToken,
-                                             new GenericDomainEventEntry<>(aggregateType, aggregateId, sequenceNumber,
-                                                                           "eventId", Instant.now(),
-                                                                           serializedPayload.getType().getName(),
-                                                                           serializedPayload.getType().getRevision(),
-                                                                           serializedPayload,
-                                                                           serializer.serialize(MetaData.emptyInstance(),
-                                                                                                String.class)));
+        EventData<?> eventData = new TrackedDomainEventData<>(
+                trackingToken,
+                new GenericDomainEventEntry<>(aggregateType, aggregateId, sequenceNumber,
+                                              "eventId", Instant.now(),
+                                              serializedPayload.getType().getName(),
+                                              serializedPayload.getType().getRevision(),
+                                              serializedPayload,
+                                              serializer.serialize(MetaData.emptyInstance(), String.class))
+        );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
@@ -98,7 +98,7 @@ public class AbstractSingleEventUpcasterTest {
 
     @Test
     public void testIgnoresUnknownType() {
-        Serializer serializer = new XStreamSerializer();
+        Serializer serializer = XStreamSerializer.builder().build();
         EventData<?> eventData =
                 new DomainEventEntry(new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"),
                                      serializer);
@@ -113,7 +113,7 @@ public class AbstractSingleEventUpcasterTest {
 
     @Test
     public void testIgnoresWrongVersion() {
-        Serializer serializer = new XStreamSerializer();
+        Serializer serializer = XStreamSerializer.builder().build();
         EventData<?> eventData = new DomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName")), serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
@@ -151,5 +151,4 @@ public class AbstractSingleEventUpcasterTest {
             });
         }
     }
-
 }

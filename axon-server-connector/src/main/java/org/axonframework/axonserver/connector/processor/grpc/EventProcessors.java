@@ -15,7 +15,7 @@
 
 package org.axonframework.axonserver.connector.processor.grpc;
 
-import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 
 import java.util.Iterator;
@@ -28,14 +28,14 @@ import java.util.Iterator;
  */
 public class EventProcessors implements Iterable<EventProcessor> {
 
-    private final EventHandlingConfiguration eventHandlingConfiguration;
+    private final EventProcessingConfiguration eventProcessingConfiguration;
 
-    public EventProcessors(EventHandlingConfiguration eventHandlingConfiguration) {
-        this.eventHandlingConfiguration = eventHandlingConfiguration;
+    public EventProcessors(EventProcessingConfiguration eventProcessingConfiguration) {
+        this.eventProcessingConfiguration = eventProcessingConfiguration;
     }
 
     @Override
     public Iterator<EventProcessor> iterator() {
-        return eventHandlingConfiguration.getProcessors().iterator();
+        return eventProcessingConfiguration.eventProcessors().values().iterator();
     }
 }

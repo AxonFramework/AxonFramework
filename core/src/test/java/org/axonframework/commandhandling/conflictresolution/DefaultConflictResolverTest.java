@@ -20,16 +20,14 @@ import org.axonframework.commandhandling.model.ConflictingModificationException;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.spy;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class DefaultConflictResolverTest {
 
@@ -38,7 +36,7 @@ public class DefaultConflictResolverTest {
 
     @Before
     public void setUp() {
-        eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
+        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         eventStore.publish(IntStream.range(0, 10).mapToObj(
                 sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber)).collect(toList()));
     }

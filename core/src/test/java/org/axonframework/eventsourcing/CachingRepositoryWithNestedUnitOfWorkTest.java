@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -104,10 +104,17 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         realCache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
 
 
-        eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers(new LoggingEventHandler(events))
+                                         .build();
         SubscribingEventProcessor eventProcessor =
-                new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(new LoggingEventListener(events)),
-                                              eventStore);
+                SubscribingEventProcessor.builder()
+                                         .name("test")
+                                         .eventHandlerInvoker(eventHandlerInvoker)
+                                         .messageSource(eventStore)
+                                         .build();
         eventProcessor.start();
         events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
@@ -161,10 +168,19 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     @SuppressWarnings("unchecked")
     public void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
-                "test",
-                new SimpleEventHandlerInvoker(new CommandExecutingEventListener("1", null, true),
-                                              new CommandExecutingEventListener("2", null, true)), eventStore);
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers(
+                                                 new CommandExecutingEventHandler("1", null, true),
+                                                 new CommandExecutingEventHandler("2", null, true)
+                                         )
+                                         .build();
+        SubscribingEventProcessor eventProcessor =
+                SubscribingEventProcessor.builder()
+                                         .name("test")
+                                         .eventHandlerInvoker(eventHandlerInvoker)
+                                         .messageSource(eventStore)
+                                         .build();
         eventProcessor.start();
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
@@ -191,19 +207,26 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         //
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
-                "test",
-                new SimpleEventHandlerInvoker(new CommandExecutingEventListener("UOW4", null, true),
-                                              new CommandExecutingEventListener("UOW5", null, true),
-                                              new CommandExecutingEventListener("UOW3", null, true),
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers(
+                                                 new CommandExecutingEventHandler("UOW4", null, true),
+                                                 new CommandExecutingEventHandler("UOW5", null, true),
+                                                 new CommandExecutingEventHandler("UOW3", null, true),
+                                                 // Execute commands to update after the previous update has been performed
+                                                 new CommandExecutingEventHandler("UOW7", "UOW6", true),
+                                                 new CommandExecutingEventHandler("UOW6", "UOW3", true),
 
-                                              // Execute commands to update after the previous update has been performed
-                                              new CommandExecutingEventListener("UOW7", "UOW6", true),
-                                              new CommandExecutingEventListener("UOW6", "UOW3", true),
-
-                                              new CommandExecutingEventListener("UOW10", "UOW8", false),
-                                              new CommandExecutingEventListener("UOW9", "UOW4", true),
-                                              new CommandExecutingEventListener("UOW8", "UOW4", true)), eventStore);
+                                                 new CommandExecutingEventHandler("UOW10", "UOW8", false),
+                                                 new CommandExecutingEventHandler("UOW9", "UOW4", true),
+                                                 new CommandExecutingEventHandler("UOW8", "UOW4", true)
+                                         ).build();
+        SubscribingEventProcessor eventProcessor =
+                SubscribingEventProcessor.builder()
+                                         .name("test")
+                                         .eventHandlerInvoker(eventHandlerInvoker)
+                                         .messageSource(eventStore)
+                                         .build();
         eventProcessor.start();
 
         // First command: Create Aggregate
@@ -235,17 +258,17 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     /**
      * Capture information about events that are published
      */
-    private static final class LoggingEventListener implements EventListener {
+    private static final class LoggingEventHandler implements EventMessageHandler {
 
         private final List<String> events;
 
-        private LoggingEventListener(List<String> events) {
+        private LoggingEventHandler(List<String> events) {
             this.events = events;
         }
 
         @SuppressWarnings("rawtypes")
         @Override
-        public void handle(EventMessage event) {
+        public Object handle(EventMessage event) {
             GenericDomainEventMessage e = (GenericDomainEventMessage) event;
             String str = String.format("%d - %s(%s) ID %s %s", //
                                        e.getSequenceNumber(), //
@@ -254,6 +277,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                                        e.getIdentifier(), //
                                        e.getPayload());
             events.add(str);
+            return null;
         }
     }
 
@@ -326,20 +350,20 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     /**
      * Simulate event on bus -> command handler -> subsequent command (w/ unit of work)
      */
-    private final class CommandExecutingEventListener implements EventListener {
+    private final class CommandExecutingEventHandler implements EventMessageHandler {
 
         private final String token;
         private final String previousToken;
         private final boolean commit;
 
-        private CommandExecutingEventListener(String token, String previousToken, boolean commit) {
+        private CommandExecutingEventHandler(String token, String previousToken, boolean commit) {
             this.token = token;
             this.previousToken = previousToken;
             this.commit = commit;
         }
 
         @Override
-        public void handle(EventMessage<?> event) {
+        public Object handle(EventMessage<?> event) {
             Object payload = event.getPayload();
 
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {
@@ -371,6 +395,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                     }
                 }
             }
+            return null;
         }
     }
 }

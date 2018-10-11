@@ -72,7 +72,7 @@ public class JgroupsConnectorTest_Gossip {
         mockCommandBus1 = spy(SimpleCommandBus.builder().build());
         mockCommandBus2 = spy(SimpleCommandBus.builder().build());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        serializer = spy(new XStreamSerializer());
+        serializer = spy(XStreamSerializer.builder().build());
         connector1 = JGroupsConnector.builder()
                                      .localSegment(mockCommandBus1)
                                      .channel(channel1)
@@ -169,7 +169,7 @@ public class JgroupsConnectorTest_Gossip {
     }
 
     private void waitForConnectorSync() throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 10000;
+        long deadline = System.currentTimeMillis() + 20000;
         while ((connector1.getConsistentHash().getMembers().isEmpty())
                 || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
