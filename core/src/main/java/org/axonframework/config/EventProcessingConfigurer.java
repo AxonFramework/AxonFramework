@@ -16,15 +16,9 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -49,30 +43,11 @@ import java.util.function.Predicate;
 public interface EventProcessingConfigurer {
 
     /**
-     * Contract which defines how to build an event processor.
-     */
-    @FunctionalInterface interface EventProcessorBuilder {
-
-        /**
-         * Builds an {@link EventProcessor} with the given {@code name}, {@link Configuration} and
-         * {@link EventHandlerInvoker}.
-         *
-         * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
-         * @param configuration       the global {@link Configuration} the implementation may use to obtain dependencies
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
-         *                            created, used to invoke event handlers
-         * @return an {@link EventProcessor}
-         */
-        EventProcessor build(String name, Configuration configuration, EventHandlerInvoker eventHandlerInvoker);
-    }
-
-    /**
      * Registers a Saga with default configuration within this Configurer.
      *
      * @param sagaType the type of Saga
      * @param <T>      the type of Saga
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     *
      * @see SagaConfiguration#defaultConfiguration(Class)
      */
     default <T> EventProcessingConfigurer registerSaga(Class<T> sagaType) {
@@ -134,7 +109,15 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerTrackingEventProcessor(String name) {
-        return registerTrackingEventProcessor(name, Configuration::eventBus);
+        return registerTrackingEventProcessor(name, c -> {
+            EventBus eventBus = c.eventBus();
+            if (!(eventBus instanceof StreamableMessageSource)) {
+                throw new AxonConfigurationException("Cannot create Tracking Event Processor with name '" + name + "'. " +
+                                                             "The available EventBus does not support tracking processors.");
+            }
+            //noinspection unchecked
+            return (StreamableMessageSource) eventBus;
+        });
     }
 
     /**
@@ -361,7 +344,6 @@ public interface EventProcessingConfigurer {
      *
      * @param assignmentRule a {@link Function} which takes a processing group and returns a processor name
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     *
      * @see #assignProcessingGroup(String, String)
      */
     EventProcessingConfigurer assignProcessingGroup(Function<String, String> assignmentRule);
@@ -468,9 +450,22 @@ public interface EventProcessingConfigurer {
                                                          Function<Configuration, TransactionManager> transactionManagerBuilder);
 
     /**
-     * Builds the Event Processing Configuration.
-     *
-     * @return the Event Processing Configuration
+     * Contract which defines how to build an event processor.
      */
-    EventProcessingConfiguration configure();
+    @FunctionalInterface
+    interface EventProcessorBuilder {
+
+        /**
+         * Builds an {@link EventProcessor} with the given {@code name}, {@link Configuration} and
+         * {@link EventHandlerInvoker}.
+         *
+         * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
+         * @param configuration       the global {@link Configuration} the implementation may use to obtain dependencies
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
+         *                            created, used to invoke event handlers
+         * @return an {@link EventProcessor}
+         */
+        EventProcessor build(String name, Configuration configuration, EventHandlerInvoker eventHandlerInvoker);
+    }
+
 }

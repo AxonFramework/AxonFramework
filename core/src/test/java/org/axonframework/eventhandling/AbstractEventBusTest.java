@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,16 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -235,11 +231,6 @@ public class AbstractEventBusTest {
                 }
             }
             committedEvents.addAll(events);
-        }
-
-        @Override
-        public TrackingEventStream openStream(TrackingToken trackingToken) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

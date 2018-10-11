@@ -16,11 +16,7 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.AsynchronousCommandBus;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.VersionedAggregateIdentifier;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
@@ -42,19 +38,16 @@ import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.hamcrest.CoreMatchers;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.InOrder;
 
+import javax.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.common.AssertUtils.assertWithin;
@@ -125,7 +118,7 @@ public class DefaultConfigurerTest {
         String processorName = "myProcessor";
         configurer.eventProcessing()
                   .registerTrackingEventProcessor(processorName,
-                                                  Configuration::eventBus,
+                                                  Configuration::eventStore,
                                                   c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
