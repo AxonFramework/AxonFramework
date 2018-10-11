@@ -27,12 +27,8 @@ import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.saga.AnnotatedSaga;
-import org.axonframework.eventhandling.saga.AssociationValue;
-import org.axonframework.eventhandling.saga.AssociationValues;
-import org.axonframework.eventhandling.saga.AssociationValuesImpl;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 
 import java.nio.charset.Charset;
@@ -78,14 +74,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         xStream.alias("event", GenericEventMessage.class);
         xStream.alias("command", GenericCommandMessage.class);
 
-        // Configuration to enhance Saga serialization
-        xStream.addDefaultImplementation(AssociationValuesImpl.class, AssociationValues.class);
-        xStream.aliasField("associations", AnnotatedSaga.class, "associationValues");
-        xStream.alias("association", AssociationValue.class);
-        xStream.aliasField("key", AssociationValue.class, "propertyKey");
-        xStream.aliasField("value", AssociationValue.class, "propertyValue");
-
-        // for backward compatibility
+        // For backward compatibility
         xStream.alias("uuid", UUID.class);
 
         xStream.alias("meta-data", MetaData.class);
@@ -266,11 +255,11 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * a {@link ChainingConverter}. The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
-     * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage}, the {@link AnnotatedSaga} and the
-     * {@link MetaData} objects among others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if
-     * the provided Converter instance is of type ChainingConverter, then the
-     * {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)} function will be called. Depending on the
-     * AbstractXStreamSerializer, this will add a number of Converter instances to the chain.
+     * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage} and the {@link MetaData} objects among
+     * others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if the provided Converter instance
+     * is of type ChainingConverter, then the {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)}
+     * function will be called. Depending on the AbstractXStreamSerializer, this will add a number of Converter
+     * instances to the chain.
      */
     public abstract static class Builder {
 

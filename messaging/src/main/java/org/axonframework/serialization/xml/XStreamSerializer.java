@@ -20,6 +20,7 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamDriver;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.io.xml.XomReader;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.serialization.AbstractXStreamSerializer;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
@@ -66,11 +67,9 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      * the {@link Converter} defaults to a {@link ChainingConverter}.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
-     * {@link org.axonframework.eventsourcing.GenericDomainEventMessage}, the
-     * {@link org.axonframework.commandhandling.GenericCommandMessage}, the
-     * {@link org.axonframework.eventhandling.saga.AnnotatedSaga} and the {@link org.axonframework.messaging.MetaData}
-     * objects among others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if the
-     * provided Converter instance is of type ChainingConverter, then the
+     * {@link GenericDomainEventMessage}, the {@link org.axonframework.commandhandling.GenericCommandMessage} and the
+     * {@link org.axonframework.messaging.MetaData} objects among others. Additionally, a {@link MetaDataConverter} is
+     * registered too. Lastly, if the provided Converter instance is of type ChainingConverter, then the
      * {@link XStreamSerializer#registerConverters(ChainingConverter)} function will be called. This will register the
      * {@link Dom4JToByteArrayConverter}, {@link InputStreamToDom4jConverter}, {@link XomToStringConverter} and
      * {@link InputStreamToXomConverter} to the Converter chain.
@@ -119,11 +118,10 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      * the {@link Converter} defaults to a {@link ChainingConverter}.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
-     * {@link org.axonframework.eventsourcing.GenericDomainEventMessage}, the
-     * {@link org.axonframework.commandhandling.GenericCommandMessage}, the
-     * {@link org.axonframework.eventhandling.saga.AnnotatedSaga} and the {@link org.axonframework.messaging.MetaData}
-     * objects among others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if the
-     * provided Converter instance is of type ChainingConverter, then the
+     * {@link GenericDomainEventMessage}, the
+     * {@link org.axonframework.commandhandling.GenericCommandMessage} and the
+     * {@link org.axonframework.messaging.MetaData} objects among others. Additionally, a {@link MetaDataConverter} is
+     * registered too. Lastly, if the provided Converter instance is of type ChainingConverter, then the
      * {@link XStreamSerializer#registerConverters(ChainingConverter)} function will be called. This will register the
      * {@link Dom4JToByteArrayConverter}, {@link InputStreamToDom4jConverter}, {@link XomToStringConverter} and
      * {@link InputStreamToXomConverter} to the Converter chain.

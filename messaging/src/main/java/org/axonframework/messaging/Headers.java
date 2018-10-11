@@ -18,7 +18,7 @@ package org.axonframework.messaging;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.serialization.SerializedObject;
 
 import java.util.Collections;

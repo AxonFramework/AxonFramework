@@ -17,7 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventhandling.TrackingToken;
 
 import java.time.Duration;
 import java.time.Instant;

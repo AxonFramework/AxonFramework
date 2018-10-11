@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;

@@ -16,10 +16,10 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
-import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.EventData;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.CachingSupplier;
 import org.axonframework.serialization.Converter;
