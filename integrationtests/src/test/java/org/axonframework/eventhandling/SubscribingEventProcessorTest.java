@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.EventTestUtils;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
@@ -24,7 +25,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 public class SubscribingEventProcessorTest {
@@ -64,7 +64,7 @@ public class SubscribingEventProcessorTest {
         testSubject.shutDown();
         testSubject.start();
 
-        eventBus.publish(createEvents(2));
+        eventBus.publish(EventTestUtils.createEvents(2));
         assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
 }

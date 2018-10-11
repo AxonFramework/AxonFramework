@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.MockException;
+import org.axonframework.MockException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -24,10 +24,6 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.serialization.SerializationException;
@@ -52,12 +48,11 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
-import static org.axonframework.common.AssertUtils.assertWithin;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
+import static org.axonframework.AssertUtils.assertWithin;
+import static org.axonframework.EventTestUtils.createEvent;
+import static org.axonframework.EventTestUtils.createEvents;
+import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.mockito.Mockito.*;
-
 
 /**
  * @author Rene de Waele
