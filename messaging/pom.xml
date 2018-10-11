@@ -48,6 +48,19 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Query Handling -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Persistence -->
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
