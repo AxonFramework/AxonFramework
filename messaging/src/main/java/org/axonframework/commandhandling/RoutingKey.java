@@ -22,20 +22,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field or method level annotation that marks a field or method providing the identifier of the aggregate that a
- * command targets.
+ * Field or method level annotation that marks a field or method providing the routing key that the that a command
+ * targets.
  * <p/>
- * If placed on a method, that method must contain no parameters. The return value will be used as the
- * Aggregate Identifier.
+ * If placed on a method, that method must contain no parameters. The return value will be used as the Routing Key.
  * <p/>
- * If placed on a field, the field's value will be converted into an AggregateIdentifier instance identical to how a
- * method's return value is converted.
+ * If placed on a field, the field's value will be converted into a Routing Key instance identical to how a method's
+ * return value is converted.
  *
- * @author Allard Buijze
- * @since 1.2
+ * @author Steven van Beelen
+ * @since 4.0
  */
-@RoutingKey
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface TargetAggregateIdentifier {
+public @interface RoutingKey {
+
 }
