@@ -65,6 +65,12 @@ the other Builder implementations introduced. This entails the following changes
 * Renamed AbstractEventStorageEngine#getSerializer() to AbstractEventStorageEngine#getSnapshotSerializer()
 * Renamed SimpleEventHandlerInvoker#eventListeners() to SimpleEventHandlerInvoker#eventHandlers()
 
+### Command Message Routing
+ 
+Introduced the @RoutingKey annotation, which is an annotation of the @TargetAggregateIdentifier.
+Additionally, adjusted the AnnotationRoutingStrategy to check for a (meta-)annotated RoutingKey field i.o. 
+@TargetAggregateIdentifier. 
+
 ### Moved classes
 
 |                                 Axon 3                                        |                                  Axon 4                                    |
