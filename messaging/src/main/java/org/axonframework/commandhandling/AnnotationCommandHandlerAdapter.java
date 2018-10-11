@@ -16,11 +16,14 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.model.inspection.CommandMessageHandlingMember;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayDeque;
 import java.util.Collection;

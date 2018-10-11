@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,13 @@
 
 package org.axonframework.commandhandling.model;
 
-import java.lang.annotation.*;
+import org.axonframework.commandhandling.CommandHandler;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Marker annotation for a field that references one or more Entities capable of handling Commands or Events. The
@@ -31,6 +37,9 @@ import java.lang.annotation.*;
  * that Entities in the Map still need to specify which routing key to use. To that end Entities should contain a {@link
  * EntityId} annotated identifier field. Usually it is advantageous in terms of performance to store Entities in a Map
  * instead of Collection.
+ * <p>
+ * Note that if the designated Aggregate member has {@link CommandHandler} annotations to handle Command message, that
+ * those may not be placed on an non-root Entity's constructor.
  */
 @Documented
 @Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
