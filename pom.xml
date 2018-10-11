@@ -140,7 +140,7 @@
         <jackson.version>2.9.4</jackson.version>
         <grpc.version>1.13.1</grpc.version>
         <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
-        <axonserver.api.version>4.0-M1</axonserver.api.version>
+        <axonserver.api.version>4.0-M2-SNAPSHOT</axonserver.api.version>
     </properties>
 
     <dependencies>
