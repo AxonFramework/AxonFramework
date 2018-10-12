@@ -236,7 +236,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         return transactionManager.fetchInTransaction(
                 () -> entityManager()
                         .createQuery(
-                                "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
+                                "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry(" +
                                         "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, e.timeStamp, "
                                         + "e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
                                         + domainEventEntryEntityName() + " e WHERE e.aggregateIdentifier = :id "
@@ -254,7 +254,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         return transactionManager.fetchInTransaction(
                 () -> entityManager()
                         .createQuery(
-                                "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry("
+                                "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry("
                                         + "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
                                         + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
                                         + snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id "
