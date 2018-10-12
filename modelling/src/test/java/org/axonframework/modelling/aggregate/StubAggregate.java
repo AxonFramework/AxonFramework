@@ -14,30 +14,44 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.modelling.aggregate;
 
 import org.axonframework.StubDomainEvent;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateLifecycle;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import java.util.UUID;
 
 /**
+ * TODO deduplicate
  * @author Allard Buijze
  */
-public class StubAnnotatedAggregate  {
+public class StubAggregate {
 
     @AggregateIdentifier
-    private final Object identifier;
+    private String identifier;
 
-    public StubAnnotatedAggregate(Object identifier) {
-        this.identifier = identifier;
+    public StubAggregate() {
+        identifier = UUID.randomUUID().toString();
+    }
+
+    public StubAggregate(Object identifier) {
+        this.identifier = identifier.toString();
     }
 
     public void doSomething() {
-        apply(new StubDomainEvent());
+        AggregateLifecycle.apply(new StubDomainEvent());
     }
 
-    public Object getIdentifier() {
+    public String getIdentifier() {
         return identifier;
+    }
+
+    public void delete() {
+        AggregateLifecycle.apply(new StubDomainEvent());
+        AggregateLifecycle.markDeleted();
     }
 }

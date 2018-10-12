@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.model.EntityId;
 import org.axonframework.config.Configuration;

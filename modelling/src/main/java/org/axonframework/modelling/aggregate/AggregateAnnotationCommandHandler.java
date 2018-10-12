@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.modelling.aggregate;
 
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandMessageHandler;
+import org.axonframework.commandhandling.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;

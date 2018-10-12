@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.modelling.aggregate;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.annotation.AnnotationUtils;
 
 import java.lang.reflect.Field;

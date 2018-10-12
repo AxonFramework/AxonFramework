@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.modelling.aggregate;
+
+import org.axonframework.commandhandling.CommandMessage;
 
 /**
  * Interface towards a mechanism that is capable of extracting an Aggregate Identifier and Version form a command that

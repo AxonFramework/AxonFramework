@@ -17,14 +17,13 @@
 package org.axonframework.deadline;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.EntityId;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Timestamp;

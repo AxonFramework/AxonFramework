@@ -138,6 +138,13 @@ EventStore to a (new) interface, the DomainEventSequenceAware.
 | org.axonframework.commandhandling.conflictresolution.DefaultConflictDescription               | org.axonframework.eventsourcing.conflictresolution.DefaultConflictDescription             |
 | org.axonframework.commandhandling.conflictresolution.DefaultConflictResolver                  | org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver                |
 | org.axonframework.commandhandling.conflictresolution.NoConflictResolver                       | org.axonframework.eventsourcing.conflictresolution.NoConflictResolver                     |
+| org.axonframework.commandhandling.AggregateAnnotationCommandHandler                           | org.axonframework.modelling.aggregate.AggregateAnnotationCommandHandler                   |
+| org.axonframework.commandhandling.AnnotationCommandTargetResolver                             | org.axonframework.modelling.aggregate.AnnotationCommandTargetResolver                     |
+| org.axonframework.commandhandling.CommandTargetResolver                                       | org.axonframework.modelling.aggregate.CommandTargetResolver                               |
+| org.axonframework.commandhandling.MetaDataCommandTargetResolver                               | org.axonframework.modelling.aggregate.MetaDataCommandTargetResolver                       |
+| org.axonframework.commandhandling.TargetAggregateIdentifier                                   | org.axonframework.modelling.aggregate.TargetAggregateIdentifier                           |
+| org.axonframework.commandhandling.TargetAggregateVersion                                      | org.axonframework.modelling.aggregate.TargetAggregateVersion                              |
+| org.axonframework.commandhandling.VersionedAggregateIdentifier                                | org.axonframework.modelling.aggregate.VersionedAggregateIdentifier                        |
 
 ### Removed classes
 |                           Class                                               |             Why                              |

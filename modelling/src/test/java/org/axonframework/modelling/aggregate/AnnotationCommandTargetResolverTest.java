@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.modelling.aggregate;
 
+import org.axonframework.modelling.aggregate.AnnotationCommandTargetResolver;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
+import org.axonframework.modelling.aggregate.TargetAggregateVersion;
+import org.axonframework.modelling.aggregate.VersionedAggregateIdentifier;
 import org.junit.Before;
 import org.junit.Test;
 

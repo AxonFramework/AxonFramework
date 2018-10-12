@@ -16,13 +16,12 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.commandhandling.StubAggregate;
+import org.axonframework.modelling.aggregate.StubAggregate;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;

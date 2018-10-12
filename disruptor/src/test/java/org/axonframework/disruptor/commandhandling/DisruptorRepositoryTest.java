@@ -16,10 +16,10 @@
 
 package org.axonframework.disruptor.commandhandling;
 
-import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.aggregate.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;

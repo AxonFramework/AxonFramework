@@ -17,7 +17,7 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.Repository;

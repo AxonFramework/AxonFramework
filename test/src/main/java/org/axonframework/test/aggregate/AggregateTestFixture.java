@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.aggregate.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;

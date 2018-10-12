@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.modelling.aggregate;
 
 import org.axonframework.StubDomainEvent;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.model.AggregateEntityNotFoundException;
@@ -40,6 +45,9 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.aggregate.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
+import org.axonframework.modelling.aggregate.TargetAggregateVersion;
 import org.junit.*;
 import org.mockito.*;
 

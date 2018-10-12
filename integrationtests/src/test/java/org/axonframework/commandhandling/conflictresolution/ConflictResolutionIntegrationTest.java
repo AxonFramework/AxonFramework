@@ -17,8 +17,8 @@
 package org.axonframework.commandhandling.conflictresolution;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
-import org.axonframework.commandhandling.TargetAggregateVersion;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
+import org.axonframework.modelling.aggregate.TargetAggregateVersion;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;

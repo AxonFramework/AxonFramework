@@ -31,6 +31,8 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.modelling.aggregate.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
