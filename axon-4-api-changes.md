@@ -69,7 +69,12 @@ the other Builder implementations introduced. This entails the following changes
  
 Introduced the @RoutingKey annotation, which is an annotation of the @TargetAggregateIdentifier.
 Additionally, adjusted the AnnotationRoutingStrategy to check for a (meta-)annotated RoutingKey field i.o. 
-@TargetAggregateIdentifier. 
+@TargetAggregateIdentifier.
+
+### Domain Event Sequences
+
+The contract to be able to provide the last known sequence for a given aggregate identifier has been moved from the
+EventStore to a (new) interface, the DomainEventSequenceAware.
 
 ### Moved classes
 

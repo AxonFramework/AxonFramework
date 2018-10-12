@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
+import org.axonframework.eventhandling.DomainEventSequenceAware;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -117,8 +117,9 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                                                         aggregateModel(),
                                                                         eventBus,
                                                                         repositoryProvider);
-        if (eventBus instanceof EventStore) {
-            Optional<Long> sequenceNumber = ((EventStore) eventBus).lastSequenceNumberFor(aggregateIdentifier);
+        if (eventBus instanceof DomainEventSequenceAware) {
+            Optional<Long> sequenceNumber =
+                    ((DomainEventSequenceAware) eventBus).lastSequenceNumberFor(aggregateIdentifier);
             sequenceNumber.ifPresent(aggregate::initSequence);
         }
         return aggregate;
@@ -131,7 +132,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                              aggregateModel(),
                                              eventBus,
                                              repositoryProvider,
-                                             eventBus instanceof EventStore);
+                                             eventBus instanceof DomainEventSequenceAware);
     }
 
     @Override
