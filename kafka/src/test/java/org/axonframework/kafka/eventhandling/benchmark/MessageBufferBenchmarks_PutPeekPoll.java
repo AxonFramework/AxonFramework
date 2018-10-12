@@ -1,10 +1,11 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +16,7 @@
 
 package org.axonframework.kafka.eventhandling.benchmark;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.kafka.eventhandling.consumer.KafkaEventMessage;
 import org.axonframework.kafka.eventhandling.consumer.SortedKafkaMessageBuffer;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,8 +39,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
  * This compares the speed of operations that can be performed on the bundled {@link SortedKafkaMessageBuffer}. Re-run this
@@ -82,13 +84,9 @@ public class MessageBufferBenchmarks_PutPeekPoll {
     }
 
     private static KafkaEventMessage message(int partition, int offset, int timestamp) {
-        return new KafkaEventMessage(
-                asTrackedEventMessage(asEventMessage(
-                        String.valueOf(offset) + "abc" + String.valueOf(offset * 17 + 123)), null),
-                partition,
-                offset,
-                timestamp
-        );
+        EventMessage<Object> eventMessage =
+                asEventMessage(String.valueOf(offset) + "abc" + String.valueOf(offset * 17 + 123));
+        return new KafkaEventMessage(asTrackedEventMessage(eventMessage, null), partition, offset, timestamp);
     }
 
     @Benchmark

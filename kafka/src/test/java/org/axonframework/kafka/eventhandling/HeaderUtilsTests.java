@@ -1,10 +1,11 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,9 +19,9 @@ package org.axonframework.kafka.eventhandling;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedType;
@@ -40,16 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertDomainHeaders;
 import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertEventHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.addHeader;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.byteMapper;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.extractAxonMetadata;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.extractKey;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.generateMetadataKey;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.keys;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.toHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.value;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsLong;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsString;
+import static org.axonframework.kafka.eventhandling.HeaderUtils.*;
 import static org.axonframework.messaging.Headers.MESSAGE_METADATA;
 import static org.mockito.Mockito.*;
 

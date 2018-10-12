@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingEventStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
