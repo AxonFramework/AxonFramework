@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework;
 
 import java.io.Serializable;
 

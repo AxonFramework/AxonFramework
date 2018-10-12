@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.StubDomainEvent;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.model.AggregateEntityNotFoundException;
@@ -29,10 +30,7 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMeta
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Priority;
-import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.StubDomainEvent;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -78,12 +76,12 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus = SimpleCommandBus.builder().build();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
-        when(mockRepository.newInstance(any()))
-                .thenAnswer(invocation -> EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>)
-                                                                                   invocation.getArguments()[0],
-                                                                           aggregateModel,
-                                                                           mock(EventStore.class),
-                                                                           NoSnapshotTriggerDefinition.TRIGGER));
+        when(mockRepository.newInstance(any())).thenAnswer(
+                invocation -> AnnotatedAggregate.initialize(
+                        (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
+                        aggregateModel,
+                        mock(EventBus.class)
+                ));
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),

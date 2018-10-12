@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,13 @@
 
 package org.axonframework.eventhandling.saga;
 
+import org.axonframework.StubDomainEvent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
-import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.*;

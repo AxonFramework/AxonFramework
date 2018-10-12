@@ -1,12 +1,27 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
 import org.mockito.*;
@@ -27,7 +42,7 @@ public class AnnotatedAggregateTest {
 
     @Before
     public void setUp() {
-        eventBus = mock(EventStore.class);
+        eventBus = mock(EventBus.class);
         repository = StubRepository.builder().eventBus(eventBus).build();
     }
 
@@ -98,13 +113,13 @@ public class AnnotatedAggregateTest {
             apply(new Event_1(command.getId()));
         }
 
-        @EventSourcingHandler
+        @EventHandler
         public void on(Event_1 event) {
             this.id = event.getId();
             apply(new Event_2(event.getId()));
         }
 
-        @EventSourcingHandler
+        @EventHandler
         public void on(Event_2 event) {
         }
     }

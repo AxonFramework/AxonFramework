@@ -16,16 +16,17 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.StubDomainEvent;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.StubDomainEvent;
 
 import java.util.UUID;
 
 /**
+ * TODO deduplicate
  * @author Allard Buijze
  */
 public class StubAggregate {
@@ -47,11 +48,6 @@ public class StubAggregate {
 
     public String getIdentifier() {
         return identifier;
-    }
-
-    @EventSourcingHandler
-    protected void handle(EventMessage event) {
-        identifier = ((DomainEventMessage) event).getAggregateIdentifier();
     }
 
     public void delete() {
