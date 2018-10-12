@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.conflictresolution.ConflictResolution;
-import org.axonframework.commandhandling.conflictresolution.DefaultConflictResolver;
+import org.axonframework.eventsourcing.conflictresolution.ConflictResolution;
+import org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockAwareAggregate;

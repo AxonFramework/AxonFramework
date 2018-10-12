@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.conflictresolution;
+package org.axonframework.eventsourcing.conflictresolution;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.junit.*;

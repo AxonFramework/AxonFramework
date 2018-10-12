@@ -25,6 +25,8 @@ import org.axonframework.commandhandling.model.ConflictingAggregateVersionExcept
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.conflictresolution.ConflictResolver;
+import org.axonframework.eventsourcing.conflictresolution.Conflicts;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.Before;
 import org.junit.Test;

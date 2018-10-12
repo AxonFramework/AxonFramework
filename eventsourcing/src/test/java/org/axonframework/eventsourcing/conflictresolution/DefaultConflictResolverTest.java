@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.conflictresolution;
+package org.axonframework.eventsourcing.conflictresolution;
 
 import org.axonframework.commandhandling.model.ConflictingModificationException;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
 
 public class DefaultConflictResolverTest {
 

@@ -86,43 +86,52 @@ EventStore to a (new) interface, the DomainEventSequenceAware.
 
 ### Moved classes
 
-|                                 Axon 3                                            |                                  Axon 4                                       |
-|-----------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| org.axonframework.messaging.MessageStream                                         | org.axonframework.common.stream.BlockingStream                                |
-| org.axonframework.messaging.StreamUtils                                           | org.axonframework.common.stream.StreamUtils                                   |
-| org.axonframework.queryhandling.responsetypes.AbstractResponseType                | org.axonframework.messaging.responsetypes.AbstractResponseType                |
-| org.axonframework.queryhandling.responsetypes.InstanceResponseType                | org.axonframework.messaging.responsetypes.InstanceResponseType                |
-| org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType       | org.axonframework.messaging.responsetypes.MultipleInstancesResponseType       |
-| org.axonframework.queryhandling.responsetypes.ResponseType                        | org.axonframework.messaging.responsetypes.ResponseType                        |
-| org.axonframework.queryhandling.responsetypes.ResponseTypes                       | org.axonframework.messaging.responsetypes.ResponseTypes                       |
-| org.axonframework.boot.autoconfig.KafkaProperties                                 | org.axonframework.boot.KafkaProperties                                        |
-| org.axonframework.commandhandling.disruptor.AggregateBlacklistedException         | org.axonframework.disruptor.commandhandling.AggregateBlacklistedException     |
-| org.axonframework.commandhandling.disruptor.AggregateStateCorruptedException      | org.axonframework.disruptor.commandhandling.AggregateStateCorruptedException  |
-| org.axonframework.commandhandling.disruptor.BlacklistDetectingCallback            | org.axonframework.disruptor.commandhandling.BlacklistDetectingCallback        |
-| org.axonframework.commandhandling.disruptor.CommandHandlerInvoker                 | org.axonframework.disruptor.commandhandling.CommandHandlerInvoker             |
-| org.axonframework.commandhandling.disruptor.CommandHandlingEntry                  | org.axonframework.disruptor.commandhandling.CommandHandlingEntry              |
-| org.axonframework.commandhandling.disruptor.DisruptorCommandBus                   | org.axonframework.disruptor.commandhandling.DisruptorCommandBus               |
-| org.axonframework.commandhandling.disruptor.DisruptorUnitOfWork                   | org.axonframework.disruptor.commandhandling.DisruptorUnitOfWork               |
-| org.axonframework.commandhandling.disruptor.EventPublisher                        | org.axonframework.disruptor.commandhandling.EventPublisher                    |
-| org.axonframework.commandhandling.disruptor.FirstLevelCache                       | org.axonframework.disruptor.commandhandling.FirstLevelCache                   |
-| org.axonframework.eventsourcing.eventstore.AbstractDomainEventEntry               | org.axonframework.eventhandling.AbstractDomainEventEntry                      |
-| org.axonframework.eventsourcing.eventstore.AbstractEventEntry                     | org.axonframework.eventhandling.AbstractEventEntry                            |
-| org.axonframework.eventsourcing.eventstore.AbstractSequencedDomainEventEntry      | org.axonframework.eventhandling.AbstractSequencedDomainEventEntry             |
-| org.axonframework.eventsourcing.eventstore.DomainEventData                        | org.axonframework.eventhandling.DomainEventData                               |
-| org.axonframework.eventsourcing.DomainEventMessage                                | org.axonframework.eventhandling.DomainEventMessage                            |
-| org.axonframework.eventsourcing.eventstore.EventData                              | org.axonframework.eventhandling.EventData                                     |
-| org.axonframework.eventsourcing.eventstore.EventUtils                             | org.axonframework.eventhandling.EventUtils                                    |
-| org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry                | org.axonframework.eventhandling.GenericDomainEventEntry                       |
-| org.axonframework.eventsourcing.GenericDomainEventMessage                         | org.axonframework.eventhandling.GenericDomainEventMessage                     |
-| org.axonframework.eventsourcing.GenericTrackedDomainEventMessage                  | org.axonframework.eventhandling.GenericTrackedDomainEventMessage              |
-| org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken            | org.axonframework.eventhandling.GlobalSequenceTrackingToken                   |
-| org.axonframework.eventsourcing.SequenceNumber                                    | org.axonframework.eventhandling.SequenceNumber                                |
-| org.axonframework.eventsourcing.SequenceNumberParameterResolverFactory            | org.axonframework.eventhandling.SequenceNumberParameterResolverFactory        |
-| org.axonframework.eventsourcing.eventstore.TrackedDomainEventData                 | org.axonframework.eventhandling.TrackedDomainEventData                        |
-| org.axonframework.eventsourcing.eventstore.TrackedEventData                       | org.axonframework.eventhandling.TrackedEventData                              |
-| org.axonframework.eventsourcing.eventstore.TrackingEventStream                    | org.axonframework.eventhandling.TrackingEventStream                           |
-| org.axonframework.eventsourcing.eventstore.TrackingToken                          | org.axonframework.eventhandling.TrackingToken                                 |
-| org.axonframework.eventsourcing.eventstore.TrackingTokenParameterResolverFactory  | org.axonframework.eventhandling.TrackingTokenParameterResolverFactory         |
+|                                 Axon 3                                                        |                                  Axon 4                                                   |
+|-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| org.axonframework.messaging.MessageStream                                                     | org.axonframework.common.stream.BlockingStream                                            |
+| org.axonframework.messaging.StreamUtils                                                       | org.axonframework.common.stream.StreamUtils                                               |
+| org.axonframework.queryhandling.responsetypes.AbstractResponseType                            | org.axonframework.messaging.responsetypes.AbstractResponseType                            |
+| org.axonframework.queryhandling.responsetypes.InstanceResponseType                            | org.axonframework.messaging.responsetypes.InstanceResponseType                            |
+| org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType                   | org.axonframework.messaging.responsetypes.MultipleInstancesResponseType                   |
+| org.axonframework.queryhandling.responsetypes.ResponseType                                    | org.axonframework.messaging.responsetypes.ResponseType                                    |
+| org.axonframework.queryhandling.responsetypes.ResponseTypes                                   | org.axonframework.messaging.responsetypes.ResponseTypes                                   |
+| org.axonframework.boot.autoconfig.KafkaProperties                                             | org.axonframework.boot.KafkaProperties                                                    |
+| org.axonframework.commandhandling.disruptor.AggregateBlacklistedException                     | org.axonframework.disruptor.commandhandling.AggregateBlacklistedException                 |
+| org.axonframework.commandhandling.disruptor.AggregateStateCorruptedException                  | org.axonframework.disruptor.commandhandling.AggregateStateCorruptedException              |
+| org.axonframework.commandhandling.disruptor.BlacklistDetectingCallback                        | org.axonframework.disruptor.commandhandling.BlacklistDetectingCallback                    |
+| org.axonframework.commandhandling.disruptor.CommandHandlerInvoker                             | org.axonframework.disruptor.commandhandling.CommandHandlerInvoker                         |
+| org.axonframework.commandhandling.disruptor.CommandHandlingEntry                              | org.axonframework.disruptor.commandhandling.CommandHandlingEntry                          |
+| org.axonframework.commandhandling.disruptor.DisruptorCommandBus                               | org.axonframework.disruptor.commandhandling.DisruptorCommandBus                           |
+| org.axonframework.commandhandling.disruptor.DisruptorUnitOfWork                               | org.axonframework.disruptor.commandhandling.DisruptorUnitOfWork                           |
+| org.axonframework.commandhandling.disruptor.EventPublisher                                    | org.axonframework.disruptor.commandhandling.EventPublisher                                |
+| org.axonframework.commandhandling.disruptor.FirstLevelCache                                   | org.axonframework.disruptor.commandhandling.FirstLevelCache                               |
+| org.axonframework.eventsourcing.eventstore.AbstractDomainEventEntry                           | org.axonframework.eventhandling.AbstractDomainEventEntry                                  |
+| org.axonframework.eventsourcing.eventstore.AbstractEventEntry                                 | org.axonframework.eventhandling.AbstractEventEntry                                        |
+| org.axonframework.eventsourcing.eventstore.AbstractSequencedDomainEventEntry                  | org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                         |
+| org.axonframework.eventsourcing.eventstore.DomainEventData                                    | org.axonframework.eventhandling.DomainEventData                                           |
+| org.axonframework.eventsourcing.DomainEventMessage                                            | org.axonframework.eventhandling.DomainEventMessage                                        |
+| org.axonframework.eventsourcing.eventstore.EventData                                          | org.axonframework.eventhandling.EventData                                                 |
+| org.axonframework.eventsourcing.eventstore.EventUtils                                         | org.axonframework.eventhandling.EventUtils                                                |
+| org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry                            | org.axonframework.eventhandling.GenericDomainEventEntry                                   |
+| org.axonframework.eventsourcing.GenericDomainEventMessage                                     | org.axonframework.eventhandling.GenericDomainEventMessage                                 |
+| org.axonframework.eventsourcing.GenericTrackedDomainEventMessage                              | org.axonframework.eventhandling.GenericTrackedDomainEventMessage                          |
+| org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken                        | org.axonframework.eventhandling.GlobalSequenceTrackingToken                               |
+| org.axonframework.eventsourcing.SequenceNumber                                                | org.axonframework.eventhandling.SequenceNumber                                            |
+| org.axonframework.eventsourcing.SequenceNumberParameterResolverFactory                        | org.axonframework.eventhandling.SequenceNumberParameterResolverFactory                    |
+| org.axonframework.eventsourcing.eventstore.TrackedDomainEventData                             | org.axonframework.eventhandling.TrackedDomainEventData                                    |
+| org.axonframework.eventsourcing.eventstore.TrackedEventData                                   | org.axonframework.eventhandling.TrackedEventData                                          |
+| org.axonframework.eventsourcing.eventstore.TrackingEventStream                                | org.axonframework.eventhandling.TrackingEventStream                                       |
+| org.axonframework.eventsourcing.eventstore.TrackingToken                                      | org.axonframework.eventhandling.TrackingToken                                             |
+| org.axonframework.eventsourcing.eventstore.TrackingTokenParameterResolverFactory              | org.axonframework.eventhandling.TrackingTokenParameterResolverFactory                     |
+| org.axonframework.commandhandling.conflictresolution.ConflictDescription                      | org.axonframework.eventsourcing.conflictresolution.ConflictDescription                    |
+| org.axonframework.commandhandling.conflictresolution.ConflictExceptionSupplier                | org.axonframework.eventsourcing.conflictresolution.ConflictExceptionSupplier              |
+| org.axonframework.commandhandling.conflictresolution.ConflictResolution                       | org.axonframework.eventsourcing.conflictresolution.ConflictResolution                     |
+| org.axonframework.commandhandling.conflictresolution.ConflictResolver                         | org.axonframework.eventsourcing.conflictresolution.ConflictResolver                       |
+| org.axonframework.commandhandling.conflictresolution.Conflicts                                | org.axonframework.eventsourcing.conflictresolution.Conflicts                              |
+| org.axonframework.commandhandling.conflictresolution.ContextAwareConflictExceptionSupplier    | org.axonframework.eventsourcing.conflictresolution.ContextAwareConflictExceptionSupplier  |
+| org.axonframework.commandhandling.conflictresolution.DefaultConflictDescription               | org.axonframework.eventsourcing.conflictresolution.DefaultConflictDescription             |
+| org.axonframework.commandhandling.conflictresolution.DefaultConflictResolver                  | org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver                |
+| org.axonframework.commandhandling.conflictresolution.NoConflictResolver                       | org.axonframework.eventsourcing.conflictresolution.NoConflictResolver                     |
 
 ### Removed classes
 |                           Class                                               |             Why                              |
