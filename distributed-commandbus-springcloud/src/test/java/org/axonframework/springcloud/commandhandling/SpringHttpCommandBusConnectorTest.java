@@ -7,15 +7,18 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.serialization.*;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.ArgumentMatcher;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.SerializedMetaData;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -24,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -51,6 +55,8 @@ public class SpringHttpCommandBusConnectorTest {
     private RestTemplate restTemplate;
     @Mock
     private Serializer serializer;
+    @Spy
+    private Executor executor = new TestExecutor();
 
     private URI expectedUri;
     @Mock
@@ -68,8 +74,13 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        expectedUri = new URI(ENDPOINT.getScheme(), ENDPOINT.getUserInfo(), ENDPOINT.getHost(),
-                              ENDPOINT.getPort(), ENDPOINT.getPath() + "/spring-command-bus-connector/command", null, null);
+        expectedUri = new URI(ENDPOINT.getScheme(),
+                              ENDPOINT.getUserInfo(),
+                              ENDPOINT.getHost(),
+                              ENDPOINT.getPort(),
+                              ENDPOINT.getPath() + "/spring-command-bus-connector/command",
+                              null,
+                              null);
 
         when(serializedMetaData.getContentType()).thenReturn(byte[].class);
         when(serializedMetaData.getData()).thenReturn(SERIALIZED_COMMAND_METADATA);
@@ -98,7 +109,8 @@ public class SpringHttpCommandBusConnectorTest {
         when(serializer.serialize(COMMAND_RESULT, byte[].class)).thenReturn(serializedResult);
         when(serializer.serialize(COMMAND_ERROR, byte[].class)).thenReturn(serializedError);
         when(serializer.deserialize(new SimpleSerializedObject<>(SERIALIZED_COMMAND_PAYLOAD, byte[].class,
-                                                                 String.class.getName(), null))).thenReturn(COMMAND_MESSAGE.getPayload());
+                                                                 String.class.getName(), null))).thenReturn(
+                COMMAND_MESSAGE.getPayload());
         when(serializer.deserialize(new SerializedMetaData<>(SERIALIZED_COMMAND_METADATA, byte[].class)))
                 .thenReturn(COMMAND_MESSAGE.getMetaData());
         when(serializer.getConverter()).thenReturn(new ChainingConverter());
@@ -110,6 +122,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST),
@@ -120,6 +133,7 @@ public class SpringHttpCommandBusConnectorTest {
     public void testSendWithoutCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE);
+        verify(executor).execute(any());
     }
 
     @Test
@@ -134,10 +148,12 @@ public class SpringHttpCommandBusConnectorTest {
         ResponseEntity<SpringHttpReplyMessage<String>> testResponseEntity =
                 new ResponseEntity<>(testReplyMessage, HttpStatus.OK);
         when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
-                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))).thenReturn(testResponseEntity);
+                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))).thenReturn(
+                testResponseEntity);
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
@@ -158,10 +174,12 @@ public class SpringHttpCommandBusConnectorTest {
         ResponseEntity<SpringHttpReplyMessage<String>> testResponseEntity =
                 new ResponseEntity<>(testReplyMessage, HttpStatus.OK);
         when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
-                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))).thenReturn(testResponseEntity);
+                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))).thenReturn(
+                testResponseEntity);
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
+        verify(executor).execute(any());
         verify(serializer).serialize(COMMAND_MESSAGE.getMetaData(), byte[].class);
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
@@ -174,6 +192,7 @@ public class SpringHttpCommandBusConnectorTest {
     public void testSendWithCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE, new NoOpCallback());
+        verify(executor).execute(any());
     }
 
     @Test
@@ -192,7 +211,7 @@ public class SpringHttpCommandBusConnectorTest {
                 new SimpleSerializedObject<>(SERIALIZED_RESULT_DATA, byte[].class, String.class.getName(), null);
         when(serializer.deserialize(expectedSerializedResult)).thenReturn(COMMAND_RESULT);
         doAnswer(a -> {
-            SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback<String,String> callback =
+            SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback<String, String> callback =
                     (SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback) a.getArguments()[1];
             callback.onSuccess(COMMAND_MESSAGE, COMMAND_RESULT);
             return a;
@@ -292,7 +311,8 @@ public class SpringHttpCommandBusConnectorTest {
             ArgumentMatcher<ParameterizedTypeReference<SpringHttpReplyMessage<R>>> {
 
         private ParameterizedTypeReference<SpringHttpReplyMessage<R>> expected =
-                new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() { };
+                new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() {
+                };
 
         @Override
         public boolean matches(ParameterizedTypeReference<SpringHttpReplyMessage<R>> actual) {
@@ -302,4 +322,13 @@ public class SpringHttpCommandBusConnectorTest {
         }
     }
 
+    private class TestExecutor implements Executor {
+
+        private final Executor executor = DirectExecutor.INSTANCE;
+
+        @Override
+        public void execute(Runnable command) {
+            executor.execute(command);
+        }
+    }
 }
