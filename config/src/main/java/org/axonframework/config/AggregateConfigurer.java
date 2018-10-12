@@ -19,7 +19,6 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateMetaModelFactory;
@@ -28,6 +27,7 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMeta
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
