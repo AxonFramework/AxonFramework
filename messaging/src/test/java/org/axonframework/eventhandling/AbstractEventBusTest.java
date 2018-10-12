@@ -21,14 +21,12 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -233,11 +231,6 @@ public class AbstractEventBusTest {
                 }
             }
             committedEvents.addAll(events);
-        }
-
-        @Override
-        public TrackingEventStream openStream(TrackingToken trackingToken) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

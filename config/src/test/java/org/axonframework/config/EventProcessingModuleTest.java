@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -39,7 +40,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class EventProcessingModuleTest {
 
@@ -79,6 +81,30 @@ public class EventProcessingModuleTest {
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
+    }
+
+    @Test
+    public void testProcessorsDefaultToSubscribingWhenUsingSimpleEventBus() {
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                                                       .configureEventBus(c -> SimpleEventBus.builder().build())
+                                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                                                                                .registerEventHandler(c -> new TrackingEventHandler()))
+                                                       .start();
+
+        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("subscribing").isPresent());
+        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("subscribing").map(p -> p instanceof SubscribingEventProcessor).orElse(false));
+        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("tracking").isPresent());
+        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("tracking").map(p -> p instanceof SubscribingEventProcessor).orElse(false));
+    }
+
+    @Test(expected = AxonConfigurationException.class)
+    public void testAssigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
+        DefaultConfigurer.defaultConfiguration()
+                         .configureEventBus(c -> SimpleEventBus.builder().build())
+                         .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                                                  .registerEventHandler(c -> new TrackingEventHandler())
+                                                  .registerTrackingEventProcessor("tracking"))
+                         .start();
     }
 
     @Test
@@ -161,12 +187,12 @@ public class EventProcessingModuleTest {
         SequentialPolicy sequentialPolicy = new SequentialPolicy();
         FullConcurrencyPolicy fullConcurrencyPolicy = new FullConcurrencyPolicy();
         configurer.eventProcessing()
-                .registerEventHandler(c -> mockHandler)
-                .registerEventHandler(c -> specialHandler)
-                .assignHandlerInstancesMatching("special", specialHandler::equals)
-                .byDefaultAssignTo("default")
-                .registerDefaultSequencingPolicy(c -> sequentialPolicy)
-                .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
+                  .registerEventHandler(c -> mockHandler)
+                  .registerEventHandler(c -> specialHandler)
+                  .assignHandlerInstancesMatching("special", specialHandler::equals)
+                  .byDefaultAssignTo("default")
+                  .registerDefaultSequencingPolicy(c -> sequentialPolicy)
+                  .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
         Configuration config = configurer.start();
 
         AbstractEventProcessor defaultProcessor =
@@ -202,7 +228,7 @@ public class EventProcessingModuleTest {
         // CorrelationDataInterceptor is automatically configured
         assertEquals(3,
                      config.eventProcessingConfiguration().eventProcessor("default").get()
-                             .getHandlerInterceptors().size());
+                           .getHandlerInterceptors().size());
     }
 
     @Test
@@ -344,20 +370,20 @@ public class EventProcessingModuleTest {
         // Use InMemoryEventStorageEngine so tracking processors don't miss events
         configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
         configurer.eventProcessing()
-                .registerSubscribingEventProcessor("subscribing")
-                .registerTrackingEventProcessor("tracking")
-                .assignHandlerInstancesMatching("subscribing",
-                                        eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
-                .assignHandlerInstancesMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
-                .registerEventHandler(c -> new SubscribingEventHandler())
-                .registerEventHandler(c -> new TrackingEventHandler())
-                .registerTokenStore("tracking", c -> new InMemoryTokenStore() {
-                    @Override
-                    public int[] fetchSegments(String processorName) {
-                        tokenStoreInvocation.countDown();
-                        return super.fetchSegments(processorName);
-                    }
-                });
+                  .registerSubscribingEventProcessor("subscribing")
+                  .registerTrackingEventProcessor("tracking")
+                  .assignHandlerInstancesMatching("subscribing",
+                                                  eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
+                  .assignHandlerInstancesMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
+                  .registerEventHandler(c -> new SubscribingEventHandler())
+                  .registerEventHandler(c -> new TrackingEventHandler())
+                  .registerTokenStore("tracking", c -> new InMemoryTokenStore() {
+                      @Override
+                      public int[] fetchSegments(String processorName) {
+                          tokenStoreInvocation.countDown();
+                          return super.fetchSegments(processorName);
+                      }
+                  });
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -382,7 +408,7 @@ public class EventProcessingModuleTest {
         }
 
         public List<?> getEventHandlers() {
-            return ((SimpleEventHandlerInvoker)((MultiEventHandlerInvoker)getEventHandlerInvoker())
+            return ((SimpleEventHandlerInvoker) ((MultiEventHandlerInvoker) getEventHandlerInvoker())
                     .delegates()
                     .get(0))
                     .eventHandlers();
@@ -467,8 +493,8 @@ public class EventProcessingModuleTest {
 
     private class StubErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
 
-        private long errorCounter = 0;
         private final CountDownLatch latch;
+        private long errorCounter = 0;
 
         private StubErrorHandler(int count) {
             this.latch = new CountDownLatch(count);

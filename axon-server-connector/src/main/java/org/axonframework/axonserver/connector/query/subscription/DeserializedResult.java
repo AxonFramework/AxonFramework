@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
  * SubscriptionQueryUpdateMessage decorator to deserialize QueryResponse and QueryUpdate messages.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class DeserializedResult<I, U>
         implements SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> {

@@ -26,8 +26,9 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 
 /**
- * Created by Sara Pellegrini on 09/05/2018.
- * sara.pellegrini@gmail.com
+ * Wrapper that allows clients to access a GRPC {@link QueryUpdate} Message as a {@link SubscriptionQueryUpdateMessage}
+ *
+ * @author Sara Pellegrini
  */
 class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<U> {
 

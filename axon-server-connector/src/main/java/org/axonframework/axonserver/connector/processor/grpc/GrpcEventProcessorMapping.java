@@ -22,8 +22,10 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import java.util.function.Function;
 
 /**
- * Created by Sara Pellegrini on 30/08/2018.
- * sara.pellegrini@gmail.com
+ * Mapping that translates an {@link EventProcessor} to GRPC {@link PlatformInboundMessage} representing the status of the {@link EventProcessor}.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class GrpcEventProcessorMapping implements Function<EventProcessor, PlatformInboundMessage> {
 

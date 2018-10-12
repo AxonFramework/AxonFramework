@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
  * SubscriptionQueryResult decorator to add cancel operations.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class DisposableResult<I,U> implements SubscriptionQueryResult<I,U> {
 

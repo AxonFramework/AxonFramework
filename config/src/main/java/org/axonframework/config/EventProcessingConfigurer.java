@@ -16,15 +16,9 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -37,6 +31,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -72,20 +67,20 @@ public interface EventProcessingConfigurer {
      * @param sagaType the type of Saga
      * @param <T>      the type of Saga
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     *
-     * @see SagaConfiguration#defaultConfiguration(Class)
      */
     default <T> EventProcessingConfigurer registerSaga(Class<T> sagaType) {
-        return registerSagaConfiguration(SagaConfiguration.defaultConfiguration(sagaType));
+        return registerSaga(sagaType, c -> {});
     }
 
     /**
-     * Registers a {@link SagaConfiguration}.
+     * Registers a Saga, allowing specific configuration to use for this Saga type.
      *
-     * @param sagaConfiguration a {@link SagaConfiguration}
+     * @param <T>            The type of Saga to configure
+     * @param sagaType       The type of Saga to configure
+     * @param sagaConfigurer a function providing modifications on top of the defaul configuration
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerSagaConfiguration(SagaConfiguration<?> sagaConfiguration);
+    <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer);
 
     /**
      * Registers a {@link Function} that builds a {@link SagaStore}.
@@ -134,7 +129,15 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerTrackingEventProcessor(String name) {
-        return registerTrackingEventProcessor(name, Configuration::eventBus);
+        return registerTrackingEventProcessor(name, c -> {
+            EventBus eventBus = c.eventBus();
+            if (!(eventBus instanceof StreamableMessageSource)) {
+                throw new AxonConfigurationException("Cannot create Tracking Event Processor with name '" + name + "'. " +
+                                                             "The available EventBus does not support tracking processors.");
+            }
+            //noinspection unchecked
+            return (StreamableMessageSource) eventBus;
+        });
     }
 
     /**
@@ -361,7 +364,6 @@ public interface EventProcessingConfigurer {
      *
      * @param assignmentRule a {@link Function} which takes a processing group and returns a processor name
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     *
      * @see #assignProcessingGroup(String, String)
      */
     EventProcessingConfigurer assignProcessingGroup(Function<String, String> assignmentRule);
@@ -467,10 +469,4 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerTransactionManager(String name,
                                                          Function<Configuration, TransactionManager> transactionManagerBuilder);
 
-    /**
-     * Builds the Event Processing Configuration.
-     *
-     * @return the Event Processing Configuration
-     */
-    EventProcessingConfiguration configure();
 }

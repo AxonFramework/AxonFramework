@@ -20,10 +20,11 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.saga.AbstractSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 
@@ -84,9 +85,7 @@ public class ConfigurationScopeAwareProviderTest {
     public void providesScopeAwareSagasFromModuleConfiguration() {
         when(eventProcessingConfiguration.sagaConfigurations())
                 .thenReturn(singletonList(sagaConfiguration));
-        when(sagaConfiguration.manager()).thenReturn(new Component<>(() -> configuration,
-                                                                     "sagaManager",
-                                                                     c -> sagaManager));
+        when(sagaConfiguration.manager()).thenReturn(sagaManager);
 
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                                                         .collect(toList());

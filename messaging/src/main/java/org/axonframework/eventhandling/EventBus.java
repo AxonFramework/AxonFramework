@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
-import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.Arrays;
@@ -36,24 +35,8 @@ import java.util.List;
  * @see SimpleEventBus
  * @since 0.1
  */
-public interface EventBus extends SubscribableMessageSource<EventMessage<?>>, StreamableMessageSource<TrackedEventMessage<?>>,
+public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
                                   MessageDispatchInterceptorSupport<EventMessage<?>> {
-
-    /**
-     * Open an event stream containing all events since given tracking token. The returned stream is comprised of events
-     * from aggregates as well as other application events. Pass a {@code trackingToken} of {@code null} to open a
-     * stream containing all available events. Note that the returned stream is <em>infinite</em>, so beware of applying
-     * terminal operations to the returned stream.
-     * <p>
-     * In case the event bus cannot open a stream for a given tracking token, for instance because the event bus does
-     * not persist or cache events, the event bus will throw an {@link UnsupportedOperationException}.
-     *
-     * @param trackingToken object describing the previous position in the stream or {@code null} to create a
-     *                      stream of all events
-     * @return a {@link TrackingEventStream} with events since the given trackingToken
-     * @throws UnsupportedOperationException in case this event bus does not support streaming from given token
-     */
-    TrackingEventStream openStream(TrackingToken trackingToken);
 
     /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed

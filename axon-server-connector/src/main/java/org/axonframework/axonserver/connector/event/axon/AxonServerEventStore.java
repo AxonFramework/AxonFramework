@@ -29,7 +29,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.PlatformConnectionManager;
 import org.axonframework.axonserver.connector.event.AppendEventTransaction;
-import org.axonframework.axonserver.connector.event.AxonDBClient;
+import org.axonframework.axonserver.connector.event.AxonServerEventStoreClient;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
@@ -265,13 +265,13 @@ public class AxonServerEventStore extends AbstractEventStore {
             assertNonNull(platformConnectionManager,
                           "The PlatformConnectionManager is a hard requirement and should be provided");
 
-            AxonDBClient axonDBClient = new AxonDBClient(configuration, platformConnectionManager);
+            AxonServerEventStoreClient eventStoreClient = new AxonServerEventStoreClient(configuration, platformConnectionManager);
             super.storageEngine(AxonIQEventStorageEngine.builder()
                                                         .snapshotSerializer(snapshotSerializer)
                                                         .upcasterChain(upcasterChain)
                                                         .eventSerializer(eventSerializer)
                                                         .configuration(configuration)
-                                                        .eventStoreClient(axonDBClient)
+                                                        .eventStoreClient(eventStoreClient)
                                                         .converter(new GrpcMetaDataConverter(eventSerializer))
                                                         .build());
         }
@@ -294,7 +294,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
 
         private final AxonServerConfiguration configuration;
-        private final AxonDBClient eventStoreClient;
+        private final AxonServerEventStoreClient eventStoreClient;
         private final GrpcMetaDataConverter converter;
 
         private AxonIQEventStorageEngine(Builder builder) {
@@ -588,7 +588,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         private static class Builder extends AbstractEventStorageEngine.Builder {
 
             private AxonServerConfiguration configuration;
-            private AxonDBClient eventStoreClient;
+            private AxonServerEventStoreClient eventStoreClient;
             private GrpcMetaDataConverter converter;
 
             @Override
@@ -627,8 +627,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                 return this;
             }
 
-            private Builder eventStoreClient(AxonDBClient eventStoreClient) {
-                assertNonNull(eventStoreClient, "AxonDBClient may not be null");
+            private Builder eventStoreClient(AxonServerEventStoreClient eventStoreClient) {
+                assertNonNull(eventStoreClient, "AxonServerEventStoreClient may not be null");
                 this.eventStoreClient = eventStoreClient;
                 return this;
             }
@@ -647,7 +647,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             protected void validate() throws AxonConfigurationException {
                 assertNonNull(configuration,
                               "The AxonServerConfiguration is a hard requirement and should be provided");
-                assertNonNull(eventStoreClient, "The AxonDBClient is a hard requirement and should be provided");
+                assertNonNull(eventStoreClient, "The AxonServerEventStoreClient is a hard requirement and should be provided");
                 assertNonNull(converter, "The GrpcMetaDataConverter is a hard requirement and should be provided");
             }
         }

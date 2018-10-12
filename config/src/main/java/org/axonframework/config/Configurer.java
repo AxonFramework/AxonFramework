@@ -34,6 +34,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -433,6 +434,25 @@ public interface Configurer {
      * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
      */
     EventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
+
+    /**
+     * Locates the {@link EventProcessingConfigurer} registered as a module with this Configurer and provides it to the
+     * given consumer for configuration. If there aren't any pre-registered instances of
+     * {@link EventProcessingConfigurer}, it will create an {@link EventProcessingModule} and register it as a module.
+     * If there are multiple, an {@link AxonConfigurationException} is thrown.
+     *
+     * This method is identical to using {@link #eventProcessing()}, except that this variant allows for easier fluent
+     * interfacing.
+     *
+     * @param eventProcessingConfigurer a consumer to configure the
+     * @return an instance of Event Processing Configurer
+     *
+     * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
+     */
+    default Configurer eventProcessing(Consumer<EventProcessingConfigurer> eventProcessingConfigurer) throws AxonConfigurationException {
+        eventProcessingConfigurer.accept(eventProcessing());
+        return this;
+    }
 
     /**
      * Returns the completely initialized Configuration built using this configurer. It is not recommended to change

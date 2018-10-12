@@ -173,6 +173,19 @@ public interface EventProcessingConfiguration {
     List<SagaConfiguration<?>> sagaConfigurations();
 
     /**
+     * Returns the {@link SagaConfiguration} for the given {@code sagaType}. If no configuration has been provided for
+     * a Saga of this type, {@code null} is returned.
+     *
+     * @param sagaType the type of Saga to return the configuration for.
+     * @param <T>      the type of Saga
+     * @return the configuration for the Saga, or {@code null} if not found
+     */
+    @SuppressWarnings("unchecked")
+    default <T> SagaConfiguration<T> sagaConfiguration(Class<T> sagaType) {
+        return (SagaConfiguration<T>) sagaConfigurations().stream().filter(c -> sagaType.equals(c.type())).findFirst().orElse(null);
+    }
+
+    /**
      * Returns the {@link MessageMonitor} set to the given {@code componentType} and {@code componentName} registered
      * within this configuration.
      *
