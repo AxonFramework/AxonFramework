@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -77,7 +77,7 @@ public class KafkaIntegrationTest {
         eventBus.publish(asEventMessage("test"));
 
         // the consumer may need some time to start
-        assertTrue(stream2.hasNextAvailable(20, TimeUnit.SECONDS));
+        assertTrue(stream2.hasNextAvailable(25, TimeUnit.SECONDS));
         TrackedEventMessage<?> actual = stream2.nextAvailable();
         assertNotNull(actual);
 
