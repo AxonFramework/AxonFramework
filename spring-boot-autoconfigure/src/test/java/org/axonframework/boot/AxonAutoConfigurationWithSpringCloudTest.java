@@ -33,7 +33,6 @@ import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.actuate.autoconfigure.metrics.amqp.RabbitMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -64,7 +63,7 @@ import static org.mockito.Mockito.*;
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
-        DataSourceAutoConfiguration.class, RabbitMetricsAutoConfiguration.class})
+        DataSourceAutoConfiguration.class})
 @TestPropertySource("classpath:test.springcloud.application.properties")
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithSpringCloudTest {

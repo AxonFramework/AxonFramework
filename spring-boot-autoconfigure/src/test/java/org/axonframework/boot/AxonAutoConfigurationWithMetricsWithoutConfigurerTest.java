@@ -21,7 +21,6 @@ import org.axonframework.metrics.GlobalMetricRegistry;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.metrics.amqp.RabbitMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -37,7 +36,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
-        DataSourceAutoConfiguration.class, RabbitMetricsAutoConfiguration.class
+        DataSourceAutoConfiguration.class
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
 @RunWith(SpringRunner.class)

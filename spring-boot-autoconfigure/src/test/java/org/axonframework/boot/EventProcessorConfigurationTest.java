@@ -31,7 +31,6 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.metrics.amqp.RabbitMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
@@ -51,7 +50,7 @@ import static org.junit.Assert.*;
 @SpringBootTest
 @TestPropertySource("classpath:test-processors.application.properties")
 @EnableAutoConfiguration(exclude = {
-        AMQPAutoConfiguration.class, JmxAutoConfiguration.class, WebClientAutoConfiguration.class, RabbitMetricsAutoConfiguration.class
+        AMQPAutoConfiguration.class, JmxAutoConfiguration.class, WebClientAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
 public class EventProcessorConfigurationTest {

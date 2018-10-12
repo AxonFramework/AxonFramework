@@ -10,7 +10,6 @@ import org.junit.*;
 import org.junit.runner.*;
 import org.ops4j.pax.exam.Configuration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.metrics.amqp.RabbitMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
@@ -33,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @author Milan Savic
  */
 @ContextConfiguration(classes = JdbcAutoConfigurationTest.Context.class)
-@EnableAutoConfiguration(exclude = {JpaRepositoriesAutoConfiguration.class, HibernateJpaAutoConfiguration.class, RabbitMetricsAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {JpaRepositoriesAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class JdbcAutoConfigurationTest {
 

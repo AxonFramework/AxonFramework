@@ -16,55 +16,65 @@
 
 package org.axonframework.boot.autoconfig;
 
+import com.codahale.metrics.MetricRegistry;
+import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.axonframework.boot.MetricsProperties;
-import org.axonframework.metrics.GlobalMetricRegistry;
-import org.axonframework.metrics.MetricsConfigurerModule;
+import io.micrometer.core.instrument.dropwizard.DropwizardConfig;
+import io.micrometer.core.instrument.dropwizard.DropwizardMeterRegistry;
+import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Auto configuration to set up Metrics for the infrastructure components.
+ * Auto configuration to set up Dropwizard Metrics for the infrastructure components
  *
- * @author Steven van Beelen
  * @author Marijn van Zelst
  * @since 3.3
  */
 @Configuration
-@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureBefore({
+        AxonAutoConfiguration.class,
+        MetricsAutoConfiguration.class
+})
 @ConditionalOnClass(name = {
+        "com.codahale.metrics.MetricRegistry",
         "io.micrometer.core.instrument.MeterRegistry",
         "org.axonframework.metrics.GlobalMetricRegistry"
 })
-@EnableConfigurationProperties(MetricsProperties.class)
-public class MetricsAutoConfiguration {
+public class DropwizardMetricsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MeterRegistry meterRegistry() {
-        return new SimpleMeterRegistry();
+    public MetricRegistry metricRegistry(){
+        return new MetricRegistry();
     }
 
     @Bean
+    @ConditionalOnBean(MetricRegistry.class)
     @ConditionalOnMissingBean
-    @ConditionalOnBean(MeterRegistry.class)
-    public GlobalMetricRegistry globalMetricRegistry(MeterRegistry meterRegistry) {
-        return new GlobalMetricRegistry(meterRegistry);
-    }
+    public MeterRegistry meterRegistry(MetricRegistry metricRegistry) {
+        DropwizardConfig dropwizardConfig = new DropwizardConfig() {
+            @Override
+            public String prefix() {
+                return "axon-metrics";
+            }
 
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(GlobalMetricRegistry.class)
-    @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
-    public MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
-        return new MetricsConfigurerModule(globalMetricRegistry);
+            @Override
+            public String get(String key) {
+                return null;
+            }
+        };
+        return new DropwizardMeterRegistry(dropwizardConfig, metricRegistry, HierarchicalNameMapper.DEFAULT,
+                                           Clock.SYSTEM) {
+            @Override
+            protected Double nullGaugeValue() {
+                return null;
+            }
+        };
     }
 
 }
