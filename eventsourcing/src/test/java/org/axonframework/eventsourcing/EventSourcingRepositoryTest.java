@@ -205,6 +205,10 @@ public class EventSourcingRepositoryTest {
             AggregateLifecycle.apply(eventPayload);
         }
 
+        public void changeState() {
+            AggregateLifecycle.apply("Test more");
+        }
+
         @EventSourcingHandler
         protected void handle(EventMessage event) {
             identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();

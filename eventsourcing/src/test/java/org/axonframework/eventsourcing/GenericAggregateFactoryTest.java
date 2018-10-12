@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.MockException;
-import org.axonframework.commandhandling.StubAggregate;
+import org.axonframework.StubAggregate;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.junit.*;
