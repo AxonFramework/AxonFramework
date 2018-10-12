@@ -14,6 +14,12 @@ Instead of throwing an `UnknownSerializedTypeException`, serializers now return 
 which provides access to the raw data in any supported intermediate representation, such as `JsonNode` or Dom4J 
 `Document`.
 
+## New Module Structure
+
+We noticed that `axon-core` was encompassing to big a portion of the whole framework. Thus, we have split it into a 
+couple of reasonable components. It's been split into `axon-messaging`, `axon-modelling`, `axon-eventsourcing`, 
+`axon-disruptor` and `axon-configuration`.
+
 Other changes
 =============
 
