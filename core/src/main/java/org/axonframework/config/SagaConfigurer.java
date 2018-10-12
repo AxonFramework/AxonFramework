@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * Provides mechanisms to configure the components used to manage and store Saga.
  *
  * @param <T> the Saga type under configuration
+ * @author Allard Buijze
+ * @since 4.0
  */
 public class SagaConfigurer<T> {
 
@@ -114,7 +116,8 @@ public class SagaConfigurer<T> {
 
     private void verifyNotInitialized() {
         if (this.sagaConfig != null) {
-            throw new AxonConfigurationException("SagaConfiguration has already been created. Cannot make modifications.");
+            throw new AxonConfigurationException(
+                    "SagaConfiguration has already been created. Cannot make modifications.");
         }
     }
 
@@ -236,6 +239,5 @@ public class SagaConfigurer<T> {
         private void ensureInitialized() {
             Assert.state(config != null, () -> "Configuration is not initialized yet");
         }
-
     }
 }
