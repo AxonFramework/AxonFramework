@@ -16,7 +16,7 @@
 
 package org.axonframework.config;
 
-import org.axonframework.eventhandling.saga.AbstractResourceInjector;
+import org.axonframework.modelling.saga.AbstractResourceInjector;
 
 import java.util.Optional;
 

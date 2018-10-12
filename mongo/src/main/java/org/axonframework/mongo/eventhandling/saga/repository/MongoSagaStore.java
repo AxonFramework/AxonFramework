@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,9 +19,9 @@ package org.axonframework.mongo.eventhandling.saga.repository;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCursor;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.saga.AssociationValue;
-import org.axonframework.eventhandling.saga.AssociationValues;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.modelling.saga.AssociationValues;
+import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.mongo.MongoTemplate;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;

@@ -18,9 +18,9 @@ package org.axonframework.config;
 
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.saga.AbstractSagaManager;
-import org.axonframework.eventhandling.saga.SagaRepository;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.AbstractSagaManager;
+import org.axonframework.modelling.saga.SagaRepository;
+import org.axonframework.modelling.saga.repository.SagaStore;
 
 /**
  * Represents a set of components needed to configure a Saga.

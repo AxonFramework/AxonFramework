@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

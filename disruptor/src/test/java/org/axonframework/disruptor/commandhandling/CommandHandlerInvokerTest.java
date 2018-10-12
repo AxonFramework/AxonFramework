@@ -28,7 +28,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.saga.SagaScopeDescriptor;
+import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.eventsourcing.AggregateCacheEntry;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;

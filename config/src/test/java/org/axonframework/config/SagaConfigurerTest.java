@@ -18,10 +18,10 @@ package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
-import org.axonframework.eventhandling.saga.SagaRepository;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.modelling.saga.AnnotatedSagaManager;
+import org.axonframework.modelling.saga.SagaRepository;
+import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

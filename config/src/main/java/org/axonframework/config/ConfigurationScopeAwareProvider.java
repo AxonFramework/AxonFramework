@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.saga.AbstractSagaManager;
+import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;

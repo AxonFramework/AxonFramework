@@ -19,6 +19,7 @@ package org.axonframework.mongo.serialization;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.thoughtworks.xstream.XStream;
+import org.axonframework.modelling.saga.AnnotatedSaga;
 import org.axonframework.serialization.AbstractXStreamSerializer;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
@@ -102,7 +103,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link org.axonframework.eventhandling.GenericDomainEventMessage}, the
      * {@link org.axonframework.commandhandling.GenericCommandMessage}, the
-     * {@link org.axonframework.eventhandling.saga.AnnotatedSaga} and the {@link org.axonframework.messaging.MetaData}
+     * {@link AnnotatedSaga} and the {@link org.axonframework.messaging.MetaData}
      * objects among others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if the
      * provided Converter instance is of type ChainingConverter, then the
      * {@link DBObjectXStreamSerializer#registerConverters(ChainingConverter)} function will be called. This will
