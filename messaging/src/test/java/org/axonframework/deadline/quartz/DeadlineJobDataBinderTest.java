@@ -16,7 +16,8 @@
 
 package org.axonframework.deadline.quartz;
 
-import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.MetaData;
@@ -70,7 +71,7 @@ public class DeadlineJobDataBinderTest {
                 GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD);
         testMetaData = MetaData.with("some-key", "some-value");
         this.testDeadlineMessage = testDeadlineMessage.withMetaData(testMetaData);
-        testDeadlineScope = new AggregateScopeDescriptor("aggregate-type", "aggregate-identifier");
+        testDeadlineScope = new TestScopeDescriptor("aggregate-type", "aggregate-identifier");
     }
 
     @Parameterized.Parameters(name = "Using {0}")
@@ -167,5 +168,58 @@ public class DeadlineJobDataBinderTest {
                 serializedObject.getContentType().equals(byte[].class) &&
                 type.getName().equals(testDeadlineScope.getClass().getName()) &&
                 type.getRevision() == null;
+    }
+
+    private static class TestScopeDescriptor implements ScopeDescriptor {
+
+        private static final long serialVersionUID = 3584695571254668002L;
+
+        private final String type;
+        private Object identifier;
+
+        @JsonCreator
+        public TestScopeDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
+            this.type = type;
+            this.identifier = identifier;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public Object getIdentifier() {
+            return identifier;
+        }
+
+        @Override
+        public String scopeDescription() {
+            return String.format("TestScopeDescriptor for type [%s] and identifier [%s]", type, identifier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, identifier);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            final TestScopeDescriptor other = (TestScopeDescriptor) obj;
+            return Objects.equals(this.type, other.type)
+                    && Objects.equals(this.identifier, other.identifier);
+        }
+
+        @Override
+        public String toString() {
+            return "TestScopeDescriptor{" +
+                    "type=" + type +
+                    ", identifier='" + identifier + '\'' +
+                    '}';
+        }
     }
 }
