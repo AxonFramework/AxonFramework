@@ -60,7 +60,7 @@ public class EventProcessingModuleConfigTest {
         assertEquals("processor2", processor2.getName());
         List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor = eventProcessingConfiguration
                 .interceptorsFor("processor2");
-        assertEquals(3, interceptorsFor.size());
+        assertEquals(2, interceptorsFor.size());
         assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));
         assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof LoggingInterceptor));
 

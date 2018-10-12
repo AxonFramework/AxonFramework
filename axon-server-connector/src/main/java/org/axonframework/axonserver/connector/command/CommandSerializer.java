@@ -84,7 +84,7 @@ public class CommandSerializer {
     }
 
     public <R> GenericCommandResultMessage<R> deserialize(CommandResponse response) {
-        return new GenericCommandResultMessage<> (response.getPayload() == null ? null :messageSerializer.deserialize(new GrpcSerializedObject(response.getPayload())),
+        return new GenericCommandResultMessage<> (response.hasPayload() ? messageSerializer.deserialize(new GrpcSerializedObject(response.getPayload())) : null,
                                                   new GrpcMetaDataConverter(messageSerializer).convert(response.getMetaDataMap()));
 
     }

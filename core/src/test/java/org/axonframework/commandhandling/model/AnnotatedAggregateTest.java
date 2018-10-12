@@ -36,7 +36,7 @@ public class AnnotatedAggregateTest {
         Command command = new Command(ID);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
-                .newInstance(() -> new AggregateRoot(command)));
+                .newInstance(() -> new AggregateRoot(command))).getPayload();
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);

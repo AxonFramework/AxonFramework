@@ -24,10 +24,14 @@ import org.axonframework.axonserver.connector.processor.schedule.ScheduledEventP
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.eventhandling.EventProcessor;
 
 /**
- * Created by Sara Pellegrini on 03/04/2018.
- * sara.pellegrini@gmail.com
+ * Module Configuration implementation that defines the components needed to
+ * control and monitor the {@link EventProcessor}s with AxonServer.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class EventProcessorInfoConfiguration implements ModuleConfiguration {
 

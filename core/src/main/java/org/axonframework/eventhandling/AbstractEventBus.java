@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -45,8 +44,7 @@ import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
  * coordinates the timing and order of the publication.
  * <p>
  * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
- * subscribed event processors. Event processors are expected to implement asynchronous handling themselves or
- * alternatively open an event stream using {@link #openStream(TrackingToken)}.
+ * subscribed event processors.
  *
  * @author Allard Buijze
  * @author René de Waele

@@ -1,6 +1,14 @@
 Major API Changes
 =================
 
+## Defaulting to tracking processors
+
+When an Event Store (or Event Bus implementing `StreamableMessageSource`) is configured, Axon will default to using 
+tracking processors. This may be overridden using the `EventProcessingConfigurer.usingSubscribingProcessors()` method.
+
+In Axon 4, the Event Bus itself no longer implements `StreamableMessageSource` (as was the case in Axon 3), meaning that
+using the `SimpleEventBus` will also imply subscribing processors as the default.
+
 ## Serialization
 Instead of throwing an `UnknownSerializedTypeException`, serializers now return an `UnknownSerializedType` object, 
 which provides access to the raw data in any supported intermediate representation, such as `JsonNode` or Dom4J 

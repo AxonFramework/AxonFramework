@@ -48,6 +48,7 @@ import static java.util.Optional.ofNullable;
  * SubscriptionQueryResult that emits initial response and update when subscription query response message is received.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class AxonServerSubscriptionQueryResult implements
         Supplier<SubscriptionQueryResult<QueryResponse, QueryUpdate>>,

@@ -75,7 +75,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -354,12 +353,18 @@ public class AxonServerQueryBus implements QueryBus {
                     }
 
                     @Override
-                    public void onError(Throwable throwable) {
+                    public void onError(Throwable ex){
+                        logger.warn("Received error from server: {}", ex.getMessage());
                         outboundStreamObserver = null;
+                        if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode().equals(Status.UNAVAILABLE.getCode())) {
+                            return;
+                        }
+                        resubscribe();
                     }
 
                     @Override
                     public void onCompleted() {
+                        logger.debug("Received completed from server");
                         outboundStreamObserver = null;
                     }
                 };
