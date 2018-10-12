@@ -110,6 +110,11 @@ public class AxonServerConfiguration {
      */
     private long keepAliveTime = 0;
 
+    /**
+     *  GRPC max inbound message size, 0 keeps default value
+     */
+    private int maxMessageSize = 0;
+
     public AxonServerConfiguration() {
     }
 
@@ -272,6 +277,14 @@ public class AxonServerConfiguration {
         this.keepAliveTime = keepAliveTime;
     }
 
+    public int getMaxMessageSize() {
+        return maxMessageSize;
+    }
+
+    public void setMaxMessageSize(int maxMessageSize) {
+        this.maxMessageSize = maxMessageSize;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
         private AxonServerConfiguration instance;
@@ -312,6 +325,11 @@ public class AxonServerConfiguration {
 
         public Builder eventCipher(EventCipher eventCipher) {
             instance.eventCipher = eventCipher;
+            return this;
+        }
+
+        public Builder maxMessageSize(int maxMessageSize) {
+            instance.maxMessageSize = maxMessageSize;
             return this;
         }
 

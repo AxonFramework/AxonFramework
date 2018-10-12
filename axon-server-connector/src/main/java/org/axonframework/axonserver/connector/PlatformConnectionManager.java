@@ -61,7 +61,7 @@ import javax.net.ssl.SSLException;
  * @author Marc Gathier
  */
 public class PlatformConnectionManager {
-    private final static Logger logger = LoggerFactory.getLogger(PlatformConnectionManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(PlatformConnectionManager.class);
 
     private volatile ManagedChannel channel;
     private volatile StreamObserver<PlatformInboundInstruction> inputStream;
@@ -141,6 +141,10 @@ public class PlatformConnectionManager {
             builder.keepAliveTime(connectInformation.getKeepAliveTime(), TimeUnit.MILLISECONDS)
                    .keepAliveTimeout(connectInformation.getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
                    .keepAliveWithoutCalls(true);
+        }
+
+        if( connectInformation.getMaxMessageSize() > 0) {
+            builder.maxInboundMessageSize(connectInformation.getMaxMessageSize());
         }
         if (connectInformation.isSslEnabled()) {
             try {
