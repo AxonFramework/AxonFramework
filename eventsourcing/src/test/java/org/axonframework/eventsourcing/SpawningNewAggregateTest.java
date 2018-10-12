@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
@@ -24,8 +28,6 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.junit.*;
 import org.junit.runner.*;
@@ -122,7 +124,7 @@ public class SpawningNewAggregateTest {
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     assertTrue(cause instanceof IllegalStateException);
                                     assertEquals(
-                                            "There is no configured repository for org.axonframework.commandhandling.SpawningNewAggregateTest$Aggregate2",
+                                            "There is no configured repository for org.axonframework.eventsourcing.SpawningNewAggregateTest$Aggregate2",
                                             cause.getMessage());
                                 }
 
@@ -147,7 +149,7 @@ public class SpawningNewAggregateTest {
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     assertTrue(cause instanceof AxonConfigurationException);
                                     assertEquals(
-                                            "Since repository provider is not provided, we cannot spawn a new aggregate for org.axonframework.commandhandling.SpawningNewAggregateTest$Aggregate2",
+                                            "Since repository provider is not provided, we cannot spawn a new aggregate for org.axonframework.eventsourcing.SpawningNewAggregateTest$Aggregate2",
                                             cause.getMessage());
                                 }
                             });
