@@ -319,9 +319,11 @@ public class AxonServerEventStore extends AbstractEventStore {
         private final AxonServerConfiguration configuration;
         private final AxonDBClient eventStoreClient;
         private final GrpcMetaDataConverter converter;
+        private final boolean snapshotFilterSet;
 
         private AxonIQEventStorageEngine(Builder builder) {
             super(builder);
+            this.snapshotFilterSet = builder.snapshotFilterSet;
             this.configuration = builder.configuration;
             this.eventStoreClient = builder.eventStoreClient;
             this.converter = builder.converter;
@@ -416,7 +418,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                                                  .setAggregateId(aggregateIdentifier);
             if (firstSequenceNumber > 0) {
                 request.setInitialSequence(firstSequenceNumber);
-            } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && snapshotFilter == null) {
+            } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && ! snapshotFilterSet) {
                 request.setAllowSnapshots(true);
             }
             try {
@@ -604,7 +606,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-            if( snapshotFilter == null) {
+            if( !snapshotFilterSet) {
                 // Snapshots are automatically fetched server-side, which is faster
                 return Stream.empty();
             }
@@ -642,6 +644,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         private static class Builder extends AbstractEventStorageEngine.Builder {
 
+            private boolean snapshotFilterSet;
             private AxonServerConfiguration configuration;
             private AxonDBClient eventStoreClient;
             private GrpcMetaDataConverter converter;
@@ -672,7 +675,10 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             @Override
             public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-                super.snapshotFilter(snapshotFilter);
+                if( snapshotFilter != null){
+                    super.snapshotFilter(snapshotFilter);
+                    snapshotFilterSet = true;
+                }
                 return this;
             }
 

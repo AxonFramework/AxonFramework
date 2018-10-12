@@ -47,7 +47,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     protected final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final Serializer eventSerializer;
-    protected final Predicate<? super DomainEventData<?>> snapshotFilter;
+    private final Predicate<? super DomainEventData<?>> snapshotFilter;
 
     /**
      * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
