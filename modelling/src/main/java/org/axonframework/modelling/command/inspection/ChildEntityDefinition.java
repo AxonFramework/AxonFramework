@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -22,7 +22,7 @@ import java.util.Optional;
 /**
  * Interface describing the definition of a Child Entity. These definitions are automatically detected by the
  * {@link AnnotatedAggregateMetaModelFactory} if the definition's implementations is registered in the
- * {@code META-INF/services/org.axonframework.commandhandling.model.inspection.ChildEntityDefinition} file.
+ * {@code META-INF/services/org.axonframework.modelling.command.inspection.ChildEntityDefinition} file.
  *
  * @see java.util.ServiceLoader
  */

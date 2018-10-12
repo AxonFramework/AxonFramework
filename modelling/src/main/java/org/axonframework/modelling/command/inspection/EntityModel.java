@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;

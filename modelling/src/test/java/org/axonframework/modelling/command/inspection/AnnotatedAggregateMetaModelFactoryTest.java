@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
@@ -27,6 +27,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.Test;
 
 import javax.persistence.Id;
@@ -214,7 +216,8 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
     @Test
     public void testFindIdentifier() {
-        AggregateModel<SomeAnnotatedHandlers> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
+        AggregateModel<SomeAnnotatedHandlers> inspector = AnnotatedAggregateMetaModelFactory
+                .inspectAggregate(SomeAnnotatedHandlers.class);
 
         assertEquals("SomeAnnotatedHandlers", inspector.type());
         assertEquals("id", inspector.getIdentifier(new SomeAnnotatedHandlers()));

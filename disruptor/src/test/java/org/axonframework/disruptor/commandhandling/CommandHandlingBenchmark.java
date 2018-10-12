@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.modelling.command.AbstractRepository;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;

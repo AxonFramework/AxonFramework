@@ -21,7 +21,7 @@ import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.command.Repository;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;

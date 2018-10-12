@@ -16,13 +16,8 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.EntityId;
-import org.axonframework.modelling.command.ForwardMatchingInstances;
-import org.axonframework.modelling.command.ForwardNone;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -31,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory.inspectAggregate;
+import static org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory.inspectAggregate;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
 

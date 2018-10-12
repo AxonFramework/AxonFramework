@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
@@ -37,7 +37,7 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
- * Abstract implementation of the {@link org.axonframework.commandhandling.model.inspection.ChildEntityDefinition} to
+ * Abstract implementation of the {@link ChildEntityDefinition} to
  * provide reusable functionality for collections of ChildEntityDefinitions.
  */
 public abstract class AbstractChildEntityDefinition implements ChildEntityDefinition {
@@ -74,16 +74,16 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
 
     /**
      * Extracts the Child Entity contained in the given {@code declaringEntity} as an
-     * {@link org.axonframework.commandhandling.model.inspection.EntityModel}. The type of the Child Entity is defined
+     * {@link EntityModel}. The type of the Child Entity is defined
      * through a key in the provided {@code attributes} or based on given {@link java.lang.reflect.Field}.
      *
-     * @param declaringEntity The {@link org.axonframework.commandhandling.model.inspection.EntityModel} declaring the
+     * @param declaringEntity The {@link EntityModel} declaring the
      *                        given {@code field}.
      * @param attributes      A {@link java.util.Map} containing the
      *                        {@link AggregateMember} attributes.
      * @param field           The {@link java.lang.reflect.Field} containing the Child Entity.
      * @param <T>             The type {@code T} of the given {@code declaringEntity}
-     *                        {@link org.axonframework.commandhandling.model.inspection.EntityModel}.
+     *                        {@link EntityModel}.
      * @return the Child Entity contained in the {@code declaringEntity}.
      */
     protected abstract <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
@@ -114,7 +114,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      *                         target entity.
      * @param parent           The {@code parent} Entity of type {@code T} of this Child Entity.
      * @param field            The {@link java.lang.reflect.Field} containing the Child Entity.
-     * @param childEntityModel The {@link org.axonframework.commandhandling.model.inspection.EntityModel} for the Child
+     * @param childEntityModel The {@link EntityModel} for the Child
      *                         Entity.
      * @param <T>              The type {@code T} of the given {@code parent} Entity.
      * @return The Child Entity which is the target of the incoming {@link org.axonframework.commandhandling.CommandMessage}.
@@ -130,7 +130,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      *
      * @param field            a {@link java.lang.reflect.Field} denoting the Child Entity upon which the {@code
      *                         childEntityModel} is based.
-     * @param childEntityModel a {@link org.axonframework.commandhandling.model.inspection.EntityModel} to retrieve the
+     * @param childEntityModel a {@link EntityModel} to retrieve the
      *                         routing key properties from.
      * @return a {@link java.util.Map} of key/value types {@link java.lang.String}/
      * {@link org.axonframework.common.property.Property} from Command Message name to routing key.

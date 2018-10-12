@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.modelling.command.AggregateMember;
@@ -26,21 +26,23 @@ import org.axonframework.eventhandling.EventMessage;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.resolveGenericType;
 
 /**
- * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Maps with entities as
- * values annotated with {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that
- * delegates to the entities in the annotated Map.
+ * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Collections of entities
+ * (field type assignable to {@link Iterable}) annotated with {@link AggregateMember}. If such a field is found a {@link
+ * ChildEntity} is created that delegates to the entities in the annotated collection.
  */
-public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractChildEntityDefinition {
+public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends AbstractChildEntityDefinition {
 
     @Override
     protected boolean isFieldTypeSupported(Field field) {
-        return Map.class.isAssignableFrom(field.getType());
+        return Iterable.class.isAssignableFrom(field.getType());
     }
 
     @Override
@@ -49,7 +51,7 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
                                                               Field field) {
         Class<?> entityType = (Class<?>) attributes.get("type");
         if (Void.class.equals(entityType)) {
-            entityType = resolveGenericType(field, 1).orElseThrow(
+            entityType = resolveGenericType(field, 0).orElseThrow(
                     () -> new AxonConfigurationException(format(
                             "Unable to resolve entity type of field [%s]. Please provide type explicitly in @AggregateMember annotation.",
                             field.toGenericString()
@@ -69,9 +71,12 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
 
         Object routingValue = commandHandlerRoutingKeys.get(msg.getCommandName())
                                                        .getValue(msg.getPayload());
-        Map<?, ?> fieldValue = ReflectionUtils.getFieldValue(field, parent);
+        Iterable<?> iterable = ReflectionUtils.getFieldValue(field, parent);
 
-        return fieldValue == null ? null : fieldValue.get(routingValue);
+        return StreamSupport.stream(iterable.spliterator(), false)
+                            .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i)))
+                            .findFirst()
+                            .orElse(null);
     }
 
     @SuppressWarnings("unchecked")
@@ -80,9 +85,9 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
                                                      T parentEntity,
                                                      Field field,
                                                      ForwardingMode eventForwardingMode) {
-        Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
+        Iterable<Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
         return fieldValue == null
                 ? Stream.empty()
-                : eventForwardingMode.filterCandidates(message, fieldValue.values().stream());
+                : eventForwardingMode.filterCandidates(message, StreamSupport.stream(fieldValue.spliterator(), false));
     }
 }

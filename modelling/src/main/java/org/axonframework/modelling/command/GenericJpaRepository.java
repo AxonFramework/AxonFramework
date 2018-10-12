@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;

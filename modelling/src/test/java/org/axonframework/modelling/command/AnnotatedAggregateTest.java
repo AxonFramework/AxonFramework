@@ -18,15 +18,11 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.modelling.command.AbstractRepository;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.Repository;
 import org.junit.*;
 import org.mockito.*;
 

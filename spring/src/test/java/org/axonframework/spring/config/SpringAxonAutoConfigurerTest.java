@@ -26,7 +26,7 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
+import org.axonframework.modelling.command.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;

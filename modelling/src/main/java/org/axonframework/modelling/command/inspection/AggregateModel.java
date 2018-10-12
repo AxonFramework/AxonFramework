@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 /**
  * Specialized EntityModel that describes the capabilities and properties of an aggregate root of type {@code T}.

@@ -16,12 +16,8 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.LockingRepository;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.StubAggregate;
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;

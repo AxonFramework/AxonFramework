@@ -18,8 +18,8 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;

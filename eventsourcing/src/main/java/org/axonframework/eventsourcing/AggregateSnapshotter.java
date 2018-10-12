@@ -18,8 +18,8 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;

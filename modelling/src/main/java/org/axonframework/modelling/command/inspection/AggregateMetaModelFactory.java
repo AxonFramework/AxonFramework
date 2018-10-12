@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 /**
  * Interface of a factory for an {@link AggregateModel} for any given type defining an aggregate.

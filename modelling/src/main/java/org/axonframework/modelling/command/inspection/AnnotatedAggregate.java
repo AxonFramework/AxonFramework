@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;

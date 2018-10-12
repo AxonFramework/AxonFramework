@@ -23,7 +23,7 @@ import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.LockAwareAggregate;
 import org.axonframework.modelling.command.LockingRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;

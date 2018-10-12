@@ -18,8 +18,8 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.StubAggregate;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;

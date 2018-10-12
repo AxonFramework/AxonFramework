@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.model.inspection.EntityModel;
+import org.axonframework.modelling.command.inspection.EntityModel;
 import org.axonframework.common.property.Property;
 import org.axonframework.messaging.Message;
 

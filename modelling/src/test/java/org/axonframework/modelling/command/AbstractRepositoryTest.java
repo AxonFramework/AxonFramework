@@ -16,10 +16,10 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.eventhandling.saga.SagaScopeDescriptor;
+import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
