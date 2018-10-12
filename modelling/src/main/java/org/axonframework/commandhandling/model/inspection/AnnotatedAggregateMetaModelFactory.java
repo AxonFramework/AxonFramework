@@ -17,9 +17,9 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.commandhandling.model.AggregateRoot;
-import org.axonframework.commandhandling.model.AggregateVersion;
-import org.axonframework.commandhandling.model.EntityId;
+import org.axonframework.modelling.command.AggregateRoot;
+import org.axonframework.modelling.command.AggregateVersion;
+import org.axonframework.modelling.command.EntityId;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;

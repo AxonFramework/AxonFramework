@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 
 /**

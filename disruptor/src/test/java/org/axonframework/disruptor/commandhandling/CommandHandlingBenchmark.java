@@ -20,9 +20,9 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.model.AbstractRepository;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.modelling.command.AbstractRepository;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -33,7 +33,7 @@ import org.axonframework.messaging.MessageHandler;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 /**
  * Benchmark test created to compare

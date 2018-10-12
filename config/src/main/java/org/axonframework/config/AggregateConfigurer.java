@@ -16,11 +16,11 @@
 
 package org.axonframework.config;
 
-import org.axonframework.modelling.aggregate.AggregateAnnotationCommandHandler;
-import org.axonframework.modelling.aggregate.AnnotationCommandTargetResolver;
-import org.axonframework.modelling.aggregate.CommandTargetResolver;
-import org.axonframework.commandhandling.model.GenericJpaRepository;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateMetaModelFactory;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;

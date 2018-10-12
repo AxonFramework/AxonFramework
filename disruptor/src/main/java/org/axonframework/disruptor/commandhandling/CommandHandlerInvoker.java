@@ -18,12 +18,12 @@ package org.axonframework.disruptor.commandhandling;
 
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
-import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;

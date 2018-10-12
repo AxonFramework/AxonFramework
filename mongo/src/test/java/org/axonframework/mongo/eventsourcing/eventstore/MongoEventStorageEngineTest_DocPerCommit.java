@@ -20,7 +20,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
-import org.axonframework.commandhandling.model.ConcurrencyException;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;

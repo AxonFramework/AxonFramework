@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**
  *

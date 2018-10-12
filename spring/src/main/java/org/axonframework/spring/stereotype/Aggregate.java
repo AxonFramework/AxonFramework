@@ -16,9 +16,9 @@
 
 package org.axonframework.spring.stereotype;
 
-import org.axonframework.commandhandling.model.AggregateRoot;
-import org.axonframework.modelling.aggregate.AnnotationCommandTargetResolver;
-import org.axonframework.modelling.aggregate.CommandTargetResolver;
+import org.axonframework.modelling.command.AggregateRoot;
+import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
+import org.axonframework.modelling.command.CommandTargetResolver;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 

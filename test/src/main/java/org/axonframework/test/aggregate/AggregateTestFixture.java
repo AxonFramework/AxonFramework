@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.modelling.aggregate.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
@@ -24,12 +24,12 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
-import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;

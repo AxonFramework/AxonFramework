@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -28,8 +28,8 @@ import org.junit.*;
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.markDeleted;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

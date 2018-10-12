@@ -16,21 +16,22 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.ApplyMore;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.ApplyMore;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.modelling.command.Aggregate;
 
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 /**
- * Implementation of an {@link org.axonframework.commandhandling.model.Aggregate} that is sourced from events that have
+ * Implementation of an {@link Aggregate} that is sourced from events that have
  * been published by the aggregate.
  *
  * @param <T> The type of the aggregate root object

@@ -16,7 +16,7 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.modelling.command.Repository;
 
 /**
  * Specialization of the Module Configuration for modules that define an Aggregate Configuration. This interface allows

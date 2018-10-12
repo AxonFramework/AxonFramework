@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 

@@ -17,15 +17,15 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.hamcrest.CoreMatchers.any;
 import static org.junit.Assert.*;
 

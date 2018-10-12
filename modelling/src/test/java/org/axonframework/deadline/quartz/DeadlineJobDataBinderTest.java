@@ -16,7 +16,7 @@
 
 package org.axonframework.deadline.quartz;
 
-import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.MetaData;

@@ -17,9 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.model.EntityId;
+import org.axonframework.modelling.command.EntityId;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
+import org.axonframework.modelling.command.AggregateNotFoundException;
 
 /**
  * Special case of the {@link AggregateNotFoundException} that indicates that historic

@@ -18,8 +18,8 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.ForwardingMode;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
@@ -80,7 +80,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @param declaringEntity The {@link org.axonframework.commandhandling.model.inspection.EntityModel} declaring the
      *                        given {@code field}.
      * @param attributes      A {@link java.util.Map} containing the
-     *                        {@link org.axonframework.commandhandling.model.AggregateMember} attributes.
+     *                        {@link AggregateMember} attributes.
      * @param field           The {@link java.lang.reflect.Field} containing the Child Entity.
      * @param <T>             The type {@code T} of the given {@code declaringEntity}
      *                        {@link org.axonframework.commandhandling.model.inspection.EntityModel}.
@@ -179,7 +179,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @param message             The {@link org.axonframework.eventhandling.EventMessage} to route.
      * @param parentEntity        The {@code parent} Entity of type {@code T} of this Child Entity.
      * @param field               The {@link java.lang.reflect.Field} containing the Child Entity.
-     * @param eventForwardingMode The {@link org.axonframework.commandhandling.model.ForwardingMode} used to filter the
+     * @param eventForwardingMode The {@link ForwardingMode} used to filter the
      *                            {@code message} to route based on the ForwardingMode implementation.
      * @param <T>                 The type {@code T} of the given {@code parent} Entity.
      * @return A filtered {@link java.util.stream.Stream} of Child Entity targets for the incoming

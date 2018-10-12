@@ -18,11 +18,11 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolution;
 import org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.LockAwareAggregate;
-import org.axonframework.commandhandling.model.LockingRepository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.LockAwareAggregate;
+import org.axonframework.modelling.command.LockingRepository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
@@ -31,6 +31,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.Repository;
 
 import java.util.concurrent.Callable;
 
@@ -201,7 +202,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * Additionally, the {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @param <T> a generic specifying the Aggregate type contained in this
-     *            {@link org.axonframework.commandhandling.model.Repository} implementation
+     *            {@link Repository} implementation
      */
     public static class Builder<T> extends LockingRepository.Builder<T> {
 

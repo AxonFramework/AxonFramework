@@ -19,10 +19,10 @@ package org.axonframework.integrationtests.domain;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.EntityId;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.EntityId;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -35,7 +35,7 @@ import org.junit.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 
 public class ComplexAggregateStructureTest {

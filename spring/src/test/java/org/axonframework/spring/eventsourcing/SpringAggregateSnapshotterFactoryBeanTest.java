@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;

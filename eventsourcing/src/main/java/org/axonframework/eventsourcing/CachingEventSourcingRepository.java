@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;

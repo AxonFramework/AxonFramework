@@ -17,11 +17,11 @@
 package org.axonframework.commandhandling.conflictresolution;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
-import org.axonframework.modelling.aggregate.TargetAggregateVersion;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateVersion;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -33,7 +33,7 @@ import org.junit.Test;
 
 import java.util.Objects;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.fail;
 
 public class ConflictResolutionIntegrationTest {

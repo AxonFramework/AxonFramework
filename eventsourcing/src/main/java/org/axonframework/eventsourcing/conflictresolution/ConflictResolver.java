@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing.conflictresolution;
 
-import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
-import org.axonframework.commandhandling.model.ConflictingModificationException;
+import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.axonframework.modelling.command.ConflictingModificationException;
 import org.axonframework.eventhandling.DomainEventMessage;
 
 import java.util.List;

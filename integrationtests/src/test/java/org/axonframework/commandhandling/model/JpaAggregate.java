@@ -17,6 +17,9 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.AggregateVersion;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;

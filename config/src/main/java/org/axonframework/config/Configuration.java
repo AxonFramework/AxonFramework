@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;

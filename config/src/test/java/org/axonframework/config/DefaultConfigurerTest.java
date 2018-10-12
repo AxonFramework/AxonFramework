@@ -18,8 +18,8 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.GenericJpaRepository;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
@@ -35,7 +35,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
-import org.axonframework.modelling.aggregate.VersionedAggregateIdentifier;
+import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.hamcrest.CoreMatchers;
@@ -50,7 +50,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.common.Assert.assertWithin;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;

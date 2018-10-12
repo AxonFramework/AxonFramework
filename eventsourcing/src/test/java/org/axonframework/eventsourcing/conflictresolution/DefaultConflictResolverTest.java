@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.conflictresolution;
 
-import org.axonframework.commandhandling.model.ConflictingModificationException;
+import org.axonframework.modelling.command.ConflictingModificationException;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;

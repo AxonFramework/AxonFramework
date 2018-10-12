@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.commandhandling.model.AggregateEntityNotFoundException;
+import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;

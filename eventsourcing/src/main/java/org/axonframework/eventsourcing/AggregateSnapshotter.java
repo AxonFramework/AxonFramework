@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.ApplyMore;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.ApplyMore;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;

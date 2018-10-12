@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +19,8 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
@@ -45,7 +45,7 @@ import java.util.function.Supplier;
  * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
  * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
  * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
- * #registerRepository(org.axonframework.commandhandling.model.Repository)} method. Registering the repository
+ * #registerRepository(Repository)} method. Registering the repository
  * will cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by
  * the test.
  * <p/>

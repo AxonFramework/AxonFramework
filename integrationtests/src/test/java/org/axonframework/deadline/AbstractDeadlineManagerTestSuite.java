@@ -17,10 +17,10 @@
 package org.axonframework.deadline;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.EntityId;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.EntityId;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.AssertUtils.assertWithin;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;

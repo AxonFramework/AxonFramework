@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.CommandHandlerInterceptor;
+import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;

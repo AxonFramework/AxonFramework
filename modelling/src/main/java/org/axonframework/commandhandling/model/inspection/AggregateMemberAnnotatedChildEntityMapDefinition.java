@@ -17,8 +17,8 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.ForwardingMode;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;

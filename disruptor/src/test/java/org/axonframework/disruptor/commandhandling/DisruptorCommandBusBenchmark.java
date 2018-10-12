@@ -17,10 +17,10 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.modelling.aggregate.TargetAggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateLifecycle;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.DomainEventMessage;

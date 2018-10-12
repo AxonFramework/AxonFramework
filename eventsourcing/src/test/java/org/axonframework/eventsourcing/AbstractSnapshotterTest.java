@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.ConcurrencyException;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
