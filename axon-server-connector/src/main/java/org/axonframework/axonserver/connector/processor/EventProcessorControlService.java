@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,14 +16,10 @@
 
 package org.axonframework.axonserver.connector.processor;
 
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import io.axoniq.axonserver.grpc.control.*;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
 import org.axonframework.axonserver.connector.processor.grpc.PlatformInboundMessage;
-import io.axoniq.axonserver.grpc.control.PauseEventProcessor;
-import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
-import io.axoniq.axonserver.grpc.control.ReleaseEventProcessorSegment;
-import io.axoniq.axonserver.grpc.control.RequestEventProcessorInfo;
-import io.axoniq.axonserver.grpc.control.StartEventProcessor;
 import org.axonframework.eventhandling.EventProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,24 +39,24 @@ public class EventProcessorControlService {
 
     private final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
 
-    private final PlatformConnectionManager platformConnectionManager;
+    private final AxonServerConnectionManager axonServerConnectionManager;
 
     private final EventProcessorController eventProcessorController;
 
     private final Function<EventProcessor, PlatformInboundMessage> mapping;
 
-    public EventProcessorControlService(PlatformConnectionManager platformConnectionManager,
+    public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
                                         EventProcessorController eventProcessorController) {
-        this.platformConnectionManager = platformConnectionManager;
+        this.axonServerConnectionManager = axonServerConnectionManager;
         this.eventProcessorController = eventProcessorController;
         this.mapping = new GrpcEventProcessorMapping();
     }
 
     public void start(){
-        this.platformConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
-        this.platformConnectionManager.onOutboundInstruction(START_EVENT_PROCESSOR, this::startProcessor);
-        this.platformConnectionManager.onOutboundInstruction(RELEASE_SEGMENT, this::releaseSegment);
-        this.platformConnectionManager.onOutboundInstruction(REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo);
+        this.axonServerConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
+        this.axonServerConnectionManager.onOutboundInstruction(START_EVENT_PROCESSOR, this::startProcessor);
+        this.axonServerConnectionManager.onOutboundInstruction(RELEASE_SEGMENT, this::releaseSegment);
+        this.axonServerConnectionManager.onOutboundInstruction(REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo);
     }
 
     public void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
@@ -85,7 +82,7 @@ public class EventProcessorControlService {
         try {
             RequestEventProcessorInfo request = platformOutboundInstruction.getRequestEventProcessorInfo();
             EventProcessor processor = eventProcessorController.getEventProcessor(request.getProcessorName());
-            platformConnectionManager.send(mapping.apply(processor).instruction());
+            axonServerConnectionManager.send(mapping.apply(processor).instruction());
         } catch (Exception e) {
             logger.debug("Problem getting the information about Event Processor",e);
         }
