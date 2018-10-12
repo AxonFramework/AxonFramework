@@ -39,6 +39,7 @@
         <module>config</module>
         <module>messaging</module>
         <module>disruptor</module>
+        <module>eventsourcing</module>
     </modules>
     <packaging>pom</packaging>
 
