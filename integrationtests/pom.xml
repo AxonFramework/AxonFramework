@@ -36,7 +36,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>axon-messaging</artifactId>
+            <artifactId>axon-eventsourcing</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
@@ -57,14 +57,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>axon-core</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>axon-core</artifactId>
+            <artifactId>axon-eventsourcing</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>

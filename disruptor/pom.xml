@@ -35,21 +35,9 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>axon-messaging</artifactId>
+            <artifactId>axon-eventsourcing</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <!--TODO temp, should be other way around!-->
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>axon-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <!--<dependency>-->
-        <!--<groupId>${project.groupId}</groupId>-->
-        <!--<artifactId>axon-modeling</artifactId>-->
-        <!--<version>${project.version}</version>-->
-        <!--</dependency>-->
 
         <dependency>
             <groupId>com.lmax</groupId>

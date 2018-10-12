@@ -35,7 +35,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>axon-core</artifactId>
+            <artifactId>axon-eventsourcing</artifactId>
             <version>${project.version}</version>
         </dependency>
 
