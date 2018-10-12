@@ -28,12 +28,14 @@
     <artifactId>axon-metrics</artifactId>
 
     <name>Axon Metrics</name>
-    <description>This module contains components that provide metrics for standard Axon components.</description>
+    <description>
+        This module contains components that provide metrics for standard Axon components.
+    </description>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>axon-core</artifactId>
+            <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
 
