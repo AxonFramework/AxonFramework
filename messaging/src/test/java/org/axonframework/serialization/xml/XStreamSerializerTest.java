@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.xml;
 
-import org.axonframework.eventsourcing.StubDomainEvent;
+import org.axonframework.StubDomainEvent;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;

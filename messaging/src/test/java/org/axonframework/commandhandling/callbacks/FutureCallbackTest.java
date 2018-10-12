@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.callbacks;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.common.MockException;
+import org.axonframework.MockException;
 import org.junit.Before;
 import org.junit.Test;
 

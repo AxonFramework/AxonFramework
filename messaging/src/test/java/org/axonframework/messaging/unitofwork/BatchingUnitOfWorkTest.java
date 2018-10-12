@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.MockException;
+import org.axonframework.MockException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;

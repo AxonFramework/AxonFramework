@@ -15,7 +15,7 @@
  */
 package org.axonframework.queryhandling.annotation;
 
-import org.axonframework.common.MockException;
+import org.axonframework.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;

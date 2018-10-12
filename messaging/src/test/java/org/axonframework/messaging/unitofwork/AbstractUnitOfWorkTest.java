@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.MockException;
+import org.axonframework.MockException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;

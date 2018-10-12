@@ -16,8 +16,8 @@
 
 package org.axonframework.common.annotation;
 
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.junit.Test;
+import org.axonframework.commandhandling.RoutingKey;
+import org.junit.*;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,8 +25,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 public class AnnotationUtilsTest {
 
@@ -66,7 +65,7 @@ public class AnnotationUtilsTest {
     @Test
     public void testFindAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
         assertFalse("Didn't expect attributes to be found for non-existent annotation",
-                    AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), AggregateMember.class).isPresent());
+                    AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class).isPresent());
     }
 
     @TheTarget

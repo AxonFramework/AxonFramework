@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework;
 
 /**
  * Mock exception that provides no stack trace.
- *
+ * TODO deduplicate
  * @author Allard Buijze
  * @since 2.0
  */

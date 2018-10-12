@@ -17,13 +17,12 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.common.AssertUtils;
-import org.axonframework.common.MockException;
+import org.axonframework.MockException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
@@ -34,7 +33,6 @@ import org.quartz.SchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
 
 import java.time.Duration;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -80,8 +78,6 @@ public class QuartzEventSchedulerTest {
             latch.countDown();
             return null;
         }).when(eventBus).publish(isA(EventMessage.class));
-        Saga mockSaga = mock(Saga.class);
-        when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), buildTestEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
@@ -105,8 +101,6 @@ public class QuartzEventSchedulerTest {
             latch.countDown();
             return null;
         }).when(mockTransaction).commit();
-        Saga mockSaga = mock(Saga.class);
-        when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), buildTestEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
@@ -135,8 +129,6 @@ public class QuartzEventSchedulerTest {
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
 
-        Saga mockSaga = mock(Saga.class);
-        when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), buildTestEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
@@ -152,8 +144,6 @@ public class QuartzEventSchedulerTest {
 
     @Test
     public void testCancelJob() throws SchedulerException {
-        Saga mockSaga = mock(Saga.class);
-        when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(1000), buildTestEvent());
         assertEquals(1, scheduler.getJobKeys(GroupMatcher.groupEquals(GROUP_ID)).size());
         testSubject.cancelSchedule(token);
