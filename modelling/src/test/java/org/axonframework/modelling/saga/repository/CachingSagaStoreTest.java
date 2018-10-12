@@ -89,8 +89,8 @@ public class CachingSagaStoreTest {
 
         Set<String> actual = testSubject.findSagas(StubSaga.class, associationValue);
         assertEquals(actual, singleton("id"));
-        verify(associationsCache, atLeast(1)).get("org.axonframework.eventhandling.saga.repository.StubSaga/key=value");
-        verify(associationsCache).put("org.axonframework.eventhandling.saga.repository.StubSaga/key=value",
+        verify(associationsCache, atLeast(1)).get("org.axonframework.modelling.saga.repository.StubSaga/key=value");
+        verify(associationsCache).put("org.axonframework.modelling.saga.repository.StubSaga/key=value",
                                       Collections.singleton("id"));
     }
 

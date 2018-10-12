@@ -282,12 +282,12 @@ public class SpringAxonAutoConfigurerTest {
                      handlerEnhancerDefinition.getDelegates().get(0).getClass());
         assertEquals(MethodCommandHandlerInterceptorDefinition.class,
                      handlerEnhancerDefinition.getDelegates().get(1).getClass());
-        assertEquals(DeadlineMethodMessageHandlerDefinition.class,
-                     handlerEnhancerDefinition.getDelegates().get(2).getClass());
-        assertEquals(MethodCommandHandlerDefinition.class, handlerEnhancerDefinition.getDelegates().get(3).getClass());
+        assertEquals(MethodCommandHandlerDefinition.class, handlerEnhancerDefinition.getDelegates().get(2).getClass());
         assertEquals(MethodQueryMessageHandlerDefinition.class,
-                     handlerEnhancerDefinition.getDelegates().get(4).getClass());
+                     handlerEnhancerDefinition.getDelegates().get(3).getClass());
         assertEquals(ReplayAwareMessageHandlerWrapper.class,
+                     handlerEnhancerDefinition.getDelegates().get(4).getClass());
+        assertEquals(DeadlineMethodMessageHandlerDefinition.class,
                      handlerEnhancerDefinition.getDelegates().get(5).getClass());
         assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(6).getClass());
     }
