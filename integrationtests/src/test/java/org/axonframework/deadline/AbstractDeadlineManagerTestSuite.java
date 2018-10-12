@@ -45,8 +45,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.AssertUtils.assertWithin;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
