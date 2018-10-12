@@ -28,14 +28,14 @@ public class MavenArtifactRevisionResolverTest {
 
     @Test
     public void testFindVersionOfExistingPomProperties() throws Exception {
-        MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("org.axonframework", "axon-core");
+        MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("org.axonframework", "axon-modelling");
 
         assertEquals("2.1-SNAPSHOT", testSubject.revisionOf(Object.class));
     }
 
     @Test
     public void testFindVersionOfNonExistingProperties() throws Exception {
-        MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("does.not.exist", "axon-core");
+        MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("does.not.exist", "axon-modelling");
 
         assertNull(testSubject.revisionOf(Object.class));
     }

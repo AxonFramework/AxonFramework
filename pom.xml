@@ -21,7 +21,6 @@
     <artifactId>axon</artifactId>
     <version>4.0-SNAPSHOT</version>
     <modules>
-        <module>core</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>test</module>
@@ -40,6 +39,7 @@
         <module>messaging</module>
         <module>disruptor</module>
         <module>eventsourcing</module>
+        <module>modelling</module>
     </modules>
     <packaging>pom</packaging>
 
