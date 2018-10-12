@@ -57,6 +57,7 @@ import javax.sql.DataSource;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.eventhandling.EventUtils.asDomainEventMessage;
 
 /**
  * EventStorageEngine implementation that uses JPA to store and fetch events.
