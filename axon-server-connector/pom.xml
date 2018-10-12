@@ -62,13 +62,6 @@
         <!-- OPTIONAL dependency on Axon Framework -->
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-core</artifactId>
-            <version>${project.parent.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.axonframework</groupId>
             <artifactId>axon-configuration</artifactId>
             <version>${project.parent.version}</version>
             <optional>true</optional>
