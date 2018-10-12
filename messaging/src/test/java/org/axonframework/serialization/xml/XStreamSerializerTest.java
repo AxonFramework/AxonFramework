@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.xml;
 
-import org.axonframework.StubDomainEvent;
+import org.axonframework.eventhandling.StubDomainEvent;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -72,7 +72,7 @@ public class XStreamSerializerTest {
 
     @Test
     public void testPackageAlias() throws UnsupportedEncodingException {
-        testSubject.addPackageAlias("axones", "org.axonframework.eventsourcing");
+        testSubject.addPackageAlias("axoneh", "org.axonframework.eventhandling");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
@@ -80,7 +80,7 @@ public class XStreamSerializerTest {
         assertFalse("Package name found in:" + asString, asString.contains("org.axonframework.domain"));
         StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
-        assertTrue(asString.contains("axones"));
+        assertTrue(asString.contains("axoneh"));
     }
 
     @Test

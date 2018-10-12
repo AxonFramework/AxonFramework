@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework;
+package org.axonframework.eventhandling;
 
 import java.io.Serializable;
 
