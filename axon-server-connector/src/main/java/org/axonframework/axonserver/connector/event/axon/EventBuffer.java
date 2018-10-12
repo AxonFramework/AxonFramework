@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,13 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.EventWithToken;
+import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackedDomainEventData;
+import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
