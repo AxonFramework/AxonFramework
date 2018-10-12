@@ -15,7 +15,9 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
@@ -24,7 +26,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-spring</artifactId>
+
     <name>Axon Framework Spring Support</name>
+    <description>
+        Module providing Spring specific helper functionality to ease configuration / set-up of an Axon application, as
+        well as some Spring specific infrastructure components.
+    </description>
 
     <packaging>jar</packaging>
 
@@ -63,30 +70,41 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-messaging</artifactId>
             <version>${spring.version}</version>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-orm</artifactId>
             <version>${spring.version}</version>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${spring.version}</version>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
             <version>2.2.1</version>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
@@ -100,45 +118,53 @@
             <version>3.2</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
             <version>${spring.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
             <version>5.1.0.Final</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
             <version>2.3.4</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
             <version>1.0.0</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
