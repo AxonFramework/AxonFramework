@@ -42,7 +42,7 @@ import javax.persistence.EntityManagerFactory;
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa",
         "org.axonframework.eventhandling.tokenstore",
-        "org.axonframework.eventhandling.saga.repository.jpa"
+        "org.axonframework.modelling.saga.repository.jpa"
 })
 @Configuration
 public class JpaAutoConfiguration {
