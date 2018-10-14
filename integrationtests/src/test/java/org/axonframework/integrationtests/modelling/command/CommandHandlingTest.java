@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.modelling.command;
 
-import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -27,6 +26,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.integrationtests.utils.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
