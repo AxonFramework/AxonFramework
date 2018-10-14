@@ -45,9 +45,7 @@
                     <instructions>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Description>High Performance and Scalability framework for Java application based on the
-                            CQRS principles
-                        </Bundle-Description>
+                        <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
                             org.axonframework.*
@@ -59,10 +57,7 @@
                     </instructions>
                 </configuration>
                 <executions>
-                    <!--
-                        This execution makes sure that the manifest is available
-                        when the tests are executed
-                    -->
+                    <!-- This execution makes sure that the manifest is available when the tests are executed -->
                     <execution>
                         <goals>
                             <goal>manifest</goal>
@@ -77,26 +72,10 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.core</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.modelling</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/AbstractEventStorageEngineTest.*</include>
-                                <include>**/BatchingEventStorageEngineTest.*</include>
-                                <include>**/EventStorageEngineTest.*</include>
-                                <include>**/EventStoreTestUtils.*</include>
-                                <include>**/AbstractSerializerTest.*</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -125,38 +104,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.1.1</version>
-                <executions>
-                    <execution>
-                        <id>ee-compatibility</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <artifactSet>
-                        <includes>
-                            <include>${project.groupId}:${project.artifactId}</include>
-                        </includes>
-                    </artifactSet>
-                    <filters>
-                        <filter>
-                            <artifact>${project.groupId}:${project.artifactId}</artifact>
-                            <excludes>
-                                <exclude>org/axonframework/common/jpa/ContainerManagedEntityManagerProvider.class
-                                </exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                    <shadedArtifactAttached>true</shadedArtifactAttached>
-                    <shadedClassifierName>ee-compat</shadedClassifierName>
-                </configuration>
             </plugin>
         </plugins>
     </build>
