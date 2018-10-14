@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.MockException;
+import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -48,9 +48,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
-import static org.axonframework.AssertUtils.assertWithin;
-import static org.axonframework.EventTestUtils.createEvent;
-import static org.axonframework.EventTestUtils.createEvents;
+import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
+import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
+import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.mockito.Mockito.*;
 

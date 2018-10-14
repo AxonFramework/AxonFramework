@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.MockException;
+import org.axonframework.modelling.utils.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;

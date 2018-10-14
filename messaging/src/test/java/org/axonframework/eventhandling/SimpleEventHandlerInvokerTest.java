@@ -21,8 +21,8 @@ import org.mockito.*;
 
 import java.util.List;
 
-import static org.axonframework.eventhandling.EventTestUtils.createEvent;
-import static org.axonframework.eventhandling.EventTestUtils.createEvents;
+import static org.axonframework.utils.EventTestUtils.createEvent;
+import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 /**

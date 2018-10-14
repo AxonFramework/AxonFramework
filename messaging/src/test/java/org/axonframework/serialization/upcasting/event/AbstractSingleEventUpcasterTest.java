@@ -28,6 +28,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.utils.TestDomainEventEntry;
 import org.dom4j.Document;
 import org.junit.*;
 
@@ -50,7 +52,7 @@ public class AbstractSingleEventUpcasterTest {
         Serializer serializer = XStreamSerializer.builder().build();
         MetaData metaData = MetaData.with("key", "value");
         EventData<?> eventData = new TestDomainEventEntry(
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"), metaData),
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"), metaData),
                 serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster(newValue);
         List<IntermediateEventRepresentation> result =
@@ -58,7 +60,7 @@ public class AbstractSingleEventUpcasterTest {
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation firstEvent = result.get(0);
         assertEquals("1", firstEvent.getType().getRevision());
-        StubEvent upcastedEvent = serializer.deserialize(firstEvent.getData());
+        StubDomainEvent upcastedEvent = serializer.deserialize(firstEvent.getData());
         assertEquals(newValue, upcastedEvent.getName());
         assertEquals(eventData.getEventIdentifier(), firstEvent.getMessageIdentifier());
         assertEquals(eventData.getTimestamp(), firstEvent.getTimestamp());
@@ -73,7 +75,7 @@ public class AbstractSingleEventUpcasterTest {
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(10);
         long sequenceNumber = 100;
         Serializer serializer = XStreamSerializer.builder().build();
-        Object payload = new StubEvent("oldName");
+        Object payload = new StubDomainEvent("oldName");
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
         EventData<?> eventData = new TrackedDomainEventData<>(
                 trackingToken,
@@ -114,7 +116,7 @@ public class AbstractSingleEventUpcasterTest {
     public void testIgnoresWrongVersion() {
         Serializer serializer = XStreamSerializer.builder().build();
         EventData<?> eventData = new TestDomainEventEntry(
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName")), serializer
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName")), serializer
         );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
@@ -130,7 +132,7 @@ public class AbstractSingleEventUpcasterTest {
 
     private static class StubEventUpcaster extends SingleEventUpcaster {
 
-        private final SerializedType targetType = new SimpleSerializedType(StubEvent.class.getName(), null);
+        private final SerializedType targetType = new SimpleSerializedType(StubDomainEvent.class.getName(), null);
         private final Class<Document> expectedType = Document.class;
         private final String newNameValue;
 

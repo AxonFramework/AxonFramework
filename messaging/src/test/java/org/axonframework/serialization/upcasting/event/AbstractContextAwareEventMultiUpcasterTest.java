@@ -32,6 +32,10 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
+import org.axonframework.utils.SecondStubEvent;
+import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.utils.TestDomainEventEntry;
+import org.axonframework.utils.ThirdStubEvent;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -90,8 +94,8 @@ public class AbstractContextAwareEventMultiUpcasterTest {
         InitialEventRepresentation firstTestRepresentation =
                 new InitialEventRepresentation(firstTestEventData, serializer);
 
-        GenericDomainEventMessage<StubEvent> secondTestEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"), testMetaData);
+        GenericDomainEventMessage<StubDomainEvent> secondTestEventMessage =
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"), testMetaData);
         EventData<?> secondTestEventData = new TestDomainEventEntry(secondTestEventMessage, serializer);
         InitialEventRepresentation secondTestRepresentation =
                 new InitialEventRepresentation(secondTestEventData, serializer);
@@ -117,7 +121,7 @@ public class AbstractContextAwareEventMultiUpcasterTest {
         assertEquals(secondTestEventData.getEventIdentifier(), secondEventResult.getMessageIdentifier());
         assertEquals(secondTestEventData.getTimestamp(), secondEventResult.getTimestamp());
         assertEquals(testMetaData, secondEventResult.getMetaData().getObject());
-        StubEvent firstUpcastedEvent = serializer.deserialize(secondEventResult.getData());
+        StubDomainEvent firstUpcastedEvent = serializer.deserialize(secondEventResult.getData());
         assertEquals(expectedNewString, firstUpcastedEvent.getName());
 
         IntermediateEventRepresentation thirdEventResult = result.get(2);
@@ -146,7 +150,7 @@ public class AbstractContextAwareEventMultiUpcasterTest {
         static final String CONTEXT_FIELD_VALUE = "ContextAdded";
 
         private final SerializedType contextType = new SimpleSerializedType(SecondStubEvent.class.getName(), null);
-        private final SerializedType targetType = new SimpleSerializedType(StubEvent.class.getName(), null);
+        private final SerializedType targetType = new SimpleSerializedType(StubDomainEvent.class.getName(), null);
 
         private final String newStringValue;
         private final Integer newIntegerValue;

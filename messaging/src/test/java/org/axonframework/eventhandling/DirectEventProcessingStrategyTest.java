@@ -21,7 +21,7 @@ import org.junit.*;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.axonframework.eventhandling.EventTestUtils.createEvents;
+import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 /**

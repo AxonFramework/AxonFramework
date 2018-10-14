@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.MockException;
+import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
@@ -41,8 +41,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
-import static org.axonframework.AssertUtils.assertWithin;
-import static org.axonframework.EventTestUtils.createEvents;
+import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
+import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.*;

@@ -56,8 +56,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

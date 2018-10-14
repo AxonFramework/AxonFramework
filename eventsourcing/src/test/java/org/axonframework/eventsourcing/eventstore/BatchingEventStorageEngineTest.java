@@ -20,8 +20,8 @@ import org.junit.Test;
 import org.springframework.transaction.annotation.Transactional;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
 
 /**
  * @author Rene de Waele

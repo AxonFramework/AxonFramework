@@ -32,7 +32,7 @@ import java.util.List;
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
 
 /**

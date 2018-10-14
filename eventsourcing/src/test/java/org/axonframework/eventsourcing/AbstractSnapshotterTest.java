@@ -33,8 +33,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.Executor;
 
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 /**

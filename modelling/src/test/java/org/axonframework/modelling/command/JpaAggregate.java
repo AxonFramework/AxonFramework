@@ -17,11 +17,14 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.modelling.utils.StubDomainEvent;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Version;
+
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 @Entity
 public class JpaAggregate {
@@ -50,7 +53,7 @@ public class JpaAggregate {
 
     public void setMessage(String newMessage) {
         this.message = newMessage;
-        AggregateLifecycle.apply(new MessageUpdatedEvent(message));
+        apply(new StubDomainEvent(message));
     }
 
     public void delete() {

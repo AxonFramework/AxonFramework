@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.MockException;
+import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
@@ -45,7 +45,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.fail;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

@@ -36,6 +36,10 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
+import org.axonframework.utils.SecondStubEvent;
+import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.utils.TestDomainEventEntry;
+import org.axonframework.utils.ThirdStubEvent;
 import org.junit.*;
 
 import java.time.Instant;
@@ -91,8 +95,8 @@ public class AbstractEventMultiUpcasterTest {
     public void testUpcasterIgnoresWrongEventRevision() {
         String expectedRevisionNumber = "1";
 
-        GenericDomainEventMessage<StubEvent> testEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"));
+        GenericDomainEventMessage<StubDomainEvent> testEventMessage =
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"));
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
@@ -118,7 +122,7 @@ public class AbstractEventMultiUpcasterTest {
         String testAggregateId = "aggregateId";
         GlobalSequenceTrackingToken testTrackingToken = new GlobalSequenceTrackingToken(10);
         long testSequenceNumber = 100;
-        SerializedObject<String> testPayload = serializer.serialize(new StubEvent("oldName"), String.class);
+        SerializedObject<String> testPayload = serializer.serialize(new StubDomainEvent("oldName"), String.class);
         EventData<?> testEventData = new TrackedDomainEventData<>(
                 testTrackingToken,
                 new GenericDomainEventEntry<>(testAggregateType, testAggregateId, testSequenceNumber, "eventId", Instant.now(),
@@ -158,8 +162,8 @@ public class AbstractEventMultiUpcasterTest {
         String expectedSecondAndThirdRevisionNumber = null;
 
         MetaData testMetaData = MetaData.with("key", "value");
-        GenericDomainEventMessage<StubEvent> testEventMessage =
-                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName"), testMetaData);
+        GenericDomainEventMessage<StubDomainEvent> testEventMessage =
+                new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"), testMetaData);
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
@@ -173,7 +177,7 @@ public class AbstractEventMultiUpcasterTest {
         assertEquals(testEventData.getEventIdentifier(), firstResultRepresentation.getMessageIdentifier());
         assertEquals(testEventData.getTimestamp(), firstResultRepresentation.getTimestamp());
         assertEquals(testMetaData, firstResultRepresentation.getMetaData().getObject());
-        StubEvent firstUpcastedEvent = serializer.deserialize(firstResultRepresentation.getData());
+        StubDomainEvent firstUpcastedEvent = serializer.deserialize(firstResultRepresentation.getData());
         assertEquals(expectedNewString, firstUpcastedEvent.getName());
 
         IntermediateEventRepresentation secondResultRepresentation = result.get(1);
@@ -198,7 +202,7 @@ public class AbstractEventMultiUpcasterTest {
 
     private static class StubEventMultiUpcaster extends EventMultiUpcaster {
 
-        private final SerializedType targetType = new SimpleSerializedType(StubEvent.class.getName(), null);
+        private final SerializedType targetType = new SimpleSerializedType(StubDomainEvent.class.getName(), null);
 
         private final String newStringValue;
         private final Integer newIntegerValue;

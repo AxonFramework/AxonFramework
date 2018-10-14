@@ -34,7 +34,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-import static org.axonframework.eventhandling.EventTestUtils.createEvent;
+import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 

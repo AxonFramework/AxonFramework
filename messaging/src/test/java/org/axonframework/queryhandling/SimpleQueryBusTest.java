@@ -15,7 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.MockException;
+import org.axonframework.utils.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;

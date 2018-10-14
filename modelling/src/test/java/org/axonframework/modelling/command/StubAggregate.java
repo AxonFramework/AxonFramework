@@ -16,12 +16,11 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.StubDomainEvent;
+import org.axonframework.modelling.utils.StubDomainEvent;
 
 import java.util.UUID;
 
 /**
- * TODO deduplicate
  * @author Allard Buijze
  */
 public class StubAggregate {

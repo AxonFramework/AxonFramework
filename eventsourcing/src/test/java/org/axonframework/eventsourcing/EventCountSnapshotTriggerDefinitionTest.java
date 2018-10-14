@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.StubAggregate;
+import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;

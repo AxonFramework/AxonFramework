@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.StubDomainEvent;
+import org.axonframework.modelling.utils.StubDomainEvent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;

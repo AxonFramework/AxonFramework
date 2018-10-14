@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static junit.framework.TestCase.*;
-import static org.axonframework.eventhandling.EventTestUtils.createEvents;
+import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 public class ConcludesBatchParameterResolverFactoryTest {

@@ -48,8 +48,8 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.junit.Assert.*;
 
 /**

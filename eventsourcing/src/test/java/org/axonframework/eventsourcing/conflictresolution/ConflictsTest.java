@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 
 public class ConflictsTest {
 

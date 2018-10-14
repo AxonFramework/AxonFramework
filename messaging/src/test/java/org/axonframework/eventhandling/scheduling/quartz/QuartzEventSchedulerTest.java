@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.common.AssertUtils;
-import org.axonframework.MockException;
+import org.axonframework.utils.AssertUtils;
+import org.axonframework.utils.MockException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;

@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
-import org.axonframework.MockException;
-import org.axonframework.StubAggregate;
+import org.axonframework.eventsourcing.utils.MockException;
+import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.LockAwareAggregate;

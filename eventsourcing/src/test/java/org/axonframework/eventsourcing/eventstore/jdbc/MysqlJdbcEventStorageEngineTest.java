@@ -28,7 +28,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.junit.Assert.*;
 
 /**

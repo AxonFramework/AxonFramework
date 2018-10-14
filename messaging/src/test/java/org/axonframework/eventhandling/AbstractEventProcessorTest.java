@@ -27,8 +27,8 @@ import java.util.Set;
 
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
-import static org.axonframework.eventhandling.EventTestUtils.createEvent;
-import static org.axonframework.eventhandling.EventTestUtils.createEvents;
+import static org.axonframework.utils.EventTestUtils.createEvent;
+import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 public class AbstractEventProcessorTest {
