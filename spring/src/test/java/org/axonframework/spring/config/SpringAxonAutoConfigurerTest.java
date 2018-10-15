@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerIn
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
-import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
@@ -46,7 +45,6 @@ import org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefin
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.axonframework.spring.stereotype.Saga;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -286,9 +284,7 @@ public class SpringAxonAutoConfigurerTest {
                 @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
             EventProcessingModule eventProcessingModule = new EventProcessingModule();
             eventProcessingModule.usingSubscribingEventProcessors()
-                                 .registerSagaConfiguration(SagaConfiguration.forType(MySaga.class)
-                                                                             .storeBuilder(conf -> customSagaStore)
-                                                                             .configure());
+                                 .registerSaga(MySaga.class, sc -> sc.configureSagaStore(conf -> customSagaStore)                                                                             );
             return eventProcessingModule;
         }
 
