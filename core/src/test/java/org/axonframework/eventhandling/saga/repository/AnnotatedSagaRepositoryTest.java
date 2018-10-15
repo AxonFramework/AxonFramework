@@ -77,7 +77,8 @@ public class AnnotatedSagaRepositoryTest {
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
         Saga<Object> saga2 =
-                startAndGet(null).executeWithResult(() -> testSubject.load(saga.getSagaIdentifier()));
+                startAndGet(null).executeWithResult(() -> testSubject.load(saga.getSagaIdentifier()))
+                .getPayload();
 
         assertSame(saga, saga2);
         currentUnitOfWork.commit();

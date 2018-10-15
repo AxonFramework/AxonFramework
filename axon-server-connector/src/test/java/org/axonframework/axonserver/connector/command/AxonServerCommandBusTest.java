@@ -24,7 +24,7 @@ import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -65,7 +65,7 @@ public class AxonServerCommandBusTest {
         conf.setNrOfNewPermits(1000);
         localSegment = SimpleCommandBus.builder().build();
         ser = XStreamSerializer.builder().build();
-        testSubject = new AxonServerCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
+        testSubject = new AxonServerCommandBus(new AxonServerConnectionManager(conf), conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);
         dummyMessagePlatformServer.start();
@@ -127,15 +127,15 @@ public class AxonServerCommandBusTest {
     public void subscribe() throws Exception {
         Registration registration = testSubject.subscribe(String.class.getName(), c -> "Done");
         Thread.sleep(30);
-        assertEquals(1, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNotNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
         registration.cancel();
         Thread.sleep(30);
-        assertEquals(0, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
     }
 
     @Test
     public void processCommand() {
-        PlatformConnectionManager mockPlatformConnectionManager = mock(PlatformConnectionManager.class);
+        AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
         AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
         doAnswer(invocationOnMock -> {
             inboundStreamObserverRef.set( invocationOnMock.getArgument(0));
@@ -155,8 +155,8 @@ public class AxonServerCommandBusTest {
 
                 }
             };
-        }).when(mockPlatformConnectionManager).getCommandStream(any(), any());
-        AxonServerCommandBus testSubject2 = new AxonServerCommandBus(mockPlatformConnectionManager, conf, localSegment, ser,
+        }).when(mockAxonServerConnectionManager).getCommandStream(any(), any());
+        AxonServerCommandBus testSubject2 = new AxonServerCommandBus(mockAxonServerConnectionManager, conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
         testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
 
@@ -175,12 +175,12 @@ public class AxonServerCommandBusTest {
     public void resubscribe() throws Exception {
         testSubject.subscribe(String.class.getName(), c -> "Done");
         Thread.sleep(30);
-        assertEquals(1, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNotNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
         dummyMessagePlatformServer.stop();
         assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
         dummyMessagePlatformServer.start();
         Thread.sleep(3000);
-        assertEquals(1, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
     }
 
     @Test
@@ -193,6 +193,17 @@ public class AxonServerCommandBusTest {
         testSubject.dispatch(new GenericCommandMessage<>("payload"));
         assertEquals("payload", results.get(0));
         assertEquals(1, results.size());
+    }
+
+
+    @Test
+    public void reconnectAfterConnectionLost() throws InterruptedException {
+        testSubject.subscribe(String.class.getName(), c -> "Done");
+        Thread.sleep(30);
+        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        dummyMessagePlatformServer.onError(String.class.getName());
+        Thread.sleep(200);
+        assertNotNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
     }
 
 

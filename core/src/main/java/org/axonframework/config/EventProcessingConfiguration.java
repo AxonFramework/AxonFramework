@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -171,6 +171,19 @@ public interface EventProcessingConfiguration {
      * @return a {@link List} of {@link SagaConfiguration}s registered within this configuration
      */
     List<SagaConfiguration<?>> sagaConfigurations();
+
+    /**
+     * Returns the {@link SagaConfiguration} for the given {@code sagaType}. If no configuration has been provided for
+     * a Saga of this type, {@code null} is returned.
+     *
+     * @param sagaType the type of Saga to return the configuration for.
+     * @param <T>      the type of Saga
+     * @return the configuration for the Saga, or {@code null} if not found
+     */
+    @SuppressWarnings("unchecked")
+    default <T> SagaConfiguration<T> sagaConfiguration(Class<T> sagaType) {
+        return (SagaConfiguration<T>) sagaConfigurations().stream().filter(c -> sagaType.equals(c.type())).findFirst().orElse(null);
+    }
 
     /**
      * Returns the {@link MessageMonitor} set to the given {@code componentType} and {@code componentName} registered

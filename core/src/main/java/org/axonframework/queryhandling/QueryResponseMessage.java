@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 3.2
  */
-public interface QueryResponseMessage<T> extends Message<T> {
+public interface QueryResponseMessage<T> extends ResultMessage<T> {
 
     /**
      * Returns a copy of this QueryResponseMessage with the given {@code metaData}. The payload remains unchanged.

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,51 +17,80 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.EventProcessorControlService;
 import org.axonframework.axonserver.connector.processor.EventProcessorController;
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorInfoSource;
 import org.axonframework.axonserver.connector.processor.schedule.ScheduledEventProcessorInfoSource;
+import org.axonframework.config.Component;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.eventhandling.EventProcessor;
+
+import java.util.function.Function;
 
 /**
- * Created by Sara Pellegrini on 03/04/2018.
- * sara.pellegrini@gmail.com
+ * Module Configuration implementation that defines the components needed to
+ * control and monitor the {@link EventProcessor}s with AxonServer.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class EventProcessorInfoConfiguration implements ModuleConfiguration {
 
-    private final EventProcessorControlService eventProcessorControlService;
+    private final Component<EventProcessingConfiguration> eventProcessingConfiguration;
+    private final Component<AxonServerConnectionManager> connectionManager;
 
-    private final ScheduledEventProcessorInfoSource processorInfoSource;
+    private final Component<AxonServerConfiguration> axonServerConfiguration;
+
+    private final Component<EventProcessorControlService> eventProcessorControlService;
+    private final Component<ScheduledEventProcessorInfoSource> processorInfoSource;
+
+    private Configuration config;
+
+    public EventProcessorInfoConfiguration() {
+        this(Configuration::eventProcessingConfiguration,
+             c -> c.getComponent(AxonServerConnectionManager.class),
+             c -> c.getComponent(AxonServerConfiguration.class));
+    }
 
     public EventProcessorInfoConfiguration(
-            EventProcessingConfiguration eventProcessingConfiguration,
-            PlatformConnectionManager connectionManager,
-            AxonServerConfiguration configuration) {
-        EventProcessorController controller = new EventProcessorController(eventProcessingConfiguration);
-        GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(eventProcessingConfiguration, connectionManager);
+            Function<Configuration, EventProcessingConfiguration> eventProcessingConfiguration,
+            Function<Configuration, AxonServerConnectionManager> connectionManager,
+            Function<Configuration, AxonServerConfiguration> axonServerConfiguration) {
+        this.eventProcessingConfiguration = new Component<>(() -> config, "eventProcessingConfiguration", eventProcessingConfiguration);
+        this.connectionManager = new Component<>(() -> config, "connectionManager", connectionManager);
+        this.axonServerConfiguration = new Component<>(() -> config, "connectionManager", axonServerConfiguration);
 
-        this.eventProcessorControlService = new EventProcessorControlService(connectionManager, controller);
-        this.processorInfoSource = new ScheduledEventProcessorInfoSource(
-                configuration.getProcessorsNotificationInitialDelay(),
-                configuration.getProcessorsNotificationRate(),
-                infoSource);
+        this.eventProcessorControlService = new Component<>(() -> config, "eventProcessorControlService",
+                                                            c -> new EventProcessorControlService(
+                                                                    this.connectionManager.get(),
+                                                                    new EventProcessorController(
+                                                                            this.eventProcessingConfiguration.get())));
+        this.processorInfoSource = new Component<>(() -> config, "eventProcessorInfoSource", c -> {
+            GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(this.eventProcessingConfiguration.get(), this.connectionManager.get());
+            return new ScheduledEventProcessorInfoSource(
+                    this.axonServerConfiguration.get().getProcessorsNotificationInitialDelay(),
+                    this.axonServerConfiguration.get().getProcessorsNotificationRate(),
+                    infoSource);
+
+        });
     }
 
     @Override
     public void initialize(Configuration config) {
+        this.config = config;
     }
 
     @Override
     public void start() {
-        processorInfoSource.start();
-        eventProcessorControlService.start();
+        processorInfoSource.get().start();
+        eventProcessorControlService.get().start();
     }
 
     @Override
     public void shutdown() {
-        processorInfoSource.shutdown();
+        processorInfoSource.get().shutdown();
     }
 }

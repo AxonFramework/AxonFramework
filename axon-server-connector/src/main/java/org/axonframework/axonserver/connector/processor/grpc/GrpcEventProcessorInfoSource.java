@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,9 +16,9 @@
 
 package org.axonframework.axonserver.connector.processor.grpc;
 
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
-import org.axonframework.axonserver.connector.processor.EventProcessorInfoSource;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.processor.EventProcessorInfoSource;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 
@@ -27,8 +28,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Created by Sara Pellegrini on 15/03/2018.
- * sara.pellegrini@gmail.com
+ * Implementation of {@link EventProcessorInfoSource} that send {@link EventProcessor}'s status to AxonServer using GRPC messages.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
 
@@ -41,11 +44,11 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
     private final Function<EventProcessor, PlatformInboundMessage> mapping;
 
     public GrpcEventProcessorInfoSource(EventProcessingConfiguration eventProcessingConfiguration,
-                                        PlatformConnectionManager platformConnectionManager) {
+                                        AxonServerConnectionManager axonServerConnectionManager) {
         this(new EventProcessors(eventProcessingConfiguration),
-             platformConnectionManager::send,
+             axonServerConnectionManager::send,
              new GrpcEventProcessorMapping());
-        platformConnectionManager.addReconnectListener(lastProcessorsInfo::clear);
+        axonServerConnectionManager.addReconnectListener(lastProcessorsInfo::clear);
     }
 
     GrpcEventProcessorInfoSource(EventProcessors eventProcessors,

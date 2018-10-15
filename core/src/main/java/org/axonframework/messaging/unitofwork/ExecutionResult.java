@@ -13,7 +13,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Objects;
 
@@ -24,35 +24,23 @@ import java.util.Objects;
  */
 public class ExecutionResult {
 
-    private final Object result;
+    private final ResultMessage<?> result;
 
     /**
-     * Initializes an {@link ExecutionResult} from the given {@code object}.
+     * Initializes an {@link ExecutionResult} from the given {@code result}.
      *
-     * @param result the result of an executed task
+     * @param result the result message of an executed task
      */
-    public ExecutionResult(Object result) {
+    public ExecutionResult(ResultMessage<?> result) {
         this.result = result;
     }
 
     /**
-     * Returns the execution result. If the execution was completed successfully but yielded no result this method
-     * returns {@code null}. If the execution gave rise to an exception, invoking this method will throw an
-     * exception. Unchecked exceptions will be thrown directly. Checked exceptions are wrapped by a
-     * {@link org.axonframework.messaging.ExecutionException}.
+     * Return the execution result message.
      *
-     * @return The result of the execution if the operation was executed without raising an exception.
+     * @return the execution result message
      */
-    public Object getResult() {
-        if (isExceptionResult()) {
-            if (result instanceof RuntimeException) {
-                throw (RuntimeException) result;
-            }
-            if (result instanceof Error) {
-                throw (Error) result;
-            }
-            throw new ExecutionException("Execution of the task gave rise to an exception", (Throwable) result);
-        }
+    public ResultMessage<?> getResult() {
         return result;
     }
 
@@ -63,7 +51,7 @@ public class ExecutionResult {
      * @return The exception raised during execution of the task if any, {@code null} otherwise.
      */
     public Throwable getExceptionResult() {
-        return isExceptionResult() ? (Throwable) result : null;
+        return isExceptionResult() ? (Throwable) result.getPayload() : null;
     }
 
     /**
@@ -72,7 +60,7 @@ public class ExecutionResult {
      * @return {@code true} if execution of the task gave rise to an exception, {@code false} otherwise.
      */
     public boolean isExceptionResult() {
-        return result instanceof Throwable;
+        return result.isExceptional();
     }
 
     @Override

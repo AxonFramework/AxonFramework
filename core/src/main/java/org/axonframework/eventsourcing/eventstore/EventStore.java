@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.messaging.StreamableMessageSource;
 
 import java.util.Optional;
 
@@ -30,7 +32,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @author Rene de Waele
  */
-public interface EventStore extends EventBus {
+public interface EventStore extends EventBus, StreamableMessageSource<TrackedEventMessage<?>> {
 
     /**
      * Open an event stream containing all domain events belonging to the given {@code aggregateIdentifier}.
@@ -70,7 +72,7 @@ public interface EventStore extends EventBus {
      * number}.
      * <p>
      * These snapshots will only affect the {@link DomainEventStream} returned by the {@link #readEvents(String)}
-     * method. They do not change the events returned by {@link EventBus#openStream(TrackingToken)} or those received
+     * method. They do not change the events returned by {@link EventStore#openStream(TrackingToken)} or those received
      * by using {@link #subscribe(java.util.function.Consumer)}.
      * <p>
      * Note that snapshots are considered a temporary replacement for Events, and are used as performance optimization.

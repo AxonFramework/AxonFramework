@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,9 +16,12 @@
 
 package org.axonframework.axonserver.connector;
 
+
 /**
- * Created by Sara Pellegrini on 15/05/2018.
- * sara.pellegrini@gmail.com
+ * Generic exception indicating an error related to AxonServer.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class AxonServerException extends RuntimeException {
 
@@ -29,4 +33,7 @@ public class AxonServerException extends RuntimeException {
         super(errorCode+ " - " +message);
     }
 
+    public AxonServerException(ErrorCode errorCode, String message) {
+        this(errorCode.errorCode(), message);
+    }
 }

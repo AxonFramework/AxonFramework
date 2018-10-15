@@ -39,9 +39,10 @@ import org.axonframework.serialization.Serializer;
 import static io.axoniq.axonserver.grpc.query.QueryProviderOutbound.newBuilder;
 
 /**
- * Serializer for Subscription Query Messages
+ * Serializer for Subscription Query Messages.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 
 public class SubscriptionMessageSerializer {
