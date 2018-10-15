@@ -66,33 +66,18 @@ public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
     }
 
     /**
-     * Invokes {@link CommandCallback#onFailure(CommandMessage, Throwable)} with given exception on the wrapped
-     * callback.
-     *
-     * @param e cause for the failure
-     */
-    public void fail(Throwable e) {
-        onFailure(getMessage(), e);
-    }
-
-    /**
-     * Invokes {@link CommandCallback#onSuccess(CommandMessage, CommandResultMessage)} with given {@code result} on
+     * Invokes {@link CommandCallback#onResult(CommandMessage, CommandResultMessage)} with given {@code result} on
      * the wrapped callback.
      *
      * @param result the result of the command
      */
-    public void success(CommandResultMessage<R> result) {
-        onSuccess(getMessage(), result);
+    public void reportResult(CommandResultMessage<R> result) {
+        onResult(getMessage(), result);
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> message,
-                          CommandResultMessage<? extends R> commandResultMessage) {
-        wrapped.onSuccess(message, commandResultMessage);
-    }
-
-    @Override
-    public void onFailure(CommandMessage<? extends C> message, Throwable cause) {
-        wrapped.onFailure(message, cause);
+    public void onResult(CommandMessage<? extends C> message,
+                         CommandResultMessage<? extends R> commandResultMessage) {
+        wrapped.onResult(message, commandResultMessage);
     }
 }

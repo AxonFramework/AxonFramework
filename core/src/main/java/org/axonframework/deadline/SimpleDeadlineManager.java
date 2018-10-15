@@ -23,6 +23,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -177,11 +178,13 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                                                           executeScheduledDeadline(deadlineMessage, deadlineScope);
                                                           return null;
                                                       });
-                unitOfWork.executeWithResult(chain::proceed);
-            } catch (Exception e) {
-                throw new DeadlineException(format("An error occurred while triggering the deadline %s %s",
-                                                   deadlineName,
-                                                   deadlineId), e);
+                ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+                if (resultMessage.isExceptional()) {
+                    Throwable e = resultMessage.getExceptionResult();
+                    throw new DeadlineException(format("An error occurred while triggering the deadline %s %s",
+                                                       deadlineName,
+                                                       deadlineId), e);
+                }
             } finally {
                 scheduledTasks.remove(new DeadlineId(deadlineName, deadlineId));
             }

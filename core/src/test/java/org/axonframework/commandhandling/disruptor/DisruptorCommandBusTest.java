@@ -20,6 +20,7 @@ import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
@@ -49,6 +50,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -161,7 +163,7 @@ public class DisruptorCommandBusTest {
         inOrder.verify(mockAfterCommitConsumer).accept(isA(UnitOfWork.class));
         inOrder.verify(mockCleanUpConsumer).accept(isA(UnitOfWork.class));
 
-        verify(mockCallback).onSuccess(eq(command), any());
+        verify(mockCallback).onResult(eq(command), any());
     }
 
     @Test
@@ -175,14 +177,16 @@ public class DisruptorCommandBusTest {
                                          .invokerThreadCount(2)
                                          .publisherThreadCount(3)
                                          .build();
-        try {
-            testSubject.dispatch(asCommandMessage("Test"));
-            fail("Expected exception");
-        } catch (NoHandlerForCommandException e) {
-            assertTrue(e.getMessage().contains(String.class.getSimpleName()));
-        } finally {
-            customExecutor.shutdownNow();
-        }
+        CommandCallback callback = mock(CommandCallback.class);
+        testSubject.dispatch(asCommandMessage("Test"), callback);
+        customExecutor.shutdownNow();
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback).onResult(any(), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
+        Throwable exceptionResult = commandResultMessageCaptor.getValue().getExceptionResult();
+        assertEquals(NoHandlerForCommandException.class, exceptionResult.getClass());
+        assertTrue(exceptionResult.getMessage().contains(String.class.getSimpleName()));
     }
 
     @Test
@@ -265,8 +269,13 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        verify(mockCallback, times(990)).onSuccess(any(), any());
-        verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        verify(mockCallback, times(1000)).onResult(any(), commandResultMessageCaptor.capture());
+        assertEquals(10, commandResultMessageCaptor.getAllValues()
+                                                   .stream()
+                                                   .filter(ResultMessage::isExceptional)
+                                                   .count());
     }
 
     @SuppressWarnings("unchecked")
@@ -281,8 +290,13 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        verify(mockCallback, times(990)).onSuccess(any(), any());
-        verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        verify(mockCallback, times(1000)).onResult(any(), commandResultMessageCaptor.capture());
+        assertEquals(10, commandResultMessageCaptor.getAllValues()
+                                                   .stream()
+                                                   .filter(ResultMessage::isExceptional)
+                                                   .count());
     }
 
     private CommandCallback dispatchCommands(MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor,
@@ -397,18 +411,20 @@ public class DisruptorCommandBusTest {
         testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
         testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
 
-        try {
-            testSubject.dispatch(asCommandMessage(new UnknownCommand(aggregateIdentifier2)));
-            fail("Expected NoHandlerForCommandException");
-        } catch (NoHandlerForCommandException expected) {
-            // ignore
-        }
+        CommandCallback callback = mock(CommandCallback.class);
+        testSubject.dispatch(asCommandMessage(new UnknownCommand(aggregateIdentifier2)), callback);
 
         testSubject.stop();
 
         assertEquals(8, successCounter.get());
         assertEquals(3, failureCounter.get());
         assertEquals(0, ignoredCounter.get());
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback).onResult(any(), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
+        assertEquals(NoHandlerForCommandException.class,
+                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
     }
 
     @Test(expected = IllegalStateException.class)

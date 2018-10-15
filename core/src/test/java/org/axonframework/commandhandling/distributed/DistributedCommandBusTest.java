@@ -18,7 +18,9 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
@@ -31,6 +33,9 @@ import org.mockito.runners.*;
 
 import java.util.Optional;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -106,18 +111,21 @@ public class DistributedCommandBusTest {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("unknown");
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
 
-        try {
-            testSubject.dispatch(testCommandMessage);
-            fail("Expected NoHandlerForCommandException");
-        } catch (NoHandlerForCommandException e) {
-            // expected
-        }
+        CommandCallback callback = mock(CommandCallback.class);
+        testSubject.dispatch(testCommandMessage, callback);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
         verify(mockMessageMonitor, never()).onMessageIngested(any());
         verify(mockMonitorCallback, never()).reportSuccess();
+
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback).onResult(any(), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
+        assertEquals(NoHandlerForCommandException.class,
+                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
     }
 
     @Test
@@ -131,7 +139,11 @@ public class DistributedCommandBusTest {
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
-        verify(mockCallback).onSuccess(testCommandMessage, null);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
+        assertFalse(commandResultMessageCaptor.getValue().isExceptional());
+        assertNull(commandResultMessageCaptor.getValue().getPayload());
     }
 
     @Test
@@ -140,20 +152,19 @@ public class DistributedCommandBusTest {
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
 
         CommandCallback mockCallback = mock(CommandCallback.class);
-        try {
-            testSubject.dispatch(testCommandMessage);
-            fail("Expected NoHandlerForCommandException");
-        } catch (NoHandlerForCommandException e) {
-            // expected
-        }
+        testSubject.dispatch(testCommandMessage, mockCallback);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportFailure(any());
-        verify(mockCallback, never()).onFailure(any(), any());
-        verify(mockCallback, never()).onSuccess(any(), any());
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
+        assertEquals(NoHandlerForCommandException.class,
+                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
     }
 
     @Test
@@ -167,7 +178,10 @@ public class DistributedCommandBusTest {
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportFailure(isA(Exception.class));
-        verify(mockCallback).onFailure(eq(testCommandMessage), isA(Exception.class));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
+        assertEquals(Exception.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {
@@ -180,9 +194,9 @@ public class DistributedCommandBusTest {
         @Override
         public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) {
             if ("fail".equals(command.getPayload())) {
-                callback.onFailure(command, new Exception("Failing"));
+                callback.onResult(command, asCommandResultMessage(new Exception("Failing")));
             } else {
-                callback.onSuccess(command, null);
+                callback.onResult(command, new GenericCommandResultMessage<>((R) null));
             }
         }
 

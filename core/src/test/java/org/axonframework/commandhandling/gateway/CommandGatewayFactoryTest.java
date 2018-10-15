@@ -29,6 +29,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.*;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -59,16 +60,8 @@ public class CommandGatewayFactoryTest {
         mockRetryScheduler = mock(RetryScheduler.class);
         testSubject = new CommandGatewayFactory(mockCommandBus, mockRetryScheduler);
         callback = spy(new StringCommandCallback());
-        testSubject.registerCommandCallback(new CommandCallback<Object, String>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage,
-                                  CommandResultMessage<? extends String> commandResultMessage) {
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-            }
-        }, ResponseTypes.instanceOf(String.class));
+        testSubject.registerCommandCallback((commandMessage, commandResultMessage) -> { },
+                                            ResponseTypes.instanceOf(String.class));
         testSubject.registerCommandCallback(callback, ResponseTypes.instanceOf(String.class));
         gateway = testSubject.createGateway(CompleteGateway.class);
     }
@@ -76,8 +69,8 @@ public class CommandGatewayFactoryTest {
     @Test//(timeout = 2000)
     public void testGateway_FireAndForget() {
         doAnswer(i -> {
-            ((CommandCallback) i.getArguments()[1]).onSuccess((CommandMessage) i.getArguments()[0],
-                                                              asCommandResultMessage(null));
+            ((CommandCallback) i.getArguments()[1]).onResult((CommandMessage) i.getArguments()[0],
+                                                             asCommandResultMessage(null));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
@@ -89,7 +82,7 @@ public class CommandGatewayFactoryTest {
                 && "value".equals(x.getMetaData().get("key"))), isA(RetryingCallback.class));
 
         // check that the callback is invoked, despite the null return value
-        verify(callback).onSuccess(isA(CommandMessage.class), any());
+        verify(callback).onResult(isA(CommandMessage.class), any());
     }
 
     @Test(timeout = 2000)
@@ -131,7 +124,7 @@ public class CommandGatewayFactoryTest {
         assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
         t.join();
         assertEquals("ReturnValue", result.get());
-        verify(callback).onSuccess(any(), eq(returnValue));
+        verify(callback).onResult(any(), eq(returnValue));
     }
 
     @Test(timeout = 2000)
@@ -154,7 +147,11 @@ public class CommandGatewayFactoryTest {
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof CommandExecutionException);
         assertTrue(error.get().getCause() instanceof ExpectedException);
-        verify(callback).onFailure(any(), isA(ExpectedException.class));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback).onResult(any(), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
+        assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
     }
 
     @Test(timeout = 2000)
@@ -189,7 +186,10 @@ public class CommandGatewayFactoryTest {
         }
         assertNull("Did not expect ReturnValue", result.get());
         assertSame("Expected exact instance of RunTimeException being propagated", runtimeException, error.get());
-        verify(callback).onFailure(any(), isA(RuntimeException.class));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback).onResult(any(), commandResultMessageCaptor.capture());
+        assertEquals(RuntimeException.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
     }
 
     @Test(timeout = 2000)
@@ -304,7 +304,11 @@ public class CommandGatewayFactoryTest {
         t.join();
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof ExpectedException);
-        verify(callback).onFailure(any(), isA(ExpectedException.class));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback).onResult(any(), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
+        assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
     }
 
     @Test(timeout = 2000)
@@ -459,8 +463,8 @@ public class CommandGatewayFactoryTest {
         assertEquals(0, cdl.getCount());
 
         assertNotNull(result);
-        verify(callback1).onSuccess(any(), eq(ok));
-        verify(callback2).onSuccess(any(), eq(ok));
+        verify(callback1).onResult(any(), eq(ok));
+        verify(callback2).onResult(any(), eq(ok));
     }
 
     @Test(timeout = 2000)
@@ -475,8 +479,13 @@ public class CommandGatewayFactoryTest {
             gateway.fireAndWaitAndInvokeCallbacks("Command", callback1, callback2);
             fail("Expected exception");
         } catch (RuntimeException e) {
-            verify(callback1).onFailure(any(), eq(exception));
-            verify(callback2).onFailure(any(), eq(exception));
+            ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                    CommandResultMessage.class);
+            verify(callback1).onResult(any(), commandResultMessageCaptor.capture());
+            verify(callback2).onResult(any(), commandResultMessageCaptor.capture());
+            assertEquals(2, commandResultMessageCaptor.getAllValues().size());
+            assertEquals(exception, commandResultMessageCaptor.getAllValues().get(0).getExceptionResult());
+            assertEquals(exception, commandResultMessageCaptor.getAllValues().get(1).getExceptionResult());
         }
     }
 
@@ -494,8 +503,8 @@ public class CommandGatewayFactoryTest {
         gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
         assertEquals(0, cdl.getCount());
 
-        verify(callback1).onSuccess(any(), eq(ok));
-        verify(callback2).onSuccess(any(), eq(ok));
+        verify(callback1).onResult(any(), eq(ok));
+        verify(callback2).onResult(any(), eq(ok));
     }
 
     @Test(timeout = 2000)
@@ -512,9 +521,9 @@ public class CommandGatewayFactoryTest {
         gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
         assertEquals(0, cdl.getCount());
 
-        verify(callback1).onSuccess(any(), eq(resultMessage));
-        verify(callback2).onSuccess(any(), eq(resultMessage));
-        verify(callback, never()).onSuccess(any(), anyObject());
+        verify(callback1).onResult(any(), eq(resultMessage));
+        verify(callback2).onResult(any(), eq(resultMessage));
+        verify(callback, never()).onResult(any(), anyObject());
     }
 
     @Test(timeout = 2000)
@@ -527,8 +536,13 @@ public class CommandGatewayFactoryTest {
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
         gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
-        verify(callback1).onFailure(any(), eq(exception));
-        verify(callback2).onFailure(any(), eq(exception));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback1).onResult(any(), commandResultMessageCaptor.capture());
+        verify(callback2).onResult(any(), commandResultMessageCaptor.capture());
+        assertEquals(2, commandResultMessageCaptor.getAllValues().size());
+        assertEquals(exception, commandResultMessageCaptor.getAllValues().get(0).getExceptionResult());
+        assertEquals(exception, commandResultMessageCaptor.getAllValues().get(1).getExceptionResult());
     }
 
     @Test(timeout = 2000)
@@ -546,8 +560,8 @@ public class CommandGatewayFactoryTest {
     public void testCreateGateway_CompletableFuture_SuccessfulResult() throws Throwable {
         doAnswer(invocationOnMock -> {
             ((CommandCallback) invocationOnMock.getArguments()[1])
-                    .onSuccess((CommandMessage) invocationOnMock.getArguments()[0],
-                               asCommandResultMessage("returnValue"));
+                    .onResult((CommandMessage) invocationOnMock.getArguments()[0],
+                              asCommandResultMessage("returnValue"));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
@@ -560,8 +574,8 @@ public class CommandGatewayFactoryTest {
     public void testCreateGateway_Future_SuccessfulResult() throws Throwable {
         doAnswer(invocationOnMock -> {
             ((CommandCallback) invocationOnMock.getArguments()[1])
-                    .onSuccess((CommandMessage) invocationOnMock.getArguments()[0],
-                               asCommandResultMessage("returnValue"));
+                    .onResult((CommandMessage) invocationOnMock.getArguments()[0],
+                              asCommandResultMessage("returnValue"));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
@@ -664,8 +678,8 @@ public class CommandGatewayFactoryTest {
         @Override
         public Object answer(InvocationOnMock invocation) {
             cdl.countDown();
-            ((CommandCallback) invocation.getArguments()[1]).onSuccess((CommandMessage) invocation.getArguments()[0],
-                                                                       returnValue);
+            ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
+                                                                      returnValue);
             return null;
         }
     }
@@ -673,12 +687,8 @@ public class CommandGatewayFactoryTest {
     public static class StringCommandCallback implements CommandCallback<Object, String> {
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage,
-                              CommandResultMessage<? extends String> commandResultMessage) {
-        }
-
-        @Override
-        public void onFailure(CommandMessage commandMessage, Throwable cause) {
+        public void onResult(CommandMessage<?> commandMessage,
+                             CommandResultMessage<? extends String> commandResultMessage) {
         }
     }
 
@@ -701,8 +711,8 @@ public class CommandGatewayFactoryTest {
             if (cdl != null) {
                 cdl.countDown();
             }
-            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
-                                                                       e);
+            ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
+                                                                       asCommandResultMessage(e));
             return null;
         }
     }

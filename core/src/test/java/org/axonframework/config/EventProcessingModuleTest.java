@@ -295,6 +295,7 @@ public class EventProcessingModuleTest {
 
         buildComplexEventHandlingConfiguration(tokenStoreInvocation);
         configurer.eventProcessing()
+                  .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
                   .registerDefaultErrorHandler(config -> errorHandler);
         Configuration config = configurer.start();
 
@@ -322,6 +323,7 @@ public class EventProcessingModuleTest {
 
         buildComplexEventHandlingConfiguration(tokenStoreInvocation);
         configurer.eventProcessing()
+                  .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
                   .registerErrorHandler("subscribing", config -> subscribingErrorHandler)
                   .registerErrorHandler("tracking", config -> trackingErrorHandler);
         Configuration config = configurer.start();
@@ -436,7 +438,7 @@ public class EventProcessingModuleTest {
 
         @EventHandler
         public void handle(Integer event, UnitOfWork unitOfWork) {
-            unitOfWork.rollback(new IllegalStateException());
+            throw new IllegalStateException();
         }
 
         @EventHandler
@@ -456,7 +458,7 @@ public class EventProcessingModuleTest {
 
         @EventHandler
         public void handle(Integer event, UnitOfWork unitOfWork) {
-            unitOfWork.rollback(new IllegalStateException());
+            throw new IllegalStateException();
         }
 
         @EventHandler

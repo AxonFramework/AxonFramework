@@ -20,6 +20,7 @@ import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
@@ -38,8 +39,10 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.junit.*;
+import org.mockito.*;
 import org.mockito.stubbing.*;
 
 import java.util.List;
@@ -113,8 +116,15 @@ public class DisruptorCommandBusTest_MultiThreaded {
         assertEquals(20, garbageCollectionPrevention.size());
         assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
                      inMemoryEventStore.storedEventCounter.get());
-        verify(mockCallback, times(1000)).onSuccess(any(), any());
-        verify(mockCallback, times(10)).onFailure(any(), isA(MockException.class));
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(mockCallback, times(1010)).onResult(any(), commandResultMessageCaptor.capture());
+        assertEquals(10, commandResultMessageCaptor.getAllValues()
+                                                   .stream()
+                                                   .filter(ResultMessage::isExceptional)
+                                                   .map(ResultMessage::getExceptionResult)
+                                                   .filter(e -> e instanceof MockException)
+                                                   .count());
     }
 
     private Answer trackCreateAndLoad(Map<Object, Object> garbageCollectionPrevention) {

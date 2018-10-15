@@ -301,13 +301,12 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-        actualReturnValue = commandResultMessage;
-    }
-
-    @Override
-    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-        actualException = cause;
+    public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+        if (commandResultMessage.isExceptional()) {
+            actualException = commandResultMessage.getExceptionResult();
+        } else {
+            actualReturnValue = commandResultMessage;
+        }
     }
 
     /**

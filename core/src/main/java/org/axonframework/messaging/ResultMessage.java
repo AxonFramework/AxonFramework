@@ -16,6 +16,9 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,12 +31,47 @@ import java.util.Optional;
  */
 public interface ResultMessage<R> extends Message<R> {
 
+    /**
+     * Indicates whether the Result Message represents unsuccessful execution.
+     *
+     * @return {@code true} if execution was unsuccessful, {@code false} otherwise
+     */
+    // TODO: 10/11/2018 remove default: https://github.com/AxonFramework/AxonFramework/issues/827
     default boolean isExceptional() {
         return Throwable.class.isAssignableFrom(getPayloadType());
     }
 
-    default Optional<Throwable> exceptionResult() {
+    /**
+     * Tries to get exception result if present.
+     *
+     * @return an Optional containing exception result
+     */
+    // TODO: 10/11/2018 remove default: https://github.com/AxonFramework/AxonFramework/issues/827
+    default Optional<Throwable> tryGetExceptionResult() {
         return isExceptional() ? Optional.ofNullable((Throwable) getPayload()) : Optional.empty();
+    }
+
+    /**
+     * Gets exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.
+     *
+     * @return exception result
+     *
+     * @throws IllegalStateException if Result Message is not ecxeptional
+     */
+    default Throwable getExceptionResult() throws IllegalStateException {
+        return tryGetExceptionResult().orElseThrow(IllegalStateException::new);
+    }
+
+    /**
+     * Serializes the exception result.
+     *
+     * @param serializer             the Serializer
+     * @param expectedRepresentation the type representing the expected format
+     * @param <T>                    the tyep representing the expected format
+     * @return serialized object
+     */
+    default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
+        return serializer.serialize(tryGetExceptionResult().orElse(null), expectedRepresentation);
     }
 
     @Override

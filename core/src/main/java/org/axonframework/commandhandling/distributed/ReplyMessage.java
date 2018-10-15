@@ -38,6 +38,9 @@ public abstract class ReplyMessage {
     protected String payloadType;
     protected String payloadRevision;
     protected byte[] serializedPayload;
+    protected String exceptionType;
+    protected String exceptionRevision;
+    protected byte[] serializedException;
 
     /**
      * Default constructor required for de-/serialization of extending classes. Do not use directly.
@@ -59,12 +62,20 @@ public abstract class ReplyMessage {
                         Serializer serializer) {
         this.success = success;
         this.commandIdentifier = commandIdentifier;
+
         SerializedObject<byte[]> metaData = commandResultMessage.serializeMetaData(serializer, byte[].class);
         this.serializedMetaData = metaData.getData();
+
         SerializedObject<byte[]> payload = commandResultMessage.serializePayload(serializer, byte[].class);
         this.serializedPayload = payload.getData();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
+
+        SerializedObject<byte[]> exception = commandResultMessage.serializeExceptionResult(serializer,
+                                                                                           byte[].class);
+        this.serializedException = exception.getData();
+        this.exceptionType = exception.getType().getName();
+        this.exceptionRevision = exception.getType().getRevision();
     }
 
     /**
@@ -79,10 +90,16 @@ public abstract class ReplyMessage {
         if (!success || payloadType == null) {
             return null;
         }
+
         Object payload = deserializePayload(serializer);
+        Throwable exception = deserializeException(serializer);
         SerializedMetaData<byte[]> serializedMetaData =
                 new SerializedMetaData<>(this.serializedMetaData, byte[].class);
         MetaData metaData = serializer.deserialize(serializedMetaData);
+
+        if (exception != null) {
+            return new GenericCommandResultMessage<>(exception, metaData);
+        }
         return new GenericCommandResultMessage<>(payload, metaData);
     }
 
@@ -94,10 +111,7 @@ public abstract class ReplyMessage {
      * @return The exception thrown during command processing
      */
     public Throwable getError(Serializer serializer) {
-        if (success || payloadType == null) {
-            return null;
-        }
-        return (Throwable) deserializePayload(serializer);
+        return deserializeException(serializer);
     }
 
     /**
@@ -162,6 +176,9 @@ public abstract class ReplyMessage {
                             payloadType,
                             payloadRevision,
                             serializedPayload,
+                            exceptionType,
+                            exceptionRevision,
+                            serializedException,
                             serializedMetaData);
     }
 
@@ -179,6 +196,9 @@ public abstract class ReplyMessage {
                 && Objects.equals(this.payloadType, other.payloadType)
                 && Objects.equals(this.payloadRevision, other.payloadRevision)
                 && Objects.deepEquals(this.serializedPayload, other.serializedPayload)
+                && Objects.deepEquals(this.exceptionType, other.exceptionType)
+                && Objects.deepEquals(this.exceptionRevision, other.exceptionRevision)
+                && Objects.deepEquals(this.serializedException, other.serializedException)
                 && Objects.deepEquals(this.serializedMetaData, other.serializedMetaData);
     }
 
@@ -190,6 +210,9 @@ public abstract class ReplyMessage {
                 ", payloadType='" + payloadType + '\'' +
                 ", payloadRevision='" + payloadRevision + '\'' +
                 ", serializedPayload=" + Arrays.toString(serializedPayload) +
+                ", exceptionType='" + exceptionType + '\'' +
+                ", exceptionRevision='" + exceptionRevision + '\'' +
+                ", serializedException='" + Arrays.toString(serializedMetaData) +
                 ", serializedMetaData=" + Arrays.toString(serializedMetaData) +
                 '}';
     }
@@ -197,6 +220,13 @@ public abstract class ReplyMessage {
     private Object deserializePayload(Serializer serializer) {
         return serializer.deserialize(new SimpleSerializedObject<>(serializedPayload, byte[].class,
                                                                    payloadType, payloadRevision));
+    }
+
+    private Throwable deserializeException(Serializer serializer) {
+        return serializer.deserialize(new SimpleSerializedObject<>(serializedException,
+                                                                   byte[].class,
+                                                                   exceptionType,
+                                                                   exceptionRevision));
     }
 
 }

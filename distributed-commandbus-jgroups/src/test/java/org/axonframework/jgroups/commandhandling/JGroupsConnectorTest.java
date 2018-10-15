@@ -19,6 +19,7 @@ package org.axonframework.jgroups.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
@@ -353,12 +354,8 @@ public class JGroupsConnectorTest {
         FutureCallback<Object, Object> callback = new FutureCallback<>();
 
         distributedCommandBus1.dispatch(new GenericCommandMessage<>(1), callback);
-        try {
-            callback.getResult();
-            fail("Expected exception");
-        } catch (Exception e) {
-            //expected
-        }
+        CommandResultMessage<?> result = callback.getResult();
+        assertTrue(result.isExceptional());
         //noinspection unchecked
         verify(mockCommandBus1).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
 

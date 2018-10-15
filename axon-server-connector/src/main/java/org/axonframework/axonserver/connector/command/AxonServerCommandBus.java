@@ -36,7 +36,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.Registration;
@@ -57,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 
 /**
@@ -102,16 +102,7 @@ public class AxonServerCommandBus implements CommandBus {
 
     @Override
     public <C> void dispatch(CommandMessage<C> command) {
-        dispatch(command, new CommandCallback<C, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<?> commandResultMessage) {
-
-            }
-
-            @Override
-            public void onFailure(CommandMessage<? extends C> commandMessage, Throwable throwable) {
-            }
-        });
+        dispatch(command, (commandMessage, commandResultMessage) -> { });
     }
 
     @Override
@@ -132,15 +123,15 @@ public class AxonServerCommandBus implements CommandBus {
                                                         //noinspection unchecked
                                                         GenericCommandResultMessage<R> resultMessage = serializer
                                                                 .deserialize(commandResponse);
-                                                        commandCallback.onSuccess(command, resultMessage);
+                                                        commandCallback.onResult(command, resultMessage);
                                                     } catch (Exception ex) {
-                                                        commandCallback.onFailure(command, ex);
+                                                        commandCallback.onResult(command, asCommandResultMessage(ex));
                                                         logger.info("Failed to deserialize payload - {} - {}",
                                                                     commandResponse.getPayload().getData(),
                                                                     ex.getCause().getMessage());
                                                     }
                                                 } else {
-                                                    commandCallback.onFailure(command,
+                                                    commandCallback.onResult(command, asCommandResultMessage(
                                                                               new CommandExecutionException(
                                                                                       commandResponse.getMessage()
                                                                                                      .getMessage(),
@@ -148,13 +139,13 @@ public class AxonServerCommandBus implements CommandBus {
                                                                                               commandResponse
                                                                                                       .getErrorCode(),
                                                                                               commandResponse
-                                                                                                      .getMessage())));
+                                                                                                      .getMessage()))));
                                                 }
                                             }
 
                                             @Override
                                             public void onError(Throwable throwable) {
-                                                commandCallback.onFailure(command, throwable);
+                                                commandCallback.onResult(command, asCommandResultMessage(throwable));
                                             }
 
                                             @Override
@@ -341,15 +332,9 @@ public class AxonServerCommandBus implements CommandBus {
 
         private <C> void dispatchLocal(CommandMessage<C> command, StreamObserver<CommandProviderOutbound> responseObserver) {
             logger.debug("DispatchLocal: {}", command.getCommandName());
-            localSegment.dispatch(command, new CommandCallback<C, Object>() {
-                @Override
-                public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                    logger.debug("DispatchLocal: done {}", command.getCommandName());
-                    responseObserver.onNext(serializer.serialize(commandResultMessage, command.getIdentifier()));
-                }
-
-                @Override
-                public void onFailure(CommandMessage<? extends C> commandMessage, Throwable throwable) {
+            localSegment.dispatch(command, (commandMessage, commandResultMessage) -> {
+                if (commandResultMessage.isExceptional()) {
+                    Throwable throwable = commandResultMessage.getExceptionResult();
                     CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
                             CommandResponse.newBuilder()
                                            .setMessageIdentifier(UUID.randomUUID().toString())
@@ -360,6 +345,9 @@ public class AxonServerCommandBus implements CommandBus {
 
                     responseObserver.onNext(response);
                     logger.info("DispatchLocal: failure {} - {}", command.getCommandName(), throwable.getMessage(), throwable);
+                } else {
+                    logger.debug("DispatchLocal: done {}", command.getCommandName());
+                    responseObserver.onNext(serializer.serialize(commandResultMessage, command.getIdentifier()));
                 }
             });
         }

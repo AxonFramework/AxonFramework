@@ -23,6 +23,7 @@ import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
@@ -218,16 +219,17 @@ public class StubDeadlineManager implements DeadlineManager {
 
     private DeadlineMessage<?> consumeDeadline(DeadlineConsumer deadlineConsumer,
                                                ScheduledDeadlineInfo scheduledDeadlineInfo) {
-        try {
-            DefaultUnitOfWork<? extends DeadlineMessage<?>> uow = DefaultUnitOfWork.startAndGet(
-                    scheduledDeadlineInfo.deadlineMessage());
-            InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, deadlineMessage -> {
-                deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), deadlineMessage);
-                return deadlineMessage;
-            });
-            return (DeadlineMessage<?>) uow.executeWithResult(chain::proceed).getPayload();
-        } catch (Exception e) {
+        DefaultUnitOfWork<? extends DeadlineMessage<?>> uow = DefaultUnitOfWork.startAndGet(
+                scheduledDeadlineInfo.deadlineMessage());
+        InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, deadlineMessage -> {
+            deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), deadlineMessage);
+            return deadlineMessage;
+        });
+        ResultMessage<?> resultMessage = uow.executeWithResult(chain::proceed);
+        if (resultMessage.isExceptional()) {
+            Throwable e = resultMessage.getExceptionResult();
             throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
         }
+        return (DeadlineMessage<?>) resultMessage.getPayload();
     }
 }

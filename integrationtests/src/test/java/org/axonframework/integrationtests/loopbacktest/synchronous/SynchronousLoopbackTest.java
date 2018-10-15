@@ -17,7 +17,6 @@
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
@@ -53,7 +52,7 @@ public class SynchronousLoopbackTest {
     private CommandBus commandBus;
     private String aggregateIdentifier;
     private EventStore eventStore;
-    private VoidCallback reportErrorCallback;
+    private CommandCallback<Object, Object> reportErrorCallback;
     private CommandCallback<Object, Object> expectErrorCallback;
 
     @SuppressWarnings("unchecked")
@@ -70,25 +69,18 @@ public class SynchronousLoopbackTest {
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
 
-        reportErrorCallback = new VoidCallback<Object>() {
-            @Override
-            protected void onSuccess(CommandMessage<?> commandMessage) {
-            }
-
-            @Override
-            public void onFailure(CommandMessage commandMessage, Throwable cause) {
+        reportErrorCallback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.getExceptionResult();
                 throw new RuntimeException("Failure", cause);
             }
         };
-        expectErrorCallback = new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                fail("Expected this command to fail");
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+        expectErrorCallback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.getExceptionResult();
                 assertEquals("Mock exception", cause.getMessage());
+            } else {
+                fail("Expected this command to fail");
             }
         };
     }

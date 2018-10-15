@@ -41,12 +41,13 @@ public class LoggingCallback implements CommandCallback<Object, Object> {
     }
 
     @Override
-    public void onSuccess(CommandMessage message, CommandResultMessage commandResultMessage) {
-        logger.info("Command executed successfully: {}", message.getCommandName());
-    }
-
-    @Override
-    public void onFailure(CommandMessage<?> message, Throwable cause) {
-        logger.warn("Command resulted in exception: {}", message.getCommandName(), cause);
+    public void onResult(CommandMessage message, CommandResultMessage commandResultMessage) {
+        if (commandResultMessage.isExceptional()) {
+            logger.warn("Command resulted in exception: {}",
+                        message.getCommandName(),
+                        commandResultMessage.getExceptionResult());
+        } else {
+            logger.info("Command executed successfully: {}", message.getCommandName());
+        }
     }
 }

@@ -304,13 +304,12 @@ public interface UnitOfWork<T extends Message<?>> {
      *                              execution fails
      */
     default void execute(Runnable task, RollbackConfiguration rollbackConfiguration) {
-        try {
-            executeWithResult(() -> {
-                task.run();
-                return null;
-            }, rollbackConfiguration);
-        } catch (Exception e) {
-            throw (RuntimeException) e;
+        ResultMessage<?> resultMessage = executeWithResult(() -> {
+            task.run();
+            return null;
+        }, rollbackConfiguration);
+        if (resultMessage.isExceptional()) {
+            throw (RuntimeException) resultMessage.getExceptionResult();
         }
     }
 
@@ -324,9 +323,8 @@ public interface UnitOfWork<T extends Message<?>> {
      * @param <R>  the type of result that is returned after successful execution
      * @param task the task to execute
      * @return The result of the task wrapped in Result Message
-     * @throws Exception if an Exception was raised while executing the task
      */
-    default <R> ResultMessage<R> executeWithResult(Callable<R> task) throws Exception {
+    default <R> ResultMessage<R> executeWithResult(Callable<R> task) {
         return executeWithResult(task, RollbackConfigurationType.ANY_THROWABLE);
     }
 
@@ -343,9 +341,8 @@ public interface UnitOfWork<T extends Message<?>> {
      * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when task
      *                              execution fails
      * @return The result of the task wrapped in Result Message
-     * @throws Exception if an Exception was raised while executing the task
      */
-    <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception;
+    <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration);
 
     /**
      * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task

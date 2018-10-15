@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
@@ -33,10 +34,12 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.String.format;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -98,20 +101,28 @@ public class DistributedCommandBus implements CommandBus {
 
     @Override
     public <C> void dispatch(CommandMessage<C> command) {
+        LoggingCallback loggingCallback = LoggingCallback.INSTANCE;
         if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
-            Member destination = commandRouter.findDestination(interceptedCommand)
-                                              .orElseThrow(() -> new NoHandlerForCommandException(
-                                                      format("No node known to accept [%s]",
-                                                             interceptedCommand.getCommandName())));
-            try {
-                connector.send(destination, interceptedCommand);
-            } catch (Exception e) {
-                destination.suspect();
-                throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
+            Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
+            if (optionalDestination.isPresent()) {
+                Member destination = optionalDestination.get();
+                try {
+                    connector.send(destination, interceptedCommand);
+                } catch (Exception e) {
+                    destination.suspect();
+                    loggingCallback.onResult(interceptedCommand,
+                                             asCommandResultMessage(new CommandDispatchException(
+                                                     DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)));
+                }
+            } else {
+                loggingCallback.onResult(interceptedCommand,
+                                         asCommandResultMessage(new NoHandlerForCommandException(format(
+                                                 "No node known to accept [%s]",
+                                                 interceptedCommand.getCommandName()))));
             }
         } else {
-            dispatch(command, null);
+            dispatch(command, loggingCallback);
         }
     }
 
@@ -124,21 +135,25 @@ public class DistributedCommandBus implements CommandBus {
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
-        Member destination = commandRouter.findDestination(interceptedCommand)
-                                          .orElseThrow(() -> {
-                                              NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                                                      format("No node known to accept [%s]",
-                                                             interceptedCommand.getCommandName()));
-                                              messageMonitorCallback.reportFailure(exception);
-                                              return exception;
-                                          });
-        try {
-            connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
-                                                                                       messageMonitorCallback));
-        } catch (Exception e) {
-            messageMonitorCallback.reportFailure(e);
-            destination.suspect();
-            throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
+        Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
+        if (optionalDestination.isPresent()) {
+            Member destination = optionalDestination.get();
+            try {
+                connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
+                                                                                           messageMonitorCallback));
+            } catch (Exception e) {
+                messageMonitorCallback.reportFailure(e);
+                destination.suspect();
+                callback.onResult(interceptedCommand,
+                                  asCommandResultMessage(new CommandDispatchException(
+                                          DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)));
+            }
+        } else {
+            NoHandlerForCommandException exception = new NoHandlerForCommandException(
+                    format("No node known to accept [%s]",
+                           interceptedCommand.getCommandName()));
+            messageMonitorCallback.reportFailure(exception);
+            callback.onResult(interceptedCommand, asCommandResultMessage(exception));
         }
     }
 

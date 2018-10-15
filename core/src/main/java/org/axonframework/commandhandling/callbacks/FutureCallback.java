@@ -20,13 +20,13 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static java.util.Objects.requireNonNull;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
@@ -42,14 +42,13 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
         implements CommandCallback<C, R> {
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage,
-                          CommandResultMessage<? extends R> commandResultMessage) {
-        super.complete(commandResultMessage);
-    }
-
-    @Override
-    public void onFailure(CommandMessage commandMessage, Throwable cause) {
-        super.completeExceptionally(requireNonNull(cause));
+    public void onResult(CommandMessage<? extends C> commandMessage,
+                         CommandResultMessage<? extends R> commandResultMessage) {
+        if (!commandResultMessage.isExceptional()) {
+            super.complete(commandResultMessage);
+        } else {
+            super.completeExceptionally(commandResultMessage.getExceptionResult());
+        }
     }
 
     /**
@@ -71,9 +70,9 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
             return get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return asCommandResultMessage(null);
+            return new GenericCommandResultMessage<>((R) null);
         } catch (ExecutionException e) {
-            throw asRuntime(e);
+            return asCommandResultMessage(e);
         }
     }
 
@@ -97,22 +96,11 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
             return get(timeout, unit);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return asCommandResultMessage(null);
+            return new GenericCommandResultMessage<>((R) null);
         } catch (TimeoutException e) {
-            return asCommandResultMessage(null);
+            return new GenericCommandResultMessage<>((R) null);
         } catch (ExecutionException e) {
-            throw asRuntime(e);
-        }
-    }
-
-    private RuntimeException asRuntime(Exception e) {
-        Throwable failure = e.getCause();
-        if (failure instanceof Error) {
-            throw (Error) failure;
-        } else if (failure instanceof RuntimeException) {
-            return (RuntimeException) failure;
-        } else {
-            return new CommandExecutionException("An exception occurred while executing a command", failure);
+            return asCommandResultMessage(e);
         }
     }
 

@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.BiConsumer;
 
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+
 /**
  * Wrapper for command handler Callbacks that detects blacklisted aggregates and starts a cleanup process when an
  * aggregate is blacklisted.
@@ -66,29 +68,31 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage,
-                          CommandResultMessage<? extends R> commandResultMessage) {
-        if (delegate != null) {
-            delegate.onSuccess(commandMessage, commandResultMessage);
-        }
-    }
-
-    @Override
-    public void onFailure(CommandMessage<? extends C> command, Throwable cause) {
-        if (cause instanceof AggregateBlacklistedException) {
-            long sequence = ringBuffer.next();
-            CommandHandlingEntry event = ringBuffer.get(sequence);
-            event.resetAsRecoverEntry(((AggregateBlacklistedException) cause).getAggregateIdentifier());
-            ringBuffer.publish(sequence);
+    public void onResult(CommandMessage<? extends C> commandMessage,
+                         CommandResultMessage<? extends R> commandResultMessage) {
+        if (!commandResultMessage.isExceptional()) {
             if (delegate != null) {
-                delegate.onFailure(command, cause.getCause());
+                delegate.onResult(commandMessage, commandResultMessage);
             }
-        } else if (rescheduleOnCorruptState && cause instanceof AggregateStateCorruptedException) {
-            retryMethod.accept(command, delegate);
-        } else if (delegate != null) {
-            delegate.onFailure(command, cause);
         } else {
-            logger.warn("Command {} resulted in an exception:", command.getPayloadType().getSimpleName(), cause);
+            Throwable cause = commandResultMessage.getExceptionResult();
+            if (cause instanceof AggregateBlacklistedException) {
+                long sequence = ringBuffer.next();
+                CommandHandlingEntry event = ringBuffer.get(sequence);
+                event.resetAsRecoverEntry(((AggregateBlacklistedException) cause).getAggregateIdentifier());
+                ringBuffer.publish(sequence);
+                if (delegate != null) {
+                    delegate.onResult(commandMessage, asCommandResultMessage(cause.getCause()));
+                }
+            } else if (rescheduleOnCorruptState && cause instanceof AggregateStateCorruptedException) {
+                retryMethod.accept(commandMessage, delegate);
+            } else if (delegate != null) {
+                delegate.onResult(commandMessage, commandResultMessage);
+            } else {
+                logger.warn("Command {} resulted in an exception:",
+                            commandMessage.getPayloadType().getSimpleName(),
+                            cause);
+            }
         }
     }
 

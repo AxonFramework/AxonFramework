@@ -19,6 +19,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+
 /**
  * This class retains a list of callbacks for CommandCallbackConnectors to use.
  *
@@ -38,9 +40,9 @@ public class CommandCallbackRepository<A> {
         while (callbacks.hasNext()) {
             CommandCallbackWrapper wrapper = callbacks.next();
             if (wrapper.getChannelIdentifier().equals(channelId)) {
-                wrapper.fail(new CommandBusConnectorCommunicationException(
+                wrapper.reportResult(asCommandResultMessage(new CommandBusConnectorCommunicationException(
                         String.format("Connection error while waiting for a response on command %s",
-                                      wrapper.getMessage().getCommandName())));
+                                      wrapper.getMessage().getCommandName()))));
                 callbacks.remove();
             }
         }
@@ -74,8 +76,8 @@ public class CommandCallbackRepository<A> {
         if ((previous = callbacks.put(callbackId, commandCallbackWrapper)) != null) {
             //a previous callback with the same command ID was already found, we will cancel the callback as the command
             //is likely to be retried, so the previous one likely failed
-            previous.fail(new CommandBusConnectorCommunicationException(
-                    "Command-callback cancelled, a new command with the same ID is entered into the command bus"));
+            previous.reportResult(asCommandResultMessage(new CommandBusConnectorCommunicationException(
+                    "Command-callback cancelled, a new command with the same ID is entered into the command bus")));
         }
     }
 

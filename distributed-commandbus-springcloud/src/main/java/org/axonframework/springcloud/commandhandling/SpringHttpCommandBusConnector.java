@@ -125,9 +125,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 SpringHttpReplyMessage<R> replyMessage =
                         this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
                 if (replyMessage.isSuccess()) {
-                    callback.onSuccess(commandMessage, replyMessage.getCommandResultMessage(serializer));
+                    callback.onResult(commandMessage, replyMessage.getCommandResultMessage(serializer));
                 } else {
-                    callback.onFailure(commandMessage, replyMessage.getError(serializer));
+                    callback.onResult(commandMessage, asCommandResultMessage(replyMessage.getError(serializer)));
                 }
             });
         }
@@ -216,7 +216,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             logger.warn("Could not serialize command reply [{}]. Sending back NULL.", result, e);
             return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(),
                                                 success,
-                                                asCommandResultMessage(null),
+                                                asCommandResultMessage(e),
                                                 serializer);
         }
     }
@@ -231,14 +231,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             implements CommandCallback<C, R> {
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage,
-                              CommandResultMessage<? extends R> commandResultMessage) {
-            super.complete(createReply(commandMessage, true, commandResultMessage));
-        }
-
-        @Override
-        public void onFailure(CommandMessage commandMessage, Throwable cause) {
-            super.complete(createReply(commandMessage, false, cause));
+        public void onResult(CommandMessage<? extends C> commandMessage,
+                             CommandResultMessage<? extends R> commandResultMessage) {
+            super.complete(createReply(commandMessage, !commandResultMessage.isExceptional(), commandResultMessage));
         }
     }
 

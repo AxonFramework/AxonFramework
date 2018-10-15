@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -135,24 +136,25 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork<? extends EventMessage<?>> unitOfWork,
                                        Segment segment) throws Exception {
-        try {
-            unitOfWork.executeWithResult(() -> {
-                MessageMonitor.MonitorCallback monitorCallback =
-                        messageMonitor.onMessageIngested(unitOfWork.getMessage());
-                return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
-                    try {
-                        eventHandlerInvoker.handle(m, segment);
-                        monitorCallback.reportSuccess();
-                        return null;
-                    } catch (Throwable throwable) {
-                        monitorCallback.reportFailure(throwable);
-                        throw throwable;
-                    }
-                }).proceed();
-            }, rollbackConfiguration);
-        } catch (Exception e) {
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
+            MessageMonitor.MonitorCallback monitorCallback =
+                    messageMonitor.onMessageIngested(unitOfWork.getMessage());
+            return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
+                try {
+                    eventHandlerInvoker.handle(m, segment);
+                    monitorCallback.reportSuccess();
+                    return null;
+                } catch (Throwable throwable) {
+                    monitorCallback.reportFailure(throwable);
+                    throw throwable;
+                }
+            }).proceed();
+        }, rollbackConfiguration);
+
+        if (resultMessage.isExceptional()) {
+            Throwable e = resultMessage.getExceptionResult();
             if (unitOfWork.isRolledBack()) {
-                errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+                errorHandler.handleError(new ErrorContext(getName(), (Exception) e, eventMessages));
             } else {
                 logger.info("Exception occurred while processing a message, but unit of work was committed. {}",
                             e.getClass().getName());

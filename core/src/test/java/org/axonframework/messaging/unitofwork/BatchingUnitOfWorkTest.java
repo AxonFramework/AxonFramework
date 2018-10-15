@@ -17,6 +17,7 @@ import org.axonframework.common.MockException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ResultMessage;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -142,28 +143,41 @@ public class BatchingUnitOfWorkTest {
     private void assertExecutionResults(Map<Message<?>, ExecutionResult> expected,
                                         Map<Message<?>, ExecutionResult> actual) {
         assertEquals(expected.keySet(), actual.keySet());
-        List<Message<?>> expectedMessages = expected.values()
-                                                    .stream()
-                                                    .map(ExecutionResult::getResult)
-                                                    .collect(Collectors.toList());
+        List<ResultMessage<?>> expectedMessages = expected.values()
+                                                          .stream()
+                                                          .map(ExecutionResult::getResult)
+                                                          .collect(Collectors.toList());
 
-        List<Message<?>> actualMessages = actual.values()
-                                                .stream()
-                                                .map(ExecutionResult::getResult)
-                                                .collect(Collectors.toList());
+        List<ResultMessage<?>> actualMessages = actual.values()
+                                                      .stream()
+                                                      .map(ExecutionResult::getResult)
+                                                      .collect(Collectors.toList());
         List<?> expectedPayloads = expectedMessages.stream()
-                                    .map(Message::getPayload)
-                                    .collect(Collectors.toList());
+                                                   .filter(crm -> !crm.isExceptional())
+                                                   .map(Message::getPayload)
+                                                   .collect(Collectors.toList());
         List<?> actualPayloads = actualMessages.stream()
-                                  .map(Message::getPayload)
-                                  .collect(Collectors.toList());
-        List<MetaData> expectedMetaData = expectedMessages.stream()
-                                                 .map(Message::getMetaData)
-                                                 .collect(Collectors.toList());
-        List<MetaData> actualMetaData = actualMessages.stream()
-                                               .map(Message::getMetaData)
+                                               .filter(crm -> !crm.isExceptional())
+                                               .map(Message::getPayload)
                                                .collect(Collectors.toList());
+        List<Throwable> expectedExceptions = expectedMessages.stream()
+                                                             .filter(ResultMessage::isExceptional)
+                                                             .map(ResultMessage::getExceptionResult)
+                                                             .collect(Collectors.toList());
+        List<Throwable> actualExceptions = actualMessages.stream()
+                                                         .filter(ResultMessage::isExceptional)
+                                                         .map(ResultMessage::getExceptionResult)
+                                                         .collect(Collectors.toList());
+        List<MetaData> expectedMetaData = expectedMessages.stream()
+                                                          .map(Message::getMetaData)
+                                                          .collect(Collectors.toList());
+        List<MetaData> actualMetaData = actualMessages.stream()
+                                                      .map(Message::getMetaData)
+                                                      .collect(Collectors.toList());
+        assertEquals(expectedPayloads.size(), actualPayloads.size());
         assertTrue(expectedPayloads.containsAll(actualPayloads));
+        assertEquals(expectedExceptions.size(), actualExceptions.size());
+        assertTrue(expectedExceptions.containsAll(actualExceptions));
         assertTrue(expectedMetaData.containsAll(actualMetaData));
     }
 

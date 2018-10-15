@@ -77,6 +77,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 
@@ -283,7 +284,7 @@ public class DisruptorCommandBus implements CommandBus {
             doDispatch(commandToDispatch, new MonitorAwareCallback(callback, monitorCallback));
         } catch (Exception e) {
             monitorCallback.reportFailure(e);
-            throw e;
+            callback.onResult(commandToDispatch, asCommandResultMessage(e));
         }
     }
 
@@ -300,8 +301,10 @@ public class DisruptorCommandBus implements CommandBus {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
-            throw new NoHandlerForCommandException(
-                    format("No handler was subscribed to command [%s]", command.getCommandName()));
+            callback.onResult(command, asCommandResultMessage(new NoHandlerForCommandException(format(
+                    "No handler was subscribed to command [%s]",
+                    command.getCommandName()))));
+            return;
         }
 
         RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
@@ -568,12 +571,12 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-        }
-
-        @Override
-        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-            logger.info("An error occurred while handling a command [{}].", commandMessage.getCommandName(), cause);
+        public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+            if (commandResultMessage.isExceptional()) {
+                logger.info("An error occurred while handling a command [{}].",
+                            commandMessage.getCommandName(),
+                            commandResultMessage.getExceptionResult());
+            }
         }
     }
 
@@ -659,16 +662,15 @@ public class DisruptorCommandBus implements CommandBus {
                         new BlacklistDetectingCallback<>(
                                 new CommandCallback<Object, Object>() {
                                     @Override
-                                    public void onSuccess(CommandMessage<?> commandMessage,
-                                                          CommandResultMessage<?> commandResultMessage) {
-                                        future.complete(null);
-                                    }
-
-                                    @Override
-                                    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                        logger.warn("Failed sending message [{}] to aggregate with id [{}]",
+                                    public void onResult(CommandMessage<?> commandMessage,
+                                                         CommandResultMessage<?> commandResultMessage) {
+                                        if (commandResultMessage.isExceptional()) {
+                                            logger.warn("Failed sending message [{}] to aggregate with id [{}]",
                                                     message, aggregateIdentifier);
-                                        future.completeExceptionally(cause);
+                                            future.completeExceptionally(commandResultMessage.getExceptionResult());
+                                        } else {
+                                            future.complete(null);
+                                        }
                                     }
                                 },
                                 disruptor.getRingBuffer(),

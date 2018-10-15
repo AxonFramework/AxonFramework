@@ -43,18 +43,14 @@ public class RecordingCommandBusTest {
     @Test
     public void testPublishCommand() {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                assertNull("Expected default callback behavior to invoke onSuccess(null)",
-                           commandResultMessage.getPayload());
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                fail("Didn't expect callback to be invoked");
-            }
-        });
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
+                             (commandMessage, commandResultMessage) -> {
+                                 if (commandResultMessage.isExceptional()) {
+                                     fail("Didn't expect handling to fail");
+                                 }
+                                 assertNull("Expected default callback behavior to invoke onResult(null)",
+                                            commandResultMessage.getPayload());
+                             });
         //noinspection AssertEqualsBetweenInconvertibleTypes
         List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());
@@ -66,17 +62,13 @@ public class RecordingCommandBusTest {
     public void testPublishCommandWithCallbackBehavior() {
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                assertEquals("callbackResult", commandResultMessage.getPayload());
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                fail("Didn't expect callback to be invoked");
-            }
-        });
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
+                             (commandMessage, commandResultMessage) -> {
+                                 if (commandResultMessage.isExceptional()) {
+                                    fail("Didn't expect handling to fail");
+                                 }
+                                 assertEquals("callbackResult", commandResultMessage.getPayload());
+                             });
         //noinspection AssertEqualsBetweenInconvertibleTypes
         List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());

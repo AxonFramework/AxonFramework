@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Generic implementation of {@link ResultMessage}.
@@ -27,6 +28,8 @@ import java.util.Map;
 public class GenericResultMessage<R> extends MessageDecorator<R> implements ResultMessage<R> {
 
     private static final long serialVersionUID = -9086395619674962782L;
+
+    private final Throwable exception;
 
     /**
      * Returns the given {@code result} as a {@link ResultMessage} instance. If {@code result} already implements {@link
@@ -51,12 +54,32 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
+     * Creates a Result Message with the given {@code exception} result.
+     *
+     * @param exception the Exception describing the cause of an error
+     * @param <T>       the type of payload
+     * @return a message containing exception result
+     */
+    public static <T> ResultMessage<T> asResultMessage(Throwable exception) {
+        return new GenericResultMessage<>(exception);
+    }
+
+    /**
      * Creates a Command Result Message with the given {@code commandResult} as the payload.
      *
      * @param result the payload for the Message
      */
     public GenericResultMessage(R result) {
         this(result, MetaData.emptyInstance());
+    }
+
+    /**
+     * Creates a Result Message with the given {@code exception}.
+     *
+     * @param exception the Exception describing the cause of an error
+     */
+    public GenericResultMessage(Throwable exception) {
+        this(exception, MetaData.emptyInstance());
     }
 
     /**
@@ -70,26 +93,83 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
+     * Creates a Result Message with the given {@code exception} and {@code metaData}.
+     *
+     * @param exception the Exception describing the cause of an error
+     * @param metaData  the meta data for the Message
+     */
+    public GenericResultMessage(Throwable exception, Map<String, ?> metaData) {
+        this(new GenericMessage<>(null, metaData), exception);
+    }
+
+    /**
      * Creates a new Result Message with given {@code delegate} message.
      *
      * @param delegate the message delegate
      */
     public GenericResultMessage(Message<R> delegate) {
+        this(delegate, null);
+    }
+
+    /**
+     * Creates a Result Message with given {@code delegate} message and {@code exception}.
+     *
+     * @param delegate  the Message delegate
+     * @param exception the Exception describing the cause of an error
+     */
+    public GenericResultMessage(Message<R> delegate, Throwable exception) {
         super(delegate);
+        this.exception = exception;
+    }
+
+    @Override
+    public boolean isExceptional() {
+        return exception != null;
+    }
+
+    @Override
+    public Optional<Throwable> tryGetExceptionResult() {
+        return Optional.ofNullable(exception);
     }
 
     @Override
     public GenericResultMessage<R> withMetaData(Map<String, ?> metaData) {
-        return new GenericResultMessage<>(getDelegate().withMetaData(metaData));
+        return new GenericResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
     public GenericResultMessage<R> andMetaData(Map<String, ?> metaData) {
-        return new GenericResultMessage<>(getDelegate().andMetaData(metaData));
+        return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
+    }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        stringBuilder.append("payload={")
+                     .append(isExceptional() ? null : getPayload())
+                     .append('}')
+                     .append(", metadata={")
+                     .append(getMetaData())
+                     .append('}')
+                     .append(", messageIdentifier='")
+                     .append(getIdentifier())
+                     .append('\'')
+                     .append(", exception='")
+                     .append(exception)
+                     .append('\'');
     }
 
     @Override
     protected String describeType() {
         return "GenericResultMessage";
+    }
+
+    @Override
+    public R getPayload() {
+        if (isExceptional()) {
+            throw new IllegalPayloadAccessException(
+                    "This result completed exceptionally, payload is not available. Try calling 'getExceptionResult' to see the cause of failure.",
+                    exception);
+        }
+        return super.getPayload();
     }
 }

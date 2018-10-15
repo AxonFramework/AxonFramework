@@ -51,7 +51,7 @@ public class ExecutionResult {
      * @return The exception raised during execution of the task if any, {@code null} otherwise.
      */
     public Throwable getExceptionResult() {
-        return isExceptionResult() ? (Throwable) result.getPayload() : null;
+        return isExceptionResult() ? result.getExceptionResult() : null;
     }
 
     /**

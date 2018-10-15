@@ -18,7 +18,9 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.callbacks.FailureLoggingCallback;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Registration;
@@ -92,7 +94,11 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     public <R> R sendAndWait(Object command) {
         FutureCallback<Object, R> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
-        return futureCallback.getResult().getPayload();
+        CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult();
+        if (commandResultMessage.isExceptional()) {
+            throw asRuntime(commandResultMessage.getExceptionResult());
+        }
+        return commandResultMessage.getPayload();
     }
 
     /**
@@ -115,7 +121,11 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
         FutureCallback<Object, R> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
-        return futureCallback.getResult(timeout, unit).getPayload();
+        CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult(timeout, unit);
+        if (commandResultMessage.isExceptional()) {
+            throw asRuntime(commandResultMessage.getExceptionResult());
+        }
+        return commandResultMessage.getPayload();
     }
 
     @Override
@@ -129,6 +139,17 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     public Registration registerDispatchInterceptor(
             MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         return super.registerDispatchInterceptor(dispatchInterceptor);
+    }
+
+    private RuntimeException asRuntime(Throwable e) {
+        Throwable failure = e.getCause();
+        if (failure instanceof Error) {
+            throw (Error) failure;
+        } else if (failure instanceof RuntimeException) {
+            return (RuntimeException) failure;
+        } else {
+            return new CommandExecutionException("An exception occurred while executing a command", failure);
+        }
     }
 
     /**

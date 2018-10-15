@@ -64,14 +64,8 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
         out.writeBoolean(success);
         out.writeInt(serializedMetaData.length);
         out.write(serializedMetaData);
-        if (payloadType == null) {
-            out.writeUTF(NULL);
-        } else {
-            out.writeUTF(payloadType);
-            out.writeUTF(payloadRevision == null ? NULL : payloadRevision);
-            out.writeInt(serializedPayload.length);
-            out.write(serializedPayload);
-        }
+        write(out, payloadType, payloadRevision, serializedPayload);
+        write(out, exceptionType, exceptionRevision, serializedException);
     }
 
     @Override
@@ -91,6 +85,17 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
             serializedPayload = new byte[in.readInt()];
             in.readFully(serializedPayload);
         }
+        exceptionType = in.readUTF();
+        if (NULL.equals(exceptionType)) {
+            exceptionType = null;
+        } else {
+            exceptionRevision = in.readUTF();
+            if (NULL.equals(exceptionRevision)) {
+                exceptionRevision = null;
+            }
+            serializedException = new byte[in.readInt()];
+            in.readFully(serializedException);
+        }
     }
 
     @Override
@@ -101,6 +106,17 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
     @Override
     public void readExternal(ObjectInput in) throws IOException {
         readFrom(in);
+    }
+
+    private void write(DataOutput out, String type, String revision, byte[] serialized) throws IOException {
+        if (type == null) {
+            out.writeUTF(NULL);
+        } else {
+            out.writeUTF(type);
+            out.writeUTF(revision == null ? NULL : revision);
+            out.writeInt(serialized.length);
+            out.write(serialized);
+        }
     }
 
 }

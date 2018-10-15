@@ -126,19 +126,25 @@ public class SpringHttpCommandBusConnectorTest {
 
         SerializedObject<byte[]> serializedPayload = serializer.serialize(COMMAND_RESULT.getPayload(), byte[].class);
         SerializedObject<byte[]> serializedMetaData = serializer.serialize(COMMAND_RESULT.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedException = serializer.serialize(COMMAND_RESULT.tryGetExceptionResult()
+                                                                                          .orElse(null), byte[].class);
         //noinspection unchecked
         ArgumentCaptor<SerializedObject<byte[]>> serializedObjectCaptor =
                 ArgumentCaptor.forClass(SerializedObject.class);
-        verify(serializer, times(2)).deserialize(serializedObjectCaptor.capture());
+        verify(serializer, times(3)).deserialize(serializedObjectCaptor.capture());
 
         assertEquals(serializedPayload.getType(), serializedObjectCaptor.getAllValues().get(0).getType());
         assertEquals(serializedPayload.getContentType(), serializedObjectCaptor.getAllValues().get(0).getContentType());
         assertTrue(Arrays.equals(serializedPayload.getData(), serializedObjectCaptor.getAllValues().get(0).getData()));
 
-        assertEquals(serializedMetaData.getType(), serializedObjectCaptor.getAllValues().get(1).getType());
+        assertEquals(serializedException.getType(), serializedObjectCaptor.getAllValues().get(1).getType());
+        assertEquals(serializedException.getContentType(), serializedObjectCaptor.getAllValues().get(1).getContentType());
+        assertTrue(Arrays.equals(serializedException.getData(), serializedObjectCaptor.getAllValues().get(1).getData()));
+
+        assertEquals(serializedMetaData.getType(), serializedObjectCaptor.getAllValues().get(2).getType());
         assertEquals(serializedMetaData.getContentType(),
-                     serializedObjectCaptor.getAllValues().get(1).getContentType());
-        assertTrue(Arrays.equals(serializedMetaData.getData(), serializedObjectCaptor.getAllValues().get(1).getData()));
+                     serializedObjectCaptor.getAllValues().get(2).getContentType());
+        assertTrue(Arrays.equals(serializedMetaData.getData(), serializedObjectCaptor.getAllValues().get(2).getData()));
 
         //noinspection unchecked
         ArgumentCaptor<CommandMessage<? extends String>> commandMessageArgumentCaptor =
@@ -146,8 +152,8 @@ public class SpringHttpCommandBusConnectorTest {
         //noinspection unchecked
         ArgumentCaptor<CommandResultMessage<? extends String>> commandResultMessageArgumentCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
-        verify(commandCallback).onSuccess(commandMessageArgumentCaptor.capture(),
-                                          commandResultMessageArgumentCaptor.capture());
+        verify(commandCallback).onResult(commandMessageArgumentCaptor.capture(),
+                                         commandResultMessageArgumentCaptor.capture());
         assertEquals(COMMAND_MESSAGE.getMetaData(), commandMessageArgumentCaptor.getValue().getMetaData());
         assertEquals(COMMAND_MESSAGE.getPayload(), commandMessageArgumentCaptor.getValue().getPayload());
         assertEquals(COMMAND_RESULT.getMetaData(), commandResultMessageArgumentCaptor.getValue().getMetaData());
@@ -185,7 +191,10 @@ public class SpringHttpCommandBusConnectorTest {
         assertEquals(serializedObject.getType(), serializedObjectCaptor.getValue().getType());
         assertEquals(serializedObject.getContentType(), serializedObjectCaptor.getValue().getContentType());
         assertTrue(Arrays.equals(serializedObject.getData(), serializedObjectCaptor.getValue().getData()));
-        verify(commandCallback).onFailure(eq(COMMAND_MESSAGE), any(Exception.class));
+        ArgumentCaptor<CommandResultMessage<String>> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(commandCallback).onResult(eq(COMMAND_MESSAGE), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -210,7 +219,7 @@ public class SpringHttpCommandBusConnectorTest {
         doAnswer(a -> {
             SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback<String, String> callback =
                     (SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback) a.getArguments()[1];
-            callback.onSuccess(COMMAND_MESSAGE, COMMAND_RESULT);
+            callback.onResult(COMMAND_MESSAGE, COMMAND_RESULT);
             return a;
         }).when(localCommandBus).dispatch(any(), any());
 
@@ -231,7 +240,7 @@ public class SpringHttpCommandBusConnectorTest {
         doAnswer(a -> {
             SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback callback =
                     (SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback) a.getArguments()[1];
-            callback.onFailure(COMMAND_MESSAGE, COMMAND_ERROR);
+            callback.onResult(COMMAND_MESSAGE, asCommandResultMessage(COMMAND_ERROR));
             return a;
         }).when(localCommandBus).dispatch(any(), any());
 

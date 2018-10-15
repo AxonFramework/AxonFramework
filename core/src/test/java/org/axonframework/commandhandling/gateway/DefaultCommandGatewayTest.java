@@ -74,32 +74,24 @@ public class DefaultCommandGatewayTest {
     public void testSendWithCallback_CommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
-                    .onFailure((CommandMessage) invocation.getArguments()[0],
-                               new RuntimeException(new RuntimeException()));
+                    .onResult((CommandMessage) invocation.getArguments()[0],
+                               asCommandResultMessage(new RuntimeException(new RuntimeException())));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
                                               isA(Runnable.class)))
                 .thenAnswer(new RescheduleCommand())
                 .thenReturn(false);
-        final AtomicReference<Object> actualResult = new AtomicReference<>();
-        testSubject.send("Command", new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                actualResult.set(commandResultMessage);
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                actualResult.set(cause);
-            }
-        });
+        final AtomicReference<CommandResultMessage> actualResult = new AtomicReference<>();
+        testSubject.send("Command",
+                         (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> actualResult.set(commandResultMessage));
         verify(mockCommandMessageTransformer).handle(isA(CommandMessage.class));
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
         verify(mockRetryScheduler, times(2)).scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class),
                                                            captor.capture(), isA(Runnable.class));
         verify(mockCommandBus, times(2)).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
-        assertTrue(actualResult.get() instanceof RuntimeException);
+        assertTrue(actualResult.get().isExceptional());
+        assertTrue(actualResult.get().getExceptionResult() instanceof RuntimeException);
         assertEquals(1, captor.getAllValues().get(0).size());
         assertEquals(2, captor.getValue().size());
         assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
@@ -110,8 +102,8 @@ public class DefaultCommandGatewayTest {
     public void testSendWithoutCallback_CommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
-                    .onFailure((CommandMessage) invocation.getArguments()[0],
-                               new RuntimeException(new RuntimeException()));
+                    .onResult((CommandMessage) invocation.getArguments()[0],
+                               asCommandResultMessage(new RuntimeException(new RuntimeException())));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -138,7 +130,7 @@ public class DefaultCommandGatewayTest {
     public void testSendWithoutCallback_() throws ExecutionException, InterruptedException {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
-                    .onSuccess((CommandMessage) invocation.getArguments()[0], asCommandResultMessage("returnValue"));
+                    .onResult((CommandMessage) invocation.getArguments()[0], asCommandResultMessage("returnValue"));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
@@ -153,8 +145,8 @@ public class DefaultCommandGatewayTest {
     public void testSendAndWait_CommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
-                                                                       failure);
+            ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
+                                                                       asCommandResultMessage(failure));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -183,8 +175,8 @@ public class DefaultCommandGatewayTest {
     public void testSendAndWaitWithTimeout_CommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
-                                                                       failure);
+            ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
+                                                                       asCommandResultMessage(failure));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),

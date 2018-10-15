@@ -63,12 +63,28 @@ public class CommandSerializerTest {
     }
 
     @Test
-    public void testSerializeResponse(){
-        CommandResultMessage response = new GenericCommandResultMessage("response", MetaData.with("test", "testValue"));
+    public void testSerializeResponse() {
+        CommandResultMessage response = new GenericCommandResultMessage<>("response",
+                                                                          MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
         CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
-        assertEquals(response.getPayload(),deserialize.getPayload());
-        assertEquals(response.getMetaData(),deserialize.getMetaData());
+        assertEquals(response.getPayload(), deserialize.getPayload());
+        assertEquals(response.getMetaData(), deserialize.getMetaData());
+        assertFalse(response.isExceptional());
+        assertFalse(response.tryGetExceptionResult().isPresent());
+    }
+
+    @Test
+    public void testSerializeExceptionalResponse() {
+        RuntimeException exception = new RuntimeException("oops");
+        CommandResultMessage response = new GenericCommandResultMessage<>(exception,
+                                                                          MetaData.with("test", "testValue"));
+        CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
+        CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
+        assertEquals(response.getMetaData(), deserialize.getMetaData());
+        assertTrue(deserialize.isExceptional());
+        assertTrue(deserialize.tryGetExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.getExceptionResult().getMessage());
     }
 
 }

@@ -23,6 +23,7 @@ import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -160,7 +161,7 @@ public class SimpleQueryBus implements QueryBus {
                                                             interceptedQuery.getResponseType()));
             }
             monitorCallback.reportSuccess();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             result.completeExceptionally(e);
             monitorCallback.reportFailure(e);
         }
@@ -187,7 +188,7 @@ public class SimpleQueryBus implements QueryBus {
                                                .get(leftTimeout, TimeUnit.MILLISECONDS);
                                monitorCallback.reportSuccess();
                                return response;
-                           } catch (Exception e) {
+                           } catch (Throwable e) {
                                monitorCallback.reportFailure(e);
                                errorHandler.onError(e, interceptedQuery, handler);
                                return null;
@@ -231,8 +232,8 @@ public class SimpleQueryBus implements QueryBus {
     @SuppressWarnings("unchecked")
     private <Q, R> CompletableFuture<QueryResponseMessage<R>> interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow,
                                                                                  MessageHandler<? super QueryMessage<?, R>> handler)
-            throws Exception {
-        return uow.executeWithResult(() -> {
+            throws Throwable {
+        ResultMessage<CompletableFuture> completableFutureResultMessage = uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
             if (queryResponse instanceof CompletableFuture) {
@@ -248,7 +249,12 @@ public class SimpleQueryBus implements QueryBus {
                 });
             }
             return buildCompletableFuture(responseType, queryResponse);
-        }).getPayload();
+        });
+        if (completableFutureResultMessage.isExceptional()) {
+            throw completableFutureResultMessage.getExceptionResult();
+        } else {
+            return completableFutureResultMessage.getPayload();
+        }
     }
 
     private <R> CompletableFuture<QueryResponseMessage<R>> buildCompletableFuture(ResponseType<R> responseType,

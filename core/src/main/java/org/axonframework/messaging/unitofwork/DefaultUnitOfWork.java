@@ -25,6 +25,8 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
+
 /**
  * Implementation of the UnitOfWork that processes a single message.
  *
@@ -61,33 +63,35 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
         Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result;
-        ResultMessage<R> resultMessage;
+        ResultMessage resultMessage;
         try {
             result = task.call();
             if (result instanceof ResultMessage) {
-                resultMessage = (ResultMessage<R>) result;
+                resultMessage = (ResultMessage) result;
             } else if(result instanceof Message) {
                 resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
             } else {
                 resultMessage = new GenericResultMessage<>(result);
             }
         } catch (Error | Exception e) {
+            resultMessage = asResultMessage(e);
             if (rollbackConfiguration.rollBackOn(e)) {
                 rollback(e);
-            } else {
-                setExecutionResult(new ExecutionResult(new GenericResultMessage<>(e)));
-                commit();
+                return resultMessage;
             }
-            throw e;
         }
         setExecutionResult(new ExecutionResult(resultMessage));
-        commit();
+        try {
+            commit();
+        } catch (Exception e) {
+            resultMessage = asResultMessage(e);
+        }
         return resultMessage;
     }
 
