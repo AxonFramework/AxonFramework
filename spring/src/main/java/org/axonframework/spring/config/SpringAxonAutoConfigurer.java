@@ -292,6 +292,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void registerSagaBeanDefinitions(EventProcessingConfigurer configurer) {
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
@@ -299,15 +300,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             Class sagaType = beanFactory.getType(saga);
             ProcessingGroup processingGroupAnnotation =
                     beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
-            SagaConfiguration.SagaConfigurer<?> sagaConfigurer = SagaConfiguration.forType(sagaType);
             if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
                 configurer.assignHandlerTypesMatching(processingGroupAnnotation.value(), sagaType::equals);
             }
-            if (sagaAnnotation != null && !"".equals(sagaAnnotation.sagaStore())) {
-                sagaConfigurer.storeBuilder(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
-            }
-            SagaConfiguration<?> sagaConfiguration = sagaConfigurer.configure();
-            configurer.registerSagaConfiguration(sagaConfiguration);
+            configurer.registerSaga(sagaType, sagaConfigurer -> {
+                if (sagaAnnotation != null && !"".equals(sagaAnnotation.sagaStore())) {
+                    sagaConfigurer.configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                }
+            });
         }
     }
 

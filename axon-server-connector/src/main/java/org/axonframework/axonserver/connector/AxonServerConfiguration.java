@@ -72,16 +72,16 @@ public class AxonServerConfiguration {
     /**
      * Initial number of permits send for message streams (events, commands, queries)
      */
-    private Integer initialNrOfPermits = 100000;
+    private Integer initialNrOfPermits = 1000;
     /**
      * Additional number of permits send for message streams (events, commands, queries) when application
      * is ready for more messages
      */
-    private Integer nrOfNewPermits = 100000;
+    private Integer nrOfNewPermits = 500;
     /**
      * Threshold at which application sends new permits to server
      */
-    private Integer newPermitsThreshold = 10000;
+    private Integer newPermitsThreshold = 500;
 
     /**
      * Number of threads executing commands
@@ -113,6 +113,7 @@ public class AxonServerConfiguration {
      * Interval (in ms) for keep alive requests, 0 is keep-alive disabled
      */
     private long keepAliveTime = 0;
+    private int snapshotPrefetch = 1;
 
     /**
      * Indicates whether the download advice message should be suppressed, even when default connection properties
@@ -286,15 +287,23 @@ public class AxonServerConfiguration {
         return suppressDownloadMessage;
     }
 
+    public int getSnapshotPrefetch() {
+        return snapshotPrefetch;
+    }
+
+    public void setSnapshotPrefetch(int snapshotPrefetch) {
+        this.snapshotPrefetch = snapshotPrefetch;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
         private AxonServerConfiguration instance;
 
         public Builder() {
             instance = new AxonServerConfiguration();
-            instance.initialNrOfPermits = 100000;
-            instance.nrOfNewPermits = 90000;
-            instance.newPermitsThreshold = 10000;
+            instance.initialNrOfPermits = 1000;
+            instance.nrOfNewPermits = 500;
+            instance.newPermitsThreshold = 500;
         }
 
         public Builder ssl(String certFile) {

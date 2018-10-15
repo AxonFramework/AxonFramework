@@ -31,6 +31,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -43,24 +44,43 @@ import java.util.function.Predicate;
 public interface EventProcessingConfigurer {
 
     /**
+     * Contract which defines how to build an event processor.
+     */
+    @FunctionalInterface interface EventProcessorBuilder {
+
+        /**
+         * Builds an {@link EventProcessor} with the given {@code name}, {@link Configuration} and
+         * {@link EventHandlerInvoker}.
+         *
+         * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
+         * @param configuration       the global {@link Configuration} the implementation may use to obtain dependencies
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
+         *                            created, used to invoke event handlers
+         * @return an {@link EventProcessor}
+         */
+        EventProcessor build(String name, Configuration configuration, EventHandlerInvoker eventHandlerInvoker);
+    }
+
+    /**
      * Registers a Saga with default configuration within this Configurer.
      *
      * @param sagaType the type of Saga
      * @param <T>      the type of Saga
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     * @see SagaConfiguration#defaultConfiguration(Class)
      */
     default <T> EventProcessingConfigurer registerSaga(Class<T> sagaType) {
-        return registerSagaConfiguration(SagaConfiguration.defaultConfiguration(sagaType));
+        return registerSaga(sagaType, c -> {});
     }
 
     /**
-     * Registers a {@link SagaConfiguration}.
+     * Registers a Saga, allowing specific configuration to use for this Saga type.
      *
-     * @param sagaConfiguration a {@link SagaConfiguration}
+     * @param <T>            The type of Saga to configure
+     * @param sagaType       The type of Saga to configure
+     * @param sagaConfigurer a function providing modifications on top of the defaul configuration
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerSagaConfiguration(SagaConfiguration<?> sagaConfiguration);
+    <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer);
 
     /**
      * Registers a {@link Function} that builds a {@link SagaStore}.
@@ -457,24 +477,5 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer registerTransactionManager(String name,
                                                          Function<Configuration, TransactionManager> transactionManagerBuilder);
-
-    /**
-     * Contract which defines how to build an event processor.
-     */
-    @FunctionalInterface
-    interface EventProcessorBuilder {
-
-        /**
-         * Builds an {@link EventProcessor} with the given {@code name}, {@link Configuration} and
-         * {@link EventHandlerInvoker}.
-         *
-         * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
-         * @param configuration       the global {@link Configuration} the implementation may use to obtain dependencies
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
-         *                            created, used to invoke event handlers
-         * @return an {@link EventProcessor}
-         */
-        EventProcessor build(String name, Configuration configuration, EventHandlerInvoker eventHandlerInvoker);
-    }
 
 }
