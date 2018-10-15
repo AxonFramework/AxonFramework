@@ -28,11 +28,10 @@ package org.axonframework.commandhandling;
 public interface CommandCallback<C, R> {
 
     /**
-     * Invoked when command handling execution was done.
+     * Invoked when command handling execution is completed.
      *
-     * @param commandMessage       The message that was dispatched
-     * @param commandResultMessage The result message of the command handling execution.
+     * @param commandMessage       the {@link CommandMessage} that was dispatched
+     * @param commandResultMessage the {@link CommandResultMessage} of the command handling execution
      */
-    void onResult(CommandMessage<? extends C> commandMessage,
-                  CommandResultMessage<? extends R> commandResultMessage);
+    void onResult(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage);
 }
