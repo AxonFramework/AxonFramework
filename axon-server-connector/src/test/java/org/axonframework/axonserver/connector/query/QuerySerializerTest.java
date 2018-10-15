@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryMessage;
@@ -79,6 +80,23 @@ public class QuerySerializerTest {
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
         assertEquals(message.getPayload(), deserialized.getPayload());
+    }
+
+    @Test
+    public void testSerializeExceptionalResponse() {
+        RuntimeException exception = new RuntimeException("oops");
+        GenericQueryResponseMessage responseMessage = new GenericQueryResponseMessage<>(
+                String.class,
+                exception,
+                MetaData.with("test", "testValue"));
+
+        QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound);
+
+        assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
+        assertTrue(deserialize.isExceptional());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
     }
 
 }

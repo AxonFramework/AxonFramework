@@ -62,6 +62,19 @@ public class DefaultQueryGatewayTest {
         );
     }
 
+    @Test
+    public void testDispatchSingleResultQueryWhenBusReportsAnError() throws Exception {
+        Throwable expected = new Throwable("oops");
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(CompletableFuture
+                                                                                       .completedFuture(new GenericQueryResponseMessage<>(
+                                                                                               String.class,
+                                                                                               expected)));
+        CompletableFuture<String> result = testSubject.query("query", String.class);
+        assertTrue(result.isDone());
+        assertTrue(result.isCompletedExceptionally());
+        assertEquals(expected.getMessage(), result.exceptionally(Throwable::getMessage).get());
+    }
+
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testDispatchMultiResultQuery() {

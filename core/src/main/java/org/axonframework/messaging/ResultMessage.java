@@ -36,10 +36,7 @@ public interface ResultMessage<R> extends Message<R> {
      *
      * @return {@code true} if execution was unsuccessful, {@code false} otherwise
      */
-    // TODO: 10/11/2018 remove default: https://github.com/AxonFramework/AxonFramework/issues/827
-    default boolean isExceptional() {
-        return Throwable.class.isAssignableFrom(getPayloadType());
-    }
+    boolean isExceptional();
 
     /**
      * Returns the Exception in case of exceptional result message or an empty {@link Optional} in case of successful
@@ -47,10 +44,7 @@ public interface ResultMessage<R> extends Message<R> {
      *
      * @return an {@link Optional} containing exception result or an empty Optional in case of a successful execution
      */
-    // TODO: 10/11/2018 remove default: https://github.com/AxonFramework/AxonFramework/issues/827
-    default Optional<Throwable> optionalExceptionResult() {
-        return isExceptional() ? Optional.ofNullable((Throwable) getPayload()) : Optional.empty();
-    }
+    Optional<Throwable> optionalExceptionResult();
 
     /**
      * Returns the exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.

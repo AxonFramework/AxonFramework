@@ -16,14 +16,18 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryResponse;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.GrpcMetadata;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
+import org.axonframework.common.AxonException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -36,13 +40,26 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     private final QueryResponse queryResponse;
     private final Serializer messageSerializer;
     private final LazyDeserializingObject<R> serializedPayload;
+    private final Throwable exception;
     private final Supplier<MetaData> metadata;
 
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer) {
         this.queryResponse = queryResponse;
         this.messageSerializer = messageSerializer;
         this.metadata = new GrpcMetadata(queryResponse.getMetaDataMap(), messageSerializer);
-        if( queryResponse.hasPayload() && !"empty".equalsIgnoreCase(queryResponse.getPayload().getType())) {
+        if (queryResponse.hasMessage()) {
+            Class<? extends AxonException> exceptionClass = ErrorCode.lookupExceptionClass(queryResponse
+                                                                                                   .getErrorCode());
+            Throwable remoteException = new RemoteQueryException(queryResponse.getErrorCode(),
+                                                                 queryResponse.getMessage());
+            if (QueryExecutionException.class.equals(exceptionClass)) {
+                remoteException = new QueryExecutionException(queryResponse.getMessage().getMessage(), remoteException);
+            }
+            this.exception = remoteException;
+        } else {
+            this.exception = null;
+        }
+        if (queryResponse.hasPayload() && !"empty".equalsIgnoreCase(queryResponse.getPayload().getType())) {
             this.serializedPayload = new LazyDeserializingObject<>(new GrpcSerializedObject(queryResponse.getPayload()),
                                                                    messageSerializer);
         } else {
@@ -50,11 +67,14 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
         }
     }
 
-    private GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer, LazyDeserializingObject<R> serializedPayload, Supplier<MetaData> metadata) {
+    private GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer,
+                                      LazyDeserializingObject<R> serializedPayload, Throwable exception,
+                                      Supplier<MetaData> metadata) {
 
         this.queryResponse = queryResponse;
         this.messageSerializer = messageSerializer;
         this.serializedPayload = serializedPayload;
+        this.exception = exception;
         this.metadata = metadata;
     }
 
@@ -70,19 +90,36 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public R getPayload() {
-        if( serializedPayload == null) return null;
+        if (serializedPayload == null) {
+            return null;
+        }
         return serializedPayload.getObject();
     }
 
     @Override
     public Class<R> getPayloadType() {
-        if( serializedPayload == null) return null;
+        if (serializedPayload == null) {
+            return null;
+        }
         return serializedPayload.getType();
     }
 
     @Override
+    public boolean isExceptional() {
+        return exception != null;
+    }
+
+    @Override
+    public Optional<Throwable> optionalExceptionResult() {
+        return Optional.ofNullable(exception);
+    }
+
+    @Override
     public GrpcBackedResponseMessage<R> withMetaData(Map<String, ?> metaData) {
-        return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer, serializedPayload,
+        return new GrpcBackedResponseMessage<>(queryResponse,
+                                               messageSerializer,
+                                               serializedPayload,
+                                               exception,
                                                () -> MetaData.from(metaData));
     }
 
@@ -90,5 +127,4 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     public QueryResponseMessage<R> andMetaData(Map<String, ?> var1) {
         return withMetaData(getMetaData().mergedWith(var1));
     }
-
 }
