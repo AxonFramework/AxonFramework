@@ -110,7 +110,7 @@ public class SagaManagerTest {
             return null;
         });
         if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.getExceptionResult();
+            Throwable e = resultMessage.exceptionResult();
             e.printStackTrace();
             assertEquals("Mock", e.getMessage());
         } else {

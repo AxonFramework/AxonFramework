@@ -126,7 +126,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         SerializedObject<byte[]> serializedPayload = serializer.serialize(COMMAND_RESULT.getPayload(), byte[].class);
         SerializedObject<byte[]> serializedMetaData = serializer.serialize(COMMAND_RESULT.getMetaData(), byte[].class);
-        SerializedObject<byte[]> serializedException = serializer.serialize(COMMAND_RESULT.tryGetExceptionResult()
+        SerializedObject<byte[]> serializedException = serializer.serialize(COMMAND_RESULT.optionalExceptionResult()
                                                                                           .orElse(null), byte[].class);
         //noinspection unchecked
         ArgumentCaptor<SerializedObject<byte[]>> serializedObjectCaptor =
@@ -255,7 +255,7 @@ public class SpringHttpCommandBusConnectorTest {
         CommandResultMessage commandResultMessage = result.getCommandResultMessage(serializer);
         assertEquals(COMMAND_MESSAGE.getIdentifier(), result.getCommandIdentifier());
         assertTrue(commandResultMessage.isExceptional());
-        assertEquals(COMMAND_ERROR.getMessage(), commandResultMessage.getExceptionResult().getMessage());
+        assertEquals(COMMAND_ERROR.getMessage(), commandResultMessage.exceptionResult().getMessage());
 
         verify(localCommandBus).dispatch(any(), any());
     }

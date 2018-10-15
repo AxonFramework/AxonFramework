@@ -69,7 +69,7 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
     public void onResult(CommandMessage<? extends C> commandMessage,
                          CommandResultMessage<? extends R> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
-            Throwable cause = commandResultMessage.getExceptionResult();
+            Throwable cause = commandResultMessage.exceptionResult();
             history.add(simplify(cause));
             try {
                 // we fail immediately when the exception is checked,

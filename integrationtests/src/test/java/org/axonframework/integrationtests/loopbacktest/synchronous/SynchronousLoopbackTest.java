@@ -70,13 +70,13 @@ public class SynchronousLoopbackTest {
 
         reportErrorCallback = (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
-                Throwable cause = commandResultMessage.getExceptionResult();
+                Throwable cause = commandResultMessage.exceptionResult();
                 throw new RuntimeException("Failure", cause);
             }
         };
         expectErrorCallback = (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
-                Throwable cause = commandResultMessage.getExceptionResult();
+                Throwable cause = commandResultMessage.exceptionResult();
                 assertEquals("Mock exception", cause.getMessage());
             } else {
                 fail("Expected this command to fail");

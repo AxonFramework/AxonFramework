@@ -47,7 +47,7 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
         if (!commandResultMessage.isExceptional()) {
             super.complete(commandResultMessage);
         } else {
-            super.completeExceptionally(commandResultMessage.getExceptionResult());
+            super.completeExceptionally(commandResultMessage.exceptionResult());
         }
     }
 

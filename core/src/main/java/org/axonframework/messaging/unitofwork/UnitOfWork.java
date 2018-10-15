@@ -309,7 +309,7 @@ public interface UnitOfWork<T extends Message<?>> {
             return null;
         }, rollbackConfiguration);
         if (resultMessage.isExceptional()) {
-            throw (RuntimeException) resultMessage.getExceptionResult();
+            throw (RuntimeException) resultMessage.exceptionResult();
         }
     }
 

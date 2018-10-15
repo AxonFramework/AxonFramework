@@ -169,7 +169,7 @@ public class AnnotatedSagaManagerTest {
             return null;
         });
         if (resultMessage.isExceptional()) {
-            throw (Exception) resultMessage.getExceptionResult();
+            throw (Exception) resultMessage.exceptionResult();
         }
     }
 

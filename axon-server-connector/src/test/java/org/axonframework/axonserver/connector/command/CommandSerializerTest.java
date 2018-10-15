@@ -71,7 +71,7 @@ public class CommandSerializerTest {
         assertEquals(response.getPayload(), deserialize.getPayload());
         assertEquals(response.getMetaData(), deserialize.getMetaData());
         assertFalse(response.isExceptional());
-        assertFalse(response.tryGetExceptionResult().isPresent());
+        assertFalse(response.optionalExceptionResult().isPresent());
     }
 
     @Test
@@ -83,8 +83,8 @@ public class CommandSerializerTest {
         CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
         assertEquals(response.getMetaData(), deserialize.getMetaData());
         assertTrue(deserialize.isExceptional());
-        assertTrue(deserialize.tryGetExceptionResult().isPresent());
-        assertEquals(exception.getMessage(), deserialize.getExceptionResult().getMessage());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
     }
 
 }

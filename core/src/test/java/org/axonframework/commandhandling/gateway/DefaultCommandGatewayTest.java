@@ -91,7 +91,7 @@ public class DefaultCommandGatewayTest {
                                                            captor.capture(), isA(Runnable.class));
         verify(mockCommandBus, times(2)).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         assertTrue(actualResult.get().isExceptional());
-        assertTrue(actualResult.get().getExceptionResult() instanceof RuntimeException);
+        assertTrue(actualResult.get().exceptionResult() instanceof RuntimeException);
         assertEquals(1, captor.getAllValues().get(0).size());
         assertEquals(2, captor.getValue().size());
         assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);

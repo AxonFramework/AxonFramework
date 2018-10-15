@@ -62,7 +62,7 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {
-                                     commandResultMessage.tryGetExceptionResult()
+                                     commandResultMessage.optionalExceptionResult()
                                                          .ifPresent(Throwable::printStackTrace);
                                      fail("Did not expect exception");
                                  }
@@ -83,7 +83,7 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (commandMessage, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {
-                                     commandResultMessage.tryGetExceptionResult()
+                                     commandResultMessage.optionalExceptionResult()
                                                          .ifPresent(Throwable::printStackTrace);
                                      fail("Did not expect exception");
                                  }
@@ -105,7 +105,7 @@ public class SimpleCommandBusTest {
         });
         testSubject.dispatch(asCommandMessage("Say hi!"), (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
-                Throwable cause = commandResultMessage.getExceptionResult();
+                Throwable cause = commandResultMessage.exceptionResult();
                 assertEquals(RuntimeException.class, cause.getClass());
             } else {
                 fail("Expected exception");
@@ -127,7 +127,7 @@ public class SimpleCommandBusTest {
 
         testSubject.dispatch(asCommandMessage("Say hi!"), (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
-                Throwable cause = commandResultMessage.getExceptionResult();
+                Throwable cause = commandResultMessage.exceptionResult();
                 assertEquals(cause.getClass(), Exception.class);
             } else {
                 fail("Expected exception");
@@ -149,7 +149,7 @@ public class SimpleCommandBusTest {
         verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -166,7 +166,7 @@ public class SimpleCommandBusTest {
         verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -222,7 +222,7 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(asCommandMessage("Hi there!"),
                              (commandMessage, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {
-                                     Throwable cause = commandResultMessage.getExceptionResult();
+                                     Throwable cause = commandResultMessage.exceptionResult();
                                      throw new RuntimeException("Unexpected exception", cause);
                                  }
                                  assertEquals("Hi there!", commandResultMessage.getPayload());
@@ -259,7 +259,7 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(asCommandMessage("Hi there!"),
                              (commandMessage, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {
-                                     Throwable cause = commandResultMessage.getExceptionResult();
+                                     Throwable cause = commandResultMessage.exceptionResult();
                                      assertEquals("Faking failed command handling", cause.getMessage());
                                  } else {
                                      fail("Expected exception to be thrown");
@@ -292,7 +292,7 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(asCommandMessage("Hi there!"),
                              (commandMessage, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {
-                                     Throwable cause = commandResultMessage.getExceptionResult();
+                                     Throwable cause = commandResultMessage.exceptionResult();
                                      assertEquals("Mocking", cause.getMessage());
                                  } else {
                                      fail("Expected exception to be propagated");

@@ -303,7 +303,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     @Override
     public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
-            actualException = commandResultMessage.getExceptionResult();
+            actualException = commandResultMessage.exceptionResult();
         } else {
             actualReturnValue = commandResultMessage;
         }

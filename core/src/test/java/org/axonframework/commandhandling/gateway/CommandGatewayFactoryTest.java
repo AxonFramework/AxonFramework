@@ -158,7 +158,7 @@ public class CommandGatewayFactoryTest {
                 CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
-        assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+        assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test(timeout = 2000)
@@ -196,7 +196,7 @@ public class CommandGatewayFactoryTest {
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
                 CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
-        assertEquals(RuntimeException.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+        assertEquals(RuntimeException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test(timeout = 2000)
@@ -315,7 +315,7 @@ public class CommandGatewayFactoryTest {
                 CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
-        assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+        assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test(timeout = 2000)
@@ -491,8 +491,8 @@ public class CommandGatewayFactoryTest {
             verify(callback1).onResult(any(), commandResultMessageCaptor.capture());
             verify(callback2).onResult(any(), commandResultMessageCaptor.capture());
             assertEquals(2, commandResultMessageCaptor.getAllValues().size());
-            assertEquals(exception, commandResultMessageCaptor.getAllValues().get(0).getExceptionResult());
-            assertEquals(exception, commandResultMessageCaptor.getAllValues().get(1).getExceptionResult());
+            assertEquals(exception, commandResultMessageCaptor.getAllValues().get(0).exceptionResult());
+            assertEquals(exception, commandResultMessageCaptor.getAllValues().get(1).exceptionResult());
         }
     }
 
@@ -548,8 +548,8 @@ public class CommandGatewayFactoryTest {
         verify(callback1).onResult(any(), commandResultMessageCaptor.capture());
         verify(callback2).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(2, commandResultMessageCaptor.getAllValues().size());
-        assertEquals(exception, commandResultMessageCaptor.getAllValues().get(0).getExceptionResult());
-        assertEquals(exception, commandResultMessageCaptor.getAllValues().get(1).getExceptionResult());
+        assertEquals(exception, commandResultMessageCaptor.getAllValues().get(0).exceptionResult());
+        assertEquals(exception, commandResultMessageCaptor.getAllValues().get(1).exceptionResult());
     }
 
     @Test(timeout = 2000)

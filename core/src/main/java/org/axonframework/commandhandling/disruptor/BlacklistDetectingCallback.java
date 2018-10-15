@@ -75,7 +75,7 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
                 delegate.onResult(commandMessage, commandResultMessage);
             }
         } else {
-            Throwable cause = commandResultMessage.getExceptionResult();
+            Throwable cause = commandResultMessage.exceptionResult();
             if (cause instanceof AggregateBlacklistedException) {
                 long sequence = ringBuffer.next();
                 CommandHandlingEntry event = ringBuffer.get(sequence);

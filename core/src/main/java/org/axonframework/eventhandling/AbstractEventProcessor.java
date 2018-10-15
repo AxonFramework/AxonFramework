@@ -149,7 +149,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }, rollbackConfiguration);
 
         if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.getExceptionResult();
+            Throwable e = resultMessage.exceptionResult();
             if (unitOfWork.isRolledBack()) {
                 errorHandler.handleError(new ErrorContext(getName(), (Exception) e, eventMessages));
             } else {

@@ -162,11 +162,11 @@ public class BatchingUnitOfWorkTest {
                                                .collect(Collectors.toList());
         List<Throwable> expectedExceptions = expectedMessages.stream()
                                                              .filter(ResultMessage::isExceptional)
-                                                             .map(ResultMessage::getExceptionResult)
+                                                             .map(ResultMessage::exceptionResult)
                                                              .collect(Collectors.toList());
         List<Throwable> actualExceptions = actualMessages.stream()
                                                          .filter(ResultMessage::isExceptional)
-                                                         .map(ResultMessage::getExceptionResult)
+                                                         .map(ResultMessage::exceptionResult)
                                                          .collect(Collectors.toList());
         List<MetaData> expectedMetaData = expectedMessages.stream()
                                                           .map(Message::getMetaData)

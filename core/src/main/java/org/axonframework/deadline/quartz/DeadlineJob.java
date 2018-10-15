@@ -114,7 +114,7 @@ public class DeadlineJob implements Job {
                                                   });
             ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
             if (resultMessage.isExceptional()) {
-                throw resultMessage.getExceptionResult();
+                throw resultMessage.exceptionResult();
             } else if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("Job successfully executed. Deadline message [{}] processed.",
                             deadlineMessage.getPayloadType().getSimpleName());

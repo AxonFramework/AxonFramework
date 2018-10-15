@@ -109,7 +109,7 @@ public class CommandSerializer {
                                                                  .putAllMetaData(metadataSerializer.apply(commandResultMessage.getMetaData()))
                                                                  .setRequestIdentifier(requestIdentifier);
         if (commandResultMessage.isExceptional()) {
-            Throwable throwable = commandResultMessage.getExceptionResult();
+            Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
             responseBuilder.setMessage(ExceptionSerializer.serialize(configuration.getClientName(), throwable));
         } else if (commandResultMessage.getPayload() != null) {

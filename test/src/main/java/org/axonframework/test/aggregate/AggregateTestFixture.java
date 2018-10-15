@@ -781,7 +781,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         @Override
         public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
             if (commandResultMessage.isExceptional()) {
-                Throwable cause = commandResultMessage.getExceptionResult();
+                Throwable cause = commandResultMessage.exceptionResult();
                 if (cause instanceof FixtureExecutionException) {
                     this.exception = (FixtureExecutionException) cause;
                 } else {

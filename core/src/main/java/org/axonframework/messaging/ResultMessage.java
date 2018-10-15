@@ -48,7 +48,7 @@ public interface ResultMessage<R> extends Message<R> {
      * @return an {@link Optional} containing exception result or an empty Optional in case of a successful execution
      */
     // TODO: 10/11/2018 remove default: https://github.com/AxonFramework/AxonFramework/issues/827
-    default Optional<Throwable> tryGetExceptionResult() {
+    default Optional<Throwable> optionalExceptionResult() {
         return isExceptional() ? Optional.ofNullable((Throwable) getPayload()) : Optional.empty();
     }
 
@@ -59,8 +59,8 @@ public interface ResultMessage<R> extends Message<R> {
      *
      * @throws IllegalStateException if this ResultMessage is not exceptional
      */
-    default Throwable getExceptionResult() throws IllegalStateException {
-        return tryGetExceptionResult().orElseThrow(IllegalStateException::new);
+    default Throwable exceptionResult() throws IllegalStateException {
+        return optionalExceptionResult().orElseThrow(IllegalStateException::new);
     }
 
     /**
@@ -72,7 +72,7 @@ public interface ResultMessage<R> extends Message<R> {
      * @return the serialized exception as a {@link SerializedObject}
      */
     default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
-        return serializer.serialize(tryGetExceptionResult().orElse(null), expectedRepresentation);
+        return serializer.serialize(optionalExceptionResult().orElse(null), expectedRepresentation);
     }
 
     @Override

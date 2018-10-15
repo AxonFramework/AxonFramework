@@ -128,7 +128,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public Optional<Throwable> tryGetExceptionResult() {
+    public Optional<Throwable> optionalExceptionResult() {
         return Optional.ofNullable(exception);
     }
 
@@ -167,7 +167,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     public R getPayload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
-                    "This result completed exceptionally, payload is not available. Try calling 'getExceptionResult' to see the cause of failure.",
+                    "This result completed exceptionally, payload is not available. Try calling 'exceptionResult' to see the cause of failure.",
                     exception);
         }
         return super.getPayload();

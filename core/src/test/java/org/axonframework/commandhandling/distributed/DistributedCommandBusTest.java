@@ -125,7 +125,7 @@ public class DistributedCommandBusTest {
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test
@@ -164,7 +164,7 @@ public class DistributedCommandBusTest {
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test
@@ -181,7 +181,7 @@ public class DistributedCommandBusTest {
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
                 CommandResultMessage.class);
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
-        assertEquals(Exception.class, commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+        assertEquals(Exception.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {

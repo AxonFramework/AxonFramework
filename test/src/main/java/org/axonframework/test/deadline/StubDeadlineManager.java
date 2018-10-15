@@ -227,7 +227,7 @@ public class StubDeadlineManager implements DeadlineManager {
         });
         ResultMessage<?> resultMessage = uow.executeWithResult(chain::proceed);
         if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.getExceptionResult();
+            Throwable e = resultMessage.exceptionResult();
             throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
         }
         return (DeadlineMessage<?>) resultMessage.getPayload();
