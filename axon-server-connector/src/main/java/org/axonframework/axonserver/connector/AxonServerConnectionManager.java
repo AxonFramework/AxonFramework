@@ -140,6 +140,7 @@ public class AxonServerConnectionManager {
     }
 
     private boolean isPrimary(NodeInfo nodeInfo, PlatformInfo clusterInfo) {
+        if( clusterInfo.getSameConnection()) return true;
         return clusterInfo.getPrimary().getGrpcPort() == nodeInfo.getGrpcPort() && clusterInfo.getPrimary().getHostName().equals(nodeInfo.getHostName());
     }
 
