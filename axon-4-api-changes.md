@@ -1,6 +1,14 @@
 Major API Changes
 =================
 
+## Defaulting to tracking processors
+
+When an Event Store (or Event Bus implementing `StreamableMessageSource`) is configured, Axon will default to using 
+tracking processors. This may be overridden using the `EventProcessingConfigurer.usingSubscribingProcessors()` method.
+
+In Axon 4, the Event Bus itself no longer implements `StreamableMessageSource` (as was the case in Axon 3), meaning that
+using the `SimpleEventBus` will also imply subscribing processors as the default.
+
 ## Serialization
 Instead of throwing an `UnknownSerializedTypeException`, serializers now return an `UnknownSerializedType` object, 
 which provides access to the raw data in any supported intermediate representation, such as `JsonNode` or Dom4J 
@@ -49,7 +57,21 @@ the other Builder implementations introduced. This entails the following changes
  - withPayloadRevisionProperty(String) -> payloadRevisionProperty(String)
  - withPayloadProperty(String) -> payloadProperty(String)
  - withMetaDataProperty(String) -> metaDataProperty(String)
+* Renamed EventSchema.Builder functions to align with the new builder approach:
+ - withEventTable(String) -> eventTable(String)
+ - withSnapshotTable(String) -> snapshotTable(String)
+ - withGlobalIndexColumn(String) -> globalIndexColumn(String)
+ - withTimestampColumn(String) -> timestampColumn(String)
+ - withEventIdentifierColumn(String) -> eventIdentifierColumn(String)
+ - withAggregateIdentifierColumn(String) -> aggregateIdentifierColumn(String)
+ - withSequenceNumberColumn(String) -> sequenceNumberColumn(String)
+ - withTypeColumn(String) -> typeColumn(String)
+ - withPayloadTypeColumn(String) -> payloadTypeColumn(String)
+ - withPayloadRevisionColumn(String) -> payloadRevisionColumn(String)
+ - withPayloadColumn(String) -> payloadColumn(String)
+ - withMetaDataColumn(String) -> metaDataColumn(String)
 * Renamed AbstractEventStorageEngine#getSerializer() to AbstractEventStorageEngine#getSnapshotSerializer()
+* Renamed SimpleEventHandlerInvoker#eventListeners() to SimpleEventHandlerInvoker#eventHandlers()
 
 ### Moved classes
 
@@ -87,8 +109,6 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.commandhandling.disruptor.DisruptorCommandBus
 - org.axonframework.commandhandling.distributed.DistributedCommandBus
 - org.axonframework.commandhandling.gateway.AbstractCommandGateway
-- org.axonframework.commandhandling.gatewayCommandGatewayFactory.GatewayInvocationHandler
-- org.axonframework.commandhandling.gatewayCommandGatewayFactory.DispatchOnInvocationHandler
 - org.axonframework.commandhandling.gateway.DefaultCommandGateway
 - org.axonframework.commandhandling.model.AbstractRepository
 - org.axonframework.commandhandling.model.LockingRepository
@@ -129,3 +149,16 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine
 - org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine
 - org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine
+- org.axonframework.eventsourcing.AbstractSnapshotter
+- org.axonframework.eventsourcing.AggregateSnapshotter
+- org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter
+- org.axonframework.eventsourcing.eventstore.AbstractEventStore
+- org.axonframework.eventsourcing.eventstore.EmbeddedEventStore
+- org.axonframework.eventhandling.AbstractEventBus
+- org.axonframework.eventhandling.SimpleEventBus
+- org.axonframework.eventhandling.SimpleEventHandlerInvoker
+- org.axonframework.eventhandling.AbstractEventProcessor
+- org.axonframework.eventhandling.SubscribingEventProcessor
+- org.axonframework.eventhandling.TrackingEventProcessor
+- org.axonframework.commandhandling.gateway.IntervalRetryScheduler
+- org.axonframework.commandhandling.gateway.CommandGatewayFactory

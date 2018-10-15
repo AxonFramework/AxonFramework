@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -29,11 +30,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Abstract implementation of an {@link EventProcessor}. Before processing of a batch of messages this implementation
@@ -47,38 +48,34 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Segment)} for processing.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public abstract class AbstractEventProcessor implements EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
+
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
+    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
-     * Initializes an event processor with given {@code name}. Actual handling of event messages is deferred to the
-     * given {@code eventHandlerInvoker}.
+     * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and {@link ErrorHandler} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param name                  The name of the event processor
-     * @param eventHandlerInvoker   The component that handles the individual events
-     * @param rollbackConfiguration Determines rollback behavior of the UnitOfWork while processing a batch of events
-     * @param errorHandler          Invoked when a UnitOfWork is rolled back during processing. If {@code null} a {@link
-     *                              PropagatingErrorHandler} is used.
-     * @param messageMonitor        Monitor to be invoked before and after event processing. If {@code null} a {@link
-     *                              NoOpMessageMonitor} is used.
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventProcessor} instance
      */
-    public AbstractEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                  RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
-                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this.name = requireNonNull(name);
-        this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
-        this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
-        this.errorHandler = getOrDefault(errorHandler, () -> PropagatingErrorHandler.INSTANCE);
-        this.messageMonitor = getOrDefault(messageMonitor,
-                                           (Supplier<MessageMonitor<? super EventMessage<?>>>) NoOpMessageMonitor::instance);
+    protected AbstractEventProcessor(Builder builder) {
+        builder.validate();
+        this.name = builder.name;
+        this.eventHandlerInvoker = builder.eventHandlerInvoker;
+        this.rollbackConfiguration = builder.rollbackConfiguration;
+        this.errorHandler = builder.errorHandler;
+        this.messageMonitor = builder.messageMonitor;
     }
 
     @Override
@@ -183,5 +180,105 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      */
     protected void reportIgnored(EventMessage<?> eventMessage) {
         messageMonitor.onMessageIngested(eventMessage).reportIgnored();
+    }
+
+    /**
+     * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
+     * <p>
+     * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler} and the {@link MessageMonitor}
+     * defaults to a {@link NoOpMessageMonitor}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
+     * {@link RollbackConfiguration} are <b>hard requirements</b> and as such should be provided.
+     */
+    public abstract static class Builder {
+
+        protected String name;
+        private EventHandlerInvoker eventHandlerInvoker;
+        private RollbackConfiguration rollbackConfiguration;
+        private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
+        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+
+        /**
+         * Sets the {@code name} of this {@link EventProcessor} implementation.
+         *
+         * @param name a {@link String} defining this {@link EventProcessor} implementation
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder name(String name) {
+            assertEventProcessorName(name, "The EventProcessor name may not be null or empty");
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
+         *
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
+         *                            {@link EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+            assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
+            this.eventHandlerInvoker = eventHandlerInvoker;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link UnitOfWork} while
+         * processing a batch of events.
+         *
+         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the
+         *                              {@link UnitOfWork} while processing a batch of events.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
+            this.rollbackConfiguration = rollbackConfiguration;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} is rolled back during processing. Defaults
+         * to a {@link PropagatingErrorHandler}.
+         *
+         * @param errorHandler the {@link ErrorHandler} invoked when an {@link UnitOfWork} is rolled back during
+         *                     processing
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder errorHandler(ErrorHandler errorHandler) {
+            assertNonNull(errorHandler, "ErrorHandler may not be null");
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're processed. Defaults
+         * to a {@link NoOpMessageMonitor}.
+         *
+         * @param messageMonitor a {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're
+         *                       processed
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
+            this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertEventProcessorName(name, "The EventProcessor name is a hard requirement and should be provided");
+            assertNonNull(eventHandlerInvoker, "The EventHandlerInvoker is a hard requirement and should be provided");
+            assertNonNull(rollbackConfiguration,
+                          "The RollbackConfiguration is a hard requirement and should be provided");
+        }
+
+        private void assertEventProcessorName(String eventProcessorName, String exceptionMessage) {
+            assertThat(eventProcessorName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
+        }
     }
 }

@@ -90,8 +90,8 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     public void testCustomSchemaConfig() {
         setTestSubject(testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
                                                   EventSchema.builder()
-                                                             .withEventTable("CustomDomainEvent")
-                                                             .withPayloadColumn("eventData").build(), String.class,
+                                                             .eventTable("CustomDomainEvent")
+                                                             .payloadColumn("eventData").build(), String.class,
                                                   new HsqlEventTableFactory() {
                                                       @Override
                                                       protected String payloadType() {
@@ -164,7 +164,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
         int testBatchSize = 2;
         testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), testBatchSize);
-        EmbeddedEventStore testEventStore = new EmbeddedEventStore(testSubject);
+        EmbeddedEventStore testEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
 
         testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
                                  createEvent(AGGREGATE, 2, "Payload2"));

@@ -285,7 +285,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
         }
 
         /**
-         * Validate whether the fields contained in this Builder are set accordingly.
+         * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications

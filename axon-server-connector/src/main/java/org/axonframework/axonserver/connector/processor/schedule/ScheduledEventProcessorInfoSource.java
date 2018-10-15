@@ -22,9 +22,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by Sara Pellegrini on 15/03/2018.
- * sara.pellegrini@gmail.com
- */
+ * Implementation of {@link EventProcessorInfoSource} that schedule the notification of {@link org.axonframework.eventhandling.EventProcessor}s status.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
+ **/
 public class ScheduledEventProcessorInfoSource implements EventProcessorInfoSource {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);

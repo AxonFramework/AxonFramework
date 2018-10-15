@@ -62,7 +62,7 @@ public class GenericJpaRepositoryTest {
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
-        eventBus = new SimpleEventBus();
+        eventBus = SimpleEventBus.builder().build();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
                 .aggregateType(StubJpaAggregate.class)
@@ -113,7 +113,9 @@ public class GenericJpaRepositoryTest {
 
     @Test
     public void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingEventStore() throws Exception {
-        EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        EventStore mockEventStore = EmbeddedEventStore.builder()
+                                                      .storageEngine(new InMemoryEventStorageEngine())
+                                                      .build();
         testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
                 .aggregateType(StubJpaAggregate.class)
                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
@@ -150,7 +152,9 @@ public class GenericJpaRepositoryTest {
 
     @Test
     public void testAggregateCreatesSequenceNumbersForExistingAggregatesWithEventsInEventStore() throws Exception {
-        EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        EventStore mockEventStore = EmbeddedEventStore.builder()
+                                                      .storageEngine(new InMemoryEventStorageEngine())
+                                                      .build();
         mockEventStore.publish(createEvent("123", 0), createEvent("123", 1));
         testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
                 .aggregateType(StubJpaAggregate.class)
@@ -180,7 +184,9 @@ public class GenericJpaRepositoryTest {
 
     @Test
     public void testAggregateDoesNotCreateSequenceNumbersWhenNoEventsInStore() throws Exception {
-        EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        EventStore mockEventStore = EmbeddedEventStore.builder()
+                                                      .storageEngine(new InMemoryEventStorageEngine())
+                                                      .build();
         testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
                 .aggregateType(StubJpaAggregate.class)
                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))

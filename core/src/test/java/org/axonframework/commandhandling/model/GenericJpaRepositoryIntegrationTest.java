@@ -72,7 +72,14 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
 
     @Before
     public void setUp() {
-        eventProcessor = new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(this), eventBus);
+        SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                                 .eventHandlers(this)
+                                                                                 .build();
+        eventProcessor = SubscribingEventProcessor.builder()
+                                                  .name("test")
+                                                  .eventHandlerInvoker(eventHandlerInvoker)
+                                                  .messageSource(eventBus)
+                                                  .build();
         eventProcessor.start();
     }
 
@@ -214,7 +221,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
 
         @Bean
         public EventBus eventBus() {
-            return new SimpleEventBus();
+            return SimpleEventBus.builder().build();
         }
 
         @Bean("simpleRepository")

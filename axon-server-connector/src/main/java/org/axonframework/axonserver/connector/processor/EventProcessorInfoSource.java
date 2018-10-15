@@ -16,8 +16,10 @@
 package org.axonframework.axonserver.connector.processor;
 
 /**
- * Created by Sara Pellegrini on 09/03/2018.
- * sara.pellegrini@gmail.com
+ * Interface that encapsulates the {@link org.axonframework.eventhandling.EventProcessor}'s status notification functionality to AxonServer.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public interface EventProcessorInfoSource {
 

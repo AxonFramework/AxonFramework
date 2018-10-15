@@ -19,20 +19,7 @@ package org.axonframework.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DirectEventProcessingStrategy;
-import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
-import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -48,14 +35,9 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -76,65 +58,25 @@ public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
 
 
-    //<editor-fold desc="configuration state">
-    private static class InstanceProcessingGroupSelector extends ProcessingGroupSelector<Object> {
-
-        private InstanceProcessingGroupSelector(int priority,
-                                                Function<Object, Optional<String>> selectorFunction) {
-            super(priority, selectorFunction);
-        }
-
-        private InstanceProcessingGroupSelector(String name, int priority, Predicate<Object> criteria) {
-            super(name, priority, criteria);
-        }
-    }
-
-    private static class TypeProcessingGroupSelector extends ProcessingGroupSelector<Class<?>> {
-
-        private TypeProcessingGroupSelector(int priority,
-                                            Function<Class<?>, Optional<String>> selectorFunction) {
-            super(priority, selectorFunction);
-        }
-
-        private TypeProcessingGroupSelector(String name, int priority, Predicate<Class<?>> criteria) {
-            super(name, priority, criteria);
-        }
-    }
-
-    private static class ProcessingGroupSelector<T> {
-
-        private final int priority;
-        private final Function<T, Optional<String>> function;
-
-        private ProcessingGroupSelector(int priority, Function<T, Optional<String>> selectorFunction) {
-            this.priority = priority;
-            this.function = selectorFunction;
-        }
-
-        private ProcessingGroupSelector(String name, int priority, Predicate<T> criteria) {
-            this(priority, handler -> {
-                if (criteria.test(handler)) {
-                    return Optional.of(name);
-                }
-                return Optional.empty();
-            });
-        }
-
-        public Optional<String> select(T handler) {
-            return function.apply(handler);
-        }
-
-        public int getPriority() {
-            return priority;
-        }
-    }
-
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
+    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
+    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
+    private final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
+    private final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
+    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
+    private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
+    private final Map<String, String> processingGroupsAssignments = new HashMap<>();
+    private final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
+    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
+    private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
+    private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
+    private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
     // if no annotation is present, the package name is used
     private Function<Class<?>, String> typeFallback = c -> c.getSimpleName() + "Processor";
-    private Function<Object, String> instanceFallback = o -> o.getClass().getPackage().getName();
     private final TypeProcessingGroupSelector defaultTypeSelector = new TypeProcessingGroupSelector(
             Integer.MIN_VALUE,
             type -> {
@@ -142,6 +84,7 @@ public class EventProcessingModule
                 return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
                                           .orElseGet(() -> typeFallback.apply(type)));
             });
+    private Function<Object, String> instanceFallback = o -> o.getClass().getPackage().getName();
     private final InstanceProcessingGroupSelector defaultInstanceSelector = new InstanceProcessingGroupSelector(
             Integer.MIN_VALUE,
             o -> {
@@ -150,66 +93,43 @@ public class EventProcessingModule
                 return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
                                           .orElseGet(() -> instanceFallback.apply(o)));
             });
-
     private Configuration configuration;
-
-    private final List<SagaConfiguration<?>> sagaConfigurations = new ArrayList<>();
-    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
-
-    private final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
             "listenerInvocationErrorHandler",
             c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new)
     );
-    private final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
     private final Component<ErrorHandler> defaultErrorHandler = new Component<>(
             () -> configuration,
             "errorHandler",
             c -> c.getComponent(ErrorHandler.class, PropagatingErrorHandler::instance)
     );
-
-    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
-    private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
-    private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
-
-    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
-    private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
-
-    private final Map<String, String> processingGroupsAssignments = new HashMap<>();
-    private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
-    private final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
     private final Component<SequencingPolicy<? super EventMessage<?>>> defaultSequencingPolicy = new Component<>(
             () -> configuration,
             "sequencingPolicy",
             c -> SequentialPerAggregatePolicy.instance()
     );
-    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-
-    private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     private final Component<TokenStore> defaultTokenStore = new Component<>(
             () -> configuration,
             "tokenStore",
             c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
     );
-    private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Component<RollbackConfiguration> defaultRollbackConfiguration = new Component<>(
             () -> configuration,
             "rollbackConfiguration",
             c -> c.getComponent(RollbackConfiguration.class, () -> RollbackConfigurationType.ANY_THROWABLE));
-
     private final Component<SagaStore> sagaStore = new Component<>(
             () -> configuration,
             "sagaStore",
             c -> c.getComponent(SagaStore.class, InMemorySagaStore::new)
     );
-    private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     private final Component<TransactionManager> defaultTransactionManager = new Component<>(
             () -> configuration,
             "transactionManager",
             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
     );
-    //</editor-fold>
+    private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
+    private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
     //<editor-fold desc="module configuration methods">
     @Override
@@ -237,6 +157,7 @@ public class EventProcessingModule
     public void shutdown() {
         eventProcessors.forEach((name, component) -> component.get().shutDown());
     }
+    //</editor-fold>
 
     private String selectProcessingGroupByType(Class<?> type) {
         return typeSelectors.stream()
@@ -268,21 +189,25 @@ public class EventProcessingModule
                             });
         assignments.forEach((processingGroup, handlers) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
-            handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
-                           .add(c -> new SimpleEventHandlerInvoker(handlers,
-                                                                   configuration.parameterResolverFactory(),
-                                                                   listenerInvocationErrorHandler(processingGroup),
-                                                                   sequencingPolicy(processingGroup)));
+            handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
+                    c -> SimpleEventHandlerInvoker.builder()
+                                                  .eventHandlers(handlers)
+                                                  .parameterResolverFactory(configuration.parameterResolverFactory())
+                                                  .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
+                                                          processingGroup
+                                                  ))
+                                                  .sequencingPolicy(sequencingPolicy(processingGroup))
+                                                  .build());
         });
     }
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
         sagaConfigurations.forEach(sc -> {
-            sc.initialize(configuration);
-            String processingGroup = selectProcessingGroupByType(sc.type());
+            SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
+            String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
-                           .add(c -> sc.manager().get());
+                           .add(c -> sagaConfig.manager());
         });
     }
 
@@ -313,7 +238,6 @@ public class EventProcessingModule
 
         return eventProcessor;
     }
-    //</editor-fold>
 
     //<editor-fold desc="configuration methods">
     @SuppressWarnings("unchecked")
@@ -335,6 +259,7 @@ public class EventProcessingModule
     public String sagaProcessingGroup(Class<?> sagaType) {
         return selectProcessingGroupByType(sagaType);
     }
+    //</editor-fold>
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
@@ -384,7 +309,7 @@ public class EventProcessingModule
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
         ensureInitialized();
-        return new ArrayList<>(sagaConfigurations);
+        return sagaConfigurations.stream().map(sc -> sc.initialize(configuration)).collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
@@ -427,12 +352,13 @@ public class EventProcessingModule
         assertNonNull(configuration, "Configuration is not initialized yet");
     }
 
-    //</editor-fold>
-
     //<editor-fold desc="configurer methods">
+
     @Override
-    public EventProcessingConfigurer registerSagaConfiguration(SagaConfiguration<?> sagaConfiguration) {
-        this.sagaConfigurations.add(sagaConfiguration);
+    public <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer) {
+        SagaConfigurer<T> configurer = SagaConfigurer.forType(sagaType);
+        sagaConfigurer.accept(configurer);
+        this.sagaConfigurations.add(configurer);
         return this;
     }
 
@@ -451,6 +377,8 @@ public class EventProcessingModule
                                                       eventHandlerBuilder));
         return this;
     }
+
+    //</editor-fold>
 
     @Override
     public EventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
@@ -472,7 +400,7 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerTrackingEventProcessor(String name,
                                                                     Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
                                                                     Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration) {
-        registerEventProcessor(name, (n, c, ehi) -> trackingEventProcessor(c, n, ehi, processorConfiguration, source));
+        registerEventProcessor(name, (n, c, ehi) -> trackingEventProcessor(n, ehi, processorConfiguration.apply(c), source.apply(c)));
         return this;
     }
 
@@ -630,47 +558,103 @@ public class EventProcessingModule
         return this;
     }
 
-    @Override
-    public EventProcessingConfiguration configure() {
-        return this;
-    }
-
-    private TrackingEventProcessor defaultEventProcessor(String name, Configuration conf,
-                                                         EventHandlerInvoker eventHandlerInvoker) {
-        return trackingEventProcessor(conf,
-                                      name,
-                                      eventHandlerInvoker,
-                                      c -> c.getComponent(
-                                              TrackingEventProcessorConfiguration.class,
-                                              TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
-                                      Configuration::eventBus);
+    @SuppressWarnings("unchecked")
+    private EventProcessor defaultEventProcessor(String name, Configuration conf,
+                                                 EventHandlerInvoker eventHandlerInvoker) {
+        if (conf.eventBus() instanceof StreamableMessageSource) {
+            return trackingEventProcessor(name,
+                                          eventHandlerInvoker,
+                                          conf.getComponent(
+                                                  TrackingEventProcessorConfiguration.class,
+                                                  TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
+                                          (StreamableMessageSource) conf.eventBus());
+        } else {
+            return subscribingEventProcessor(name, conf, eventHandlerInvoker, Configuration::eventBus);
+        }
     }
 
     private SubscribingEventProcessor subscribingEventProcessor(String name, Configuration conf,
                                                                 EventHandlerInvoker eventHandlerInvoker,
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
-        return new SubscribingEventProcessor(name,
-                                             eventHandlerInvoker,
-                                             rollbackConfiguration(name),
-                                             messageSource.apply(conf),
-                                             DirectEventProcessingStrategy.INSTANCE,
-                                             errorHandler(name),
-                                             messageMonitor(SubscribingEventProcessor.class, name));
+        return SubscribingEventProcessor.builder()
+                                        .name(name)
+                                        .eventHandlerInvoker(eventHandlerInvoker)
+                                        .rollbackConfiguration(rollbackConfiguration(name))
+                                        .errorHandler(errorHandler(name))
+                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+                                        .messageSource(messageSource.apply(conf))
+                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                                        .build();
     }
 
-    private TrackingEventProcessor trackingEventProcessor(Configuration conf, String name,
+    private TrackingEventProcessor trackingEventProcessor(String name,
                                                           EventHandlerInvoker eventHandlerInvoker,
-                                                          Function<Configuration, TrackingEventProcessorConfiguration> config,
-                                                          Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return new TrackingEventProcessor(name,
-                                          eventHandlerInvoker,
-                                          source.apply(conf),
-                                          tokenStore(name),
-                                          transactionManager(name),
-                                          messageMonitor(TrackingEventProcessor.class, name),
-                                          rollbackConfiguration(name),
-                                          errorHandler(name),
-                                          config.apply(conf));
+                                                          TrackingEventProcessorConfiguration config,
+                                                          StreamableMessageSource<TrackedEventMessage<?>> source) {
+        return TrackingEventProcessor.builder()
+                                     .name(name)
+                                     .eventHandlerInvoker(eventHandlerInvoker)
+                                     .rollbackConfiguration(rollbackConfiguration(name))
+                                     .errorHandler(errorHandler(name))
+                                     .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
+                                     .messageSource(source)
+                                     .tokenStore(tokenStore(name))
+                                     .transactionManager(transactionManager(name))
+                                     .trackingEventProcessorConfiguration(config)
+                                     .build();
+    }
+
+    //<editor-fold desc="configuration state">
+    private static class InstanceProcessingGroupSelector extends ProcessingGroupSelector<Object> {
+
+        private InstanceProcessingGroupSelector(int priority,
+                                                Function<Object, Optional<String>> selectorFunction) {
+            super(priority, selectorFunction);
+        }
+
+        private InstanceProcessingGroupSelector(String name, int priority, Predicate<Object> criteria) {
+            super(name, priority, criteria);
+        }
+    }
+
+    private static class TypeProcessingGroupSelector extends ProcessingGroupSelector<Class<?>> {
+
+        private TypeProcessingGroupSelector(int priority,
+                                            Function<Class<?>, Optional<String>> selectorFunction) {
+            super(priority, selectorFunction);
+        }
+
+        private TypeProcessingGroupSelector(String name, int priority, Predicate<Class<?>> criteria) {
+            super(name, priority, criteria);
+        }
+    }
+
+    private static class ProcessingGroupSelector<T> {
+
+        private final int priority;
+        private final Function<T, Optional<String>> function;
+
+        private ProcessingGroupSelector(int priority, Function<T, Optional<String>> selectorFunction) {
+            this.priority = priority;
+            this.function = selectorFunction;
+        }
+
+        private ProcessingGroupSelector(String name, int priority, Predicate<T> criteria) {
+            this(priority, handler -> {
+                if (criteria.test(handler)) {
+                    return Optional.of(name);
+                }
+                return Optional.empty();
+            });
+        }
+
+        public Optional<String> select(T handler) {
+            return function.apply(handler);
+        }
+
+        public int getPriority() {
+            return priority;
+        }
     }
     //</editor-fold>
 }

@@ -36,6 +36,7 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
@@ -59,6 +60,7 @@ import org.springframework.context.annotation.Primary;
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
 public class AxonServerAutoConfiguration implements ApplicationContextAware {
+
     private ApplicationContext applicationContext;
 
     @Bean
@@ -83,19 +85,29 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @Primary
     @ConditionalOnMissingBean(CommandBus.class)
-    public AxonServerCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration, AxonServerConfiguration axonServerConfiguration,
-                                           Serializer serializer, PlatformConnectionManager platformConnectionManager,
+    public AxonServerCommandBus commandBus(TransactionManager txManager,
+                                           AxonConfiguration axonConfiguration,
+                                           AxonServerConfiguration axonServerConfiguration,
+                                           Serializer serializer,
+                                           PlatformConnectionManager platformConnectionManager,
                                            RoutingStrategy routingStrategy,
                                            CommandPriorityCalculator priorityCalculator) {
 
-        SimpleCommandBus commandBus = SimpleCommandBus.builder()
-                                                      .transactionManager(txManager)
-                                                      .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
-                                                      .build();
+        SimpleCommandBus commandBus =
+                SimpleCommandBus.builder()
+                                .transactionManager(txManager)
+                                .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
+                                .build();
 
-        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
+        commandBus.registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
+        );
 
-        return new AxonServerCommandBus(platformConnectionManager, axonServerConfiguration, commandBus, serializer, routingStrategy,
+        return new AxonServerCommandBus(platformConnectionManager,
+                                        axonServerConfiguration,
+                                        commandBus,
+                                        serializer,
+                                        routingStrategy,
                                         priorityCalculator);
     }
 
@@ -127,18 +139,24 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @Bean
     @ConditionalOnMissingBean(QueryBus.class)
-    public AxonServerQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration axonServerConfiguration,
-                                       AxonConfiguration axonConfiguration, TransactionManager txManager,
+    public AxonServerQueryBus queryBus(PlatformConnectionManager platformConnectionManager,
+                                       AxonServerConfiguration axonServerConfiguration,
+                                       AxonConfiguration axonConfiguration,
+                                       TransactionManager txManager,
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
-                                       QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
-        SimpleQueryBus simpleQueryBus = SimpleQueryBus.builder()
-                                                      .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class,
-                                                                                                       "queryBus"))
-                                                      .transactionManager(txManager)
-                                                      .errorHandler(queryInvocationErrorHandler)
-                                                      .build();
-        simpleQueryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
+                                       QueryPriorityCalculator priorityCalculator,
+                                       QueryInvocationErrorHandler queryInvocationErrorHandler) {
+        SimpleQueryBus simpleQueryBus =
+                SimpleQueryBus.builder()
+                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
+                              .transactionManager(txManager)
+                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                              .errorHandler(queryInvocationErrorHandler)
+                              .build();
+        simpleQueryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration
+                                                                                           .correlationDataProviders()));
+
         return new AxonServerQueryBus(platformConnectionManager,
                                       axonServerConfiguration,
                                       simpleQueryBus.queryUpdateEmitter(),
@@ -154,9 +172,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
-    public EventProcessorInfoConfiguration processorInfoConfiguration(EventProcessingConfiguration eventProcessingConfiguration,
-                                                                      PlatformConnectionManager connectionManager,
-                                                                      AxonServerConfiguration configuration) {
+    public EventProcessorInfoConfiguration processorInfoConfiguration(
+            EventProcessingConfiguration eventProcessingConfiguration,
+            PlatformConnectionManager connectionManager,
+            AxonServerConfiguration configuration) {
         return new EventProcessorInfoConfiguration(eventProcessingConfiguration, connectionManager, configuration);
     }
 
@@ -166,9 +185,14 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                  AxonConfiguration configuration,
                                  PlatformConnectionManager platformConnectionManager,
                                  Serializer snapshotSerializer,
-                                 @Qualifier("eventSerializer") Serializer serializer) {
-        return new AxonServerEventStore(axonServerConfiguration, platformConnectionManager, snapshotSerializer, serializer, configuration.upcasterChain());
+                                 @Qualifier("eventSerializer") Serializer eventSerializer) {
+        return AxonServerEventStore.builder()
+                                   .configuration(axonServerConfiguration)
+                                   .platformConnectionManager(platformConnectionManager)
+                                   .snapshotSerializer(snapshotSerializer)
+                                   .eventSerializer(eventSerializer)
+                                   .upcasterChain(configuration.upcasterChain())
+                                   .build();
     }
-
 }
 

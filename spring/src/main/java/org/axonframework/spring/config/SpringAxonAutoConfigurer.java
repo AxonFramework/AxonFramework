@@ -26,17 +26,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.config.EventProcessingModule;
-import org.axonframework.config.ModuleConfiguration;
-import org.axonframework.config.ProcessingGroup;
-import org.axonframework.config.SagaConfiguration;
+import org.axonframework.config.*;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
@@ -302,6 +292,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void registerSagaBeanDefinitions(EventProcessingConfigurer configurer) {
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
@@ -309,15 +300,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             Class sagaType = beanFactory.getType(saga);
             ProcessingGroup processingGroupAnnotation =
                     beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
-            SagaConfiguration.SagaConfigurer<?> sagaConfigurer = SagaConfiguration.forType(sagaType);
             if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
                 configurer.assignHandlerTypesMatching(processingGroupAnnotation.value(), sagaType::equals);
             }
-            if (sagaAnnotation != null && !"".equals(sagaAnnotation.sagaStore())) {
-                sagaConfigurer.storeBuilder(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
-            }
-            SagaConfiguration<?> sagaConfiguration = sagaConfigurer.configure();
-            configurer.registerSagaConfiguration(sagaConfiguration);
+            configurer.registerSaga(sagaType, sagaConfigurer -> {
+                if (sagaAnnotation != null && !"".equals(sagaAnnotation.sagaStore())) {
+                    sagaConfigurer.configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                }
+            });
         }
     }
 

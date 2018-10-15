@@ -18,9 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -34,15 +32,18 @@ public class SubscribingEventProcessorTest {
     private SubscribingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;
     private EventHandlerInvoker eventHandlerInvoker;
-    private EventMessageHandler mockListener;
-
+    private EventMessageHandler mockHandler;
 
     @Before
     public void setUp() {
-        mockListener = mock(EventMessageHandler.class);
-        eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
-        eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        testSubject = new SubscribingEventProcessor("test", eventHandlerInvoker, eventBus);
+        mockHandler = mock(EventMessageHandler.class);
+        eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build();
+        eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        testSubject = SubscribingEventProcessor.builder()
+                                               .name("test")
+                                               .eventHandlerInvoker(eventHandlerInvoker)
+                                               .messageSource(eventBus)
+                                               .build();
     }
 
     @After
@@ -57,13 +58,13 @@ public class SubscribingEventProcessorTest {
         doAnswer(invocation -> {
             countDownLatch.countDown();
             return null;
-        }).when(mockListener).handle(any());
+        }).when(mockHandler).handle(any());
 
         testSubject.start();
         testSubject.shutDown();
         testSubject.start();
 
         eventBus.publish(createEvents(2));
-        assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 
 /**
@@ -43,8 +44,7 @@ import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
  * coordinates the timing and order of the publication.
  * <p>
  * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
- * subscribed event processors. Event processors are expected to implement asynchronous handling themselves or
- * alternatively open an event stream using {@link #openStream(TrackingToken)}.
+ * subscribed event processors.
  *
  * @author Allard Buijze
  * @author René de Waele
@@ -54,26 +54,20 @@ public abstract class AbstractEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
-    private final String eventsKey = this + "_EVENTS";
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
+
+    private final String eventsKey = this + "_EVENTS";
     private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
 
     /**
-     * Initializes an event bus with a {@link NoOpMessageMonitor}.
-     */
-    public AbstractEventBus() {
-        this(NoOpMessageMonitor.INSTANCE);
-    }
-
-    /**
-     * Initializes an event bus. Uses the given {@code messageMonitor} to report ingested messages and report the
-     * result of processing the message.
+     * Instantiate an {@link AbstractEventBus} based on the fields contained in the {@link Builder}.
      *
-     * @param messageMonitor The monitor used to monitor the ingested messages
+     * @param builder the {@link Builder} used to instantiate an {@link AbstractEventBus} instance
      */
-    public AbstractEventBus(MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this.messageMonitor = messageMonitor;
+    protected AbstractEventBus(Builder builder) {
+        builder.validate();
+        this.messageMonitor = builder.messageMonitor;
     }
 
     @Override
@@ -107,7 +101,8 @@ public abstract class AbstractEventBus implements EventBus {
      * @param dispatchInterceptor
      */
     @Override
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
@@ -120,13 +115,15 @@ public abstract class AbstractEventBus implements EventBus {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Assert.state(!unitOfWork.phase().isAfter(PREPARE_COMMIT),
                          () -> "It is not allowed to publish events when the current Unit of Work has already been " +
-                               "committed. Please start a new Unit of Work before publishing events.");
+                                 "committed. Please start a new Unit of Work before publishing events.");
             Assert.state(!unitOfWork.root().phase().isAfter(PREPARE_COMMIT),
                          () -> "It is not allowed to publish events when the root Unit of Work has already been " +
-                               "committed.");
+                                 "committed.");
 
             unitOfWork.afterCommit(u -> ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess));
-            unitOfWork.onRollback(u -> ingested.forEach(m -> m.reportFailure(u.getExecutionResult().getExceptionResult())));
+            unitOfWork.onRollback(uow -> ingested.forEach(
+                    message -> message.reportFailure(uow.getExecutionResult().getExceptionResult())
+            ));
 
             eventsQueue(unitOfWork).addAll(events);
         } else {
@@ -153,9 +150,10 @@ public abstract class AbstractEventBus implements EventBus {
                 } else {
                     int processedItems = eventQueue.size();
                     doWithEvents(this::prepareCommit, intercept(eventQueue));
-                    // make sure events published during publication prepare commit phase are also published
+                    // Make sure events published during publication prepare commit phase are also published
                     while (processedItems < eventQueue.size()) {
-                        List<? extends EventMessage<?>> newMessages = intercept(eventQueue.subList(processedItems, eventQueue.size()));
+                        List<? extends EventMessage<?>> newMessages =
+                                intercept(eventQueue.subList(processedItems, eventQueue.size()));
                         processedItems = eventQueue.size();
                         doWithEvents(this::prepareCommit, newMessages);
                     }
@@ -177,7 +175,6 @@ public abstract class AbstractEventBus implements EventBus {
             });
             unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
             return eventQueue;
-
         });
     }
 
@@ -207,7 +204,8 @@ public abstract class AbstractEventBus implements EventBus {
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
         for (MessageDispatchInterceptor<? super EventMessage<?>> preprocessor : dispatchInterceptors) {
-            BiFunction<Integer, ? super EventMessage<?>, ? super EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
+            BiFunction<Integer, ? super EventMessage<?>, ? super EventMessage<?>> function =
+                    preprocessor.handle(preprocessedEvents);
             for (int i = 0; i < preprocessedEvents.size(); i++) {
                 preprocessedEvents.set(i, (EventMessage<?>) function.apply(i, preprocessedEvents.get(i)));
             }
@@ -247,5 +245,38 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void afterCommit(List<? extends EventMessage<?>> events) {
+    }
+
+    /**
+     * Abstract Builder class to instantiate {@link AbstractEventBus} implementations.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor}.
+     */
+    public abstract static class Builder {
+
+        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+
+        /**
+         * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a
+         * {@link NoOpMessageMonitor}.
+         *
+         * @param messageMonitor a {@link MessageMonitor} to monitor ingested {@link EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
+            this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
+        }
     }
 }

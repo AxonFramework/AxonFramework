@@ -16,15 +16,14 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.List;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
@@ -33,33 +32,39 @@ public class SimpleEventHandlerInvokerTest {
 
     @Test
     public void testSingleEventPublication() throws Exception {
-        EventMessageHandler mockListener1 = mock(EventMessageHandler.class);
-        EventMessageHandler mockListener2 = mock(EventMessageHandler.class);
-        SimpleEventHandlerInvoker subject = new SimpleEventHandlerInvoker("test", mockListener1, mockListener2);
+        EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
+        EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
+        SimpleEventHandlerInvoker subject =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers("test", mockHandler1, mockHandler2)
+                                         .build();
 
         EventMessage<?> event = createEvent();
         subject.handle(event, Segment.ROOT_SEGMENT);
-        InOrder inOrder = inOrder(mockListener1, mockListener2);
-        inOrder.verify(mockListener1).handle(event);
-        inOrder.verify(mockListener2).handle(event);
+        InOrder inOrder = inOrder(mockHandler1, mockHandler2);
+        inOrder.verify(mockHandler1).handle(event);
+        inOrder.verify(mockHandler2).handle(event);
         inOrder.verifyNoMoreInteractions();
     }
 
     @Test
     public void testRepeatedEventPublication() throws Exception {
-        EventMessageHandler mockListener1 = mock(EventMessageHandler.class);
-        EventMessageHandler mockListener2 = mock(EventMessageHandler.class);
-        SimpleEventHandlerInvoker subject = new SimpleEventHandlerInvoker("test", mockListener1, mockListener2);
+        EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
+        EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
+        SimpleEventHandlerInvoker subject =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers("test", mockHandler1, mockHandler2)
+                                         .build();
 
         List<? extends EventMessage<?>> events = createEvents(2);
         for (EventMessage<?> event : events) {
             subject.handle(event, Segment.ROOT_SEGMENT);
         }
-        InOrder inOrder = inOrder(mockListener1, mockListener2);
-        inOrder.verify(mockListener1).handle(events.get(0));
-        inOrder.verify(mockListener2).handle(events.get(0));
-        inOrder.verify(mockListener1).handle(events.get(1));
-        inOrder.verify(mockListener2).handle(events.get(1));
+        InOrder inOrder = inOrder(mockHandler1, mockHandler2);
+        inOrder.verify(mockHandler1).handle(events.get(0));
+        inOrder.verify(mockHandler2).handle(events.get(0));
+        inOrder.verify(mockHandler1).handle(events.get(1));
+        inOrder.verify(mockHandler2).handle(events.get(1));
         inOrder.verifyNoMoreInteractions();
     }
 }

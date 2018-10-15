@@ -23,8 +23,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Created by Sara Pellegrini on 29/03/2018.
- * sara.pellegrini@gmail.com
+ * Composite of {@link MessageDispatchInterceptor}s that apply all interceptors in the order of registration.
+ *
+ * @author Sara Pellegrini
+ * @since 4.0
  */
 public class DispatchInterceptors<M extends Message<?>> {
 

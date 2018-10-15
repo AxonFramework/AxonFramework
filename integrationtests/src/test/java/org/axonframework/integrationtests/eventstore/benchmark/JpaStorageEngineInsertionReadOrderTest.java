@@ -38,7 +38,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -104,7 +103,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject);
+        EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {
@@ -132,12 +131,12 @@ public class JpaStorageEngineInsertionReadOrderTest {
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject,
-                                                                       null,
-                                                                       20,
-                                                                       1000,
-                                                                       100,
-                                                                       TimeUnit.MILLISECONDS);
+        EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder()
+                                                                  .storageEngine(testSubject)
+                                                                  .cachedEvents(20)
+                                                                  .fetchDelay(100)
+                                                                  .cleanupDelay(1000)
+                                                                  .build();
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {

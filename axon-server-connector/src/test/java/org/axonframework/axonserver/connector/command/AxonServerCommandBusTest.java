@@ -116,10 +116,10 @@ public class AxonServerCommandBusTest {
     public void subscribe() throws Exception {
         Registration registration = testSubject.subscribe(String.class.getName(), c -> "Done");
         Thread.sleep(30);
-        assertEquals(1, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNotNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
         registration.cancel();
         Thread.sleep(30);
-        assertEquals(0, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
     }
 
     @Test
@@ -164,12 +164,12 @@ public class AxonServerCommandBusTest {
     public void resubscribe() throws Exception {
         testSubject.subscribe(String.class.getName(), c -> "Done");
         Thread.sleep(30);
-        assertEquals(1, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNotNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
         dummyMessagePlatformServer.stop();
         assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
         dummyMessagePlatformServer.start();
         Thread.sleep(3000);
-        assertEquals(1, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
     }
 
     @Test
@@ -182,6 +182,17 @@ public class AxonServerCommandBusTest {
         testSubject.dispatch(new GenericCommandMessage<>("payload"));
         assertEquals("payload", results.get(0));
         assertEquals(1, results.size());
+    }
+
+
+    @Test
+    public void reconnectAfterConnectionLost() throws InterruptedException {
+        testSubject.subscribe(String.class.getName(), c -> "Done");
+        Thread.sleep(30);
+        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        dummyMessagePlatformServer.onError(String.class.getName());
+        Thread.sleep(200);
+        assertNotNull( dummyMessagePlatformServer.subscriptions(String.class.getName()));
     }
 
 

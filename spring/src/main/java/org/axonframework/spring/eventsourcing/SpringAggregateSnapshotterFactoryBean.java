@@ -52,7 +52,8 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
+public class SpringAggregateSnapshotterFactoryBean
+        implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
 
     private Executor executor = DirectExecutor.INSTANCE;
     private PlatformTransactionManager transactionManager;
@@ -97,12 +98,15 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore,
-                                                                                parameterResolverFactory,
-                                                                                handlerDefinition,
-                                                                                executor,
-                                                                                txManager,
-                                                                                repositoryProvider);
+        SpringAggregateSnapshotter snapshotter =
+                SpringAggregateSnapshotter.builder()
+                                          .eventStore(eventStore)
+                                          .executor(executor)
+                                          .transactionManager(txManager)
+                                          .repositoryProvider(repositoryProvider)
+                                          .parameterResolverFactory(parameterResolverFactory)
+                                          .handlerDefinition(handlerDefinition)
+                                          .build();
         snapshotter.setApplicationContext(applicationContext);
         return snapshotter;
     }

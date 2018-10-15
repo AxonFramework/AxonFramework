@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
@@ -35,7 +36,12 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ThreadFactory;
@@ -45,9 +51,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
@@ -68,10 +74,12 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  *
  * @author Rene de Waele
  * @author Christophe Bouhier
+ * @since 3.0
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
+
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder;
@@ -89,83 +97,30 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final long tokenClaimInterval;
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
-     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Instantiate a {@link TrackingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
-     * The EventProcessor is initialized with a batch size of 1, a {@link PropagatingErrorHandler}, a {@link
-     * RollbackConfigurationType#ANY_THROWABLE} and a {@link NoOpMessageMonitor}.
+     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker}, {@link StreamableMessageSource},
+     * {@link TokenStore} and {@link TransactionManager} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param name                The name of the event processor
-     * @param eventHandlerInvoker The component that handles the individual events
-     * @param messageSource       The message source (e.g. Event Bus) which this event processor will track
-     * @param tokenStore          Used to store and fetch event tokens that enable the processor to track its progress
-     * @param transactionManager  The transaction manager used when processing messages
+     * @param builder the {@link Builder} used to instantiate a {@link TrackingEventProcessor} instance
      */
-    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                  StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
-                                  TransactionManager transactionManager) {
-        this(name, eventHandlerInvoker, messageSource, tokenStore, transactionManager, NoOpMessageMonitor.INSTANCE);
-    }
-
-    /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
-     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
-     * <p>
-     * The EventProcessor is initialized with a batch size of 1, a {@link PropagatingErrorHandler} and a {@link
-     * RollbackConfigurationType#ANY_THROWABLE}.
-     *
-     * @param name                The name of the event processor
-     * @param eventHandlerInvoker The component that handles the individual events
-     * @param messageSource       The message source (e.g. Event Bus) which this event processor will track
-     * @param tokenStore          Used to store and fetch event tokens that enable the processor to track its progress
-     * @param transactionManager  The transaction manager used when processing messages
-     * @param messageMonitor      Monitor to be invoked before and after event processing
-     */
-    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                  StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
-                                  TransactionManager transactionManager,
-                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(name, eventHandlerInvoker, messageSource, tokenStore, transactionManager, messageMonitor,
-             RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-             TrackingEventProcessorConfiguration.forSingleThreadedProcessing());
-    }
-
-    /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
-     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
-     *
-     * @param name                  The name of the event processor
-     * @param eventHandlerInvoker   The component that handles the individual events
-     * @param messageSource         The message source (e.g. Event Bus) which this event processor will track
-     * @param tokenStore            Used to store and fetch event tokens that enable the processor to track its
-     *                              progress
-     * @param transactionManager    The transaction manager used when processing messages
-     * @param messageMonitor        Monitor to be invoked before and after event processing
-     * @param rollbackConfiguration Determines rollback behavior of the UnitOfWork while processing a batch of events
-     * @param errorHandler          Invoked when a UnitOfWork is rolled back during processing
-     * @param config                The configuration for the event processor.
-     */
-    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                  StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
-                                  TransactionManager transactionManager,
-                                  MessageMonitor<? super EventMessage<?>> messageMonitor,
-                                  RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
-                                  TrackingEventProcessorConfiguration config) {
-        super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
-
+    protected TrackingEventProcessor(Builder builder) {
+        super(builder);
+        TrackingEventProcessorConfiguration config = builder.trackingEventProcessorConfiguration;
         this.tokenClaimInterval = config.getTokenClaimInterval();
         this.batchSize = config.getBatchSize();
 
-        this.messageSource = requireNonNull(messageSource);
-        this.tokenStore = requireNonNull(tokenStore);
+        this.messageSource = builder.messageSource;
+        this.tokenStore = builder.tokenStore;
 
         this.segmentsSize = config.getInitialSegmentsCount();
-        this.transactionManager = transactionManager;
+        this.transactionManager = builder.transactionManager;
 
         this.availableThreads = new AtomicInteger(config.getMaxThreadCount());
-        this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(name));
-        this.segmentIdResourceKey = "Processor[" + name + "]/SegmentId";
-        this.lastTokenResourceKey = "Processor[" + name + "]/Token";
+        this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(builder.name));
+        this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
+        this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
@@ -174,11 +129,27 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isLastMessage()) {
                 unitOfWork.onPrepareCommit(uow -> tokenStore.storeToken(unitOfWork.getResource(lastTokenResourceKey),
-                                                                        name,
+                                                                        builder.name,
                                                                         unitOfWork.getResource(segmentIdResourceKey)));
             }
             return interceptorChain.proceed();
         });
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
+     * <p>
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a
+     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
+     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
+     * are <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link TrackingEventProcessor}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -216,7 +187,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     logger.info("Segment is owned by another node. Releasing thread to process another segment...");
                     releaseSegment(segment.getSegmentId());
                 } catch (Exception e) {
-                    // make sure to start with a clean event stream. The exception may have caused an illegal state
+                    // Make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
                         logger.warn("Error occurred. Starting retry mode.", e);
                     }
@@ -238,7 +209,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         try {
             transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
         } catch (Exception e) {
-            // whatever.
+            // Ignore exception
         }
     }
 
@@ -259,19 +230,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 }
                 if (batch.isEmpty()) {
                     TrackingToken finalLastToken = lastToken;
-                    transactionManager.executeInTransaction(() -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId()));
+                    transactionManager.executeInTransaction(
+                            () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
+                    );
                     return;
                 }
             } else {
-                // refresh claim on token
-                transactionManager.executeInTransaction(() -> tokenStore.extendClaim(getName(), segment.getSegmentId()));
+                // Refresh claim on token
+                transactionManager.executeInTransaction(
+                        () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
+                );
                 return;
             }
 
             TrackingToken finalLastToken = lastToken;
-            // make sure all subsequent events with the same token (if non-null) as the last are added as well.
+            // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
             // These are the result of upcasting and should always be processed in the same batch.
-            while (lastToken != null && eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
+            while (lastToken != null
+                    && eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                 if (canHandle(trackedEventMessage, segment)) {
                     batch.add(trackedEventMessage);
@@ -302,7 +278,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             BlockingStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
         BlockingStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
-            final TrackingToken trackingToken = transactionManager.fetchInTransaction(() -> tokenStore.fetchToken(getName(), segment.getSegmentId()));
+            final TrackingToken trackingToken = transactionManager.fetchInTransaction(
+                    () -> tokenStore.fetchToken(getName(), segment.getSegmentId())
+            );
             logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
             eventStream = transactionManager.fetchInTransaction(
                     () -> doOpenStream(trackingToken));
@@ -706,6 +684,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private class WorkerLauncher implements Runnable {
+
         @Override
         public void run() {
             int waitTime = 1;
@@ -752,17 +731,29 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                             });
                         } catch (UnableToClaimTokenException ucte) {
                             // When not able to claim a token for a given segment, we skip the
-                            logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());
+                            logger.debug("Unable to claim the token for segment: {}. It is owned by another process",
+                                         segment.getSegmentId());
                             activeSegments.remove(segment.getSegmentId());
                             continue;
                         } catch (Exception e) {
                             activeSegments.remove(segment.getSegmentId());
                             if (AxonNonTransientException.isCauseOf(e)) {
-                                logger.error("An unrecoverable error has occurred wile attempting to claim a token for segment: {}. Shutting down processor [{}].", segment.getSegmentId(), getName(), e);
+                                logger.error(
+                                        "An unrecoverable error has occurred wile attempting to claim a token "
+                                                + "for segment: {}. Shutting down processor [{}].",
+                                        segment.getSegmentId(),
+                                        getName(),
+                                        e
+                                );
                                 state.set(State.PAUSED_ERROR);
                                 break;
                             }
-                            logger.info("An error occurred while attempting to claim a token for segment: {}. Will retry later...", segment.getSegmentId(), e);
+                            logger.info(
+                                    "An error occurred while attempting to claim a token for segment: {}. "
+                                            + "Will retry later...",
+                                    segment.getSegmentId(),
+                                    e
+                            );
                             continue;
                         }
 
@@ -833,10 +824,147 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 return message;
             }
             if (message instanceof DomainEventMessage) {
-                return new GenericTrackedDomainEventMessage<>(lastToken.advancedTo(message.trackingToken()), (DomainEventMessage<T>) message);
+                return new GenericTrackedDomainEventMessage<>(lastToken.advancedTo(message.trackingToken()),
+                                                              (DomainEventMessage<T>) message);
             } else {
                 return new GenericTrackedEventMessage<>(lastToken.advancedTo(message.trackingToken()), message);
             }
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link TrackingEventProcessor}.
+     * <p>
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a
+     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
+     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
+     * are <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder extends AbstractEventProcessor.Builder {
+
+        private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+        private TokenStore tokenStore;
+        private TransactionManager transactionManager;
+        private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration =
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
+
+        public Builder() {
+            super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
+        }
+
+        @Override
+        public Builder name(String name) {
+            super.name(name);
+            return this;
+        }
+
+        @Override
+        public Builder eventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+            super.eventHandlerInvoker(eventHandlerInvoker);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}. Defaults to a {@link RollbackConfigurationType#ANY_THROWABLE})
+         */
+        @Override
+        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+            super.rollbackConfiguration(rollbackConfiguration);
+            return this;
+        }
+
+        @Override
+        public Builder errorHandler(ErrorHandler errorHandler) {
+            super.errorHandler(errorHandler);
+            return this;
+        }
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        /**
+         * Sets the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link EventProcessor} will
+         * track.
+         *
+         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link
+         *                      EventProcessor} will track
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+            assertNonNull(messageSource, "StreamableMessageSource may not be null");
+            this.messageSource = messageSource;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TokenStore} used to store and fetch event tokens that enable this {@link EventProcessor} to
+         * track its progress.
+         *
+         * @param tokenStore the {@link TokenStore} used to store and fetch event tokens that enable this {@link
+         *                   EventProcessor} to track its progress
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder tokenStore(TokenStore tokenStore) {
+            assertNonNull(tokenStore, "TokenStore may not be null");
+            this.tokenStore = tokenStore;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
+         *
+         * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TrackingEventProcessorConfiguration} containing the fine grained configuration options for a
+         * {@link TrackingEventProcessor}. Defaults to a
+         * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call.
+         *
+         * @param trackingEventProcessorConfiguration the {@link TrackingEventProcessorConfiguration} containing the
+         *                                            fine grained configuration options for a
+         *                                            {@link TrackingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder trackingEventProcessorConfiguration(
+                TrackingEventProcessorConfiguration trackingEventProcessorConfiguration) {
+            assertNonNull(trackingEventProcessorConfiguration, "TrackingEventProcessorConfiguration may not be null");
+            this.trackingEventProcessorConfiguration = trackingEventProcessorConfiguration;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link TrackingEventProcessor} as specified through this Builder.
+         *
+         * @return a {@link TrackingEventProcessor} as specified through this Builder
+         */
+        public TrackingEventProcessor build() {
+            return new TrackingEventProcessor(this);
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+            assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
+            assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
+            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
         }
     }
 }

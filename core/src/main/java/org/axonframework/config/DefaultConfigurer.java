@@ -342,7 +342,9 @@ public class DefaultConfigurer implements Configurer {
      * @return The default EventBus to use.
      */
     protected EventBus defaultEventBus(Configuration config) {
-        return new SimpleEventBus(Integer.MAX_VALUE, config.messageMonitor(EventBus.class, "eventBus"));
+        return SimpleEventBus.builder()
+                             .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
+                             .build();
     }
 
     /**
@@ -470,7 +472,10 @@ public class DefaultConfigurer implements Configurer {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
                     messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
-            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
+            EmbeddedEventStore eventStore = EmbeddedEventStore.builder()
+                                                              .storageEngine(storageEngineBuilder.apply(c))
+                                                              .messageMonitor(monitor)
+                                                              .build();
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });

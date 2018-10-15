@@ -47,7 +47,7 @@ public class CommandHandlingTest {
 
     @Before
     public void setUp() {
-        stubEventStore = new StubEventStore();
+        stubEventStore = StubEventStore.builder().build();
         repository = EventSourcingRepository.<StubAggregate>builder()
                 .aggregateType(StubAggregate.class)
                 .eventStore(stubEventStore)
@@ -80,6 +80,14 @@ public class CommandHandlingTest {
 
         private List<DomainEventMessage<?>> storedEvents = new LinkedList<>();
 
+        private StubEventStore(Builder builder) {
+            super(builder);
+        }
+
+        private static Builder builder() {
+            return new Builder();
+        }
+
         @Override
         public DomainEventStream readEvents(String identifier) {
             return DomainEventStream.of(new ArrayList<>(storedEvents));
@@ -102,6 +110,13 @@ public class CommandHandlingTest {
         @Override
         public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
+        }
+
+        private static class Builder extends AbstractEventBus.Builder {
+
+            private StubEventStore build() {
+                return new StubEventStore(this);
+            }
         }
     }
 }

@@ -71,7 +71,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     @Before
     public void setUp() {
         StubHandler stubHandler = new StubHandler();
-        inMemoryEventStore = new InMemoryEventStore();
+        inMemoryEventStore = InMemoryEventStore.builder().build();
         testSubject = DisruptorCommandBus.builder()
                                          .bufferSize(4)
                                          .producerType(ProducerType.MULTI)
@@ -194,6 +194,14 @@ public class DisruptorCommandBusTest_MultiThreaded {
         private final AtomicInteger storedEventCounter = new AtomicInteger();
         private final AtomicInteger loadCounter = new AtomicInteger();
 
+        private InMemoryEventStore(Builder builder) {
+            super(builder);
+        }
+
+        private static Builder builder() {
+            return new Builder();
+        }
+
         @Override
         protected void commit(List<? extends EventMessage<?>> events) {
             if (events == null || events.isEmpty()) {
@@ -225,6 +233,13 @@ public class DisruptorCommandBusTest_MultiThreaded {
         @Override
         public TrackingEventStream openStream(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
+        }
+
+        private static class Builder extends AbstractEventBus.Builder {
+
+            private InMemoryEventStore build() {
+                return new InMemoryEventStore(this);
+            }
         }
     }
 
