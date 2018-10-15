@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.conflictresolution.ConflictResolution;
 import org.axonframework.commandhandling.conflictresolution.DefaultConflictResolver;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.LockAwareAggregate;
-import org.axonframework.commandhandling.model.LockingRepository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
@@ -99,8 +95,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      *
      * @return a Builder to be able to create a {@link EventSourcingRepository}
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> Builder<T> builder(Class<T> aggregateType) {
+        return new Builder<>(aggregateType);
     }
 
     /**
@@ -211,10 +207,14 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         protected RepositoryProvider repositoryProvider;
         protected Cache cache;
 
-        @Override
-        public Builder<T> aggregateType(Class<T> aggregateType) {
-            super.aggregateType(aggregateType);
-            return this;
+        /**
+         * Creates a builder for a Repository for given {@code aggregateType}.
+         *
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
+         *                      store
+         */
+        protected Builder(Class<T> aggregateType) {
+            super(aggregateType);
         }
 
         @Override
@@ -274,9 +274,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
 
         /**
-         * Sets the {@link AggregateFactory} used to create new Aggregate instances. Either this field or the
-         * {@link #aggregateType(Class)} should be provided to correctly instantiate an AggregateFactory for this
-         * {@link EventSourcingRepository}.
+         * Sets the {@link AggregateFactory} used to create new Aggregate instances.
          *
          * @param aggregateFactory the {@link AggregateFactory} used to create new Aggregate instances
          * @return the current Builder instance, for fluent interfacing

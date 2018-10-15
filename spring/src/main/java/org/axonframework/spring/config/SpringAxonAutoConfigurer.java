@@ -348,8 +348,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     }
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
                         aggregateConf.configureRepository(
-                                c -> GenericJpaRepository.<A>builder()
-                                        .aggregateType(aggregateType)
+                                c -> GenericJpaRepository.builder(aggregateType)
                                         .parameterResolverFactory(c.parameterResolverFactory())
                                         .handlerDefinition(c.handlerDefinition(aggregateType))
                                         .lockFactory(c.getComponent(

@@ -27,18 +27,20 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.internal.stubbing.answers.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.internal.stubbing.answers.Returns;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.LockModeType;
 import javax.persistence.Version;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
@@ -64,8 +66,7 @@ public class GenericJpaRepositoryTest {
         identifierConverter = mock(Function.class);
         eventBus = SimpleEventBus.builder().build();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
-        testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
-                .aggregateType(StubJpaAggregate.class)
+        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                 .eventBus(eventBus)
                 .identifierConverter(identifierConverter)
@@ -116,8 +117,7 @@ public class GenericJpaRepositoryTest {
         EventStore mockEventStore = EmbeddedEventStore.builder()
                                                       .storageEngine(new InMemoryEventStorageEngine())
                                                       .build();
-        testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
-                .aggregateType(StubJpaAggregate.class)
+        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                 .eventBus(mockEventStore)
                 .identifierConverter(identifierConverter)
@@ -156,8 +156,7 @@ public class GenericJpaRepositoryTest {
                                                       .storageEngine(new InMemoryEventStorageEngine())
                                                       .build();
         mockEventStore.publish(createEvent("123", 0), createEvent("123", 1));
-        testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
-                .aggregateType(StubJpaAggregate.class)
+        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                 .eventBus(mockEventStore)
                 .identifierConverter(identifierConverter)
@@ -187,8 +186,7 @@ public class GenericJpaRepositoryTest {
         EventStore mockEventStore = EmbeddedEventStore.builder()
                                                       .storageEngine(new InMemoryEventStorageEngine())
                                                       .build();
-        testSubject = GenericJpaRepository.<StubJpaAggregate>builder()
-                .aggregateType(StubJpaAggregate.class)
+        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                 .eventBus(mockEventStore)
                 .identifierConverter(identifierConverter)
