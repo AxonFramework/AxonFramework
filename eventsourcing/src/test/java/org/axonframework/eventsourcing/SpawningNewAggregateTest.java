@@ -16,24 +16,17 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.callbacks.VoidCallback;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;

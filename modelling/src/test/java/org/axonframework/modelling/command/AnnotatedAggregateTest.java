@@ -18,24 +18,21 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {
 

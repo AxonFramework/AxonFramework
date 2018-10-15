@@ -29,7 +29,7 @@
 
     <name>Axon Framework Connector for AxonServer</name>
     <description>
-        Connector module providing infrastructue components that connect to AxonServer.
+        Connector module providing infrastructure components that connect to AxonServer.
     </description>
 
     <packaging>bundle</packaging>

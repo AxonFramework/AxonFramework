@@ -16,25 +16,22 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventsourcing.utils.StubDomainEvent;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +61,10 @@ public class EventSourcingRepositoryTest {
         triggerDefinition = mock(SnapshotTriggerDefinition.class);
         when(triggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
         testSubject = EventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(stubAggregateFactory)
-                .eventStore(mockEventStore)
-                .snapshotTriggerDefinition(triggerDefinition)
-                .build();
+                                             .aggregateFactory(stubAggregateFactory)
+                                             .eventStore(mockEventStore)
+                                             .snapshotTriggerDefinition(triggerDefinition)
+                                             .build();
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
 

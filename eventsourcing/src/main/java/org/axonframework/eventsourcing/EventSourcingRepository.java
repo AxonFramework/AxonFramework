@@ -16,22 +16,22 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventsourcing.conflictresolution.ConflictResolution;
-import org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateNotFoundException;
-import org.axonframework.modelling.command.LockAwareAggregate;
-import org.axonframework.modelling.command.LockingRepository;
-import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
+import org.axonframework.eventsourcing.conflictresolution.ConflictResolution;
+import org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.LockAwareAggregate;
+import org.axonframework.modelling.command.LockingRepository;
 import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.inspection.AggregateModel;
 
 import java.util.concurrent.Callable;
 

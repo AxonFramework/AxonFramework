@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.RemoteExceptionDescription;
 import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;

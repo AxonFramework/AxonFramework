@@ -18,10 +18,10 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.util.EventStoreClientException;
 import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.modelling.command.AggregateRolledBackException;
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.modelling.command.AggregateRolledBackException;
+import org.axonframework.modelling.command.ConcurrencyException;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeoutException;

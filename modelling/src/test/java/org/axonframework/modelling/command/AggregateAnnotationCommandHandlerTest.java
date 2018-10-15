@@ -16,16 +16,12 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.modelling.utils.StubDomainEvent;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Priority;
@@ -39,6 +35,10 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.modelling.utils.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
 

@@ -23,7 +23,6 @@ import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
@@ -32,9 +31,7 @@ import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -46,8 +43,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * Author: marc

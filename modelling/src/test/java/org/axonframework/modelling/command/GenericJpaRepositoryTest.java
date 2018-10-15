@@ -24,16 +24,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateNotFoundException;
-import org.axonframework.modelling.command.AggregateVersion;
-import org.axonframework.modelling.command.ConflictingAggregateVersionException;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.internal.stubbing.answers.Returns;
+import org.junit.*;
+import org.mockito.*;
+import org.mockito.internal.stubbing.answers.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,10 +40,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.LockModeType;
 import javax.persistence.Version;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
@@ -76,10 +65,10 @@ public class GenericJpaRepositoryTest {
         eventBus = SimpleEventBus.builder().build();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
-                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                .eventBus(eventBus)
-                .identifierConverter(identifierConverter)
-                .build();
+                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                          .eventBus(eventBus)
+                                          .identifierConverter(identifierConverter)
+                                          .build();
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
@@ -122,15 +111,14 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus()
-            throws Exception {
+    public void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
-                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                .eventBus(testEventBus)
-                .identifierConverter(identifierConverter)
-                .build();
+                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                          .eventBus(testEventBus)
+                                          .identifierConverter(identifierConverter)
+                                          .build();
 
         DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg =
@@ -166,14 +154,14 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testAggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() throws Exception {
+    public void testAggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
         SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
-                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                .eventBus(testEventBus)
-                .identifierConverter(identifierConverter)
-                .build();
+                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                          .eventBus(testEventBus)
+                                          .identifierConverter(identifierConverter)
+                                          .build();
 
         DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);

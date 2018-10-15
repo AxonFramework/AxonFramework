@@ -21,12 +21,6 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.CommandHandlerInterceptor;
-import org.axonframework.modelling.command.EntityId;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -36,19 +30,22 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.CommandHandlerInterceptor;
+import org.axonframework.modelling.command.EntityId;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 
 import java.util.Objects;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**

@@ -16,9 +16,11 @@
 
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
-import org.axonframework.commandhandling.*;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -30,13 +32,13 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Before;
-import org.junit.Test;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.Repository;
+import org.junit.*;
 
 import java.util.List;
 import java.util.UUID;

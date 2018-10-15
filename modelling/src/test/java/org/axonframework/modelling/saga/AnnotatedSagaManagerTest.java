@@ -16,20 +16,16 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.modelling.utils.StubDomainEvent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
-import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.modelling.utils.StubDomainEvent;
 import org.junit.*;
 
 import java.util.Collection;
