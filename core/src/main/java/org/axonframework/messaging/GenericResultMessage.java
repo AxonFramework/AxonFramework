@@ -54,7 +54,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Creates a Result Message with the given {@code exception} result.
+     * Creates a ResultMessage with the given {@code exception} result.
      *
      * @param exception the Exception describing the cause of an error
      * @param <T>       the type of payload
@@ -65,7 +65,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Creates a Command Result Message with the given {@code commandResult} as the payload.
+     * Creates a ResultMessage with the given {@code result} as the payload.
      *
      * @param result the payload for the Message
      */
@@ -74,7 +74,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Creates a Result Message with the given {@code exception}.
+     * Creates a ResultMessage with the given {@code exception}.
      *
      * @param exception the Exception describing the cause of an error
      */

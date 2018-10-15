@@ -32,7 +32,7 @@ import java.util.Optional;
 public interface ResultMessage<R> extends Message<R> {
 
     /**
-     * Indicates whether the Result Message represents unsuccessful execution.
+     * Indicates whether the ResultMessage represents unsuccessful execution.
      *
      * @return {@code true} if execution was unsuccessful, {@code false} otherwise
      */
@@ -42,9 +42,10 @@ public interface ResultMessage<R> extends Message<R> {
     }
 
     /**
-     * Tries to get exception result if present.
+     * Returns the Exception in case of exceptional result message or an empty {@link Optional} in case of successful
+     * execution.
      *
-     * @return an Optional containing exception result
+     * @return an {@link Optional} containing exception result or an empty Optional in case of a successful execution
      */
     // TODO: 10/11/2018 remove default: https://github.com/AxonFramework/AxonFramework/issues/827
     default Optional<Throwable> tryGetExceptionResult() {
@@ -52,11 +53,11 @@ public interface ResultMessage<R> extends Message<R> {
     }
 
     /**
-     * Gets exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.
+     * Returns the exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.
      *
-     * @return exception result
+     * @return the exception result
      *
-     * @throws IllegalStateException if Result Message is not ecxeptional
+     * @throws IllegalStateException if this ResultMessage is not exceptional
      */
     default Throwable getExceptionResult() throws IllegalStateException {
         return tryGetExceptionResult().orElseThrow(IllegalStateException::new);
@@ -65,10 +66,10 @@ public interface ResultMessage<R> extends Message<R> {
     /**
      * Serializes the exception result.
      *
-     * @param serializer             the Serializer
+     * @param serializer             the {@link Serializer} used to serialize the exception
      * @param expectedRepresentation the type representing the expected format
-     * @param <T>                    the tyep representing the expected format
-     * @return serialized object
+     * @param <T>                    the type representing the expected format
+     * @return the serialized exception as a {@link SerializedObject}
      */
     default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
         return serializer.serialize(tryGetExceptionResult().orElse(null), expectedRepresentation);
