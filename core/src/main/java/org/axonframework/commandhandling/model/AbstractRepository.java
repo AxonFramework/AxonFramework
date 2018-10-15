@@ -315,24 +315,19 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     public static abstract class Builder<T> {
 
-        protected Class<T> aggregateType;
+        protected final Class<T> aggregateType;
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
 
         /**
-         * Sets the {@code aggregateType} as a {@code Class}, specifying the type of aggregate this {@link Repository}
-         * will store. Either this field or the {@link #aggregateModel(AggregateModel)} should be provided to correctly
-         * instantiate a Repository.
+         * Creates a builder for a Repository for given {@code aggregateType}.
          *
          * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
          *                      store
-         * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> aggregateType(Class<T> aggregateType) {
-            assertNonNull(aggregateType, "The aggregateType may not be null");
+        protected Builder(Class<T> aggregateType) {
             this.aggregateType = aggregateType;
-            return this;
         }
 
         /**
@@ -365,8 +360,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
         /**
          * Sets the {@link AggregateModel} of generic type {@code T}, describing the structure of the aggregate this
-         * {@link Repository} will store. Either this field or the {@link #aggregateType(Class)} should be provided to
-         * correctly instantiate a Repository.
+         * {@link Repository} will store.
          *
          * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
          *                       {@link Repository} will store

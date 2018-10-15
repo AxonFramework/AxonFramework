@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,11 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,8 +60,7 @@ public class EventSourcingRepositoryTest {
         snapshotTrigger = mock(SnapshotTrigger.class);
         triggerDefinition = mock(SnapshotTriggerDefinition.class);
         when(triggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
-        testSubject = EventSourcingRepository.<TestAggregate>builder()
-                .aggregateType(TestAggregate.class)
+        testSubject = EventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(stubAggregateFactory)
                 .eventStore(mockEventStore)
                 .snapshotTriggerDefinition(triggerDefinition)

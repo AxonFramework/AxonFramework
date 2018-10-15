@@ -431,6 +431,12 @@ public class EventProcessingModule
     }
 
     @Override
+    public EventProcessingConfigurer registerTokenStore(Function<Configuration, TokenStore> tokenStore) {
+        this.defaultTokenStore.update(tokenStore);
+        return this;
+    }
+
+    @Override
     public EventProcessingConfigurer usingSubscribingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
                 subscribingEventProcessor(name, conf, eventHandlerInvoker, Configuration::eventBus);

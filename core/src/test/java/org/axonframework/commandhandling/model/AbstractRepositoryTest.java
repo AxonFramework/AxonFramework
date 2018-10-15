@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import org.axonframework.eventhandling.saga.SagaScopeDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.concurrent.Callable;
 
@@ -46,9 +48,7 @@ public class AbstractRepositoryTest {
     @Before
     public void setUp() {
         testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                new AbstractRepository.Builder<JpaAggregate>() {
-                }.aggregateType(JpaAggregate.class)
-        ) {
+                new AbstractRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)

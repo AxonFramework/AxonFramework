@@ -18,7 +18,7 @@ package org.axonframework.boot.autoconfig;
 
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
@@ -33,11 +33,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.BeansException;
@@ -78,8 +74,8 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
-    public PlatformConnectionManager platformConnectionManager(AxonServerConfiguration routingConfiguration) {
-        return new PlatformConnectionManager(routingConfiguration);
+    public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration routingConfiguration) {
+        return new AxonServerConnectionManager(routingConfiguration);
     }
 
     @Bean
@@ -89,7 +85,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                            AxonConfiguration axonConfiguration,
                                            AxonServerConfiguration axonServerConfiguration,
                                            Serializer serializer,
-                                           PlatformConnectionManager platformConnectionManager,
+                                           AxonServerConnectionManager axonServerConnectionManager,
                                            RoutingStrategy routingStrategy,
                                            CommandPriorityCalculator priorityCalculator) {
 
@@ -103,7 +99,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
         );
 
-        return new AxonServerCommandBus(platformConnectionManager,
+        return new AxonServerCommandBus(axonServerConnectionManager,
                                         axonServerConfiguration,
                                         commandBus,
                                         serializer,
@@ -139,7 +135,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @Bean
     @ConditionalOnMissingBean(QueryBus.class)
-    public AxonServerQueryBus queryBus(PlatformConnectionManager platformConnectionManager,
+    public AxonServerQueryBus queryBus(AxonServerConnectionManager axonServerConnectionManager,
                                        AxonServerConfiguration axonServerConfiguration,
                                        AxonConfiguration axonConfiguration,
                                        TransactionManager txManager,
@@ -157,7 +153,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         simpleQueryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration
                                                                                            .correlationDataProviders()));
 
-        return new AxonServerQueryBus(platformConnectionManager,
+        return new AxonServerQueryBus(axonServerConnectionManager,
                                       axonServerConfiguration,
                                       simpleQueryBus.queryUpdateEmitter(),
                                       simpleQueryBus,
@@ -174,21 +170,23 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     public EventProcessorInfoConfiguration processorInfoConfiguration(
             EventProcessingConfiguration eventProcessingConfiguration,
-            PlatformConnectionManager connectionManager,
+            AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration) {
-        return new EventProcessorInfoConfiguration(eventProcessingConfiguration, connectionManager, configuration);
+        return new EventProcessorInfoConfiguration(c -> eventProcessingConfiguration,
+                                                   c -> connectionManager,
+                                                   c -> configuration);
     }
 
     @Bean
     @ConditionalOnMissingBean
     public EventStore eventStore(AxonServerConfiguration axonServerConfiguration,
                                  AxonConfiguration configuration,
-                                 PlatformConnectionManager platformConnectionManager,
+                                 AxonServerConnectionManager axonServerConnectionManager,
                                  Serializer snapshotSerializer,
                                  @Qualifier("eventSerializer") Serializer eventSerializer) {
         return AxonServerEventStore.builder()
                                    .configuration(axonServerConfiguration)
-                                   .platformConnectionManager(platformConnectionManager)
+                                   .platformConnectionManager(axonServerConnectionManager)
                                    .snapshotSerializer(snapshotSerializer)
                                    .eventSerializer(eventSerializer)
                                    .upcasterChain(configuration.upcasterChain())

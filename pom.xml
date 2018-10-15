@@ -140,7 +140,7 @@
         <jackson.version>2.9.4</jackson.version>
         <grpc.version>1.13.1</grpc.version>
         <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
-        <axonserver.api.version>4.0-M2</axonserver.api.version>
+        <axonserver.api.version>4.0-M3</axonserver.api.version>
     </properties>
 
     <dependencies>
@@ -374,16 +374,6 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>1.1.11</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>1.1.11</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>

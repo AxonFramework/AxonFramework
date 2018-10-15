@@ -28,15 +28,19 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class EventSourcingRepositoryTest {
 
@@ -53,9 +57,9 @@ public class EventSourcingRepositoryTest {
                                                           "Test2"),
                     new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgument(0), 3,
                                                           "Test3")));
-        repository = EventSourcingRepository.<StubAggregate>builder().aggregateType(StubAggregate.class)
-                                                                     .eventStore(eventStore)
-                                                                     .build();
+        repository = EventSourcingRepository.builder(StubAggregate.class)
+                                            .eventStore(eventStore)
+                                            .build();
         DefaultUnitOfWork.startAndGet(asCommandMessage("Stub"));
     }
 

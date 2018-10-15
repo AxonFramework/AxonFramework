@@ -27,8 +27,10 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 
 import java.util.UUID;
 
@@ -48,14 +50,13 @@ public class EventPublicationOrderTest {
     public void setUp() {
         this.commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
-        EventSourcingRepository<StubAggregate> repository = EventSourcingRepository.<StubAggregate>builder()
-                .aggregateType(StubAggregate.class)
-                .eventStore(eventStore)
-                .build();
+        EventSourcingRepository<StubAggregate> repository = EventSourcingRepository.builder(StubAggregate.class)
+                                                                                   .eventStore(eventStore)
+                                                                                   .build();
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventStore);
-        new AnnotationCommandHandlerAdapter(target).subscribe(commandBus);
+        new AnnotationCommandHandlerAdapter<>(target).subscribe(commandBus);
     }
 
     @Test

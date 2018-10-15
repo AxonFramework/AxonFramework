@@ -31,7 +31,8 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -122,8 +123,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testWithoutCache() throws Exception {
-        repository = CachingEventSourcingRepository.<TestAggregate>builder()
-                .aggregateType(TestAggregate.class)
+        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
                 .cache(NoCache.INSTANCE)
@@ -133,8 +133,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testWithCache() throws Exception {
-        repository = CachingEventSourcingRepository.<TestAggregate>builder()
-                .aggregateType(TestAggregate.class)
+        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
                 .cache(realCache)
@@ -144,8 +143,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testMinimalScenarioWithoutCache() throws Exception {
-        repository = CachingEventSourcingRepository.<TestAggregate>builder()
-                .aggregateType(TestAggregate.class)
+        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
                 .cache(NoCache.INSTANCE)
@@ -155,8 +153,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testMinimalScenarioWithCache() throws Exception {
-        repository = CachingEventSourcingRepository.<TestAggregate>builder()
-                .aggregateType(TestAggregate.class)
+        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
                 .cache(realCache)

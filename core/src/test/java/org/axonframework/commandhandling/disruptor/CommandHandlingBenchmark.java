@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,8 @@ public class CommandHandlingBenchmark {
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
         Repository<MyAggregate> repository = new AbstractRepository<MyAggregate, AnnotatedAggregate<MyAggregate>>(
-                new AbstractRepository.Builder<MyAggregate>() {
-                }.aggregateType(MyAggregate.class)
+                new AbstractRepository.Builder<MyAggregate>(MyAggregate.class) {
+                }
         ) {
 
             @Override
