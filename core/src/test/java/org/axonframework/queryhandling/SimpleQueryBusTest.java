@@ -278,12 +278,13 @@ public class SimpleQueryBusTest {
 
         QueryMessage<String, String> testQueryMessage =
                 new GenericQueryMessage<>("query", "query", singleStringResponse);
-        CompletableFuture<String> result = testSubject.query(testQueryMessage)
-                                                      .thenApply(QueryResponseMessage::getPayload);
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
 
         assertTrue(result.isDone());
-        assertTrue(result.isCompletedExceptionally());
-        assertEquals("Mock", result.exceptionally(e -> e.getCause().getMessage()).get());
+        assertFalse(result.isCompletedExceptionally());
+        QueryResponseMessage<String> queryResponseMessage = result.get();
+        assertTrue(queryResponseMessage.isExceptional());
+        assertEquals("Mock", queryResponseMessage.getExceptionResult().getMessage());
     }
 
     @Test
@@ -326,15 +327,13 @@ public class SimpleQueryBusTest {
         });
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
-        CompletableFuture<?> result = testSubject.query(testQueryMessage);
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
 
-        assertTrue(result.isCompletedExceptionally());
-        try {
-            result.get();
-            fail("Expected exception");
-        } catch (ExecutionException e) {
-            assertEquals(mockException, e.getCause());
-        }
+        assertTrue(result.isDone());
+        assertFalse(result.isCompletedExceptionally());
+        QueryResponseMessage<String> queryResponseMessage = result.get();
+        assertTrue(queryResponseMessage.isExceptional());
+        assertEquals(mockException, queryResponseMessage.getExceptionResult());
     }
 
     @Test

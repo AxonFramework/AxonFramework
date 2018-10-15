@@ -20,6 +20,8 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
 import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
@@ -62,12 +64,19 @@ public class QuerySerializer {
     }
 
     public QueryResponse serializeResponse(QueryResponseMessage<?> response, String requestMessageId) {
-        return QueryResponse.newBuilder()
-                            .setPayload(payloadSerializer.apply(response))
-                            .putAllMetaData(metadataSerializer.apply(response.getMetaData()))
-                            .setMessageIdentifier(response.getIdentifier())
-                            .setRequestIdentifier(requestMessageId)
-                            .build();
+        QueryResponse.Builder builder = QueryResponse.newBuilder();
+        if (response.isExceptional()) {
+            Throwable exceptionResult = response.getExceptionResult();
+            builder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            builder.setMessage(ExceptionSerializer.serialize(configuration.getClientName(), exceptionResult));
+        } else {
+            builder.setPayload(payloadSerializer.apply(response));
+        }
+        return builder
+                .putAllMetaData(metadataSerializer.apply(response.getMetaData()))
+                .setMessageIdentifier(response.getIdentifier())
+                .setRequestIdentifier(requestMessageId)
+                .build();
     }
 
     public <Q, R> QueryRequest serializeRequest(QueryMessage<Q, R> queryMessage, int nrResults, long timeout, int priority) {

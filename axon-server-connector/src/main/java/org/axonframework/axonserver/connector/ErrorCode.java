@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.model.AggregateRolledBackException;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.queryhandling.QueryExecutionException;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
@@ -44,6 +45,7 @@ public enum ErrorCode {
 
     // Execution errors
     COMMAND_EXECUTION_ERROR("AXONIQ-7000", CommandExecutionException.class),
+    QUERY_EXECUTION_ERROR("AXONIQ-8000", QueryExecutionException.class),
 
     // Internal errors
     DATAFILE_READ_ERROR( "AXONIQ-9000", EventStoreException.class),

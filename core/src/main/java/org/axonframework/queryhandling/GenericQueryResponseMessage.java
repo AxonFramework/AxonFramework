@@ -17,9 +17,10 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 
@@ -30,7 +31,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 3.2
  */
-public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implements QueryResponseMessage<R> {
+public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> implements QueryResponseMessage<R> {
 
     private static final long serialVersionUID = -735698768536456937L;
 
@@ -47,6 +48,12 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
     public static <R> QueryResponseMessage<R> asResponseMessage(Object result) {
         if (result instanceof QueryResponseMessage) {
             return (QueryResponseMessage<R>) result;
+        } else if (result instanceof ResultMessage) {
+            ResultMessage<R> resultMessage = (ResultMessage<R>) result;
+            return new GenericQueryResponseMessage<>(resultMessage.getPayload(), resultMessage.getMetaData());
+        } else if (result instanceof Message) {
+            Message<R> message = (Message<R>) result;
+            return new GenericQueryResponseMessage<>(message.getPayload(), message.getMetaData());
         } else {
             return new GenericQueryResponseMessage(result);
         }
@@ -70,9 +77,31 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
     public static <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
         if (result instanceof QueryResponseMessage) {
             return (QueryResponseMessage<R>) result;
+        } else if (result instanceof ResultMessage) {
+            ResultMessage<R> resultMessage = (ResultMessage<R>) result;
+            if (resultMessage.isExceptional()) {
+                Throwable cause = resultMessage.getExceptionResult();
+                return new GenericQueryResponseMessage<>(declaredType, cause, resultMessage.getMetaData());
+            }
+            return new GenericQueryResponseMessage<>(resultMessage.getPayload(), resultMessage.getMetaData());
+        } else if (result instanceof Message) {
+            Message<R> message = (Message<R>) result;
+            return new GenericQueryResponseMessage<>(message.getPayload(), message.getMetaData());
         } else {
             return new GenericQueryResponseMessage(declaredType, result);
         }
+    }
+
+    /**
+     * Creates a Query Response Message with given {@code declaredType} and {@code exception}.
+     *
+     * @param declaredType The declared type of the Query Response Message to be created
+     * @param exception    The Exception describing the cause of an error
+     * @param <R>          The type of the payload
+     * @return a message containing exception result
+     */
+    public static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
+        return new GenericQueryResponseMessage<>(declaredType, exception);
     }
 
     /**
@@ -94,6 +123,16 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
      */
     public GenericQueryResponseMessage(Class<R> declaredResultType, R result) {
         this(declaredResultType, result, MetaData.emptyInstance());
+    }
+
+    /**
+     * Initialize the response message with given {@code declaredResultType} and {@code exception}.
+     *
+     * @param declaredResultType The declared type of the Query Response Message to be created
+     * @param exception          The Exception describing the cause of an error
+     */
+    public GenericQueryResponseMessage(Class<R> declaredResultType, Throwable exception) {
+        this(declaredResultType, exception, MetaData.emptyInstance());
     }
 
     /**
@@ -120,6 +159,17 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
     }
 
     /**
+     * Initialize the response message with given {@code declaredResultType}, {@code exception} and {@code metaData}.
+     *
+     * @param declaredResultType The declared type of the Query Response Message to be created
+     * @param exception          The Exception describing the cause of an error
+     * @param metaData           The meta data to contain in the message
+     */
+    public GenericQueryResponseMessage(Class<R> declaredResultType, Throwable exception, Map<String, ?> metaData) {
+        super(new GenericMessage<>(declaredResultType, null, metaData), exception);
+    }
+
+    /**
      * Copy-constructor that takes the payload, meta data and message identifier of the given {@code delegate} for this
      * message.
      * <p>
@@ -132,13 +182,27 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
         super(delegate);
     }
 
+    /**
+     * Copy-constructor that takes the payload, meta data and message identifier of the given {@code delegate} for this
+     * message and given {@code exception} as a cause for the failure.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
+     *
+     * @param delegate  The message to retrieve message details from
+     * @param exception The Exception describing the cause of an error
+     */
+    public GenericQueryResponseMessage(Message<R> delegate, Throwable exception) {
+        super(delegate, exception);
+    }
+
     @Override
-    public QueryResponseMessage<R> withMetaData(Map<String, ?> metaData) {
+    public GenericQueryResponseMessage<R> withMetaData(Map<String, ?> metaData) {
         return new GenericQueryResponseMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public QueryResponseMessage<R> andMetaData(Map<String, ?> additionalMetaData) {
+    public GenericQueryResponseMessage<R> andMetaData(Map<String, ?> additionalMetaData) {
         return new GenericQueryResponseMessage<>(getDelegate().andMetaData(additionalMetaData));
     }
 }

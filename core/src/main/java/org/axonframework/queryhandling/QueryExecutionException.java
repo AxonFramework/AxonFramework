@@ -15,13 +15,15 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.AxonException;
+
 /**
  * Exception indicating that the execution of a Query Handler has resulted in an exception
  *
  * @author Marc Gathier
  * @since 3.1
  */
-public class QueryExecutionException extends RuntimeException {
+public class QueryExecutionException extends AxonException {
 
     private static final long serialVersionUID = 3269266885785226323L;
 
