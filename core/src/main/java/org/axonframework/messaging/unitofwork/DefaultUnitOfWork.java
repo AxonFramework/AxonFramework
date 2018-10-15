@@ -69,11 +69,12 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         }
         Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result;
-        ResultMessage resultMessage;
+        ResultMessage<R> resultMessage;
         try {
             result = task.call();
             if (result instanceof ResultMessage) {
-                resultMessage = (ResultMessage) result;
+                //noinspection Duplicates
+                resultMessage = (ResultMessage<R>) result;
             } else if(result instanceof Message) {
                 resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
             } else {
