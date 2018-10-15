@@ -324,7 +324,7 @@ public class JGroupsConnectorTest {
     }
 
     @Test
-    public void testUnserializableResponseConvertedToNull() throws Exception {
+    public void testUnserializableResponseReportedAsExceptional() throws Exception {
         serializer = spy(XStreamSerializer.builder().build());
         Object successResponse = new Object();
         Exception failureResponse = new MockException("This cannot be serialized");
@@ -361,7 +361,7 @@ public class JGroupsConnectorTest {
 
         callback = new FutureCallback<>();
         distributedCommandBus1.dispatch(new GenericCommandMessage<>("string"), callback);
-        assertNull(callback.getResult().getPayload());
+        assertTrue(callback.getResult().isExceptional());
     }
 
     @SuppressWarnings("unchecked")

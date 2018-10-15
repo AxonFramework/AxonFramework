@@ -289,14 +289,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             logger.warn("Received a callback for a message that has either already received a callback, "
                                 + "or which was not sent through this node. Ignoring.");
         } else {
-            if (message.isSuccess()) {
-                //noinspection unchecked
-                callbackWrapper.reportResult(message.getCommandResultMessage(serializer));
-            } else {
-                Throwable exception = getOrDefault(message.getError(serializer), new IllegalStateException(
-                        format("Unknown execution failure for command [%s]", message.getCommandIdentifier())));
-                callbackWrapper.reportResult(asCommandResultMessage(exception));
-            }
+            //noinspection unchecked
+            callbackWrapper.reportResult(message.getCommandResultMessage(serializer));
         }
     }
 
@@ -322,14 +316,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     private <R> void sendReply(Address address, String commandIdentifier, CommandResultMessage<R> commandResultMessage) {
-        boolean success = !commandResultMessage.isExceptional();
         Object reply;
         try {
-            reply = new JGroupsReplyMessage(commandIdentifier, success, commandResultMessage, serializer);
+            reply = new JGroupsReplyMessage(commandIdentifier, commandResultMessage, serializer);
         } catch (Exception e) {
             logger.warn(String.format("Could not serialize command reply [%s]. Sending back NULL.",
                                       commandResultMessage), e);
-            reply = new JGroupsReplyMessage(commandIdentifier, success, asCommandResultMessage((R) null), serializer);
+            reply = new JGroupsReplyMessage(commandIdentifier, asCommandResultMessage(e), serializer);
         }
         try {
             channel.send(address, reply);

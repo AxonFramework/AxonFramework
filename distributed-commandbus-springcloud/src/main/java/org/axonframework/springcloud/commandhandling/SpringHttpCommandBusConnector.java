@@ -124,10 +124,8 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             executor.execute(() -> {
                 SpringHttpReplyMessage<R> replyMessage =
                         this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
-                if (replyMessage.isSuccess()) {
+                if (replyMessage != null) {
                     callback.onResult(commandMessage, replyMessage.getCommandResultMessage(serializer));
-                } else {
-                    callback.onResult(commandMessage, asCommandResultMessage(replyMessage.getError(serializer)));
                 }
             });
         }
@@ -193,7 +191,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 return replyFutureCallback;
             } catch (Exception e) {
                 logger.error("Could not dispatch command", e);
-                return CompletableFuture.completedFuture(createReply(commandMessage, false, e));
+                return CompletableFuture.completedFuture(createReply(commandMessage, asCommandResultMessage(e)));
             }
         } else {
             try {
@@ -201,21 +199,20 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 return CompletableFuture.completedFuture("");
             } catch (Exception e) {
                 logger.error("Could not dispatch command", e);
-                return CompletableFuture.completedFuture(createReply(commandMessage, false, e));
+                return CompletableFuture.completedFuture(createReply(commandMessage, asCommandResultMessage(e)));
             }
         }
     }
 
-    private SpringHttpReplyMessage createReply(CommandMessage<?> commandMessage, boolean success, Object result) {
+    private SpringHttpReplyMessage createReply(CommandMessage<?> commandMessage,
+                                               CommandResultMessage<?> commandResultMessage) {
         try {
             return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(),
-                                                success,
-                                                asCommandResultMessage(result),
+                                                commandResultMessage,
                                                 serializer);
         } catch (Exception e) {
-            logger.warn("Could not serialize command reply [{}]. Sending back NULL.", result, e);
+            logger.warn("Could not serialize command reply [{}]. Sending back NULL.", commandResultMessage, e);
             return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(),
-                                                success,
                                                 asCommandResultMessage(e),
                                                 serializer);
         }
@@ -233,7 +230,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         @Override
         public void onResult(CommandMessage<? extends C> commandMessage,
                              CommandResultMessage<? extends R> commandResultMessage) {
-            super.complete(createReply(commandMessage, !commandResultMessage.isExceptional(), commandResultMessage));
+            super.complete(createReply(commandMessage, commandResultMessage));
         }
     }
 

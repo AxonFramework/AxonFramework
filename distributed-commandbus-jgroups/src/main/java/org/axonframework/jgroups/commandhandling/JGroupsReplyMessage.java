@@ -44,24 +44,21 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
 
     /**
      * Initializes a JGroupsReplyMessage containing a reply to the command with given {commandIdentifier} and given
-     * {@code commandResultMessage}. The parameter {@code success} determines whether the was executed successfully or
-     * not.
+     * {@code commandResultMessage}.
      *
      * @param commandIdentifier    The identifier of the command to which the message is a reply
-     * @param success              Whether or not the command executed successfully or not
      * @param commandResultMessage The return value of command process
      *                             the given {@code commandResultMessage} is ignored.
      * @param serializer           The serializer to serialize the message contents with
      */
-    public JGroupsReplyMessage(String commandIdentifier, boolean success,
-                               CommandResultMessage<?> commandResultMessage, Serializer serializer) {
-        super(commandIdentifier, success, commandResultMessage, serializer);
+    public JGroupsReplyMessage(String commandIdentifier, CommandResultMessage<?> commandResultMessage,
+                               Serializer serializer) {
+        super(commandIdentifier, commandResultMessage, serializer);
     }
 
     @Override
     public void writeTo(DataOutput out) throws IOException {
         out.writeUTF(commandIdentifier);
-        out.writeBoolean(success);
         out.writeInt(serializedMetaData.length);
         out.write(serializedMetaData);
         write(out, payloadType, payloadRevision, serializedPayload);
@@ -71,7 +68,6 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
     @Override
     public void readFrom(DataInput in) throws IOException {
         commandIdentifier = in.readUTF();
-        success = in.readBoolean();
         serializedMetaData = new byte[in.readInt()];
         in.readFully(serializedMetaData);
         payloadType = in.readUTF();

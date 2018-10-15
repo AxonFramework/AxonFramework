@@ -28,6 +28,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.*;
+import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
