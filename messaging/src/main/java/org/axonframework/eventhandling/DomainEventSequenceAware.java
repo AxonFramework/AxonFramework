@@ -14,13 +14,29 @@
  * limitations under the License.
  */
 
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling;
 
 import java.util.Optional;
 
 /**
- * Contract describing a component which is aware of {@link DomainEventMessage} their sequences. As such, it is capable
- * of providing the last known sequence number for a given Aggregate model.
+ * Contract describing a component which is aware of {@link DomainEventMessage} their sequences and is capable of
+ * providing the last known sequence number for a given Aggregate identifier.
  *
  * @author Steven van Beelen
  * @since 4.0
@@ -38,7 +54,5 @@ public interface DomainEventSequenceAware {
      * @return an optional containing the highest sequence number found, or an empty optional is no events are found
      * for this aggregate
      */
-    default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
-        return Optional.empty();
-    }
+    Optional<Long> lastSequenceNumberFor(String aggregateIdentifier);
 }
