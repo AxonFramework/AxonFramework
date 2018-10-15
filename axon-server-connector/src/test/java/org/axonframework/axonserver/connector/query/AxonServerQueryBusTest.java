@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,22 +31,19 @@ import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.axonserver.connector.common.AssertUtils.assertWithin;
+import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * Author: marc
@@ -114,10 +111,15 @@ public class AxonServerQueryBusTest {
     public void subscribe() throws Exception {
         Registration response = queryBus.subscribe("testQuery", String.class, q -> "test");
         Thread.sleep(1000);
-        assertWithin(1000, TimeUnit.MILLISECONDS, () -> assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
+        assertWithin(1000,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertNotNull(dummyMessagePlatformServer
+                                                 .subscriptions("testQuery", String.class.getName())));
 
         response.cancel();
-        assertWithin(2000, TimeUnit.MILLISECONDS, () -> assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
+        assertWithin(2000,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
     }
 
     @Test

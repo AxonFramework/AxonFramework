@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,17 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.commandhandling.model.RepositoryProvider;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.AbstractAggregateFactory;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.spring.config.annotation.StubAggregate;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -99,9 +102,9 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class))
                 .thenReturn(Collections.singletonMap("myRepository",
                                                      EventSourcingRepository.builder(StubAggregate.class)
-                                                             .eventStore(mockEventStore)
-                                                             .repositoryProvider(mockRepositoryProvider)
-                                                             .build()
+                                                                            .eventStore(mockEventStore)
+                                                                            .repositoryProvider(mockRepositoryProvider)
+                                                                            .build()
                 ));
         testSnapshotCreatedNoTransaction();
     }

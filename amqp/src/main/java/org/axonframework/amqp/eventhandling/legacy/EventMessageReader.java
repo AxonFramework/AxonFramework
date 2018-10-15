@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +18,8 @@ package org.axonframework.amqp.eventhandling.legacy;
 
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.Serializer;
@@ -63,8 +64,6 @@ public class EventMessageReader {
      *                                                                        underlying input
      * @throws java.io.EOFException                                           when the end of the stream was reached
      *                                                                        before the message was entirely read
-     * @throws org.axonframework.serialization.UnknownSerializedTypeException if the type of the serialized object
-     *                                                                        cannot be resolved to a class
      */
     public <T> EventMessage<T> readEventMessage() throws IOException {
         final int firstByte = in.read();

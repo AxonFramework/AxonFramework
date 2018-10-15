@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +18,8 @@ package org.axonframework.axonserver.connector.processor.grpc;
 
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;

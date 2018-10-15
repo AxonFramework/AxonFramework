@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,10 +18,10 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.util.EventStoreClientException;
 import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.model.AggregateRolledBackException;
-import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.modelling.command.AggregateRolledBackException;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.queryhandling.QueryExecutionException;
 
 import java.util.Arrays;
