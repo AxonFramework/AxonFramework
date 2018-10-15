@@ -53,9 +53,9 @@ public abstract class ReplyMessage {
      * Initializes a ReplyMessage containing a reply to the command with given {commandIdentifier} and given
      * {@code commandResultMessage}.
      *
-     * @param commandIdentifier    The identifier of the command to which the message is a reply
-     * @param commandResultMessage The result message of command process
-     * @param serializer           The serializer to serialize the message contents with
+     * @param commandIdentifier    the identifier of the command to which the message is a reply
+     * @param commandResultMessage the result message of command process
+     * @param serializer           the serializer to serialize the message contents with
      */
     public ReplyMessage(String commandIdentifier, CommandResultMessage<?> commandResultMessage, Serializer serializer) {
         this.commandIdentifier = commandIdentifier;
@@ -68,29 +68,28 @@ public abstract class ReplyMessage {
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
 
-        SerializedObject<byte[]> exception = commandResultMessage.serializeExceptionResult(serializer,
-                                                                                           byte[].class);
+        SerializedObject<byte[]> exception = commandResultMessage.serializeExceptionResult(serializer, byte[].class);
         this.serializedException = exception.getData();
         this.exceptionType = exception.getType().getName();
         this.exceptionRevision = exception.getType().getRevision();
     }
 
     /**
-     * Returns the returnValue of the command processing.
+     * Returns a {@link CommandResultMessage} containg the result of command processing.
      *
-     * @param serializer The serializer to deserialize the result with
-     * @return The return value of command processing
+     * @param serializer the serializer to deserialize the result with
+     * @return a {@link CommandResultMessage} containing the return value of command processing
      */
     public CommandResultMessage<?> getCommandResultMessage(Serializer serializer) {
-        Object payload = deserializePayload(serializer);
-        RemoteExceptionDescription exceptionDescription = deserializeException(serializer);
-        SerializedMetaData<byte[]> serializedMetaData =
-                new SerializedMetaData<>(this.serializedMetaData, byte[].class);
+        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(this.serializedMetaData, byte[].class);
         MetaData metaData = serializer.deserialize(serializedMetaData);
 
+        RemoteExceptionDescription exceptionDescription = deserializeException(serializer);
         if (exceptionDescription != null) {
             return new GenericCommandResultMessage<>(new RemoteHandlingException(exceptionDescription), metaData);
         }
+
+        Object payload = deserializePayload(serializer);
         return new GenericCommandResultMessage<>(payload, metaData);
     }
 
@@ -185,8 +184,10 @@ public abstract class ReplyMessage {
     }
 
     private Object deserializePayload(Serializer serializer) {
-        return serializer.deserialize(new SimpleSerializedObject<>(serializedPayload, byte[].class,
-                                                                   payloadType, payloadRevision));
+        return serializer.deserialize(new SimpleSerializedObject<>(serializedPayload,
+                                                                   byte[].class,
+                                                                   payloadType,
+                                                                   payloadRevision));
     }
 
     private RemoteExceptionDescription deserializeException(Serializer serializer) {

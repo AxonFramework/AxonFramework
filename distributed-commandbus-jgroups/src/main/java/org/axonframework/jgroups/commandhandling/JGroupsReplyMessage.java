@@ -51,7 +51,8 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
      *                             the given {@code commandResultMessage} is ignored.
      * @param serializer           The serializer to serialize the message contents with
      */
-    public JGroupsReplyMessage(String commandIdentifier, CommandResultMessage<?> commandResultMessage,
+    public JGroupsReplyMessage(String commandIdentifier,
+                               CommandResultMessage<?> commandResultMessage,
                                Serializer serializer) {
         super(commandIdentifier, commandResultMessage, serializer);
     }
@@ -114,5 +115,4 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
             out.write(serialized);
         }
     }
-
 }

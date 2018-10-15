@@ -154,8 +154,8 @@ public class CommandGatewayFactoryTest {
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof CommandExecutionException);
         assertTrue(error.get().getCause() instanceof ExpectedException);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
@@ -193,8 +193,8 @@ public class CommandGatewayFactoryTest {
         }
         assertNull("Did not expect ReturnValue", result.get());
         assertSame("Expected exact instance of RunTimeException being propagated", runtimeException, error.get());
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(RuntimeException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
@@ -311,8 +311,8 @@ public class CommandGatewayFactoryTest {
         t.join();
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof ExpectedException);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
@@ -486,8 +486,8 @@ public class CommandGatewayFactoryTest {
             gateway.fireAndWaitAndInvokeCallbacks("Command", callback1, callback2);
             fail("Expected exception");
         } catch (RuntimeException e) {
-            ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                    CommandResultMessage.class);
+            ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                    ArgumentCaptor.forClass(CommandResultMessage.class);
             verify(callback1).onResult(any(), commandResultMessageCaptor.capture());
             verify(callback2).onResult(any(), commandResultMessageCaptor.capture());
             assertEquals(2, commandResultMessageCaptor.getAllValues().size());
@@ -543,8 +543,8 @@ public class CommandGatewayFactoryTest {
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
         gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback1).onResult(any(), commandResultMessageCaptor.capture());
         verify(callback2).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(2, commandResultMessageCaptor.getAllValues().size());

@@ -120,8 +120,8 @@ public class DistributedCommandBusTest {
         verify(mockMessageMonitor, never()).onMessageIngested(any());
         verify(mockMonitorCallback, never()).reportSuccess();
 
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
@@ -139,8 +139,8 @@ public class DistributedCommandBusTest {
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertFalse(commandResultMessageCaptor.getValue().isExceptional());
         assertNull(commandResultMessageCaptor.getValue().getPayload());
@@ -159,8 +159,8 @@ public class DistributedCommandBusTest {
         verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportFailure(any());
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
@@ -178,8 +178,8 @@ public class DistributedCommandBusTest {
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportFailure(isA(Exception.class));
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertEquals(Exception.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }

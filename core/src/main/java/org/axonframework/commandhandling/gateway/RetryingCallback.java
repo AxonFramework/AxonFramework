@@ -72,8 +72,8 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
             Throwable cause = commandResultMessage.exceptionResult();
             history.add(simplify(cause));
             try {
-                // we fail immediately when the exception is checked,
-                // or when it is a Deadlock Exception and we have an active unit of work
+                // We fail immediately when the exception is checked,
+                // or when it is a Deadlock Exception and we have an active unit of work.
                 if (!(cause instanceof RuntimeException)
                         || (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted())
                         || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,

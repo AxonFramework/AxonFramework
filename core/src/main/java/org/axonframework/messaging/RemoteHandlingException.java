@@ -21,11 +21,11 @@ import org.axonframework.common.AxonException;
 import java.util.List;
 
 /**
- * Exception indicating that an error has occurred while remotely handling a command. This may mean that a command was
- * dispatched, but the segment that handled the command is no longer available.
+ * Exception indicating that an error has occurred while remotely handling a message. This may mean that a message was
+ * dispatched, but the node/segment that handled the message is no longer available.
  * <p/>
- * The sender of the command <strong>cannot</strong> assume that the command has not been handled. It may, if the type
- * of command or the infrastructure allows it, try to dispatch the command again.
+ * The sender of the message <strong>cannot</strong> assume that the message has not been handled. It may, if the type
+ * of message or the infrastructure allows it, try to dispatch the message again.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -33,12 +33,13 @@ import java.util.List;
 public class RemoteHandlingException extends AxonException {
 
     private static final long serialVersionUID = 7310513417002285205L;
+
     private final List<String> exceptionDescriptions;
 
     /**
      * Initializes the exception using the given {@code exceptionDescription} describing the remote cause-chain.
      *
-     * @param exceptionDescription the description of the remote exceptions
+     * @param exceptionDescription a {@link String} describing the remote exceptions
      */
     public RemoteHandlingException(RemoteExceptionDescription exceptionDescription) {
         super("An exception was thrown by the remote message handling component.");
@@ -46,9 +47,9 @@ public class RemoteHandlingException extends AxonException {
     }
 
     /**
-     * Returns the list of descriptions describing the remote exception.
+     * Returns a {@link List} of {@link String}s describing the remote exception.
      *
-     * @return the list of descriptions describing the remote exception
+     * @return a {@link List} of {@link String}s describing the remote exception
      */
     public List<String> getExceptionDescriptions() {
         return exceptionDescriptions;

@@ -55,7 +55,7 @@ public interface ResultMessage<R> extends Message<R> {
     /**
      * Returns the exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.
      *
-     * @return the exception result
+     * @return a {@link Throwable} defining the exception result
      *
      * @throws IllegalStateException if this ResultMessage is not exceptional
      */
@@ -68,15 +68,15 @@ public interface ResultMessage<R> extends Message<R> {
      * exception in this ResultMessage instead of serializing the original exception.
      *
      * @param serializer             the {@link Serializer} used to serialize the exception
-     * @param expectedRepresentation the type representing the expected format
-     * @param <T>                    the type representing the expected format
+     * @param expectedRepresentation a {@link Class} representing the expected format
+     * @param <T>                    the generic type representing the expected format
      * @return the serialized exception as a {@link SerializedObject}
      */
     default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
-        return serializer.serialize(optionalExceptionResult()
-                                            .map(RemoteExceptionDescription::describing)
-                                            .orElse(null),
-                                    expectedRepresentation);
+        return serializer.serialize(
+                optionalExceptionResult().map(RemoteExceptionDescription::describing).orElse(null),
+                expectedRepresentation
+        );
     }
 
     @Override

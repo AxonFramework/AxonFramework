@@ -111,15 +111,14 @@ public class DistributedCommandBus implements CommandBus {
                     connector.send(destination, interceptedCommand);
                 } catch (Exception e) {
                     destination.suspect();
-                    loggingCallback.onResult(interceptedCommand,
-                                             asCommandResultMessage(new CommandDispatchException(
-                                                     DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)));
+                    loggingCallback.onResult(interceptedCommand, asCommandResultMessage(
+                            new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
+                    ));
                 }
             } else {
-                loggingCallback.onResult(interceptedCommand,
-                                         asCommandResultMessage(new NoHandlerForCommandException(format(
-                                                 "No node known to accept [%s]",
-                                                 interceptedCommand.getCommandName()))));
+                loggingCallback.onResult(interceptedCommand, asCommandResultMessage(new NoHandlerForCommandException(
+                        format("No node known to accept [%s]", interceptedCommand.getCommandName())
+                )));
             }
         } else {
             dispatch(command, loggingCallback);
@@ -139,19 +138,20 @@ public class DistributedCommandBus implements CommandBus {
         if (optionalDestination.isPresent()) {
             Member destination = optionalDestination.get();
             try {
-                connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
-                                                                                           messageMonitorCallback));
+                connector.send(destination,
+                               interceptedCommand,
+                               new MonitorAwareCallback<>(callback, messageMonitorCallback));
             } catch (Exception e) {
                 messageMonitorCallback.reportFailure(e);
                 destination.suspect();
-                callback.onResult(interceptedCommand,
-                                  asCommandResultMessage(new CommandDispatchException(
-                                          DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)));
+                callback.onResult(interceptedCommand, asCommandResultMessage(
+                        new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e)
+                ));
             }
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                    format("No node known to accept [%s]",
-                           interceptedCommand.getCommandName()));
+                    format("No node known to accept [%s]", interceptedCommand.getCommandName())
+            );
             messageMonitorCallback.reportFailure(exception);
             callback.onResult(interceptedCommand, asCommandResultMessage(exception));
         }

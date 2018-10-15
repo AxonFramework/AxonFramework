@@ -31,10 +31,10 @@ public class RemoteCommandException extends RemoteHandlingException {
     private final String server;
 
     /**
-     * Initialize the exception with given {@code errorCode} and {@code errorMessage}
+     * Initialize the exception with given {@code errorCode} and {@code errorMessage}.
      *
-     * @param errorCode    The code reported by the server
-     * @param errorMessage The message describing the exception on the remote end
+     * @param errorCode    the code reported by the server
+     * @param errorMessage the message describing the exception on the remote end
      */
     public RemoteCommandException(String errorCode, ErrorMessage errorMessage) {
         super(new RemoteExceptionDescription(errorMessage.getDetailsList()));

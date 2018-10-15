@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Description of an Exception received from a remote source. Allows the correct de-/serialization of Exceptions to be
- * send over the wire without failing on a potential ClassCastException.
+ * Description of an Exception received from a remote source. Allows for correct de-/serialization of the cause of
+ * Exceptions without requiring any knowledge on the Exception classes.
  *
  * @author Steven van Beelen
  * @since 4.0
@@ -34,6 +34,7 @@ import java.util.Objects;
 public class RemoteExceptionDescription implements Serializable {
 
     private static final String DELIMITER = ": ";
+    private static final String CAUSED_BY = "\nCaused by ";
 
     private final List<String> descriptions;
 
@@ -57,7 +58,7 @@ public class RemoteExceptionDescription implements Serializable {
      * Initialize a RemoteExceptionDescription with given {@code descriptions} describing the exception chain on the
      * remote end of communication
      *
-     * @param descriptions a list of strings, each describing a single "cause" on the remote end
+     * @param descriptions a {@link List} of {@link String}s, each describing a single "cause" on the remote end
      */
     @JsonCreator
     public RemoteExceptionDescription(@JsonProperty("descriptions") List<String> descriptions) {
@@ -65,9 +66,9 @@ public class RemoteExceptionDescription implements Serializable {
     }
 
     /**
-     * Returns a list of String describing the causes of the exception on the remote end
+     * Returns the {@link List} of {@link String}s describing the causes of the exception on the remote end.
      *
-     * @return the descriptions of the causes
+     * @return the descriptions of the causes as a {@link List} of {@link String}s
      */
     public List<String> getDescriptions() {
         return descriptions;
@@ -95,7 +96,7 @@ public class RemoteExceptionDescription implements Serializable {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < descriptions.size(); i++) {
             if (i != 0) {
-                sb.append("\nCaused by ");
+                sb.append(CAUSED_BY);
             }
             sb.append(descriptions.get(i));
         }

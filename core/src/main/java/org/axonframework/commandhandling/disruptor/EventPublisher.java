@@ -91,18 +91,20 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     @SuppressWarnings("unchecked")
     private void rejectExecution(CommandHandlingEntry entry, String aggregateIdentifier) {
         executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(), asCommandResultMessage(
-                                              new AggregateStateCorruptedException(
-                                                      aggregateIdentifier,
-                                                      format("Aggregate %s has been blacklisted and will be ignored "
-                                                                     + "until its state has been recovered.",
-                                                             aggregateIdentifier)))));
+                new AggregateStateCorruptedException(
+                        aggregateIdentifier,
+                        format("Aggregate %s has been blacklisted and will be ignored until its state has been recovered.",
+                               aggregateIdentifier)
+                ))));
+
         entry.getResult()
              .optionalExceptionResult()
              .ifPresent(entry::rollback);
     }
 
     @SuppressWarnings("unchecked")
-    private void processPublication(CommandHandlingEntry entry, DisruptorUnitOfWork unitOfWork,
+    private void processPublication(CommandHandlingEntry entry,
+                                    DisruptorUnitOfWork unitOfWork,
                                     String aggregateIdentifier) {
         invokeInterceptorChain(entry);
 
@@ -117,8 +119,9 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
             phaseExceptionResult = performCommit(unitOfWork, exceptionResult, aggregateIdentifier);
         }
         if (phaseExceptionResult != null || entry.getCallback().hasDelegate()) {
-            executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(),
-                                                  asCommandResultMessage(phaseExceptionResult)));
+            executor.execute(new ReportResultTask(
+                    entry.getMessage(), entry.getCallback(), asCommandResultMessage(phaseExceptionResult)
+            ));
         }
     }
 
@@ -187,7 +190,8 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         private final CommandCallback<C, R> callback;
         private final CommandResultMessage<R> result;
 
-        private ReportResultTask(CommandMessage<C> commandMessage, CommandCallback<C, R> callback,
+        private ReportResultTask(CommandMessage<C> commandMessage,
+                                 CommandCallback<C, R> callback,
                                  CommandResultMessage<R> result) {
             this.commandMessage = commandMessage;
             this.callback = callback;

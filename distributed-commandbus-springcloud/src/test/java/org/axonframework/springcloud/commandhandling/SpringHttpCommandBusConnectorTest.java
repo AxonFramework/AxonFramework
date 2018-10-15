@@ -212,8 +212,9 @@ public class SpringHttpCommandBusConnectorTest {
 
         assertTrue(Arrays.equals("{}".getBytes(), serializedObjectCaptor.getAllValues().get(2).getData()));
 
-        ArgumentCaptor<CommandResultMessage<String>> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<CommandResultMessage<String>> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(commandCallback).onResult(eq(COMMAND_MESSAGE), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
     }

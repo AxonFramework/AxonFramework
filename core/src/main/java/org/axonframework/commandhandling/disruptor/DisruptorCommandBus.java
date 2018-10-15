@@ -301,9 +301,9 @@ public class DisruptorCommandBus implements CommandBus {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
-            callback.onResult(command, asCommandResultMessage(new NoHandlerForCommandException(format(
-                    "No handler was subscribed to command [%s]",
-                    command.getCommandName()))));
+            callback.onResult(command, asCommandResultMessage(new NoHandlerForCommandException(
+                    format("No handler was subscribed to command [%s]", command.getCommandName()))
+            ));
             return;
         }
 

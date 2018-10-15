@@ -15,10 +15,12 @@
 
 package org.axonframework.axonserver.connector.command;
 
-import io.axoniq.axonserver.grpc.command.Command;
-import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingInstruction;
 import io.axoniq.axonserver.grpc.ProcessingKey;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
@@ -27,8 +29,6 @@ import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
 import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
 import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
-import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -62,9 +62,8 @@ public class CommandSerializer {
         this.configuration = configuration;
         this.messageSerializer = serializer;
         this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(this.messageSerializer));
-        this.payloadSerializer  = new GrpcPayloadSerializer(messageSerializer);
+        this.payloadSerializer = new GrpcPayloadSerializer(messageSerializer);
         this.objectSerializer = new GrpcObjectSerializer<>(messageSerializer);
-
     }
 
     public Command serialize(CommandMessage<?> commandMessage, String routingKey, int priority) {
@@ -90,6 +89,7 @@ public class CommandSerializer {
 
     public <R> GenericCommandResultMessage<R> deserialize(CommandResponse response) {
         MetaData metaData = new GrpcMetaDataConverter(messageSerializer).convert(response.getMetaDataMap());
+
         if (response.hasMessage()) {
             Class<? extends AxonException> exceptionClass = ErrorCode.lookupExceptionClass(response.getErrorCode());
             Throwable exception = new RemoteCommandException(response.getErrorCode(), response.getMessage());
@@ -98,16 +98,21 @@ public class CommandSerializer {
             }
             return new GenericCommandResultMessage<>(exception, metaData);
         }
-        R payload = response.hasPayload() ? messageSerializer
-                .deserialize(new GrpcSerializedObject(response.getPayload())) : null;
+
+        R payload = response.hasPayload()
+                ? messageSerializer.deserialize(new GrpcSerializedObject(response.getPayload()))
+                : null;
         return new GenericCommandResultMessage<>(payload, metaData);
     }
 
-    public CommandProviderOutbound serialize(CommandResultMessage<?> commandResultMessage, String requestIdentifier){
-        CommandResponse.Builder responseBuilder = CommandResponse.newBuilder()
-                                                                 .setMessageIdentifier(getOrDefault(commandResultMessage.getIdentifier(),UUID.randomUUID().toString()))
-                                                                 .putAllMetaData(metadataSerializer.apply(commandResultMessage.getMetaData()))
-                                                                 .setRequestIdentifier(requestIdentifier);
+    public CommandProviderOutbound serialize(CommandResultMessage<?> commandResultMessage, String requestIdentifier) {
+        CommandResponse.Builder responseBuilder =
+                CommandResponse.newBuilder()
+                               .setMessageIdentifier(
+                                       getOrDefault(commandResultMessage.getIdentifier(), UUID.randomUUID().toString())
+                               )
+                               .putAllMetaData(metadataSerializer.apply(commandResultMessage.getMetaData()))
+                               .setRequestIdentifier(requestIdentifier);
         if (commandResultMessage.isExceptional()) {
             Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
@@ -117,7 +122,4 @@ public class CommandSerializer {
         }
         return CommandProviderOutbound.newBuilder().setCommandResponse(responseBuilder).build();
     }
-
-
-
 }
