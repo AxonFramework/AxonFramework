@@ -112,7 +112,7 @@ public class AsynchronousCommandBusTest {
     @Test
     public void testExceptionIsThrownWhenNoHandlerIsRegistered() {
         CommandCallback callback = mock(CommandCallback.class);
-        CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("test");
+        CommandMessage<Object> command = asCommandMessage("test");
         testSubject.dispatch(command, callback);
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
                 CommandResultMessage.class);
