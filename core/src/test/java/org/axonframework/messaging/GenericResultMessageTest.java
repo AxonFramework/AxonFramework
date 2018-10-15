@@ -46,9 +46,9 @@ public class GenericResultMessageTest {
         Throwable expected = new Throwable("oops");
         ResultMessage<?> resultMessage = asResultMessage(expected);
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
-        SerializedObject<String> serializedObject = resultMessage.serializeExceptionResult(jacksonSerializer,
-                                                                                           String.class);
-        Throwable actual = jacksonSerializer.deserialize(serializedObject);
-        assertEquals(expected.getMessage(), actual.getMessage());
+        SerializedObject<String> serializedObject =
+                resultMessage.serializeExceptionResult(jacksonSerializer, String.class);
+        RemoteExceptionDescription actual = jacksonSerializer.deserialize(serializedObject);
+        assertEquals("java.lang.Throwable: oops", actual.getDescriptions().get(0));
     }
 }

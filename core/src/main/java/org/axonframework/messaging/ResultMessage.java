@@ -64,7 +64,8 @@ public interface ResultMessage<R> extends Message<R> {
     }
 
     /**
-     * Serializes the exception result.
+     * Serializes the exception result. Will create a {@link RemoteExceptionDescription} from the {@link Optional}
+     * exception in this ResultMessage instead of serializing the original exception.
      *
      * @param serializer             the {@link Serializer} used to serialize the exception
      * @param expectedRepresentation the type representing the expected format
@@ -72,7 +73,10 @@ public interface ResultMessage<R> extends Message<R> {
      * @return the serialized exception as a {@link SerializedObject}
      */
     default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
-        return serializer.serialize(optionalExceptionResult().orElse(null), expectedRepresentation);
+        return serializer.serialize(optionalExceptionResult()
+                                            .map(RemoteExceptionDescription::describing)
+                                            .orElse(null),
+                                    expectedRepresentation);
     }
 
     @Override
