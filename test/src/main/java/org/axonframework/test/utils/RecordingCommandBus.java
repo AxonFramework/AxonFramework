@@ -56,11 +56,11 @@ public class RecordingCommandBus implements CommandBus {
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C,? super R> callback) {
         dispatchedCommands.add(command);
         try {
-            callback.onSuccess(command,
-                               asCommandResultMessage(callbackBehavior
-                                                                .handle(command.getPayload(), command.getMetaData())));
+            callback.onResult(command, asCommandResultMessage(
+                    callbackBehavior.handle(command.getPayload(), command.getMetaData())
+            ));
         } catch (Throwable throwable) {
-            callback.onFailure(command, throwable);
+            callback.onResult(command, asCommandResultMessage(throwable));
         }
     }
 

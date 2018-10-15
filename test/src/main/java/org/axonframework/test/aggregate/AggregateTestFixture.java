@@ -140,7 +140,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(
+        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter<>(
                 annotatedCommandHandler, parameterResolverFactory, handlerDefinition);
         adapter.subscribe(commandBus);
         return this;
@@ -779,15 +779,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         private FixtureExecutionException exception;
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-        }
-
-        @Override
-        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-            if (cause instanceof FixtureExecutionException) {
-                this.exception = (FixtureExecutionException) cause;
-            } else {
-                this.exception = new FixtureExecutionException("Failed to execute givenCommands", cause);
+        public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.exceptionResult();
+                if (cause instanceof FixtureExecutionException) {
+                    this.exception = (FixtureExecutionException) cause;
+                } else {
+                    this.exception = new FixtureExecutionException("Failed to execute givenCommands", cause);
+                }
             }
         }
 

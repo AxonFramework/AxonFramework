@@ -70,44 +70,46 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
      * result of the last executed task.
      */
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
         Assert.state(phase() == Phase.STARTED,
                      () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
-        R result;
-        ResultMessage<R> resultMessage = asResultMessage(null);
-        Exception exception = null;
+        R result = null;
+        ResultMessage<R> resultMessage = asResultMessage(result);
+        Throwable cause = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
             try {
                 result = task.call();
                 if (result instanceof ResultMessage) {
-                    resultMessage = (ResultMessage) result;
+                    resultMessage = (ResultMessage<R>) result;
                 } else if(result instanceof Message) {
                     resultMessage = new GenericResultMessage<>(result, ((Message) result).getMetaData());
                 } else {
                     resultMessage = new GenericResultMessage<>(result);
                 }
-            } catch (Exception e) {
+            } catch (Error | Exception e) {
                 if (rollbackConfiguration.rollBackOn(e)) {
                     rollback(e);
-                    throw e;
+                    return asResultMessage(e);
                 }
-                setExecutionResult(new ExecutionResult(new GenericResultMessage<>(e)));
-                if (exception != null) {
-                    exception.addSuppressed(e);
+                setExecutionResult(new ExecutionResult(asResultMessage(e)));
+                if (cause != null) {
+                    cause.addSuppressed(e);
                 } else {
-                    exception = e;
+                    cause = e;
                 }
+                resultMessage = asResultMessage(cause);
                 continue;
             }
             setExecutionResult(new ExecutionResult(resultMessage));
         }
-        commit();
-        if (exception != null) {
-            throw exception;
+        try {
+            commit();
+        } catch (Exception e) {
+            resultMessage = asResultMessage(e);
         }
         return resultMessage;
     }

@@ -38,7 +38,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private final MessageHandler<CommandMessage<?>> repeatingCommandHandler;
     private InterceptorChain invocationInterceptorChain;
     private InterceptorChain publisherInterceptorChain;
-    private Exception exceptionResult;
     private CommandResultMessage<?> result;
     private int publisherSegmentId;
     private BlacklistDetectingCallback callback;
@@ -72,25 +71,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      */
     public InterceptorChain getPublisherInterceptorChain() {
         return publisherInterceptorChain;
-    }
-
-    /**
-     * Registers the exception that occurred while processing the incoming command.
-     *
-     * @param exceptionResult the exception that occurred while processing the incoming command
-     */
-    public void setExceptionResult(Exception exceptionResult) {
-        this.exceptionResult = exceptionResult;
-    }
-
-    /**
-     * Returns the exception that occurred while processing the incoming command, or {@code null} if
-     * processing did not result in an exception or if execution is not yet finished.
-     *
-     * @return the exception that occurred while processing the incoming command, if any.
-     */
-    public Exception getExceptionResult() {
-        return exceptionResult;
     }
 
     /**
@@ -183,7 +163,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         this.callback = newCallback;
         this.isRecoverEntry = false;
         this.result = null;
-        this.exceptionResult = null;
         this.aggregateIdentifier = null;
         this.invocationInterceptorChain = new DefaultInterceptorChain<>(
                 this,
@@ -205,7 +184,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         this.isRecoverEntry = true;
         this.callback = null;
         result = null;
-        exceptionResult = null;
         invocationInterceptorChain = null;
         invokerSegmentId = -1;
         publisherSegmentId = -1;
@@ -231,7 +209,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;
         result = null;
-        exceptionResult = null;
         aggregateIdentifier = null;
         invocationInterceptorChain = callable::call;
         publisherInterceptorChain = () -> repeatingCommandHandler.handle(null);
@@ -256,9 +233,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
 
         @Override
         public Object handle(CommandMessage<?> message) throws Exception {
-            if (exceptionResult != null) {
-                throw exceptionResult;
-            }
             return result;
         }
     }

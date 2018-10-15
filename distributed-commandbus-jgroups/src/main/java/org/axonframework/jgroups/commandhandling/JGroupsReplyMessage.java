@@ -44,40 +44,31 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
 
     /**
      * Initializes a JGroupsReplyMessage containing a reply to the command with given {commandIdentifier} and given
-     * {@code commandResultMessage}. The parameter {@code success} determines whether the was executed successfully or
-     * not.
+     * {@code commandResultMessage}.
      *
      * @param commandIdentifier    The identifier of the command to which the message is a reply
-     * @param success              Whether or not the command executed successfully or not
      * @param commandResultMessage The return value of command process
      *                             the given {@code commandResultMessage} is ignored.
      * @param serializer           The serializer to serialize the message contents with
      */
-    public JGroupsReplyMessage(String commandIdentifier, boolean success,
-                               CommandResultMessage<?> commandResultMessage, Serializer serializer) {
-        super(commandIdentifier, success, commandResultMessage, serializer);
+    public JGroupsReplyMessage(String commandIdentifier,
+                               CommandResultMessage<?> commandResultMessage,
+                               Serializer serializer) {
+        super(commandIdentifier, commandResultMessage, serializer);
     }
 
     @Override
     public void writeTo(DataOutput out) throws IOException {
         out.writeUTF(commandIdentifier);
-        out.writeBoolean(success);
         out.writeInt(serializedMetaData.length);
         out.write(serializedMetaData);
-        if (payloadType == null) {
-            out.writeUTF(NULL);
-        } else {
-            out.writeUTF(payloadType);
-            out.writeUTF(payloadRevision == null ? NULL : payloadRevision);
-            out.writeInt(serializedPayload.length);
-            out.write(serializedPayload);
-        }
+        write(out, payloadType, payloadRevision, serializedPayload);
+        write(out, exceptionType, exceptionRevision, serializedException);
     }
 
     @Override
     public void readFrom(DataInput in) throws IOException {
         commandIdentifier = in.readUTF();
-        success = in.readBoolean();
         serializedMetaData = new byte[in.readInt()];
         in.readFully(serializedMetaData);
         payloadType = in.readUTF();
@@ -91,6 +82,17 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
             serializedPayload = new byte[in.readInt()];
             in.readFully(serializedPayload);
         }
+        exceptionType = in.readUTF();
+        if (NULL.equals(exceptionType)) {
+            exceptionType = null;
+        } else {
+            exceptionRevision = in.readUTF();
+            if (NULL.equals(exceptionRevision)) {
+                exceptionRevision = null;
+            }
+            serializedException = new byte[in.readInt()];
+            in.readFully(serializedException);
+        }
     }
 
     @Override
@@ -103,4 +105,14 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
         readFrom(in);
     }
 
+    private void write(DataOutput out, String type, String revision, byte[] serialized) throws IOException {
+        if (type == null) {
+            out.writeUTF(NULL);
+        } else {
+            out.writeUTF(type);
+            out.writeUTF(revision == null ? NULL : revision);
+            out.writeInt(serialized.length);
+            out.write(serialized);
+        }
+    }
 }

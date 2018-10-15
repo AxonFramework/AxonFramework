@@ -82,19 +82,13 @@ public class AxonServerCommandBusTest {
         CountDownLatch waiter = new CountDownLatch(1);
         AtomicReference<String> resultHolder = new AtomicReference<>();
         AtomicBoolean failure = new AtomicBoolean(false);
-        testSubject.dispatch(commandMessage, new CommandCallback<String, String>() {
-
-            @Override
-            public void onSuccess(CommandMessage<? extends String> commandMessage, CommandResultMessage<? extends String> result) {
-                resultHolder.set(result.getPayload());
-                waiter.countDown();
-            }
-
-            @Override
-            public void onFailure(CommandMessage<? extends String> commandMessage, Throwable cause) {
+        testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
+            if (result.isExceptional()) {
                 failure.set(true);
-                waiter.countDown();
+            } else {
+                resultHolder.set(result.getPayload());
             }
+            waiter.countDown();
         });
         waiter.await();
         assertEquals(resultHolder.get(), "this is the payload");
@@ -106,18 +100,13 @@ public class AxonServerCommandBusTest {
         CountDownLatch waiter = new CountDownLatch(1);
         AtomicReference<String> resultHolder = new AtomicReference<>();
         AtomicBoolean failure = new AtomicBoolean(false);
-        testSubject.dispatch(commandMessage, new CommandCallback<String, String>() {
-            @Override
-            public void onSuccess(CommandMessage<? extends String> commandMessage, CommandResultMessage<? extends String> result) {
-                resultHolder.set(result.getPayload());
-                waiter.countDown();
-            }
-
-            @Override
-            public void onFailure(CommandMessage<? extends String> commandMessage, Throwable cause) {
+        testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
+            if (result.isExceptional()) {
                 failure.set(true);
-                waiter.countDown();
+            } else {
+                resultHolder.set(result.getPayload());
             }
+            waiter.countDown();
         });
         waiter.await();
         assertTrue(failure.get());

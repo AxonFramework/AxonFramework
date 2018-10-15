@@ -43,6 +43,6 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
 
     @Override
     public void handleError(ErrorContext errorContext) throws Exception {
-        throw errorContext.error();
+        throw (Exception) errorContext.error();
     }
 }

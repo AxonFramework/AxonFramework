@@ -90,37 +90,49 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     @SuppressWarnings("unchecked")
     private void rejectExecution(CommandHandlingEntry entry, String aggregateIdentifier) {
-        executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(), null,
-                                              new AggregateStateCorruptedException(
-                                                      aggregateIdentifier,
-                                                      format("Aggregate %s has been blacklisted and will be ignored "
-                                                                     + "until its state has been recovered.",
-                                                             aggregateIdentifier))));
-        entry.rollback(entry.getExceptionResult());
+        executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(), asCommandResultMessage(
+                new AggregateStateCorruptedException(
+                        aggregateIdentifier,
+                        format("Aggregate %s has been blacklisted and will be ignored until its state has been recovered.",
+                               aggregateIdentifier)
+                ))));
+
+        entry.getResult()
+             .optionalExceptionResult()
+             .ifPresent(entry::rollback);
     }
 
     @SuppressWarnings("unchecked")
-    private void processPublication(CommandHandlingEntry entry, DisruptorUnitOfWork unitOfWork,
+    private void processPublication(CommandHandlingEntry entry,
+                                    DisruptorUnitOfWork unitOfWork,
                                     String aggregateIdentifier) {
         invokeInterceptorChain(entry);
-        Throwable exceptionResult;
-        if (entry.getExceptionResult() != null && rollbackConfiguration.rollBackOn(entry.getExceptionResult())) {
-            exceptionResult = performRollback(unitOfWork, aggregateIdentifier, entry.getExceptionResult());
+
+        Throwable exceptionResult = entry.getResult()
+                                         .optionalExceptionResult()
+                                         .orElse(null);
+        Throwable phaseExceptionResult;
+
+        if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
+            phaseExceptionResult = performRollback(unitOfWork, aggregateIdentifier, exceptionResult);
         } else {
-            exceptionResult = performCommit(unitOfWork, entry.getExceptionResult(), aggregateIdentifier);
+            phaseExceptionResult = performCommit(unitOfWork, exceptionResult, aggregateIdentifier);
         }
-        if (exceptionResult != null || entry.getCallback().hasDelegate()) {
-            executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(),
-                                                  entry.getResult(), exceptionResult));
+        if (phaseExceptionResult != null || entry.getCallback().hasDelegate()) {
+            executor.execute(new ReportResultTask(
+                    entry.getMessage(), entry.getCallback(), asCommandResultMessage(phaseExceptionResult)
+            ));
         }
     }
 
     private void invokeInterceptorChain(CommandHandlingEntry entry) {
+        CommandResultMessage<?> commandResultMessage;
         try {
-            entry.setResult(asCommandResultMessage(entry.getPublisherInterceptorChain().proceed()));
+            commandResultMessage = asCommandResultMessage(entry.getPublisherInterceptorChain().proceed());
         } catch (Exception throwable) {
-            entry.setExceptionResult(throwable);
+            commandResultMessage = asCommandResultMessage(throwable);
         }
+        entry.setResult(commandResultMessage);
     }
 
     private Throwable performRollback(DisruptorUnitOfWork unitOfWork, String aggregateIdentifier,
@@ -177,23 +189,18 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         private final CommandMessage<C> commandMessage;
         private final CommandCallback<C, R> callback;
         private final CommandResultMessage<R> result;
-        private final Throwable exceptionResult;
 
-        private ReportResultTask(CommandMessage<C> commandMessage, CommandCallback<C, R> callback,
-                                 CommandResultMessage<R> result, Throwable exceptionResult) {
+        private ReportResultTask(CommandMessage<C> commandMessage,
+                                 CommandCallback<C, R> callback,
+                                 CommandResultMessage<R> result) {
             this.commandMessage = commandMessage;
             this.callback = callback;
             this.result = result;
-            this.exceptionResult = exceptionResult;
         }
 
         @Override
         public void run() {
-            if (exceptionResult != null) {
-                callback.onFailure(commandMessage, exceptionResult);
-            } else {
-                callback.onSuccess(commandMessage, result);
-            }
+            callback.onResult(commandMessage, result);
         }
     }
 }

@@ -16,6 +16,7 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.util.EventStoreClientException;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.model.AggregateRolledBackException;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.AxonException;
@@ -40,6 +41,9 @@ public enum ErrorCode {
     NO_MASTER_AVAILABLE("AXONIQ-2100", EventStoreException.class),
 
     CONNECTION_TO_AXONDB_FAILED("AXONIQ-6000", EventStoreException.class),
+
+    // Execution errors
+    COMMAND_EXECUTION_ERROR("AXONIQ-7000", CommandExecutionException.class),
 
     // Internal errors
     DATAFILE_READ_ERROR( "AXONIQ-9000", EventStoreException.class),

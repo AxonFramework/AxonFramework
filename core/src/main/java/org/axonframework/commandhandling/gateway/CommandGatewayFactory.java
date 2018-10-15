@@ -330,7 +330,7 @@ public class CommandGatewayFactory {
      * Registers the {@code callback}, which is invoked for each sent command, unless Axon is able to detect that
      * the result of the command does not match the type accepted by the callback.
      * <p/>
-     * Axon will check the signature of the onSuccess() method and only invoke the callback if the actual result of the
+     * Axon will check the signature of the onResult() method and only invoke the callback if the actual result of the
      * command is an instance of that type. If Axon is unable to detect the type, the callback is always invoked,
      * potentially causing {@link java.lang.ClassCastException}.
      *
@@ -629,17 +629,10 @@ public class CommandGatewayFactory {
         }
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage,
-                              CommandResultMessage<? extends R> commandResultMessage) {
+        public void onResult(CommandMessage<? extends C> commandMessage,
+                             CommandResultMessage<? extends R> commandResultMessage) {
             for (CommandCallback<? super C, ? super R> callback : callbacks) {
-                callback.onSuccess(commandMessage, commandResultMessage);
-            }
-        }
-
-        @Override
-        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-            for (CommandCallback<? super C, ? super R> callback : callbacks) {
-                callback.onFailure(commandMessage, cause);
+                callback.onResult(commandMessage, commandResultMessage);
             }
         }
     }
@@ -822,16 +815,11 @@ public class CommandGatewayFactory {
         }
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage,
-                              CommandResultMessage<? extends R> commandResultMessage) {
-            if (parameterType.matches(commandResultMessage.getPayloadType())) {
-                delegate.onSuccess(commandMessage, commandResultMessage);
+        public void onResult(CommandMessage<? extends C> commandMessage,
+                             CommandResultMessage<? extends R> commandResultMessage) {
+            if (commandResultMessage.isExceptional() || parameterType.matches(commandResultMessage.getPayloadType())) {
+                delegate.onResult(commandMessage, commandResultMessage);
             }
-        }
-
-        @Override
-        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-            delegate.onFailure(commandMessage, cause);
         }
     }
 

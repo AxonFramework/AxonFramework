@@ -58,7 +58,7 @@ public class FutureCallbackTest {
         });
         t.start();
         assertTrue(t.isAlive());
-        testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
+        testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         t.join(THREAD_JOIN_TIMEOUT);
         assertEquals(COMMAND_RESPONSE_MESSAGE, resultFromParallelThread);
     }
@@ -76,7 +76,7 @@ public class FutureCallbackTest {
         t.start();
         assertTrue(t.isAlive());
         RuntimeException exception = new MockException();
-        testSubject.onFailure(COMMAND_MESSAGE, exception);
+        testSubject.onResult(COMMAND_MESSAGE, asCommandResultMessage(exception));
         t.join(THREAD_JOIN_TIMEOUT);
         assertTrue(resultFromParallelThread instanceof ExecutionException);
         assertEquals(exception, ((Exception) resultFromParallelThread).getCause());
@@ -93,7 +93,7 @@ public class FutureCallbackTest {
         });
         t.start();
         t.join(1000);
-        testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
+        testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         assertTrue(resultFromParallelThread instanceof TimeoutException);
     }
 
@@ -109,7 +109,7 @@ public class FutureCallbackTest {
         t.start();
         assertTrue(t.isAlive());
         assertFalse(testSubject.isDone());
-        testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
+        testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         assertTrue(testSubject.isDone());
         t.join(THREAD_JOIN_TIMEOUT);
         assertEquals(COMMAND_RESPONSE_MESSAGE, resultFromParallelThread);

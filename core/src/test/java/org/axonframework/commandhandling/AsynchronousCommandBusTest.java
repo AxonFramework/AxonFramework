@@ -82,7 +82,7 @@ public class AsynchronousCommandBusTest {
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         ArgumentCaptor<CommandResultMessage<Object>> responseCaptor = ArgumentCaptor
                 .forClass(CommandResultMessage.class);
-        inOrder.verify(mockCallback).onSuccess(commandCaptor.capture(), responseCaptor.capture());
+        inOrder.verify(mockCallback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(command, commandCaptor.getValue());
         assertNull(responseCaptor.getValue().getPayload());
     }
@@ -109,9 +109,17 @@ public class AsynchronousCommandBusTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test(expected = NoHandlerForCommandException.class)
+    @Test
     public void testExceptionIsThrownWhenNoHandlerIsRegistered() {
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"));
+        CommandCallback callback = mock(CommandCallback.class);
+        CommandMessage<Object> command = asCommandMessage("test");
+        testSubject.dispatch(command, callback);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
+                CommandResultMessage.class);
+        verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
+        assertTrue(commandResultMessageCaptor.getValue().isExceptional());
+        assertEquals(NoHandlerForCommandException.class,
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test

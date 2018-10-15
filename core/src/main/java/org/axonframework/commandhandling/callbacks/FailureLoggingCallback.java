@@ -56,15 +56,14 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage,
-                          CommandResultMessage<? extends R> commandResultMessage) {
-        delegate.onSuccess(commandMessage, commandResultMessage);
-    }
-
-    @Override
-    public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-        logger.warn("Command '{}' resulted in {}({})",
-                    commandMessage.getCommandName(), cause.getClass().getName(), cause.getMessage());
-        delegate.onFailure(commandMessage, cause);
+    public void onResult(CommandMessage<? extends C> commandMessage,
+                         CommandResultMessage<? extends R> commandResultMessage) {
+        commandResultMessage.optionalExceptionResult()
+                            .ifPresent(cause ->
+                                               logger.warn("Command '{}' resulted in {}({})",
+                                                           commandMessage.getCommandName(),
+                                                           cause.getClass().getName(),
+                                                           cause.getMessage()));
+        delegate.onResult(commandMessage, commandResultMessage);
     }
 }

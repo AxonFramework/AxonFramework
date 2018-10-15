@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStor
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -128,12 +129,15 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void handleInSaga(EventMessage<?> event) {
         ensureSagaResourcesInitialized();
-        try {
-            DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
-                sagaManager.handle(event, Segment.ROOT_SEGMENT);
-                return null;
-            });
-        } catch (Exception e) {
+        ResultMessage<?> resultMessage = DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
+            sagaManager.handle(event, Segment.ROOT_SEGMENT);
+            return null;
+        });
+        if (resultMessage.isExceptional()) {
+            Throwable e = resultMessage.exceptionResult();
+            if (Error.class.isAssignableFrom(e.getClass())) {
+                throw (Error) e;
+            }
             throw new FixtureExecutionException("Exception occurred while handling an event", e);
         }
     }

@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.Segment;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -103,16 +104,17 @@ public class SagaManagerTest {
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handle(event);
         doThrow(toBeThrown).when(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
-        try {
-            UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
-            unitOfWork.executeWithResult(() -> {
-                testSubject.handle(event, Segment.ROOT_SEGMENT);
-                return null;
-            });
-            fail("Expected exception to be propagated");
-        } catch (RuntimeException e) {
+        UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
+        ResultMessage<Object> resultMessage = unitOfWork.executeWithResult(() -> {
+            testSubject.handle(event, Segment.ROOT_SEGMENT);
+            return null;
+        });
+        if (resultMessage.isExceptional()) {
+            Throwable e = resultMessage.exceptionResult();
             e.printStackTrace();
             assertEquals("Mock", e.getMessage());
+        } else {
+            fail("Expected exception to be propagated");
         }
         verify(mockSaga1, times(1)).handle(event);
         verify(mockErrorHandler).onError(toBeThrown, event, mockSaga1);

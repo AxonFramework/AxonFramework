@@ -136,14 +136,15 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
-        MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command).orElseThrow(() -> {
+        Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(command);
+        if (optionalHandler.isPresent()) {
+            handle(command, optionalHandler.get(), new MonitorAwareCallback<>(callback, monitorCallback));
+        } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(
                     format("No handler was subscribed to command [%s]", command.getCommandName()));
             monitorCallback.reportFailure(exception);
-            return exception;
-        });
-
-        handle(command, handler, new MonitorAwareCallback<>(callback, monitorCallback));
+            callback.onResult(command, asCommandResultMessage(exception));
+        }
     }
 
     private Optional<MessageHandler<? super CommandMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
@@ -167,18 +168,13 @@ public class SimpleCommandBus implements CommandBus {
             logger.debug("Handling command [{}]", command.getCommandName());
         }
 
-        try {
-            UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-            unitOfWork.attachTransaction(transactionManager);
-            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+        CommandResultMessage<R> resultMessage;
+        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
+        unitOfWork.attachTransaction(transactionManager);
+        InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-            CommandResultMessage<R> result =
-                    asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
-
-            callback.onSuccess(command, result);
-        } catch (Exception e) {
-            callback.onFailure(command, e);
-        }
+        resultMessage = asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
+        callback.onResult(command, resultMessage);
     }
 
     /**

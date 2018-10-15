@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,30 +16,46 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.messaging.RemoteExceptionDescription;
+import org.axonframework.messaging.RemoteHandlingException;
 
 /**
+ * Exception indicating a problem that was reported by the remote end of a connection.
+ *
  * @author Marc Gathier
+ * @since 4.0
  */
-public class RemoteCommandException extends RuntimeException {
+public class RemoteCommandException extends RemoteHandlingException {
 
     private final String errorCode;
-    private final String location;
-    private final Iterable<String> details;
-    public RemoteCommandException(String errorCode, ErrorMessage message) {
-        super(message.getMessage());
+    private final String server;
+
+    /**
+     * Initialize the exception with given {@code errorCode} and {@code errorMessage}.
+     *
+     * @param errorCode    the code reported by the server
+     * @param errorMessage the message describing the exception on the remote end
+     */
+    public RemoteCommandException(String errorCode, ErrorMessage errorMessage) {
+        super(new RemoteExceptionDescription(errorMessage.getDetailsList()));
         this.errorCode = errorCode;
-        details = message.getDetailsList();
-        location = message.getLocation();
+        this.server = errorMessage.getLocation();
     }
 
-    public Iterable<String> getDetails() {
-        return details;
+    /**
+     * Returns the name of the server that reported the error.
+     *
+     * @return the name of the server that reported the error
+     */
+    public String getOriginServer() {
+        return server;
     }
 
-    public String getLocation() {
-        return location;
-    }
-
+    /**
+     * Returns the error code as reported by the server.
+     *
+     * @return the error code as reported by the server
+     */
     public String getErrorCode() {
         return errorCode;
     }
@@ -48,8 +65,7 @@ public class RemoteCommandException extends RuntimeException {
         return "RemoteCommandException{" +
                 "message=" + getMessage() +
                 ", errorCode='" + errorCode + '\'' +
-                ", location='" + location + '\'' +
-                ", details=" + details +
+                ", server='" + server + '\'' +
                 '}';
     }
 }

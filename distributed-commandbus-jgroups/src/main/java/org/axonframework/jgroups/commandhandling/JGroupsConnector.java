@@ -48,10 +48,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -290,14 +288,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             logger.warn("Received a callback for a message that has either already received a callback, "
                                 + "or which was not sent through this node. Ignoring.");
         } else {
-            if (message.isSuccess()) {
-                //noinspection unchecked
-                callbackWrapper.success(message.getCommandResultMessage(serializer));
-            } else {
-                Throwable exception = getOrDefault(message.getError(serializer), new IllegalStateException(
-                        format("Unknown execution failure for command [%s]", message.getCommandIdentifier())));
-                callbackWrapper.fail(exception);
-            }
+            //noinspection unchecked
+            callbackWrapper.reportResult(message.getCommandResultMessage(serializer));
         }
     }
 
@@ -306,20 +298,12 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             try {
                 CommandMessage commandMessage = message.getCommandMessage(serializer);
                 //noinspection unchecked
-                localSegment.dispatch(commandMessage, new CommandCallback<C, R>() {
-                    @Override
-                    public void onSuccess(CommandMessage<? extends C> commandMessage,
-                                          CommandResultMessage<? extends R> commandResultMessage) {
-                        sendReply(msg.getSrc(), message.getCommandIdentifier(), commandResultMessage, null);
-                    }
-
-                    @Override
-                    public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-                        sendReply(msg.getSrc(), message.getCommandIdentifier(), null, cause);
-                    }
-                });
+                localSegment.dispatch(commandMessage,
+                                      (CommandCallback<C, R>) (cm, commandResultMessage) -> sendReply(msg.getSrc(),
+                                                                                                      message.getCommandIdentifier(),
+                                                                                                      commandResultMessage));
             } catch (Exception e) {
-                sendReply(msg.getSrc(), message.getCommandIdentifier(), null, e);
+                sendReply(msg.getSrc(), message.getCommandIdentifier(), asCommandResultMessage(e));
             }
         } else {
             try {
@@ -330,17 +314,14 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
     }
 
-    private <R> void sendReply(Address address, String commandIdentifier, R result, Throwable cause) {
-        boolean success = cause == null;
+    private <R> void sendReply(Address address, String commandIdentifier, CommandResultMessage<R> commandResultMessage) {
         Object reply;
         try {
-            CommandResultMessage<?> commandResultMessage =
-                    success ? asCommandResultMessage(result) : asCommandResultMessage(cause);
-            reply = new JGroupsReplyMessage(commandIdentifier, success, commandResultMessage, serializer);
+            reply = new JGroupsReplyMessage(commandIdentifier, commandResultMessage, serializer);
         } catch (Exception e) {
             logger.warn(String.format("Could not serialize command reply [%s]. Sending back NULL.",
-                                      success ? result : cause), e);
-            reply = new JGroupsReplyMessage(commandIdentifier, success, asCommandResultMessage(null), serializer);
+                                      commandResultMessage), e);
+            reply = new JGroupsReplyMessage(commandIdentifier, asCommandResultMessage(e), serializer);
         }
         try {
             channel.send(address, reply);
