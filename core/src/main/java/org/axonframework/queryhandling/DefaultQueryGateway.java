@@ -76,7 +76,7 @@ public class DefaultQueryGateway implements QueryGateway {
         CompletableFuture<R> result = new CompletableFuture<>();
         queryResponse.thenAccept(queryResponseMessage -> {
             if (queryResponseMessage.isExceptional()) {
-                result.completeExceptionally(queryResponseMessage.getExceptionResult());
+                result.completeExceptionally(queryResponseMessage.exceptionResult());
             } else {
                 result.complete(queryResponseMessage.getPayload());
             }

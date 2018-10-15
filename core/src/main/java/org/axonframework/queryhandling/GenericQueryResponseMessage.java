@@ -80,7 +80,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
         } else if (result instanceof ResultMessage) {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             if (resultMessage.isExceptional()) {
-                Throwable cause = resultMessage.getExceptionResult();
+                Throwable cause = resultMessage.exceptionResult();
                 return new GenericQueryResponseMessage<>(declaredType, cause, resultMessage.getMetaData());
             }
             return new GenericQueryResponseMessage<>(resultMessage.getPayload(), resultMessage.getMetaData());

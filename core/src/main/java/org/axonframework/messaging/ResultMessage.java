@@ -44,7 +44,7 @@ public interface ResultMessage<R> extends Message<R> {
      *
      * @return an {@link Optional} containing exception result or an empty Optional in case of a successful execution
      */
-    Optional<Throwable> tryGetExceptionResult();
+    Optional<Throwable> optionalExceptionResult();
 
     /**
      * Returns the exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.

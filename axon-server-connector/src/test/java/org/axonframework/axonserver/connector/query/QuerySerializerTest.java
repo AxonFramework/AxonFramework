@@ -95,8 +95,8 @@ public class QuerySerializerTest {
 
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
         assertTrue(deserialize.isExceptional());
-        assertTrue(deserialize.tryGetExceptionResult().isPresent());
-        assertEquals(exception.getMessage(), deserialize.getExceptionResult().getMessage());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
     }
 
 }

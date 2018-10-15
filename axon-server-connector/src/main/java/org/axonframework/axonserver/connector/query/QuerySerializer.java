@@ -66,7 +66,7 @@ public class QuerySerializer {
     public QueryResponse serializeResponse(QueryResponseMessage<?> response, String requestMessageId) {
         QueryResponse.Builder builder = QueryResponse.newBuilder();
         if (response.isExceptional()) {
-            Throwable exceptionResult = response.getExceptionResult();
+            Throwable exceptionResult = response.exceptionResult();
             builder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
             builder.setMessage(ExceptionSerializer.serialize(configuration.getClientName(), exceptionResult));
         } else {

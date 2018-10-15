@@ -216,7 +216,7 @@ public class SimpleQueryBus implements QueryBus {
         MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
                 .thenAccept(queryResponseMessage -> {
                     if (queryResponseMessage.isExceptional()) {
-                        Throwable exceptionResult = queryResponseMessage.getExceptionResult();
+                        Throwable exceptionResult = queryResponseMessage.exceptionResult();
                         logger.error(format("An error happened while trying to report an initial result. Query: %s",
                                             query),
                                      exceptionResult);

@@ -110,7 +110,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public Optional<Throwable> tryGetExceptionResult() {
+    public Optional<Throwable> optionalExceptionResult() {
         return Optional.ofNullable(exception);
     }
 

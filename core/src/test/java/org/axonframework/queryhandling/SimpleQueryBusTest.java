@@ -284,7 +284,7 @@ public class SimpleQueryBusTest {
         assertFalse(result.isCompletedExceptionally());
         QueryResponseMessage<String> queryResponseMessage = result.get();
         assertTrue(queryResponseMessage.isExceptional());
-        assertEquals("Mock", queryResponseMessage.getExceptionResult().getMessage());
+        assertEquals("Mock", queryResponseMessage.exceptionResult().getMessage());
     }
 
     @Test
@@ -333,7 +333,7 @@ public class SimpleQueryBusTest {
         assertFalse(result.isCompletedExceptionally());
         QueryResponseMessage<String> queryResponseMessage = result.get();
         assertTrue(queryResponseMessage.isExceptional());
-        assertEquals(mockException, queryResponseMessage.getExceptionResult());
+        assertEquals(mockException, queryResponseMessage.exceptionResult());
     }
 
     @Test
