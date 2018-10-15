@@ -30,8 +30,11 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,8 +63,7 @@ public class EventSourcingRepositoryTest {
         snapshotTrigger = mock(SnapshotTrigger.class);
         triggerDefinition = mock(SnapshotTriggerDefinition.class);
         when(triggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
-        testSubject = EventSourcingRepository.<TestAggregate>builder()
-                .aggregateType(TestAggregate.class)
+        testSubject = EventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(stubAggregateFactory)
                 .eventStore(mockEventStore)
                 .snapshotTriggerDefinition(triggerDefinition)

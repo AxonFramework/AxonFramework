@@ -44,7 +44,7 @@ public class ExecutionResultTest {
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
-        assertSame(mockException, subject.getResult().getPayload());
+        assertSame(mockException, subject.getResult().exceptionResult());
     }
 
     @Test
@@ -54,6 +54,6 @@ public class ExecutionResultTest {
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
-        assertSame(mockException, subject.getResult().getPayload());
+        assertSame(mockException, subject.getResult().exceptionResult());
     }
 }

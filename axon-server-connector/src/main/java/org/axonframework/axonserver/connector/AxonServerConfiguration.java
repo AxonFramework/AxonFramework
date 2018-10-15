@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,8 +16,8 @@
 
 package org.axonframework.axonserver.connector;
 
-import org.axonframework.axonserver.connector.event.util.EventCipher;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
+import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
@@ -31,11 +32,13 @@ import java.util.stream.Collectors;
 @ConfigurationProperties(prefix = "axon.axonserver")
 public class AxonServerConfiguration {
     private static final int DEFAULT_GRPC_PORT = 8124;
+    private static final String DEFAULT_SERVERS = "localhost";
 
     /**
-     * Comma seperated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is specified, default port 8123 is used.
+     * Comma separated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
+     * specified, default port 8123 is used.
      */
-    private String servers = "localhost";
+    private String servers = DEFAULT_SERVERS;
 
     /**
      * clientId as it registers itself to AxonServer, must be unique
@@ -100,6 +103,7 @@ public class AxonServerConfiguration {
     private int processorsNotificationInitialDelay = 5000;
 
     private EventCipher eventCipher = new EventCipher();
+
     /**
      * Timeout (in ms) for keep alive requests
      */
@@ -111,12 +115,18 @@ public class AxonServerConfiguration {
     private long keepAliveTime = 0;
     private int snapshotPrefetch = 1;
 
-    public AxonServerConfiguration() {
-    }
+    /**
+     * Indicates whether the download advice message should be suppressed, even when default connection properties
+     * (which are generally only used in DEV mode) are used. Defaults to false.
+     */
+    private boolean suppressDownloadMessage = false;
 
-    private AxonServerConfiguration(String routingServers, String componentName) {
-        this.servers = routingServers;
-        this.componentName = componentName;
+    /**
+     *  GRPC max inbound message size, 0 keeps default value
+     */
+    private int maxMessageSize = 0;
+
+    public AxonServerConfiguration() {
     }
 
 
@@ -133,7 +143,7 @@ public class AxonServerConfiguration {
     }
 
     public String getComponentName() {
-        return componentName;
+        return componentName == null ? System.getProperty("axon.application.name", "Unnamed-" + clientName) : componentName;
     }
 
     public void setComponentName(String componentName) {
@@ -142,6 +152,7 @@ public class AxonServerConfiguration {
 
     public void setServers(String routingServers) {
         this.servers = routingServers;
+        suppressDownloadMessage = true;
     }
 
     public String getToken() {
@@ -273,6 +284,22 @@ public class AxonServerConfiguration {
         this.keepAliveTime = keepAliveTime;
     }
 
+    public void setSuppressDownloadMessage(boolean suppressDownloadMessage) {
+        this.suppressDownloadMessage = suppressDownloadMessage;
+    }
+
+    public boolean getSuppressDownloadMessage() {
+        return suppressDownloadMessage;
+    }
+
+    public int getMaxMessageSize() {
+        return maxMessageSize;
+    }
+
+    public void setMaxMessageSize(int maxMessageSize) {
+        this.maxMessageSize = maxMessageSize;
+    }
+
     public int getSnapshotPrefetch() {
         return snapshotPrefetch;
     }
@@ -284,8 +311,9 @@ public class AxonServerConfiguration {
     @SuppressWarnings("unused")
     public static class Builder {
         private AxonServerConfiguration instance;
-        public Builder(String servers, String componentName) {
-            instance = new AxonServerConfiguration(servers, componentName);
+
+        public Builder() {
+            instance = new AxonServerConfiguration();
             instance.initialNrOfPermits = 1000;
             instance.nrOfNewPermits = 500;
             instance.newPermitsThreshold = 500;
@@ -324,12 +352,42 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        public Builder maxMessageSize(int maxMessageSize) {
+            instance.maxMessageSize = maxMessageSize;
+            return this;
+        }
+
+        public Builder snapshotPrefetch(int snapshotPrefetch) {
+            instance.snapshotPrefetch = snapshotPrefetch;
+            return this;
+        }
+
         public AxonServerConfiguration build() {
             return instance;
         }
+
+        public Builder servers(String servers) {
+            instance.setServers(servers);
+            return this;
+        }
+
+        public Builder suppressDownloadMessage() {
+            instance.setSuppressDownloadMessage(true);
+            return this;
+        }
+
+        public Builder componentName(String componentName) {
+            instance.setComponentName(componentName);
+            return this;
+        }
     }
 
-    public static Builder newBuilder(String servers, String componentName) {
-        return new Builder( servers, componentName);
+    public static Builder builder() {
+        Builder builder = new Builder();
+        if (Boolean.getBoolean("axon.axonserver.suppressDownloadMessage")) {
+            builder.suppressDownloadMessage();
+        }
+
+        return builder;
     }
 }

@@ -18,9 +18,11 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
+import org.axonframework.messaging.RemoteHandlingException;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -57,9 +59,8 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
      * Implementations <em>should</em> always invoke the callback with an outcome.
      * <p/>
      * If a member's connection was lost, and the result of the command is unclear, the {@link
-     * CommandCallback#onFailure(org.axonframework.commandhandling.CommandMessage, Throwable)} method is invoked with a
-     * {@link RemoteCommandHandlingException} describing
-     * the failed connection. A client may choose to resend a command.
+     * CommandCallback#onResult(CommandMessage, CommandResultMessage)}} method is invoked with a
+     * {@link RemoteHandlingException} describing the failed connection. A client may choose to resend a command.
      * <p/>
      * Connectors route the commands based on the given {@code routingKey}. Using the same {@code routingKey}
      * will result in the command being sent to the same member.

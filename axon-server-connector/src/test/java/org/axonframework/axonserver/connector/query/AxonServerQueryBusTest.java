@@ -24,6 +24,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
@@ -57,7 +58,7 @@ public class AxonServerQueryBusTest {
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private AxonServerConfiguration conf;
     private SimpleQueryBus localSegment;
-    private PlatformConnectionManager platformConnectionManager;
+    private AxonServerConnectionManager axonServerConnectionManager;
     private AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserverRef;
     private XStreamSerializer ser;
 
@@ -72,7 +73,7 @@ public class AxonServerQueryBusTest {
         conf.setNrOfNewPermits(1000);
         localSegment = SimpleQueryBus.builder().build();
         ser = XStreamSerializer.builder().build();
-        queryBus = new AxonServerQueryBus(new PlatformConnectionManager(conf),
+        queryBus = new AxonServerQueryBus(new AxonServerConnectionManager(conf),
                                           conf,
                                           localSegment.queryUpdateEmitter(),
                                           localSegment,
@@ -82,7 +83,7 @@ public class AxonServerQueryBusTest {
                                           });
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
-        platformConnectionManager = mock(PlatformConnectionManager.class);
+        axonServerConnectionManager = mock(AxonServerConnectionManager.class);
         inboundStreamObserverRef = new AtomicReference<>();
         doAnswer(invocationOnMock -> {
             inboundStreamObserverRef.set(invocationOnMock.getArgument(0));
@@ -102,7 +103,7 @@ public class AxonServerQueryBusTest {
                     System.out.println("Completed");
                 }
             };
-        }).when(platformConnectionManager).getQueryStream(any(), any());
+        }).when(axonServerConnectionManager).getQueryStream(any(), any());
     }
 
     @After
@@ -114,10 +115,15 @@ public class AxonServerQueryBusTest {
     public void subscribe() throws Exception {
         Registration response = queryBus.subscribe("testQuery", String.class, q -> "test");
         Thread.sleep(1000);
-        assertWithin(1000, TimeUnit.MILLISECONDS, () -> assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
+        assertWithin(1000,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertNotNull(dummyMessagePlatformServer
+                                                 .subscriptions("testQuery", String.class.getName())));
 
         response.cancel();
-        assertWithin(2000, TimeUnit.MILLISECONDS, () -> assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
+        assertWithin(2000,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
     }
 
     @Test
@@ -132,7 +138,7 @@ public class AxonServerQueryBusTest {
     @Test
     public void processQuery() {
 
-        AxonServerQueryBus queryBus2 = new AxonServerQueryBus(platformConnectionManager,
+        AxonServerQueryBus queryBus2 = new AxonServerQueryBus(axonServerConnectionManager,
                                                               conf,
                                                               localSegment.queryUpdateEmitter(),
                                                               localSegment,
@@ -181,7 +187,7 @@ public class AxonServerQueryBusTest {
     @Test
     public void handlerInterceptor() {
         SimpleQueryBus localSegment = SimpleQueryBus.builder().build();
-        AxonServerQueryBus bus = new AxonServerQueryBus(platformConnectionManager, conf,
+        AxonServerQueryBus bus = new AxonServerQueryBus(axonServerConnectionManager, conf,
                                                         localSegment.queryUpdateEmitter(),
                                                         localSegment,
                                                         ser,

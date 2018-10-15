@@ -41,15 +41,7 @@ public final class NoOpCallback implements CommandCallback<Object, Object> {
      * This implementation does nothing.
      */
     @Override
-    public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
-     */
-    @Override
-    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+    public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+        // No-op
     }
 }

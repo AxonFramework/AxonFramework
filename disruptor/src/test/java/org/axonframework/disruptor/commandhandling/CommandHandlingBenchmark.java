@@ -51,8 +51,8 @@ public class CommandHandlingBenchmark {
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
         Repository<MyAggregate> repository = new AbstractRepository<MyAggregate, AnnotatedAggregate<MyAggregate>>(
-                new AbstractRepository.Builder<MyAggregate>() {
-                }.aggregateType(MyAggregate.class)
+                new AbstractRepository.Builder<MyAggregate>(MyAggregate.class) {
+                }
         ) {
 
             @Override

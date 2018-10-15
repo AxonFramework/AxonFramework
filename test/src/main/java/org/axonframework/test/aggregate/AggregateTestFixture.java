@@ -33,6 +33,11 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.model.*;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
@@ -40,6 +45,9 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.messaging.*;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
@@ -53,14 +61,7 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -77,16 +78,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -165,21 +157,20 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 ClasspathParameterResolverFactory.forClass(aggregateType)
         );
 
-        return registerRepository(EventSourcingRepository.<T>builder()
-                                          .aggregateType(aggregateFactory.getAggregateType())
-                                          .aggregateFactory(aggregateFactory)
-                                          .eventStore(eventStore)
-                                          .parameterResolverFactory(parameterResolverFactory)
-                                          .handlerDefinition(handlerDefinition)
-                                          .repositoryProvider(getRepositoryProvider())
-                                          .build());
+        return registerRepository(EventSourcingRepository.builder(aggregateFactory.getAggregateType())
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .parameterResolverFactory(parameterResolverFactory)
+                                                         .handlerDefinition(handlerDefinition)
+                                                         .repositoryProvider(getRepositoryProvider())
+                                                         .build());
     }
 
     @Override
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(
+        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter<>(
                 annotatedCommandHandler, parameterResolverFactory, handlerDefinition);
         adapter.subscribe(commandBus);
         return this;
@@ -417,14 +408,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(EventSourcingRepository.<T>builder()
-                                       .aggregateType(aggregateType)
-                                       .aggregateFactory(new GenericAggregateFactory<>(aggregateType))
-                                       .eventStore(eventStore)
-                                       .parameterResolverFactory(parameterResolverFactory)
-                                       .handlerDefinition(handlerDefinition)
-                                       .repositoryProvider(getRepositoryProvider())
-                                       .build());
+            registerRepository(EventSourcingRepository.builder(aggregateType)
+                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateType))
+                                                      .eventStore(eventStore)
+                                                      .parameterResolverFactory(parameterResolverFactory)
+                                                      .handlerDefinition(handlerDefinition)
+                                                      .repositoryProvider(getRepositoryProvider())
+                                                      .build());
         }
     }
 
@@ -819,15 +809,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         private FixtureExecutionException exception;
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-        }
-
-        @Override
-        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-            if (cause instanceof FixtureExecutionException) {
-                this.exception = (FixtureExecutionException) cause;
-            } else {
-                this.exception = new FixtureExecutionException("Failed to execute givenCommands", cause);
+        public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.exceptionResult();
+                if (cause instanceof FixtureExecutionException) {
+                    this.exception = (FixtureExecutionException) cause;
+                } else {
+                    this.exception = new FixtureExecutionException("Failed to execute givenCommands", cause);
+                }
             }
         }
 

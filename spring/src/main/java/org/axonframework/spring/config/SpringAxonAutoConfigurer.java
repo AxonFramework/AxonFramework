@@ -132,7 +132,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         registry.registerBeanDefinition("queryHandlerSubscriber",
                                         genericBeanDefinition(QueryHandlerSubscriber.class).getBeanDefinition());
 
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration(false);
 
         RuntimeBeanReference parameterResolver =
                 SpringContextParameterResolverFactoryBuilder.getBeanReference(registry);
@@ -348,8 +348,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     }
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
                         aggregateConf.configureRepository(
-                                c -> GenericJpaRepository.<A>builder()
-                                        .aggregateType(aggregateType)
+                                c -> GenericJpaRepository.builder(aggregateType)
                                         .parameterResolverFactory(c.parameterResolverFactory())
                                         .handlerDefinition(c.handlerDefinition(aggregateType))
                                         .lockFactory(c.getComponent(

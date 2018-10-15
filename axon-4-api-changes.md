@@ -277,6 +277,7 @@ EventStore to a (new) interface, the DomainEventSequenceAware.
 | org.axonframework.commandhandling.disruptor.DisruptorConfiguration            | Removed in favor DisruptorCommandBus.Builder |
 | org.axonframework.config.EventHandlingConfiguration                           | Removed in favor of EventProcessingModule    |
 | org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration    | Removed in favor KafkaPublisher.Builder      |
+| org.axonframework.commandhandling.VoidCallback                                | Command execution returns a message now.     |
 
 ### Classes for which the Constructor has been replaced for a Builder
 

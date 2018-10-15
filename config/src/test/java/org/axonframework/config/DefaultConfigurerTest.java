@@ -182,8 +182,7 @@ public class DefaultConfigurerTest {
             return commandBus;
         }).configureAggregate(
                 defaultConfiguration(StubAggregate.class).configureRepository(
-                        c -> GenericJpaRepository.<StubAggregate>builder()
-                                .aggregateType(StubAggregate.class)
+                        c -> GenericJpaRepository.builder(StubAggregate.class)
                                 .entityManagerProvider(new SimpleEntityManagerProvider(em))
                                 .eventBus(c.eventBus())
                                 .parameterResolverFactory(c.parameterResolverFactory())
@@ -259,8 +258,7 @@ public class DefaultConfigurerTest {
             return commandBus;
         }).configureAggregate(
                 defaultConfiguration(StubAggregate.class).configureRepository(
-                        c -> GenericJpaRepository.<StubAggregate>builder()
-                                .aggregateType(StubAggregate.class)
+                        c -> GenericJpaRepository.builder(StubAggregate.class)
                                 .entityManagerProvider(new SimpleEntityManagerProvider(em))
                                 .eventBus(c.eventBus())
                                 .parameterResolverFactory(c.parameterResolverFactory())

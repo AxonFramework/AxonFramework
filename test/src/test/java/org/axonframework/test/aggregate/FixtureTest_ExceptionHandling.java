@@ -27,6 +27,8 @@ import org.junit.Test;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class FixtureTest_ExceptionHandling {
 
@@ -41,12 +43,17 @@ public class FixtureTest_ExceptionHandling {
         );
     }
 
-    @Test(expected = NoHandlerForCommandException.class)
+    @Test
     public void givenUnknownCommand() {
-        fixture.givenCommands(
-                new CreateMyAggregateCommand("14"),
-                new UnknownCommand("14")
-        );
+        try {
+            fixture.givenCommands(
+                    new CreateMyAggregateCommand("14"),
+                    new UnknownCommand("14")
+            );
+            fail("Expected FixtureExecutionException");
+        } catch (FixtureExecutionException fee) {
+            assertEquals(NoHandlerForCommandException.class, fee.getCause().getClass());
+        }
     }
 
     @Test

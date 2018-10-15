@@ -100,8 +100,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      *
      * @return a Builder to be able to create a {@link EventSourcingRepository}
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> Builder<T> builder(Class<T> aggregateType) {
+        return new Builder<>(aggregateType);
     }
 
     /**
@@ -212,10 +212,14 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         protected RepositoryProvider repositoryProvider;
         protected Cache cache;
 
-        @Override
-        public Builder<T> aggregateType(Class<T> aggregateType) {
-            super.aggregateType(aggregateType);
-            return this;
+        /**
+         * Creates a builder for a Repository for given {@code aggregateType}.
+         *
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
+         *                      store
+         */
+        protected Builder(Class<T> aggregateType) {
+            super(aggregateType);
         }
 
         @Override
@@ -275,9 +279,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
 
         /**
-         * Sets the {@link AggregateFactory} used to create new Aggregate instances. Either this field or the
-         * {@link #aggregateType(Class)} should be provided to correctly instantiate an AggregateFactory for this
-         * {@link EventSourcingRepository}.
+         * Sets the {@link AggregateFactory} used to create new Aggregate instances.
          *
          * @param aggregateFactory the {@link AggregateFactory} used to create new Aggregate instances
          * @return the current Builder instance, for fluent interfacing

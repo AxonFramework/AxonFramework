@@ -20,18 +20,25 @@ import java.util.List;
 
 /**
  * Describes the context of an error.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class ErrorContext {
+
     private final String eventProcessor;
-    private final Exception error;
+    private final Throwable error;
     private final List<? extends EventMessage<?>> failedEvents;
 
     /**
-     * @param eventProcessor The name of the event processor that failed to process the given events
-     * @param error          The error that was raised during processing
-     * @param failedEvents   The list of events that triggered the error
+     * Instantiate an ErrorContext for the given {@code eventProcessor}, due to the given {@code error}, with the given
+     * {@code failedEvents}.
+     *
+     * @param eventProcessor the name of the event processor that failed to process the given events
+     * @param error          the error that was raised during processing
+     * @param failedEvents   the list of events that triggered the error
      */
-    public ErrorContext(String eventProcessor, Exception error, List<? extends EventMessage<?>> failedEvents) {
+    public ErrorContext(String eventProcessor, Throwable error, List<? extends EventMessage<?>> failedEvents) {
         this.eventProcessor = eventProcessor;
         this.error = error;
         this.failedEvents = failedEvents;
@@ -51,7 +58,7 @@ public class ErrorContext {
      *
      * @return the error that was raised in the processor
      */
-    public Exception error() {
+    public Throwable error() {
         return error;
     }
 

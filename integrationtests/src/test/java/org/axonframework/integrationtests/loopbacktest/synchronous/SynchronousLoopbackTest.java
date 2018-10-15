@@ -16,14 +16,7 @@
 
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.callbacks.VoidCallback;
+import org.axonframework.commandhandling.*;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.lock.LockFactory;
@@ -37,11 +30,13 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.UUID;
@@ -61,7 +56,7 @@ public class SynchronousLoopbackTest {
     private CommandBus commandBus;
     private String aggregateIdentifier;
     private EventStore eventStore;
-    private VoidCallback reportErrorCallback;
+    private CommandCallback<Object, Object> reportErrorCallback;
     private CommandCallback<Object, Object> expectErrorCallback;
 
     @SuppressWarnings("unchecked")
@@ -78,38 +73,31 @@ public class SynchronousLoopbackTest {
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
 
-        reportErrorCallback = new VoidCallback<Object>() {
-            @Override
-            protected void onSuccess(CommandMessage<?> commandMessage) {
-            }
-
-            @Override
-            public void onFailure(CommandMessage commandMessage, Throwable cause) {
+        reportErrorCallback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.exceptionResult();
                 throw new RuntimeException("Failure", cause);
             }
         };
-        expectErrorCallback = new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                fail("Expected this command to fail");
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+        expectErrorCallback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.exceptionResult();
                 assertEquals("Mock exception", cause.getMessage());
+            } else {
+                fail("Expected this command to fail");
             }
         };
     }
 
     protected void initializeRepository(LockFactory lockingStrategy) {
-        EventSourcingRepository<CountingAggregate> repository = EventSourcingRepository.<CountingAggregate>builder()
-                .aggregateType(CountingAggregate.class)
-                .lockFactory(lockingStrategy)
-                .aggregateFactory(new GenericAggregateFactory<>(CountingAggregate.class))
-                .eventStore(eventStore)
-                .build();
+        EventSourcingRepository<CountingAggregate> repository =
+                EventSourcingRepository.builder(CountingAggregate.class)
+                                       .lockFactory(lockingStrategy)
+                                       .aggregateFactory(new GenericAggregateFactory<>(CountingAggregate.class))
+                                       .eventStore(eventStore)
+                                       .build();
 
-        new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
+        new AnnotationCommandHandlerAdapter<>(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
     @Test

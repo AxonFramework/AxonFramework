@@ -44,24 +44,12 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -70,11 +58,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -141,7 +125,32 @@ public class DefaultConfigurer implements Configurer {
      * @return Configurer instance for further configuration.
      */
     public static Configurer defaultConfiguration() {
-        return new DefaultConfigurer();
+        return defaultConfiguration(true);
+    }
+
+    /**
+     * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
+     * {@link SimpleEventBus}, indicating whether to {@code autoLocateConfigurerModules}.
+     *
+     * When {@code autoLocateConfigurerModules} is {@code true}, a ServiceLoader will be used to locate all declared
+     * instances of type {@link ConfigurerModule}. Each of the discovered instances will be invoked, allowing it to
+     * set default values for the configuration.
+     *
+     * @param autoLocateConfigurerModules flag indicating whether ConfigurerModules on the classpath should be
+     *                                    automatically retrieved. Should be set to {@code false} when using an
+     *                                    application container, such as Spring or CDI.
+     * @return Configurer instance for further configuration.
+     */
+    public static Configurer defaultConfiguration(boolean autoLocateConfigurerModules) {
+        DefaultConfigurer configurer = new DefaultConfigurer();
+        if(autoLocateConfigurerModules) {
+            ServiceLoader<ConfigurerModule> configurerModuleLoader = ServiceLoader.load(ConfigurerModule.class, configurer.getClass().getClassLoader());
+            List<ConfigurerModule> configurerModules = new ArrayList<>();
+            configurerModuleLoader.forEach(configurerModules::add);
+            configurerModules.sort(Comparator.comparingInt(ConfigurerModule::order));
+            configurerModules.forEach(cm -> cm.configureModule(configurer));
+        }
+        return configurer;
     }
 
     /**

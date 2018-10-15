@@ -16,9 +16,6 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +45,7 @@ public class CommandCallbackRepositoryTest {
         assertEquals(commandCallbackWrapper, fetchedCallback);
         assertEquals(0, repository.callbacks().size());
 
-        fetchedCallback.success(asCommandResultMessage(new Object()));
+        fetchedCallback.reportResult(asCommandResultMessage(new Object()));
         assertEquals(1, successCounter);
     }
 
@@ -92,16 +89,11 @@ public class CommandCallbackRepositoryTest {
     private CommandCallbackWrapper<Object, Object, Object> createWrapper(Object sessionId) {
         return new CommandCallbackWrapper<>(
                 sessionId, new GenericCommandMessage<>(new Object()),
-                new CommandCallback<Object, Object>() {
-                    @Override
-                    public void onSuccess(CommandMessage<?> commandMessage,
-                                          CommandResultMessage<?> commandResultMessage) {
-                        successCounter++;
-                    }
-
-                    @Override
-                    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                (commandMessage, commandResultMessage) -> {
+                    if (commandResultMessage.isExceptional()) {
                         failCounter++;
+                    } else {
+                        successCounter++;
                     }
                 }
         );

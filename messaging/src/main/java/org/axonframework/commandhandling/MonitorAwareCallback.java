@@ -41,19 +41,15 @@ public class MonitorAwareCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage,
-                          CommandResultMessage<? extends R> commandResultMessage) {
-        messageMonitorCallback.reportSuccess();
-        if (delegate != null) {
-            delegate.onSuccess(commandMessage, commandResultMessage);
+    public void onResult(CommandMessage<? extends C> commandMessage,
+                         CommandResultMessage<? extends R> commandResultMessage) {
+        if (commandResultMessage.isExceptional()) {
+            messageMonitorCallback.reportFailure(commandResultMessage.exceptionResult());
+        } else {
+            messageMonitorCallback.reportSuccess();
         }
-    }
-
-    @Override
-    public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-        messageMonitorCallback.reportFailure(cause);
         if (delegate != null) {
-            delegate.onFailure(commandMessage, cause);
+            delegate.onResult(commandMessage, commandResultMessage);
         }
     }
 

@@ -253,11 +253,10 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
         @Bean("simpleRepository")
         public Repository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
                                                          EventBus eventBus) {
-            return GenericJpaRepository.<JpaAggregate>builder()
-                    .aggregateType(JpaAggregate.class)
-                    .entityManagerProvider(entityManagerProvider)
-                    .eventBus(eventBus)
-                    .build();
+            return GenericJpaRepository.builder(JpaAggregate.class)
+                                       .entityManagerProvider(entityManagerProvider)
+                                       .eventBus(eventBus)
+                                       .build();
         }
     }
 }

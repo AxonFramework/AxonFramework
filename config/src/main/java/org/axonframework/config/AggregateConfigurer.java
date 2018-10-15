@@ -28,11 +28,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.ArrayList;
@@ -101,7 +97,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                                        c.handlerDefinition(aggregate),
                                                                                        c::repository);
                     }
-                    return EventSourcingRepository.<A>builder()
+                    return EventSourcingRepository.builder(aggregate)
                             .aggregateModel(metaModel.get())
                             .aggregateFactory(aggregateFactory.get())
                             .eventStore(c.eventStore())
@@ -158,7 +154,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                         aggregateType.getSimpleName()
                                 ));
                             });
-                    return GenericJpaRepository.<A>builder()
+                    return GenericJpaRepository.builder(aggregateType)
                             .aggregateModel(configurer.metaModel.get())
                             .entityManagerProvider(entityManagerProvider)
                             .eventBus(c.eventBus())
@@ -181,7 +177,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                     EntityManagerProvider entityManagerProvider) {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
         return configurer.configureRepository(
-                c -> GenericJpaRepository.<A>builder()
+                c -> GenericJpaRepository.builder(aggregateType)
                         .aggregateModel(configurer.metaModel.get())
                         .entityManagerProvider(entityManagerProvider)
                         .eventBus(c.eventBus())

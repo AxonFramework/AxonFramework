@@ -16,10 +16,9 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDecorator;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 
@@ -30,7 +29,7 @@ import java.util.Map;
  * @author Milan Savic
  * @since 4.0
  */
-public class GenericCommandResultMessage<R> extends MessageDecorator<R> implements CommandResultMessage<R> {
+public class GenericCommandResultMessage<R> extends GenericResultMessage<R> implements CommandResultMessage<R> {
 
     private static final long serialVersionUID = 9013948836930094183L;
 
@@ -49,12 +48,30 @@ public class GenericCommandResultMessage<R> extends MessageDecorator<R> implemen
     public static <T> CommandResultMessage<T> asCommandResultMessage(Object commandResult) {
         if (CommandResultMessage.class.isInstance(commandResult)) {
             return (CommandResultMessage<T>) commandResult;
+        } else if (ResultMessage.class.isInstance(commandResult)) {
+            ResultMessage<T> resultMessage = (ResultMessage<T>) commandResult;
+            if (resultMessage.isExceptional()) {
+                Throwable cause = resultMessage.exceptionResult();
+                return new GenericCommandResultMessage<>(cause, resultMessage.getMetaData());
+            }
+            return new GenericCommandResultMessage<>(resultMessage.getPayload(), resultMessage.getMetaData());
         } else if (Message.class.isInstance(commandResult)) {
-            Message<?> commandResultMessage = (Message<?>) commandResult;
-            return new GenericCommandResultMessage<>((T) commandResultMessage.getPayload(),
+            Message<T> commandResultMessage = (Message<T>) commandResult;
+            return new GenericCommandResultMessage<>(commandResultMessage.getPayload(),
                                                      commandResultMessage.getMetaData());
         }
         return new GenericCommandResultMessage<>((T) commandResult);
+    }
+
+    /**
+     * Creates a Command Result Message with the given {@code exception} result.
+     *
+     * @param exception the Exception describing the cause of an error
+     * @param <T> the type of payload
+     * @return a message containing exception result
+     */
+    public static <T> CommandResultMessage<T> asCommandResultMessage(Throwable exception) {
+        return new GenericCommandResultMessage<>(exception);
     }
 
     /**
@@ -63,7 +80,16 @@ public class GenericCommandResultMessage<R> extends MessageDecorator<R> implemen
      * @param commandResult the payload for the Message
      */
     public GenericCommandResultMessage(R commandResult) {
-        this(commandResult, MetaData.emptyInstance());
+        super(commandResult);
+    }
+
+    /**
+     * Creates a Command Result Message with the given {@code exception}.
+     *
+     * @param exception the Exception describing the cause of an error
+     */
+    public GenericCommandResultMessage(Throwable exception) {
+        super(exception);
     }
 
     /**
@@ -74,7 +100,17 @@ public class GenericCommandResultMessage<R> extends MessageDecorator<R> implemen
      * @param metaData      the meta data for the Message
      */
     public GenericCommandResultMessage(R commandResult, Map<String, ?> metaData) {
-        this(new GenericMessage<>(commandResult, metaData));
+        super(commandResult, metaData);
+    }
+
+    /**
+     * Creates a Command Result Message with the given {@code exception} and {@code metaData}.
+     *
+     * @param exception the Exception describing the cause of an error
+     * @param metaData  the meta data for the Message
+     */
+    public GenericCommandResultMessage(Throwable exception, Map<String, ?> metaData) {
+        super(exception, metaData);
     }
 
     /**
@@ -86,14 +122,26 @@ public class GenericCommandResultMessage<R> extends MessageDecorator<R> implemen
         super(delegate);
     }
 
+    /**
+     * Creates a Command Result Message with given {@code delegate} message and {@code exception}.
+     *
+     * @param delegate  the Message delegate
+     * @param exception the Exception describing the cause of an error
+     */
+    public GenericCommandResultMessage(Message<R> delegate, Throwable exception) {
+        super(delegate, exception);
+    }
+
     @Override
     public GenericCommandResultMessage<R> withMetaData(Map<String, ?> metaData) {
-        return new GenericCommandResultMessage<>(getDelegate().withMetaData(metaData));
+        Throwable exception = optionalExceptionResult().orElse(null);
+        return new GenericCommandResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
     public GenericCommandResultMessage<R> andMetaData(Map<String, ?> metaData) {
-        return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData));
+        Throwable exception = optionalExceptionResult().orElse(null);
+        return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData), exception);
     }
 
     @Override

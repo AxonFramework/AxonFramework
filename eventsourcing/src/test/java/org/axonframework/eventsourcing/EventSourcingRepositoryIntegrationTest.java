@@ -30,7 +30,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +39,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 
 /**
  * @author Allard Buijze
@@ -71,8 +73,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository() throws Exception {
         eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
-        repository = EventSourcingRepository.<SimpleAggregateRoot>builder()
-                .aggregateType(SimpleAggregateRoot.class)
+        repository = EventSourcingRepository.builder(SimpleAggregateRoot.class)
                 .aggregateFactory(new SimpleAggregateFactory())
                 .eventStore(eventStore)
                 .build();

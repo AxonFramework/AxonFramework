@@ -26,6 +26,11 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -119,17 +124,14 @@ public class SpawningNewAggregateTest {
         initializeAggregate1Repository(repositoryProvider);
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(null);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
-                            new VoidCallback<Object>() {
-                                @Override
-                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                            (commandMessage, commandResultMessage) -> {
+                                if (commandResultMessage.isExceptional()) {
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof IllegalStateException);
                                     assertEquals(
                                             "There is no configured repository for org.axonframework.eventsourcing.SpawningNewAggregateTest$Aggregate2",
                                             cause.getMessage());
-                                }
-
-                                @Override
-                                protected void onSuccess(CommandMessage<?> commandMessage) {
+                                } else {
                                     fail("Expected exception");
                                 }
                             });
@@ -139,18 +141,15 @@ public class SpawningNewAggregateTest {
     public void testSpawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
         initializeAggregate1Repository(null);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
-                            new VoidCallback<Object>() {
-                                @Override
-                                protected void onSuccess(CommandMessage<?> commandMessage) {
-                                    fail("Expected exception");
-                                }
-
-                                @Override
-                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                            (commandMessage, commandResultMessage) -> {
+                                if (commandResultMessage.isExceptional()) {
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof AxonConfigurationException);
                                     assertEquals(
                                             "Since repository provider is not provided, we cannot spawn a new aggregate for org.axonframework.eventsourcing.SpawningNewAggregateTest$Aggregate2",
                                             cause.getMessage());
+                                } else {
+                                    fail("Expected exception");
                                 }
                             });
     }

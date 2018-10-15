@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
@@ -25,14 +25,16 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class AxonServerEventStoreTest {
 
@@ -43,12 +45,14 @@ public class AxonServerEventStoreTest {
     public void setUp() throws Exception {
         server = new StubServer(6123);
         server.start();
-        AxonServerConfiguration config = AxonServerConfiguration.newBuilder("localhost:6123", "JUNIT")
+        AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .servers("localhost:6123")
+                                                                .componentName("JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
         testSubject = AxonServerEventStore.builder()
                                           .configuration(config)
-                                          .platformConnectionManager(new PlatformConnectionManager(config))
+                                          .platformConnectionManager(new AxonServerConnectionManager(config))
                                           .build();
     }
 
