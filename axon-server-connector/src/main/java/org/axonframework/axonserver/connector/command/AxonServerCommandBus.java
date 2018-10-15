@@ -23,6 +23,8 @@ import io.axoniq.axonserver.grpc.command.CommandResponse;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
 import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.ClientInterceptor;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
@@ -128,19 +130,17 @@ public class AxonServerCommandBus implements CommandBus {
                                             public void onNext(CommandResponse commandResponse) {
                                                 if (!commandResponse.hasMessage()) {
                                                     logger.debug("response received - {}", commandResponse);
-                                                    GenericCommandResultMessage<R> resultMessage = null;
-                                                    if (commandResponse.hasPayload()) {
-                                                        try {
-                                                            //noinspection unchecked
-                                                            resultMessage = serializer.deserialize(commandResponse);
-                                                        } catch (Exception ex) {
-                                                            logger.info("Failed to deserialize payload - {} - {}",
-                                                                        commandResponse.getPayload().getData(),
-                                                                        ex.getCause().getMessage());
-                                                        }
+                                                    try {
+                                                        //noinspection unchecked
+                                                        GenericCommandResultMessage<R> resultMessage = serializer
+                                                                .deserialize(commandResponse);
+                                                        commandCallback.onSuccess(command, resultMessage);
+                                                    } catch (Exception ex) {
+                                                        commandCallback.onFailure(command, ex);
+                                                        logger.info("Failed to deserialize payload - {} - {}",
+                                                                    commandResponse.getPayload().getData(),
+                                                                    ex.getCause().getMessage());
                                                     }
-
-                                                    commandCallback.onSuccess(command, resultMessage);
                                                 } else {
                                                     commandCallback.onFailure(command,
                                                                               new CommandExecutionException(
@@ -289,9 +289,14 @@ public class AxonServerCommandBus implements CommandBus {
                     }
 
                     @Override
-                    public void onError(Throwable throwable) {
-                        logger.warn("Received error from server: {}", throwable.getMessage());
+                    public void onError(Throwable ex) {
+                        logger.warn("Received error from server: {}", ex.getMessage());
                         subscriberStreamObserver = null;
+                        if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode().equals(
+                                Status.UNAVAILABLE.getCode())) {
+                            return;
+                        }
+                        resubscribe();
                     }
 
                     @Override

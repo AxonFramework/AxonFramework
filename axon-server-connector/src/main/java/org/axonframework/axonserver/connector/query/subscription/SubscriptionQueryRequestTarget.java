@@ -33,9 +33,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Listener of Subscription Query requests
+ * Listener of Subscription Query requests.
  *
  * @author Sara Pellegrini
+ * @since 4.0
  */
 public class SubscriptionQueryRequestTarget {
 
