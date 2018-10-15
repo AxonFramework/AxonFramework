@@ -29,7 +29,10 @@ import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
@@ -122,14 +125,11 @@ public class AxonServerCommandBus implements CommandBus {
                                                     }
                                                 } else {
                                                     commandCallback.onResult(command, asCommandResultMessage(
-                                                                              new CommandExecutionException(
-                                                                                      commandResponse.getMessage()
-                                                                                                     .getMessage(),
                                                                                       new RemoteCommandException(
                                                                                               commandResponse
                                                                                                       .getErrorCode(),
                                                                                               commandResponse
-                                                                                                      .getMessage()))));
+                                                                                                      .getMessage())));
                                                 }
                                             }
 

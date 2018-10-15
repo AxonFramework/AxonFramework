@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,11 +37,6 @@ public class RemoteExceptionDescription implements Serializable {
 
     private final List<String> descriptions;
 
-    @JsonCreator
-    private RemoteExceptionDescription(@JsonProperty("descriptions") List<String> descriptions) {
-        this.descriptions = new ArrayList<>(descriptions);
-    }
-
     /**
      * Provide a description as a {@link List} of {@link String}s of all the causes in the given {@code exception}.
      *
@@ -58,6 +53,22 @@ public class RemoteExceptionDescription implements Serializable {
         return cause != null ? createDescription(cause, descriptions) : descriptions;
     }
 
+    /**
+     * Initialize a RemoteExceptionDescription with given {@code descriptions} describing the exception chain on the
+     * remote end of communication
+     *
+     * @param descriptions a list of strings, each describing a single "cause" on the remote end
+     */
+    @JsonCreator
+    public RemoteExceptionDescription(@JsonProperty("descriptions") List<String> descriptions) {
+        this.descriptions = new ArrayList<>(descriptions);
+    }
+
+    /**
+     * Returns a list of String describing the causes of the exception on the remote end
+     *
+     * @return the descriptions of the causes
+     */
     public List<String> getDescriptions() {
         return descriptions;
     }

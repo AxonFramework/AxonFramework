@@ -27,12 +27,15 @@ import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -161,10 +164,9 @@ public class JgroupsConnectorTest_Gossip {
         try {
             gateway1.sendAndWait("Try this!");
             fail("Expected exception");
-        } catch (RuntimeException e) {
-            assertEquals("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(),
-                         "Mock",
-                         e.getMessage());
+        } catch (RemoteHandlingException e) {
+            assertTrue("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(),
+                       e.getExceptionDescriptions().stream().anyMatch(m -> m.contains("Mock")));
         }
     }
 
