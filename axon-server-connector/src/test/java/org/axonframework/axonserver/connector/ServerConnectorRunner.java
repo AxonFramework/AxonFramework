@@ -73,10 +73,10 @@ public class ServerConnectorRunner {
         protected void handle(MyAggregateCreatedEvent event) {
             this.id = event.getId();
         }
-
     }
 
     public static class MyAggregateCreatedEvent {
+
         private final String id;
 
         public MyAggregateCreatedEvent(String id) {
@@ -101,17 +101,13 @@ public class ServerConnectorRunner {
         public String getId() {
             return id;
         }
-
-
     }
 
     public static class MyEventHandler {
-
 
         @EventHandler
         public void handle(MyAggregateCreatedEvent event) {
             logger.info("Received event for aggregate: {}", event.getId());
         }
-
     }
 }

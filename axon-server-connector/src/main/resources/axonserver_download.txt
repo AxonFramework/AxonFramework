@@ -10,4 +10,4 @@
 
 To suppress this message, you can
  - explicitly configure an AxonServer location,
- - start with -Daxon.axonserver.suppressDownloadMessage=true)
+ - start with -Daxon.axonserver.suppressDownloadMessage=true
