@@ -81,15 +81,15 @@ public abstract class ReplyMessage {
      * @return a {@link CommandResultMessage} containing the return value of command processing
      */
     public CommandResultMessage<?> getCommandResultMessage(Serializer serializer) {
-        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(this.serializedMetaData, byte[].class);
+        Object payload = deserializePayload(serializer);
+        RemoteExceptionDescription exceptionDescription = deserializeException(serializer);
+        SerializedMetaData<byte[]> serializedMetaData =
+                new SerializedMetaData<>(this.serializedMetaData, byte[].class);
         MetaData metaData = serializer.deserialize(serializedMetaData);
 
-        RemoteExceptionDescription exceptionDescription = deserializeException(serializer);
         if (exceptionDescription != null) {
             return new GenericCommandResultMessage<>(new RemoteHandlingException(exceptionDescription), metaData);
         }
-
-        Object payload = deserializePayload(serializer);
         return new GenericCommandResultMessage<>(payload, metaData);
     }
 
