@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,73 +16,47 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
-import org.axonframework.axonserver.connector.query.subscription.DeserializedResult;
-import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
-import org.axonframework.axonserver.connector.query.subscription.SubscriptionQueryRequestTarget;
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.query.QueryRequest;
-import io.axoniq.axonserver.grpc.query.QueryResponse;
-import io.axoniq.axonserver.grpc.query.QuerySubscription;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.DispatchInterceptors;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
-import org.axonframework.axonserver.connector.command.AxonServerRegistration;
-import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
-import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
-import io.axoniq.axonserver.grpc.query.QueryComplete;
-import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
+import io.axoniq.axonserver.grpc.query.*;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
-import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
-import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
+import io.axoniq.axonserver.grpc.query.QuerySubscription;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.DispatchInterceptors;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.command.AxonServerRegistration;
+import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
+import org.axonframework.axonserver.connector.query.subscription.DeserializedResult;
+import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
+import org.axonframework.axonserver.connector.query.subscription.SubscriptionQueryRequestTarget;
+import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
+import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
+import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.numberOfResults;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
-import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
 
 /**
  * AxonServer implementation for the QueryBus. Delegates incoming queries to the specified localSegment.
@@ -97,7 +72,7 @@ public class AxonServerQueryBus implements QueryBus {
     private final SubscriptionMessageSerializer subscriptionSerializer;
     private final QueryPriorityCalculator priorityCalculator;
     private final QueryProvider queryProvider;
-    private final PlatformConnectionManager platformConnectionManager;
+    private final AxonServerConnectionManager axonServerConnectionManager;
     private final ClientInterceptor[] interceptors;
     private final Collection<String> subscriptions = new CopyOnWriteArraySet<>();
     private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors = new DispatchInterceptors<>();
@@ -107,7 +82,7 @@ public class AxonServerQueryBus implements QueryBus {
     /**
      * Creates an instance of the AxonServerQueryBus
      *
-     * @param platformConnectionManager creates connection to AxonServer platform
+     * @param axonServerConnectionManager creates connection to AxonServer platform
      * @param configuration             contains client and component names used to identify the application in
      *                                  AxonServer
      * @param updateEmitter             emits incremental updates to subscription queries
@@ -116,7 +91,7 @@ public class AxonServerQueryBus implements QueryBus {
      * @param genericSerializer         serializer for communication of other objects than payload and metadata
      * @param priorityCalculator        calculates the request priority based on the content and adds it to the request
      */
-    public AxonServerQueryBus(PlatformConnectionManager platformConnectionManager,
+    public AxonServerQueryBus(AxonServerConnectionManager axonServerConnectionManager,
                               AxonServerConfiguration configuration,
                               QueryUpdateEmitter updateEmitter, QueryBus localSegment,
                               Serializer messageSerializer, Serializer genericSerializer,
@@ -127,18 +102,18 @@ public class AxonServerQueryBus implements QueryBus {
         this.serializer = new QuerySerializer(messageSerializer, genericSerializer, configuration);
         this.priorityCalculator = priorityCalculator;
         this.queryProvider = new QueryProvider();
-        this.platformConnectionManager = platformConnectionManager;
-        this.platformConnectionManager.addReconnectListener(queryProvider::resubscribe);
-        this.platformConnectionManager.addDisconnectListener(queryProvider::unsubscribeAll);
+        this.axonServerConnectionManager = axonServerConnectionManager;
+        this.axonServerConnectionManager.addReconnectListener(queryProvider::resubscribe);
+        this.axonServerConnectionManager.addDisconnectListener(queryProvider::unsubscribeAll);
         interceptors = new ClientInterceptor[]{new TokenAddingInterceptor(configuration.getToken()),
                 new ContextAddingInterceptor(configuration.getContext())};
         this.subscriptionSerializer = new SubscriptionMessageSerializer(configuration, messageSerializer, genericSerializer);
-        platformConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
-        platformConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
+        axonServerConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
+        axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
         SubscriptionQueryRequestTarget target =
                 new SubscriptionQueryRequestTarget(localSegment, this::publish, subscriptionSerializer);
         this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
-        platformConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
+        axonServerConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
     }
 
 
@@ -185,7 +160,7 @@ public class AxonServerQueryBus implements QueryBus {
     }
 
     public QueryServiceGrpc.QueryServiceStub queryServiceStub() {
-        return QueryServiceGrpc.newStub(platformConnectionManager.getChannel()).withInterceptors(interceptors);
+        return QueryServiceGrpc.newStub(axonServerConnectionManager.getChannel()).withInterceptors(interceptors);
     }
 
     @Override
@@ -369,7 +344,7 @@ public class AxonServerQueryBus implements QueryBus {
                     }
                 };
 
-                StreamObserver<QueryProviderOutbound> stream = platformConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
+                StreamObserver<QueryProviderOutbound> stream = axonServerConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
                 outboundStreamObserver = new FlowControllingStreamObserver<>(stream,
                                                                              configuration,
                                                                              flowControl -> QueryProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
