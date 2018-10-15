@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.RemoteExceptionDescription;
 import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -197,7 +198,8 @@ public class SpringHttpCommandBusConnectorTest {
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
                                       argThat(new ParameterizedTypeReferenceMatcher<>()));
-        SerializedObject<byte[]> serializedObject = serializer.serialize(RemoteExceptionDescription.describing(COMMAND_ERROR), byte[].class);
+        SerializedObject<byte[]> serializedObject =
+                serializer.serialize(RemoteExceptionDescription.describing(COMMAND_ERROR), byte[].class);
         //noinspection unchecked
         ArgumentCaptor<SerializedObject<byte[]>> serializedObjectCaptor =
                 ArgumentCaptor.forClass(SerializedObject.class);
