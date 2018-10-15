@@ -651,13 +651,17 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             @Override
             public Builder snapshotSerializer(Serializer snapshotSerializer) {
-                super.snapshotSerializer(snapshotSerializer);
+                if( snapshotSerializer != null) {
+                    super.snapshotSerializer(snapshotSerializer);
+                }
                 return this;
             }
 
             @Override
             public Builder upcasterChain(EventUpcaster upcasterChain) {
-                super.upcasterChain(upcasterChain);
+                if( upcasterChain != null) {
+                    super.upcasterChain(upcasterChain);
+                }
                 return this;
             }
 
@@ -669,7 +673,9 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             @Override
             public Builder eventSerializer(Serializer eventSerializer) {
-                super.eventSerializer(eventSerializer);
+                if( eventSerializer != null) {
+                    super.eventSerializer(eventSerializer);
+                }
                 return this;
             }
 
