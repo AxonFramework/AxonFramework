@@ -80,7 +80,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
             } else {
                 resultMessage = new GenericResultMessage<>(result);
             }
-        } catch (Exception e) {
+        } catch (Error | Exception e) {
             resultMessage = asResultMessage(e);
             if (rollbackConfiguration.rollBackOn(e)) {
                 rollback(e);

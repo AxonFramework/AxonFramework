@@ -78,7 +78,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
                      () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result = null;
         ResultMessage<R> resultMessage = asResultMessage(result);
-        Exception exception = null;
+        Throwable cause = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
             try {
@@ -90,18 +90,18 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
                 } else {
                     resultMessage = new GenericResultMessage<>(result);
                 }
-            } catch (Exception e) {
+            } catch (Error | Exception e) {
                 if (rollbackConfiguration.rollBackOn(e)) {
                     rollback(e);
                     return asResultMessage(e);
                 }
                 setExecutionResult(new ExecutionResult(asResultMessage(e)));
-                if (exception != null) {
-                    exception.addSuppressed(e);
+                if (cause != null) {
+                    cause.addSuppressed(e);
                 } else {
-                    exception = e;
+                    cause = e;
                 }
-                resultMessage = asResultMessage(exception);
+                resultMessage = asResultMessage(cause);
                 continue;
             }
             setExecutionResult(new ExecutionResult(resultMessage));
