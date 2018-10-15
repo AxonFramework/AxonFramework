@@ -60,7 +60,7 @@ import static org.axonframework.messaging.Headers.*;
  */
 public class DeadlineJob implements Job {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DeadlineJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(DeadlineJob.class);
 
     /**
      * The key under which the {@link TransactionManager} is stored within the {@link SchedulerContext}.
@@ -81,8 +81,8 @@ public class DeadlineJob implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Starting a deadline job");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Starting a deadline job");
         }
 
         JobDetail jobDetail = context.getJobDetail();
@@ -94,9 +94,10 @@ public class DeadlineJob implements Job {
             Serializer serializer = (Serializer) schedulerContext.get(JOB_DATA_SERIALIZER);
             TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
             ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
+            @SuppressWarnings("unchecked")
             List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors =
-                    (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>) schedulerContext
-                            .get(HANDLER_INTERCEPTORS);
+                    (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>)
+                            schedulerContext.get(HANDLER_INTERCEPTORS);
 
             DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
             ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
@@ -115,12 +116,12 @@ public class DeadlineJob implements Job {
             ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
             if (resultMessage.isExceptional()) {
                 throw resultMessage.exceptionResult();
-            } else if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Job successfully executed. Deadline message [{}] processed.",
+            } else if (logger.isInfoEnabled()) {
+                logger.info("Job successfully executed. Deadline message [{}] processed.",
                             deadlineMessage.getPayloadType().getSimpleName());
             }
         } catch (Throwable e) {
-            LOGGER.error("Exception occurred during processing a deadline job [{}]", jobDetail.getDescription(), e);
+            logger.error("Exception occurred during processing a deadline job [{}]", jobDetail.getDescription(), e);
             throw new JobExecutionException(e);
         }
     }

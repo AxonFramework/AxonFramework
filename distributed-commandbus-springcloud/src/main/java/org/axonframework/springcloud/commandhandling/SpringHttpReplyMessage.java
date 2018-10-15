@@ -33,12 +33,13 @@ public class SpringHttpReplyMessage<R> extends ReplyMessage implements Serializa
      * Initializes a SpringHttpReplyMessage containing a reply to the command with given {commandIdentifier} and given
      * {@code commandResultMessage}.
      *
-     * @param commandIdentifier    The identifier of the command to which the message is a reply
-     * @param commandResultMessage The return value of command process
+     * @param commandIdentifier    the identifier of the command to which the message is a reply
+     * @param commandResultMessage the return value of command process
      *                             the given {@code commandResultMessage} is ignored.
-     * @param serializer           The serializer to serialize the message contents with
+     * @param serializer           the serializer to serialize the message contents with
      */
-    public SpringHttpReplyMessage(String commandIdentifier, CommandResultMessage<R> commandResultMessage,
+    public SpringHttpReplyMessage(String commandIdentifier,
+                                  CommandResultMessage<R> commandResultMessage,
                                   Serializer serializer) {
         super(commandIdentifier, commandResultMessage, serializer);
     }

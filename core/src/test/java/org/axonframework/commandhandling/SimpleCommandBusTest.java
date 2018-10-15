@@ -144,8 +144,8 @@ public class SimpleCommandBusTest {
         CommandMessage<Object> command = asCommandMessage("test");
         CommandCallback callback = mock(CommandCallback.class);
         testSubject.dispatch(command, callback);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
@@ -161,8 +161,8 @@ public class SimpleCommandBusTest {
         CommandMessage<Object> command = asCommandMessage("Say hi!");
         CommandCallback callback = mock(CommandCallback.class);
         testSubject.dispatch(command, callback);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,

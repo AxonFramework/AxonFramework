@@ -166,6 +166,7 @@ public class DisruptorCommandBusTest {
         verify(mockCallback).onResult(eq(command), any());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testPublishUnsupportedCommand() {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
@@ -180,8 +181,8 @@ public class DisruptorCommandBusTest {
         CommandCallback callback = mock(CommandCallback.class);
         testSubject.dispatch(asCommandMessage("Test"), callback);
         customExecutor.shutdownNow();
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage<?>> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         Throwable exceptionResult = commandResultMessageCaptor.getValue().exceptionResult();
@@ -259,7 +260,7 @@ public class DisruptorCommandBusTest {
         verifyNoMoreInteractions(mockTransaction, mockTransactionManager);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Duplicates"})
     @Test(timeout = 10000)
     public void testAggregatesBlacklistedAndRecoveredOnError_WithAutoReschedule() throws Exception {
         MessageHandlerInterceptor mockInterceptor = mock(MessageHandlerInterceptor.class);
@@ -269,8 +270,8 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor
-                .forClass(CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback, times(1000)).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(10, commandResultMessageCaptor.getAllValues()
                                                    .stream()
@@ -278,7 +279,7 @@ public class DisruptorCommandBusTest {
                                                    .count());
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Duplicates"})
     @Test(timeout = 10000)
     public void testAggregatesBlacklistedAndRecoveredOnError_WithoutReschedule() throws Exception {
         MessageHandlerInterceptor mockInterceptor = mock(MessageHandlerInterceptor.class);
@@ -290,8 +291,8 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor
-                .forClass(CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback, times(1000)).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(10, commandResultMessageCaptor.getAllValues()
                                                    .stream()
@@ -366,6 +367,7 @@ public class DisruptorCommandBusTest {
         assertEquals(aggregateIdentifier, lastEvent.getAggregateIdentifier());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testMessageMonitoring() {
         eventStore.storedEvents.clear();
@@ -419,8 +421,8 @@ public class DisruptorCommandBusTest {
         assertEquals(8, successCounter.get());
         assertEquals(3, failureCounter.get());
         assertEquals(0, ignoredCounter.get());
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,

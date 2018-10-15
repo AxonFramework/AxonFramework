@@ -116,8 +116,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
         assertEquals(20, garbageCollectionPrevention.size());
         assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
                      inMemoryEventStore.storedEventCounter.get());
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback, times(1010)).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(10, commandResultMessageCaptor.getAllValues()
                                                    .stream()

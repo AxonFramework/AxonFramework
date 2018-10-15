@@ -28,6 +28,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
  * @author Koen Lavooij
  */
 public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
+
     private final CommandCallback<? super C, ? super R> wrapped;
     private final A sessionId;
     private final CommandMessage<C> message;
@@ -76,8 +77,7 @@ public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onResult(CommandMessage<? extends C> message,
-                         CommandResultMessage<? extends R> commandResultMessage) {
+    public void onResult(CommandMessage<? extends C> message, CommandResultMessage<? extends R> commandResultMessage) {
         wrapped.onResult(message, commandResultMessage);
     }
 }

@@ -102,8 +102,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")),
                             (CommandCallback<FailingCreateCommand, Object>) (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    assertEquals("parameter", commandResultMessage.exceptionResult()
-                                                                                  .getMessage());
+                                    assertEquals("parameter", commandResultMessage.exceptionResult().getMessage());
                                 } else {
                                     fail("Expected exception");
                                 }
@@ -118,8 +117,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus.dispatch(asCommandMessage(new FailingUpdateCommand(aggregateIdentifier, "parameter")),
                             (CommandCallback<FailingUpdateCommand, Object>) (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    assertEquals("parameter", commandResultMessage
-                                            .exceptionResult().getMessage());
+                                    assertEquals("parameter", commandResultMessage.exceptionResult().getMessage());
                                 } else {
                                     fail("Expected exception");
                                 }

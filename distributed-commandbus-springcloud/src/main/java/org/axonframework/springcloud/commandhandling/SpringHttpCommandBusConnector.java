@@ -207,14 +207,10 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     private SpringHttpReplyMessage createReply(CommandMessage<?> commandMessage,
                                                CommandResultMessage<?> commandResultMessage) {
         try {
-            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(),
-                                                commandResultMessage,
-                                                serializer);
+            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), commandResultMessage, serializer);
         } catch (Exception e) {
             logger.warn("Could not serialize command reply [{}]. Sending back NULL.", commandResultMessage, e);
-            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(),
-                                                asCommandResultMessage(e),
-                                                serializer);
+            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), asCommandResultMessage(e), serializer);
         }
     }
 

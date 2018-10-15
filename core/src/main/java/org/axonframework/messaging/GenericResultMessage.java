@@ -83,7 +83,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Creates a Result Message with the given {@code rResult} as the payload and {@code metaData} as the meta data.
+     * Creates a ResultMessage with the given {@code result} as the payload and {@code metaData} as the meta data.
      *
      * @param result   the payload for the Message
      * @param metaData the meta data for the Message
@@ -93,7 +93,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Creates a Result Message with the given {@code exception} and {@code metaData}.
+     * Creates a ResultMessage with the given {@code exception} and {@code metaData}.
      *
      * @param exception the Exception describing the cause of an error
      * @param metaData  the meta data for the Message
@@ -103,7 +103,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Creates a new Result Message with given {@code delegate} message.
+     * Creates a new ResultMessage with given {@code delegate} message.
      *
      * @param delegate the message delegate
      */
@@ -112,7 +112,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     /**
-     * Creates a Result Message with given {@code delegate} message and {@code exception}.
+     * Creates a ResultMessage with given {@code delegate} message and {@code exception}.
      *
      * @param delegate  the Message delegate
      * @param exception the Exception describing the cause of an error
@@ -167,8 +167,10 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     public R getPayload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
-                    "This result completed exceptionally, payload is not available. Try calling 'exceptionResult' to see the cause of failure.",
-                    exception);
+                    "This result completed exceptionally, payload is not available. "
+                            + "Try calling 'exceptionResult' to see the cause of failure.",
+                    exception
+            );
         }
         return super.getPayload();
     }
