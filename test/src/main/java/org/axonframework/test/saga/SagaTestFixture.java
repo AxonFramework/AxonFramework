@@ -134,7 +134,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             return null;
         });
         if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.getExceptionResult();
+            Throwable e = resultMessage.exceptionResult();
             if (Error.class.isAssignableFrom(e.getClass())) {
                 throw (Error) e;
             }

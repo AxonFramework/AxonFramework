@@ -45,7 +45,7 @@ public class LoggingCallback implements CommandCallback<Object, Object> {
         if (commandResultMessage.isExceptional()) {
             logger.warn("Command resulted in exception: {}",
                         message.getCommandName(),
-                        commandResultMessage.getExceptionResult());
+                        commandResultMessage.exceptionResult());
         } else {
             logger.info("Command executed successfully: {}", message.getCommandName());
         }

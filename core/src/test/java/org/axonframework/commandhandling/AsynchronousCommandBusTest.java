@@ -119,7 +119,7 @@ public class AsynchronousCommandBusTest {
         verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test

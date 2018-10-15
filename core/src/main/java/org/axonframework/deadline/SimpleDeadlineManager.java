@@ -180,7 +180,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                                                       });
                 ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
                 if (resultMessage.isExceptional()) {
-                    Throwable e = resultMessage.getExceptionResult();
+                    Throwable e = resultMessage.exceptionResult();
                     throw new DeadlineException(format("An error occurred while triggering the deadline %s %s",
                                                        deadlineName,
                                                        deadlineId), e);

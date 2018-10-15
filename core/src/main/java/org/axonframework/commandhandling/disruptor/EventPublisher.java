@@ -97,7 +97,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                                                                      + "until its state has been recovered.",
                                                              aggregateIdentifier)))));
         entry.getResult()
-             .tryGetExceptionResult()
+             .optionalExceptionResult()
              .ifPresent(entry::rollback);
     }
 
@@ -107,7 +107,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         invokeInterceptorChain(entry);
 
         Throwable exceptionResult = entry.getResult()
-                                         .tryGetExceptionResult()
+                                         .optionalExceptionResult()
                                          .orElse(null);
         Throwable phaseExceptionResult;
 

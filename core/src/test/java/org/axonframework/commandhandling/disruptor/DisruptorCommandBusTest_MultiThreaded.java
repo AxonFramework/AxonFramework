@@ -122,7 +122,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         assertEquals(10, commandResultMessageCaptor.getAllValues()
                                                    .stream()
                                                    .filter(ResultMessage::isExceptional)
-                                                   .map(ResultMessage::getExceptionResult)
+                                                   .map(ResultMessage::exceptionResult)
                                                    .filter(e -> e instanceof MockException)
                                                    .count());
     }

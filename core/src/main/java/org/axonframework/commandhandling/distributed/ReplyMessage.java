@@ -18,6 +18,8 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.RemoteExceptionDescription;
+import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -81,13 +83,13 @@ public abstract class ReplyMessage {
      */
     public CommandResultMessage<?> getCommandResultMessage(Serializer serializer) {
         Object payload = deserializePayload(serializer);
-        Throwable exception = deserializeException(serializer);
+        RemoteExceptionDescription exceptionDescription = deserializeException(serializer);
         SerializedMetaData<byte[]> serializedMetaData =
                 new SerializedMetaData<>(this.serializedMetaData, byte[].class);
         MetaData metaData = serializer.deserialize(serializedMetaData);
 
-        if (exception != null) {
-            return new GenericCommandResultMessage<>(exception, metaData);
+        if (exceptionDescription != null) {
+            return new GenericCommandResultMessage<>(new RemoteHandlingException(exceptionDescription), metaData);
         }
         return new GenericCommandResultMessage<>(payload, metaData);
     }
@@ -187,7 +189,7 @@ public abstract class ReplyMessage {
                                                                    payloadType, payloadRevision));
     }
 
-    private Throwable deserializeException(Serializer serializer) {
+    private RemoteExceptionDescription deserializeException(Serializer serializer) {
         return serializer.deserialize(new SimpleSerializedObject<>(serializedException,
                                                                    byte[].class,
                                                                    exceptionType,

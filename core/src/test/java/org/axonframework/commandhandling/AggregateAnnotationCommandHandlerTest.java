@@ -102,7 +102,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")),
                             (CommandCallback<FailingCreateCommand, Object>) (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    assertEquals("parameter", commandResultMessage.getExceptionResult()
+                                    assertEquals("parameter", commandResultMessage.exceptionResult()
                                                                                   .getMessage());
                                 } else {
                                     fail("Expected exception");
@@ -119,7 +119,7 @@ public class AggregateAnnotationCommandHandlerTest {
                             (CommandCallback<FailingUpdateCommand, Object>) (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     assertEquals("parameter", commandResultMessage
-                                            .getExceptionResult().getMessage());
+                                            .exceptionResult().getMessage());
                                 } else {
                                     fail("Expected exception");
                                 }
@@ -198,7 +198,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -218,7 +218,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -247,7 +247,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -266,7 +266,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -286,7 +286,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -306,7 +306,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -330,7 +330,7 @@ public class AggregateAnnotationCommandHandlerTest {
                                 public void onResult(CommandMessage<?> commandMessage,
                                                      CommandResultMessage<?> commandResultMessage) {
                                     if (commandResultMessage.isExceptional()) {
-                                        Throwable cause = commandResultMessage.getExceptionResult();
+                                        Throwable cause = commandResultMessage.exceptionResult();
                                         if (!cause.getMessage().contains("entity")) {
                                             fail("Got an exception, but not the right one.");
                                         }
@@ -354,7 +354,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateEntityStateCommand("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -378,7 +378,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -399,7 +399,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.getExceptionResult();
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 } else {
                                     fail("Expected exception");
@@ -420,7 +420,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateEntityFromCollectionStateCommand("abc123", null)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.getExceptionResult();
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 } else {
                                     fail("Expected exception");
@@ -441,7 +441,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus.dispatch(asCommandMessage(new UpdateNestedEntityStateCommand("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -475,7 +475,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateEntityFromMapStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    commandResultMessage.tryGetExceptionResult()
+                                    commandResultMessage.optionalExceptionResult()
                                                         .ifPresent(Throwable::printStackTrace);
                                     fail("Did not expect exception");
                                 }
@@ -496,7 +496,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 new UpdateEntityFromMapStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.getExceptionResult();
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 } else {
                                     fail("Expected exception");
@@ -516,7 +516,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", null)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.getExceptionResult();
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 } else {
                                     fail("Expected exception");

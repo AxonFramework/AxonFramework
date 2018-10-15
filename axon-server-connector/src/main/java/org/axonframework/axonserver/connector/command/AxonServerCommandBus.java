@@ -330,7 +330,7 @@ public class AxonServerCommandBus implements CommandBus {
             logger.debug("DispatchLocal: {}", command.getCommandName());
             localSegment.dispatch(command, (commandMessage, commandResultMessage) -> {
                 if (commandResultMessage.isExceptional()) {
-                    Throwable throwable = commandResultMessage.getExceptionResult();
+                    Throwable throwable = commandResultMessage.exceptionResult();
                     CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
                             CommandResponse.newBuilder()
                                            .setMessageIdentifier(UUID.randomUUID().toString())

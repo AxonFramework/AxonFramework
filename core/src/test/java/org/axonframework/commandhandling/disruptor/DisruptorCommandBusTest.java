@@ -184,7 +184,7 @@ public class DisruptorCommandBusTest {
                 CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
-        Throwable exceptionResult = commandResultMessageCaptor.getValue().getExceptionResult();
+        Throwable exceptionResult = commandResultMessageCaptor.getValue().exceptionResult();
         assertEquals(NoHandlerForCommandException.class, exceptionResult.getClass());
         assertTrue(exceptionResult.getMessage().contains(String.class.getSimpleName()));
     }
@@ -424,7 +424,7 @@ public class DisruptorCommandBusTest {
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
-                     commandResultMessageCaptor.getValue().getExceptionResult().getClass());
+                     commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
     @Test(expected = IllegalStateException.class)

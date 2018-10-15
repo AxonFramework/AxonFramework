@@ -51,7 +51,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
         } else if (ResultMessage.class.isInstance(commandResult)) {
             ResultMessage<T> resultMessage = (ResultMessage<T>) commandResult;
             if (resultMessage.isExceptional()) {
-                Throwable cause = resultMessage.getExceptionResult();
+                Throwable cause = resultMessage.exceptionResult();
                 return new GenericCommandResultMessage<>(cause, resultMessage.getMetaData());
             }
             return new GenericCommandResultMessage<>(resultMessage.getPayload(), resultMessage.getMetaData());
@@ -134,13 +134,13 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
 
     @Override
     public GenericCommandResultMessage<R> withMetaData(Map<String, ?> metaData) {
-        Throwable exception = tryGetExceptionResult().orElse(null);
+        Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
     public GenericCommandResultMessage<R> andMetaData(Map<String, ?> metaData) {
-        Throwable exception = tryGetExceptionResult().orElse(null);
+        Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData), exception);
     }
 

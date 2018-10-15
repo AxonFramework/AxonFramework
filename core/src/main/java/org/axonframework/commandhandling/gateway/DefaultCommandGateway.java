@@ -96,7 +96,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
         send(command, futureCallback);
         CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult();
         if (commandResultMessage.isExceptional()) {
-            throw asRuntime(commandResultMessage.getExceptionResult());
+            throw asRuntime(commandResultMessage.exceptionResult());
         }
         return commandResultMessage.getPayload();
     }
@@ -123,7 +123,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
         send(command, futureCallback);
         CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult(timeout, unit);
         if (commandResultMessage.isExceptional()) {
-            throw asRuntime(commandResultMessage.getExceptionResult());
+            throw asRuntime(commandResultMessage.exceptionResult());
         }
         return commandResultMessage.getPayload();
     }

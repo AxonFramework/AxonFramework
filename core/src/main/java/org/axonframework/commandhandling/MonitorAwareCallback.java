@@ -43,7 +43,7 @@ public class MonitorAwareCallback<C, R> implements CommandCallback<C, R> {
     public void onResult(CommandMessage<? extends C> commandMessage,
                          CommandResultMessage<? extends R> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
-            messageMonitorCallback.reportFailure(commandResultMessage.getExceptionResult());
+            messageMonitorCallback.reportFailure(commandResultMessage.exceptionResult());
         } else {
             messageMonitorCallback.reportSuccess();
         }

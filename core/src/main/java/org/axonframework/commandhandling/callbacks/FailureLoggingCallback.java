@@ -58,7 +58,7 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
     @Override
     public void onResult(CommandMessage<? extends C> commandMessage,
                          CommandResultMessage<? extends R> commandResultMessage) {
-        commandResultMessage.tryGetExceptionResult()
+        commandResultMessage.optionalExceptionResult()
                             .ifPresent(cause ->
                                                logger.warn("Command '{}' resulted in {}({})",
                                                            commandMessage.getCommandName(),

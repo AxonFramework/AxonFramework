@@ -575,7 +575,7 @@ public class DisruptorCommandBus implements CommandBus {
             if (commandResultMessage.isExceptional()) {
                 logger.info("An error occurred while handling a command [{}].",
                             commandMessage.getCommandName(),
-                            commandResultMessage.getExceptionResult());
+                            commandResultMessage.exceptionResult());
             }
         }
     }
@@ -667,7 +667,7 @@ public class DisruptorCommandBus implements CommandBus {
                                         if (commandResultMessage.isExceptional()) {
                                             logger.warn("Failed sending message [{}] to aggregate with id [{}]",
                                                     message, aggregateIdentifier);
-                                            future.completeExceptionally(commandResultMessage.getExceptionResult());
+                                            future.completeExceptionally(commandResultMessage.exceptionResult());
                                         } else {
                                             future.complete(null);
                                         }

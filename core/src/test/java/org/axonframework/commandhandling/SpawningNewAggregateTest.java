@@ -118,7 +118,7 @@ public class SpawningNewAggregateTest {
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.getExceptionResult();
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof IllegalStateException);
                                     assertEquals(
                                             "There is no configured repository for org.axonframework.commandhandling.SpawningNewAggregateTest$Aggregate2",
@@ -135,7 +135,7 @@ public class SpawningNewAggregateTest {
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
-                                    Throwable cause = commandResultMessage.getExceptionResult();
+                                    Throwable cause = commandResultMessage.exceptionResult();
                                     assertTrue(cause instanceof AxonConfigurationException);
                                     assertEquals(
                                             "Since repository provider is not provided, we cannot spawn a new aggregate for org.axonframework.commandhandling.SpawningNewAggregateTest$Aggregate2",

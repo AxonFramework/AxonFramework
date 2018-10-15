@@ -267,7 +267,7 @@ public class SimpleQueryBus implements QueryBus {
             return buildCompletableFuture(responseType, queryResponse);
         });
         if (completableFutureResultMessage.isExceptional()) {
-            throw completableFutureResultMessage.getExceptionResult();
+            throw completableFutureResultMessage.exceptionResult();
         } else {
             return completableFutureResultMessage.getPayload();
         }
