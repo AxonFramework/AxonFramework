@@ -15,15 +15,31 @@
   ~ limitations under the License.
   -->
 
+<!--
+  ~ Copyright (c) 2010-2018. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>axon</artifactId>
         <groupId>org.axonframework</groupId>
+        <artifactId>axon</artifactId>
         <version>4.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-eventsourcing</artifactId>
 
@@ -31,6 +47,8 @@
     <description>
         Module containing all necessary infrastructure components to support Event Sourcing Command and Query models.
     </description>
+
+    <packaging>bundle</packaging>
 
     <dependencies>
         <dependency>
@@ -147,7 +165,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -160,7 +177,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.eventsourcing
+                            org.axonframework.eventsourcing.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,
@@ -177,7 +194,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -205,40 +221,7 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.1.1</version>
-                <executions>
-                    <execution>
-                        <id>ee-compatibility</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <artifactSet>
-                        <includes>
-                            <include>${project.groupId}:${project.artifactId}</include>
-                        </includes>
-                    </artifactSet>
-                    <filters>
-                        <filter>
-                            <artifact>${project.groupId}:${project.artifactId}</artifact>
-                            <excludes>
-                                <exclude>
-                                    org/axonframework/common/jpa/ContainerManagedEntityManagerProvider.class
-                                </exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                    <shadedArtifactAttached>true</shadedArtifactAttached>
-                    <shadedClassifierName>ee-compat</shadedClassifierName>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
+
 </project>
