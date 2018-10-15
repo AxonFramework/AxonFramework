@@ -20,6 +20,7 @@ import io.axoniq.axonserver.grpc.event.Confirmation;
 import io.axoniq.axonserver.grpc.event.EventStoreGrpc;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
+import io.axoniq.axonserver.grpc.event.GetAggregateSnapshotsRequest;
 import io.axoniq.axonserver.grpc.event.GetEventsRequest;
 import io.axoniq.axonserver.grpc.event.GetFirstTokenRequest;
 import io.axoniq.axonserver.grpc.event.GetLastTokenRequest;
@@ -245,6 +246,38 @@ public class AxonServerEventStoreClient {
                                                                            .setAggregateId(aggregateIdentifier).build(),
                                                new SingleResultStreamObserver<>(completableFuture));
         return completableFuture;
+    }
+
+    public Stream<Event> listAggregateSnapshots(GetAggregateSnapshotsRequest request)
+            throws ExecutionException, InterruptedException {
+        CompletableFuture<Stream<Event>> stream = new CompletableFuture<>();
+        long before = System.currentTimeMillis();
+
+        eventStoreStub().listAggregateSnapshots(request, new StreamObserver<Event>() {
+            Stream.Builder<Event> eventStream = Stream.builder();
+            int count;
+
+            @Override
+            public void onNext(Event event) {
+                eventStream.accept(eventCipher.decrypt(event));
+                count++;
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                checkConnectionException(throwable);
+                stream.completeExceptionally(GrpcExceptionParser.parse(throwable));
+            }
+
+            @Override
+            public void onCompleted() {
+                stream.complete(eventStream.build());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Done request for {}: {}ms, {} events", request.getAggregateId(), System.currentTimeMillis() - before, count);
+                }
+            }
+        });
+        return stream.get();
     }
 
     private class SingleResultStreamObserver<T> implements StreamObserver<T> {
