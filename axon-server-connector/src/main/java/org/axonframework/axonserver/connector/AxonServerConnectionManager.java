@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,57 +16,49 @@
 
 package org.axonframework.axonserver.connector;
 
-import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
-import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.control.*;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
-import io.axoniq.axonserver.grpc.control.ClientIdentification;
-import io.axoniq.axonserver.grpc.control.NodeInfo;
-import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
-import io.axoniq.axonserver.grpc.control.PlatformInfo;
-import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
-import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
-import io.grpc.Channel;
-import io.grpc.ClientInterceptor;
-import io.grpc.ManagedChannel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import io.grpc.*;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import io.netty.handler.ssl.SslContext;
+import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
+import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
+import org.axonframework.common.AxonThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.net.ssl.SSLException;
 
 /**
  * @author Marc Gathier
  */
-public class PlatformConnectionManager {
-    private static final Logger logger = LoggerFactory.getLogger(PlatformConnectionManager.class);
+public class AxonServerConnectionManager {
+    private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
 
     private volatile ManagedChannel channel;
     private volatile StreamObserver<PlatformInboundInstruction> inputStream;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new AxonThreadFactory("AxonServerConnector") {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = super.newThread(r);
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
     private volatile ScheduledFuture<?> reconnectTask;
     private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Function<Runnable, Runnable>> reconnectInterceptors = new CopyOnWriteArrayList<>();
@@ -73,14 +66,14 @@ public class PlatformConnectionManager {
     private final AxonServerConfiguration connectInformation;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
-    public PlatformConnectionManager(AxonServerConfiguration connectInformation) {
+    public AxonServerConnectionManager(AxonServerConfiguration connectInformation) {
         this.connectInformation = connectInformation;
     }
 
     public synchronized Channel getChannel() {
         if( channel == null || channel.isShutdown()) {
             channel = null;
-            logger.info("Connecting {}using SSL...", connectInformation.isSslEnabled()?"":"not ");
+            logger.info("Connecting using {}...", connectInformation.isSslEnabled()?"TLS":"unencrypted connection");
             boolean unavailable = false;
             for(NodeInfo nodeInfo : connectInformation.routingServers()) {
                 ManagedChannel candidate = createChannel( nodeInfo.getHostName(), nodeInfo.getGrpcPort());
@@ -114,11 +107,27 @@ public class PlatformConnectionManager {
                 }
             }
             if( unavailable) {
+                if(!connectInformation.getSuppressDownloadMessage()) {
+                    connectInformation.setSuppressDownloadMessage(true);
+                    writeDownloadMessage();
+                }
                 scheduleReconnect();
-                throw new RuntimeException("No connection to AxonServer available");
+                throw new AxonServerException(ErrorCode.CONNECTION_TO_AXONDB_FAILED, "No connection to AxonServer available");
             }
         }
         return channel;
+    }
+
+    private void writeDownloadMessage() {
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream("axonserver_download.txt")) {
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = in.read(buffer, 0, 1024)) >= 0) {
+                System.out.write(buffer, 0, read);
+            }
+        } catch (IOException e) {
+            logger.debug("Unable to write download advice. You're on your own now.", e);
+        }
     }
 
     private void shutdown(ManagedChannel managedChannel) {

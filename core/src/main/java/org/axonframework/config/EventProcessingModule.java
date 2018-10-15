@@ -37,6 +37,7 @@ import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -59,7 +60,7 @@ public class EventProcessingModule
 
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
-    private final List<SagaConfiguration<?>> sagaConfigurations = new ArrayList<>();
+    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
     private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
     private final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     private final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
@@ -202,11 +203,11 @@ public class EventProcessingModule
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
         sagaConfigurations.forEach(sc -> {
-            sc.initialize(configuration);
-            String processingGroup = selectProcessingGroupByType(sc.type());
+            SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
+            String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
-                           .add(c -> sc.manager().get());
+                           .add(c -> sagaConfig.manager());
         });
     }
 
@@ -308,7 +309,7 @@ public class EventProcessingModule
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
         ensureInitialized();
-        return new ArrayList<>(sagaConfigurations);
+        return sagaConfigurations.stream().map(sc -> sc.initialize(configuration)).collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
@@ -352,9 +353,12 @@ public class EventProcessingModule
     }
 
     //<editor-fold desc="configurer methods">
+
     @Override
-    public EventProcessingConfigurer registerSagaConfiguration(SagaConfiguration<?> sagaConfiguration) {
-        this.sagaConfigurations.add(sagaConfiguration);
+    public <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer) {
+        SagaConfigurer<T> configurer = SagaConfigurer.forType(sagaType);
+        sagaConfigurer.accept(configurer);
+        this.sagaConfigurations.add(configurer);
         return this;
     }
 
@@ -423,6 +427,12 @@ public class EventProcessingModule
         this.tokenStore.put(processingGroup, new Component<>(() -> configuration,
                                                              "tokenStore",
                                                              tokenStore));
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerTokenStore(Function<Configuration, TokenStore> tokenStore) {
+        this.defaultTokenStore.update(tokenStore);
         return this;
     }
 

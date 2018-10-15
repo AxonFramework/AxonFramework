@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,11 +16,16 @@
 
 package org.axonframework.axonserver.connector.event;
 
+import io.grpc.Channel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.Confirmation;
 import io.axoniq.axonserver.grpc.event.EventStoreGrpc;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
+import io.axoniq.axonserver.grpc.event.GetAggregateSnapshotsRequest;
 import io.axoniq.axonserver.grpc.event.GetEventsRequest;
 import io.axoniq.axonserver.grpc.event.GetFirstTokenRequest;
 import io.axoniq.axonserver.grpc.event.GetLastTokenRequest;
@@ -30,16 +36,12 @@ import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrRequest;
 import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
 import io.axoniq.axonserver.grpc.event.TrackingToken;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerException;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
 import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
-import io.grpc.Channel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
-import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +59,7 @@ public class AxonServerEventStoreClient {
     private final TokenAddingInterceptor tokenAddingInterceptor;
     private final ContextAddingInterceptor contextAddingInterceptor;
     private final EventCipher eventCipher;
-    private final PlatformConnectionManager platformConnectionManager;
+    private final AxonServerConnectionManager axonServerConnectionManager;
 
     private boolean shutdown;
 
@@ -65,12 +67,12 @@ public class AxonServerEventStoreClient {
      * Initialize the Event Store Client using given {@code eventStoreConfiguration} and given {@code platformConnectionManager}.
      *
      * @param eventStoreConfiguration The configuration describing the bounded context that this application operates in
-     * @param platformConnectionManager manager for connections to AxonServer platform
+     * @param axonServerConnectionManager manager for connections to AxonServer platform
      */
-    public AxonServerEventStoreClient(AxonServerConfiguration eventStoreConfiguration, PlatformConnectionManager platformConnectionManager) {
+    public AxonServerEventStoreClient(AxonServerConfiguration eventStoreConfiguration, AxonServerConnectionManager axonServerConnectionManager) {
         this.tokenAddingInterceptor = new TokenAddingInterceptor(eventStoreConfiguration.getToken());
         this.eventCipher = eventStoreConfiguration.getEventCipher();
-        this.platformConnectionManager = platformConnectionManager;
+        this.axonServerConnectionManager = axonServerConnectionManager;
         contextAddingInterceptor = new ContextAddingInterceptor(eventStoreConfiguration.getContext());
     }
 
@@ -85,7 +87,7 @@ public class AxonServerEventStoreClient {
 
     private Channel getChannelToEventStore() {
         if (shutdown) return null;
-        return platformConnectionManager.getChannel();
+        return axonServerConnectionManager.getChannel();
     }
 
     /**
@@ -245,6 +247,38 @@ public class AxonServerEventStoreClient {
                                                                            .setAggregateId(aggregateIdentifier).build(),
                                                new SingleResultStreamObserver<>(completableFuture));
         return completableFuture;
+    }
+
+    public Stream<Event> listAggregateSnapshots(GetAggregateSnapshotsRequest request)
+            throws ExecutionException, InterruptedException {
+        CompletableFuture<Stream<Event>> stream = new CompletableFuture<>();
+        long before = System.currentTimeMillis();
+
+        eventStoreStub().listAggregateSnapshots(request, new StreamObserver<Event>() {
+            Stream.Builder<Event> eventStream = Stream.builder();
+            int count;
+
+            @Override
+            public void onNext(Event event) {
+                eventStream.accept(eventCipher.decrypt(event));
+                count++;
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                checkConnectionException(throwable);
+                stream.completeExceptionally(GrpcExceptionParser.parse(throwable));
+            }
+
+            @Override
+            public void onCompleted() {
+                stream.complete(eventStream.build());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Done request for {}: {}ms, {} events", request.getAggregateId(), System.currentTimeMillis() - before, count);
+                }
+            }
+        });
+        return stream.get();
     }
 
     private class SingleResultStreamObserver<T> implements StreamObserver<T> {
