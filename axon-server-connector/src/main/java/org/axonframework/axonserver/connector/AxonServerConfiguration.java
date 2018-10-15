@@ -292,20 +292,20 @@ public class AxonServerConfiguration {
         return suppressDownloadMessage;
     }
 
-    public int getSnapshotPrefetch() {
-        return snapshotPrefetch;
-    }
-
-    public void setSnapshotPrefetch(int snapshotPrefetch) {
-        this.snapshotPrefetch = snapshotPrefetch;
-    }
-
     public int getMaxMessageSize() {
         return maxMessageSize;
     }
 
     public void setMaxMessageSize(int maxMessageSize) {
         this.maxMessageSize = maxMessageSize;
+    }
+
+    public int getSnapshotPrefetch() {
+        return snapshotPrefetch;
+    }
+
+    public void setSnapshotPrefetch(int snapshotPrefetch) {
+        this.snapshotPrefetch = snapshotPrefetch;
     }
 
     @SuppressWarnings("unused")
@@ -354,6 +354,11 @@ public class AxonServerConfiguration {
 
         public Builder maxMessageSize(int maxMessageSize) {
             instance.maxMessageSize = maxMessageSize;
+            return this;
+        }
+
+        public Builder snapshotPrefetch(int snapshotPrefetch) {
+            instance.snapshotPrefetch = snapshotPrefetch;
             return this;
         }
 
