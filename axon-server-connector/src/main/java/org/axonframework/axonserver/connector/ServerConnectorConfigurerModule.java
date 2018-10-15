@@ -67,6 +67,9 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         return AxonServerEventStore.builder()
                                    .configuration(c.getComponent(AxonServerConfiguration.class))
                                    .platformConnectionManager(c.getComponent(AxonServerConnectionManager.class))
+                                   .snapshotSerializer(c.serializer())
+                                   .eventSerializer(c.eventSerializer())
+                                   .upcasterChain(c.upcasterChain())
                                    .build();
     }
 
