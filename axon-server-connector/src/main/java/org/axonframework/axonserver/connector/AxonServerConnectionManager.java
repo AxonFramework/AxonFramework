@@ -47,7 +47,7 @@ import java.util.function.Function;
  * @author Marc Gathier
  */
 public class AxonServerConnectionManager {
-    private final static Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
 
     private volatile ManagedChannel channel;
     private volatile StreamObserver<PlatformInboundInstruction> inputStream;
@@ -150,6 +150,10 @@ public class AxonServerConnectionManager {
             builder.keepAliveTime(connectInformation.getKeepAliveTime(), TimeUnit.MILLISECONDS)
                    .keepAliveTimeout(connectInformation.getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
                    .keepAliveWithoutCalls(true);
+        }
+
+        if( connectInformation.getMaxMessageSize() > 0) {
+            builder.maxInboundMessageSize(connectInformation.getMaxMessageSize());
         }
         if (connectInformation.isSslEnabled()) {
             try {

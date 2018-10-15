@@ -121,6 +121,11 @@ public class AxonServerConfiguration {
      */
     private boolean suppressDownloadMessage = false;
 
+    /**
+     *  GRPC max inbound message size, 0 keeps default value
+     */
+    private int maxMessageSize = 0;
+
     public AxonServerConfiguration() {
     }
 
@@ -287,6 +292,14 @@ public class AxonServerConfiguration {
         return suppressDownloadMessage;
     }
 
+    public int getMaxMessageSize() {
+        return maxMessageSize;
+    }
+
+    public void setMaxMessageSize(int maxMessageSize) {
+        this.maxMessageSize = maxMessageSize;
+    }
+
     public int getSnapshotPrefetch() {
         return snapshotPrefetch;
     }
@@ -336,6 +349,16 @@ public class AxonServerConfiguration {
 
         public Builder eventCipher(EventCipher eventCipher) {
             instance.eventCipher = eventCipher;
+            return this;
+        }
+
+        public Builder maxMessageSize(int maxMessageSize) {
+            instance.maxMessageSize = maxMessageSize;
+            return this;
+        }
+
+        public Builder snapshotPrefetch(int snapshotPrefetch) {
+            instance.snapshotPrefetch = snapshotPrefetch;
             return this;
         }
 
