@@ -1,33 +1,29 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.messaging.RemoteExceptionDescription;
+import org.axonframework.messaging.RemoteHandlingException;
 
 /**
  * Author: marc
  */
-public class RemoteQueryException extends RuntimeException {
+public class RemoteQueryException extends RemoteHandlingException {
     private final String errorCode;
-    private final String location;
-    private final Iterable<String> details;
+    private final String server;
 
     public RemoteQueryException(String errorCode, ErrorMessage message) {
-        super(message.getMessage());
+        super(new RemoteExceptionDescription(message.getDetailsList()));
 
-        details = message.getDetailsList();
         this.errorCode = errorCode;
-        location = message.getLocation();
+        this.server = message.getLocation();
     }
 
     public String getErrorCode() {
         return errorCode;
     }
 
-    public String getLocation() {
-        return location;
-    }
-
-    public Iterable<String> getDetails() {
-        return details;
+    public String getServer() {
+        return server;
     }
 
     @Override
@@ -35,8 +31,7 @@ public class RemoteQueryException extends RuntimeException {
         return "RemoteQueryException{" +
                 "message=" + getMessage() +
                 ", errorCode='" + errorCode + '\'' +
-                ", location='" + location + '\'' +
-                ", details=" + details +
+                ", location='" + server + '\'' +
                 '}';
     }
 
