@@ -16,9 +16,7 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;

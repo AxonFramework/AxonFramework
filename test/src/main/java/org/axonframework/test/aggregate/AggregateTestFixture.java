@@ -16,20 +16,8 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
-import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -39,28 +27,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -77,16 +48,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -165,14 +127,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 ClasspathParameterResolverFactory.forClass(aggregateType)
         );
 
-        return registerRepository(EventSourcingRepository.<T>builder()
-                                          .aggregateType(aggregateFactory.getAggregateType())
-                                          .aggregateFactory(aggregateFactory)
-                                          .eventStore(eventStore)
-                                          .parameterResolverFactory(parameterResolverFactory)
-                                          .handlerDefinition(handlerDefinition)
-                                          .repositoryProvider(getRepositoryProvider())
-                                          .build());
+        return registerRepository(EventSourcingRepository.builder(aggregateFactory.getAggregateType())
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .parameterResolverFactory(parameterResolverFactory)
+                                                         .handlerDefinition(handlerDefinition)
+                                                         .repositoryProvider(getRepositoryProvider())
+                                                         .build());
     }
 
     @Override
@@ -417,14 +378,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(EventSourcingRepository.<T>builder()
-                                       .aggregateType(aggregateType)
-                                       .aggregateFactory(new GenericAggregateFactory<>(aggregateType))
-                                       .eventStore(eventStore)
-                                       .parameterResolverFactory(parameterResolverFactory)
-                                       .handlerDefinition(handlerDefinition)
-                                       .repositoryProvider(getRepositoryProvider())
-                                       .build());
+            registerRepository(EventSourcingRepository.builder(aggregateType)
+                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateType))
+                                                      .eventStore(eventStore)
+                                                      .parameterResolverFactory(parameterResolverFactory)
+                                                      .handlerDefinition(handlerDefinition)
+                                                      .repositoryProvider(getRepositoryProvider())
+                                                      .build());
         }
     }
 

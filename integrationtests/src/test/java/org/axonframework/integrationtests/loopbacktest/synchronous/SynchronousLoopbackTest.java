@@ -16,13 +16,7 @@
 
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
@@ -31,16 +25,13 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.UUID;
@@ -94,14 +85,14 @@ public class SynchronousLoopbackTest {
     }
 
     protected void initializeRepository(LockFactory lockingStrategy) {
-        EventSourcingRepository<CountingAggregate> repository = EventSourcingRepository.<CountingAggregate>builder()
-                .aggregateType(CountingAggregate.class)
-                .lockFactory(lockingStrategy)
-                .aggregateFactory(new GenericAggregateFactory<>(CountingAggregate.class))
-                .eventStore(eventStore)
-                .build();
+        EventSourcingRepository<CountingAggregate> repository =
+                EventSourcingRepository.builder(CountingAggregate.class)
+                                       .lockFactory(lockingStrategy)
+                                       .aggregateFactory(new GenericAggregateFactory<>(CountingAggregate.class))
+                                       .eventStore(eventStore)
+                                       .build();
 
-        new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
+        new AnnotationCommandHandlerAdapter<>(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
     @Test

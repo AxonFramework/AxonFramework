@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.3
  */
 public abstract class LockingRepository<T, A extends Aggregate<T>> extends
-        AbstractRepository<T, LockAwareAggregate<T, A>> {
+                                                                   AbstractRepository<T, LockAwareAggregate<T, A>> {
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
@@ -99,7 +99,6 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
-     *
      * @throws Exception when the factoryMethod throws an exception
      */
     protected abstract A doCreateNewForLock(Callable<T> factoryMethod) throws Exception;
@@ -110,7 +109,6 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
-     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     @Override
@@ -189,7 +187,6 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate to load
      * @return a fully initialized aggregate
-     *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
     protected abstract A doLoadWithLock(String aggregateIdentifier, Long expectedVersion);
@@ -211,10 +208,14 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
 
         private LockFactory lockFactory = new PessimisticLockFactory();
 
-        @Override
-        public Builder<T> aggregateType(Class<T> aggregateType) {
-            super.aggregateType(aggregateType);
-            return this;
+        /**
+         * Creates a builder for a Repository for given {@code aggregateType}.
+         *
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
+         *                      store
+         */
+        protected Builder(Class<T> aggregateType) {
+            super(aggregateType);
         }
 
         @Override

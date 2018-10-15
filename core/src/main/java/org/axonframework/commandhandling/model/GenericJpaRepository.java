@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -60,6 +60,28 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     private boolean forceFlushOnSave = true;
 
     /**
+     * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
+     * <p>
+     * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
+     * the {@code identifierConverter} to {@link Function#identity()}.
+     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
+     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * <p>
+     * Additionally, the {@link EntityManagerProvider} and {@link EventBus}  are <b>hard requirements</b> and as such
+     * should be provided.
+     *
+     * @param <T>           The type of aggregate to build the repository for
+     * @param aggregateType The type of aggregate to build the repository for
+     * @return a Builder to be able to create a {@link GenericJpaRepository}
+     */
+    public static <T> Builder<T> builder(Class<T> aggregateType) {
+        return new Builder<>(aggregateType);
+    }
+
+    /**
      * Instantiate a {@link GenericJpaRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
@@ -81,26 +103,6 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         this.eventBus = builder.eventBus;
         this.identifierConverter = builder.identifierConverter;
         this.repositoryProvider = builder.repositoryProvider;
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
-     * <p>
-     * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
-     * the {@code identifierConverter} to {@link Function#identity()}.
-     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
-     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
-     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
-     * <p>
-     * Additionally, the {@link EntityManagerProvider} and {@link EventBus}  are <b>hard requirements</b> and as such
-     * should be provided.
-     *
-     * @return a Builder to be able to create a {@link GenericJpaRepository}
-     */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
     }
 
     @Override
@@ -189,14 +191,15 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         private RepositoryProvider repositoryProvider;
         private Function<String, ?> identifierConverter = Function.identity();
 
-        public Builder() {
+        /**
+         * Creates a builder for a Repository for given {@code aggregateType}.
+         *
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
+         *                      store
+         */
+        protected Builder(Class<T> aggregateType) {
+            super(aggregateType);
             super.lockFactory(NullLockFactory.INSTANCE);
-        }
-
-        @Override
-        public Builder<T> aggregateType(Class<T> aggregateType) {
-            super.aggregateType(aggregateType);
-            return this;
         }
 
         @Override

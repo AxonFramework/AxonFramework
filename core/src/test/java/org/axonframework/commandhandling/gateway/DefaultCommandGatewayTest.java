@@ -71,7 +71,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendWithCallback_CommandIsRetried() {
+    public void testSendWithCallbackCommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
                     .onResult((CommandMessage) invocation.getArguments()[0],
@@ -99,7 +99,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendWithoutCallback_CommandIsRetried() {
+    public void testSendWithoutCallbackCommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
                     .onResult((CommandMessage) invocation.getArguments()[0],
@@ -127,7 +127,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendWithoutCallback_() throws ExecutionException, InterruptedException {
+    public void testSendWithoutCallback() throws ExecutionException, InterruptedException {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
                     .onResult((CommandMessage) invocation.getArguments()[0], asCommandResultMessage("returnValue"));
@@ -142,7 +142,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendAndWait_CommandIsRetried() {
+    public void testSendAndWaitCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
@@ -172,7 +172,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendAndWaitWithTimeout_CommandIsRetried() {
+    public void testSendAndWaitWithTimeoutCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
@@ -202,7 +202,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSendAndWait_NullOnInterrupt() {
+    public void testSendAndWaitNullOnInterrupt() {
         doAnswer(invocation -> {
             Thread.currentThread().interrupt();
             return null;
@@ -215,7 +215,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSendAndWaitWithTimeout_NullOnInterrupt() {
+    public void testSendAndWaitWithTimeoutNullOnInterrupt() {
         doAnswer(invocation -> {
             Thread.currentThread().interrupt();
             return null;
@@ -228,7 +228,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSendAndWaitWithTimeout_NullOnTimeout() {
+    public void testSendAndWaitWithTimeoutNullOnTimeout() {
         assertNull(testSubject.sendAndWait("Hello", 10, TimeUnit.MILLISECONDS));
         verify(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
     }

@@ -17,7 +17,6 @@
 package org.axonframework.messaging;
 
 import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.*;
 

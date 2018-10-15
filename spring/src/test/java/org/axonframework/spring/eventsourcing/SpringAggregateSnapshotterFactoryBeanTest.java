@@ -17,16 +17,13 @@
 package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.commandhandling.model.RepositoryProvider;
-import org.axonframework.eventsourcing.AbstractAggregateFactory;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.spring.config.annotation.StubAggregate;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -101,8 +98,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
 
         when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class))
                 .thenReturn(Collections.singletonMap("myRepository",
-                                                     EventSourcingRepository.<StubAggregate>builder()
-                                                             .aggregateType(StubAggregate.class)
+                                                     EventSourcingRepository.builder(StubAggregate.class)
                                                              .eventStore(mockEventStore)
                                                              .repositoryProvider(mockRepositoryProvider)
                                                              .build()

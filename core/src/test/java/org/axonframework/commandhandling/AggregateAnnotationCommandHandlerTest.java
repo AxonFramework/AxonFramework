@@ -191,7 +191,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerUpdatesAggregateInstance_AnnotatedMethod() {
+    public void testCommandHandlerUpdatesAggregateInstanceAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -210,7 +210,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersion_AnnotatedMethod() {
+    public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -239,7 +239,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerUpdatesAggregateInstanceWithNullVersion_AnnotatedMethod() {
+    public void testCommandHandlerUpdatesAggregateInstanceWithNullVersionAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -259,7 +259,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerUpdatesAggregateInstance_AnnotatedField() {
+    public void testCommandHandlerUpdatesAggregateInstanceAnnotatedField() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -278,7 +278,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersion_AnnotatedField() {
+    public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedField() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -298,7 +298,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersion_AnnotatedIntegerField() {
+    public void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedIntegerField() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -390,7 +390,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandledByEntityFromCollection_NoEntityAvailable() {
+    public void testCommandHandledByEntityFromCollectionNoEntityAvailable() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -411,7 +411,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandledByEntityFromCollection_NullIdInCommand() {
+    public void testCommandHandledByEntityFromCollectionNullIdInCommand() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -487,7 +487,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandledByEntityFromMap_NoEntityAvailable() {
+    public void testCommandHandledByEntityFromMapNoEntityAvailable() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -508,7 +508,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandledByEntityFromMap_NullIdInCommand() {
+    public void testCommandHandledByEntityFromMapNullIdInCommand() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");

@@ -42,5 +42,6 @@ public final class NoOpCallback implements CommandCallback<Object, Object> {
      */
     @Override
     public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+        // noop
     }
 }

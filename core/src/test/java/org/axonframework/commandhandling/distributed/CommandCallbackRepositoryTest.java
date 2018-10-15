@@ -1,8 +1,5 @@
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.junit.Before;
 import org.junit.Test;

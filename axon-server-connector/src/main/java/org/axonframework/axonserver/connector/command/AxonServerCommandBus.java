@@ -16,30 +16,22 @@
 
 package org.axonframework.axonserver.connector.command;
 
-import io.axoniq.axonserver.grpc.command.Command;
-import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
-import io.axoniq.axonserver.grpc.command.CommandResponse;
-import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.command.CommandSubscription;
+import io.axoniq.axonserver.grpc.command.*;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -50,11 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -68,7 +56,7 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
 public class AxonServerCommandBus implements CommandBus {
     private final CommandBus localSegment;
     private final CommandRouterSubscriber commandRouterSubscriber;
-    private final PlatformConnectionManager platformConnectionManager;
+    private final AxonServerConnectionManager axonServerConnectionManager;
     private final RoutingStrategy routingStrategy;
     private final CommandPriorityCalculator priorityCalculator;
     private final CommandSerializer serializer;
@@ -77,23 +65,23 @@ public class AxonServerCommandBus implements CommandBus {
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors = new DispatchInterceptors<>();
     private Logger logger = LoggerFactory.getLogger(AxonServerCommandBus.class);
 
-    public AxonServerCommandBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration configuration,
+    public AxonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager, AxonServerConfiguration configuration,
                                 CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy) {
-        this( platformConnectionManager, configuration, localSegment, serializer, routingStrategy, new CommandPriorityCalculator(){});
+        this(axonServerConnectionManager, configuration, localSegment, serializer, routingStrategy, new CommandPriorityCalculator(){});
     }
     /**
-     * @param platformConnectionManager creates connection to AxonServer platform
+     * @param axonServerConnectionManager creates connection to AxonServer platform
      * @param configuration contains client and component names used to identify the application in AxonServer
      * @param localSegment handles incoming commands
      * @param serializer serializer/deserializer for command requests and responses
      * @param routingStrategy determines routing key based on command message
      * @param priorityCalculator calculates the request priority based on the content and adds it to the request
      */
-    public AxonServerCommandBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration configuration,
+    public AxonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager, AxonServerConfiguration configuration,
                                 CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy, CommandPriorityCalculator priorityCalculator) {
         this.localSegment = localSegment;
         this.serializer = new CommandSerializer(serializer, configuration);
-        this.platformConnectionManager = platformConnectionManager;
+        this.axonServerConnectionManager = axonServerConnectionManager;
         this.routingStrategy = routingStrategy;
         this.priorityCalculator = priorityCalculator;
         this.configuration = configuration;
@@ -111,7 +99,7 @@ public class AxonServerCommandBus implements CommandBus {
     public <C, R> void dispatch(CommandMessage<C> commandMessage, CommandCallback<? super C, ? super R> commandCallback) {
         logger.debug("Dispatch with callback: {}", commandMessage.getCommandName());
         CommandMessage<C> command = dispatchInterceptors.intercept(commandMessage);
-            CommandServiceGrpc.newStub(platformConnectionManager.getChannel())
+            CommandServiceGrpc.newStub(axonServerConnectionManager.getChannel())
                               .withInterceptors(interceptors)
                               .dispatch(serializer.serialize(command,
                                                              routingStrategy.getRoutingKey(command),
@@ -176,15 +164,16 @@ public class AxonServerCommandBus implements CommandBus {
     protected class CommandRouterSubscriber {
         private final CopyOnWriteArraySet<String> subscribedCommands = new CopyOnWriteArraySet<>();
         private final PriorityBlockingQueue<Command> commandQueue;
-        private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getCommandThreads());
+        private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getCommandThreads(),
+                                                                              new AxonThreadFactory("AxonServerCommandReceiver"));
         private volatile boolean subscribing;
-
+        private volatile boolean running = true;
 
         private volatile StreamObserver<CommandProviderOutbound> subscriberStreamObserver;
 
         CommandRouterSubscriber() {
-            platformConnectionManager.addReconnectListener(this::resubscribe);
-            platformConnectionManager.addDisconnectListener(this::unsubscribeAll);
+            axonServerConnectionManager.addReconnectListener(this::resubscribe);
+            axonServerConnectionManager.addDisconnectListener(this::unsubscribeAll);
             commandQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
             IntStream.range(0, configuration.getCommandThreads()).forEach( i -> executor.submit(this::commandExecutor));
         }
@@ -192,9 +181,9 @@ public class AxonServerCommandBus implements CommandBus {
         private void commandExecutor() {
             logger.debug("Starting command Executor");
             boolean interrupted = false;
-            while(!interrupted) {
+            while(!interrupted && running) {
                 try {
-                    Command command = commandQueue.poll(10, TimeUnit.SECONDS);
+                    Command command = commandQueue.poll(1, TimeUnit.SECONDS);
                     if( command != null) {
                         logger.debug("Received command: {}", command);
                         processCommand(command);
@@ -297,7 +286,7 @@ public class AxonServerCommandBus implements CommandBus {
                     }
                 };
 
-                StreamObserver<CommandProviderOutbound> stream = platformConnectionManager.getCommandStream(commandsFromRoutingServer, interceptors);
+                StreamObserver<CommandProviderOutbound> stream = axonServerConnectionManager.getCommandStream(commandsFromRoutingServer, interceptors);
                 subscriberStreamObserver = new FlowControllingStreamObserver<>(stream,
                         configuration,
                         flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
@@ -362,6 +351,8 @@ public class AxonServerCommandBus implements CommandBus {
         public void disconnect() {
             if( subscriberStreamObserver != null)
                 subscriberStreamObserver.onCompleted();
+            running = false;
+            executor.shutdown();
         }
     }
 

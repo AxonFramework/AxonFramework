@@ -18,11 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.model.EntityId;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -31,16 +27,18 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Objects;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -58,10 +56,9 @@ public class CommandHandlerInterceptorTest {
     @Before
     public void setUp() {
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
-        Repository<MyAggregate> myAggregateRepository = EventSourcingRepository.<MyAggregate>builder()
-                .aggregateType(MyAggregate.class)
-                .eventStore(eventStore)
-                .build();
+        Repository<MyAggregate> myAggregateRepository = EventSourcingRepository.builder(MyAggregate.class)
+                                                                               .eventStore(eventStore)
+                                                                               .build();
         CommandBus commandBus = SimpleCommandBus.builder().build();
         commandGateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
         AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler =
@@ -157,16 +154,14 @@ public class CommandHandlerInterceptorTest {
 
     @Test(expected = AxonConfigurationException.class)
     public void testInterceptorWithNonVoidReturnType() {
-        EventSourcingRepository.<MyAggregateWithInterceptorReturningNonVoid>builder()
-                .aggregateType(MyAggregateWithInterceptorReturningNonVoid.class)
-                .eventStore(eventStore)
-                .build();
+        EventSourcingRepository.builder(MyAggregateWithInterceptorReturningNonVoid.class)
+                               .eventStore(eventStore)
+                               .build();
     }
 
     @Test
     public void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
-        EventSourcingRepository.<MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid>builder()
-                .aggregateType(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
+        EventSourcingRepository.builder(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
                 .eventStore(eventStore)
                 .build();
     }
@@ -610,6 +605,11 @@ public class CommandHandlerInterceptorTest {
             // do nothing
         }
 
+        @CommandHandler
+        public MyAggregate(CreateMyAggregateCommand command) {
+            apply(new MyAggregateCreatedEvent(command.getId()));
+        }
+
         @CommandHandlerInterceptor
         public void interceptAll(Object command) {
             apply(new AnyCommandInterceptedEvent(command.getClass().getName()));
@@ -619,11 +619,6 @@ public class CommandHandlerInterceptorTest {
         public void interceptAllMatchingPattern(Object command, InterceptorChain interceptorChain) throws Exception {
             apply(new AnyCommandMatchingPatternInterceptedEvent(command.getClass().getName()));
             interceptorChain.proceed();
-        }
-
-        @CommandHandler
-        public MyAggregate(CreateMyAggregateCommand command) {
-            apply(new MyAggregateCreatedEvent(command.getId()));
         }
 
         @EventSourcingHandler
@@ -732,11 +727,6 @@ public class CommandHandlerInterceptorTest {
         private String state;
 
         @CommandHandlerInterceptor
-        public void interceptAll(Object command) {
-            apply(new AnyCommandInterceptedEvent("NestedNested" + command.getClass().getName()));
-        }
-
-        @CommandHandlerInterceptor
         public static void interceptAll(Object command, InterceptorChain chain) throws Exception {
             apply(new AnyCommandInterceptedEvent("StaticNestedNested" + command.getClass().getName()));
             chain.proceed();
@@ -744,6 +734,11 @@ public class CommandHandlerInterceptorTest {
 
         private MyNestedNestedEntity(String id) {
             this.id = id;
+        }
+
+        @CommandHandlerInterceptor
+        public void interceptAll(Object command) {
+            apply(new AnyCommandInterceptedEvent("NestedNested" + command.getClass().getName()));
         }
 
         @CommandHandlerInterceptor
