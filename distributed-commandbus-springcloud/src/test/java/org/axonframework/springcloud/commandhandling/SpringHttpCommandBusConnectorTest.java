@@ -1,23 +1,39 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.springcloud.commandhandling;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.RemoteExceptionDescription;
+import org.axonframework.messaging.RemoteHandlingException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -182,7 +198,7 @@ public class SpringHttpCommandBusConnectorTest {
         verify(serializer).serialize(COMMAND_MESSAGE.getPayload(), byte[].class);
         verify(restTemplate).exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
                                       argThat(new ParameterizedTypeReferenceMatcher<>()));
-        SerializedObject<byte[]> serializedObject = serializer.serialize(COMMAND_ERROR, byte[].class);
+        SerializedObject<byte[]> serializedObject = serializer.serialize(RemoteExceptionDescription.describing(COMMAND_ERROR), byte[].class);
         //noinspection unchecked
         ArgumentCaptor<SerializedObject<byte[]>> serializedObjectCaptor =
                 ArgumentCaptor.forClass(SerializedObject.class);
@@ -255,7 +271,9 @@ public class SpringHttpCommandBusConnectorTest {
         CommandResultMessage commandResultMessage = result.getCommandResultMessage(serializer);
         assertEquals(COMMAND_MESSAGE.getIdentifier(), result.getCommandIdentifier());
         assertTrue(commandResultMessage.isExceptional());
-        assertEquals(COMMAND_ERROR.getMessage(), commandResultMessage.exceptionResult().getMessage());
+        assertEquals("An exception was thrown by the remote message handling component.", commandResultMessage.exceptionResult().getMessage());
+
+        assertTrue(((RemoteHandlingException)commandResultMessage.exceptionResult()).getExceptionDescriptions().stream().anyMatch(m -> m.contains(COMMAND_ERROR.getMessage())));
 
         verify(localCommandBus).dispatch(any(), any());
     }
