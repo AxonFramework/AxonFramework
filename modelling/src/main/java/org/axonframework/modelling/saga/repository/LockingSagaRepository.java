@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +20,10 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.modelling.saga.Saga;
-import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.saga.Saga;
+import org.axonframework.modelling.saga.SagaRepository;
 
 import java.util.function.Supplier;
 
@@ -113,7 +113,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
      */
     public abstract static class Builder<T> {
 
-        private LockFactory lockFactory = new PessimisticLockFactory();
+        private LockFactory lockFactory = PessimisticLockFactory.usingDefaults();
 
         /**
          * Sets the {@link LockFactory} used to lock an aggregate. Defaults to a pessimistic locking strategy,

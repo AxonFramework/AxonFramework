@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,7 @@ public class PessimisticLockFactoryTest {
 
     @Test
     public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
-        PessimisticLockFactory manager = new PessimisticLockFactory();
+        PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
         Lock lock = manager.obtainLock(identifier);
         lock.release();
 
@@ -48,7 +48,7 @@ public class PessimisticLockFactoryTest {
 
     @Test
     public void testLockOnlyCleanedUpIfNoLocksAreHeld() throws NoSuchFieldException, IllegalAccessException {
-        PessimisticLockFactory manager = new PessimisticLockFactory();
+        PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
         Lock lock1 = manager.obtainLock(identifier);
         Lock lock2 = manager.obtainLock(identifier);
         lock1.release();
@@ -65,7 +65,7 @@ public class PessimisticLockFactoryTest {
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_TwoThreadsInVector() throws InterruptedException {
-        final PessimisticLockFactory lock = new PessimisticLockFactory();
+        final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -84,8 +84,8 @@ public class PessimisticLockFactoryTest {
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
-        final PessimisticLockFactory lock1 = new PessimisticLockFactory();
-        final PessimisticLockFactory lock2 = new PessimisticLockFactory();
+        final PessimisticLockFactory lock1 = PessimisticLockFactory.builder().build();
+        final PessimisticLockFactory lock2 = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -104,7 +104,7 @@ public class PessimisticLockFactoryTest {
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
-        final PessimisticLockFactory lock = new PessimisticLockFactory();
+        final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(3);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -146,13 +146,12 @@ public class PessimisticLockFactoryTest {
     }
 
     @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
-    public void testAquireBackoff() throws InterruptedException {
-        PessimisticLockFactory.BackoffParameters backoffConfig = new PessimisticLockFactory.BackoffParameters(
-                10,
-                -1,
-                0
-        );
-        final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
+    public void testAquireBackoff() {
+        final PessimisticLockFactory lockFactory = PessimisticLockFactory.builder()
+                                                                         .acquireAttempts(10)
+                                                                         .queueLengthThreshold(Integer.MAX_VALUE)
+                                                                         .lockAttemptTimeout(0)
+                                                                         .build();
         final CountDownLatch rendezvous = new CountDownLatch(1);
         try {
             final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
@@ -167,13 +166,12 @@ public class PessimisticLockFactoryTest {
     }
 
     @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
-    public void testQueueBackoff() throws InterruptedException {
-        PessimisticLockFactory.BackoffParameters backoffConfig = new PessimisticLockFactory.BackoffParameters(
-                -1,
-                2,
-                10000
-        );
-        final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
+    public void testQueueBackoff() {
+        final PessimisticLockFactory lockFactory = PessimisticLockFactory.builder()
+                                                                         .acquireAttempts(Integer.MAX_VALUE)
+                                                                         .queueLengthThreshold(2)
+                                                                         .lockAttemptTimeout(10000)
+                                                                         .build();
         final CountDownLatch rendezvous = new CountDownLatch(1);
         try {
             final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
@@ -194,31 +192,31 @@ public class PessimisticLockFactoryTest {
     @Test(expected = IllegalArgumentException.class)
     public void testBackoffParametersConstructorAquireAttempts() {
         int illegalValue = 0;
-        new PessimisticLockFactory.BackoffParameters(illegalValue, 100, 100);
+        PessimisticLockFactory.builder().acquireAttempts(illegalValue);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBackoffParametersConstructorMaximumQueued() {
         int illegalValue = 0;
-        new PessimisticLockFactory.BackoffParameters(10, illegalValue, 100);
+        PessimisticLockFactory.builder().queueLengthThreshold(illegalValue);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBackoffParametersConstructorSpinTime() {
         int illegalValue = -1;
-        new PessimisticLockFactory.BackoffParameters(10, 100, illegalValue);
+        PessimisticLockFactory.builder().lockAttemptTimeout(illegalValue);
     }
 
     private void createThreadObtainLockAndWaitForState(PessimisticLockFactory lockFactory, Thread.State state, CountDownLatch rendezvous, AtomicReference<Exception> exceptionInThread, String id) {
         Thread thread = new Thread(() -> {
-            try(Lock ignored = lockFactory.obtainLock(id)) {
+            try (Lock ignored = lockFactory.obtainLock(id)) {
                 rendezvous.await();
             } catch (Exception e) {
                 exceptionInThread.set(e);
             }
         });
         thread.start();
-        while(thread.isAlive() && rendezvous.getCount() > 0 && thread.getState() != state) {
+        while (thread.isAlive() && rendezvous.getCount() > 0 && thread.getState() != state) {
             Thread.yield();
         }
     }

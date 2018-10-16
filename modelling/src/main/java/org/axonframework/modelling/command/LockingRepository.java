@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
@@ -24,6 +23,7 @@ import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -206,7 +206,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     protected static abstract class Builder<T> extends AbstractRepository.Builder<T> {
 
-        private LockFactory lockFactory = new PessimisticLockFactory();
+        private LockFactory lockFactory = PessimisticLockFactory.usingDefaults();
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.

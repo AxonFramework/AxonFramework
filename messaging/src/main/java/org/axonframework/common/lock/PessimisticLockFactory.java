@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,15 +32,13 @@ import static java.util.Collections.synchronizedMap;
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
  * {@link #obtainLock} will block until a lock could be obtained or back off limit is reached, based on the
- * {@link BackoffParameters}, by throwing an exception. The latter will cause the command to fail, but will allow
+ * settings provided, by throwing an exception. The latter will cause the command to fail, but will allow
  * the calling thread to be freed. If a lock is obtained by a thread, that thread has guaranteed unique access.
  * <p/>
  * Each thread can hold the same lock multiple times. The lock will only be released for other threads when the lock
  * has been released as many times as it was obtained.
  * <p/>
  * This lock can be used to ensure thread safe access to a number of objects, such as Aggregates and Sagas.
- * <p>
- * Back off properties with respect to acquiring locks can be configured through the {@link BackoffParameters}.
  *
  * @author Allard Buijze
  * @author Michael Bischoff
@@ -51,7 +49,9 @@ public class PessimisticLockFactory implements LockFactory {
     private static final Set<PessimisticLockFactory> INSTANCES = newSetFromMap(synchronizedMap(new WeakHashMap<>()));
 
     private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
-    private final BackoffParameters backoffParameters;
+    private final int acquireAttempts;
+    private final int maximumQueued;
+    private final int lockAttemptTimeout;
 
     private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
         return threadsWaitingForMyLocks(owner, INSTANCES);
@@ -70,34 +70,33 @@ public class PessimisticLockFactory implements LockFactory {
     }
 
     /**
-     * Creates a new IdentifierBasedLock instance.
-     * <p/>
-     * Deadlocks are detected across instances of the IdentifierBasedLock.
-     * This constructor specifies no back off from lock acquisition
+     * Creates a builder to construct an instance of this LockFactory.
      *
-     * @apiNote Since the previous versions didn't support any backoff properties, this no-arg constructor creates a
-     * {@link PessimisticLockFactory} with no backoff properties. This is however a poor default (the system will
-     * very likely converge to a state where it no longer handles any commands if any lock is held indefinitely.) In the
-     * next major version of Axon other defaults will chosen and thus behavior will change. Should your setup rely
-     * on the no-backoff behavior then you are advised to call {@link #PessimisticLockFactory(BackoffParameters)} with
-     * explicitly specified {@link BackoffParameters}.
-     * @Deprecated use {@link #PessimisticLockFactory(BackoffParameters)} instead
+     * @return a builder allowing the definition of properties for this Lock Factory.
      */
-    @Deprecated
-    public PessimisticLockFactory() {
-        this(new BackoffParameters(-1, -1, 100));
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
-     * Creates a new IdentifierBasedLock instance.
-     * <p/>
-     * Deadlocks are detected across instances of the IdentifierBasedLock.
-     * Back off policy as by supplied {@link BackoffParameters}
+     * Creates an instance using default values, as defined in the properties of the {@link Builder}.
      *
-     * @param backoffParameters back off policy configuration
+     * @return a PessimisticLockFactory instance using sensible default values
      */
-    public PessimisticLockFactory(BackoffParameters backoffParameters) {
-        this.backoffParameters = backoffParameters;
+    public static PessimisticLockFactory usingDefaults() {
+        return builder().build();
+    }
+
+    /**
+     * Creates an instance of the lock factory using the given {@code builder} containing the configuration properties
+     * to use.
+     *
+     * @param builder The building containing the configuration properties to use
+     */
+    protected PessimisticLockFactory(Builder builder) {
+        this.acquireAttempts = builder.acquireAttempts;
+        this.maximumQueued = builder.maximumQueued;
+        this.lockAttemptTimeout = builder.lockAttemptTimeout;
         INSTANCES.add(this);
     }
 
@@ -134,71 +133,6 @@ public class PessimisticLockFactory implements LockFactory {
         return lock;
     }
 
-    /**
-     * There are 3 values:
-     * <p>
-     * acquireAttempts
-     * This used to specify the maxium number of attempts to obtain a lock before we back off
-     * (throwing a {@link LockAcquisitionFailedException} if it does). A value of '-1' means unlimited attempts.
-     * <p>
-     * maximumQueued
-     * Maximum number of queued threads we allow to try and obtain a lock, if another thread tries to obtain the lock
-     * after the limit is reached we back off (throwing a {@link LockAcquisitionFailedException}). A value of '-1'
-     * means the maximum queued threads is unbound / no limit.
-     * NOTE: This relies on approximation given by {@link ReentrantLock#getQueueLength()} so the effective limit may
-     * be higher then specified. Since this is a back off control this should be ok.
-     * <p>
-     * lockAttemptTimeout
-     * Time permitted to try and obtain a lock per acquire attempt in milliseconds.
-     * NOTE: The lockAttemptTimeout of the first attempt is always zero, so max wait time is approximately
-     * (acquireAttempts - 1) * lockAttemptTimeout
-     */
-    public static final class BackoffParameters {
-        public final int acquireAttempts;
-        public final int maximumQueued;
-        public final int lockAttemptTimeout;
-
-        /**
-         * Initialize the BackoffParameters using given parameters.
-         *
-         * @param acquireAttempts    the total number of attempts to make to acquire the lock. A value of {@code -1} means indefinite attempts
-         * @param maximumQueued      the threshold of the number of threads queued for acquiring the lock, or {@code -1} to ignore queue size
-         * @param lockAttemptTimeout the amount of time to wait, in milliseconds, for each lock acquisition attempt
-         */
-        public BackoffParameters(int acquireAttempts, int maximumQueued, int lockAttemptTimeout) {
-            Assert.isTrue(
-                    acquireAttempts > 0 || acquireAttempts == -1,
-                    () -> "acquireAttempts needs to be a positive integer or -1, but was '" + acquireAttempts + "'"
-            );
-            this.acquireAttempts = acquireAttempts;
-            Assert.isTrue(
-                    maximumQueued > 0 || maximumQueued == -1,
-                    () -> "maximumQueued needs to be a positive integer or -1, but was '" + maximumQueued + "'"
-            );
-            this.maximumQueued = maximumQueued;
-            Assert.isFalse(
-                    lockAttemptTimeout < 0,
-                    () -> "lockAttemptTimeout needs to be a non negative integer, but was '" + lockAttemptTimeout + "'"
-            );
-            this.lockAttemptTimeout = lockAttemptTimeout;
-        }
-
-        public boolean hasAcquireAttemptLimit() {
-            return acquireAttempts != -1;
-        }
-
-        public boolean hasAcquireQueueLimit() {
-            return maximumQueued != -1;
-        }
-
-        public boolean maximumQueuedThreadsReached(int queueLength) {
-            if (!hasAcquireQueueLimit()) {
-                return false;
-            }
-            return queueLength >= maximumQueued;
-        }
-    }
-
     private static final class PubliclyOwnedReentrantLock extends ReentrantLock {
 
         private static final long serialVersionUID = -2259228494514612163L;
@@ -210,6 +144,85 @@ public class PessimisticLockFactory implements LockFactory {
 
         public boolean isHeldBy(Thread thread) {
             return thread.equals(getOwner());
+        }
+    }
+
+    /**
+     * Builder class for the {@link PessimisticLockFactory}.
+     */
+    public static class Builder {
+        private int acquireAttempts = 100;
+        private int maximumQueued = Integer.MAX_VALUE;
+        private int lockAttemptTimeout = 600;
+
+        /**
+         * Default constructor
+         */
+        protected Builder() {
+        }
+
+        /**
+         * Indicates howmany attempts should be done to acquire a lock. In combination with the
+         * {@link #lockAttemptTimeout(int)}, this defines the total timeout of a lock acquisition.
+         * <p>
+         * Defaults to 100.
+         *
+         * @param acquireAttempts The number of attempts to acquire the lock
+         * @return this Builder, for further configuration
+         */
+        public Builder acquireAttempts(int acquireAttempts) {
+            Assert.isTrue(
+                    acquireAttempts > 0 || acquireAttempts == -1,
+                    () -> "acquireAttempts needs to be a positive integer or -1, but was '" + acquireAttempts + "'"
+            );
+            this.acquireAttempts = acquireAttempts;
+            return this;
+        }
+
+        /**
+         * Defines the maximum number of queued threads to allow for this lock. If the given number of threads are
+         * waiting to acquire a lock, and another thread joins, that thread will immediately fail any attempt to acquire
+         * the lock, as if it had timed out.
+         * <p>
+         * Defaults to unbounded.
+         *
+         * @param maximumQueued The maximum number of threads to allow in the queue for this lock
+         * @return this Builder, for further configuration
+         */
+        public Builder queueLengthThreshold(int maximumQueued) {
+            Assert.isTrue(
+                    maximumQueued > 0,
+                    () -> "queueLengthThreshold needs to be a positive integer, but was '" + maximumQueued + "'"
+            );
+            this.maximumQueued = maximumQueued;
+            return this;
+        }
+
+        /**
+         * The duration of a single attempt to acquire the internal lock. In combination with the
+         * {@link #acquireAttempts(int)}, this defines the total timeout of an acquisition attempt.
+         * <p>
+         * Defaults to 600ms.
+         *
+         * @param lockAttemptTimeout The duration of a single aqcuisition attempt of the internal lock, in milliseconds
+         * @return this Builder, for further configuration
+         */
+        public Builder lockAttemptTimeout(int lockAttemptTimeout) {
+            Assert.isTrue(
+                    lockAttemptTimeout >= 0,
+                    () -> "lockAttemptTimeout needs to be a non negative integer, but was '" + lockAttemptTimeout + "'"
+            );
+            this.lockAttemptTimeout = lockAttemptTimeout;
+            return this;
+        }
+
+        /**
+         * Builds the PessimisticLockFactory instance using the properties defined in this builder
+         *
+         * @return a fully configured PessimisticLockfactory instance
+         */
+        public PessimisticLockFactory build() {
+            return new PessimisticLockFactory(this);
         }
     }
 
@@ -239,21 +252,21 @@ public class PessimisticLockFactory implements LockFactory {
         }
 
         public boolean lock() {
-            if (backoffParameters.maximumQueuedThreadsReached(lock.getQueueLength())) {
+            if (lock.getQueueLength() >= maximumQueued) {
                 throw new LockAcquisitionFailedException("Failed to acquire lock for aggregate identifier " + identifier + ": too many queued threads.");
             }
             try {
                 if (!lock.tryLock(0, TimeUnit.NANOSECONDS)) {
-                    int attempts = backoffParameters.acquireAttempts - 1;
+                    int attempts = acquireAttempts - 1;
                     do {
                         attempts--;
                         checkForDeadlock();
-                        if (backoffParameters.hasAcquireAttemptLimit() && attempts < 1) {
+                        if (attempts < 1) {
                             throw new LockAcquisitionFailedException(
-                                    "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + backoffParameters.maximumQueued + ")"
+                                    "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + maximumQueued + ")"
                             );
                         }
-                    } while (!lock.tryLock(backoffParameters.lockAttemptTimeout, TimeUnit.MILLISECONDS));
+                    } while (!lock.tryLock(lockAttemptTimeout, TimeUnit.MILLISECONDS));
                 }
             } catch (InterruptedException e) {
                 throw new LockAcquisitionFailedException("Thread was interrupted", e);
