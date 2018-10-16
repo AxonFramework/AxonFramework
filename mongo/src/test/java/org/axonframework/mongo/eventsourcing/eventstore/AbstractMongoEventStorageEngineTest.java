@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +16,20 @@
 
 package org.axonframework.mongo.eventsourcing.eventstore;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.junit.Assert.*;
 
 /**
  * Abstract test for {@link MongoEventStorageEngine} tests.
@@ -112,6 +114,17 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
                                                       .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event4, event3), readEvents);
+    }
+
+    @Test
+    public void testStoreAndLoadSnapshot() {
+        testSubject.storeSnapshot(createEvent(0));
+        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createEvent(3));
+        testSubject.storeSnapshot(createEvent(2));
+        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+        // note - MongoDB stores the last inserted snapshot, as opposed to the one with the largest sequence number
+        assertEquals(2, testSubject.readSnapshot(AGGREGATE).get().getSequenceNumber());
     }
 
     protected void setTestSubject(MongoEventStorageEngine testSubject) {

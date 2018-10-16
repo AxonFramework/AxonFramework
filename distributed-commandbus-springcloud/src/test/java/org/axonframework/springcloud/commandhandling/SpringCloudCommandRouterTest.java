@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,17 +19,15 @@ package org.axonframework.springcloud.commandhandling;
 import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
-import org.axonframework.commandhandling.distributed.Member;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -37,13 +36,8 @@ import org.springframework.cloud.client.serviceregistry.Registration;
 
 import java.lang.reflect.Field;
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.singletonList;
@@ -63,9 +57,9 @@ public class SpringCloudCommandRouterTest {
     private static final int LOAD_FACTOR = 1;
     private static final CommandMessage<Object> TEST_COMMAND = GenericCommandMessage.asCommandMessage("testCommand");
     private static final String ROUTING_KEY = "routingKey";
-    private static final String SERVICE_INSTANCE_ID = "SERVICEID";
+    private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
+    private static final CommandMessageFilter COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
     private static final boolean LOCAL_MEMBER = true;
     private static final boolean REMOTE_MEMBER = false;
     private static final boolean REGISTERED = true;
@@ -90,7 +84,8 @@ public class SpringCloudCommandRouterTest {
 
     @Before
     public void setUp() throws Exception {
-        serializedCommandFilterData = new XStreamSerializer().serialize(COMMAND_NAME_FILTER, String.class).getData();
+        serializedCommandFilterData = XStreamSerializer.builder().build()
+                                                       .serialize(COMMAND_NAME_FILTER, String.class).getData();
         serializedCommandFilterClassName = COMMAND_NAME_FILTER.getClass().getName();
 
         String atomicConsistentHashFieldName = "atomicConsistentHash";
@@ -110,11 +105,13 @@ public class SpringCloudCommandRouterTest {
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
 
-        testSubject = new SpringCloudCommandRouter(discoveryClient,
-                                                   localServiceInstance,
-                                                   routingStrategy,
-                                                   s -> true,
-                                                   consistentHashChangeListener);
+        testSubject = SpringCloudCommandRouter.builder()
+                                              .discoveryClient(discoveryClient)
+                                              .localServiceInstance(localServiceInstance)
+                                              .routingStrategy(routingStrategy)
+                                              .serviceInstanceFilter(serviceInstance -> true)
+                                              .consistentHashChangeListener(consistentHashChangeListener)
+                                              .build();
     }
 
     @Test
@@ -146,8 +143,9 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipUpdatesLocalServiceInstance() {
-        Predicate<? super CommandMessage<?>> commandNameFilter = new CommandNameFilter(String.class.getName());
-        String commandFilterData = new XStreamSerializer().serialize(commandNameFilter, String.class).getData();
+        CommandMessageFilter commandNameFilter = new CommandNameFilter(String.class.getName());
+        String commandFilterData = XStreamSerializer.builder().build()
+                                                    .serialize(commandNameFilter, String.class).getData();
         testSubject.updateMembership(LOAD_FACTOR, commandNameFilter);
 
         assertEquals(Integer.toString(LOAD_FACTOR), serviceInstanceMetadata.get(LOAD_FACTOR_KEY));
@@ -328,9 +326,12 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipsOnHeartbeatEventBlackListsNonAxonInstances() throws Exception {
-        SpringCloudCommandRouter testSubject = new SpringCloudCommandRouter(
-                discoveryClient, localServiceInstance, routingStrategy, serviceInstance -> true
-        );
+        SpringCloudCommandRouter testSubject = SpringCloudCommandRouter.builder()
+                                                                       .discoveryClient(discoveryClient)
+                                                                       .localServiceInstance(localServiceInstance)
+                                                                       .routingStrategy(routingStrategy)
+                                                                       .serviceInstanceFilter(serviceInstance -> true)
+                                                                       .build();
 
         String blackListedInstancesFieldName = "blackListedServiceInstances";
         Field blackListedInstancesField =
@@ -366,9 +367,12 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipsOnHeartbeatEventDoesNotRequestInfoFromBlackListedServiceInstance() {
-        SpringCloudCommandRouter testSubject = new SpringCloudCommandRouter(
-                discoveryClient, localServiceInstance, routingStrategy, serviceInstance -> true
-        );
+        SpringCloudCommandRouter testSubject = SpringCloudCommandRouter.builder()
+                                                                       .discoveryClient(discoveryClient)
+                                                                       .localServiceInstance(localServiceInstance)
+                                                                       .routingStrategy(routingStrategy)
+                                                                       .serviceInstanceFilter(serviceInstance -> true)
+                                                                       .build();
 
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
@@ -531,11 +535,13 @@ public class SpringCloudCommandRouterTest {
     private SpringCloudCommandRouter createRouterFor(String host) {
         Registration localServiceInstance = mock(Registration.class);
         when(localServiceInstance.getUri()).thenReturn(URI.create("http://" + host));
-        return new SpringCloudCommandRouter(discoveryClient,
-                                            localServiceInstance,
-                                            routingStrategy,
-                                            s -> true,
-                                            consistentHashChangeListener);
+        return SpringCloudCommandRouter.builder()
+                                       .discoveryClient(discoveryClient)
+                                       .localServiceInstance(localServiceInstance)
+                                       .routingStrategy(routingStrategy)
+                                       .serviceInstanceFilter(serviceInstance -> true)
+                                       .consistentHashChangeListener(consistentHashChangeListener)
+                                       .build();
     }
 
     private List<ServiceInstance> mockServiceInstances(int number) {

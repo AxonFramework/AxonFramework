@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,9 @@
 package org.axonframework.kafka.eventhandling.consumer;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.StreamableMessageSource;
 
 /**
@@ -43,7 +43,7 @@ public class KafkaMessageSource implements StreamableMessageSource<TrackedEventM
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
+    public BlockingStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
         Assert.isTrue(trackingToken == null || trackingToken instanceof KafkaTrackingToken, () -> "Invalid token type");
         return fetcher.start((KafkaTrackingToken) trackingToken);
     }

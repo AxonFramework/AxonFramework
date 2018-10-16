@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +20,19 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventhandling.TrackingToken;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -40,6 +47,7 @@ import static java.util.Collections.unmodifiableSet;
  * with the highest timestamp but are published at a later time (due to time differences between nodes).
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class MongoTrackingToken implements TrackingToken, Serializable {
 

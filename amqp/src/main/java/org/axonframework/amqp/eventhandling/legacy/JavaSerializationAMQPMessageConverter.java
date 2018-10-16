@@ -20,6 +20,7 @@ import com.rabbitmq.client.AMQP;
 import org.axonframework.amqp.eventhandling.*;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.EventPublicationFailedException;
 import org.axonframework.serialization.Serializer;
 
 import java.io.*;

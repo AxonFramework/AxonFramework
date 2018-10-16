@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,9 +19,9 @@ package org.axonframework.kafka.eventhandling;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.FixedValueRevisionResolver;
 import org.axonframework.serialization.SerializedObject;
@@ -36,13 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertDomainHeaders;
 import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertEventHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.byteMapper;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.toHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsString;
-import static org.axonframework.messaging.Headers.MESSAGE_ID;
-import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
-import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
+import static org.axonframework.kafka.eventhandling.HeaderUtils.*;
+import static org.axonframework.messaging.Headers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -63,8 +58,10 @@ public class DefaultKafkaMessageConverterTests {
 
     @Before
     public void setUp() {
-        serializer = new XStreamSerializer(new FixedValueRevisionResolver("stub-revision"));
-        testSubject = new DefaultKafkaMessageConverter(serializer);
+        serializer = XStreamSerializer.builder()
+                                      .revisionResolver(new FixedValueRevisionResolver("stub-revision"))
+                                      .build();
+        testSubject = DefaultKafkaMessageConverter.builder().serializer(serializer).build();
     }
 
     @Test
@@ -85,7 +82,7 @@ public class DefaultKafkaMessageConverterTests {
     public void testWriting_EventMessageAsKafkaMessage_ShouldAppendEventHeaders() {
         EventMessage<?> expected = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(expected, SOME_TOPIC);
-        SerializedObject<byte[]> serializedObject = serializePayload(expected, serializer, byte[].class);
+        SerializedObject<byte[]> serializedObject = expected.serializePayload(serializer, byte[].class);
 
         assertEventHeaders("key", expected, serializedObject, senderMessage.headers());
     }
@@ -161,7 +158,9 @@ public class DefaultKafkaMessageConverterTests {
 
     @Test
     public void testWriting_EventMessageWithNullRevision_ShouldWriteRevisionAsNull() {
-        testSubject = new DefaultKafkaMessageConverter(new XStreamSerializer());
+        testSubject = DefaultKafkaMessageConverter.builder()
+                                                  .serializer(XStreamSerializer.builder().build())
+                                                  .build();
         EventMessage<?> eventMessage = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(eventMessage, SOME_TOPIC);
 

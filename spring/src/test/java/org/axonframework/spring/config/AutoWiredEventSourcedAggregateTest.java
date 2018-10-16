@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,9 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -29,13 +30,14 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.persistence.Id;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -52,7 +54,7 @@ public class AutoWiredEventSourcedAggregateTest {
         assertEquals(EventSourcingRepository.class, myAggregateRepository.getClass());
     }
 
-    @EnableAxon
+    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Scope
     @Configuration
     public static class Context {
@@ -65,6 +67,11 @@ public class AutoWiredEventSourcedAggregateTest {
         @Bean
         public EntityManagerProvider entityManagerProvider() {
             return mock(EntityManagerProvider.class);
+        }
+
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            return new EventProcessingModule();
         }
 
         @Aggregate

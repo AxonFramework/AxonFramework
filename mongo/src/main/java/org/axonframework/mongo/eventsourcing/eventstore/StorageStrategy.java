@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,16 +17,17 @@
 package org.axonframework.mongo.eventsourcing.eventstore;
 
 import com.mongodb.client.MongoCollection;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.bson.Document;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Interface towards the mechanism that prescribes the structure in which events are stored in the Event Store. Events
@@ -103,15 +104,15 @@ public interface StorageStrategy {
                                                           TrackingToken lastToken, int batchSize);
 
     /**
-     * Finds the entry containing the last snapshot event for an aggregate with given {@code aggregateIdentifier}
-     * in the given {@code collection}.
+     * Finds entries containing snapshot events for an aggregate with given {@code aggregateIdentifier} in the given
+     * {@code collection}.
      *
-     * @param snapshotCollection  The collection to find the last snapshot event in
-     * @param aggregateIdentifier The identifier of the aggregate to find a snapshot for
-     * @return an optional with DomainEventData of the snapshot if found
+     * @param snapshotCollection  The collection to find the snapshot events in
+     * @param aggregateIdentifier The identifier of the aggregate to find a snapshots for
+     * @return a stream with DomainEventData representing snapshots for aggregate
      */
-    Optional<? extends DomainEventData<?>> findLastSnapshot(MongoCollection<Document> snapshotCollection,
-                                                            String aggregateIdentifier);
+    Stream<? extends DomainEventData<?>> findSnapshots(MongoCollection<Document> snapshotCollection,
+                                                       String aggregateIdentifier);
 
     /**
      * Ensure that the correct indexes are in place.

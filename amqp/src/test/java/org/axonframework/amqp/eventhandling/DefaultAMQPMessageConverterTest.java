@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,22 +16,19 @@
 
 package org.axonframework.amqp.eventhandling;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.Headers;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -43,15 +40,19 @@ public class DefaultAMQPMessageConverterTest {
 
     @Before
     public void setUp() {
-        testSubject = new DefaultAMQPMessageConverter(new XStreamSerializer());
+        testSubject = DefaultAMQPMessageConverter.builder()
+                                                 .serializer(XStreamSerializer.builder().build())
+                                                 .build();
     }
 
     @Test
     public void testWriteAndReadEventMessage() {
-        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage("SomePayload").withMetaData(MetaData.with("key", "value"));
+        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage("SomePayload")
+                                                          .withMetaData(MetaData.with("key", "value"));
         AMQPMessage amqpMessage = testSubject.createAMQPMessage(eventMessage);
-        EventMessage<?> actualResult = testSubject.readAMQPMessage(amqpMessage.getBody(), amqpMessage.getProperties().getHeaders())
-                .orElseThrow(() -> new AssertionError("Expected valid message"));
+        EventMessage<?> actualResult = testSubject.readAMQPMessage(
+                amqpMessage.getBody(), amqpMessage.getProperties().getHeaders()
+        ).orElseThrow(() -> new AssertionError("Expected valid message"));
 
         assertEquals(eventMessage.getIdentifier(), amqpMessage.getProperties().getHeaders().get(Headers.MESSAGE_ID));
         assertEquals(eventMessage.getIdentifier(), actualResult.getIdentifier());
@@ -63,7 +64,8 @@ public class DefaultAMQPMessageConverterTest {
 
     @Test
     public void testMessageIgnoredIfNotAxonMessageIdPresent() {
-        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage("SomePayload").withMetaData(MetaData.with("key", "value"));
+        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage("SomePayload")
+                                                          .withMetaData(MetaData.with("key", "value"));
         AMQPMessage amqpMessage = testSubject.createAMQPMessage(eventMessage);
 
         Map<String, Object> headers = new HashMap<>(amqpMessage.getProperties().getHeaders());
@@ -73,7 +75,8 @@ public class DefaultAMQPMessageConverterTest {
 
     @Test
     public void testMessageIgnoredIfNotAxonMessageTypePresent() {
-        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage("SomePayload").withMetaData(MetaData.with("key", "value"));
+        EventMessage<?> eventMessage = GenericEventMessage.asEventMessage("SomePayload")
+                                                          .withMetaData(MetaData.with("key", "value"));
         AMQPMessage amqpMessage = testSubject.createAMQPMessage(eventMessage);
 
         Map<String, Object> headers = new HashMap<>(amqpMessage.getProperties().getHeaders());
@@ -83,10 +86,12 @@ public class DefaultAMQPMessageConverterTest {
 
     @Test
     public void testWriteAndReadDomainEventMessage() {
-        DomainEventMessage<?> eventMessage = new GenericDomainEventMessage<>("Stub", "1234", 1L, "Payload", MetaData.with("key", "value"));
+        DomainEventMessage<?> eventMessage =
+                new GenericDomainEventMessage<>("Stub", "1234", 1L, "Payload", MetaData.with("key", "value"));
         AMQPMessage amqpMessage = testSubject.createAMQPMessage(eventMessage);
-        EventMessage<?> actualResult = testSubject.readAMQPMessage(amqpMessage.getBody(), amqpMessage.getProperties().getHeaders())
-                .orElseThrow(() -> new AssertionError("Expected valid message"));
+        EventMessage<?> actualResult = testSubject.readAMQPMessage(
+                amqpMessage.getBody(), amqpMessage.getProperties().getHeaders()
+        ).orElseThrow(() -> new AssertionError("Expected valid message"));
 
         assertEquals(eventMessage.getIdentifier(), amqpMessage.getProperties().getHeaders().get(Headers.MESSAGE_ID));
         assertEquals("1234", amqpMessage.getProperties().getHeaders().get(Headers.AGGREGATE_ID));
@@ -98,8 +103,9 @@ public class DefaultAMQPMessageConverterTest {
         assertEquals(eventMessage.getPayload(), actualResult.getPayload());
         assertEquals(eventMessage.getPayloadType(), actualResult.getPayloadType());
         assertEquals(eventMessage.getTimestamp(), actualResult.getTimestamp());
-        assertEquals(eventMessage.getAggregateIdentifier(), ((DomainEventMessage)actualResult).getAggregateIdentifier());
-        assertEquals(eventMessage.getType(), ((DomainEventMessage)actualResult).getType());
-        assertEquals(eventMessage.getSequenceNumber(), ((DomainEventMessage)actualResult).getSequenceNumber());
+        assertEquals(eventMessage.getAggregateIdentifier(),
+                     ((DomainEventMessage) actualResult).getAggregateIdentifier());
+        assertEquals(eventMessage.getType(), ((DomainEventMessage) actualResult).getType());
+        assertEquals(eventMessage.getSequenceNumber(), ((DomainEventMessage) actualResult).getSequenceNumber());
     }
 }

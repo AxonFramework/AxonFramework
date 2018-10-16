@@ -16,8 +16,17 @@
 
 package org.axonframework.test.deadline;
 
+import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.test.FixtureExecutionException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,6 +41,8 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
+
 /**
  * Stub implementation of {@link DeadlineManager}. Records all scheduled and met deadlines.
  *
@@ -45,6 +56,9 @@ public class StubDeadlineManager implements DeadlineManager {
     private final List<ScheduledDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
     private final AtomicInteger counter = new AtomicInteger(0);
     private Instant currentDateTime;
+
+    private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Initializes the manager with {@link ZonedDateTime#now()} as current time.
@@ -77,26 +91,27 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Override
-    public void schedule(Instant triggerDateTime,
+    public String schedule(Instant triggerDateTime,
                          String deadlineName,
                          Object payloadOrMessage,
-                         ScopeDescriptor deadlineScope,
-                         String scheduleId) {
+                         ScopeDescriptor deadlineScope) {
+        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, payloadOrMessage);
+        deadlineMessage = processDispatchInterceptors(deadlineMessage);
         schedules.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                 deadlineName,
-                                                scheduleId,
+                                                deadlineMessage.getIdentifier(),
                                                 counter.getAndIncrement(),
-                                                payloadOrMessage,
+                                                deadlineMessage,
                                                 deadlineScope));
+        return deadlineMessage.getIdentifier();
     }
 
     @Override
-    public void schedule(Duration triggerDuration,
-                         String deadlineName,
-                         Object payloadOrMessage,
-                         ScopeDescriptor deadlineScope,
-                         String scheduleId) {
-        schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope, scheduleId);
+    public String schedule(Duration triggerDuration,
+                           String deadlineName,
+                           Object payloadOrMessage,
+                           ScopeDescriptor deadlineScope) {
+        return schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope);
     }
 
     @Override
@@ -159,7 +174,9 @@ public class StubDeadlineManager implements DeadlineManager {
     public void advanceTimeTo(Instant newDateTime, DeadlineConsumer deadlineConsumer) {
         while (!schedules.isEmpty() && !schedules.first().getScheduleTime().isAfter(newDateTime)) {
             ScheduledDeadlineInfo scheduledDeadlineInfo = advanceToNextTrigger();
-            deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), scheduledDeadlineInfo.deadlineMessage());
+            DeadlineMessage<?> consumedMessage = consumeDeadline(deadlineConsumer, scheduledDeadlineInfo);
+            deadlinesMet.remove(scheduledDeadlineInfo);
+            deadlinesMet.add(scheduledDeadlineInfo.recreateWithNewMessage(consumedMessage));
         }
         if (newDateTime.isAfter(currentDateTime)) {
             currentDateTime = newDateTime;
@@ -175,5 +192,44 @@ public class StubDeadlineManager implements DeadlineManager {
      */
     public void advanceTimeBy(Duration duration, DeadlineConsumer deadlineConsumer) {
         advanceTimeTo(currentDateTime.plus(duration), deadlineConsumer);
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super DeadlineMessage<?>> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super DeadlineMessage<?>> handlerInterceptor) {
+        handlerInterceptors.add(handlerInterceptor);
+        return () -> handlerInterceptors.remove(handlerInterceptor);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> DeadlineMessage<T> processDispatchInterceptors(DeadlineMessage<T> message) {
+        DeadlineMessage<T> intercepted = message;
+        for (MessageDispatchInterceptor<? super DeadlineMessage<?>> interceptor : dispatchInterceptors) {
+            intercepted = (DeadlineMessage<T>) interceptor.handle(intercepted);
+        }
+        return intercepted;
+    }
+
+    private DeadlineMessage<?> consumeDeadline(DeadlineConsumer deadlineConsumer,
+                                               ScheduledDeadlineInfo scheduledDeadlineInfo) {
+        DefaultUnitOfWork<? extends DeadlineMessage<?>> uow =
+                DefaultUnitOfWork.startAndGet(scheduledDeadlineInfo.deadlineMessage());
+        InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, deadlineMessage -> {
+            deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), deadlineMessage);
+            return deadlineMessage;
+        });
+        ResultMessage<?> resultMessage = uow.executeWithResult(chain::proceed);
+        if (resultMessage.isExceptional()) {
+            Throwable e = resultMessage.exceptionResult();
+            throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+        }
+        return (DeadlineMessage<?>) resultMessage.getPayload();
     }
 }

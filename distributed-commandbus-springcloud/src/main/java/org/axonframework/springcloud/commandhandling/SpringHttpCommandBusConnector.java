@@ -18,8 +18,10 @@ package org.axonframework.springcloud.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
@@ -43,11 +45,16 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * A {@link CommandBusConnector} implementation based on Spring Rest characteristics. Serves as a {@link RestController}
  * to receive Command Messages for its node, but also contains a {@link RestOperations} component to send Command
  * Messages to other nodes. Will use a {@code localCommandBus} of type {@link CommandBus} to publish any received
- * Command Messages to its local instance. Messages are de-/serialized using a {@link Serializer}.
+ * Command Messages to its local instance. Messages are de-/serialized using a {@link Serializer}. Lastly, an
+ * {@link Executor} is used to make the Command publishing calls asynchronous, by using
+ * {@link Executor#execute(Runnable)}, providing the usage of the RestOperations within the {@link Runnable}.
  *
  * @author Steven van Beelen
  * @since 3.0
@@ -68,44 +75,33 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     private final Executor executor;
 
     /**
-     * Initialize a {@link SpringHttpCommandBusConnector} using the provided local {@link CommandBus},
-     * {@link RestOperations} and {@link Serializer}. The {@code localCommandBus} is used to publish received commands
-     * which to the local segment. The given RestOperations provides the connectivity between other nodes to send
-     * commands, and the Serializer is used to serialize the command messages when they are sent between nodes.
-     * The {@link Executor} used to make the sending of commands asynchronous is defaulted to a
-     * {@link DirectExecutor#INSTANCE}.
+     * Instantiate a {@link SpringHttpCommandBusConnector} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@code localCommandBus} of type (@link CommandBus}, {@link RestOperations} and
+     * {@link Serializer} are not {@code null}, and will throw an {@link AxonConfigurationException} if
+     * any of them is {@code null}.
      *
-     * @param localCommandBus the {@link CommandBus} to publish received commands which to the local segment
-     * @param restOperations  the {@link RestOperations} used to send commands to other nodes
-     * @param serializer      the {@link Serializer} used to serialize command messages when they are sent between nodes
+     * @param builder the {@link Builder} used to instantiate a {@link SpringHttpCommandBusConnector} instance
      */
-    public SpringHttpCommandBusConnector(CommandBus localCommandBus,
-                                         RestOperations restOperations,
-                                         Serializer serializer) {
-        this(localCommandBus, restOperations, serializer, DirectExecutor.INSTANCE);
+    protected SpringHttpCommandBusConnector(Builder builder) {
+        builder.validate();
+        this.localCommandBus = builder.localCommandBus;
+        this.restOperations = builder.restOperations;
+        this.serializer = builder.serializer;
+        this.executor = builder.executor;
     }
 
     /**
-     * Initialize a {@link SpringHttpCommandBusConnector} using the provided local {@link CommandBus},
-     * {@link RestOperations}, {@link Serializer} and {@link Executor}. The {@code localCommandBus} is used to publish
-     * received commands which to the local segment. The given RestOperations provides the connectivity between other
-     * nodes to send commands, and the Serializer is used to serialize the command messages when they are sent between
-     * nodes. The provided Executor is used to unblock then sending of a command with the RestOperations.
+     * Instantiate a Builder to be able to create a {@link SpringHttpCommandBusConnector}.
+     * <p>
+     * The {@link Executor} is defaulted to a {@link DirectExecutor#INSTANCE}.
+     * The {@code localCommandBus} of type (@link CommandBus}, {@link RestOperations} and {@link Serializer} are
+     * <b>hard requirements</b> and as such should be provided.
      *
-     * @param localCommandBus the {@link CommandBus} to publish received commands which to the local segment
-     * @param restOperations  the {@link RestOperations} used to send commands to other nodes
-     * @param serializer      the {@link Serializer} used to serialize command messages when they are sent between nodes
-     * @param executor        the {@link Executor} used to make the sending of commands using the @link RestOperations}
-     *                        asynchronous
+     * @return a Builder to be able to create a {@link SpringHttpCommandBusConnector}
      */
-    public SpringHttpCommandBusConnector(CommandBus localCommandBus,
-                                         RestOperations restOperations,
-                                         Serializer serializer,
-                                         Executor executor) {
-        this.localCommandBus = localCommandBus;
-        this.restOperations = restOperations;
-        this.serializer = serializer;
-        this.executor = executor;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -128,10 +124,8 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             executor.execute(() -> {
                 SpringHttpReplyMessage<R> replyMessage =
                         this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
-                if (replyMessage.isSuccess()) {
-                    callback.onSuccess(commandMessage, replyMessage.getReturnValue(serializer));
-                } else {
-                    callback.onFailure(commandMessage, replyMessage.getError(serializer));
+                if (replyMessage != null) {
+                    callback.onResult(commandMessage, replyMessage.getCommandResultMessage(serializer));
                 }
             });
         }
@@ -158,7 +152,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
             SpringHttpDispatchMessage<C> dispatchMessage =
                     new SpringHttpDispatchMessage<>(commandMessage, serializer, expectReply);
-            return restOperations.exchange(destinationUri, HttpMethod.POST, new HttpEntity<>(dispatchMessage),
+            return restOperations.exchange(destinationUri,
+                                           HttpMethod.POST,
+                                           new HttpEntity<>(dispatchMessage),
                                            new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() {
                                            });
         } else {
@@ -186,8 +182,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     }
 
     @PostMapping("/command")
-    public <C, R> CompletableFuture<?> receiveCommand(
-            @RequestBody SpringHttpDispatchMessage<C> dispatchMessage) {
+    public <C, R> CompletableFuture<?> receiveCommand(@RequestBody SpringHttpDispatchMessage<C> dispatchMessage) {
         CommandMessage<C> commandMessage = dispatchMessage.getCommandMessage(serializer);
         if (dispatchMessage.isExpectReply()) {
             try {
@@ -196,7 +191,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 return replyFutureCallback;
             } catch (Exception e) {
                 logger.error("Could not dispatch command", e);
-                return CompletableFuture.completedFuture(createReply(commandMessage, false, e));
+                return CompletableFuture.completedFuture(createReply(commandMessage, asCommandResultMessage(e)));
             }
         } else {
             try {
@@ -204,17 +199,18 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 return CompletableFuture.completedFuture("");
             } catch (Exception e) {
                 logger.error("Could not dispatch command", e);
-                return CompletableFuture.completedFuture(createReply(commandMessage, false, e));
+                return CompletableFuture.completedFuture(createReply(commandMessage, asCommandResultMessage(e)));
             }
         }
     }
 
-    private SpringHttpReplyMessage createReply(CommandMessage<?> commandMessage, boolean success, Object result) {
+    private SpringHttpReplyMessage createReply(CommandMessage<?> commandMessage,
+                                               CommandResultMessage<?> commandResultMessage) {
         try {
-            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), success, result, serializer);
+            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), commandResultMessage, serializer);
         } catch (Exception e) {
-            logger.warn("Could not serialize command reply [{}]. Sending back NULL.", result, e);
-            return new SpringHttpReplyMessage(commandMessage.getIdentifier(), success, null, serializer);
+            logger.warn("Could not serialize command reply [{}]. Sending back NULL.", commandResultMessage, e);
+            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), asCommandResultMessage(e), serializer);
         }
     }
 
@@ -228,13 +224,96 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             implements CommandCallback<C, R> {
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-            super.complete(createReply(commandMessage, true, result));
+        public void onResult(CommandMessage<? extends C> commandMessage,
+                             CommandResultMessage<? extends R> commandResultMessage) {
+            super.complete(createReply(commandMessage, commandResultMessage));
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link SpringHttpCommandBusConnector}.
+     * <p>
+     * The {@link Executor} is defaulted to a {@link DirectExecutor#INSTANCE}.
+     * The {@code localCommandBus} of type (@link CommandBus}, {@link RestOperations} and {@link Serializer} are
+     * <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private CommandBus localCommandBus;
+        private RestOperations restOperations;
+        private Serializer serializer;
+        private Executor executor = DirectExecutor.INSTANCE;
+
+        /**
+         * Sets the {@code localCommandBus} of type {@link CommandBus} to publish received commands which to the local
+         * segment.
+         *
+         * @param localCommandBus the {@link CommandBus} to publish received commands which to the local segment
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder localCommandBus(CommandBus localCommandBus) {
+            assertNonNull(localCommandBus, "Local CommandBus may not be null");
+            this.localCommandBus = localCommandBus;
+            return this;
         }
 
-        @Override
-        public void onFailure(CommandMessage commandMessage, Throwable cause) {
-            super.complete(createReply(commandMessage, false, cause));
+        /**
+         * Sets the {@link RestOperations} used to send commands to other nodes.
+         *
+         * @param restOperations the {@link RestOperations} used to send commands to other nodes
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder restOperations(RestOperations restOperations) {
+            assertNonNull(restOperations, "RestOperations may not be null");
+            this.restOperations = restOperations;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to serialize command messages when they are sent between nodes.
+         *
+         * @param serializer the {@link Serializer} used to serialize command messages when they are sent between nodes
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Executor} used to asynchronously perform sending of the command messages to other nodes.
+         * Defaults to a {@link DirectExecutor#INSTANCE}.
+         *
+         * @param executor a {@link Executor} used to asynchronously perform sending of the command messages to other
+         *                 nodes
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder executor(Executor executor) {
+            assertNonNull(executor, "Executor may not be null");
+            this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SpringHttpCommandBusConnector} as specified through this Builder.
+         *
+         * @return a {@link SpringHttpCommandBusConnector} as specified through this Builder
+         */
+        public SpringHttpCommandBusConnector build() {
+            return new SpringHttpCommandBusConnector(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
+            assertNonNull(localCommandBus, "The local CommandBus is a hard requirement and should be provided");
+            assertNonNull(restOperations, "The RestOperations is a hard requirement and should be provided");
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
         }
     }
 }

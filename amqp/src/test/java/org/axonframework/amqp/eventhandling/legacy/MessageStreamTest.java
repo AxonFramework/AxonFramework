@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,12 @@
 
 package org.axonframework.amqp.eventhandling.legacy;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,8 +29,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -40,12 +39,11 @@ public class MessageStreamTest {
     @Test
     public void testStreamEventMessage() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        GenericEventMessage<String> message = new GenericEventMessage<>("This is the payload",
-                                                                              Collections.<String, Object>singletonMap(
-                                                                                      "metaKey",
-                                                                                      "MetaValue"));
+        GenericEventMessage<String> message = new GenericEventMessage<>(
+                "This is the payload", Collections.<String, Object>singletonMap("metaKey", "MetaValue")
+        );
         out.writeEventMessage(message);
         EventMessageReader in = new EventMessageReader(new DataInputStream(
                 new ByteArrayInputStream(baos.toByteArray())), serializer);
@@ -61,11 +59,15 @@ public class MessageStreamTest {
     @Test
     public void testStreamDomainEventMessage() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
         GenericDomainEventMessage<String> message = new GenericDomainEventMessage<>(
-                "type", "AggregateID", 1L, "This is the payload", Collections.<String, Object>singletonMap("metaKey",
-                                                                                                   "MetaValue"));
+                "type",
+                "AggregateID",
+                1L,
+                "This is the payload",
+                Collections.<String, Object>singletonMap("metaKey", "MetaValue")
+        );
         out.writeEventMessage(message);
         EventMessageReader in = new EventMessageReader(
                 new DataInputStream(new ByteArrayInputStream(baos.toByteArray())), serializer);

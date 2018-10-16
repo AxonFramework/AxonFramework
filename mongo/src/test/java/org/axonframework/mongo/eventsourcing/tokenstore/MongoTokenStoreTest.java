@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,18 +20,19 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.MongoTemplate;
+import org.axonframework.mongo.MongoTestContext;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.bson.Document;
 import org.junit.*;
-import org.junit.runner.RunWith;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -42,14 +43,17 @@ import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
+@ContextConfiguration(classes = MongoTestContext.class)
 public class MongoTokenStoreTest {
 
     private MongoTokenStore tokenStore;
@@ -90,22 +94,20 @@ public class MongoTokenStoreTest {
     @Before
     public void setUp() {
         MongoClient mongoClient = context.getBean(MongoClient.class);
-        serializer = new XStreamSerializer();
+        serializer = XStreamSerializer.builder().build();
 
-        mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate = DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
         trackingTokensCollection = mongoTemplate.trackingTokensCollection();
         trackingTokensCollection.drop();
-        tokenStore = new MongoTokenStore(mongoTemplate,
-                                         serializer,
-                                         claimTimeout,
-                                         testOwner,
-                                         contentType);
+
+        MongoTokenStore.Builder tokenStoreBuilder = MongoTokenStore.builder()
+                                                                   .mongoTemplate(mongoTemplate)
+                                                                   .serializer(serializer)
+                                                                   .claimTimeout(claimTimeout)
+                                                                   .contentType(contentType);
+        tokenStore = tokenStoreBuilder.nodeId(testOwner).build();
         tokenStore.ensureIndexes();
-        tokenStoreDifferentOwner = new MongoTokenStore(mongoTemplate,
-                                                       serializer,
-                                                       claimTimeout,
-                                                       "anotherOwner",
-                                                       contentType);
+        tokenStoreDifferentOwner = tokenStoreBuilder.nodeId("anotherOwner").build();
     }
 
     @After
@@ -115,10 +117,10 @@ public class MongoTokenStoreTest {
 
     @Test
     public void testClaimAndUpdateToken() {
-        Assert.assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
+        assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         tokenStore.storeToken(token, testProcessorName, testSegment);
-        Assert.assertEquals(token, tokenStore.fetchToken(testProcessorName, testSegment));
+        assertEquals(token, tokenStore.fetchToken(testProcessorName, testSegment));
     }
 
     @Test
@@ -130,6 +132,7 @@ public class MongoTokenStoreTest {
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
     }
 
+    @SuppressWarnings("Duplicates")
     @Test
     public void testInitializeTokensAtGivenPosition() {
         tokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
@@ -151,7 +154,7 @@ public class MongoTokenStoreTest {
 
     @Test(expected = UnableToClaimTokenException.class)
     public void testAttemptToClaimAlreadyClaimedToken() {
-        Assert.assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
+        assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         tokenStore.storeToken(token, testProcessorName, testSegment);
         tokenStoreDifferentOwner.storeToken(token, testProcessorName, testSegment);
@@ -159,7 +162,7 @@ public class MongoTokenStoreTest {
 
     @Test(expected = UnableToClaimTokenException.class)
     public void testAttemptToExtendClaimOnAlreadyClaimedToken() {
-        Assert.assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
+        assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
         tokenStoreDifferentOwner.extendClaim(testProcessorName, testSegment);
     }
 
@@ -201,7 +204,7 @@ public class MongoTokenStoreTest {
         tokenStore.fetchToken("processor1", 2);
         tokenStore.fetchToken("processor2", 0);
 
-        assertArrayEquals(new int[]{0,1,2}, tokenStore.fetchSegments("processor1"));
+        assertArrayEquals(new int[]{0, 1, 2}, tokenStore.fetchSegments("processor1"));
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments("processor2"));
         assertArrayEquals(new int[0], tokenStore.fetchSegments("processor3"));
     }
@@ -217,11 +220,13 @@ public class MongoTokenStoreTest {
             Future<Integer> future = executorService.submit(() -> {
                 try {
                     String owner = String.valueOf(iteration);
-                    TokenStore tokenStore = new MongoTokenStore(mongoTemplate,
-                                                                serializer,
-                                                                claimTimeout,
-                                                                owner,
-                                                                contentType);
+                    TokenStore tokenStore = MongoTokenStore.builder()
+                                                           .mongoTemplate(mongoTemplate)
+                                                           .serializer(serializer)
+                                                           .claimTimeout(claimTimeout)
+                                                           .nodeId(owner)
+                                                           .contentType(contentType)
+                                                           .build();
                     GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(iteration);
                     tokenStore.storeToken(token, testProcessorName, testSegment);
                     return iteration;
@@ -243,17 +248,19 @@ public class MongoTokenStoreTest {
                                                               }
                                                           })
                                                           .collect(Collectors.toList());
-        Assert.assertEquals(1, successfulAttempts.size());
+        assertEquals(1, successfulAttempts.size());
 
         Integer iterationOfSuccessfulAttempt = successfulAttempts.get(0)
                                                                  .get();
-        TokenStore tokenStore = new MongoTokenStore(mongoTemplate,
-                                                    serializer,
-                                                    claimTimeout,
-                                                    String.valueOf(iterationOfSuccessfulAttempt),
-                                                    contentType);
+        TokenStore tokenStore = MongoTokenStore.builder()
+                                               .mongoTemplate(mongoTemplate)
+                                               .serializer(serializer)
+                                               .claimTimeout(claimTimeout)
+                                               .nodeId(String.valueOf(iterationOfSuccessfulAttempt))
+                                               .contentType(contentType)
+                                               .build();
 
-        Assert.assertEquals(new GlobalSequenceTrackingToken(iterationOfSuccessfulAttempt),
-                            tokenStore.fetchToken(testProcessorName, testSegment));
+        assertEquals(new GlobalSequenceTrackingToken(iterationOfSuccessfulAttempt),
+                     tokenStore.fetchToken(testProcessorName, testSegment));
     }
 }

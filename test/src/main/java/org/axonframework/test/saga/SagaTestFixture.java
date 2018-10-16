@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,21 +16,24 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
-import org.axonframework.eventhandling.saga.SagaRepository;
-import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
-import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.modelling.saga.AnnotatedSagaManager;
+import org.axonframework.modelling.saga.SagaRepository;
+import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -100,14 +103,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        EventBus eventBus = new SimpleEventBus();
+        EventBus eventBus = SimpleEventBus.builder().build();
         sagaStore = new InMemorySagaStore();
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(deadlineManager);
-        registeredResources.add(new DefaultCommandGateway(commandBus));
+        registeredResources.add(DefaultCommandGateway.builder().commandBus(commandBus).build());
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore,
                                                                   eventScheduler,
                                                                   deadlineManager,
@@ -126,12 +129,15 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void handleInSaga(EventMessage<?> event) {
         ensureSagaResourcesInitialized();
-        try {
-            DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
-                sagaManager.handle(event, Segment.ROOT_SEGMENT);
-                return null;
-            });
-        } catch (Exception e) {
+        ResultMessage<?> resultMessage = DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
+            sagaManager.handle(event, Segment.ROOT_SEGMENT);
+            return null;
+        });
+        if (resultMessage.isExceptional()) {
+            Throwable e = resultMessage.exceptionResult();
+            if (Error.class.isAssignableFrom(e.getClass())) {
+                throw (Error) e;
+            }
             throw new FixtureExecutionException("Exception occurred while handling an event", e);
         }
     }
@@ -145,15 +151,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      * @param sagaDescriptor  A {@link ScopeDescriptor} describing the saga under test
      * @param deadlineMessage The {@link DeadlineMessage} to be handled
      */
-    protected void handleDeadline(ScopeDescriptor sagaDescriptor, DeadlineMessage<?> deadlineMessage) {
+    protected void handleDeadline(ScopeDescriptor sagaDescriptor, DeadlineMessage<?> deadlineMessage) throws Exception {
         ensureSagaResourcesInitialized();
-        DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> {
-            try {
-                sagaManager.send(deadlineMessage, sagaDescriptor);
-            } catch (Exception e) {
-                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
-            }
-        });
+        sagaManager.send(deadlineMessage, sagaDescriptor);
     }
 
     /**
@@ -161,20 +161,24 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void ensureSagaResourcesInitialized() {
         if (!resourcesInitialized) {
-            ParameterResolverFactory parameterResolverFactory = ordered(new SimpleResourceParameterResolverFactory(
-                                                                                registeredResources),
-                                                                        ClasspathParameterResolverFactory
-                                                                                .forClass(sagaType));
-            sagaRepository = new AnnotatedSagaRepository<>(sagaType,
-                                                           sagaStore,
-                                                           new TransienceValidatingResourceInjector(),
-                                                           parameterResolverFactory,
-                                                           handlerDefinition);
-            sagaManager = new AnnotatedSagaManager<>(sagaType,
-                                                     sagaRepository,
-                                                     parameterResolverFactory,
-                                                     handlerDefinition,
-                                                     new LoggingErrorHandler());
+            ParameterResolverFactory parameterResolverFactory = ordered(
+                    new SimpleResourceParameterResolverFactory(registeredResources),
+                    ClasspathParameterResolverFactory.forClass(sagaType)
+            );
+
+            sagaRepository = AnnotatedSagaRepository.<T>builder()
+                    .sagaType(sagaType)
+                    .parameterResolverFactory(parameterResolverFactory)
+                    .handlerDefinition(handlerDefinition)
+                    .sagaStore(sagaStore)
+                    .resourceInjector(new TransienceValidatingResourceInjector())
+                    .build();
+            sagaManager = AnnotatedSagaManager.<T>builder()
+                    .sagaRepository(sagaRepository)
+                    .sagaType(sagaType)
+                    .parameterResolverFactory(parameterResolverFactory)
+                    .handlerDefinition(handlerDefinition)
+                    .build();
             resourcesInitialized = true;
         }
     }
@@ -300,8 +304,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public <I> I registerCommandGateway(Class<I> gatewayInterface, final I stubImplementation) {
-        CommandGatewayFactory factory = new StubAwareCommandGatewayFactory(stubImplementation,
-                                                                           SagaTestFixture.this.commandBus);
+        CommandGatewayFactory factory = StubAwareCommandGatewayFactory.builder()
+                                                                      .commandBus(SagaTestFixture.this.commandBus)
+                                                                      .stubImplementation(stubImplementation)
+                                                                      .build();
         final I gateway = factory.createGateway(gatewayInterface);
         registerResource(gateway);
         return gateway;
@@ -324,6 +330,20 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return this;
     }
 
+    @Override
+    public FixtureConfiguration registerDeadlineDispatchInterceptor(
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor) {
+        this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerDeadlineHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
+        this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
+        return this;
+    }
+
     private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
@@ -338,9 +358,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         private final Object stubImplementation;
 
-        public StubAwareCommandGatewayFactory(Object stubImplementation, RecordingCommandBus commandBus) {
-            super(commandBus);
-            this.stubImplementation = stubImplementation;
+        protected StubAwareCommandGatewayFactory(Builder builder) {
+            super(builder);
+            this.stubImplementation = builder.stubImplementation;
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -360,6 +384,26 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                 InvocationHandler<CompletableFuture<R>> delegate,
                 int timeoutIndex, int timeUnitIndex) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
+        }
+
+        public static class Builder extends CommandGatewayFactory.Builder {
+
+            private Object stubImplementation;
+
+            @Override
+            public Builder commandBus(CommandBus commandBus) {
+                super.commandBus(commandBus);
+                return this;
+            }
+
+            private Builder stubImplementation(Object stubImplementation) {
+                this.stubImplementation = stubImplementation;
+                return this;
+            }
+
+            public StubAwareCommandGatewayFactory build() {
+                return new StubAwareCommandGatewayFactory(this);
+            }
         }
     }
 

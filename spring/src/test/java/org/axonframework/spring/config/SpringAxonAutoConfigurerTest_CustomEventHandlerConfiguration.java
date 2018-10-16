@@ -1,32 +1,46 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.saga.SagaEventHandler;
-import org.axonframework.eventhandling.saga.StartSaga;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.modelling.saga.SagaEventHandler;
+import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -45,19 +59,7 @@ import static org.junit.Assert.*;
 public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
 
     @Autowired(required = false)
-    private EventStore eventStore;
-
-    @Autowired(required = false)
     private EventBus eventBus;
-
-    @Autowired(required = false)
-    private CommandBus commandBus;
-
-    @Autowired(required = false)
-    private QueryBus queryBus;
-
-    @Autowired
-    private org.axonframework.config.Configuration axonConfig;
 
     @Autowired
     private Context.MyEventHandler myEventHandler;
@@ -74,33 +76,41 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
         assertTrue(myOtherEventHandler.received.contains("Testing 123"));
     }
 
-    @EnableAxon
+    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Scope
     @Configuration
     public static class Context {
 
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            EventProcessingModule eventProcessingModule = new EventProcessingModule();
+            eventProcessingModule.usingSubscribingEventProcessors();
+            eventProcessingModule.byDefaultAssignTo("test")
+                                 .registerEventProcessor("test", (name, config, eventHandlerInvoker) -> {
+                                     SubscribingEventProcessor processor =
+                                             SubscribingEventProcessor.builder()
+                                                                      .name(name)
+                                                                      .eventHandlerInvoker(eventHandlerInvoker)
+                                                                      .messageSource(config.eventBus())
+                                                                      .build();
+                                     processor.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+                                         unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
+                                         return interceptorChain.proceed();
+                                     });
+                                     return processor;
+                                 });
+            return eventProcessingModule;
+        }
+
         @Primary
         @Bean(destroyMethod = "shutdown")
         public CommandBus commandBus() {
-            return new AsynchronousCommandBus();
-        }
-
-        @Autowired
-        public void configure(EventHandlingConfiguration ehConfig, EventProcessingConfiguration epConfig) {
-            ehConfig.byDefaultAssignTo("test");
-            epConfig.registerEventProcessor("test", (name, c, eh) -> {
-                SubscribingEventProcessor processor = new SubscribingEventProcessor(name, eh, c.eventBus());
-                processor.registerInterceptor((unitOfWork, interceptorChain) -> {
-                    unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
-                    return interceptorChain.proceed();
-                });
-                return processor;
-            });
+            return AsynchronousCommandBus.builder().build();
         }
 
         @Bean
         public CommandBus simpleCommandBus() {
-            return new SimpleCommandBus();
+            return SimpleCommandBus.builder().build();
         }
 
         @Bean
@@ -128,7 +138,6 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             public void on(String event) {
                 fail("Event Handler on aggregate shouldn't be invoked");
             }
-
         }
 
         @Component
@@ -186,7 +195,6 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
                 received.add(event);
             }
         }
-
     }
 
     public static class SomeEvent {
@@ -201,6 +209,4 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             return id;
         }
     }
-
-
 }

@@ -20,8 +20,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import static org.mockito.Mockito.*;
 
@@ -29,14 +28,14 @@ public class DefaultMongoTemplateTest {
 
     private MongoClient mockMongo;
     private MongoDatabase mockDb;
-    private MongoCollection<Document> mockCollection;
     private DefaultMongoTemplate testSubject;
 
     @Before
     public void createFixtures() {
         mockMongo = mock(MongoClient.class);
         mockDb = mock(MongoDatabase.class);
-        mockCollection = mock(MongoCollection.class);
+        //noinspection unchecked
+        MongoCollection<Document> mockCollection = mock(MongoCollection.class);
 
         when(mockMongo.getDatabase(anyString())).thenReturn(mockDb);
         when(mockDb.getCollection(anyString())).thenReturn(mockCollection);
@@ -44,7 +43,7 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testTrackingTokenDefaultValues() {
-        testSubject = new DefaultMongoTemplate(mockMongo);
+        testSubject = DefaultMongoTemplate.builder().mongoDatabase(mockMongo).build();
 
         verify(mockMongo).getDatabase("axonframework");
 
@@ -54,7 +53,10 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testTrackingTokenCustomValues() {
-        testSubject = new DefaultMongoTemplate(mockMongo, "customDatabaseName").withTrackingTokenCollection("customCollectionName");
+        testSubject = DefaultMongoTemplate.builder()
+                                          .mongoDatabase(mockMongo, "customDatabaseName")
+                                          .build()
+                                          .withTrackingTokenCollection("customCollectionName");
 
         verify(mockMongo).getDatabase("customDatabaseName");
         testSubject.trackingTokensCollection();
@@ -63,7 +65,7 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testSagasDefaultValues() {
-        testSubject = new DefaultMongoTemplate(mockMongo);
+        testSubject = DefaultMongoTemplate.builder().mongoDatabase(mockMongo).build();
 
         testSubject.sagaCollection();
         verify(mockDb).getCollection("sagas");
@@ -71,7 +73,8 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testCustomProvidedNames() {
-        testSubject = new DefaultMongoTemplate(mockMongo).withSagasCollection("customsagas");
+        testSubject = DefaultMongoTemplate.builder().mongoDatabase(mockMongo).build()
+                                          .withSagasCollection("customsagas");
 
         testSubject.sagaCollection();
         verify(mockDb).getCollection("customsagas");
@@ -79,7 +82,7 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testDomainEvents() {
-        testSubject = new DefaultMongoTemplate(mockMongo);
+        testSubject = DefaultMongoTemplate.builder().mongoDatabase(mockMongo).build();
 
         testSubject.eventCollection();
         verify(mockDb).getCollection("domainevents");
@@ -87,7 +90,7 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testSnapshotEvents() {
-        testSubject = new DefaultMongoTemplate(mockMongo);
+        testSubject = DefaultMongoTemplate.builder().mongoDatabase(mockMongo).build();
 
         testSubject.snapshotCollection();
 
@@ -96,9 +99,9 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testEventsCollectionWithCustomProvidedNames() {
-        testSubject = new DefaultMongoTemplate(mockMongo)
-                .withDomainEventsCollection("customevents")
-                .withSnapshotCollection("customsnapshots");
+        testSubject = DefaultMongoTemplate.builder().mongoDatabase(mockMongo).build()
+                                          .withDomainEventsCollection("customevents")
+                                          .withSnapshotCollection("customsnapshots");
 
         testSubject.eventCollection();
         verify(mockDb).getCollection("customevents");
@@ -106,9 +109,9 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testSnapshotsCollectionWithCustomProvidedNames() {
-        testSubject = new DefaultMongoTemplate(mockMongo)
-                .withDomainEventsCollection("customevents")
-                .withSnapshotCollection("customsnapshots");
+        testSubject = DefaultMongoTemplate.builder().mongoDatabase(mockMongo).build()
+                                          .withDomainEventsCollection("customevents")
+                                          .withSnapshotCollection("customsnapshots");
 
         testSubject.snapshotCollection();
         verify(mockDb).getCollection("customsnapshots");

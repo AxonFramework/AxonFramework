@@ -17,32 +17,38 @@ package org.axonframework.mongo.eventsourcing.eventstore;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.WriteConcern;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
+import org.axonframework.mongo.DefaultMongoTemplate;
+import org.axonframework.mongo.MongoTemplate;
+import org.axonframework.mongo.serialization.DBObjectXStreamSerializer;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.junit.*;
 import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
 
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context_dbobject.xml"})
+@ContextConfiguration(classes = MongoEventStorageEngineTest_DBObjectSerialization.TestContext.class)
 public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractMongoEventStorageEngineTest {
 
     private static final Logger logger =
@@ -84,7 +90,7 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractM
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
-        mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate = DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
         mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
         mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
         mongoTemplate.eventCollection().dropIndexes();
@@ -104,14 +110,72 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractM
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         Serializer serializer = context.getBean(Serializer.class);
-        return new MongoEventStorageEngine(serializer, upcasterChain, mongoTemplate,
-                                           new DocumentPerEventStorageStrategy());
+        return MongoEventStorageEngine.builder()
+                                      .snapshotSerializer(serializer)
+                                      .upcasterChain(upcasterChain)
+                                      .eventSerializer(serializer)
+                                      .mongoTemplate(mongoTemplate)
+                                      .build();
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
         Serializer serializer = context.getBean(Serializer.class);
-        return new MongoEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver,
-                                           serializer, 100, mongoTemplate, new DocumentPerEventStorageStrategy());
+        return MongoEventStorageEngine.builder()
+                                      .snapshotSerializer(serializer)
+                                      .persistenceExceptionResolver(persistenceExceptionResolver)
+                                      .eventSerializer(serializer)
+                                      .mongoTemplate(mongoTemplate)
+                                      .build();
+    }
+
+    @Configuration
+    public static class TestContext {
+
+        @Bean
+        public MongoEventStorageEngine mongoEventStorageEngine(Serializer serializer, MongoTemplate mongoTemplate) {
+            return MongoEventStorageEngine.builder()
+                                          .snapshotSerializer(serializer)
+                                          .eventSerializer(serializer)
+                                          .mongoTemplate(mongoTemplate)
+                                          .build();
+        }
+
+        @Bean
+        public Serializer serializer() {
+            return DBObjectXStreamSerializer.builder().build();
+        }
+
+        @Bean
+        public MongoTemplate mongoTemplate(MongoClient mongoClient) {
+            return DefaultMongoTemplate.builder()
+                                       .mongoDatabase(mongoClient)
+                                       .build();
+        }
+
+        @Bean
+        public MongoClient mongoClient(MongoFactory mongoFactory) {
+            return mongoFactory.createMongo();
+        }
+
+        @Bean
+        public MongoFactory mongoFactoryBean(MongoOptionsFactory mongoOptionsFactory) {
+            MongoFactory mongoFactory = new MongoFactory();
+            mongoFactory.setMongoOptions(mongoOptionsFactory.createMongoOptions());
+            mongoFactory.setWriteConcern(WriteConcern.JOURNALED);
+            return mongoFactory;
+        }
+
+        @Bean
+        public MongoOptionsFactory mongoOptionsFactory() {
+            MongoOptionsFactory mongoOptionsFactory = new MongoOptionsFactory();
+            mongoOptionsFactory.setConnectionsPerHost(100);
+            return mongoOptionsFactory;
+        }
+
+        @Bean
+        public PlatformTransactionManager transactionManager() {
+            return mock(PlatformTransactionManager.class);
+        }
     }
 }

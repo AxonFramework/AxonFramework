@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +18,8 @@ package org.axonframework.mongo.eventsourcing.eventstore.documentperevent;
 
 import com.mongodb.DBObject;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -28,8 +29,6 @@ import org.bson.Document;
 import java.time.Instant;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * Implementation of a serialized event message that can be used to create a Mongo document.
@@ -61,8 +60,8 @@ public class EventEntry implements DomainEventData<Object> {
         if (serializer.canSerializeTo(DBObject.class)) {
             serializationTarget = DBObject.class;
         }
-        SerializedObject<?> serializedPayloadObject = serializePayload(event, serializer, serializationTarget);
-        SerializedObject<?> serializedMetaDataObject = serializeMetaData(event, serializer, serializationTarget);
+        SerializedObject<?> serializedPayloadObject = event.serializePayload(serializer, serializationTarget);
+        SerializedObject<?> serializedMetaDataObject = event.serializeMetaData(serializer, serializationTarget);
         serializedPayload = serializedPayloadObject.getData();
         payloadType = serializedPayloadObject.getType().getName();
         payloadRevision = serializedPayloadObject.getType().getRevision();

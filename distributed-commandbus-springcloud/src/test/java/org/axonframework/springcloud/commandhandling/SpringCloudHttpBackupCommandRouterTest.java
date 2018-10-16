@@ -16,7 +16,7 @@
 package org.axonframework.springcloud.commandhandling;
 
 import com.google.common.collect.ImmutableList;
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.*;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -43,7 +43,6 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -54,7 +53,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     private static final int LOAD_FACTOR = 1;
     private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
+    private static final CommandMessageFilter COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
 
     private SpringCloudHttpBackupCommandRouter testSubject;
 
@@ -84,22 +83,25 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
                 .thenReturn(Collections.singletonList(localServiceInstance));
 
-        expectedMessageRoutingInfo =
-                new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
+        expectedMessageRoutingInfo = new MessageRoutingInformation(LOAD_FACTOR,
+                                                                   COMMAND_NAME_FILTER,
+                                                                   XStreamSerializer.builder().build());
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(true);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
         URI expectedRemoteUri = URI.create("http://remote/message-routing-information");
         when(restTemplate.exchange(
                 eq(expectedRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
         )).thenReturn(responseEntity);
 
-        testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient,
-                                                             localServiceInstance,
-                                                             routingStrategy,
-                                                             restTemplate,
-                                                             messageRoutingInformationEndpoint);
+        testSubject = SpringCloudHttpBackupCommandRouter.builder()
+                                                        .discoveryClient(discoveryClient)
+                                                        .localServiceInstance(localServiceInstance)
+                                                        .routingStrategy(routingStrategy)
+                                                        .restTemplate(restTemplate)
+                                                        .messageRoutingInformationEndpoint(
+                                                                messageRoutingInformationEndpoint
+                                                        ).build();
     }
 
     @Test
@@ -163,7 +165,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(nonAxonInstance.getUri()).thenReturn(URI.create("http://non-axon"));
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(false);
         URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
         when(restTemplate.exchange(
                 eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
@@ -218,7 +219,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(nonAxonInstance.getUri()).thenReturn(URI.create("http://faulty-axon"));
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(true);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
         URI testRemoteUri = URI.create("http://faulty-axon/message-routing-information");
         when(restTemplate.exchange(
@@ -275,7 +275,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(discoveryClient.getInstances(nonAxonServiceInstanceId)).thenReturn(ImmutableList.of(nonAxonInstance));
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(false);
         URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
         when(restTemplate.exchange(
                 eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)

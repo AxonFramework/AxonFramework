@@ -9,10 +9,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.FanoutExchange;
@@ -35,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeNoException;
+import static org.junit.Assume.*;
 
 @ContextConfiguration(classes = SpringAMQPIntegrationTest.Context.class)
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -107,7 +105,7 @@ public class SpringAMQPIntegrationTest {
     @DirtiesContext
     @Test
     public void testPublishMessagesFromEventBus() throws Exception {
-        SimpleEventBus messageSource = new SimpleEventBus();
+        SimpleEventBus messageSource = SimpleEventBus.builder().build();
         SpringAMQPPublisher publisher = new SpringAMQPPublisher(messageSource);
         publisher.setConnectionFactory(connectionFactory);
         publisher.setExchangeName("testExchange");
@@ -143,12 +141,14 @@ public class SpringAMQPIntegrationTest {
 
         @Bean
         public AMQPMessageConverter messageConverter() {
-            return new DefaultAMQPMessageConverter(seralizer());
+            return DefaultAMQPMessageConverter.builder()
+                                              .serializer(seralizer())
+                                              .build();
         }
 
         @Bean
         public Serializer seralizer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
 
         @Bean

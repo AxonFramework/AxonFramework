@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,14 +18,19 @@ package org.axonframework.mongo.eventsourcing.tokenstore;
 
 import com.mongodb.ErrorCategory;
 import com.mongodb.MongoWriteException;
-import com.mongodb.client.model.*;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.InsertManyOptions;
+import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.result.UpdateResult;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.GenericTokenEntry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.MongoTemplate;
 import org.axonframework.serialization.Serializer;
 import org.bson.Document;
@@ -34,7 +39,6 @@ import org.bson.types.Binary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import java.lang.management.ManagementFactory;
 import java.time.Clock;
 import java.time.Duration;
@@ -42,8 +46,10 @@ import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.annotation.PostConstruct;
 
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.*;
@@ -51,14 +57,20 @@ import static com.mongodb.client.model.Sorts.ascending;
 import static com.mongodb.client.model.Updates.combine;
 import static com.mongodb.client.model.Updates.set;
 import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * An implementation of TokenStore that allows you store and retrieve tracking tokens with MongoDB.
+ *
+ * @author Joris van der Kallen
+ * @since 3.1
  */
 public class MongoTokenStore implements TokenStore {
 
-    private final static Clock clock = Clock.systemUTC();
     private final static Logger logger = LoggerFactory.getLogger(MongoTokenStore.class);
+    private final static Clock clock = Clock.systemUTC();
+
     private final MongoTemplate mongoTemplate;
     private final Serializer serializer;
     private final TemporalAmount claimTimeout;
@@ -66,36 +78,34 @@ public class MongoTokenStore implements TokenStore {
     private final Class<?> contentType;
 
     /**
-     * Creates a MongoTokenStore with a default claim timeout of 10 seconds, a default owner identifier and a default
-     * content type.
+     * Instantiate a {@link MongoTokenStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link MongoTemplate} and {@link Serializer} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param mongoTemplate used to access the collection in which tracking tokens are stored
-     * @param serializer    serializer used to serialize tracking tokens
+     * @param builder the {@link Builder} used to instantiate a {@link MongoTokenStore} instance
      */
-    public MongoTokenStore(MongoTemplate mongoTemplate, Serializer serializer) {
-        this(mongoTemplate,
-             serializer,
-             Duration.ofSeconds(10),
-             ManagementFactory.getRuntimeMXBean().getName(),
-             byte[].class);
+    protected MongoTokenStore(Builder builder) {
+        builder.validate();
+        this.mongoTemplate = builder.mongoTemplate;
+        this.serializer = builder.serializer;
+        this.claimTimeout = builder.claimTimeout;
+        this.nodeId = builder.nodeId;
+        this.contentType = builder.contentType;
     }
 
     /**
-     * Creates a MongoTokenStore by using the given values.
+     * Instantiate a Builder to be able to create a {@link MongoTokenStore}.
+     * <p>
+     * The {@code claimTimeout} is defaulted to a 10 seconds duration (by using {@link Duration#ofSeconds(long)},
+     * {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
+     * {@code contentType} to a {@code byte[]} {@link Class}. The {@link MongoTemplate} and {@link Serializer} are
+     * <b>hard requirements</b> and as such should be provided.
      *
-     * @param mongoTemplate used to access the collection in which tracking tokens are stored
-     * @param serializer    serializer used to serialize TrackingToken
-     * @param claimTimeout  the amount of time after which a claim is automatically released
-     * @param nodeId        the owner identifier that this token store uses
-     * @param contentType   the data type of the serialized tracking token
+     * @return a Builder to be able to create a {@link MongoTokenStore}
      */
-    public MongoTokenStore(MongoTemplate mongoTemplate, Serializer serializer, TemporalAmount claimTimeout,
-                           String nodeId, Class<?> contentType) {
-        this.mongoTemplate = mongoTemplate;
-        this.serializer = serializer;
-        this.claimTimeout = claimTimeout;
-        this.nodeId = nodeId;
-        this.contentType = contentType;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -109,9 +119,13 @@ public class MongoTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken) throws UnableToClaimTokenException {
+    public void initializeTokenSegments(String processorName,
+                                        int segmentCount,
+                                        TrackingToken initialToken) throws UnableToClaimTokenException {
         if (fetchSegments(processorName).length > 0) {
-            throw new UnableToClaimTokenException("Unable to initialize segments. Some tokens were already present for the given processor.");
+            throw new UnableToClaimTokenException(
+                    "Unable to initialize segments. Some tokens were already present for the given processor."
+            );
         }
 
         List<Document> entries = IntStream.range(0, segmentCount)
@@ -122,7 +136,6 @@ public class MongoTokenStore implements TokenStore {
                                           .collect(Collectors.toList());
         mongoTemplate.trackingTokensCollection()
                      .insertMany(entries, new InsertManyOptions().ordered(false));
-
     }
 
     /**
@@ -136,14 +149,17 @@ public class MongoTokenStore implements TokenStore {
 
     @Override
     public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
-        UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
-                                                 .updateOne(and(eq("processorName", processorName),
-                                                                eq("segment", segment),
-                                                                eq("owner", nodeId)),
-                                                            set("timestamp", TokenEntry.clock.instant().toEpochMilli()));
+        UpdateResult updateResult =
+                mongoTemplate.trackingTokensCollection()
+                             .updateOne(and(eq("processorName", processorName),
+                                            eq("segment", segment),
+                                            eq("owner", nodeId)),
+                                        set("timestamp", TokenEntry.clock.instant().toEpochMilli()));
         if (updateResult.getMatchedCount() == 0) {
-            throw new UnableToClaimTokenException(format("Unable to extend claim on token token '%s[%s]'. It is owned " +
-                                                                 "by another segment.", processorName, segment));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to extend claim on token token '%s[%s]'. It is owned by another segment.",
+                    processorName, segment
+            ));
         }
     }
 
@@ -298,4 +314,109 @@ public class MongoTokenStore implements TokenStore {
                                                              new IndexOptions().unique(true));
     }
 
+    /**
+     * Builder class to instantiate a {@link MongoTokenStore}.
+     * <p>
+     * The {@code claimTimeout} is defaulted to a 10 seconds duration (by using {@link Duration#ofSeconds(long)},
+     * {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
+     * {@code contentType} to a {@code byte[]} {@link Class}. The {@link MongoTemplate} and {@link Serializer} are
+     * <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private MongoTemplate mongoTemplate;
+        private Serializer serializer;
+        private TemporalAmount claimTimeout = Duration.ofSeconds(10);
+        private String nodeId = ManagementFactory.getRuntimeMXBean().getName();
+        private Class<?> contentType = byte[].class;
+
+        /**
+         * Sets the {@link MongoTemplate} providing access to the collection which stores the {@link TrackingToken}s.
+         *
+         * @param mongoTemplate the {@link MongoTemplate} providing access to the collection which stores the
+         *                      {@link TrackingToken}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder mongoTemplate(MongoTemplate mongoTemplate) {
+            assertNonNull(mongoTemplate, "MongoTemplate may not be null");
+            this.mongoTemplate = mongoTemplate;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
+         *
+         * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@code claimTimeout} specifying the amount of time this process will wait after which this process
+         * will force a claim of a {@link TrackingToken}. Thus if a claim has not been updated for the given
+         * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
+         *
+         * @param claimTimeout a timeout specifying the time after which this process will force a claim
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder claimTimeout(TemporalAmount claimTimeout) {
+            assertNonNull(claimTimeout, "The claim timeout may not be null");
+            this.claimTimeout = claimTimeout;
+            return this;
+        }
+
+        /**
+         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to
+         * {@link ManagementFactory#getRuntimeMXBean#getName} output as the node id.
+         *
+         * @param nodeId the id as a {@link String} to identify ownership of the tokens
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder nodeId(String nodeId) {
+            assertNodeId(nodeId, "The nodeId may not be null or empty");
+            this.nodeId = nodeId;
+            return this;
+        }
+
+        /**
+         * Sets the {@code contentType} to which a {@link TrackingToken} should be serialized. Defaults to a
+         * {@code byte[]} {@link Class} type.
+         *
+         * @param contentType the content type as a {@link Class} to which a {@link TrackingToken} should be serialized
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder contentType(Class<?> contentType) {
+            assertNonNull(contentType, "The content type may not be null");
+            this.contentType = contentType;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link MongoTokenStore} as specified through this Builder.
+         *
+         * @return a {@link MongoTokenStore} as specified through this Builder
+         */
+        public MongoTokenStore build() {
+            return new MongoTokenStore(this);
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(mongoTemplate, "The MongoTemplate is a hard requirement and should be provided");
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+        }
+
+        private void assertNodeId(String nodeId, String exceptionMessage) {
+            assertThat(nodeId, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
+        }
+    }
 }

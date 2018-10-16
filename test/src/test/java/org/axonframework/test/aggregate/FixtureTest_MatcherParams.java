@@ -54,7 +54,7 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectReturnValueMatching(new DoesMatch())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(sequenceOf(matches(i -> true)));
     }
 
@@ -63,7 +63,7 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectReturnValueMatching(new DoesMatch())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(payloadsMatching(sequenceOf(matches(i -> true))));
     }
 
@@ -72,7 +72,7 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectReturnValueMatching(new DoesMatch())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(payloadsMatching(exactSequenceOf(matches(i -> true))));
     }
 
@@ -81,13 +81,14 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectReturnValueMatching(new DoesMatch())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(payloadsMatching(predicate(ml -> !ml.isEmpty())));
     }
 
     @Test
     public void testFixture_UnexpectedException() {
-        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
+                                            new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
@@ -96,7 +97,7 @@ public class FixtureTest_MatcherParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new StrangeCommand("aggregateId"))
-                    .expectReturnValueMatching(new DoesMatch());
+                    .expectResultMessageMatching(new DoesMatch<>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("but got <exception of type [StrangeCommandReceivedException]>"));
@@ -105,7 +106,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_UnexpectedReturnValue() {
-        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
+                                            new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
@@ -124,7 +126,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_WrongReturnValue() {
-        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
+                                            new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
@@ -132,16 +135,17 @@ public class FixtureTest_MatcherParams {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
-                    .expectReturnValueMatching(new DoesNotMatch());
+                    .expectResultMessageMatching(new DoesNotMatch<>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("<something you can never give me> but got <null>"));
+            assertTrue(e.getMessage().contains("<something you can never give me> but got <GenericCommandResultMessage{payload={null}"));
         }
     }
 
     @Test
     public void testFixture_WrongExceptionType() {
-        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
+                                            new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
@@ -159,7 +163,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_ExpectedPublishedSameAsStored() {
-        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
+                                            new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
@@ -180,7 +185,8 @@ public class FixtureTest_MatcherParams {
     @Test
     @SuppressWarnings("unchecked")
     public void testFixture_DispatchMetaDataInCommand() throws Exception {
-        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
+                                            new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         MessageHandler<CommandMessage<?>> mockCommandHandler = mock(MessageHandler.class);
         fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
@@ -198,7 +204,8 @@ public class FixtureTest_MatcherParams {
 
     @Test
     public void testFixture_EventDoesNotMatch() {
-        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
+                                            new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());

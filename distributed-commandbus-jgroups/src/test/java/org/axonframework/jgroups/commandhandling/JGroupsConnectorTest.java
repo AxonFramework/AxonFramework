@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.axonframework.jgroups.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
@@ -27,6 +28,7 @@ import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.axonframework.jgroups.commandhandling.utils.MockException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serialization.SerializationException;
@@ -40,6 +42,7 @@ import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,10 +60,10 @@ public class JGroupsConnectorTest {
     private JChannel channel2;
     private JGroupsConnector connector1;
     private CommandBus mockCommandBus1;
-    private DistributedCommandBus dcb1;
+    private DistributedCommandBus distributedCommandBus1;
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
-    private DistributedCommandBus dcb2;
+    private DistributedCommandBus distributedCommandBus2;
     private Serializer serializer;
     private String clusterName;
     private RoutingStrategy routingStrategy;
@@ -70,15 +73,33 @@ public class JGroupsConnectorTest {
         routingStrategy = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
         channel1 = createChannel();
         channel2 = createChannel();
-        mockCommandBus1 = spy(new SimpleCommandBus());
-        mockCommandBus2 = spy(new SimpleCommandBus());
+        mockCommandBus1 = spy(SimpleCommandBus.builder().build());
+        mockCommandBus2 = spy(SimpleCommandBus.builder().build());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        serializer = new XStreamSerializer();
-        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
-        connector2 = new JGroupsConnector(mockCommandBus2, channel2, clusterName, serializer, routingStrategy);
+        serializer = XStreamSerializer.builder().build();
+        connector1 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus1)
+                                     .channel(channel1)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
+        connector2 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus2)
+                                     .channel(channel2)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
 
-        dcb1 = new DistributedCommandBus(connector1, connector1);
-        dcb2 = new DistributedCommandBus(connector2, connector2);
+        distributedCommandBus1 = DistributedCommandBus.builder()
+                                                      .commandRouter(connector1)
+                                                      .connector(connector1)
+                                                      .build();
+        distributedCommandBus2 = DistributedCommandBus.builder()
+                                                      .commandRouter(connector2)
+                                                      .connector(connector2)
+                                                      .build();
     }
 
     @After
@@ -92,18 +113,21 @@ public class JGroupsConnectorTest {
         final String mockPayload = "DummyString";
         final CommandMessage<String> commandMessage = new GenericCommandMessage<>(mockPayload);
 
-        dcb1.subscribe(String.class.getName(), m -> "ok");
+        distributedCommandBus1.subscribe(String.class.getName(), m -> "ok");
         connector1.connect();
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
         connector1.awaitJoined();
 
         FutureCallback<String, Object> futureCallback = new FutureCallback<>();
-        dcb1.dispatch(commandMessage, futureCallback);
+        distributedCommandBus1.dispatch(commandMessage, futureCallback);
         futureCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
-        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
-        verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)), any(CommandCallback.class));
+        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of
+        // ReplyingCallback is tested in its unit tests
+        //noinspection unchecked
+        verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)),
+                                         any(CommandCallback.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -115,11 +139,11 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        dcb1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
-        dcb2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        distributedCommandBus1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
+        distributedCommandBus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
 
-        dcb1.updateLoadFactor(20);
-        dcb2.updateLoadFactor(80);
+        distributedCommandBus1.updateLoadFactor(20);
+        distributedCommandBus2.updateLoadFactor(80);
 
         connector1.connect();
         connector2.connect();
@@ -132,18 +156,19 @@ public class JGroupsConnectorTest {
 
         List<FutureCallback> callbacks = new ArrayList<>();
 
+        //noinspection Duplicates
         for (int t = 0; t < 100; t++) {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t & 1) == 0) {
-                dcb1.dispatch(new GenericCommandMessage<>(message), callback);
+                distributedCommandBus1.dispatch(new GenericCommandMessage<>(message), callback);
             } else {
-                dcb2.dispatch(new GenericCommandMessage<>(message), callback);
+                distributedCommandBus2.dispatch(new GenericCommandMessage<>(message), callback);
             }
             callbacks.add(callback);
         }
-        for (FutureCallback callback : callbacks) {
-            assertEquals("The Reply!", callback.get());
+        for (FutureCallback<?, ?> callback : callbacks) {
+            assertEquals("The Reply!", callback.get().getPayload());
         }
         assertEquals(100, counter1.get() + counter2.get());
         System.out.println("Node 1 got " + counter1.get());
@@ -167,13 +192,13 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        dcb1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
-        dcb1.updateLoadFactor(20);
+        distributedCommandBus1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
+        distributedCommandBus1.updateLoadFactor(20);
         connector1.connect();
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        dcb2.subscribe(Long.class.getName(), new CountingCommandHandler(counter2));
-        dcb2.updateLoadFactor(20);
+        distributedCommandBus2.subscribe(Long.class.getName(), new CountingCommandHandler(counter2));
+        distributedCommandBus2.updateLoadFactor(20);
         connector2.connect();
 
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined(10, TimeUnit.SECONDS));
@@ -181,19 +206,19 @@ public class JGroupsConnectorTest {
         waitForConnectorSync();
 
         FutureCallback<Object, Object> callback1 = new FutureCallback<>();
-        dcb1.dispatch(new GenericCommandMessage<>("Hello"), callback1);
+        distributedCommandBus1.dispatch(new GenericCommandMessage<>("Hello"), callback1);
         FutureCallback<Object, Object> callback2 = new FutureCallback<>();
-        dcb1.dispatch(new GenericCommandMessage<>(1L), callback2);
+        distributedCommandBus1.dispatch(new GenericCommandMessage<>(1L), callback2);
 
         FutureCallback<Object, Object> callback3 = new FutureCallback<>();
-        dcb2.dispatch(new GenericCommandMessage<>("Hello"), callback3);
+        distributedCommandBus2.dispatch(new GenericCommandMessage<>("Hello"), callback3);
         FutureCallback<Object, Object> callback4 = new FutureCallback<>();
-        dcb2.dispatch(new GenericCommandMessage<>(1L), callback4);
+        distributedCommandBus2.dispatch(new GenericCommandMessage<>(1L), callback4);
 
-        assertEquals("The Reply!", callback1.get());
-        assertEquals("The Reply!", callback2.get());
-        assertEquals("The Reply!", callback3.get());
-        assertEquals("The Reply!", callback4.get());
+        assertEquals("The Reply!", callback1.get().getPayload());
+        assertEquals("The Reply!", callback2.get().getPayload());
+        assertEquals("The Reply!", callback3.get().getPayload());
+        assertEquals("The Reply!", callback4.get().getPayload());
 
         assertEquals(connector1.getConsistentHash(), connector2.getConsistentHash());
     }
@@ -203,14 +228,14 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        dcb1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
-        dcb1.updateLoadFactor(20);
+        distributedCommandBus1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
+        distributedCommandBus1.updateLoadFactor(20);
         connector1.connect();
 
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        dcb2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
-        dcb2.updateLoadFactor(80);
+        distributedCommandBus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        distributedCommandBus2.updateLoadFactor(80);
         connector2.connect();
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
@@ -225,7 +250,9 @@ public class JGroupsConnectorTest {
 
         assertFalse("That message should not have changed the ring",
                     connector1.getConsistentHash().getMembers().stream()
-                              .map(i -> i.getConnectionEndpoint(Address.class).orElse(null)).anyMatch(a -> a.equals(new IpAddress(12345))));
+                              .map(i -> i.getConnectionEndpoint(Address.class).orElse(null))
+                              .filter(Objects::nonNull)
+                              .anyMatch(a -> a.equals(new IpAddress(12345))));
     }
 
     @SuppressWarnings("unchecked")
@@ -234,8 +261,8 @@ public class JGroupsConnectorTest {
         assertNull(connector1.getNodeName());
         assertNull(connector2.getNodeName());
 
-        dcb1.subscribe(String.class.getName(), new CountingCommandHandler(new AtomicInteger(0)));
-        dcb2.subscribe(String.class.getName(), new CountingCommandHandler(new AtomicInteger(0)));
+        distributedCommandBus1.subscribe(String.class.getName(), new CountingCommandHandler(new AtomicInteger(0)));
+        distributedCommandBus2.subscribe(String.class.getName(), new CountingCommandHandler(new AtomicInteger(0)));
 
         connector1.connect();
         connector2.connect();
@@ -247,7 +274,7 @@ public class JGroupsConnectorTest {
         waitForConnectorSync();
 
         for (int i = 0; i <= 100; i = i + 10) {
-            dcb1.updateLoadFactor(i);
+            distributedCommandBus1.updateLoadFactor(i);
         }
         // send some fake news
         channel1.send(null, new JoinMessage(1, DenyAll.INSTANCE, 0, false));
@@ -261,13 +288,13 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        dcb1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
-        dcb1.updateLoadFactor(20);
+        distributedCommandBus1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
+        distributedCommandBus1.updateLoadFactor(20);
         connector1.connect();
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        dcb2.subscribe(Object.class.getName(), new CountingCommandHandler(counter2));
-        dcb2.updateLoadFactor(80);
+        distributedCommandBus2.subscribe(Object.class.getName(), new CountingCommandHandler(counter2));
+        distributedCommandBus2.updateLoadFactor(80);
         connector2.connect();
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
@@ -276,18 +303,19 @@ public class JGroupsConnectorTest {
 
         List<FutureCallback> callbacks = new ArrayList<>();
 
+        //noinspection Duplicates
         for (int t = 0; t < 100; t++) {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t & 1) == 0) {
-                dcb1.dispatch(new GenericCommandMessage<>(message), callback);
+                distributedCommandBus1.dispatch(new GenericCommandMessage<>(message), callback);
             } else {
-                dcb2.dispatch(new GenericCommandMessage<>(message), callback);
+                distributedCommandBus2.dispatch(new GenericCommandMessage<>(message), callback);
             }
             callbacks.add(callback);
         }
-        for (FutureCallback callback : callbacks) {
-            assertEquals("The Reply!", callback.get());
+        for (FutureCallback<?, ?> callback : callbacks) {
+            assertEquals("The Reply!", callback.get().getPayload());
         }
         assertEquals(100, counter1.get() + counter2.get());
         System.out.println("Node 1 got " + counter1.get());
@@ -297,36 +325,44 @@ public class JGroupsConnectorTest {
     }
 
     @Test
-    public void testUnserializableResponseConvertedToNull() throws Exception {
-        serializer = spy(new XStreamSerializer());
+    public void testUnserializableResponseReportedAsExceptional() throws Exception {
+        serializer = spy(XStreamSerializer.builder().build());
         Object successResponse = new Object();
         Exception failureResponse = new MockException("This cannot be serialized");
-        when(serializer.serialize(successResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize success"));
-        when(serializer.serialize(failureResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize failure"));
+        when(serializer.serialize(successResponse, byte[].class)).thenThrow(new SerializationException(
+                "cannot serialize success"));
+        when(serializer.serialize(failureResponse, byte[].class)).thenThrow(new SerializationException(
+                "cannot serialize failure"));
 
-        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
-        dcb1 = new DistributedCommandBus(connector1, connector1);
+        connector1 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus1)
+                                     .channel(channel1)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
+        distributedCommandBus1 = DistributedCommandBus.builder()
+                                                      .commandRouter(connector1)
+                                                      .connector(connector1)
+                                                      .build();
 
-        dcb1.subscribe(String.class.getName(), c -> successResponse);
-        dcb1.subscribe(Integer.class.getName(), c -> {
+        distributedCommandBus1.subscribe(String.class.getName(), c -> successResponse);
+        distributedCommandBus1.subscribe(Integer.class.getName(), c -> {
             throw failureResponse;
         });
         connector1.connect();
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
 
-        dcb1.dispatch(new GenericCommandMessage<>(1), callback);
-        try {
-            callback.getResult();
-            fail("Expected exception");
-        } catch (Exception e) {
-            //expected
-        }
+        distributedCommandBus1.dispatch(new GenericCommandMessage<>(1), callback);
+        CommandResultMessage<?> result = callback.getResult();
+        assertTrue(result.isExceptional());
+        //noinspection unchecked
         verify(mockCommandBus1).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
 
         callback = new FutureCallback<>();
-        dcb1.dispatch(new GenericCommandMessage<>("string"), callback);
-        assertNull(callback.getResult());
+        distributedCommandBus1.dispatch(new GenericCommandMessage<>("string"), callback);
+        assertTrue(callback.getResult().isExceptional());
     }
 
     @SuppressWarnings("unchecked")
@@ -335,13 +371,13 @@ public class JGroupsConnectorTest {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        dcb1.subscribe("myCommand1", new CountingCommandHandler(counter1));
-        dcb1.updateLoadFactor(80);
+        distributedCommandBus1.subscribe("myCommand1", new CountingCommandHandler(counter1));
+        distributedCommandBus1.updateLoadFactor(80);
         connector1.connect();
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        dcb2.subscribe("myCommand2", new CountingCommandHandler(counter2));
-        dcb2.updateLoadFactor(20);
+        distributedCommandBus2.subscribe("myCommand2", new CountingCommandHandler(counter2));
+        distributedCommandBus2.updateLoadFactor(20);
         connector2.connect();
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
@@ -354,18 +390,18 @@ public class JGroupsConnectorTest {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t % 3) == 0) {
-                dcb1.dispatch(
+                distributedCommandBus1.dispatch(
                         new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand1"),
                         callback);
             } else {
-                dcb2.dispatch(
+                distributedCommandBus2.dispatch(
                         new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand2"),
                         callback);
             }
             callbacks.add(callback);
         }
-        for (FutureCallback callback : callbacks) {
-            assertEquals("The Reply!", callback.get());
+        for (FutureCallback<?, ?> callback : callbacks) {
+            assertEquals("The Reply!", callback.get().getPayload());
         }
         assertEquals(100, counter1.get() + counter2.get());
         System.out.println("Node 1 got " + counter1.get());
@@ -406,16 +442,16 @@ public class JGroupsConnectorTest {
         int commandHandlingCounter = 0;
 
         CommandDispatchingCommandHandler commandHandlerOne = new CommandDispatchingCommandHandler(
-                numberOfDispatchedAndWaitedForCommands, dcb1, secondCommandHandlerName
+                numberOfDispatchedAndWaitedForCommands, distributedCommandBus1, secondCommandHandlerName
         );
-        dcb1.subscribe(firstCommandHandlerName, commandHandlerOne);
+        distributedCommandBus1.subscribe(firstCommandHandlerName, commandHandlerOne);
         connector1.connect();
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
         CommandDispatchingCommandHandler commandHandlerTwo = new CommandDispatchingCommandHandler(
-                numberOfDispatchedAndWaitedForCommands, dcb2, firstCommandHandlerName
+                numberOfDispatchedAndWaitedForCommands, distributedCommandBus2, firstCommandHandlerName
         );
-        dcb2.subscribe(secondCommandHandlerName, commandHandlerTwo);
+        distributedCommandBus2.subscribe(secondCommandHandlerName, commandHandlerTwo);
         connector2.connect();
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
@@ -423,11 +459,12 @@ public class JGroupsConnectorTest {
         waitForConnectorSync();
 
         FutureCallback<Integer, Integer> futureCallback = new FutureCallback<>();
-        dcb1.dispatch(new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter),
-                                                  secondCommandHandlerName),
-                      futureCallback);
+        distributedCommandBus1.dispatch(
+                new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter), secondCommandHandlerName),
+                futureCallback
+        );
 
-        assertEquals(numberOfDispatchedAndWaitedForCommands, futureCallback.getResult());
+        assertEquals(numberOfDispatchedAndWaitedForCommands, futureCallback.getResult().getPayload());
         verify(mockCommandBus1, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         verify(mockCommandBus2, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
@@ -448,7 +485,7 @@ public class JGroupsConnectorTest {
 
         private final AtomicInteger counter;
 
-        public CountingCommandHandler(AtomicInteger counter) {
+        private CountingCommandHandler(AtomicInteger counter) {
             this.counter = counter;
         }
 
@@ -484,7 +521,7 @@ public class JGroupsConnectorTest {
                     new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter), commandHandlerName),
                     futureCallback
             );
-            return (Integer) futureCallback.getResult(1000, TimeUnit.MILLISECONDS);
+            return (Integer) futureCallback.getResult(1000, TimeUnit.MILLISECONDS).getPayload();
         }
     }
 }

@@ -18,11 +18,15 @@ package org.axonframework.amqp.eventhandling.spring;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
-import org.axonframework.amqp.eventhandling.*;
+import org.axonframework.amqp.eventhandling.AMQPMessage;
+import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
+import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
+import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.EventPublicationFailedException;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -45,7 +49,8 @@ import java.util.concurrent.TimeoutException;
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
  * outgoing messages are sent to a configured Exchange, which defaults to "{@code Axon.EventBus}".
  * <p>
- * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP Queue.
+ * This publisher does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP
+ * Queue.
  *
  * @author Allard Buijze
  * @since 3.0
@@ -219,8 +224,8 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
                 serializer = applicationContext.getBean(Serializer.class);
             }
             if (routingKeyResolver == null) {
-                Map<String, RoutingKeyResolver> routingKeyResolverCandidates = applicationContext.getBeansOfType(
-                        RoutingKeyResolver.class);
+                Map<String, RoutingKeyResolver> routingKeyResolverCandidates =
+                        applicationContext.getBeansOfType(RoutingKeyResolver.class);
                 if (routingKeyResolverCandidates.size() > 1) {
                     throw new AxonConfigurationException("No MessageConverter was configured, but none can be created "
                                                                  + "using autowired properties, as more than 1 "
@@ -228,11 +233,14 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
                                                                  + "ApplicationContent");
                 } else if (routingKeyResolverCandidates.size() == 1) {
                     routingKeyResolver = routingKeyResolverCandidates.values().iterator().next();
-                } else {
-                    routingKeyResolver = new PackageRoutingKeyResolver();
                 }
             }
-            messageConverter = new DefaultAMQPMessageConverter(serializer, routingKeyResolver, isDurable);
+
+            messageConverter = DefaultAMQPMessageConverter.builder()
+                                                          .serializer(serializer)
+                                                          .routingKeyResolver(routingKeyResolver)
+                                                          .durable(isDurable)
+                                                          .build();
         }
     }
 
@@ -254,8 +262,8 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     }
 
     /**
-     * Enables or diables the RabbitMQ specific publisher acknowledgements (confirms). When confirms are enabled, the
-     * terminal will wait until the server has acknowledged the reception (or fsync to disk on persistent messages) of
+     * Enables or disables the RabbitMQ specific publisher acknowledgements (confirms). When confirms are enabled, the
+     * publisher will wait until the server has acknowledged the reception (or fsync to disk on persistent messages) of
      * all published messages.
      * <p>
      * Server ACKS cannot be enabled when transactions are enabled.
@@ -342,9 +350,9 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     }
 
     /**
-     * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a {@link
-     * PackageRoutingKeyResolver}, which uses the package name of the message's
-     * payload as a Routing Key.
+     * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a
+     * {@link org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver}, which uses the package name of the
+     * message's payload as a Routing Key.
      * <p>
      * This setting is ignored if a {@link
      * #setMessageConverter(AMQPMessageConverter) MessageConverter} is configured.

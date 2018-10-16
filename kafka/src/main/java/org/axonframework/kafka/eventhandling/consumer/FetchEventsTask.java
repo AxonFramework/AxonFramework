@@ -36,6 +36,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * Polls {@link Consumer} and inserts records on {@link Buffer}.
  *
  * @author Nakul Mishra
+ * @since 3.3
  */
 class FetchEventsTask<K, V> implements Runnable {
 
