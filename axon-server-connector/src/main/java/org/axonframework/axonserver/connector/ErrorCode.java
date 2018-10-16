@@ -46,9 +46,9 @@ public enum ErrorCode {
     AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", AxonServerException::new),
 
     //Event publishing errors
-    INVALID_SEQUENCE("AXONIQ-2000", (code, error) -> new ConcurrencyException(error.getMessage(), new AxonServerException(code, error))),
-    NO_MASTER_AVAILABLE("AXONIQ-2100", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
-    PAYLOAD_TOO_LARGE("AXONIQ-2001",(code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
+    INVALID_EVENT_SEQUENCE("AXONIQ-2000", (code, error) -> new ConcurrencyException(error.getMessage(), new AxonServerException(code, error))),
+    NO_EVENT_STORE_MASTER_AVAILABLE("AXONIQ-2100", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
+    EVENT_PAYLOAD_TOO_LARGE("AXONIQ-2001", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
 
     //Communication errors
     CONNECTION_FAILED("AXONIQ-3001", AxonServerException::new),
@@ -77,11 +77,11 @@ public enum ErrorCode {
     OTHER("AXONIQ-0001", AxonServerException::new);
 
     private final String errorCode;
-    private final BiFunction<String, ErrorMessage, ? extends AxonException> exceptionFn;
+    private final BiFunction<String, ErrorMessage, ? extends AxonException> exceptionBuilder;
 
-    ErrorCode(String errorCode, BiFunction<String, ErrorMessage, ? extends AxonException> exceptionFn) {
+    ErrorCode(String errorCode, BiFunction<String, ErrorMessage, ? extends AxonException> exceptionBuilder) {
         this.errorCode = errorCode;
-        this.exceptionFn = exceptionFn;
+        this.exceptionBuilder = exceptionBuilder;
     }
 
     private static AxonException convert(String code, Throwable t) {
@@ -110,6 +110,6 @@ public enum ErrorCode {
     }
 
     public AxonException convert(ErrorMessage errorMessage){
-        return exceptionFn.apply(errorCode,errorMessage);
+        return exceptionBuilder.apply(errorCode, errorMessage);
     }
 }
