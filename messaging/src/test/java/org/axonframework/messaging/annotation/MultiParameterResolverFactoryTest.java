@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InOrder;
-import org.mockito.Matchers;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -55,12 +55,12 @@ public class MultiParameterResolverFactoryTest {
         mockResolver1 = mock(ParameterResolver.class);
         mockResolver2 = mock(ParameterResolver.class);
 
-        when(mockFactory1.createInstance(Matchers.any(Executable.class),
-                                         Matchers.any(),
-                                         Matchers.anyInt())).thenReturn(mockResolver1);
-        when(mockFactory2.createInstance(Matchers.any(Executable.class),
-                                         Matchers.any(),
-                                         Matchers.anyInt())).thenReturn(mockResolver2);
+        when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
+                                         ArgumentMatchers.any(),
+                                         ArgumentMatchers.anyInt())).thenReturn(mockResolver1);
+        when(mockFactory2.createInstance(ArgumentMatchers.any(Executable.class),
+                                         ArgumentMatchers.any(),
+                                         ArgumentMatchers.anyInt())).thenReturn(mockResolver2);
 
         testSubject = new MultiParameterResolverFactory(mockFactory1, mockFactory2);
     }
@@ -72,14 +72,14 @@ public class MultiParameterResolverFactoryTest {
         assertFalse(factory.matches(null));
 
         InOrder inOrder = inOrder(mockFactory1, mockFactory2, mockResolver1, mockResolver2);
-        inOrder.verify(mockFactory1).createInstance(Matchers.any(Executable.class),
-                                                    Matchers.any(),
-                                                    Matchers.anyInt());
+        inOrder.verify(mockFactory1).createInstance(ArgumentMatchers.any(Executable.class),
+                                                    ArgumentMatchers.any(),
+                                                    ArgumentMatchers.anyInt());
         inOrder.verify(mockResolver1).matches(any());
 
-        verify(mockFactory2, never()).createInstance(Matchers.any(Executable.class),
-                                                     Matchers.any(),
-                                                     Matchers.anyInt());
+        verify(mockFactory2, never()).createInstance(ArgumentMatchers.any(Executable.class),
+                                                     ArgumentMatchers.any(),
+                                                     ArgumentMatchers.anyInt());
 
         verify(mockResolver2, never()).matches(any(Message.class));
     }
@@ -88,9 +88,9 @@ public class MultiParameterResolverFactoryTest {
     public void testFirstMatchingResolverMayReturnValue() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-        when(mockFactory1.createInstance(Matchers.any(Executable.class),
-                                         Matchers.any(),
-                                         Matchers.anyInt()))
+        when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
+                                         ArgumentMatchers.any(),
+                                         ArgumentMatchers.anyInt()))
                 .thenReturn(null);
         when(mockResolver2.matches(message)).thenReturn(true);
         when(mockResolver2.resolveParameterValue(message)).thenReturn("Resolved");

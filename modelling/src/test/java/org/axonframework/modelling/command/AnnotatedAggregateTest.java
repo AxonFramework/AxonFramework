@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,16 +23,19 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 public class AnnotatedAggregateTest {
 
@@ -47,7 +50,7 @@ public class AnnotatedAggregateTest {
     }
 
     @Test
-    public void testApplyingEventInHandlerPublishesInRightOrder() throws Exception {
+    public void testApplyingEventInHandlerPublishesInRightOrder() {
         Command command = new Command(ID);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository

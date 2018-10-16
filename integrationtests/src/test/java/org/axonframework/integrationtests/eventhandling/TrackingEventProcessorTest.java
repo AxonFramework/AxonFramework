@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,22 +17,10 @@
 package org.axonframework.integrationtests.eventhandling;
 
 import junit.framework.TestCase;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.GapAwareTrackingToken;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.ReplayToken;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -41,17 +29,14 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.serialization.SerializationException;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -62,10 +47,10 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
+import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
-import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.mockito.Mockito.*;
 
 /**
@@ -696,7 +681,7 @@ public class TrackingEventProcessorTest {
         } catch (UnableToClaimTokenException e) {
             // expected
         }
-        verify(tokenStore, never()).storeToken(isNull(TrackingToken.class), anyString(), anyInt());
+        verify(tokenStore, never()).storeToken(isNull(), anyString(), anyInt());
     }
 
     @Test
@@ -716,7 +701,7 @@ public class TrackingEventProcessorTest {
 
         Thread.sleep(2500);
 
-        assertTrue(testSubject.activeProcessorThreads() == 1);
+        assertEquals(1, testSubject.activeProcessorThreads());
     }
 
     @Test

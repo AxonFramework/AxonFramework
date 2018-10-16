@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,31 +17,27 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateScopeDescriptor;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.modelling.saga.SagaScopeDescriptor;
-import org.axonframework.eventsourcing.AggregateCacheEntry;
-import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.SnapshotTrigger;
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.junit.*;
-import org.mockito.*;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.modelling.saga.SagaScopeDescriptor;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatchers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -168,7 +164,7 @@ public class CommandHandlerInvokerTest {
 
         verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
         verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
-        verify(mockEventStore).publish(Matchers.<DomainEventMessage<?>[]>anyVararg());
+        verify(mockEventStore).publish(ArgumentMatchers.<DomainEventMessage<?>[]>any());
     }
 
     @Test

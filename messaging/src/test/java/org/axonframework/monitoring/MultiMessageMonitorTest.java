@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,9 +19,9 @@ package org.axonframework.monitoring;
 import org.axonframework.messaging.Message;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 
@@ -42,8 +42,8 @@ public class MultiMessageMonitorTest {
         Throwable throwable = new Throwable();
         monitorCallback.reportFailure(throwable);
 
-        Mockito.verify(messageMonitorMock).onMessageIngested(Matchers.same(messageMock));
-        Mockito.verify(callback).reportFailure(Matchers.same(throwable));
+        Mockito.verify(messageMonitorMock).onMessageIngested(ArgumentMatchers.same(messageMock));
+        Mockito.verify(callback).reportFailure(ArgumentMatchers.same(throwable));
     }
 
     @Test
@@ -57,7 +57,7 @@ public class MultiMessageMonitorTest {
         MessageMonitor.MonitorCallback monitorCallback = multiMessageMonitor.onMessageIngested(messageMock);
         monitorCallback.reportSuccess();
 
-        Mockito.verify(messageMonitorMock).onMessageIngested(Matchers.same(messageMock));
+        Mockito.verify(messageMonitorMock).onMessageIngested(ArgumentMatchers.same(messageMock));
         Mockito.verify(callback).reportSuccess();
     }
 
@@ -74,9 +74,9 @@ public class MultiMessageMonitorTest {
 
         multiMessageMonitor.onMessageIngested(messageMock).reportSuccess();
 
-        Mockito.verify(messageMonitorMock1).onMessageIngested(Matchers.same(messageMock));
+        Mockito.verify(messageMonitorMock1).onMessageIngested(ArgumentMatchers.same(messageMock));
         Mockito.verify(callback1).reportSuccess();
-        Mockito.verify(messageMonitorMock2).onMessageIngested(Matchers.same(messageMock));
+        Mockito.verify(messageMonitorMock2).onMessageIngested(ArgumentMatchers.same(messageMock));
         Mockito.verify(callback2).reportSuccess();
     }
 }
