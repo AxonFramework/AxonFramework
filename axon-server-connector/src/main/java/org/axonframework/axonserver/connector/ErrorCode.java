@@ -62,6 +62,7 @@ public enum ErrorCode {
     //Query errors
     NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
     QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error) -> new QueryExecutionException(error.getMessage(), new RemoteQueryException(code, error))),
+    QUERY_DISPATCH_ERROR("AXONIQ-5002", RemoteQueryException::new),
 
     // Internal errors
     DATAFILE_READ_ERROR( "AXONIQ-9000", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
