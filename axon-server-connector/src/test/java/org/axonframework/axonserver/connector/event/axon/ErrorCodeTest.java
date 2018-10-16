@@ -16,11 +16,17 @@
 
 package org.axonframework.axonserver.connector.event.axon;
 
+import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.event.util.EventStoreClientException;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.common.AxonException;
 import org.axonframework.modelling.command.ConcurrencyException;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.junit.Test;
+import org.junit.*;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 
 /**
@@ -32,9 +38,25 @@ public class ErrorCodeTest {
         throw ErrorCode.convert(new EventStoreClientException("AXONIQ-2000", "Concurrent modification of same aggregate"));
     }
 
-    @Test(expected = EventStoreException.class)
+    @Test(expected = AxonServerException.class)
     public void convertUnknown() throws Exception {
-        throw ErrorCode.convert(new EventStoreClientException("AXONIQ-10000", "Concurrent modification of same aggregate"));
+        throw ErrorCode.convert(new EventStoreClientException("AXONIQ-10000", "Unknown error code"));
+    }
+
+    @Test
+    public void testCovert4002FromCodeAndMessage(){
+        ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4002");
+        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build());
+        assertTrue(exception instanceof CommandExecutionException);
+        assertEquals("myMessage", exception.getMessage());
+    }
+
+    @Test
+    public void testCovertUnknownFromCodeAndMessage(){
+        ErrorCode errorCode = ErrorCode.getFromCode("????????");
+        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build());
+        assertTrue(exception instanceof AxonServerException);
+        assertEquals("myMessage", exception.getMessage());
     }
 
 }
