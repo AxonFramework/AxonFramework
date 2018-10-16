@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
@@ -80,7 +81,7 @@ public class AxonServerEventStoreTest {
         assertEquals(Arrays.asList("Test1", "Test2", "Test3"), received);
     }
 
-    @Test(expected = EventStoreException.class)
+    @Test(expected = AxonServerException.class)
     public void testLastSequenceNumberFor() {
         testSubject.lastSequenceNumberFor("Agg1");
     }
