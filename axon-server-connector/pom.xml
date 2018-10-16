@@ -194,7 +194,8 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.axonserver.*
+                            org.axonframework.axonserver.*,
+                            io.axoniq.axonserver.grpc.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,
