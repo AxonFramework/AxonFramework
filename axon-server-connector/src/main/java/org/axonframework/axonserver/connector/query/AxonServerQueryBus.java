@@ -278,8 +278,8 @@ public class AxonServerQueryBus implements QueryBus {
                                                                                                   .setRequestIdentifier(requestId)
                                                                                                   .setMessage(ExceptionSerializer
                                                                                                                  .serialize(configuration.getClientName(), ex))
-                                                                                                    .setErrorCode(ErrorCode.resolve(ex).errorCode())
-                                                                                                    .build())
+                                                                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                                                                  .build())
                                                                    .build());
             }
         }

@@ -16,84 +16,94 @@
 
 package org.axonframework.axonserver.connector;
 
+import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.axonserver.connector.command.RemoteCommandException;
 import org.axonframework.axonserver.connector.event.util.EventStoreClientException;
+import org.axonframework.axonserver.connector.query.RemoteQueryException;
+import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.modelling.command.AggregateRolledBackException;
-import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.messaging.EventPublicationFailedException;
+import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryExecutionException;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiFunction;
 
 
 /**
- * Converts an EventStoreClientException to the relevant Axon framework exception.
+ * Converts an Axon Server Error to the relevant Axon framework exception.
  */
 public enum ErrorCode {
     // Generic errors processing client request
-    AUTHENTICATION_TOKEN_MISSING("AXONIQ-1000", EventStoreException.class),
-    AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", EventStoreException.class),
-    NODE_IS_REPLICA("AXONIQ-1100", EventStoreException.class),
+    AUTHENTICATION_TOKEN_MISSING("AXONIQ-1000", AxonServerException::new),
+    AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", AxonServerException::new),
+    NODE_IS_REPLICA("AXONIQ-1100", AxonServerException::new),
 
-    // Input errors
-    INVALID_SEQUENCE("AXONIQ-2000", ConcurrencyException.class),
-    PAYLOAD_TOO_LARGE("AXONIQ-2001", EventStoreException.class),
-    NO_MASTER_AVAILABLE("AXONIQ-2100", EventStoreException.class),
+    //Event publishing errors
+    INVALID_SEQUENCE("AXONIQ-2000", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
+    NO_MASTER_AVAILABLE("AXONIQ-2100", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
 
-    CONNECTION_TO_AXONDB_FAILED("AXONIQ-6000", EventStoreException.class),
+    //Communication errors
+    CONNECTION_FAILED("AXONIQ-6000", AxonServerException::new),
+    PAYLOAD_TOO_LARGE("AXONIQ-6001", AxonServerException::new),
 
-    // Execution errors
-    COMMAND_EXECUTION_ERROR("AXONIQ-7000", CommandExecutionException.class),
-    QUERY_EXECUTION_ERROR("AXONIQ-8000", QueryExecutionException.class),
+    // Command errors
+    COMMAND_EXECUTION_ERROR("AXONIQ-7000", (code, error) -> new CommandExecutionException(error.getMessage(),  new RemoteCommandException(code, error))),
+    NO_HANDLER_FOR_COMMAND("AXONIQ-7001", (code, error) -> new NoHandlerForCommandException(error.getMessage())),
+    COMMAND_DISPATCH_ERROR("AXONIQ-7002", (code, error) -> new CommandDispatchException(error.getMessage())),
+
+    //Query errors
+    QUERY_EXECUTION_ERROR("AXONIQ-8000", (code, error) -> new QueryExecutionException(error.getMessage(), new RemoteQueryException(code, error))),
+    NO_HANDLER_FOR_QUERY("AXONIQ-8001", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
 
     // Internal errors
-    DATAFILE_READ_ERROR( "AXONIQ-9000", EventStoreException.class),
-    INDEX_READ_ERROR( "AXONIQ-9001", EventStoreException.class),
-    DATAFILE_WRITE_ERROR( "AXONIQ-9100", EventStoreException.class),
-    INDEX_WRITE_ERROR( "AXONIQ-9101", EventStoreException.class),
-    DIRECTORY_CREATION_FAILED("AXONIQ-9102", EventStoreException.class),
-    VALIDATION_FAILED( "AXONIQ-9200", EventStoreException.class),
-    TRANSACTION_ROLLED_BACK( "AXONIQ-9900", AggregateRolledBackException.class),
-    OTHER( "AXONIQ-0001", EventStoreException.class),
-    ;
+    DATAFILE_READ_ERROR( "AXONIQ-9000", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    INDEX_READ_ERROR( "AXONIQ-9001", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    DATAFILE_WRITE_ERROR( "AXONIQ-9100", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    INDEX_WRITE_ERROR( "AXONIQ-9101", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    DIRECTORY_CREATION_FAILED("AXONIQ-9102", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    VALIDATION_FAILED( "AXONIQ-9200", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    TRANSACTION_ROLLED_BACK( "AXONIQ-9900", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
 
-    private final String code;
-    private final Class exceptionClass;
+    //Default
+    OTHER("AXONIQ-0001", AxonServerException::new);
 
-    ErrorCode(String code, Class<? extends AxonException> exceptionClass) {
-        this.code = code;
-        this.exceptionClass = exceptionClass;
+    private final String errorCode;
+    private final BiFunction<String, ErrorMessage, ? extends AxonException> exceptionFn;
+
+    ErrorCode(String errorCode, BiFunction<String, ErrorMessage, ? extends AxonException> exceptionFn) {
+        this.errorCode = errorCode;
+        this.exceptionFn = exceptionFn;
     }
 
-
-    public static Class<? extends AxonException> lookupExceptionClass(String code) {
-        return Arrays.stream(values()).filter(mapping -> mapping.code.equals(code))
-                .map(mapping -> mapping.exceptionClass)
-                .findFirst().orElse(OTHER.exceptionClass);
+    private static AxonException convert(String code, Throwable t) {
+        return Arrays.stream(values()).filter(mapping -> mapping.errorCode.equals(code))
+              .findFirst()
+              .orElse(OTHER)
+              .convert(ExceptionSerializer.serialize("", t));
     }
 
     public static AxonException convert(Throwable t) {
         if( t instanceof EventStoreClientException) {
-            Class<? extends AxonException> clazz = lookupExceptionClass(((EventStoreClientException)t).getCode());
-            try {
-                return clazz.getDeclaredConstructor(String.class, Throwable.class).newInstance(t.getMessage(), t.getCause());
-            } catch (Exception ex) {
-            }
+            return convert(((EventStoreClientException)t).getCode(), t);
         }
-
         if( t instanceof TimeoutException) {
             return new org.axonframework.messaging.ExecutionException("Timeout while executing request", t);
         }
-        return new EventStoreException(t.getMessage(), t);
+        return new AxonServerException(OTHER.errorCode, t.getMessage());
     }
 
-    public static ErrorCode resolve(Throwable throwable) {
-        return OTHER;
-    }
 
     public String errorCode() {
-        return code;
+        return errorCode;
+    }
+
+    public AxonException convert(ErrorMessage errorMessage){
+        return exceptionFn.apply(errorCode,errorMessage);
     }
 }

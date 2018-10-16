@@ -17,23 +17,53 @@
 package org.axonframework.axonserver.connector;
 
 
+import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.common.AxonException;
+
+import java.util.Collection;
+import java.util.Collections;
+
 /**
  * Generic exception indicating an error related to AxonServer.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class AxonServerException extends RuntimeException {
+public class AxonServerException extends AxonException {
 
-    public AxonServerException(String message) {
-        super(message);
+    private final String errorCode;
+    private final String source;
+    private final Collection<String> details;
+
+    public AxonServerException(String errorCode, ErrorMessage errorMessage) {
+        this(errorMessage.getMessage(), errorCode, errorMessage.getLocation(), errorMessage.getDetailsList());
     }
 
     public AxonServerException(String errorCode, String message) {
-        super(errorCode+ " - " +message);
+        this(message, errorCode, null, Collections.emptyList());
     }
 
-    public AxonServerException(ErrorCode errorCode, String message) {
-        this(errorCode.errorCode(), message);
+    public AxonServerException(String message,
+                               String errorCode,
+                               String source,
+                               Collection<String> details) {
+        super(message);
+        this.errorCode = errorCode;
+        this.source = source;
+        this.details = details;
     }
+
+    public String errorCode() {
+        return errorCode;
+    }
+
+    public String source() {
+        return source;
+    }
+
+    public Collection<String> details() {
+        return details;
+    }
+
+
 }

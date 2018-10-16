@@ -110,7 +110,7 @@ public class SubscriptionMessageSerializer {
         QueryUpdateCompleteExceptionally.Builder builder = QueryUpdateCompleteExceptionally
                 .newBuilder()
                 .setMessage(ExceptionSerializer.serialize(conf.getClientName(), cause))
-                .setErrorCode(ErrorCode.resolve(cause).errorCode())
+                .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
                 .setClientName(conf.getClientName())
                 .setComponentName(conf.getComponentName());
         return newBuilder().setSubscriptionQueryResponse(

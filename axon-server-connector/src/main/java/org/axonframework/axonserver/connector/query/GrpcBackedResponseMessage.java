@@ -48,14 +48,14 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
         this.messageSerializer = messageSerializer;
         this.metadata = new GrpcMetadata(queryResponse.getMetaDataMap(), messageSerializer);
         if (queryResponse.hasMessage()) {
-            Class<? extends AxonException> exceptionClass = ErrorCode.lookupExceptionClass(queryResponse
-                                                                                                   .getErrorCode());
-            Throwable remoteException = new RemoteQueryException(queryResponse.getErrorCode(),
-                                                                 queryResponse.getMessage());
-            if (QueryExecutionException.class.equals(exceptionClass)) {
-                remoteException = new QueryExecutionException(queryResponse.getMessage().getMessage(), remoteException);
-            }
-            this.exception = remoteException;
+//            Class<? extends AxonException> exceptionClass = ErrorCode.lookupExceptionClass(queryResponse
+//                                                                                                   .getErrorCode());
+//            Throwable remoteException = new RemoteQueryException(queryResponse.getErrorCode(),
+//                                                                 queryResponse.getMessage());
+//            if (QueryExecutionException.class.equals(exceptionClass)) {
+//                remoteException = new QueryExecutionException(queryResponse.getMessage().getMessage(), remoteException);
+//            }
+            this.exception = ErrorCode.valueOf(queryResponse.getErrorCode()).convert(queryResponse.getMessage());
         } else {
             this.exception = null;
         }
