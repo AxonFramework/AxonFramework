@@ -27,10 +27,10 @@ import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.EventPublicationFailedException;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryExecutionException;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 
@@ -46,7 +46,7 @@ public enum ErrorCode {
     AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", AxonServerException::new),
 
     //Event publishing errors
-    INVALID_SEQUENCE("AXONIQ-2000", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
+    INVALID_SEQUENCE("AXONIQ-2000", (code, error) -> new ConcurrencyException(error.getMessage(), new AxonServerException(code, error))),
     NO_MASTER_AVAILABLE("AXONIQ-2100", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
     PAYLOAD_TOO_LARGE("AXONIQ-2001",(code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
 
