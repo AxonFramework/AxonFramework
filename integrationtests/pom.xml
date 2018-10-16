@@ -71,14 +71,14 @@
         </dependency>
 
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework.extensions.mongo</groupId>
             <artifactId>axon-mongo</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework.extensions.amqp</groupId>
             <artifactId>axon-amqp</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

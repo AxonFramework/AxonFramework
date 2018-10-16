@@ -20,6 +20,20 @@ We noticed that `axon-core` was encompassing to big a portion of the whole frame
 couple of reasonable components. It's been split into `axon-messaging`, `axon-modelling`, `axon-eventsourcing`, 
 `axon-disruptor` and `axon-configuration`.
 
+The Spring Cloud, AMQP, Kafka, Mongo and JGroups related modules are now published under another Maven Group ID, to 
+emphasise their status as an extension to the framework, rather than a core module. This also means their release 
+schedule may differ slightly from that of the core framework.
+
+The new Group ID's are:
+
+| Module  | New Group ID                             |
+|---------|------------------------------------------|
+| Spring  | org.axonframework.extensions.springcloud |
+| AMQP    | org.axonframework.extensions.amqp        |
+| Kafka   | org.axonframework.extensions.kafka       |
+| JGroups | org.axonframework.extensions.jgroups     |
+| Mongo   | org.axonframework.extensions.mongo       |
+
 Other changes
 =============
 

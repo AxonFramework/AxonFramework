@@ -59,7 +59,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.jgroups</groupId>
             <artifactId>axon-distributed-commandbus-jgroups</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>

@@ -41,6 +41,7 @@
         <version>4.0-SNAPSHOT</version>
     </parent>
 
+    <groupId>org.axonframework.extensions.kafka</groupId>
     <artifactId>axon-kafka</artifactId>
 
     <name>Axon Framework Kafka</name>
@@ -58,7 +59,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -119,7 +120,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.kafka</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extensions.kafka</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

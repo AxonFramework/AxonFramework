@@ -41,6 +41,7 @@
         <version>4.0-SNAPSHOT</version>
     </parent>
 
+    <groupId>org.axonframework.extensions.jgroups</groupId>
     <artifactId>axon-distributed-commandbus-jgroups</artifactId>
 
     <name>Axon Framework Distributed CommandBus JGroups</name>
@@ -52,7 +53,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -84,7 +85,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.jgroups.commandhandling</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extensions.jgroups.commandbus</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

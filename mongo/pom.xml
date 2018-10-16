@@ -41,6 +41,7 @@
         <version>4.0-SNAPSHOT</version>
     </parent>
 
+    <groupId>org.axonframework.extensions.mongo</groupId>
     <artifactId>axon-mongo</artifactId>
 
     <name>Axon Framework MongoDB Components</name>
@@ -89,7 +90,7 @@
 
         <!-- Test dependencies -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -139,7 +140,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.mongo</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extensions.mongo</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

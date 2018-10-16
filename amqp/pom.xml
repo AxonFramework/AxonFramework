@@ -41,6 +41,7 @@
         <version>4.0-SNAPSHOT</version>
     </parent>
 
+    <groupId>org.axonframework.extensions.amqp</groupId>
     <artifactId>axon-amqp</artifactId>
 
     <name>Axon AMQP</name>
@@ -53,7 +54,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -129,7 +130,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.amqp</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extensions.amqp</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

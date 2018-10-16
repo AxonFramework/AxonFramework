@@ -52,14 +52,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.amqp</groupId>
             <artifactId>axon-amqp</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.kafka</groupId>
             <artifactId>axon-kafka</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
@@ -72,14 +72,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.jgroups</groupId>
             <artifactId>axon-distributed-commandbus-jgroups</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.springcloud</groupId>
             <artifactId>axon-distributed-commandbus-springcloud</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
