@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertEquals;
 public class EventProcessorConfigurationTest {
 
     @Autowired
-    private EventProcessingConfiguration eventProcessingConfiguration;
+    private EventProcessingModule eventProcessingConfiguration;
 
     @Autowired
     private SequencingPolicy expectedPolicy;
@@ -91,33 +91,33 @@ public class EventProcessorConfigurationTest {
         public SequencingPolicy<?> customPolicy() {
             return new FullConcurrencyPolicy();
         }
-    }
 
-    @SuppressWarnings("unused")
-    @Component
-    @ProcessingGroup("first")
-    public static class FirstHandler {
+        @SuppressWarnings("unused")
+        @Component
+        @ProcessingGroup("first")
+        public static class FirstHandler {
 
-        @Autowired
-        private CountDownLatch countDownLatch1;
+            @Autowired
+            private CountDownLatch countDownLatch1;
 
-        @EventHandler
-        public void handle(String event) {
-            countDownLatch1.countDown();
+            @EventHandler
+            public void handle(String event) {
+                countDownLatch1.countDown();
+            }
         }
-    }
 
-    @SuppressWarnings("unused")
-    @Component
-    @ProcessingGroup("second")
-    public static class SecondHandler {
+        @SuppressWarnings("unused")
+        @Component
+        @ProcessingGroup("second")
+        public static class SecondHandler {
 
-        @Autowired
-        private CountDownLatch countDownLatch2;
+            @Autowired
+            private CountDownLatch countDownLatch2;
 
-        @EventHandler
-        public void handle(String event) {
-            countDownLatch2.countDown();
+            @EventHandler
+            public void handle(String event) {
+                countDownLatch2.countDown();
+            }
         }
     }
 }
