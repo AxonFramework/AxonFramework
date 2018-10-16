@@ -91,12 +91,7 @@ public class CommandSerializer {
         MetaData metaData = new GrpcMetaDataConverter(messageSerializer).convert(response.getMetaDataMap());
 
         if (response.hasMessage()) {
-            AxonException exception = ErrorCode.valueOf(response.getErrorCode()).convert(response.getMessage());
-//            Class<? extends AxonException> exceptionClass = ErrorCode.lookupExceptionClass(response.getErrorCode());
-//            Throwable exception = new RemoteCommandException(response.getErrorCode(), response.getMessage());
-//            if (CommandExecutionException.class.equals(exceptionClass)) {
-//                exception = new CommandExecutionException(response.getMessage().getMessage(), exception);
-//            }
+            AxonException exception = ErrorCode.getFromCode(response.getErrorCode()).convert(response.getMessage());
             return new GenericCommandResultMessage<>(exception, metaData);
         }
 

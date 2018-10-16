@@ -34,6 +34,8 @@ import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 
+import static java.util.Arrays.stream;
+
 
 /**
  * Converts an Axon Server Error to the relevant Axon framework exception.
@@ -42,24 +44,24 @@ public enum ErrorCode {
     // Generic errors processing client request
     AUTHENTICATION_TOKEN_MISSING("AXONIQ-1000", AxonServerException::new),
     AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", AxonServerException::new),
-    NODE_IS_REPLICA("AXONIQ-1100", AxonServerException::new),
 
     //Event publishing errors
     INVALID_SEQUENCE("AXONIQ-2000", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
     NO_MASTER_AVAILABLE("AXONIQ-2100", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
+    PAYLOAD_TOO_LARGE("AXONIQ-2001",(code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
 
     //Communication errors
-    CONNECTION_FAILED("AXONIQ-6000", AxonServerException::new),
-    PAYLOAD_TOO_LARGE("AXONIQ-6001", AxonServerException::new),
+    CONNECTION_FAILED("AXONIQ-3001", AxonServerException::new),
+    GRPC_MESSAGE_TOO_LARGE("AXONIQ-3002", AxonServerException::new),
 
     // Command errors
-    COMMAND_EXECUTION_ERROR("AXONIQ-7000", (code, error) -> new CommandExecutionException(error.getMessage(),  new RemoteCommandException(code, error))),
-    NO_HANDLER_FOR_COMMAND("AXONIQ-7001", (code, error) -> new NoHandlerForCommandException(error.getMessage())),
-    COMMAND_DISPATCH_ERROR("AXONIQ-7002", (code, error) -> new CommandDispatchException(error.getMessage())),
+    NO_HANDLER_FOR_COMMAND("AXONIQ-4000", (code, error) -> new NoHandlerForCommandException(error.getMessage())),
+    COMMAND_EXECUTION_ERROR("AXONIQ-4002", (code, error) -> new CommandExecutionException(error.getMessage(),  new RemoteCommandException(code, error))),
+    COMMAND_DISPATCH_ERROR("AXONIQ-4003", (code, error) -> new CommandDispatchException(error.getMessage())),
 
     //Query errors
-    QUERY_EXECUTION_ERROR("AXONIQ-8000", (code, error) -> new QueryExecutionException(error.getMessage(), new RemoteQueryException(code, error))),
-    NO_HANDLER_FOR_QUERY("AXONIQ-8001", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
+    NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
+    QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error) -> new QueryExecutionException(error.getMessage(), new RemoteQueryException(code, error))),
 
     // Internal errors
     DATAFILE_READ_ERROR( "AXONIQ-9000", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
@@ -82,7 +84,7 @@ public enum ErrorCode {
     }
 
     private static AxonException convert(String code, Throwable t) {
-        return Arrays.stream(values()).filter(mapping -> mapping.errorCode.equals(code))
+        return stream(values()).filter(mapping -> mapping.errorCode.equals(code))
               .findFirst()
               .orElse(OTHER)
               .convert(ExceptionSerializer.serialize("", t));
@@ -98,6 +100,9 @@ public enum ErrorCode {
         return new AxonServerException(OTHER.errorCode, t.getMessage());
     }
 
+    public static ErrorCode getFromCode(String code){
+        return stream(values()).filter(value -> value.errorCode.equals(code)).findFirst().orElse(OTHER);
+    }
 
     public String errorCode() {
         return errorCode;
