@@ -6,7 +6,7 @@
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~     http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
@@ -24,15 +25,9 @@
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>test</module>
-        <module>distributed-commandbus-jgroups</module>
-        <module>distributed-commandbus-springcloud</module>
         <module>integrationtests</module>
-        <module>mongo</module>
-        <module>amqp</module>
-        <module>kafka</module>
         <module>metrics</module>
         <module>spring-boot-starter</module>
-        <module>spring-boot-starter-jgroups</module>
         <module>legacy</module>
         <module>axon-server-connector</module>
         <module>config</module>
@@ -129,17 +124,13 @@
         <log4j.version>1.2.17</log4j.version>
         <spring.version>5.0.3.RELEASE</spring.version>
         <spring.boot.version>2.0.0.RELEASE</spring.boot.version>
-        <spring-cloud.version>2.0.1.RELEASE</spring-cloud.version>
-        <rabbitmq.version>4.1.0</rabbitmq.version>
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
         <felix.version>5.6.2</felix.version>
         <pax.exam.version>4.10.0</pax.exam.version>
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jgroups.version>4.0.6.Final</jgroups.version>
         <mockito.version>2.15.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
-        <kafka.version>1.0.0</kafka.version>
         <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
         <jackson.version>2.9.4</jackson.version>
         <grpc.version>1.13.1</grpc.version>
@@ -320,18 +311,6 @@
                 <version>${mockito.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>${powermock.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>${powermock.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-test</artifactId>
                 <version>${projectreactor.version}</version>
@@ -459,7 +438,6 @@
                     <systemPropertyVariables>
                         <slf4j.version>${slf4j.version}</slf4j.version>
                         <log4j.version>${log4j.version}</log4j.version>
-                        <rabbitmq.version>${rabbitmq.version}</rabbitmq.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

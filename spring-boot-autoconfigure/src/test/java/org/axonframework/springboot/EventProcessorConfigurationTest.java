@@ -5,23 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,20 +16,14 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.springboot.autoconfig.AMQPAutoConfiguration;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.AbstractEventProcessor;
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -62,15 +40,14 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @SpringBootTest
 @TestPropertySource("classpath:test-processors.application.properties")
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
-        DataSourceAutoConfiguration.class,
-        AMQPAutoConfiguration.class
+        DataSourceAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
 public class EventProcessorConfigurationTest {

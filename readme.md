@@ -1,10 +1,10 @@
 ## Axon Framework
 
-A CQRS Framework for Scalable, High-Performance Java Applications
+Framework for building evolutionary, event-driven microservice systems, based on the principles of Domain Driven Design, Event Sourcing and CQRS.
 
-For more information, visit our website: [http://www.axonframework.org](http://www.axonframework.org).
+For more information, visit our website: [http://axoniq.io](http://axoniq.io).
 
-To read the reference guide, visit: [https://docs.axonframework.org](https://docs.axonframework.org).
+To read the reference guide, visit: [https://docs.axoniq.io](https://docs.axoniq.io).
 
 ## Build status and issue tracker
 
@@ -12,4 +12,3 @@ Build status: [![Build Status](https://travis-ci.org/AxonFramework/AxonFramework
 
 Issues are managed in the [GitHub issue tracker](https://github.com/AxonFramework/AxonFramework/issues)
 
-If you're looking for the old issue tracker, visit [axonframework.myjetbrains.com](https://axonframework.myjetbrains.com/).
