@@ -19,14 +19,9 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.commandhandling.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
@@ -37,12 +32,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
-import org.axonframework.modelling.saga.AssociationValue;
-import org.axonframework.modelling.saga.SagaEventHandler;
-import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
-import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -56,6 +45,17 @@ import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.VersionedAggregateIdentifier;
+import org.axonframework.modelling.command.inspection.MethodCommandHandlerInterceptorDefinition;
+import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.modelling.saga.SagaEventHandler;
+import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
+import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
@@ -75,9 +75,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -93,13 +95,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration
 public class SpringAxonAutoConfigurerTest {
 

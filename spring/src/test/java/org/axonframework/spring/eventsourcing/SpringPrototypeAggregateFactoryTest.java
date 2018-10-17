@@ -21,6 +21,8 @@ import org.axonframework.spring.domain.SpringWiredAggregate;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -31,6 +33,7 @@ import static org.junit.Assert.*;
  */
 @ContextConfiguration(locations = {"/META-INF/spring/spring-prototype-aggregate-factory.xml"})
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class SpringPrototypeAggregateFactoryTest {
 
     @Autowired

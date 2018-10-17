@@ -20,19 +20,19 @@ import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.modelling.saga.SagaEventHandler;
-import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.saga.SagaEventHandler;
+import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
@@ -40,9 +40,11 @@ import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -55,6 +57,7 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration
 public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
 
