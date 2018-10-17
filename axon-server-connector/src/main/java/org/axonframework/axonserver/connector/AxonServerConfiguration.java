@@ -43,11 +43,11 @@ public class AxonServerConfiguration {
     /**
      * clientId as it registers itself to AxonServer, must be unique
      */
-    private String clientName = ManagementFactory.getRuntimeMXBean().getName();
+    private String clientId = ManagementFactory.getRuntimeMXBean().getName();
     /**
      * application name, defaults to spring.application.name
      * multiple instances of the same application share the same application name, but each must have
-     * a different clientName
+     * a different clientId
      */
     private String componentName;
 
@@ -134,16 +134,16 @@ public class AxonServerConfiguration {
         return servers;
     }
 
-    public String getClientName() {
-        return clientName;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public String getComponentName() {
-        return componentName == null ? System.getProperty("axon.application.name", "Unnamed-" + clientName) : componentName;
+        return componentName == null ? System.getProperty("axon.application.name", "Unnamed-" + clientId) : componentName;
     }
 
     public void setComponentName(String componentName) {
@@ -378,6 +378,11 @@ public class AxonServerConfiguration {
 
         public Builder componentName(String componentName) {
             instance.setComponentName(componentName);
+            return this;
+        }
+
+        public Builder clientId(String clientId) {
+            instance.setClientId(clientId);
             return this;
         }
     }

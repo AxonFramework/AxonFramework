@@ -110,7 +110,7 @@ public class AxonServerCommandBus implements CommandBus {
                                         new StreamObserver<CommandResponse>() {
                                             @Override
                                             public void onNext(CommandResponse commandResponse) {
-                                                if (!commandResponse.hasMessage()) {
+                                                if (!commandResponse.hasErrorMessage()) {
                                                     logger.debug("response received - {}", commandResponse);
                                                     try {
                                                         //noinspection unchecked
@@ -129,7 +129,7 @@ public class AxonServerCommandBus implements CommandBus {
                                                                                               commandResponse
                                                                                                       .getErrorCode(),
                                                                                               commandResponse
-                                                                                                      .getMessage())));
+                                                                                                      .getErrorMessage())));
                                                 }
                                             }
 
@@ -205,7 +205,7 @@ public class AxonServerCommandBus implements CommandBus {
                         CommandSubscription.newBuilder()
                                 .setCommand(command)
                                 .setComponentName(configuration.getComponentName())
-                                .setClientName(configuration.getClientName())
+                                .setClientId(configuration.getClientId())
                                 .setMessageId(UUID.randomUUID().toString())
                                 .build()
                 ).build()));
@@ -222,7 +222,7 @@ public class AxonServerCommandBus implements CommandBus {
                 outboundStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
                         CommandSubscription.newBuilder()
                                 .setCommand(command)
-                                .setClientName(configuration.getClientName())
+                                .setClientId(configuration.getClientId())
                                 .setComponentName(configuration.getComponentName())
                                 .setMessageId(UUID.randomUUID().toString())
                                 .build()
@@ -247,7 +247,7 @@ public class AxonServerCommandBus implements CommandBus {
                                        .setMessageIdentifier(UUID.randomUUID().toString())
                                        .setRequestIdentifier(command.getMessageIdentifier())
                                        .setErrorCode(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode())
-                                       .setMessage(ExceptionSerializer.serialize(configuration.getClientName(), throwable))
+                                       .setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable))
                 ).build();
 
                 outboundStreamObserver.onNext(response);
@@ -290,7 +290,7 @@ public class AxonServerCommandBus implements CommandBus {
                 subscriberStreamObserver = new FlowControllingStreamObserver<>(stream,
                         configuration,
                         flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
-                        t -> t.getRequestCase().equals(CommandProviderOutbound.RequestCase.COMMANDRESPONSE)).sendInitialPermits();
+                        t -> t.getRequestCase().equals(CommandProviderOutbound.RequestCase.COMMAND_RESPONSE)).sendInitialPermits();
 
             }
             return subscriberStreamObserver;
@@ -302,7 +302,7 @@ public class AxonServerCommandBus implements CommandBus {
                 getSubscriberObserver().onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
                         CommandSubscription.newBuilder()
                                 .setCommand(command)
-                                .setClientName(configuration.getClientName())
+                                .setClientId(configuration.getClientId())
                                 .setMessageId(UUID.randomUUID().toString())
                                 .build()
                 ).build());
@@ -316,7 +316,7 @@ public class AxonServerCommandBus implements CommandBus {
                     getSubscriberObserver().onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
                             CommandSubscription.newBuilder()
                                     .setCommand(command)
-                                    .setClientName(configuration.getClientName())
+                                    .setClientId(configuration.getClientId())
                                     .setMessageId(UUID.randomUUID().toString())
                                     .build()
                     ).build());
@@ -336,7 +336,7 @@ public class AxonServerCommandBus implements CommandBus {
                                            .setMessageIdentifier(UUID.randomUUID().toString())
                                            .setRequestIdentifier(command.getIdentifier())
                                            .setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode())
-                                           .setMessage(ExceptionSerializer.serialize(configuration.getClientName(), throwable))
+                                           .setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable))
                     ).build();
 
                     responseObserver.onNext(response);

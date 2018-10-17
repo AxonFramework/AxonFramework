@@ -68,7 +68,7 @@ public class QuerySerializer {
         if (response.isExceptional()) {
             Throwable exceptionResult = response.exceptionResult();
             builder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
-            builder.setMessage(ExceptionSerializer.serialize(configuration.getClientName(), exceptionResult));
+            builder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult));
         } else {
             builder.setPayload(payloadSerializer.apply(response));
         }
@@ -84,7 +84,7 @@ public class QuerySerializer {
                 .setTimestamp(System.currentTimeMillis())
                 .setMessageIdentifier(queryMessage.getIdentifier())
                 .setQuery(queryMessage.getQueryName())
-                .setClientId(configuration.getClientName())
+                .setClientId(configuration.getClientId())
                 .setComponentName(configuration.getComponentName())
                 .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType()))
                 .setPayload(payloadSerializer.apply(queryMessage))

@@ -44,7 +44,7 @@ public class SubscriptionMessageSerializerTest {
     private final Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
     private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
-        this.setClientName("client");
+        this.setClientId("client");
         this.setComponentName("component");
     }};
 
@@ -62,7 +62,7 @@ public class SubscriptionMessageSerializerTest {
         QueryResponseMessage message = new GenericQueryResponseMessage<>(String.class, "Result", metadata);
         QueryProviderOutbound grpcMessage = testSubject.serialize(message, "subscriptionId");
         assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
-        QueryResponse initialResponse = grpcMessage.getSubscriptionQueryResponse().getInitialResponse();
+        QueryResponse initialResponse = grpcMessage.getSubscriptionQueryResponse().getInitialResult();
         QueryResponseMessage<Object> deserialized = testSubject.deserialize(initialResponse);
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
         assertEquals(message.getPayload(), deserialized.getPayload());
@@ -117,7 +117,7 @@ public class SubscriptionMessageSerializerTest {
         SubscriptionQueryResponse subscriptionQueryResponse = grpcMessage.getSubscriptionQueryResponse();
         assertEquals("subscriptionId", subscriptionQueryResponse.getSubscriptionIdentifier());
         QueryUpdateCompleteExceptionally completeExceptionally = subscriptionQueryResponse.getCompleteExceptionally();
-        assertEquals("Error",completeExceptionally.getMessage().getMessage());
+        assertEquals("Error",completeExceptionally.getErrorMessage().getMessage());
 
     }
 }

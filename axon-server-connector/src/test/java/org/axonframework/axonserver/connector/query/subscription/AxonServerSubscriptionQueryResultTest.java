@@ -53,11 +53,11 @@ public class AxonServerSubscriptionQueryResultTest {
         requestObserver = new FakeStreamObserver<>();
         queryMessage = SubscriptionQuery.newBuilder().build();
         update = SubscriptionQueryResponse.newBuilder().setUpdate(QueryUpdate.newBuilder()).build();
-        initialResult = SubscriptionQueryResponse.newBuilder().setInitialResponse(QueryResponse.newBuilder()).build();
+        initialResult = SubscriptionQueryResponse.newBuilder().setInitialResult(QueryResponse.newBuilder()).build();
         configuration = new AxonServerConfiguration();
         configuration.setContext("context");
         configuration.setComponentName("component");
-        configuration.setClientName("client");
+        configuration.setClientId("client");
     }
 
     @Test

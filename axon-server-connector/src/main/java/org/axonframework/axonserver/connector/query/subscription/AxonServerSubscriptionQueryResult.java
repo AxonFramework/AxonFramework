@@ -104,8 +104,8 @@ public class AxonServerSubscriptionQueryResult implements
     public void onNext(SubscriptionQueryResponse response) {
         requestObserver.markConsumed(1);
         switch (response.getResponseCase()) {
-            case INITIAL_RESPONSE:
-                ofNullable(initialResultSink).ifPresent(sink -> sink.success(response.getInitialResponse()));
+            case INITIAL_RESULT:
+                ofNullable(initialResultSink).ifPresent(sink -> sink.success(response.getInitialResult()));
                 break;
             case UPDATE:
                 updateMessageFluxSink.next(response.getUpdate());
@@ -117,7 +117,7 @@ public class AxonServerSubscriptionQueryResult implements
             case COMPLETE_EXCEPTIONALLY:
                 requestObserver.onCompleted();
                 QueryUpdateCompleteExceptionally exceptionally = response.getCompleteExceptionally();
-                Throwable e = new RemoteQueryException(exceptionally.getErrorCode(), exceptionally.getMessage());
+                Throwable e = new RemoteQueryException(exceptionally.getErrorCode(), exceptionally.getErrorMessage());
                 completeExceptionally(e);
                 break;
         }

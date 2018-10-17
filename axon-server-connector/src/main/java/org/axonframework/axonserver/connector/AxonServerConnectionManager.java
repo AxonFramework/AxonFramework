@@ -81,7 +81,7 @@ public class AxonServerConnectionManager {
                         .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
                 try {
                     PlatformInfo clusterInfo = stub.getPlatformServer(ClientIdentification.newBuilder()
-                            .setClientName(connectInformation.getClientName())
+                            .setClientId(connectInformation.getClientId())
                             .setComponentName(connectInformation.getComponentName())
                             .build());
                     if(isPrimary(nodeInfo, clusterInfo)) {
@@ -227,7 +227,7 @@ public class AxonServerConnectionManager {
                     }
                 }));
         inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
-                .setClientName(connectInformation.getClientName())
+                .setClientId(connectInformation.getClientId())
                 .setComponentName(connectInformation.getComponentName())
         ).build());
     }

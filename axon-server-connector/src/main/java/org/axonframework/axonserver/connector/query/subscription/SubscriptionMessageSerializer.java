@@ -81,7 +81,7 @@ public class SubscriptionMessageSerializer {
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()
                                          .setSubscriptionIdentifier(subscriptionId)
-                                         .setInitialResponse(response)).build();
+                                         .setInitialResult(response)).build();
     }
 
     <I> QueryResponseMessage<I> deserialize(QueryResponse queryResponse){
@@ -93,7 +93,7 @@ public class SubscriptionMessageSerializer {
                                                  .setPayload(payloadSerializer.apply(update))
                                                  .putAllMetaData(metadataSerializer.apply(update.getMetaData()))
                                                  .setMessageIdentifier(update.getIdentifier())
-                                                 .setClientName(conf.getClientName())
+                                                 .setClientId(conf.getClientId())
                                                  .setComponentName(conf.getComponentName());
 
         return newBuilder().setSubscriptionQueryResponse(
@@ -109,9 +109,9 @@ public class SubscriptionMessageSerializer {
     QueryProviderOutbound serializeCompleteExceptionally(String subscriptionId, Throwable cause) {
         QueryUpdateCompleteExceptionally.Builder builder = QueryUpdateCompleteExceptionally
                 .newBuilder()
-                .setMessage(ExceptionSerializer.serialize(conf.getClientName(), cause))
+                .setErrorMessage(ExceptionSerializer.serialize(conf.getClientId(), cause))
                 .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                .setClientName(conf.getClientName())
+                .setClientId(conf.getClientId())
                 .setComponentName(conf.getComponentName());
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()
@@ -124,7 +124,7 @@ public class SubscriptionMessageSerializer {
         QueryRequest queryRequest = QueryRequest.newBuilder().setTimestamp(System.currentTimeMillis())
                                                 .setMessageIdentifier(message.getIdentifier())
                                                 .setQuery(message.getQueryName())
-                                                .setClientId(conf.getClientName())
+                                                .setClientId(conf.getClientId())
                                                 .setComponentName(conf.getComponentName())
                                                 .setPayload(payloadSerializer.apply(message))
                                                 .setResponseType(responseTypeSerializer.apply(message.getResponseType()))
@@ -145,7 +145,7 @@ public class SubscriptionMessageSerializer {
 
     QueryProviderOutbound serializeComplete(String subscriptionId) {
         QueryUpdateComplete.Builder builder = QueryUpdateComplete.newBuilder()
-                                                                 .setClientName(conf.getClientName())
+                                                                 .setClientId(conf.getClientId())
                                                                  .setComponentName(conf.getComponentName());
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()

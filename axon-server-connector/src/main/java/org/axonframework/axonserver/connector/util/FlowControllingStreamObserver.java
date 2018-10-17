@@ -66,7 +66,7 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
 
     private FlowControl createRequest(long initialNrOfPermits) {
         return FlowControl.newBuilder()
-                .setClientName(configuration.getClientName())
+                .setClientId(configuration.getClientId())
                 .setPermits(initialNrOfPermits)
                 .build();
     }
