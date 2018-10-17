@@ -173,9 +173,11 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
         try {
             if (handlers.isEmpty()) {
-                throw new NoHandlerForQueryException(format("No handler found for %s with response type %s",
-                                                            interceptedQuery.getQueryName(),
-                                                            interceptedQuery.getResponseType()));
+                throw new NoHandlerForQueryException(
+                        format("No handler found for [%s] with response type [%s]",
+                               interceptedQuery.getQueryName(),
+                               interceptedQuery.getResponseType())
+                );
             }
             Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
@@ -189,9 +191,11 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                 }
             }
             if (!invocationSuccess) {
-                throw new NoHandlerForQueryException(format("No suitable handler was found for %s with response type %s",
-                                                            interceptedQuery.getQueryName(),
-                                                            interceptedQuery.getResponseType()));
+                throw new NoHandlerForQueryException(
+                        format("No suitable handler was found for [%s] with response type [%s]",
+                               interceptedQuery.getQueryName(),
+                               interceptedQuery.getResponseType())
+                );
             }
             monitorCallback.reportSuccess();
         } catch (Exception e) {
