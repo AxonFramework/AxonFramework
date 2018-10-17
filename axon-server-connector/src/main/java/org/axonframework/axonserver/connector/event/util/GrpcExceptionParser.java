@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.event.util;
 import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import org.axonframework.axonserver.connector.ErrorCode;
 
 /**
  * Converts GRPC Exceptions to EventStoreClientException
@@ -41,7 +42,7 @@ public class GrpcExceptionParser {
                 code = errorCode;
             }
         }
-        return new EventStoreClientException(code, ex.getMessage(), ex);
+        return ErrorCode.getFromCode(code).convert(ex);
     }
 
 

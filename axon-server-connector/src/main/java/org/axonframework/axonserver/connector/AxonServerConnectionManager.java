@@ -112,7 +112,7 @@ public class AxonServerConnectionManager {
                     writeDownloadMessage();
                 }
                 scheduleReconnect();
-                throw new AxonServerException(ErrorCode.CONNECTION_TO_AXONDB_FAILED, "No connection to AxonServer available");
+                throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "No connection to AxonServer available");
             }
         }
         return channel;

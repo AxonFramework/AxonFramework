@@ -145,13 +145,13 @@ public class AxonServerQueryBus implements QueryBus {
                                    @Override
                                    public void onError(Throwable throwable) {
                                        logger.warn("Received error while waiting for first response: {}", throwable.getMessage(), throwable);
-                                       completableFuture.completeExceptionally(throwable);
+                                       completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
                                    }
 
                                    @Override
                                    public void onCompleted() {
                                        if (!completableFuture.isDone()) {
-                                           completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.OTHER.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
+                                           completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
                                        }
                                    }
                                });
@@ -278,8 +278,8 @@ public class AxonServerQueryBus implements QueryBus {
                                                                                                   .setRequestIdentifier(requestId)
                                                                                                   .setErrorMessage(ExceptionSerializer
                                                                                                                  .serialize(configuration.getClientId(), ex))
-                                                                                                    .setErrorCode(ErrorCode.resolve(ex).errorCode())
-                                                                                                    .build())
+                                                                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                                                                  .build())
                                                                    .build());
             }
         }

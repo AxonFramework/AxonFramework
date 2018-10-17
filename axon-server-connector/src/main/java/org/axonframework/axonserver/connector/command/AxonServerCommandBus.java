@@ -246,7 +246,7 @@ public class AxonServerCommandBus implements CommandBus {
                         CommandResponse.newBuilder()
                                        .setMessageIdentifier(UUID.randomUUID().toString())
                                        .setRequestIdentifier(command.getMessageIdentifier())
-                                       .setErrorCode(ErrorCode.resolve(throwable).errorCode())
+                                       .setErrorCode(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode())
                                        .setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable))
                 ).build();
 
@@ -335,7 +335,7 @@ public class AxonServerCommandBus implements CommandBus {
                             CommandResponse.newBuilder()
                                            .setMessageIdentifier(UUID.randomUUID().toString())
                                            .setRequestIdentifier(command.getIdentifier())
-                                           .setErrorCode(ErrorCode.resolve(throwable).errorCode())
+                                           .setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode())
                                            .setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable))
                     ).build();
 

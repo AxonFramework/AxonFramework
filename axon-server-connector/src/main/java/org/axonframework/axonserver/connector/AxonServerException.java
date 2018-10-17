@@ -17,23 +17,78 @@
 package org.axonframework.axonserver.connector;
 
 
+import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.common.AxonException;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Generic exception indicating an error related to AxonServer.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class AxonServerException extends RuntimeException {
+public class AxonServerException extends AxonException {
 
-    public AxonServerException(String message) {
+    private final String code;
+    private final String source;
+    private final List<String> details;
+
+    /**
+     * Initializes the exception using the given {@code code} and {@code errorMessage}.
+     *
+     * @param code          The code of the error received from the Axon Server
+     * @param errorMessage  The grpc error message describing the error
+     */
+    public AxonServerException(String code, ErrorMessage errorMessage) {
+        this(errorMessage.getMessage(), code, errorMessage.getLocation(), errorMessage.getDetailsList());
+    }
+
+    /**
+     * Initializes the exception using the given {@code code} and {@code message}.
+     *
+     * @param code      The code of the error received from the Axon Server
+     * @param message   The message describing the exception
+     */
+    public AxonServerException(String code, String message) {
+        this(message, code, null, Collections.emptyList());
+    }
+
+    /**
+     * Initializes the exception using the given {@code message}, {@code code}, {@code source} and {@code details} .
+     *
+     * @param message   The message describing the exception
+     * @param code      The code of the error received from the Axon Server
+     * @param source    The location that originally reported the error
+     * @param details   A {@link List} of {@link String}s, each describing a single "cause"
+     */
+    public AxonServerException(String message,
+                               String code,
+                               String source,
+                               List<String> details) {
         super(message);
+        this.code = code;
+        this.source = source;
+        this.details = details;
     }
 
-    public AxonServerException(String errorCode, String message) {
-        super(errorCode+ " - " +message);
+    public String code() {
+        return code;
     }
 
-    public AxonServerException(ErrorCode errorCode, String message) {
-        this(errorCode.errorCode(), message);
+    public String source() {
+        return source;
     }
+
+    public Collection<String> details() {
+        return details;
+    }
+
+    public ErrorCode errorCode(){
+        return ErrorCode.getFromCode(code);
+    }
+
+
 }

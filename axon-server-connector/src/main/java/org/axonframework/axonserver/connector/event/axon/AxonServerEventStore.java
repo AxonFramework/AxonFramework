@@ -28,7 +28,6 @@ import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.event.AppendEventTransaction;
 import org.axonframework.axonserver.connector.event.AxonServerEventStoreClient;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
@@ -361,12 +360,12 @@ public class AxonServerEventStore extends AbstractEventStore {
             try {
                 appendEventTransaction.commit();
             } catch (ExecutionException e) {
-                throw ErrorCode.convert(e.getCause());
+                throw new EventStoreException(e.getMessage(), e.getCause());
             } catch (TimeoutException e) {
-                throw ErrorCode.convert(e);
+                throw new org.axonframework.messaging.ExecutionException("Timeout while executing request", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw ErrorCode.convert(e);
+                throw new EventStoreException(e.getMessage(), e);
             }
         }
 
@@ -394,21 +393,17 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-            try {
-                eventStoreClient.appendSnapshot(map(snapshot, serializer)).whenComplete((c, e) -> {
-                    if (e != null) {
-                        logger.warn("Error occurred while creating a snapshot", e);
-                    } else if (c != null) {
-                        if (c.getSuccess()) {
-                            logger.info("Snapshot created");
-                        } else {
-                            logger.warn("Snapshot creation failed for unknown reason. Check server logs for details.");
-                        }
+            eventStoreClient.appendSnapshot(map(snapshot, serializer)).whenComplete((c, e) -> {
+                if (e != null) {
+                    logger.warn("Error occurred while creating a snapshot", e);
+                } else if (c != null) {
+                    if (c.getSuccess()) {
+                        logger.info("Snapshot created");
+                    } else {
+                        logger.warn("Snapshot creation failed for unknown reason. Check server logs for details.");
                     }
-                });
-            } catch (Throwable e) {
-                throw ErrorCode.convert(e);
-            }
+                }
+            });
         }
 
         @Override
@@ -424,8 +419,11 @@ public class AxonServerEventStore extends AbstractEventStore {
             }
             try {
                 return eventStoreClient.listAggregateEvents(request.build()).map(GrpcBackedDomainEventData::new);
-            } catch (Exception e) {
-                throw ErrorCode.convert(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new EventStoreException(e.getMessage(), e);
+            } catch (ExecutionException e) {
+                throw new EventStoreException(e.getMessage(), e);
             }
         }
 
@@ -557,8 +555,11 @@ public class AxonServerEventStore extends AbstractEventStore {
                 return lastSequenceNumber.getToSequenceNr() < 0
                         ? Optional.empty()
                         : Optional.of(lastSequenceNumber.getToSequenceNr());
-            } catch (Throwable e) {
-                throw ErrorCode.convert(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new EventStoreException(e.getMessage(), e);
+            } catch (ExecutionException e) {
+                throw new EventStoreException(e.getMessage(), e);
             }
         }
 
@@ -570,8 +571,11 @@ public class AxonServerEventStore extends AbstractEventStore {
                     return null;
                 }
                 return new GlobalSequenceTrackingToken(token.getToken() - 1);
-            } catch (Throwable e) {
-                throw ErrorCode.convert(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new EventStoreException(e.getMessage(), e);
+            } catch (ExecutionException e) {
+                throw new EventStoreException(e.getMessage(), e);
             }
         }
 
@@ -580,8 +584,11 @@ public class AxonServerEventStore extends AbstractEventStore {
             try {
                 io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getLastToken().get();
                 return new GlobalSequenceTrackingToken(token.getToken());
-            } catch (Throwable e) {
-                throw ErrorCode.convert(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new EventStoreException(e.getMessage(), e);
+            } catch (ExecutionException e) {
+                throw new EventStoreException(e.getMessage(), e);
             }
         }
 
@@ -593,8 +600,11 @@ public class AxonServerEventStore extends AbstractEventStore {
                     return null;
                 }
                 return new GlobalSequenceTrackingToken(token.getToken() - 1);
-            } catch (Throwable e) {
-                throw ErrorCode.convert(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new EventStoreException(e.getMessage(), e);
+            } catch (ExecutionException e) {
+                throw new EventStoreException(e.getMessage(), e);
             }
         }
 
@@ -634,7 +644,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                             eventStoreClient.listAggregateSnapshots(request).map(GrpcBackedDomainEventData::new)
                                             .forEach(e -> prefetched.add(e));
                         } catch (ExecutionException e) {
-                            throw ErrorCode.convert(e);
+                            throw new EventStoreException(e.getMessage(), e);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                             return false;
