@@ -749,7 +749,7 @@ public class SubscriptionQueryTest {
     @Test
     public void testQueryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
-        QueryGateway queryGateway = new DefaultQueryGateway(queryBus);
+        QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
 
         assertNull(queryGateway.subscriptionQuery(new SomeQuery("not " + FOUND), String.class, String.class)
                                .initialResult()
@@ -758,7 +758,7 @@ public class SubscriptionQueryTest {
 
     @Test
     public void testQueryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
-        QueryGateway queryGateway = new DefaultQueryGateway(queryBus);
+        QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
         String result = queryGateway.subscriptionQuery(new SomeQuery(FOUND), String.class, String.class)
                                     .initialResult()
                                     .toFuture().get();
