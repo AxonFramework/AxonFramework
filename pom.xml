@@ -21,19 +21,19 @@
     <artifactId>axon</artifactId>
     <version>4.0-SNAPSHOT</version>
     <modules>
+        <module>messaging</module>
+        <module>modelling</module>
+        <module>eventsourcing</module>
+        <module>config</module>
+        <module>test</module>
+        <module>axon-server-connector</module>
+        <module>disruptor</module>
+        <module>metrics</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
-        <module>test</module>
-        <module>integrationtests</module>
-        <module>metrics</module>
         <module>spring-boot-starter</module>
+        <module>integrationtests</module>
         <module>legacy</module>
-        <module>axon-server-connector</module>
-        <module>config</module>
-        <module>messaging</module>
-        <module>disruptor</module>
-        <module>eventsourcing</module>
-        <module>modelling</module>
     </modules>
     <packaging>pom</packaging>
 
