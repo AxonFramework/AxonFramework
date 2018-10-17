@@ -29,7 +29,6 @@ import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
 import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
 import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
-import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
@@ -91,7 +90,7 @@ public class CommandSerializer {
         MetaData metaData = new GrpcMetaDataConverter(messageSerializer).convert(response.getMetaDataMap());
 
         if (response.hasErrorMessage()) {
-            AxonException exception = ErrorCode.getFromCode(response.getErrorCode()).convert(response.getMessage());
+            AxonException exception = ErrorCode.getFromCode(response.getErrorCode()).convert(response.getErrorMessage());
             return new GenericCommandResultMessage<>(exception, metaData);
         }
 
