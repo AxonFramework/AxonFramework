@@ -81,9 +81,9 @@ public class DummyMessagePlatformServer {
                         case UNSUBSCRIBE:
                             subscriptions.remove(queryProviderOutbound.getUnsubscribe().getCommand(), responseObserver);
                             break;
-                        case FLOWCONTROL:
+                        case FLOW_CONTROL:
                             break;
-                        case COMMANDRESPONSE:
+                        case COMMAND_RESPONSE:
                             break;
                         case REQUEST_NOT_SET:
                             break;
@@ -109,7 +109,7 @@ public class DummyMessagePlatformServer {
                 responseObserver.onNext(CommandResponse.newBuilder()
                         .setErrorCode(ErrorCode.DATAFILE_READ_ERROR.errorCode())
                         .setMessageIdentifier(request.getMessageIdentifier())
-                        .setMessage(ErrorMessage.newBuilder().setMessage(data))
+                        .setErrorMessage(ErrorMessage.newBuilder().setMessage(data))
                         .build());
 
             } else {

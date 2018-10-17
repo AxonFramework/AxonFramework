@@ -135,8 +135,8 @@ public class AxonServerQueryBus implements QueryBus {
                                    @Override
                                    public void onNext(QueryResponse queryResponse) {
                                        logger.debug("Received response: {}", queryResponse);
-                                       if( queryResponse.hasMessage()) {
-                                           completableFuture.completeExceptionally(new RemoteQueryException(queryResponse.getErrorCode(), queryResponse.getMessage()));
+                                       if( queryResponse.hasErrorMessage()) {
+                                           completableFuture.completeExceptionally(new RemoteQueryException(queryResponse.getErrorCode(), queryResponse.getErrorMessage()));
                                        } else {
                                            completableFuture.complete(serializer.deserializeResponse(queryResponse));
                                        }
@@ -176,8 +176,8 @@ public class AxonServerQueryBus implements QueryBus {
                                    public void onNext(QueryResponse queryResponse) {
                                        logger.debug("Received response: {}", queryResponse);
 
-                                       if( queryResponse.hasMessage()) {
-                                           logger.warn("Received exception: {}", queryResponse.getMessage());
+                                       if( queryResponse.hasErrorMessage()) {
+                                           logger.warn("Received exception: {}", queryResponse.getErrorMessage());
                                        } else {
                                            resultSpliterator.put(serializer.deserializeResponse(queryResponse));
                                        }
@@ -276,8 +276,8 @@ public class AxonServerQueryBus implements QueryBus {
                                                                    .setQueryResponse(QueryResponse.newBuilder()
                                                                                                   .setMessageIdentifier(UUID.randomUUID().toString())
                                                                                                   .setRequestIdentifier(requestId)
-                                                                                                  .setMessage(ExceptionSerializer
-                                                                                                                 .serialize(configuration.getClientName(), ex))
+                                                                                                  .setErrorMessage(ExceptionSerializer
+                                                                                                                 .serialize(configuration.getClientId(), ex))
                                                                                                     .setErrorCode(ErrorCode.resolve(ex).errorCode())
                                                                                                     .build())
                                                                    .build());
@@ -294,7 +294,7 @@ public class AxonServerQueryBus implements QueryBus {
                 getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder()
                                                                     .setSubscribe(QuerySubscription.newBuilder()
                                                                                                    .setMessageId(UUID.randomUUID().toString())
-                                                                                                   .setClientName(configuration.getClientName())
+                                                                                                   .setClientId(configuration.getClientId())
                                                                                                    .setComponentName(componentName)
                                                                                                    .setQuery(queryName)
                                                                                                    .setResultName(responseType.getTypeName())
@@ -348,7 +348,7 @@ public class AxonServerQueryBus implements QueryBus {
                 outboundStreamObserver = new FlowControllingStreamObserver<>(stream,
                                                                              configuration,
                                                                              flowControl -> QueryProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
-                                                                             t -> t.getRequestCase().equals(QueryProviderOutbound.RequestCase.QUERYRESPONSE)).sendInitialPermits();
+                                                                             t -> t.getRequestCase().equals(QueryProviderOutbound.RequestCase.QUERY_RESPONSE)).sendInitialPermits();
             }
             return outboundStreamObserver;
         }
@@ -399,7 +399,7 @@ public class AxonServerQueryBus implements QueryBus {
 
         private QuerySubscription.Builder subscriptionBuilder(QueryDefinition queryDefinition, int nrHandlers) {
             return QuerySubscription.newBuilder()
-                                    .setClientName(configuration.getClientName())
+                                    .setClientId(configuration.getClientId())
                                     .setMessageId(UUID.randomUUID().toString())
                                     .setComponentName(queryDefinition.componentName)
                                     .setQuery(queryDefinition.queryName)

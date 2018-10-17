@@ -63,7 +63,7 @@ public class AxonServerCommandBusTest {
     public void setup() throws Exception {
         conf = new AxonServerConfiguration();
         conf.setServers("localhost:4344");
-        conf.setClientName("JUnit");
+        conf.setClientId("JUnit");
         conf.setComponentName("JUnit");
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);

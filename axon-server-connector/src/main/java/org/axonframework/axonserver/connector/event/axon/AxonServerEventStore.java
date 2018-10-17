@@ -469,8 +469,8 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             GetEventsRequest request = GetEventsRequest.newBuilder()
                                                        .setTrackingToken(nextToken)
-                                                       .setClient(configuration.getClientName())
-                                                       .setComponent(configuration.getComponentName())
+                                                       .setClientId(configuration.getClientId())
+                                                       .setComponentName(configuration.getComponentName())
                                                        .setNumberOfPermits(configuration.getInitialNrOfPermits())
                                                        .build();
             observer.onNext(request);

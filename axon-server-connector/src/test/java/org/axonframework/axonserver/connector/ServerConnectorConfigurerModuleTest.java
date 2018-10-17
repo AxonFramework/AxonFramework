@@ -38,8 +38,8 @@ public class ServerConnectorConfigurerModuleTest {
         AxonServerConfiguration axonServerConfiguration = configuration.getComponent(AxonServerConfiguration.class);
 
         assertEquals("localhost", axonServerConfiguration.getServers());
-        assertNotNull(axonServerConfiguration.getClientName());
+        assertNotNull(axonServerConfiguration.getClientId());
         assertNotNull(axonServerConfiguration.getComponentName());
-        assertTrue(axonServerConfiguration.getComponentName().contains(axonServerConfiguration.getClientName()));
+        assertTrue(axonServerConfiguration.getComponentName().contains(axonServerConfiguration.getClientId()));
     }
 }

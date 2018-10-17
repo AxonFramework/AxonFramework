@@ -89,9 +89,9 @@ public class DummyMessagePlatformServer {
                         case UNSUBSCRIBE:
                             subscriptions.remove(new QueryDefinition(queryProviderOutbound.getUnsubscribe()));
                             break;
-                        case FLOWCONTROL:
+                        case FLOW_CONTROL:
                             break;
-                        case QUERYRESPONSE:
+                        case QUERY_RESPONSE:
                             break;
                         case REQUEST_NOT_SET:
                             break;

@@ -90,11 +90,11 @@ public class CommandSerializer {
     public <R> GenericCommandResultMessage<R> deserialize(CommandResponse response) {
         MetaData metaData = new GrpcMetaDataConverter(messageSerializer).convert(response.getMetaDataMap());
 
-        if (response.hasMessage()) {
+        if (response.hasErrorMessage()) {
             Class<? extends AxonException> exceptionClass = ErrorCode.lookupExceptionClass(response.getErrorCode());
-            Throwable exception = new RemoteCommandException(response.getErrorCode(), response.getMessage());
+            Throwable exception = new RemoteCommandException(response.getErrorCode(), response.getErrorMessage());
             if (CommandExecutionException.class.equals(exceptionClass)) {
-                exception = new CommandExecutionException(response.getMessage().getMessage(), exception);
+                exception = new CommandExecutionException(response.getErrorMessage().getMessage(), exception);
             }
             return new GenericCommandResultMessage<>(exception, metaData);
         }
@@ -116,7 +116,7 @@ public class CommandSerializer {
         if (commandResultMessage.isExceptional()) {
             Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
-            responseBuilder.setMessage(ExceptionSerializer.serialize(configuration.getClientName(), throwable));
+            responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
         } else if (commandResultMessage.getPayload() != null) {
             responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
         }

@@ -48,7 +48,7 @@ public class QuerySerializerTest {
     private final Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
     private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
-        this.setClientName("client");
+        this.setClientId("client");
         this.setComponentName("component");
     }};
 
