@@ -21,6 +21,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -102,9 +103,15 @@ public class DefaultQueryGateway implements QueryGateway {
                 new GenericSubscriptionQueryMessage<>(query, queryName, initialResponseType, updateResponseType);
         SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
                 .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, updateBufferSize);
-        return new DefaultSubscriptionQueryResult<>(result.initialResult().map(QueryResponseMessage::getPayload),
-                                                    result.updates().map(SubscriptionQueryUpdateMessage::getPayload),
-                                                    result);
+        return new DefaultSubscriptionQueryResult<>(
+                result.initialResult()
+                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
+                      .map(QueryResponseMessage::getPayload),
+                result.updates()
+                      .filter(update -> Objects.nonNull(update.getPayload()))
+                      .map(SubscriptionQueryUpdateMessage::getPayload),
+                result
+        );
     }
 
     @Override

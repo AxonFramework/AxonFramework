@@ -141,4 +141,9 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         responseIterator.forEachRemaining(responseInstance -> response.add((R) responseInstance));
         return response;
     }
+
+    @Override
+    public String toString() {
+        return "MultipleInstancesResponseType{" + expectedResponseType + "}";
+    }
 }

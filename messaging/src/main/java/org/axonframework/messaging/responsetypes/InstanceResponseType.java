@@ -35,8 +35,8 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
 
     /**
      * Instantiate a {@link InstanceResponseType} with the given
-     * {@code expectedResponseType} as the type to be matched against and to which the query response should be converted
-     * to.
+     * {@code expectedResponseType} as the type to be matched against and to which the query response should be
+     * converted to.
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
@@ -63,5 +63,10 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
     @Override
     public Class<R> responseMessagePayloadType() {
         return (Class<R>) expectedResponseType;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceResponseType{" + expectedResponseType + "}";
     }
 }

@@ -15,9 +15,9 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  * @author Milan Savic
  * @since 3.1
  */
-public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMessage<?,?>> {
+public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with
@@ -139,6 +139,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@link QueryBus} instead.
      *
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
@@ -147,6 +151,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
@@ -162,6 +167,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@link QueryBus} instead.
      *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               The {@code query} to be sent
@@ -171,6 +180,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
@@ -188,6 +198,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@link QueryBus} instead.
      *
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
@@ -196,6 +210,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
@@ -212,6 +227,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@link QueryBus} instead.
      *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               The {@code query} to be sent
@@ -222,6 +241,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
@@ -241,6 +261,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@link QueryBus} instead.
      *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               The {@code query} to be sent
@@ -253,6 +277,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
