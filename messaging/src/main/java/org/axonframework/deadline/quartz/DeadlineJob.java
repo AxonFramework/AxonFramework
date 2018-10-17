@@ -88,41 +88,45 @@ public class DeadlineJob implements Job {
         JobDetail jobDetail = context.getJobDetail();
         JobDataMap jobData = jobDetail.getJobDataMap();
 
+        SchedulerContext schedulerContext;
         try {
-            SchedulerContext schedulerContext = context.getScheduler().getContext();
-
-            Serializer serializer = (Serializer) schedulerContext.get(JOB_DATA_SERIALIZER);
-            TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
-            ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
-            @SuppressWarnings("unchecked")
-            List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors =
-                    (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>)
-                            schedulerContext.get(HANDLER_INTERCEPTORS);
-
-            DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
-            ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
-
-            DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
-            unitOfWork.attachTransaction(transactionManager);
-            InterceptorChain chain =
-                    new DefaultInterceptorChain<>(unitOfWork,
-                                                  handlerInterceptors,
-                                                  interceptedDeadlineMessage -> {
-                                                      executeScheduledDeadline(scopeAwareComponents,
-                                                                               interceptedDeadlineMessage,
-                                                                               deadlineScope);
-                                                      return null;
-                                                  });
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
-            if (resultMessage.isExceptional()) {
-                throw resultMessage.exceptionResult();
-            } else if (logger.isInfoEnabled()) {
-                logger.info("Job successfully executed. Deadline message [{}] processed.",
-                            deadlineMessage.getPayloadType().getSimpleName());
-            }
-        } catch (Throwable e) {
+            schedulerContext = context.getScheduler().getContext();
+        } catch (Exception e) {
             logger.error("Exception occurred during processing a deadline job [{}]", jobDetail.getDescription(), e);
             throw new JobExecutionException(e);
+        }
+
+        Serializer serializer = (Serializer) schedulerContext.get(JOB_DATA_SERIALIZER);
+        TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
+        ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
+        @SuppressWarnings("unchecked")
+        List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors =
+                (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>)
+                        schedulerContext.get(HANDLER_INTERCEPTORS);
+
+        DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
+        ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
+
+        DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
+        unitOfWork.attachTransaction(transactionManager);
+        InterceptorChain chain =
+                new DefaultInterceptorChain<>(unitOfWork,
+                                              handlerInterceptors,
+                                              interceptedDeadlineMessage -> {
+                                                  executeScheduledDeadline(scopeAwareComponents,
+                                                                           interceptedDeadlineMessage,
+                                                                           deadlineScope);
+                                                  return null;
+                                              });
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+        if (resultMessage.isExceptional()) {
+            logger.error("Exception occurred during processing a deadline job [{}]",
+                         jobDetail.getDescription(),
+                         resultMessage.exceptionResult());
+            throw new JobExecutionException(resultMessage.exceptionResult());
+        } else if (logger.isInfoEnabled()) {
+            logger.info("Job successfully executed. Deadline message [{}] processed.",
+                        deadlineMessage.getPayloadType().getSimpleName());
         }
     }
 

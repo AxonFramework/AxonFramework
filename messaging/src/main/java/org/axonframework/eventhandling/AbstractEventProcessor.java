@@ -141,9 +141,9 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     eventHandlerInvoker.handle(m, segment);
                     monitorCallback.reportSuccess();
                     return null;
-                } catch (Throwable throwable) {
-                    monitorCallback.reportFailure(throwable);
-                    throw throwable;
+                } catch (Exception exception) {
+                    monitorCallback.reportFailure(exception);
+                    throw exception;
                 }
             }).proceed();
         }, rollbackConfiguration);
