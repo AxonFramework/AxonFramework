@@ -79,6 +79,12 @@ public enum ErrorCode {
     private final String errorCode;
     private final BiFunction<String, ErrorMessage, ? extends AxonException> exceptionBuilder;
 
+    /**
+     * Initializes the ErrorCode using the given {@code code} and {@code exceptionBuilder}
+     *
+     * @param errorCode the code of the error
+     * @param exceptionBuilder the function to build the relevant Axon Framework exception
+     */
     ErrorCode(String errorCode, BiFunction<String, ErrorMessage, ? extends AxonException> exceptionBuilder) {
         this.errorCode = errorCode;
         this.exceptionBuilder = exceptionBuilder;
