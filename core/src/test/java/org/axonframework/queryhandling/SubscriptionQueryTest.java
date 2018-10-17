@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -45,6 +46,8 @@ import static org.junit.Assert.*;
  * @author Milan Savic
  */
 public class SubscriptionQueryTest {
+
+    private static final String FOUND = "found";
 
     private final SimpleQueryBus queryBus = new SimpleQueryBus();
     private final ChatQueryHandler chatQueryHandler = new ChatQueryHandler(queryBus);
@@ -713,6 +716,39 @@ public class SubscriptionQueryTest {
         assertTrue(updates.isEmpty());
     }
 
+    @Test
+    public void testQueryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
+            throws ExecutionException, InterruptedException {
+        QueryGateway queryGateway = new DefaultQueryGateway(queryBus);
+
+        assertNull(queryGateway.subscriptionQuery(new SomeQuery("not " + FOUND), String.class, String.class)
+                               .initialResult()
+                               .toFuture().get());
+    }
+
+    @Test
+    public void testQueryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
+        QueryGateway queryGateway = new DefaultQueryGateway(queryBus);
+        String result = queryGateway.subscriptionQuery(new SomeQuery(FOUND), String.class, String.class)
+                                    .initialResult()
+                                    .toFuture().get();
+
+        assertEquals(FOUND, result);
+    }
+
+    private static class SomeQuery {
+
+        private final String filter;
+
+        private SomeQuery(String filter) {
+            this.filter = filter;
+        }
+
+        public String getFilter() {
+            return filter;
+        }
+    }
+
     @SuppressWarnings("unused")
     private class ChatQueryHandler {
 
@@ -755,6 +791,11 @@ public class SubscriptionQueryTest {
             latch.await();
 
             return "Initial";
+        }
+
+        @QueryHandler
+        public String someQueryHandler(SomeQuery query) {
+            return FOUND.equals(query.getFilter()) ? FOUND : null;
         }
     }
 }

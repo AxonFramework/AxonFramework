@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -73,9 +74,14 @@ public class DefaultQueryGateway implements QueryGateway {
                 new GenericSubscriptionQueryMessage<>(query, queryName, initialResponseType, updateResponseType);
         SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
                 .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, updateBufferSize);
-        return new DefaultSubscriptionQueryResult<>(result.initialResult().map(QueryResponseMessage::getPayload),
-                                                    result.updates().map(SubscriptionQueryUpdateMessage::getPayload),
-                                                    result);
+        return new DefaultSubscriptionQueryResult<>(
+                result.initialResult()
+                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
+                      .map(QueryResponseMessage::getPayload),
+                result.updates()
+                      .map(SubscriptionQueryUpdateMessage::getPayload),
+                result
+        );
     }
 
     @SuppressWarnings("unchecked")
