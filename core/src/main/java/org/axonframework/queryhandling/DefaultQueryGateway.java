@@ -79,6 +79,7 @@ public class DefaultQueryGateway implements QueryGateway {
                       .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
                       .map(QueryResponseMessage::getPayload),
                 result.updates()
+                      .filter(update -> Objects.nonNull(update.getPayload()))
                       .map(SubscriptionQueryUpdateMessage::getPayload),
                 result
         );
