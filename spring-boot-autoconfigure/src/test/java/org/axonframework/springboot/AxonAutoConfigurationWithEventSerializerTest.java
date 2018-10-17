@@ -32,7 +32,6 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -46,8 +45,9 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -55,7 +55,9 @@ import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Primary;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -70,6 +72,7 @@ import static org.junit.Assert.*;
         WebClientAutoConfiguration.class,
         AxonServerAutoConfiguration.class})
 @RunWith(SpringRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class AxonAutoConfigurationWithEventSerializerTest {
 
     @Autowired

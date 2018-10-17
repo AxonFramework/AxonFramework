@@ -19,18 +19,20 @@ package org.axonframework.modelling.saga.repository.jpa;
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.StubSaga;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -49,6 +51,7 @@ import static org.junit.Assert.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(locations = "/META-INF/spring/saga-repository-test.xml")
 @Transactional
 public class JpaSagaStoreTest {

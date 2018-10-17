@@ -33,7 +33,6 @@
 package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -47,6 +46,7 @@ import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +56,8 @@ import org.springframework.boot.autoconfigure.web.reactive.function.client.WebCl
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -72,6 +74,7 @@ import static org.junit.Assert.*;
         AxonServerAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")
 public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
 

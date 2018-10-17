@@ -31,6 +31,8 @@ import org.junit.*;
 import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -52,6 +54,7 @@ import static org.junit.Assert.*;
  * @author Rene de Waele
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(locations = "classpath:/META-INF/spring/insertion-read-order-test-context.xml")
 public class JpaStorageEngineInsertionReadOrderTest {
 
