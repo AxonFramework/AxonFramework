@@ -39,6 +39,8 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -65,6 +67,7 @@ import static org.junit.Assert.*;
  * @author Rene de Waele
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
 @Transactional
 public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {

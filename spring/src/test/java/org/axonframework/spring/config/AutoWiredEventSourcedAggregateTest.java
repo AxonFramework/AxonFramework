@@ -17,32 +17,34 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.persistence.Id;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration
 public class AutoWiredEventSourcedAggregateTest {
 

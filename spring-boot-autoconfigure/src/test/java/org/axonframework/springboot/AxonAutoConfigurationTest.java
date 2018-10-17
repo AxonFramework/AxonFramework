@@ -40,7 +40,6 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -56,6 +55,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
+import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -73,6 +73,8 @@ import org.springframework.boot.autoconfigure.web.reactive.function.client.WebCl
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -91,6 +93,7 @@ import static org.mockito.Mockito.*;
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @RunWith(SpringRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class AxonAutoConfigurationTest {
 
     @Autowired

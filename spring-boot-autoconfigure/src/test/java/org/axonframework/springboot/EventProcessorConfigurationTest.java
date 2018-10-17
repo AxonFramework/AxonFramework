@@ -19,11 +19,16 @@ package org.axonframework.springboot;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.AbstractEventProcessor;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -32,6 +37,8 @@ import org.springframework.boot.autoconfigure.web.reactive.function.client.WebCl
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -40,7 +47,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @SpringBootTest
 @TestPropertySource("classpath:test-processors.application.properties")
@@ -50,6 +57,7 @@ import static org.junit.Assert.assertEquals;
         DataSourceAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class EventProcessorConfigurationTest {
 
     @Autowired

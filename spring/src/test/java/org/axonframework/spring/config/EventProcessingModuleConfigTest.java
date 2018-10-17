@@ -25,19 +25,20 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Tests configuration of {@link EventProcessingModule}.
@@ -45,6 +46,7 @@ import static org.junit.Assert.assertTrue;
  * @author Milan Savic
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class EventProcessingModuleConfigTest {
 
     @Autowired

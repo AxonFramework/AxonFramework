@@ -18,17 +18,19 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
 
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
-import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -49,6 +51,7 @@ import static org.junit.Assert.*;
 
 @ContextConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class JdbcTokenStoreTest {
 
     @Inject
