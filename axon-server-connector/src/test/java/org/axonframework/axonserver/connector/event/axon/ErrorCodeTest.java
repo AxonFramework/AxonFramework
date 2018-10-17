@@ -33,15 +33,6 @@ import static junit.framework.TestCase.assertTrue;
  * Author: marc
  */
 public class ErrorCodeTest {
-    @Test(expected = ConcurrencyException.class)
-    public void convert2000() throws Exception {
-        throw ErrorCode.convert(new EventStoreClientException("AXONIQ-2000", "Concurrent modification of same aggregate"));
-    }
-
-    @Test(expected = AxonServerException.class)
-    public void convertUnknown() throws Exception {
-        throw ErrorCode.convert(new EventStoreClientException("AXONIQ-10000", "Unknown error code"));
-    }
 
     @Test
     public void testCovert4002FromCodeAndMessage(){

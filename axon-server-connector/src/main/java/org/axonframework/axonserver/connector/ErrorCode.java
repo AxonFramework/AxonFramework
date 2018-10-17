@@ -84,23 +84,6 @@ public enum ErrorCode {
         this.exceptionBuilder = exceptionBuilder;
     }
 
-    private static AxonException convert(String code, Throwable t) {
-        return stream(values()).filter(mapping -> mapping.errorCode.equals(code))
-              .findFirst()
-              .orElse(OTHER)
-              .convert(ExceptionSerializer.serialize("", t));
-    }
-
-    public static AxonException convert(Throwable t) {
-        if( t instanceof EventStoreClientException) {
-            return convert(((EventStoreClientException)t).getCode(), t);
-        }
-        if( t instanceof TimeoutException) {
-            return new org.axonframework.messaging.ExecutionException("Timeout while executing request", t);
-        }
-        return new AxonServerException(OTHER.errorCode, t.getMessage());
-    }
-
     public static ErrorCode getFromCode(String code){
         return stream(values()).filter(value -> value.errorCode.equals(code)).findFirst().orElse(OTHER);
     }
@@ -109,7 +92,34 @@ public enum ErrorCode {
         return errorCode;
     }
 
+    /**
+     * Converts the {@code errorMessage} to the relevant AxonException
+     *
+     * @param errorMessage the descriptor of the error
+     * @return the Axon Framework exception
+     */
     public AxonException convert(ErrorMessage errorMessage){
         return exceptionBuilder.apply(errorCode, errorMessage);
+    }
+
+    /**
+     * Converts the {@code throwable} to the relevant AxonException
+     *
+     * @param throwable the descriptor of the error
+     * @return the Axon Framework exception
+     */
+    public AxonException convert(Throwable throwable){
+        return convert(null, throwable);
+    }
+
+    /**
+     * Converts the {@code source} and the {@code throwable} to the relevant AxonException
+     *
+     * @param source The location that originally reported the error
+     * @param throwable the descriptor of the error
+     * @return the Axon Framework exception
+     */
+    public AxonException convert(String source, Throwable throwable){
+        return convert(ExceptionSerializer.serialize(source, throwable));
     }
 }

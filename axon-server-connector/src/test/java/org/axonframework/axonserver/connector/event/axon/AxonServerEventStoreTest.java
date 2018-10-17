@@ -81,7 +81,7 @@ public class AxonServerEventStoreTest {
         assertEquals(Arrays.asList("Test1", "Test2", "Test3"), received);
     }
 
-    @Test(expected = AxonServerException.class)
+    @Test(expected = EventStoreException.class)
     public void testLastSequenceNumberFor() {
         testSubject.lastSequenceNumberFor("Agg1");
     }
