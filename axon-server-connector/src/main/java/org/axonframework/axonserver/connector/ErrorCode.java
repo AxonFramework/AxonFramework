@@ -17,13 +17,13 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.axonserver.connector.command.RemoteCommandException;
 import org.axonframework.axonserver.connector.query.AxonServerQueryDispatchException;
 import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
+import org.axonframework.axonserver.connector.command.AxonServerCommandDispatchException;
+import org.axonframework.axonserver.connector.command.AxonServerRemoteCommandHandlingException;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.EventPublicationFailedException;
@@ -55,8 +55,8 @@ public enum ErrorCode {
 
     // Command errors
     NO_HANDLER_FOR_COMMAND("AXONIQ-4000", (code, error) -> new NoHandlerForCommandException(error.getMessage())),
-    COMMAND_EXECUTION_ERROR("AXONIQ-4002", (code, error) -> new CommandExecutionException(error.getMessage(),  new RemoteCommandException(code, error))),
-    COMMAND_DISPATCH_ERROR("AXONIQ-4003", (code, error) -> new CommandDispatchException(error.getMessage())),
+    COMMAND_EXECUTION_ERROR("AXONIQ-4002", (code, error) -> new CommandExecutionException(error.getMessage(),  new AxonServerRemoteCommandHandlingException(code, error))),
+    COMMAND_DISPATCH_ERROR("AXONIQ-4003", AxonServerCommandDispatchException::new),
 
     //Query errors
     NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
