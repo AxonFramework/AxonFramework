@@ -19,20 +19,11 @@ package org.axonframework.axonserver.connector;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.control.ClientIdentification;
-import io.axoniq.axonserver.grpc.control.NodeInfo;
-import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
-import io.axoniq.axonserver.grpc.control.PlatformInfo;
-import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
-import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
+import io.axoniq.axonserver.grpc.control.*;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
-import io.grpc.Channel;
-import io.grpc.ClientInterceptor;
-import io.grpc.ManagedChannel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import io.grpc.*;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -43,23 +34,14 @@ import org.axonframework.common.AxonThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.net.ssl.SSLException;
 
 /**
  * @author Marc Gathier
@@ -131,7 +113,7 @@ public class AxonServerConnectionManager {
                     connectInformation.setSuppressDownloadMessage(true);
                     writeDownloadMessage();
                 }
-                scheduleReconnect();
+                scheduleReconnect(false);
                 throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "No connection to AxonServer available");
             }
         }
@@ -226,7 +208,7 @@ public class AxonServerConnectionManager {
                                 Runnable reconnect = () -> {
                                     disconnectListeners.forEach(Runnable::run);
                                     inputStream.onCompleted();
-                                    scheduleReconnect();
+                                    scheduleReconnect(true);
                                 };
                                 for (Function<Runnable,Runnable> interceptor : reconnectInterceptors) {
                                     reconnect = interceptor.apply(reconnect);
@@ -247,14 +229,14 @@ public class AxonServerConnectionManager {
                             StatusRuntimeException sre = (StatusRuntimeException)throwable;
                             if( sre.getStatus().getCode().equals(Status.Code.PERMISSION_DENIED)) return;
                         }
-                        scheduleReconnect();
+                        scheduleReconnect(true);
                     }
 
                     @Override
                     public void onCompleted() {
                         logger.warn("Closed instruction stream to {}", name);
                         disconnectListeners.forEach(Runnable::run);
-                        scheduleReconnect();
+                        scheduleReconnect(true);
                     }
                 }));
         inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
@@ -284,7 +266,7 @@ public class AxonServerConnectionManager {
         reconnectInterceptors.add(interceptor);
     }
 
-    private synchronized void scheduleReconnect() {
+    private synchronized void scheduleReconnect(boolean immediate) {
         if( !shutdown && (reconnectTask == null || reconnectTask.isDone())) {
             if( channel != null) {
                 try {
@@ -294,7 +276,7 @@ public class AxonServerConnectionManager {
                 }
             }
             channel = null;
-            reconnectTask = scheduler.schedule(this::tryReconnect, 1, TimeUnit.SECONDS);
+            reconnectTask = scheduler.schedule(this::tryReconnect, immediate ? 100 : 5000, TimeUnit.MILLISECONDS);
         }
     }
 
