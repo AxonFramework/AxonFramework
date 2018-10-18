@@ -36,6 +36,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.GenericSagaSqlSchema;
 import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
@@ -61,7 +62,7 @@ import javax.sql.DataSource;
 
 @ConditionalOnBean(DataSource.class)
 @Configuration
-@AutoConfigureAfter(JpaAutoConfiguration.class)
+@AutoConfigureAfter(value = {JpaAutoConfiguration.class, JpaEventStoreAutoConfiguration.class})
 public class JdbcAutoConfiguration {
 
     @ConditionalOnMissingBean({EventStorageEngine.class, EventStore.class})
