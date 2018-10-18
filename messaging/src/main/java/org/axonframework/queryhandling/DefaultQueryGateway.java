@@ -75,7 +75,8 @@ public class DefaultQueryGateway implements QueryGateway {
         CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus
                 .query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)));
         CompletableFuture<R> result = new CompletableFuture<>();
-        queryResponse.thenAccept(queryResponseMessage -> {
+        queryResponse.exceptionally(cause -> GenericQueryResponseMessage.asResponseMessage(responseType.responseMessagePayloadType(), cause))
+                     .thenAccept(queryResponseMessage -> {
             if (queryResponseMessage.isExceptional()) {
                 result.completeExceptionally(queryResponseMessage.exceptionResult());
             } else {
