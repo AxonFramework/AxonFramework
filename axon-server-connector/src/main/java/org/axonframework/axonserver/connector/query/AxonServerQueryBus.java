@@ -181,9 +181,7 @@ public class AxonServerQueryBus implements QueryBus {
                                                throwable);
                                    completableFuture.completeExceptionally(new AxonServerQueryDispatchException(
                                            ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
-                                           ErrorMessage.newBuilder()
-                                                       .setMessage("No result from query executor")
-                                                       .build()
+                                           ExceptionSerializer.serialize(configuration.getClientId(), throwable)
                                    ));
                                }
 
