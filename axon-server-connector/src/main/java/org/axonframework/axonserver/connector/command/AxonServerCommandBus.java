@@ -157,6 +157,9 @@ public class AxonServerCommandBus implements CommandBus {
         return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
+    /**
+     * Disconnect the command bus from the Axon Server.
+     */
     public void disconnect() {
         commandRouterSubscriber.disconnect();
     }
@@ -228,7 +231,7 @@ public class AxonServerCommandBus implements CommandBus {
                                 .build()
                 ).build());
             } catch (Exception sre) {
-                logger.warn("Subscribe at AxonServer platform failed - {}, trying again at later moment", sre.getMessage());
+                logger.debug("Subscribing command {} with AxonServer failed. Will resubscribe when connection is established.", command, sre);
             } finally {
                 subscribing = false;
             }
@@ -256,7 +259,6 @@ public class AxonServerCommandBus implements CommandBus {
 
         private synchronized StreamObserver<CommandProviderOutbound> getSubscriberObserver() {
             if (subscriberStreamObserver == null) {
-                logger.info("Create new subscriber");
                 StreamObserver<CommandProviderInbound> commandsFromRoutingServer = new StreamObserver<CommandProviderInbound>() {
                     @Override
                     public void onNext(CommandProviderInbound commandToSubscriber) {
@@ -287,6 +289,7 @@ public class AxonServerCommandBus implements CommandBus {
                 };
 
                 StreamObserver<CommandProviderOutbound> stream = axonServerConnectionManager.getCommandStream(commandsFromRoutingServer, interceptors);
+                logger.info("Creating new subscriber");
                 subscriberStreamObserver = new FlowControllingStreamObserver<>(stream,
                         configuration,
                         flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
@@ -349,8 +352,9 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         public void disconnect() {
-            if( subscriberStreamObserver != null)
+            if( subscriberStreamObserver != null) {
                 subscriberStreamObserver.onCompleted();
+            }
             running = false;
             executor.shutdown();
         }
