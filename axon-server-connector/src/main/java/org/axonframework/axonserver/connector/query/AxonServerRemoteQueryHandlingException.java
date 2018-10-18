@@ -10,7 +10,7 @@ import org.axonframework.messaging.RemoteHandlingException;
  * @author Marc Gathier
  * @since 4.0
  */
-public class RemoteQueryHandlingException extends RemoteHandlingException {
+public class AxonServerRemoteQueryHandlingException extends RemoteHandlingException {
 
     private final String errorCode;
     private final String server;
@@ -21,7 +21,7 @@ public class RemoteQueryHandlingException extends RemoteHandlingException {
      * @param errorCode a {@link String} defining the error code of this exception
      * @param message   an {@link ErrorMessage} describing the exception
      */
-    public RemoteQueryHandlingException(String errorCode, ErrorMessage message) {
+    public AxonServerRemoteQueryHandlingException(String errorCode, ErrorMessage message) {
         super(new RemoteExceptionDescription(message.getDetailsList()));
         this.errorCode = errorCode;
         this.server = message.getLocation();
@@ -48,7 +48,7 @@ public class RemoteQueryHandlingException extends RemoteHandlingException {
 
     @Override
     public String toString() {
-        return "RemoteQueryHandlingException{" +
+        return "AxonServerRemoteQueryHandlingException{" +
                 "message=" + getMessage() +
                 ", errorCode='" + errorCode + '\'' +
                 ", location='" + server + '\'' +

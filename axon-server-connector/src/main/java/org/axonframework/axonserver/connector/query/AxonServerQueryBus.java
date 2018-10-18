@@ -166,9 +166,11 @@ public class AxonServerQueryBus implements QueryBus {
                                public void onNext(QueryResponse queryResponse) {
                                    logger.debug("Received response: {}", queryResponse);
                                    if (queryResponse.hasErrorMessage()) {
-                                       completableFuture.completeExceptionally(
-                                               new RemoteQueryHandlingException(queryResponse.getErrorCode(),
-                                                                                queryResponse.getErrorMessage()));
+                                       AxonServerRemoteQueryHandlingException exception =
+                                               new AxonServerRemoteQueryHandlingException(
+                                                       queryResponse.getErrorCode(), queryResponse.getErrorMessage()
+                                               );
+                                       completableFuture.completeExceptionally(exception);
                                    } else {
                                        completableFuture.complete(serializer.deserializeResponse(queryResponse));
                                    }
