@@ -312,7 +312,6 @@ public class AxonServerQueryBus implements QueryBus {
 
         private synchronized StreamObserver<QueryProviderOutbound> getSubscriberObserver() {
             if (outboundStreamObserver == null) {
-                logger.info("Create new subscriber");
                 StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
                     @Override
                     public void onNext(QueryProviderInbound inboundRequest) {
@@ -346,6 +345,7 @@ public class AxonServerQueryBus implements QueryBus {
                 };
 
                 StreamObserver<QueryProviderOutbound> stream = axonServerConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
+                logger.info("Creating new subscriber");
                 outboundStreamObserver = new FlowControllingStreamObserver<>(stream,
                                                                              configuration,
                                                                              flowControl -> QueryProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
