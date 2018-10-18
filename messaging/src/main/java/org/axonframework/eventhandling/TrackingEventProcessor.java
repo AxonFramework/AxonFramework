@@ -691,7 +691,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
                 try {
                     tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
-                    waitTime = 1;
 
                     // When in an initial stage, split segments to the requested number.
                     if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
@@ -702,6 +701,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                     return tokenStore.fetchSegments(processorName);
                                 });
                     }
+                    waitTime = 1;
                 } catch (Exception e) {
                     logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
                                 processorName, e.getMessage(), waitTime);

@@ -50,6 +50,7 @@ public class AxonServerConnectionManager {
     private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
 
     private volatile ManagedChannel channel;
+    private volatile boolean shutdown;
     private volatile StreamObserver<PlatformInboundInstruction> inputStream;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new AxonThreadFactory("AxonServerConnector") {
         @Override
@@ -71,6 +72,7 @@ public class AxonServerConnectionManager {
     }
 
     public synchronized Channel getChannel() {
+        checkConnectionState();
         if( channel == null || channel.isShutdown()) {
             channel = null;
             logger.info("Connecting using {}...", connectInformation.isSslEnabled()?"TLS":"unencrypted connection");
@@ -111,11 +113,22 @@ public class AxonServerConnectionManager {
                     connectInformation.setSuppressDownloadMessage(true);
                     writeDownloadMessage();
                 }
-                scheduleReconnect();
+                scheduleReconnect(false);
                 throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "No connection to AxonServer available");
             }
         }
         return channel;
+    }
+
+    private void checkConnectionState() {
+        if (shutdown) {
+            throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "Shutdown in progress");
+        }
+
+        if (reconnectTask != null && !reconnectTask.isDone()) {
+            throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(),
+                                          "No connection to AxonServer available");
+        }
     }
 
     private void writeDownloadMessage() {
@@ -195,7 +208,7 @@ public class AxonServerConnectionManager {
                                 Runnable reconnect = () -> {
                                     disconnectListeners.forEach(Runnable::run);
                                     inputStream.onCompleted();
-                                    scheduleReconnect();
+                                    scheduleReconnect(true);
                                 };
                                 for (Function<Runnable,Runnable> interceptor : reconnectInterceptors) {
                                     reconnect = interceptor.apply(reconnect);
@@ -216,14 +229,14 @@ public class AxonServerConnectionManager {
                             StatusRuntimeException sre = (StatusRuntimeException)throwable;
                             if( sre.getStatus().getCode().equals(Status.Code.PERMISSION_DENIED)) return;
                         }
-                        scheduleReconnect();
+                        scheduleReconnect(true);
                     }
 
                     @Override
                     public void onCompleted() {
                         logger.warn("Closed instruction stream to {}", name);
                         disconnectListeners.forEach(Runnable::run);
-                        scheduleReconnect();
+                        scheduleReconnect(true);
                     }
                 }));
         inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
@@ -233,7 +246,7 @@ public class AxonServerConnectionManager {
     }
 
     private synchronized void tryReconnect() {
-        if( channel != null ) return;
+        if( channel != null || shutdown) return;
         try {
             reconnectTask = null;
             getChannel();
@@ -253,8 +266,8 @@ public class AxonServerConnectionManager {
         reconnectInterceptors.add(interceptor);
     }
 
-    private synchronized void scheduleReconnect() {
-        if( reconnectTask == null || reconnectTask.isDone()) {
+    private synchronized void scheduleReconnect(boolean immediate) {
+        if( !shutdown && (reconnectTask == null || reconnectTask.isDone())) {
             if( channel != null) {
                 try {
                     channel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
@@ -263,7 +276,7 @@ public class AxonServerConnectionManager {
                 }
             }
             channel = null;
-            reconnectTask = scheduler.schedule(this::tryReconnect, 1, TimeUnit.SECONDS);
+            reconnectTask = scheduler.schedule(this::tryReconnect, immediate ? 100 : 5000, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -288,4 +301,11 @@ public class AxonServerConnectionManager {
         inputStream.onNext(instruction);
     }
 
+    public void shutdown() {
+        if (channel != null) {
+            shutdown(channel);
+        }
+        shutdown = true;
+        scheduler.shutdown();
+    }
 }

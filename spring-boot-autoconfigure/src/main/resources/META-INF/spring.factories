@@ -3,6 +3,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration,\
   org.axonframework.springboot.autoconfig.AxonAutoConfiguration,\
   org.axonframework.springboot.autoconfig.JpaAutoConfiguration,\
+  org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration,\
   org.axonframework.springboot.autoconfig.JdbcAutoConfiguration,\
   org.axonframework.springboot.autoconfig.TransactionAutoConfiguration,\
   org.axonframework.springboot.autoconfig.NoOpTransactionAutoConfiguration,\

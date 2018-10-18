@@ -89,12 +89,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return id;
     }
 
-    @Bean
+    @Bean(destroyMethod = "shutdown")
     public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration routingConfiguration) {
         return new AxonServerConnectionManager(routingConfiguration);
     }
 
-    @Bean
+    @Bean( destroyMethod = "disconnect")
     @Primary
     @ConditionalOnMissingBean(CommandBus.class)
     public AxonServerCommandBus commandBus(TransactionManager txManager,
@@ -149,7 +149,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return LoggingQueryInvocationErrorHandler.builder().build();
     }
 
-    @Bean
+    @Bean( destroyMethod = "disconnect")
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonServerQueryBus queryBus(AxonServerConnectionManager axonServerConnectionManager,
                                        AxonServerConfiguration axonServerConfiguration,
