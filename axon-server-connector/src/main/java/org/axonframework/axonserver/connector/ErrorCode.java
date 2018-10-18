@@ -17,10 +17,10 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.axonserver.connector.query.AxonServerQueryDispatchException;
-import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.command.AxonServerCommandDispatchException;
 import org.axonframework.axonserver.connector.command.AxonServerRemoteCommandHandlingException;
+import org.axonframework.axonserver.connector.query.AxonServerQueryDispatchException;
+import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.NoHandlerForCommandException;

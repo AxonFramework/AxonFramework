@@ -201,9 +201,8 @@ public class AxonServerQueryBus implements QueryBus {
                            });
         } catch (Exception e) {
             logger.warn("There was a problem issuing a query {}.", interceptedQuery, e);
-            String message = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e).getMessage();
             completableFuture.completeExceptionally(
-                    new AxonServerQueryDispatchException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), message)
+                    ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e)
             );
         }
         return completableFuture;
