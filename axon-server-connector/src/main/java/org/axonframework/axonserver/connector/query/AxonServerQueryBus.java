@@ -50,6 +50,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -128,33 +129,58 @@ public class AxonServerQueryBus implements QueryBus {
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         CompletableFuture<QueryResponseMessage<R>> completableFuture = new CompletableFuture<>();
-        queryServiceStub()
-                        .query(serializer.serializeRequest(interceptedQuery, 1,
-                                                           TimeUnit.HOURS.toMillis(1), priorityCalculator.determinePriority(interceptedQuery)),
-                               new StreamObserver<QueryResponse>() {
-                                   @Override
-                                   public void onNext(QueryResponse queryResponse) {
-                                       logger.debug("Received response: {}", queryResponse);
-                                       if( queryResponse.hasErrorMessage()) {
-                                           completableFuture.completeExceptionally(new RemoteQueryException(queryResponse.getErrorCode(), queryResponse.getErrorMessage()));
-                                       } else {
-                                           completableFuture.complete(serializer.deserializeResponse(queryResponse));
-                                       }
+        try {
+            queryServiceStub()
+                    .query(serializer.serializeRequest(interceptedQuery,
+                                                       1,
+                                                       TimeUnit.HOURS.toMillis(1),
+                                                       priorityCalculator.determinePriority(interceptedQuery)),
+                           new StreamObserver<QueryResponse>() {
+                               @Override
+                               public void onNext(QueryResponse queryResponse) {
+                                   logger.debug("Received response: {}", queryResponse);
+                                   if (queryResponse.hasErrorMessage()) {
+                                       completableFuture.completeExceptionally(
+                                               new RemoteQueryException(queryResponse.getErrorCode(),
+                                                                        queryResponse.getErrorMessage()));
+                                   } else {
+                                       completableFuture.complete(serializer.deserializeResponse(queryResponse));
                                    }
+                               }
 
-                                   @Override
-                                   public void onError(Throwable throwable) {
-                                       logger.warn("Received error while waiting for first response: {}", throwable.getMessage(), throwable);
-                                       completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
-                                   }
+                               @Override
+                               public void onError(Throwable throwable) {
+                                   logger.warn("Received error while waiting for first response: {}",
+                                               throwable.getMessage(),
+                                               throwable);
+                                   completableFuture
+                                           .completeExceptionally(new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR
+                                                                                                   .errorCode(),
+                                                                                           ErrorMessage.newBuilder()
+                                                                                                       .setMessage(
+                                                                                                               "No result from query executor")
+                                                                                                       .build()));
+                               }
 
-                                   @Override
-                                   public void onCompleted() {
-                                       if (!completableFuture.isDone()) {
-                                           completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
-                                       }
+                               @Override
+                               public void onCompleted() {
+                                   if (!completableFuture.isDone()) {
+                                       completableFuture
+                                               .completeExceptionally(
+                                                       new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR
+                                                                                        .errorCode(),
+                                                                                ErrorMessage.newBuilder().setMessage(
+                                                                                        "No result from query executor")
+                                                                                            .build()));
                                    }
-                               });
+                               }
+                           });
+        } catch (Exception e) {
+            logger.warn("There was a problem issuing a query {}.", interceptedQuery, e);
+            ErrorMessage errorMessage = ExceptionSerializer.serialize(configuration.getClientId(), e);
+            completableFuture.completeExceptionally(
+                    new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), errorMessage));
+        }
 
         return completableFuture;
     }

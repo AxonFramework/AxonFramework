@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.queryhandling.GenericQueryResponseMessage.asResponseMessage;
 
 /**
  * Implementation of the QueryGateway interface that allows the registration of dispatchInterceptors.
@@ -75,14 +76,14 @@ public class DefaultQueryGateway implements QueryGateway {
         CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus
                 .query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)));
         CompletableFuture<R> result = new CompletableFuture<>();
-        queryResponse.exceptionally(cause -> GenericQueryResponseMessage.asResponseMessage(responseType.responseMessagePayloadType(), cause))
+        queryResponse.exceptionally(cause -> asResponseMessage(responseType.responseMessagePayloadType(), cause))
                      .thenAccept(queryResponseMessage -> {
-            if (queryResponseMessage.isExceptional()) {
-                result.completeExceptionally(queryResponseMessage.exceptionResult());
-            } else {
-                result.complete(queryResponseMessage.getPayload());
-            }
-        });
+                         if (queryResponseMessage.isExceptional()) {
+                             result.completeExceptionally(queryResponseMessage.exceptionResult());
+                         } else {
+                             result.complete(queryResponseMessage.getPayload());
+                         }
+                     });
         return result;
     }
 
