@@ -49,6 +49,7 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureAfter(name = {
         "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
         "org.axonframework.springboot.autoconfig.JpaAutoConfiguration",
+        "org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration",
         "org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration"
 })
 public class EventProcessingAutoConfiguration {

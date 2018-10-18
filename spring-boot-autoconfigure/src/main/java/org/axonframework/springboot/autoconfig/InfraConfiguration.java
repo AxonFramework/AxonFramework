@@ -26,7 +26,9 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnClass(SpringAxonAutoConfigurer.class)
 @AutoConfigureAfter({
         AxonAutoConfiguration.class,
-        JpaAutoConfiguration.class, NoOpTransactionAutoConfiguration.class,
+        JpaAutoConfiguration.class,
+        JpaEventStoreAutoConfiguration.class,
+        NoOpTransactionAutoConfiguration.class,
         TransactionAutoConfiguration.class})
 @Import(SpringAxonAutoConfigurer.ImportSelector.class)
 @AnnotationDriven
