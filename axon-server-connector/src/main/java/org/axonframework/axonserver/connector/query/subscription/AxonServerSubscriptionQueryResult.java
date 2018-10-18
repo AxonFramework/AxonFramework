@@ -23,7 +23,7 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
 import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.Publisher;
-import org.axonframework.axonserver.connector.query.RemoteQueryException;
+import org.axonframework.axonserver.connector.query.RemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import io.axoniq.axonserver.grpc.FlowControl;
 import io.grpc.stub.StreamObserver;
@@ -117,7 +117,7 @@ public class AxonServerSubscriptionQueryResult implements
             case COMPLETE_EXCEPTIONALLY:
                 requestObserver.onCompleted();
                 QueryUpdateCompleteExceptionally exceptionally = response.getCompleteExceptionally();
-                Throwable e = new RemoteQueryException(exceptionally.getErrorCode(), exceptionally.getErrorMessage());
+                Throwable e = new RemoteQueryHandlingException(exceptionally.getErrorCode(), exceptionally.getErrorMessage());
                 completeExceptionally(e);
                 break;
         }

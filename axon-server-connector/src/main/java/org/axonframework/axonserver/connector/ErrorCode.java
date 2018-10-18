@@ -18,8 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.axonserver.connector.command.RemoteCommandException;
-import org.axonframework.axonserver.connector.event.util.EventStoreClientException;
-import org.axonframework.axonserver.connector.query.RemoteQueryException;
+import org.axonframework.axonserver.connector.query.RemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -31,7 +30,6 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryExecutionException;
 
-import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 
 import static java.util.Arrays.stream;
@@ -61,8 +59,8 @@ public enum ErrorCode {
 
     //Query errors
     NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
-    QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error) -> new QueryExecutionException(error.getMessage(), new RemoteQueryException(code, error))),
-    QUERY_DISPATCH_ERROR("AXONIQ-5002", RemoteQueryException::new),
+    QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error) -> new QueryExecutionException(error.getMessage(), new RemoteQueryHandlingException(code, error))),
+    QUERY_DISPATCH_ERROR("AXONIQ-5002", RemoteQueryHandlingException::new),
 
     // Internal errors
     DATAFILE_READ_ERROR( "AXONIQ-9000", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
