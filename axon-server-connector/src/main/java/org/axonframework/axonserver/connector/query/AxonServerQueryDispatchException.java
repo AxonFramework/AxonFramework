@@ -17,9 +17,7 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.common.AxonException;
 
 import java.util.Collections;
@@ -73,19 +71,39 @@ public class AxonServerQueryDispatchException extends AxonException {
         this.details = details;
     }
 
+    /**
+     * Return a {@link String} defining the error code.
+     *
+     * @return a {@link String} defining the error code
+     */
     public String code() {
         return code;
     }
 
+    /**
+     * Return a {@link String} defining the source where the error originated.
+     *
+     * @return a {@link String} defining the source where the error originated
+     */
     public String source() {
         return source;
     }
 
+    /**
+     * Return a {@link List} of {@link String}s, each describing a single "cause".
+     *
+     * @return a {@link List} of {@link String}s, each describing a single "cause"
+     */
     public List<String> details() {
         return details;
     }
 
-    public ErrorCode errorCode(){
+    /**
+     * Return an {@link ErrorCode} based on the {@link #code()}.
+     *
+     * @return an {@link ErrorCode} based on the {@link #code()}
+     */
+    public ErrorCode errorCode() {
         return ErrorCode.getFromCode(code);
     }
 }
