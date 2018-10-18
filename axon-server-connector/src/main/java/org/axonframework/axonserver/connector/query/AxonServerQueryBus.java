@@ -17,8 +17,13 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.query.*;
+import io.axoniq.axonserver.grpc.query.QueryComplete;
+import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
 import io.axoniq.axonserver.grpc.query.QuerySubscription;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
@@ -41,16 +46,36 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -63,6 +88,7 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
  * AxonServer implementation for the QueryBus. Delegates incoming queries to the specified localSegment.
  *
  * @author Marc Gathier
+ * @since 4.0
  */
 public class AxonServerQueryBus implements QueryBus {
     private final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
@@ -153,25 +179,23 @@ public class AxonServerQueryBus implements QueryBus {
                                    logger.warn("Received error while waiting for first response: {}",
                                                throwable.getMessage(),
                                                throwable);
-                                   completableFuture
-                                           .completeExceptionally(new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR
-                                                                                                   .errorCode(),
-                                                                                           ErrorMessage.newBuilder()
-                                                                                                       .setMessage(
-                                                                                                               "No result from query executor")
-                                                                                                       .build()));
+                                   completableFuture.completeExceptionally(new QueryDispatchException(
+                                           ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
+                                           ErrorMessage.newBuilder()
+                                                       .setMessage("No result from query executor")
+                                                       .build()
+                                   ));
                                }
 
                                @Override
                                public void onCompleted() {
                                    if (!completableFuture.isDone()) {
-                                       completableFuture
-                                               .completeExceptionally(
-                                                       new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR
-                                                                                        .errorCode(),
-                                                                                ErrorMessage.newBuilder().setMessage(
-                                                                                        "No result from query executor")
-                                                                                            .build()));
+                                       completableFuture.completeExceptionally(new QueryDispatchException(
+                                               ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
+                                               ErrorMessage.newBuilder()
+                                                           .setMessage("No result from query executor")
+                                                           .build()
+                                       ));
                                    }
                                }
                            });
@@ -179,9 +203,9 @@ public class AxonServerQueryBus implements QueryBus {
             logger.warn("There was a problem issuing a query {}.", interceptedQuery, e);
             ErrorMessage errorMessage = ExceptionSerializer.serialize(configuration.getClientId(), e);
             completableFuture.completeExceptionally(
-                    new RemoteQueryException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), errorMessage));
+                    new QueryDispatchException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), errorMessage)
+            );
         }
-
         return completableFuture;
     }
 
