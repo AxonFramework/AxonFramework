@@ -45,12 +45,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-metrics</artifactId>
             <version>${project.version}</version>
