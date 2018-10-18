@@ -25,6 +25,7 @@ import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -45,8 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * Author: marc
@@ -57,6 +57,7 @@ public class AxonServerCommandBusTest {
     private AxonServerConfiguration conf;
     private XStreamSerializer ser;
     private SimpleCommandBus localSegment;
+    private AxonServerConnectionManager axonServerConnectionManager;
 
 
     @Before
@@ -70,7 +71,8 @@ public class AxonServerCommandBusTest {
         conf.setNrOfNewPermits(1000);
         localSegment = SimpleCommandBus.builder().build();
         ser = XStreamSerializer.builder().build();
-        testSubject = new AxonServerCommandBus(new AxonServerConnectionManager(conf), conf, localSegment, ser,
+        axonServerConnectionManager = spy(new AxonServerConnectionManager(conf));
+        testSubject = new AxonServerCommandBus(axonServerConnectionManager, conf, localSegment, ser,
                                                command -> "RoutingKey", new CommandPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);
         dummyMessagePlatformServer.start();
@@ -98,6 +100,27 @@ public class AxonServerCommandBusTest {
         waiter.await();
         assertEquals(resultHolder.get(), "this is the payload");
         assertFalse(failure.get());
+    }
+
+    @Test
+    public void dispatchWhenChannelThrowsAnException() throws InterruptedException {
+        CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is the payload");
+        CountDownLatch waiter = new CountDownLatch(1);
+        AtomicBoolean failure = new AtomicBoolean(false);
+        AtomicReference<Throwable> throwable = new AtomicReference<>();
+        when(axonServerConnectionManager.getChannel()).thenThrow(new RuntimeException("oops"));
+        testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
+            if (result.isExceptional()) {
+                failure.set(true);
+                throwable.set(result.exceptionResult());
+            }
+            waiter.countDown();
+        });
+        waiter.await();
+        assertTrue(failure.get());
+        assertTrue(throwable.get() instanceof AxonServerCommandDispatchException);
+        assertEquals(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
+                     ((AxonServerCommandDispatchException) throwable.get()).getErrorCode());
     }
 
     @Test

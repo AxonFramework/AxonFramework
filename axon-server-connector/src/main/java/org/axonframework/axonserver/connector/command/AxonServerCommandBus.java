@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.command;
 
+import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.command.*;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
@@ -33,6 +34,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
@@ -46,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -99,9 +102,12 @@ public class AxonServerCommandBus implements CommandBus {
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> commandMessage, CommandCallback<? super C, ? super R> commandCallback) {
+    public <C, R> void dispatch(CommandMessage<C> commandMessage,
+                                CommandCallback<? super C, ? super R> commandCallback) {
         logger.debug("Dispatch with callback: {}", commandMessage.getCommandName());
         CommandMessage<C> command = dispatchInterceptors.intercept(commandMessage);
+        AtomicBoolean serverResponded = new AtomicBoolean(false);
+        try {
             CommandServiceGrpc.newStub(axonServerConnectionManager.getChannel())
                               .withInterceptors(interceptors)
                               .dispatch(serializer.serialize(command,
@@ -110,6 +116,7 @@ public class AxonServerCommandBus implements CommandBus {
                                         new StreamObserver<CommandResponse>() {
                                             @Override
                                             public void onNext(CommandResponse commandResponse) {
+                                                serverResponded.set(true);
                                                 if (!commandResponse.hasErrorMessage()) {
                                                     logger.debug("response received - {}", commandResponse);
                                                     try {
@@ -125,23 +132,47 @@ public class AxonServerCommandBus implements CommandBus {
                                                     }
                                                 } else {
                                                     commandCallback.onResult(command, asCommandResultMessage(
-                                                                                      new RemoteCommandException(
-                                                                                              commandResponse
-                                                                                                      .getErrorCode(),
-                                                                                              commandResponse
-                                                                                                      .getErrorMessage())));
+                                                            new AxonServerRemoteCommandHandlingException(
+                                                                    commandResponse
+                                                                            .getErrorCode(),
+                                                                    commandResponse
+                                                                            .getErrorMessage())));
                                                 }
                                             }
 
                                             @Override
                                             public void onError(Throwable throwable) {
-                                                commandCallback.onResult(command, asCommandResultMessage(throwable));
+                                                serverResponded.set(true);
+                                                commandCallback.onResult(command,
+                                                                         asCommandResultMessage(new AxonServerCommandDispatchException(
+                                                                                 ErrorCode.COMMAND_DISPATCH_ERROR
+                                                                                         .errorCode(),
+                                                                                 ExceptionSerializer
+                                                                                         .serialize(configuration
+                                                                                                            .getClientId(),
+                                                                                                    throwable))));
                                             }
 
                                             @Override
                                             public void onCompleted() {
+                                                if (!serverResponded.get()) {
+                                                    commandCallback.onResult(command,
+                                                                             asCommandResultMessage(new AxonServerCommandDispatchException(
+                                                                                     ErrorCode.COMMAND_DISPATCH_ERROR
+                                                                                             .errorCode(),
+                                                                                     ErrorMessage.newBuilder()
+                                                                                                 .setMessage("No result from command executor")
+                                                                                                 .build())));
+                                                }
                                             }
                                         });
+        } catch (Exception e) {
+            logger.warn("There was a problem dispatching a command {}.", command, e);
+            commandCallback.onResult(command,
+                                     asCommandResultMessage(new AxonServerCommandDispatchException(
+                                             ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
+                                             ExceptionSerializer.serialize(configuration.getClientId(), e))));
+        }
     }
 
     @Override
