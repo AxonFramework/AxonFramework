@@ -31,6 +31,8 @@ import java.util.List;
  */
 public class AxonServerQueryDispatchException extends AxonException {
 
+    private static final long serialVersionUID = 4810265327922717359L;
+
     private final String code;
     private final String source;
     private final List<String> details;

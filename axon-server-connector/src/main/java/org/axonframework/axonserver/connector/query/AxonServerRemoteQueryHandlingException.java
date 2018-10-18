@@ -12,6 +12,8 @@ import org.axonframework.messaging.RemoteHandlingException;
  */
 public class AxonServerRemoteQueryHandlingException extends RemoteHandlingException {
 
+    private static final long serialVersionUID = -8868624888839585045L;
+
     private final String errorCode;
     private final String server;
 
