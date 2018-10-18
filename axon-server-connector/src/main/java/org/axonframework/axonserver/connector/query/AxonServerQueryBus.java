@@ -222,6 +222,7 @@ public class AxonServerQueryBus implements QueryBus {
         private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getQueryThreads());
         private StreamObserver<QueryProviderOutbound> outboundStreamObserver;
         private volatile boolean subscribing;
+        private volatile boolean running = true;
 
         QueryProvider() {
             queryQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
@@ -232,9 +233,9 @@ public class AxonServerQueryBus implements QueryBus {
             logger.debug("Starting Query Executor");
             boolean interrupted = false;
 
-            while (!interrupted) {
+            while (running && !interrupted) {
                 try {
-                    QueryRequest query = queryQueue.poll(10, TimeUnit.SECONDS);
+                    QueryRequest query = queryQueue.poll(1, TimeUnit.SECONDS);
                     if (query != null) {
                         logger.debug("Received query: {}", query);
                         processQuery(query);
@@ -393,8 +394,12 @@ public class AxonServerQueryBus implements QueryBus {
         }
 
         public void disconnect() {
-            if( outboundStreamObserver != null)
-                outboundStreamObserver.onCompleted();//onError(new AxonServerException("AXONIQ-0001", "Cancelled by client"));
+            if (outboundStreamObserver != null) {
+                outboundStreamObserver.onCompleted();
+            }
+
+            running = false;
+            executor.shutdown();
         }
 
         private QuerySubscription.Builder subscriptionBuilder(QueryDefinition queryDefinition, int nrHandlers) {

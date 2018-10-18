@@ -19,11 +19,20 @@ package org.axonframework.axonserver.connector;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.control.*;
+import io.axoniq.axonserver.grpc.control.ClientIdentification;
+import io.axoniq.axonserver.grpc.control.NodeInfo;
+import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformInfo;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
-import io.grpc.*;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
+import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -34,14 +43,23 @@ import org.axonframework.common.AxonThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.net.ssl.SSLException;
 
 /**
  * @author Marc Gathier
@@ -50,6 +68,7 @@ public class AxonServerConnectionManager {
     private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
 
     private volatile ManagedChannel channel;
+    private volatile boolean shutdown;
     private volatile StreamObserver<PlatformInboundInstruction> inputStream;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new AxonThreadFactory("AxonServerConnector") {
         @Override
@@ -71,6 +90,7 @@ public class AxonServerConnectionManager {
     }
 
     public synchronized Channel getChannel() {
+        checkConnectionState();
         if( channel == null || channel.isShutdown()) {
             channel = null;
             logger.info("Connecting using {}...", connectInformation.isSslEnabled()?"TLS":"unencrypted connection");
@@ -116,6 +136,17 @@ public class AxonServerConnectionManager {
             }
         }
         return channel;
+    }
+
+    private void checkConnectionState() {
+        if (shutdown) {
+            throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "Shutdown in progress");
+        }
+
+        if (reconnectTask != null && !reconnectTask.isDone()) {
+            throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(),
+                                          "No connection to AxonServer available");
+        }
     }
 
     private void writeDownloadMessage() {
@@ -233,7 +264,7 @@ public class AxonServerConnectionManager {
     }
 
     private synchronized void tryReconnect() {
-        if( channel != null ) return;
+        if( channel != null || shutdown) return;
         try {
             reconnectTask = null;
             getChannel();
@@ -254,7 +285,7 @@ public class AxonServerConnectionManager {
     }
 
     private synchronized void scheduleReconnect() {
-        if( reconnectTask == null || reconnectTask.isDone()) {
+        if( !shutdown && (reconnectTask == null || reconnectTask.isDone())) {
             if( channel != null) {
                 try {
                     channel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
@@ -288,4 +319,11 @@ public class AxonServerConnectionManager {
         inputStream.onNext(instruction);
     }
 
+    public void shutdown() {
+        if (channel != null) {
+            shutdown(channel);
+        }
+        shutdown = true;
+        scheduler.shutdown();
+    }
 }

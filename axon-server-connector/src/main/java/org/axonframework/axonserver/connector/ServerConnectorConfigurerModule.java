@@ -51,7 +51,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     public void configureModule(Configurer configurer) {
         configurer.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration());
 
-        configurer.registerComponent(AxonServerConnectionManager.class, c -> new AxonServerConnectionManager(c.getComponent(AxonServerConfiguration.class)));
+        configurer.registerComponent(AxonServerConnectionManager.class, c -> buildAxonServerConnectionManager(c));
         configurer.configureEventStore(this::buildEventStore);
         configurer.configureCommandBus(this::buildCommandBus);
         configurer.configureQueryBus(this::buildQueryBus);
@@ -61,6 +61,13 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 "persistent implementation, based on the activity of the handler.");
             return new InMemoryTokenStore();
         });
+    }
+
+    private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
+        AxonServerConnectionManager axonServerConnectionManager = new AxonServerConnectionManager(c.getComponent(
+                AxonServerConfiguration.class));
+        c.onShutdown(axonServerConnectionManager::shutdown);
+        return axonServerConnectionManager;
     }
 
     private AxonServerEventStore buildEventStore(Configuration c) {
