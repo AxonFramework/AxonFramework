@@ -19,11 +19,11 @@ package org.axonframework.axonserver.connector;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.axonserver.connector.command.AxonServerCommandDispatchException;
 import org.axonframework.axonserver.connector.command.AxonServerRemoteCommandHandlingException;
-import org.axonframework.axonserver.connector.query.RemoteQueryException;
+import org.axonframework.axonserver.connector.query.AxonServerQueryDispatchException;
+import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.EventPublicationFailedException;
@@ -60,8 +60,10 @@ public enum ErrorCode {
 
     //Query errors
     NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
-    QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error) -> new QueryExecutionException(error.getMessage(), new RemoteQueryException(code, error))),
-    QUERY_DISPATCH_ERROR("AXONIQ-5002", RemoteQueryException::new),
+    QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error) -> new QueryExecutionException(
+            error.getMessage(), new AxonServerRemoteQueryHandlingException(code, error))
+    ),
+    QUERY_DISPATCH_ERROR("AXONIQ-5002", AxonServerQueryDispatchException::new),
 
     // Internal errors
     DATAFILE_READ_ERROR( "AXONIQ-9000", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),

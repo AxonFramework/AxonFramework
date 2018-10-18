@@ -24,17 +24,20 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -130,6 +133,26 @@ public class AxonServerQueryBusTest {
         assertEquals("test", queryBus.query(queryMessage).get().getPayload());
     }
 
+    @Test
+    public void queryWhenQueryServiceStubFails() {
+        RuntimeException expected = new RuntimeException("oops");
+        queryBus = spy(queryBus);
+        when(queryBus.queryServiceStub()).thenThrow(expected);
+
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        CompletableFuture<QueryResponseMessage<String>> result = queryBus.query(queryMessage);
+        assertTrue(result.isDone());
+        assertTrue(result.isCompletedExceptionally());
+
+        try {
+            result.get();
+            fail("Expected an exception here");
+        } catch (Exception actual) {
+            assertTrue(actual.getCause() instanceof AxonServerQueryDispatchException);
+            AxonServerQueryDispatchException queryDispatchException = (AxonServerQueryDispatchException) actual.getCause();
+            assertEquals(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), queryDispatchException.code());
+        }
+    }
 
     @Test
     public void processQuery() {
