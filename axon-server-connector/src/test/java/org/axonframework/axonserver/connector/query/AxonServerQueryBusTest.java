@@ -38,7 +38,6 @@ import org.junit.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -149,8 +148,8 @@ public class AxonServerQueryBusTest {
             result.get();
             fail("Expected an exception here");
         } catch (Exception actual) {
-            assertTrue(actual.getCause() instanceof QueryDispatchException);
-            QueryDispatchException queryDispatchException = (QueryDispatchException) actual.getCause();
+            assertTrue(actual.getCause() instanceof AxonServerQueryDispatchException);
+            AxonServerQueryDispatchException queryDispatchException = (AxonServerQueryDispatchException) actual.getCause();
             assertEquals(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), queryDispatchException.code());
         }
     }

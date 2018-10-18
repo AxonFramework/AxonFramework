@@ -179,7 +179,7 @@ public class AxonServerQueryBus implements QueryBus {
                                    logger.warn("Received error while waiting for first response: {}",
                                                throwable.getMessage(),
                                                throwable);
-                                   completableFuture.completeExceptionally(new QueryDispatchException(
+                                   completableFuture.completeExceptionally(new AxonServerQueryDispatchException(
                                            ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
                                            ErrorMessage.newBuilder()
                                                        .setMessage("No result from query executor")
@@ -190,7 +190,7 @@ public class AxonServerQueryBus implements QueryBus {
                                @Override
                                public void onCompleted() {
                                    if (!completableFuture.isDone()) {
-                                       completableFuture.completeExceptionally(new QueryDispatchException(
+                                       completableFuture.completeExceptionally(new AxonServerQueryDispatchException(
                                                ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
                                                ErrorMessage.newBuilder()
                                                            .setMessage("No result from query executor")
@@ -203,7 +203,7 @@ public class AxonServerQueryBus implements QueryBus {
             logger.warn("There was a problem issuing a query {}.", interceptedQuery, e);
             ErrorMessage errorMessage = ExceptionSerializer.serialize(configuration.getClientId(), e);
             completableFuture.completeExceptionally(
-                    new QueryDispatchException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), errorMessage)
+                    new AxonServerQueryDispatchException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), errorMessage)
             );
         }
         return completableFuture;
