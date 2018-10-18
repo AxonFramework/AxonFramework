@@ -25,7 +25,7 @@ import org.axonframework.messaging.RemoteHandlingException;
  * @author Marc Gathier
  * @since 4.0
  */
-public class RemoteCommandException extends RemoteHandlingException {
+public class AxonServerRemoteCommandHandlingException extends RemoteHandlingException {
 
     private final String errorCode;
     private final String server;
@@ -36,7 +36,7 @@ public class RemoteCommandException extends RemoteHandlingException {
      * @param errorCode    the code reported by the server
      * @param errorMessage the message describing the exception on the remote end
      */
-    public RemoteCommandException(String errorCode, ErrorMessage errorMessage) {
+    public AxonServerRemoteCommandHandlingException(String errorCode, ErrorMessage errorMessage) {
         super(new RemoteExceptionDescription(errorMessage.getDetailsList()));
         this.errorCode = errorCode;
         this.server = errorMessage.getLocation();
@@ -62,7 +62,7 @@ public class RemoteCommandException extends RemoteHandlingException {
 
     @Override
     public String toString() {
-        return "RemoteCommandException{" +
+        return "AxonServerRemoteCommandHandlingException{" +
                 "message=" + getMessage() +
                 ", errorCode='" + errorCode + '\'' +
                 ", server='" + server + '\'' +
