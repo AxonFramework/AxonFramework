@@ -20,7 +20,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean class="org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory">
-        <property name="prototypeBeanName" value="stubAggregate"/>
+        <constructor-arg value="stubAggregate"/>
     </bean>
 
     <bean id="stubAggregate" class="org.axonframework.spring.domain.SpringWiredAggregate" init-method="initialize"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,26 @@
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.ThrowingListenerErrorHandler;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventhandling.*;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.Repository;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -53,52 +50,54 @@ public class SynchronousLoopbackTest {
     private CommandBus commandBus;
     private String aggregateIdentifier;
     private EventStore eventStore;
-    private VoidCallback reportErrorCallback;
+    private CommandCallback<Object, Object> reportErrorCallback;
     private CommandCallback<Object, Object> expectErrorCallback;
+
+    @SuppressWarnings("unchecked")
+    private static List<DomainEventMessage<?>> anyEventList() {
+        return anyList();
+    }
 
     @Before
     public void setUp() {
         aggregateIdentifier = UUID.randomUUID().toString();
-        commandBus = new SimpleCommandBus();
-        eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
+        commandBus = SimpleCommandBus.builder().build();
+        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         eventStore.publish(new GenericDomainEventMessage<>("test", aggregateIdentifier, 0,
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
 
-        reportErrorCallback = new VoidCallback<Object>() {
-            @Override
-            protected void onSuccess(CommandMessage<?> commandMessage) {
-            }
-
-            @Override
-            public void onFailure(CommandMessage commandMessage, Throwable cause) {
+        reportErrorCallback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.exceptionResult();
                 throw new RuntimeException("Failure", cause);
             }
         };
-        expectErrorCallback = new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-                fail("Expected this command to fail");
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+        expectErrorCallback = (commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                Throwable cause = commandResultMessage.exceptionResult();
                 assertEquals("Mock exception", cause.getMessage());
+            } else {
+                fail("Expected this command to fail");
             }
         };
     }
 
     protected void initializeRepository(LockFactory lockingStrategy) {
         EventSourcingRepository<CountingAggregate> repository =
-                new EventSourcingRepository<>(new GenericAggregateFactory<>(CountingAggregate.class), eventStore,
-                                              lockingStrategy, NoSnapshotTriggerDefinition.INSTANCE);
-        new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
+                EventSourcingRepository.builder(CountingAggregate.class)
+                                       .lockFactory(lockingStrategy)
+                                       .aggregateFactory(new GenericAggregateFactory<>(CountingAggregate.class))
+                                       .eventStore(eventStore)
+                                       .build();
+
+        new AnnotationCommandHandlerAdapter<>(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
-        initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        initializeRepository(PessimisticLockFactory.usingDefaults());
+        EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -111,13 +110,23 @@ public class SynchronousLoopbackTest {
                                                                                           2)), reportErrorCallback);
                 }
             }
+            return null;
         };
-        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(el), eventStore).start();
+        SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
+                                                                                 .eventHandlers(eventHandler)
+                                                                                 .build();
+        SubscribingEventProcessor.builder()
+                                 .name("processor")
+                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                 .messageSource(eventStore)
+                                 .build()
+                                 .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
         DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
+        //noinspection Duplicates
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
             if (next.getPayload() instanceof CounterChangedEvent) {
@@ -131,8 +140,8 @@ public class SynchronousLoopbackTest {
 
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
-        initializeRepository(new PessimisticLockFactory());
-        EventListener el = event -> {
+        initializeRepository(PessimisticLockFactory.usingDefaults());
+        EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
@@ -147,10 +156,19 @@ public class SynchronousLoopbackTest {
                     throw new RuntimeException("Mock exception");
                 }
             }
+            return null;
         };
-        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(Collections.singletonList(el),
-                                                                    ThrowingListenerErrorHandler.INSTANCE), eventStore)
-                .start();
+        SimpleEventHandlerInvoker eventHandlerInvoker =
+                SimpleEventHandlerInvoker.builder()
+                                         .eventHandlers(eventHandler)
+                                         .listenerInvocationErrorHandler(PropagatingErrorHandler.INSTANCE)
+                                         .build();
+        SubscribingEventProcessor.builder()
+                                 .name("processor")
+                                 .eventHandlerInvoker(eventHandlerInvoker)
+                                 .messageSource(eventStore)
+                                 .build()
+                                 .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
@@ -165,11 +183,6 @@ public class SynchronousLoopbackTest {
         }
 
         verify(eventStore, times(3)).publish(anyEventList());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<DomainEventMessage<?>> anyEventList() {
-        return anyList();
     }
 
     private static class CounterCommandHandler {

@@ -16,6 +16,9 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
@@ -125,6 +128,27 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
+     * (scheduled) on the {@link org.axonframework.deadline.DeadlineManager} to perform a task specified in the
+     * interceptor.
+     *
+     * @param deadlineDispatchInterceptor the interceptor for dispatching (scheduling) deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerDeadlineDispatchInterceptor(
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor);
+
+    /**
+     * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
+     * task specified in the interceptor.
+     *
+     * @param deadlineHandlerInterceptor the interceptor for handling deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerDeadlineHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
 
     /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.

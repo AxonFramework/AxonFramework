@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,9 @@
 
 package org.axonframework.spring.stereotype;
 
-import org.axonframework.commandhandling.model.AggregateRoot;
+import org.axonframework.modelling.command.AggregateRoot;
+import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
+import org.axonframework.modelling.command.CommandTargetResolver;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -57,9 +59,9 @@ public @interface Aggregate {
     String type() default "";
 
     /**
-     * Selects the name of the {@link org.axonframework.commandhandling.CommandTargetResolver} bean. If left empty,
-     * {@link org.axonframework.commandhandling.CommandTargetResolver} bean from application context will be used. If
-     * the bean is not defined in the application context, {@link org.axonframework.commandhandling.AnnotationCommandTargetResolver}
+     * Selects the name of the {@link CommandTargetResolver} bean. If left empty,
+     * {@link CommandTargetResolver} bean from application context will be used. If
+     * the bean is not defined in the application context, {@link AnnotationCommandTargetResolver}
      * will be used.
      */
     String commandTargetResolver() default "";

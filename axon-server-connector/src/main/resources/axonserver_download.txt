@@ -1,0 +1,13 @@
+**********************************************
+*                                            *
+*  !!! UNABLE TO CONNECT TO AXON SERVER !!!  *
+*                                            *
+* Are you sure it's running?                 *
+* If you haven't got Axon Server yet, visit  *
+*       https://axoniq.io/download           *
+*                                            *
+**********************************************
+
+To suppress this message, you can
+ - explicitly configure an AxonServer location,
+ - start with -Daxon.axonserver.suppressDownloadMessage=true

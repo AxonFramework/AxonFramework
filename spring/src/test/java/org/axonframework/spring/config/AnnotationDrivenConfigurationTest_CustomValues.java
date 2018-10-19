@@ -19,23 +19,26 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = AnnotationDrivenConfigurationTest_CustomValues.Context.class)
 public class AnnotationDrivenConfigurationTest_CustomValues {
 

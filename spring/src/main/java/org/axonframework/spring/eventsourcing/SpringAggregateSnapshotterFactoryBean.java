@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -52,7 +52,8 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
+public class SpringAggregateSnapshotterFactoryBean
+        implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
 
     private Executor executor = DirectExecutor.INSTANCE;
     private PlatformTransactionManager transactionManager;
@@ -97,12 +98,15 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore,
-                                                                                parameterResolverFactory,
-                                                                                handlerDefinition,
-                                                                                executor,
-                                                                                txManager,
-                                                                                repositoryProvider);
+        SpringAggregateSnapshotter snapshotter =
+                SpringAggregateSnapshotter.builder()
+                                          .eventStore(eventStore)
+                                          .executor(executor)
+                                          .transactionManager(txManager)
+                                          .repositoryProvider(repositoryProvider)
+                                          .parameterResolverFactory(parameterResolverFactory)
+                                          .handlerDefinition(handlerDefinition)
+                                          .build();
         snapshotter.setApplicationContext(applicationContext);
         return snapshotter;
     }
