@@ -131,9 +131,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
                 logger.debug("Loaded saga id [{}] of type [{}]", sagaIdentifier, loadedSaga.getClass().getName());
             }
 
-            Set<AssociationValue> associations = sqldef.readAssociationValues(sqldef.sql_findAssociations(conn, sagaIdentifier, sagaTypeName(sagaType)).executeQuery());
-
-            return new EntryImpl<>(associations, loadedSaga);
+            return new EntryImpl<>(loadAssociations(conn, sagaTypeName(sagaType), sagaIdentifier), loadedSaga);
         } catch (SQLException e) {
             throw new SagaStorageException("Exception while loading a Saga", e);
         } finally {
@@ -299,6 +297,19 @@ public class JdbcSagaStore implements SagaStore<Object> {
             sqldef.sql_createTableAssocValueEntry(connection).executeUpdate();
         } finally {
             closeQuietly(connection);
+        }
+    }
+
+    private Set<AssociationValue> loadAssociations(final Connection conn, final String sagaTypeName, final String sagaIdentifier) throws SQLException {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = sqldef.sql_findAssociations(conn, sagaIdentifier, sagaTypeName);
+            resultSet = statement.executeQuery();
+            return sqldef.readAssociationValues(resultSet);
+        } finally {
+            closeQuietly(statement);
+            closeQuietly(resultSet);
         }
     }
 
