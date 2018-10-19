@@ -18,9 +18,9 @@ package org.axonframework.springboot.autoconfig;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.axonframework.springboot.MetricsProperties;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
+import org.axonframework.springboot.MetricsProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -48,14 +48,14 @@ public class MetricsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MeterRegistry meterRegistry() {
+    public static MeterRegistry meterRegistry() {
         return new SimpleMeterRegistry();
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(MeterRegistry.class)
-    public GlobalMetricRegistry globalMetricRegistry(MeterRegistry meterRegistry) {
+    public static GlobalMetricRegistry globalMetricRegistry(MeterRegistry meterRegistry) {
         return new GlobalMetricRegistry(meterRegistry);
     }
 
@@ -63,7 +63,7 @@ public class MetricsAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnBean(GlobalMetricRegistry.class)
     @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
-    public MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
         return new MetricsConfigurerModule(globalMetricRegistry);
     }
 
