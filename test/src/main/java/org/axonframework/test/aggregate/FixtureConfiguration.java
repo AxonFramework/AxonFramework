@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +19,9 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -44,7 +45,7 @@ import java.util.function.Supplier;
  * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
  * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
  * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
- * #registerRepository(org.axonframework.commandhandling.model.Repository)} method. Registering the repository
+ * #registerRepository(Repository)} method. Registering the repository
  * will cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by
  * the test.
  * <p/>
@@ -63,7 +64,7 @@ import java.util.function.Supplier;
  *     public void testCommandHandlerCase() {
  *         fixture.<strong>given(new MyEvent(1), new MyEvent(2))</strong>
  *                .when(new TestCommand())
- *                .expectReturnValue(null)
+ *                .expectResultMessagePayload(null)
  *                .expectEvents(new MyEvent(3));
  *     }
  * <br/>  }
@@ -170,7 +171,8 @@ public interface FixtureConfiguration<T> {
      * @param commandDispatchInterceptor the command dispatch interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandDispatchInterceptor(MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor);
+    FixtureConfiguration<T> registerCommandDispatchInterceptor(
+            MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor);
 
     /**
      * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
@@ -180,11 +182,33 @@ public interface FixtureConfiguration<T> {
      * @param commandHandlerInterceptor the command handler interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor);
+    FixtureConfiguration<T> registerCommandHandlerInterceptor(
+            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor);
 
     /**
-     * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
-     * objects. The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectReturnValue(Object)},
+     * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
+     * (scheduled) on the {@link org.axonframework.deadline.DeadlineManager} to perform a task specified in the
+     * interceptor.
+     *
+     * @param deadlineDispatchInterceptor the interceptor for dispatching (scheduling) deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor);
+
+    /**
+     * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
+     * task specified in the interceptor.
+     *
+     * @param deadlineHandlerInterceptor the interceptor for handling deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
+
+    /**
+     * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.
+     * The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectResultMessagePayload(Object)},
      * for example, use this filter.
      * <p/>
      * When multiple filters are registered, a Field must be accepted by all registered filters in order to be

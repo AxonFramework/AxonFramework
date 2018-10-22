@@ -11,8 +11,6 @@ jdk:
 
 before_install:
   - docker run -d --shm-size=1g -p 1521:1521 -p 8080:8080 alexeiled/docker-oracle-xe-11g
-  - docker run -d -p 4369:4369 -p 5671:5671 -p 5672:5672 rabbitmq
-  - docker run -d -p 27017:27017 mongo
   - docker ps
   - mysql -e 'CREATE DATABASE axon;'
 
@@ -24,3 +22,7 @@ cache:
 
 script:
   - mvn clean verify -B
+
+notifications:
+  slack:
+    secure: d1HN9GBeH0e6EsHjNkPVXgBaFCYqbvjkZv9GUkpWnyjNYP5V1snSk6sO4X6ONttydgzfbElZTOfrgDzRTgWJ76iDMxAPccFPY7dmGcpw8/2TOjwP6H6yEitiiZcWR9fssTM2Li2WQtuGkwaVBhw15JNABzEsexxqXC+Cu48yUfA=

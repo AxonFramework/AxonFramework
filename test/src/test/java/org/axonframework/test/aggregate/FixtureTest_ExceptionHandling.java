@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,17 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.Test;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class FixtureTest_ExceptionHandling {
 
@@ -41,12 +43,17 @@ public class FixtureTest_ExceptionHandling {
         );
     }
 
-    @Test(expected = NoHandlerForCommandException.class)
+    @Test
     public void givenUnknownCommand() {
-        fixture.givenCommands(
-                new CreateMyAggregateCommand("14"),
-                new UnknownCommand("14")
-        );
+        try {
+            fixture.givenCommands(
+                    new CreateMyAggregateCommand("14"),
+                    new UnknownCommand("14")
+            );
+            fail("Expected FixtureExecutionException");
+        } catch (FixtureExecutionException fee) {
+            assertEquals(NoHandlerForCommandException.class, fee.getCause().getClass());
+        }
     }
 
     @Test

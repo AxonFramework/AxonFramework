@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package org.axonframework.spring.messaging;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.spring.utils.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.mockito.Mockito.*;
@@ -51,7 +52,7 @@ public class InboundEventMessageChannelAdapterTest {
 
         testSubject.handleMessage(new GenericMessage<Object>(event));
 
-        verify(mockEventBus).publish(Matchers.anyList());
+        verify(mockEventBus).publish(ArgumentMatchers.anyList());
     }
 
 }

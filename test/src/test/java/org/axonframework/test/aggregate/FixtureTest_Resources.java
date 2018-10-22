@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,14 +18,14 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.Executor;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
@@ -66,7 +66,7 @@ public class FixtureTest_Resources {
         fixture.registerInjectableResource(resource)
                .given(new MyEvent("id", 1))
                .when(new TestCommand("id"))
-               .expectReturnValue(fixture.getCommandBus());
+               .expectResultMessagePayload(fixture.getCommandBus());
 
         verify(resource).execute(isA(Runnable.class));
         verifyNoMoreInteractions(resource);
