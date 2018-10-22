@@ -53,7 +53,7 @@ public class JacksonSerializer implements Serializer {
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
      * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
      * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter) and {@link ByteArrayToJsonNodeConverter).
+     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link JacksonSerializer} instance
      */
@@ -78,12 +78,12 @@ public class JacksonSerializer implements Serializer {
      * <p>
      * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
      * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
-     * the {@link ClassLoader} to the result of an {@link Object#getClass()#getClassLoader()} call.
+     * the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
      * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
      * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter) and {@link ByteArrayToJsonNodeConverter).
+     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
      * @return a Builder to be able to create a {@link JacksonSerializer}
      */
@@ -224,12 +224,12 @@ public class JacksonSerializer implements Serializer {
      * <p>
      * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
      * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
-     * the {@link ClassLoader} to the result of an {@link Object#getClass()#getClassLoader()} call.
+     * the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
      * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
      * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter) and {@link ByteArrayToJsonNodeConverter).
+     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      */
     public static class Builder {
 
@@ -281,8 +281,7 @@ public class JacksonSerializer implements Serializer {
         }
 
         /**
-         * Sets the {@link ClassLoader} used to load classes with when deserializing. Defaults to the result of an
-         * {@link Object#getClass()#getClassLoader()} call.
+         * Sets the {@link ClassLoader} used to load classes with when deserializing. Defaults to the ClassLoader of {@code this} class.
          *
          * @param classLoader the {@link ClassLoader} used to load classes with when deserializing
          * @return the current Builder instance, for fluent interfacing

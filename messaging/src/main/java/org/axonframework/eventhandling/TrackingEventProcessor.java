@@ -476,14 +476,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Starts the {@link TrackingSegmentWorker workers} for a number of segments. When only the
-     * {@link Segment#ROOT_SEGMENT root } segment {@link TokenStore#fetchSegments(String) exists} in the  TokenStore,
-     * it will be split in multiple segments as configured by the
-     * {@link TrackingEventProcessorConfiguration#andInitialSegmentsCount(int)}, otherwise the existing segments in
-     * the TokenStore will be used.
+     * Starts workers for a number of segments. When only the {@link Segment#ROOT_SEGMENT root } segment
+     * {@link TokenStore#fetchSegments(String) exists} in the  TokenStore, it will be split in multiple segments as
+     * configured by the {@link TrackingEventProcessorConfiguration#andInitialSegmentsCount(int)}, otherwise the
+     * existing segments in the TokenStore will be used.
      * <p/>
-     * An attempt will be made to instantiate a {@link TrackingSegmentWorker} for each segment. This will succeed when
-     * the number of threads matches the requested segments. The number of active threads can be configured with
+     * An attempt will be made to instantiate a worker for each segment. This will succeed when the number of threads
+     * matches the requested segments. The number of active threads can be configured with
      * {@link TrackingEventProcessorConfiguration#forParallelProcessing(int)}. When insufficient threads are available
      * to serve the number of segments, it will result in some segments not being processed.
      */

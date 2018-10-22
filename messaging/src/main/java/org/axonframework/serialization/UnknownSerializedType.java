@@ -59,7 +59,7 @@ public class UnknownSerializedType {
      * To verify whether a format is supported, use {@link #supportsFormat(Class)}.
      *
      * @param desiredFormat the format in which the data is desired
-     * @param <T></T>       the format in which the data is desired
+     * @param <T>           the format in which the data is desired
      * @return the data in the desired format
      */
     public <T> T readData(Class<T> desiredFormat) {
