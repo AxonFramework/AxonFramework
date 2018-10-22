@@ -60,8 +60,10 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
@@ -204,6 +206,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
         return DefaultCommandGateway.builder().commandBus(commandBus).build();
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public QueryGateway queryGateway(QueryBus queryBus) {
+        return new DefaultQueryGateway(queryBus);
     }
 
     @Bean
