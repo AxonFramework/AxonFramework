@@ -26,6 +26,7 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -33,7 +34,7 @@ import java.util.Objects;
  * Base class for reply messages which may be used in the {@link CommandBusConnector} for replying on received
  * commands from other nodes.
  */
-public abstract class ReplyMessage {
+public abstract class ReplyMessage implements Serializable {
 
     protected String commandIdentifier;
     protected byte[] serializedMetaData;
@@ -128,6 +129,33 @@ public abstract class ReplyMessage {
      */
     public byte[] getSerializedPayload() {
         return serializedPayload;
+    }
+
+    /**
+     * Returns the exception type of the serialized reply message.
+     *
+     * @return the exception type of the serialized reply message as a {@code String}
+     */
+    public String getExceptionType() {
+        return exceptionType;
+    }
+
+    /**
+     * Returns the exception revision of the serialized reply message.
+     *
+     * @return the exception revision of the serialized reply message as a {@code String}
+     */
+    public String getExceptionRevision() {
+        return exceptionRevision;
+    }
+
+    /**
+     * Returns the serialized exception of the serialized reply message.
+     *
+     * @return the serialized exception of the serialized reply message as {@code byte[]}
+     */
+    public byte[] getSerializedException() {
+        return serializedException;
     }
 
     /**
