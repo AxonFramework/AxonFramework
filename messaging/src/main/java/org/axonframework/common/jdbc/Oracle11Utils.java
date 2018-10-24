@@ -19,6 +19,7 @@ package org.axonframework.common.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Utility class with some specific hacks required to get certain features to work with Oracle v11.
@@ -41,22 +42,21 @@ public class Oracle11Utils {
         String sequenceName = tableName + "_seq";
         String triggerName = tableName + "_id";
 
-        connection.prepareStatement(
-                "CREATE sequence " + sequenceName + " start with 1 increment by 1 nocycle"
-        ).executeUpdate();
-
+        try (PreparedStatement pst = connection.prepareStatement(
+                "CREATE sequence " + sequenceName + " start with 1 increment by 1 nocycle")) {
+            pst.executeUpdate();
+        }
         // The oracle driver is getting confused by this statement, claiming we have to declare some in out parameter,
         // when we execute this as a prepared statement. Might be a config issue on our side.
-        connection
-                .createStatement()
-                .execute(
-                        "create or replace trigger " + triggerName +
-                        "        before insert on " + tableName +
-                        "        for each row " +
-                        "        begin " +
-                        "                :new." + columnName + " := " + sequenceName + ".nextval; " +
-                        "        end;"
-                );
+        try (Statement st = connection.createStatement()) {
+            st.execute("create or replace trigger " + triggerName +
+                            "        before insert on " + tableName +
+                            "        for each row " +
+                            "        begin " +
+                            "                :new." + columnName + " := " + sequenceName + ".nextval; " +
+                            "        end;"
+            );
+        }
     }
 
     /**
