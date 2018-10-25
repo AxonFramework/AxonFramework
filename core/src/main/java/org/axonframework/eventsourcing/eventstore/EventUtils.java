@@ -19,10 +19,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
-import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.SerializedMessage;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.UnknownSerializedTypeException;
+import org.axonframework.serialization.*;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -45,6 +42,10 @@ import static java.util.stream.StreamSupport.stream;
 public abstract class EventUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(EventUtils.class);
+    private static final byte[] EMPTY_BYTES = new byte[0];
+
+    private EventUtils() {
+    }
 
     /**
      * Convert an {@link EventMessage} to a {@link TrackedEventMessage} using the given {@code trackingToken}. If the
@@ -180,18 +181,16 @@ public abstract class EventUtils {
         Stream<IntermediateEventRepresentation> upcastResult =
                 upcasterChain.upcast(eventEntryStream.map(entryConverter));
         if (skipUnknownTypes) {
-            upcastResult = upcastResult.filter(ir -> {
+            upcastResult = upcastResult.map(ir -> {
                 try {
                     serializer.classForType(ir.getType());
-                    return true;
+                    return ir;
                 } catch (UnknownSerializedTypeException e) {
-                    return false;
+                    return ir.upcast(SerializedType.emptyType(),
+                                     byte[].class, u -> EMPTY_BYTES, Function.identity());
                 }
             });
         }
         return upcastResult;
-    }
-
-    private EventUtils() {
     }
 }

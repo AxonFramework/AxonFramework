@@ -25,17 +25,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializationException;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.UnknownSerializedTypeException;
+import org.axonframework.serialization.*;
 
 import java.io.IOException;
 
@@ -203,6 +193,9 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (SerializedType.emptyType().equals(serializedObject.getType())) {
+            return null;
+        }
         try {
             if (JsonNode.class.equals(serializedObject.getContentType())) {
                 return getReader(classForType(serializedObject.getType()))
