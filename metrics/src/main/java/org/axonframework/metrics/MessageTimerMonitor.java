@@ -70,6 +70,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
     private static Timer buildTimer(String meterNamePrefix, String timerName, MeterRegistry meterRegistry) {
         return Timer.builder(meterNamePrefix + "." + timerName)
                     .distributionStatisticExpiry(Duration.of(10, ChronoUnit.MINUTES))
+                    .publishPercentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
                     .register(meterRegistry);
     }
 
