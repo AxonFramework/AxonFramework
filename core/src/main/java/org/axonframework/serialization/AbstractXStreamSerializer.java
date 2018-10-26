@@ -208,11 +208,17 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (SerializedType.emptyType().equals(serializedObject.getType())) {
+            return null;
+        }
         return (T) doDeserialize(serializedObject, xStream);
     }
 
     @Override
     public Class classForType(SerializedType type) {
+        if (SerializedType.emptyType().equals(type)) {
+            return Void.class;
+        }
         try {
             return xStream.getMapper().realClass(type.getName());
         } catch (CannotResolveClassException e) {

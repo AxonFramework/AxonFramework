@@ -177,6 +177,12 @@ public class JacksonSerializerTest {
         assertNull(testSubject.deserialize(serializedNullString));
     }
 
+    @Test
+    public void testDeserializeEmptyBytes() {
+        assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
+        assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
+    }
+
     public static class ComplexObject {
         private final String value1;
         private final String value2;

@@ -25,6 +25,16 @@ package org.axonframework.serialization;
 public interface SerializedType {
 
     /**
+     * Returns the type that represents an empty message, of undefined type. The type of such message is "empty" and
+     * always has a {@code null} revision.
+     *
+     * @return the type representing an empty message
+     */
+    static SerializedType emptyType() {
+        return SimpleSerializedType.emptyType();
+    }
+
+    /**
      * Returns the name of the serialized type. This may be the class name of the serialized object, or an alias for
      * that name.
      *

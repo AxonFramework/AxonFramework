@@ -52,6 +52,7 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -239,7 +240,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     public void testEventsWithUnknownPayloadTypeAreSkipped() throws InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
-        List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
+        List<String> expected = Arrays.asList(null, null, expectedPayloadOne, expectedPayloadTwo);
 
         int testBatchSize = 2;
         testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, testBatchSize);
@@ -261,6 +262,8 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
 
         assertTrue(eventStoreResult.hasNextAvailable());
+        assertNull(eventStoreResult.nextAvailable().getPayload());
+        assertNull(eventStoreResult.nextAvailable().getPayload());
         assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
         assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
         assertFalse(eventStoreResult.hasNextAvailable());

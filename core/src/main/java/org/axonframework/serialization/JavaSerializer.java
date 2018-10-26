@@ -89,6 +89,9 @@ public class JavaSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (SerializedType.emptyType().equals(serializedObject.getType())) {
+            return null;
+        }
         SerializedObject<InputStream> converted =
                 converter.convert(serializedObject, InputStream.class);
         ObjectInputStream ois = null;
@@ -104,6 +107,9 @@ public class JavaSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) {
+        if (SerializedType.emptyType().equals(type)) {
+            return Void.class;
+        }
         try {
             return Class.forName(type.getName());
         } catch (ClassNotFoundException e) {
