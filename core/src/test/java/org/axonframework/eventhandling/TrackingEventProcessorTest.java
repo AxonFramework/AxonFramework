@@ -137,11 +137,7 @@ public class TrackingEventProcessorTest {
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         sleepInstructions = new ArrayList<>();
-        testSubject = new TrackingEventProcessor("test",
-                                                 eventHandlerInvoker,
-                                                 eventBus,
-                                                 tokenStore,
-                                                 mockTransactionManager) {
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, mockTransactionManager) {
             @Override
             protected void doSleepFor(long millisToSleep) {
                 if (isRunning()) {
@@ -201,12 +197,8 @@ public class TrackingEventProcessorTest {
 
         testSubject.start();
 
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertFalse("Expected processor to have stopped", testSubject.isRunning()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertTrue("Expected processor to set the error flag", testSubject.isError()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse("Expected processor to have stopped", testSubject.isRunning()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue("Expected processor to set the error flag", testSubject.isError()));
         assertEquals(Collections.emptyList(), sleepInstructions);
     }
 
@@ -314,11 +306,7 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
 
-        testSubject = new TrackingEventProcessor("test",
-                                                 eventHandlerInvoker,
-                                                 eventBus,
-                                                 tokenStore,
-                                                 NoTransactionManager.INSTANCE);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
@@ -387,11 +375,7 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
 
-        testSubject = new TrackingEventProcessor("test",
-                                                 eventHandlerInvoker,
-                                                 eventBus,
-                                                 tokenStore,
-                                                 NoTransactionManager.INSTANCE);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
         testSubject.start();
         // give it a bit of time to start
         Thread.sleep(200);
@@ -436,11 +420,7 @@ public class TrackingEventProcessorTest {
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
         when(eventBus.openStream(null)).thenReturn(trackingEventStreamOf(events.iterator()));
-        testSubject = new TrackingEventProcessor("test",
-                                                 eventHandlerInvoker,
-                                                 eventBus,
-                                                 tokenStore,
-                                                 NoTransactionManager.INSTANCE);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
 
         testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
@@ -534,8 +514,7 @@ public class TrackingEventProcessorTest {
                                                  RollbackConfigurationType.ANY_THROWABLE,
                                                  PropagatingErrorHandler.instance(),
                                                  TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
-                                                                                    .andInitialTrackingToken(ms -> new GlobalSequenceTrackingToken(
-                                                                                            1L))
+                                                                                    .andInitialTrackingToken(ms -> new GlobalSequenceTrackingToken(1L))
         ) {
             @Override
             protected void doSleepFor(long millisToSleep) {
@@ -598,11 +577,7 @@ public class TrackingEventProcessorTest {
     @Test
     public void testReplayFlagAvailableWhenReplayInDifferentOrder() throws Exception {
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
-        testSubject = new TrackingEventProcessor("test",
-                                                 eventHandlerInvoker,
-                                                 stubSource,
-                                                 tokenStore,
-                                                 NoTransactionManager.INSTANCE);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, stubSource, tokenStore, NoTransactionManager.INSTANCE);
 
         when(stubSource.openStream(any())).thenReturn(new StubTrackingEventStream(0, 1, 2, 5))
                                           .thenReturn(new StubTrackingEventStream(0, 1, 2, 3, 4, 5, 6, 7));
@@ -686,6 +661,7 @@ public class TrackingEventProcessorTest {
         Thread.sleep(2500);
 
         assertTrue(testSubject.activeProcessorThreads() == 1);
+
     }
 
     @Test
@@ -736,8 +712,9 @@ public class TrackingEventProcessorTest {
     }
 
 
-    private static class StubTrackingEventStream implements TrackingEventStream {
 
+
+    private static class StubTrackingEventStream implements TrackingEventStream {
         private final Queue<TrackedEventMessage<?>> eventMessages;
 
         public StubTrackingEventStream(long... tokens) {
