@@ -250,7 +250,7 @@ public abstract class ReflectionUtils {
     /**
      * Returns the boxed wrapper type for the given {@code type} if it is primitive.
      *
-     * @param type The type to return boxed wrapper type for
+     * @param type a {@link Type} to return boxed wrapper type for
      * @return the boxed wrapper type for the give {@code type}, or {@code type} if no wrapper class was found.
      */
     public static Type resolvePrimitiveWrapperTypeIfPrimitive(Type type) {
