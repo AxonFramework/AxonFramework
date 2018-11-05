@@ -18,11 +18,7 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventhandling.DomainEventData;
-import org.axonframework.eventhandling.GapAwareTrackingToken;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -31,7 +27,8 @@ import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
@@ -50,7 +47,8 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Rene de Waele

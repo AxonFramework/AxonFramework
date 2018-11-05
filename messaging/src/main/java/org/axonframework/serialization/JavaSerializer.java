@@ -104,6 +104,9 @@ public class JavaSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (SerializedType.emptyType().equals(serializedObject.getType())) {
+            return null;
+        }
         if (UnknownSerializedType.class.isAssignableFrom(classForType(serializedObject.getType()))) {
             return (T) new UnknownSerializedType(this, serializedObject);
         }
@@ -123,10 +126,9 @@ public class JavaSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) {
-        if (SimpleSerializedType.emptyType().equals(type)) {
+        if (SerializedType.emptyType().equals(type)) {
             return Void.class;
         }
-
         try {
             return Class.forName(type.getName());
         } catch (ClassNotFoundException e) {

@@ -159,6 +159,9 @@ public class JacksonSerializer implements Serializer {
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
         try {
+            if (SerializedType.emptyType().equals(serializedObject.getType())) {
+                return null;
+            }
             Class<?> type = classForType(serializedObject.getType());
             if (UnknownSerializedType.class.isAssignableFrom(type)) {
                 return (T) new UnknownSerializedType(this, serializedObject);
