@@ -17,9 +17,7 @@
 package org.axonframework.serialization.xml;
 
 import org.axonframework.utils.StubDomainEvent;
-import org.axonframework.serialization.Revision;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.*;
 import org.junit.*;
 
 import java.io.Serializable;
@@ -68,6 +66,12 @@ public class XStreamSerializerTest {
                 testSubject.serialize(testEvent, org.dom4j.Document.class);
         Object actualResult = testSubject.deserialize(serializedEvent);
         assertEquals(testEvent, actualResult);
+    }
+
+    @Test
+    public void testDeserializeEmptyBytes() {
+        assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
+        assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
     }
 
     @Test

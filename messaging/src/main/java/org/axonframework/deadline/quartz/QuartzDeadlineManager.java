@@ -27,14 +27,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
+import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +59,19 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private final Serializer serializer;
 
     /**
+     * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to an {@link NoTransactionManager}, and the {@link Serializer} to a
+     * {@link XStreamSerializer}. The {@link Scheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and
+     * as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link QuartzDeadlineManager}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Instantiate a {@link QuartzDeadlineManager} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link Scheduler}, {@link ScopeAwareProvider}, {@link TransactionManager} and
@@ -88,19 +94,6 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         } catch (SchedulerException e) {
             throw new AxonConfigurationException("Unable to initialize QuartzDeadlineManager", e);
         }
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
-     * <p>
-     * The {@link TransactionManager} is defaulted to an {@link NoTransactionManager}, and the {@link Serializer} to a
-     * {@link XStreamSerializer}. The {@link Scheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and
-     * as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link QuartzDeadlineManager}
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
     private void initialize() throws SchedulerException {
