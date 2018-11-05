@@ -28,14 +28,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
+import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +36,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.quartz.JobKey.jobKey;
@@ -106,7 +101,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
      *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
      * @param transactionManager A {@link TransactionManager} which builds transactions and ties them to deadline
      * @param serializer         The {@link Serializer} which will be used to de-/serialize the {@link DeadlineMessage}
-     *                           and the {@link ScopeDescriptor} into the {@link JobDataMap}
+     *                           and the {@linksched ScopeDescriptor} into the {@link JobDataMap}
      */
     public QuartzDeadlineManager(Scheduler scheduler,
                                  ScopeAwareProvider scopeAwareProvider,
@@ -142,7 +137,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                 JobDetail jobDetail = buildJobDetail(deadlineMessage,
                                                      deadlineScope,
                                                      new JobKey(scheduleId, deadlineName));
-                scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
+                scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()), true);
             } catch (SchedulerException e) {
                 throw new DeadlineException("An error occurred while setting a timer for a deadline", e);
             }
@@ -199,10 +194,10 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                          .build();
     }
 
-    private static Trigger buildTrigger(Instant triggerDateTime, JobKey key) {
-        return TriggerBuilder.newTrigger()
-                             .forJob(key)
-                             .startAt(Date.from(triggerDateTime))
-                             .build();
+    private static Set<Trigger> buildTrigger(Instant triggerDateTime, JobKey key) {
+        return Collections.singleton(TriggerBuilder.newTrigger()
+                                                    .forJob(key)
+                                                    .startAt(Date.from(triggerDateTime))
+                                                    .build());
     }
 }

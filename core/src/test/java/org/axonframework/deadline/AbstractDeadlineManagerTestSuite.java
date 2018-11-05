@@ -33,6 +33,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -181,6 +182,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                               new ScheduleSpecificDeadline(IDENTIFIER, null),
                               new SpecificDeadlineOccurredEvent(null));
+    }
+
+    @Test
+    public void testRescheduleWithSameIdentifierShouldOverrideExisting() {
+        ScopeDescriptor mockScope = () -> "bla";
+        configuration.deadlineManager().schedule(Duration.ofMinutes(1), "testing", null, mockScope, "123");
+        configuration.deadlineManager().schedule(Duration.ofMinutes(1), "testing", null, mockScope, "123");
     }
 
     private void assertPublishedEvents(Object... expectedEvents) {
