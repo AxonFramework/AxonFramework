@@ -35,7 +35,12 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ThreadFactory;
@@ -259,6 +264,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 if (batch.isEmpty()) {
                     TrackingToken finalLastToken = lastToken;
                     transactionManager.executeInTransaction(() -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId()));
+                    activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
                     return;
                 }
             } else {
