@@ -116,7 +116,7 @@ public enum ErrorCode {
      * @return the Axon Framework exception
      */
     public AxonException convert(Throwable throwable){
-        return convert(null, throwable);
+        return convert("", throwable);
     }
 
     /**
