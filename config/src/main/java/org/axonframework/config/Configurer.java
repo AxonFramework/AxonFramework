@@ -455,6 +455,17 @@ public interface Configurer {
     }
 
     /**
+     * Registers a {@link Function} that builds an Event Handler instance.
+     *
+     * @param eventHandlerBuilder a {@link Function} that builds an Event Handler instance.
+     * @return the current instance of the Configurer, for chaining purposes.
+     */
+    default Configurer registerEventhandler(Function<Configuration, Object> eventHandlerBuilder) {
+        eventProcessing().registerEventHandler(eventHandlerBuilder);
+        return this;
+    }
+
+    /**
      * Returns the completely initialized Configuration built using this configurer. It is not recommended to change
      * any configuration on this Configurer once this method is called.
      *
