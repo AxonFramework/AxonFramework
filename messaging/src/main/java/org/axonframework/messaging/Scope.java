@@ -25,13 +25,9 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 
 /**
- * Describes functionality off processes which can be 'in scope', like the
- * {@link org.axonframework.commandhandling.model.AggregateLifecycle} or
- * {@link org.axonframework.eventhandling.saga.SagaLifecycle}.
+ * Describes functionality off processes which can be 'in scope', like an Aggregate or Saga.
  *
  * @author Steven van Beelen
- * @see org.axonframework.commandhandling.model.AggregateLifecycle
- * @see org.axonframework.eventhandling.saga.SagaLifecycle
  * @since 3.3
  */
 public abstract class Scope {

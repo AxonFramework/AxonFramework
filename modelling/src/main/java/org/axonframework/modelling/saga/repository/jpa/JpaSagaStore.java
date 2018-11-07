@@ -342,7 +342,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     /**
      * Intended for clients to override. Defaults to {@link SerializedSaga#getClass() SerialzedSaga.class}
      *
-     * @return
+     * @return the serialized object type of the Saga this {@link SagaStore} stores
      */
     protected Class<? extends SimpleSerializedObject<?>> serializedObjectType() {
         return SerializedSaga.class;

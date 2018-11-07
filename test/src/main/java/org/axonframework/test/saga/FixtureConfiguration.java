@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -96,8 +97,8 @@ public interface FixtureConfiguration {
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
-     * objects. The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectReturnValue(Object)},
-     * for example, use this filter.
+     * objects. The {@link ResultValidator#expectEvents(Object...)} and
+     * {@link ResultValidator#expectResultMessage(CommandResultMessage)}, for example, use this filter.
      * <p/>
      * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
      * accepted.
