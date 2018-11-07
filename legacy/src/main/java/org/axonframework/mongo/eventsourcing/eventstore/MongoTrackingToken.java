@@ -30,7 +30,7 @@ import java.util.Map;
 @Deprecated
 public class MongoTrackingToken implements Serializable {
 
-    private static final long serialVersionUID = 1L
+    private static final long serialVersionUID = 8211720263575974485L;
 
     private long timestamp;
     private Map<String, Long> trackedEvents;

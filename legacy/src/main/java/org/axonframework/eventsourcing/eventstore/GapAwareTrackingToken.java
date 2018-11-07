@@ -28,7 +28,7 @@ import java.util.Collection;
 @Deprecated
 public class GapAwareTrackingToken implements Serializable {
 
-    private static final long serialVersionUID = 1L
+    private static final long serialVersionUID = -4691964346972539244L;
 
     private int index;
     private Collection<Long> gaps;

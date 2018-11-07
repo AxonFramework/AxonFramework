@@ -28,7 +28,7 @@ import java.io.Serializable;
 @Deprecated
 public class GlobalSequenceTrackingToken implements Serializable {
 
-    private static final long serialVersionUID = 1L
+    private static final long serialVersionUID = 6161638247685258537L;
 
     private long globalIndex;
 
