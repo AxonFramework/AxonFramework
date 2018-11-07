@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>3.4.1</version>
+    <version>3.4.2-SNAPSHOT</version>
     <modules>
         <module>core</module>
         <module>spring</module>
@@ -448,7 +448,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>axon-3.4.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <developers>
