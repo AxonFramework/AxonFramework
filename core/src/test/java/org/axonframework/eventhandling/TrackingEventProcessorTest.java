@@ -23,19 +23,27 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.serialization.SerializationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -673,6 +681,38 @@ public class TrackingEventProcessorTest {
         testSubject.releaseSegment(0);
         assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.availableProcessorThreads()));
     }
+
+    @Test
+    public void testUpdateActiveSegmentsWhenBatchIsEmpty() throws Exception {
+        StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
+        testSubject = new TrackingEventProcessor("test",
+                                                 eventHandlerInvoker,
+                                                 stubSource,
+                                                 tokenStore,
+                                                 NoTransactionManager.INSTANCE);
+
+        when(stubSource.openStream(any())).thenReturn(new StubTrackingEventStream(0, 1, 2, 5));
+        doReturn(true, false).when(eventHandlerInvoker).canHandle(any(), any());
+
+        List<TrackingToken> trackingTokens = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            trackingTokens.add(i.<TrackedEventMessage>getArgument(0).trackingToken());
+            return null;
+        }).when(eventHandlerInvoker).handle(any(), any());
+
+
+        testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
+        EventTrackerStatus eventTrackerStatus = testSubject.processingStatus().get(0);
+        assertTrue(eventTrackerStatus.isCaughtUp());
+        GapAwareTrackingToken expectedToken = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        TrackingToken lastToken = eventTrackerStatus.getTrackingToken();
+        assertTrue(lastToken.covers(expectedToken));
+    }
+
+
+
 
     private static class StubTrackingEventStream implements TrackingEventStream {
         private final Queue<TrackedEventMessage<?>> eventMessages;
