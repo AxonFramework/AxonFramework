@@ -101,7 +101,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
      *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
      * @param transactionManager A {@link TransactionManager} which builds transactions and ties them to deadline
      * @param serializer         The {@link Serializer} which will be used to de-/serialize the {@link DeadlineMessage}
-     *                           and the {@linksched ScopeDescriptor} into the {@link JobDataMap}
+     *                           and the {@link ScopeDescriptor} into the {@link JobDataMap}
      */
     public QuartzDeadlineManager(Scheduler scheduler,
                                  ScopeAwareProvider scopeAwareProvider,
