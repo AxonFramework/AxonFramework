@@ -31,6 +31,8 @@ import java.util.Objects;
 public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken>,
                                                     Serializable {
 
+    private static final long serialVersionUID = -3658606104934080049L;
+
     private final long globalIndex;
 
     /**
