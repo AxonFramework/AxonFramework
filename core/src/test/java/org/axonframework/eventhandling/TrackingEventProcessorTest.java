@@ -663,6 +663,35 @@ public class TrackingEventProcessorTest {
         assertTrue(testSubject.activeProcessorThreads() == 1);
 
     }
+    @Test
+    public void testUpdateActiveSegmentsWhenBatchIsEmpty() throws Exception {
+        StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
+        testSubject = new TrackingEventProcessor("test",
+                                                 eventHandlerInvoker,
+                                                 stubSource,
+                                                 tokenStore,
+                                                 NoTransactionManager.INSTANCE);
+
+        when(stubSource.openStream(any())).thenReturn(new StubTrackingEventStream(0, 1, 2, 5));
+        doReturn(true, false).when(eventHandlerInvoker).canHandle(any(), any());
+
+        List<TrackingToken> trackingTokens = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            trackingTokens.add(i.<TrackedEventMessage>getArgument(0).trackingToken());
+            return null;
+        }).when(eventHandlerInvoker).handle(any(), any());
+
+
+        testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
+        EventTrackerStatus eventTrackerStatus = testSubject.processingStatus().get(0);
+        assertTrue(eventTrackerStatus.isCaughtUp());
+        GapAwareTrackingToken expectedToken = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        TrackingToken lastToken = eventTrackerStatus.getTrackingToken();
+        assertTrue(lastToken.covers(expectedToken));
+    }
+
 
     @Test
     public void testReleaseSegment() {
