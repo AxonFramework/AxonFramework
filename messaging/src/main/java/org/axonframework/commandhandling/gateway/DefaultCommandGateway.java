@@ -57,7 +57,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @param builder the {@link DefaultCommandGateway.Builder} used to instantiate a {@link DefaultCommandGateway}
      *                instance
      */
-    public DefaultCommandGateway(Builder builder) {
+    protected DefaultCommandGateway(Builder builder) {
         super(builder);
     }
 
