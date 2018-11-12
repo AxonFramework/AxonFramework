@@ -230,6 +230,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     transactionManager.executeInTransaction(
                             () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
                     );
+                    activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
                     return;
                 }
             } else {
