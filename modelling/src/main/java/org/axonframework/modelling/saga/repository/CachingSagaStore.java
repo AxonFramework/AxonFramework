@@ -64,7 +64,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     /**
      * Instantiate a Builder to be able to create a {@link CachingSagaStore}.
      * <p>
-     * The {@code delegateSagaStore} of type {@link SagaStore, the {@code associationsCache} and {@code sagaCache}
+     * The {@code delegateSagaStore} of type {@link SagaStore}, the {@code associationsCache} and {@code sagaCache}
      * (both of type {@link Cache}) are <b>hard requirements</b> and as such should be provided.
      *
      * @param <T> a generic specifying the Saga type contained in this
@@ -160,11 +160,10 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     /**
      * Builder class to instantiate a {@link CachingSagaStore}.
      * <p>
-     * The {@code delegateSagaStore} of type {@link SagaStore, the {@code associationsCache} and {@code sagaCache}
+     * The {@code delegateSagaStore} of type {@link SagaStore}, the {@code associationsCache} and {@code sagaCache}
      * (both of type {@link Cache}) are <b>hard requirements</b> and as such should be provided.
      *
-     * @param <T> a generic specifying the Saga type contained in this
-     *            {@link SagaRepository } implementation
+     * @param <T> a generic specifying the Saga type contained in this {@link SagaRepository} implementation
      */
     public static class Builder<T> {
 

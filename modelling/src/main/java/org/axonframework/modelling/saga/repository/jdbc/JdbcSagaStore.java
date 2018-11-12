@@ -252,6 +252,20 @@ public class JdbcSagaStore implements SagaStore<Object> {
         }
     }
 
+    private Set<AssociationValue> loadAssociations(final Connection conn, final String sagaTypeName, final String sagaIdentifier) throws SQLException {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = sqlSchema.sql_findAssociations(conn, sagaIdentifier, sagaTypeName);
+            resultSet = statement.executeQuery();
+            return sqlSchema.readAssociationValues(resultSet);
+        } finally {
+            closeQuietly(statement);
+            closeQuietly(resultSet);
+        }
+    }
+
+
     private String sagaTypeName(Class<?> sagaType) {
         return serializer.typeForClass(sagaType).getName();
     }

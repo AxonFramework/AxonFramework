@@ -43,6 +43,8 @@ import java.util.stream.LongStream;
  */
 public class GapAwareTrackingToken implements TrackingToken, Serializable {
 
+    private static final long serialVersionUID = -3190388158060110593L;
+
     private final long index;
     private final SortedSet<Long> gaps;
 

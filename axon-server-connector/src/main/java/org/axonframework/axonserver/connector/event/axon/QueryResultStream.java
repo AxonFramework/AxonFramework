@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * Iterator to process the results of a query.
  * Adds hasNext(timeout, TimeUnit timeUnit) operation to limit the time to wait for the next result.
  *
- * @author: Marc Gathier
+ * @author Marc Gathier
  */
 public interface QueryResultStream extends Iterator<QueryResult>, AutoCloseable {
 

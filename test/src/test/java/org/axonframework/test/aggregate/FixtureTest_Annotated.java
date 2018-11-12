@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,22 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
-import org.junit.*;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,13 +61,50 @@ public class FixtureTest_Annotated {
     public void testNullIdentifierIsRejected() {
         try {
             fixture.given(new MyEvent(null, 0))
-                    .when(new TestCommand("test"))
-                    .expectEvents(new MyEvent("test", 1))
-                    .expectSuccessfulHandlerExecution();
+                   .when(new TestCommand("test"))
+                   .expectEvents(new MyEvent("test", 1))
+                   .expectSuccessfulHandlerExecution();
             fail("Expected test fixture to report failure");
         } catch (AxonAssertionError error) {
             assertTrue("Expected test to fail with IncompatibleAggregateException", error.getMessage().contains("IncompatibleAggregateException"));
         }
+    }
+
+    @Test
+    public void testEventsCarryCorrectTimestamp() {
+        fixture.givenCurrentTime(Instant.EPOCH)
+               .andGiven(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
+               .andGivenCommands(new TestCommand("AggregateId"))
+               .when(new TestCommand("AggregateId"))
+               .expectEventsMatching(new TypeSafeMatcher<List<EventMessage<?>>>() {
+                   @Override
+                   protected boolean matchesSafely(List<EventMessage<?>> item) {
+                       return item.stream().allMatch(i -> Instant.EPOCH.equals(i.getTimestamp()));
+                   }
+
+                   @Override
+                   public void describeTo(Description description) {
+                       description.appendText("list with all events with timestamp at epoch");
+                   }
+               });
+        assertTrue(fixture.getEventStore().readEvents("AggregateId").asStream().allMatch(i -> Instant.EPOCH.equals(i.getTimestamp())));
+        assertEquals(1, fixture.getEventStore().readEvents("AggregateId")
+                               .asStream()
+                               .map(EventMessage::getTimestamp)
+                               .distinct()
+                               .count());
+    }
+
+    @Test
+    public void testClockStandsStillDuringExecution() {
+        fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
+               .when(new TestCommand("AggregateId"));
+
+        assertEquals(1, fixture.getEventStore().readEvents("AggregateId")
+                               .asStream()
+                               .map(EventMessage::getTimestamp)
+                               .distinct()
+                               .count());
     }
 
     @Test
@@ -78,21 +123,21 @@ public class FixtureTest_Annotated {
     public void testAggregateIdentifier_ServerGeneratedIdentifier() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given()
-                .when(new CreateAggregateCommand());
+               .when(new CreateAggregateCommand());
     }
 
     @Test(expected = FixtureExecutionException.class)
     public void testUnavailableResourcesCausesFailure() {
         fixture.given()
-                .when(new CreateAggregateCommand());
+               .when(new CreateAggregateCommand());
     }
 
     @Test
     public void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
-                .when(new TestCommand("AggregateId"))
-                .expectEvents(new MyEvent("AggregateId", 3))
-                .expectState(Assert::assertNotNull);
+               .when(new TestCommand("AggregateId"))
+               .expectEvents(new MyEvent("AggregateId", 3))
+               .expectState(Assert::assertNotNull);
 
         DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {
@@ -115,8 +160,8 @@ public class FixtureTest_Annotated {
                               new TestCommand("aggregateId"),
                               new TestCommand("aggregateId"),
                               new TestCommand("aggregateId"))
-                .when(new TestCommand("aggregateId"))
-                .expectEvents(new MyEvent("aggregateId", 4));
+               .when(new TestCommand("aggregateId"))
+               .expectEvents(new MyEvent("aggregateId", 4));
     }
 
     @Test(expected = FixtureExecutionException.class)
@@ -124,7 +169,7 @@ public class FixtureTest_Annotated {
         // a 'when' will cause command handlers to be registered.
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given()
-                .when(new CreateAggregateCommand("AggregateId"));
+               .when(new CreateAggregateCommand("AggregateId"));
         fixture.registerInjectableResource("I am injectable");
     }
 
@@ -146,8 +191,8 @@ public class FixtureTest_Annotated {
     @Test
     public void testFixture_AggregateDeleted() {
         fixture.given(new MyEvent("aggregateId", 5))
-                .when(new DeleteCommand("aggregateId", false))
-                .expectEvents(new MyAggregateDeletedEvent(false));
+               .when(new DeleteCommand("aggregateId", false))
+               .expectEvents(new MyAggregateDeletedEvent(false));
     }
 
     @Test
@@ -165,26 +210,26 @@ public class FixtureTest_Annotated {
     public void testAndGiven() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenCommands(new CreateAggregateCommand("aggregateId"))
-                .andGiven(new MyEvent("aggregateId", 1))
-                .when(new TestCommand("aggregateId"))
-                .expectEvents(new MyEvent("aggregateId", 2));
+               .andGiven(new MyEvent("aggregateId", 1))
+               .when(new TestCommand("aggregateId"))
+               .expectEvents(new MyEvent("aggregateId", 2));
     }
 
     @Test
     public void testAndGivenCommands() {
         fixture.given(new MyEvent("aggregateId", 1))
-                .andGivenCommands(new TestCommand("aggregateId"))
-                .when(new TestCommand("aggregateId"))
-                .expectEvents(new MyEvent("aggregateId", 3));
+               .andGivenCommands(new TestCommand("aggregateId"))
+               .when(new TestCommand("aggregateId"))
+               .expectEvents(new MyEvent("aggregateId", 3));
     }
 
     @Test
     public void testMultipleAndGivenCommands() {
         fixture.given(new MyEvent("aggregateId", 1))
-                .andGivenCommands(new TestCommand("aggregateId"))
-                .andGivenCommands(new TestCommand("aggregateId"))
-                .when(new TestCommand("aggregateId"))
-                .expectEvents(new MyEvent("aggregateId", 4));
+               .andGivenCommands(new TestCommand("aggregateId"))
+               .andGivenCommands(new TestCommand("aggregateId"))
+               .when(new TestCommand("aggregateId"))
+               .expectEvents(new MyEvent("aggregateId", 4));
     }
 
     private class StubDomainEvent {

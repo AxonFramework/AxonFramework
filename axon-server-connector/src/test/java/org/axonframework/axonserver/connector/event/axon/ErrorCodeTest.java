@@ -35,7 +35,7 @@ import static junit.framework.TestCase.assertTrue;
 public class ErrorCodeTest {
 
     @Test
-    public void testCovert4002FromCodeAndMessage(){
+    public void testConvert4002FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4002");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build());
         assertTrue(exception instanceof CommandExecutionException);
@@ -43,11 +43,17 @@ public class ErrorCodeTest {
     }
 
     @Test
-    public void testCovertUnknownFromCodeAndMessage(){
+    public void testConvertUnknownFromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("????????");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build());
         assertTrue(exception instanceof AxonServerException);
         assertEquals("myMessage", exception.getMessage());
     }
 
+    @Test
+    public void testConvertWithoutSource() {
+        RuntimeException exception = new RuntimeException("oops");
+        AxonException axonException = ErrorCode.getFromCode("AXONIQ-4002").convert(exception);
+        assertEquals(exception.getMessage(), axonException.getMessage());
+    }
 }

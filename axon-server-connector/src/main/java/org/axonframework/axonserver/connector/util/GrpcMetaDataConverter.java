@@ -22,6 +22,7 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
+import java.io.ObjectStreamClass;
 import java.util.HashMap;
 import java.util.Map;
 

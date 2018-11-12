@@ -19,12 +19,8 @@ package org.axonframework.test.deadline;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
 
@@ -32,12 +28,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.NavigableSet;
-import java.util.NoSuchElementException;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,10 +46,9 @@ public class StubDeadlineManager implements DeadlineManager {
     private final NavigableSet<ScheduledDeadlineInfo> schedules = new TreeSet<>();
     private final List<ScheduledDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
     private final AtomicInteger counter = new AtomicInteger(0);
-    private Instant currentDateTime;
-
     private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
+    private Instant currentDateTime;
 
     /**
      * Initializes the manager with {@link ZonedDateTime#now()} as current time.
@@ -95,15 +85,16 @@ public class StubDeadlineManager implements DeadlineManager {
                          String deadlineName,
                          Object payloadOrMessage,
                          ScopeDescriptor deadlineScope) {
-        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, payloadOrMessage);
-        deadlineMessage = processDispatchInterceptors(deadlineMessage);
+        DeadlineMessage<?> deadlineMessage = processDispatchInterceptors(asDeadlineMessage(deadlineName, payloadOrMessage));
+        DeadlineMessage<?> scheduledMessage = new GenericDeadlineMessage<>(deadlineName, deadlineMessage, () -> triggerDateTime);
+
         schedules.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                 deadlineName,
-                                                deadlineMessage.getIdentifier(),
+                                                scheduledMessage.getIdentifier(),
                                                 counter.getAndIncrement(),
-                                                deadlineMessage,
+                                                scheduledMessage,
                                                 deadlineScope));
-        return deadlineMessage.getIdentifier();
+        return scheduledMessage.getIdentifier();
     }
 
     @Override

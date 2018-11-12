@@ -74,9 +74,9 @@ public class JpaTokenStore implements TokenStore {
     /**
      * Instantiate a Builder to be able to create a {@link JpaTokenStore}.
      * <p>
-     * The {@code claimTimeout} to a 10 seconds duration, and the {@code nodeId} is defaulted to the
-     * {@link ManagementFactory#getRuntimeMXBean#getName} output. The {@link EntityManagerProvider} and
-     * {@link Serializer} are a <b>hard requirements</b> and as such should be provided.
+     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
+     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
+     * are a <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link JpaTokenStore}
      */
@@ -200,9 +200,9 @@ public class JpaTokenStore implements TokenStore {
     /**
      * Builder class to instantiate a {@link JpaTokenStore}.
      * <p>
-     * The {@code claimTimeout} to a 10 seconds duration, and the {@code nodeId} is defaulted to the
-     * {@link ManagementFactory#getRuntimeMXBean#getName} output. The {@link EntityManagerProvider} and
-     * {@link Serializer} are a <b>hard requirements</b> and as such should be provided.
+     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
+     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
+     * are a <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -252,8 +252,8 @@ public class JpaTokenStore implements TokenStore {
         }
 
         /**
-         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to
-         * {@link ManagementFactory#getRuntimeMXBean#getName} output as the node id.
+         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for
+         * the runtime system of the Java virtual machine
          *
          * @param nodeId the id as a {@link String} to identify ownership of the tokens
          * @return the current Builder instance, for fluent interfacing
