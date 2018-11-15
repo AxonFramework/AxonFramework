@@ -17,13 +17,8 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.query.QueryComplete;
-import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
+import io.axoniq.axonserver.grpc.query.*;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
-import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
-import io.axoniq.axonserver.grpc.query.QueryRequest;
-import io.axoniq.axonserver.grpc.query.QueryResponse;
-import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
 import io.axoniq.axonserver.grpc.query.QuerySubscription;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
@@ -46,35 +41,14 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -110,13 +84,13 @@ public class AxonServerQueryBus implements QueryBus {
      * Creates an instance of the AxonServerQueryBus
      *
      * @param axonServerConnectionManager creates connection to AxonServer platform
-     * @param configuration             contains client and component names used to identify the application in
-     *                                  AxonServer
-     * @param updateEmitter             emits incremental updates to subscription queries
-     * @param localSegment              handles incoming query requests
-     * @param messageSerializer         serializer/deserializer for payload and metadata of query requests and responses
-     * @param genericSerializer         serializer for communication of other objects than payload and metadata
-     * @param priorityCalculator        calculates the request priority based on the content and adds it to the request
+     * @param configuration               contains client and component names used to identify the application in
+     *                                    AxonServer
+     * @param updateEmitter               emits incremental updates to subscription queries
+     * @param localSegment                handles incoming query requests
+     * @param messageSerializer           serializer/deserializer for payload and metadata of query requests and responses
+     * @param genericSerializer           serializer for communication of other objects than payload and metadata
+     * @param priorityCalculator          calculates the request priority based on the content and adds it to the request
      */
     public AxonServerQueryBus(AxonServerConnectionManager axonServerConnectionManager,
                               AxonServerConfiguration configuration,
@@ -217,34 +191,34 @@ public class AxonServerQueryBus implements QueryBus {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator = new QueueBackedSpliterator<>(timeout, timeUnit);
         queryServiceStub()
-                        .withDeadlineAfter(timeout, timeUnit)
-                        .query(serializer.serializeRequest(interceptedQuery, -1, timeUnit.toMillis(timeout),
-                                                           priorityCalculator.determinePriority(interceptedQuery)),
-                               new StreamObserver<QueryResponse>() {
-                                   @Override
-                                   public void onNext(QueryResponse queryResponse) {
-                                       logger.debug("Received response: {}", queryResponse);
+                .withDeadlineAfter(timeout, timeUnit)
+                .query(serializer.serializeRequest(interceptedQuery, -1, timeUnit.toMillis(timeout),
+                                                   priorityCalculator.determinePriority(interceptedQuery)),
+                       new StreamObserver<QueryResponse>() {
+                           @Override
+                           public void onNext(QueryResponse queryResponse) {
+                               logger.debug("Received response: {}", queryResponse);
 
-                                       if( queryResponse.hasErrorMessage()) {
-                                           logger.warn("Received exception: {}", queryResponse.getErrorMessage());
-                                       } else {
-                                           resultSpliterator.put(serializer.deserializeResponse(queryResponse));
-                                       }
-                                   }
+                               if (queryResponse.hasErrorMessage()) {
+                                   logger.warn("Received exception: {}", queryResponse.getErrorMessage());
+                               } else {
+                                   resultSpliterator.put(serializer.deserializeResponse(queryResponse));
+                               }
+                           }
 
-                                   @Override
-                                   public void onError(Throwable throwable) {
-                                       if (!isDeadlineExceeded(throwable)) {
-                                           logger.warn("Received error while waiting for responses: {}", throwable.getMessage(), throwable);
-                                       }
-                                       resultSpliterator.cancel(throwable);
-                                   }
+                           @Override
+                           public void onError(Throwable throwable) {
+                               if (!isDeadlineExceeded(throwable)) {
+                                   logger.warn("Received error while waiting for responses: {}", throwable.getMessage(), throwable);
+                               }
+                               resultSpliterator.cancel(throwable);
+                           }
 
-                                   @Override
-                                   public void onCompleted() {
-                                       resultSpliterator.cancel(null);
-                                   }
-                               });
+                           @Override
+                           public void onCompleted() {
+                               resultSpliterator.cancel(null);
+                           }
+                       });
 
         return StreamSupport.stream(resultSpliterator, false);
     }
@@ -253,7 +227,7 @@ public class AxonServerQueryBus implements QueryBus {
         return throwable instanceof StatusRuntimeException && ((StatusRuntimeException) throwable).getStatus().getCode().equals(Status.Code.DEADLINE_EXCEEDED);
     }
 
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor){
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor) {
         return localSegment.registerHandlerInterceptor(interceptor);
     }
 
@@ -263,6 +237,67 @@ public class AxonServerQueryBus implements QueryBus {
 
     public void disconnect() {
         queryProvider.disconnect();
+    }
+
+    /**
+     * Returns the local segment configurated for this instance. The local segment is responsible for publishing queries
+     * to handlers in the local JVM.
+     *
+     * @return the local segment of the Query Bus
+     */
+    public QueryBus localSegment() {
+        return localSegment;
+    }
+
+    public void publish(QueryProviderOutbound providerOutbound) {
+        this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
+    }
+
+    public void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
+        Collection<Consumer<QueryProviderInbound>> consumers =
+                queryHandlers.computeIfAbsent(requestCase, rc -> new CopyOnWriteArraySet<>());
+        consumers.add(consumer);
+    }
+
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backPressure, int updateBufferSize) {
+        String subscriptionId = query.getIdentifier();
+
+        if (this.subscriptions.contains(subscriptionId)) {
+            String errorMessage = "Already exists a subscription query with the same subscriptionId: " + subscriptionId;
+            logger.warn(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
+        }
+        logger.debug("Subscription Query requested with subscriptionId {}", subscriptionId);
+        subscriptions.add(subscriptionId);
+        QueryServiceGrpc.QueryServiceStub queryService = this.queryServiceStub();
+
+        AxonServerSubscriptionQueryResult result = new AxonServerSubscriptionQueryResult(
+                subscriptionSerializer.serialize(query),
+                queryService::subscription,
+                configuration,
+                backPressure,
+                updateBufferSize,
+                () -> subscriptions.remove(subscriptionId));
+
+        return new DeserializedResult<>(result.get(), subscriptionSerializer);
+    }
+
+    @Override
+    public QueryUpdateEmitter queryUpdateEmitter() {
+        return updateEmitter;
+    }
+
+    private Runnable interceptReconnectRequest(Runnable reconnect) {
+        if (subscriptions.isEmpty()) {
+            return reconnect;
+        }
+        return () -> logger.info("Reconnect refused because there are active subscription queries.");
+    }
+
+    private void onApplicationDisconnected() {
+        subscriptions.clear();
     }
 
     class QueryProvider {
@@ -302,7 +337,7 @@ public class AxonServerQueryBus implements QueryBus {
             String requestId = query.getMessageIdentifier();
             try {
                 //noinspection unchecked
-                if( numberOfResults(query.getProcessingInstructionsList()) == 1) {
+                if (numberOfResults(query.getProcessingInstructionsList()) == 1) {
                     QueryResponseMessage<Object> response = localSegment.query(serializer.deserializeRequest(query))
                                                                         .get();
                     outboundStreamObserver.onNext(
@@ -327,7 +362,7 @@ public class AxonServerQueryBus implements QueryBus {
                                                                                                   .setMessageIdentifier(UUID.randomUUID().toString())
                                                                                                   .setRequestIdentifier(requestId)
                                                                                                   .setErrorMessage(ExceptionSerializer
-                                                                                                                 .serialize(configuration.getClientId(), ex))
+                                                                                                                           .serialize(configuration.getClientId(), ex))
                                                                                                   .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
                                                                                                   .build())
                                                                    .build());
@@ -377,7 +412,7 @@ public class AxonServerQueryBus implements QueryBus {
                     }
 
                     @Override
-                    public void onError(Throwable ex){
+                    public void onError(Throwable ex) {
                         logger.warn("Received error from server: {}", ex.getMessage());
                         outboundStreamObserver = null;
                         if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode().equals(Status.UNAVAILABLE.getCode())) {
@@ -429,13 +464,15 @@ public class AxonServerQueryBus implements QueryBus {
         }
 
         private void resubscribe() {
-            if( subscribedQueries.isEmpty() || subscribing) return;
+            if (subscribedQueries.isEmpty() || subscribing) {
+                return;
+            }
             try {
                 StreamObserver<QueryProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
                 subscribedQueries.forEach((queryDefinition, handlers) ->
-                                                      subscriberStreamObserver.onNext(QueryProviderOutbound.newBuilder().setSubscribe(
-                                                              subscriptionBuilder(queryDefinition, handlers.size())
-                                                      ).build())
+                                                  subscriberStreamObserver.onNext(QueryProviderOutbound.newBuilder().setSubscribe(
+                                                          subscriptionBuilder(queryDefinition, handlers.size())
+                                                  ).build())
                 );
             } catch (Exception ex) {
                 logger.warn("Error while resubscribing - {}", ex.getMessage());
@@ -474,8 +511,12 @@ public class AxonServerQueryBus implements QueryBus {
 
             @Override
             public boolean equals(Object o) {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
+                if (this == o) {
+                    return true;
+                }
+                if (o == null || getClass() != o.getClass()) {
+                    return false;
+                }
                 QueryDefinition that = (QueryDefinition) o;
                 return Objects.equals(queryName, that.queryName) &&
                         Objects.equals(responseName, that.responseName) &&
@@ -487,57 +528,6 @@ public class AxonServerQueryBus implements QueryBus {
                 return Objects.hash(queryName, responseName, componentName);
             }
         }
-    }
-
-    public void publish(QueryProviderOutbound providerOutbound){
-        this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
-    }
-
-    public void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
-        Collection<Consumer<QueryProviderInbound>> consumers =
-                queryHandlers.computeIfAbsent(requestCase,rc -> new CopyOnWriteArraySet<>());
-        consumers.add(consumer);
-    }
-
-    @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backPressure, int updateBufferSize) {
-        String subscriptionId = query.getIdentifier();
-
-        if (this.subscriptions.contains(subscriptionId)) {
-            String errorMessage = "Already exists a subscription query with the same subscriptionId: " + subscriptionId;
-            logger.warn(errorMessage);
-            throw new IllegalArgumentException(errorMessage);
-        }
-        logger.debug("Subscription Query requested with subscriptionId {}", subscriptionId);
-        subscriptions.add(subscriptionId);
-        QueryServiceGrpc.QueryServiceStub queryService = this.queryServiceStub();
-
-        AxonServerSubscriptionQueryResult result = new AxonServerSubscriptionQueryResult(
-                subscriptionSerializer.serialize(query),
-                queryService::subscription,
-                configuration,
-                backPressure,
-                updateBufferSize,
-                () -> subscriptions.remove(subscriptionId));
-
-        return new DeserializedResult<>(result.get(), subscriptionSerializer);
-    }
-
-    @Override
-    public QueryUpdateEmitter queryUpdateEmitter() {
-        return updateEmitter;
-    }
-
-    private Runnable interceptReconnectRequest(Runnable reconnect) {
-        if (subscriptions.isEmpty()) {
-            return reconnect;
-        }
-        return () -> logger.info("Reconnect refused because there are active subscription queries.");
-    }
-
-    private void onApplicationDisconnected() {
-        subscriptions.clear();
     }
 
 }

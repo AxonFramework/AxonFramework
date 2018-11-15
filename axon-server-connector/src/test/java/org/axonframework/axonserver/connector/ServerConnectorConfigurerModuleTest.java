@@ -42,4 +42,16 @@ public class ServerConnectorConfigurerModuleTest {
         assertNotNull(axonServerConfiguration.getComponentName());
         assertTrue(axonServerConfiguration.getComponentName().contains(axonServerConfiguration.getClientId()));
     }
+
+    @Test
+    public void testQueryUpdateEmitterIsTakenFromConfiguration() {
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                                                       .buildConfiguration();
+
+        assertTrue(configuration.queryBus() instanceof AxonServerQueryBus);
+        assertSame(configuration.queryBus().queryUpdateEmitter(), configuration.queryUpdateEmitter());
+        assertSame(((AxonServerQueryBus)configuration.queryBus()).localSegment().queryUpdateEmitter(),
+                   configuration.queryUpdateEmitter());
+
+    }
 }
