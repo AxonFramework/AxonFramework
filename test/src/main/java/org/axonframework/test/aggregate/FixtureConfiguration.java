@@ -229,6 +229,7 @@ public interface FixtureConfiguration<T> {
      * @param declaringClass The class declaring the field
      * @param fieldName      The name of the field
      * @return the current FixtureConfiguration, for fluent interfacing
+     *
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
@@ -271,6 +272,7 @@ public interface FixtureConfiguration<T> {
      * no events in the {@link #given(java.util.List)} method.
      *
      * @return a TestExecutor instance that can execute the test with this configuration
+     *
      * @since 2.1.1
      */
     TestExecutor<T> givenNoPriorActivity();
@@ -338,6 +340,13 @@ public interface FixtureConfiguration<T> {
      */
     Repository<T> getRepository();
 
+    /**
+     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start
+     * of the given state.
+     *
+     * @param time an {@link Instant} defining the simulated "current time" at which the given state is initialized
+     * @return a TestExecutor instance that can execute the test with this configuration
+     */
     TestExecutor<T> givenCurrentTime(Instant time);
 
     /**
