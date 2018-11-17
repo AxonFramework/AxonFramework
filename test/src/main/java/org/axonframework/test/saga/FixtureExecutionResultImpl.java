@@ -17,6 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -32,6 +33,7 @@ import org.hamcrest.Matcher;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
@@ -51,6 +53,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     private final DeadlineManagerValidator deadlineManagerValidator;
     private final CommandValidator commandValidator;
     private final FieldFilter fieldFilter;
+    private final List<Runnable> onStartRecordingCallbacks;
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
@@ -72,6 +75,12 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
         eventValidator = new EventValidator(eventBus, fieldFilter);
         eventSchedulerValidator = new EventSchedulerValidator(eventScheduler);
         deadlineManagerValidator = new DeadlineManagerValidator(deadlineManager, fieldFilter);
+        onStartRecordingCallbacks = new CopyOnWriteArrayList<>();
+    }
+
+    public void registerStartRecordingCallback(Runnable onStartRecordingCallback) {
+        Assert.notNull(onStartRecordingCallback, () -> "onStartRecordingCallback may not be null");
+        onStartRecordingCallbacks.add(onStartRecordingCallback);
     }
 
     /**
@@ -80,6 +89,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     public void startRecording() {
         eventValidator.startRecording();
         commandValidator.startRecording();
+        onStartRecordingCallbacks.forEach(Runnable::run);
     }
 
     @Override

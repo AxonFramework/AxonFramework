@@ -152,6 +152,14 @@ public interface FixtureConfiguration {
             MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
 
     /**
+     * Registers a callback to be invoked when the fixture execution starts recording. This happens right before
+     * invocation of the 'when' step (stimulus) of the fixture.
+     *
+     * @param onStartRecordingCallback callback to invoke
+     */
+    FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback);
+
+    /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.
      *
      * @param callbackBehavior The instance deciding to how the callback should be invoked.
