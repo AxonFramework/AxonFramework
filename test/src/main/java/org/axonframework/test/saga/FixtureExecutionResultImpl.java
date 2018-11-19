@@ -78,6 +78,15 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
         onStartRecordingCallbacks = new CopyOnWriteArrayList<>();
     }
 
+    /**
+     * Registers a callback to be invoked when the fixture execution starts recording. This happens right before
+     * invocation of the 'when' step (stimulus) of the fixture.
+     * <p/>
+     * Use this to manage Saga dependencies which are not an Axon first class citizen, but do require monitoring of
+     * their interactions. For example, register the callback to set a mock in recording mode.
+     *
+     * @param onStartRecordingCallback callback to invoke
+     */
     public void registerStartRecordingCallback(Runnable onStartRecordingCallback) {
         Assert.notNull(onStartRecordingCallback, () -> "onStartRecordingCallback may not be null");
         onStartRecordingCallbacks.add(onStartRecordingCallback);

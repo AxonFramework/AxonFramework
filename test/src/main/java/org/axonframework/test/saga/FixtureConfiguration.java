@@ -16,11 +16,13 @@
 
 package org.axonframework.test.saga;
 
+import com.sun.tools.javadoc.resources.javadoc;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.modelling.saga.Saga;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
@@ -154,8 +156,12 @@ public interface FixtureConfiguration {
     /**
      * Registers a callback to be invoked when the fixture execution starts recording. This happens right before
      * invocation of the 'when' step (stimulus) of the fixture.
+     * <p/>
+     * Use this to manage Saga dependencies which are not an Axon first class citizen, but do require monitoring of
+     * their interactions. For example, register the callback to set a mock in recording mode.
      *
      * @param onStartRecordingCallback callback to invoke
+     * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback);
 
