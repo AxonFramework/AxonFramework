@@ -344,6 +344,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return this;
     }
 
+    @Override
+    public FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback) {
+        this.fixtureExecutionResult.registerStartRecordingCallback(onStartRecordingCallback);
+        return this;
+    }
+
     private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
