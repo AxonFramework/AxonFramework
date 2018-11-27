@@ -683,7 +683,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * performance of reading events. Defaults to 60000 (1 minute).
      *
      * @param gapTimeout The amount of time, in milliseconds until a gap may be considered timed out.
+     * @deprecated Use the {@link Builder#gapTimeout(int) gapTimeout(int)} in the {@link #builder()} instead
      */
+    @Deprecated
     public void setGapTimeout(int gapTimeout) {
         this.gapTimeout = gapTimeout;
     }
@@ -692,7 +694,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to 250.
      *
      * @param gapCleaningThreshold The number of gaps before triggering a cleanup.
+     * @deprecated Use the {@link Builder#gapCleaningThreshold(int) gapCleaningThreshold(int)} in the {@link #builder()} instead
      */
+    @Deprecated
     public void setGapCleaningThreshold(int gapCleaningThreshold) {
         this.gapCleaningThreshold = gapCleaningThreshold;
     }
