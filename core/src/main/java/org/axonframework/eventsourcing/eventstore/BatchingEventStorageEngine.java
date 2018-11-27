@@ -97,7 +97,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      */
     public BatchingEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
                                       PersistenceExceptionResolver persistenceExceptionResolver,
-                                      Serializer eventSerializer, Predicate<? super DomainEventData<?>> snapshotFilter, Integer batchSize) {
+                                      Serializer eventSerializer, Predicate<? super DomainEventData<?>> snapshotFilter,
+                                      Integer batchSize) {
         super(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, snapshotFilter);
         this.batchSize = getOrDefault(batchSize, DEFAULT_BATCH_SIZE);
     }
@@ -135,12 +136,24 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     protected abstract List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier,
                                                                             long firstSequenceNumber, int batchSize);
 
+    /**
+     * Return a {@code boolean} specifying whether {@link #readEventData(String, long)} should proceed fetching events
+     * for an aggregate until an empty batch is returned. Defaults to {@code false}, as Aggregate event batches
+     * typically do not have gaps in them.
+     *
+     * @return a {@code boolean} specifying whether {@link #readEventData(String, long)} should proceed fetching events
+     * for an aggregate until an empty batch is returned
+     */
+    protected boolean fetchForAggregateUntilEmpty() {
+        return false;
+    }
+
     @Override
     protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
         EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchDomainEvents(identifier,
                                               lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
-                                              batchSize), batchSize, false);
+                                              batchSize), batchSize, fetchForAggregateUntilEmpty());
         return StreamSupport.stream(spliterator, false);
     }
 
@@ -166,7 +179,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         return batchSize;
     }
 
-    protected static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+    private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
 
         private final Function<T, List<? extends T>> fetchFunction;
         private final int batchSize;
@@ -176,9 +189,9 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         private T lastItem;
         private int sizeOfLastBatch;
 
-        public EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
-                                      int batchSize,
-                                      boolean fetchUntilEmpty) {
+        private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
+                                       int batchSize,
+                                       boolean fetchUntilEmpty) {
             super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
             this.batchSize = batchSize;

@@ -216,7 +216,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventDataForAggregateReturnsTheCompleteStream() {
+    public void testReadEventsForAggregateReturnsTheCompleteStream() {
         testSubject = createEngine(NoOpEventUpcaster.INSTANCE,
                                    defaultPersistenceExceptionResolver,
                                    new EventSchema(),
@@ -232,7 +232,8 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
         testSubject.appendEvents(testEventOne, testEventTwo, testEventThree, testEventFour, testEventFive);
 
-        List<? extends DomainEventData<?>> result = testSubject.readEventData(AGGREGATE, 0L).collect(toList());
+        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+                                                                  .collect(toList());
 
         assertEquals(5, result.size());
         assertEquals(0, result.get(0).getSequenceNumber());
@@ -243,7 +244,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventDataForAggregateWithGapsReturnsTheCompleteStream() {
+    public void testReadEventsForAggregateWithGapsReturnsTheCompleteStream() {
         testSubject = createEngine(NoOpEventUpcaster.INSTANCE,
                                    defaultPersistenceExceptionResolver,
                                    new EventSchema(),
@@ -259,7 +260,8 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
         testSubject.appendEvents(testEventOne, testEventTwo, testEventFour, testEventFive);
 
-        List<? extends DomainEventData<?>> result = testSubject.readEventData(AGGREGATE, 0L).collect(toList());
+        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+                                                                  .collect(toList());
 
         assertEquals(4, result.size());
         assertEquals(0, result.get(0).getSequenceNumber());
@@ -269,7 +271,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventDataForAggregateWithEventsExceedingOneBatchReturnsTheCompleteStream() {
+    public void testReadEventsForAggregateWithEventsExceedingOneBatchReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
         int batchSize = 5;
         testSubject = createEngine(NoOpEventUpcaster.INSTANCE,
@@ -293,7 +295,8 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                 testEventEight
         );
 
-        List<? extends DomainEventData<?>> result = testSubject.readEventData(AGGREGATE, 0L).collect(toList());
+        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+                                                                  .collect(toList());
 
         assertEquals(8, result.size());
         assertEquals(0, result.get(0).getSequenceNumber());
@@ -307,7 +310,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventDataForAggregateWithEventsExceedingOneBatchAndGapsReturnsTheCompleteStream() {
+    public void testReadEventsForAggregateWithEventsExceedingOneBatchAndGapsReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
         int batchSize = 5;
         testSubject = createEngine(NoOpEventUpcaster.INSTANCE,
@@ -331,7 +334,8 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                 testEventEight
         );
 
-        List<? extends DomainEventData<?>> result = testSubject.readEventData(AGGREGATE, 0L).collect(toList());
+        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+                                                                  .collect(toList());
 
         assertEquals(7, result.size());
         assertEquals(0, result.get(0).getSequenceNumber());

@@ -416,12 +416,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
-        EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
-                lastItem -> fetchDomainEvents(identifier,
-                                              lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
-                                              batchSize), batchSize, true);
-        return StreamSupport.stream(spliterator, false);
+    protected boolean fetchForAggregateUntilEmpty() {
+        return true;
     }
 
     @Override
