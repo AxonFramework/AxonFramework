@@ -19,6 +19,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
@@ -107,8 +108,12 @@ public class DefaultQueryGateway implements QueryGateway {
                 .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, updateBufferSize);
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
-                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
-                      .map(QueryResponseMessage::getPayload),
+                      .flatMap(msg -> {
+                          if (msg.isExceptional()) {
+                              return Mono.error(msg.exceptionResult());
+                          }
+                          return Mono.justOrEmpty(msg.getPayload());
+                      }),
                 result.updates()
                       .filter(update -> Objects.nonNull(update.getPayload()))
                       .map(SubscriptionQueryUpdateMessage::getPayload),

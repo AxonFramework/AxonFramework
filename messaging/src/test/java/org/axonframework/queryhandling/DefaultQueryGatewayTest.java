@@ -17,9 +17,10 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.*;
-import org.mockito.*;
+import org.axonframework.utils.MockException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +28,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 public class DefaultQueryGatewayTest {
@@ -94,7 +98,7 @@ public class DefaultQueryGatewayTest {
                 .thenReturn(Stream.of(answer));
 
         Stream<String> actual = testSubject.scatterGather(
-                "query", ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS
+                "query", instanceOf(String.class), 1, TimeUnit.SECONDS
         );
         assertEquals("answer", actual.findFirst().get());
         verify(mockBus).scatterGather(
@@ -110,8 +114,8 @@ public class DefaultQueryGatewayTest {
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
         testSubject.subscriptionQuery("query",
-                                      ResponseTypes.instanceOf(String.class),
-                                      ResponseTypes.instanceOf(String.class));
+                                      instanceOf(String.class),
+                                      instanceOf(String.class));
         verify(mockBus)
                 .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>)
                                                    x -> "query".equals(x.getPayload())), any(), anyInt());
@@ -133,8 +137,42 @@ public class DefaultQueryGatewayTest {
         );
     }
 
+    @Test
+    public void testExceptionInInitialResultOfSubscriptionQueryReportedInMono() {
+        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.just(new GenericQueryResponseMessage<>(String.class, new MockException())), Flux.empty(), () -> true));
+
+        SubscriptionQueryResult<String, String> actual = testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+        assertEquals(MockException.class, actual.initialResult().map(i -> null).onErrorResume(e -> Mono.just(e.getClass())).block());
+    }
+
+    @Test
+    public void testNullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
+        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.just(new GenericQueryResponseMessage<>(String.class, (String) null)), Flux.empty(), () -> true));
+
+        SubscriptionQueryResult<String, String> actual = testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+        assertNull(actual.initialResult().block());
+    }
+
+    @Test
+    public void testNullUpdatesOfSubscriptionQuerySkipped() {
+        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(),
+                                                                 Flux.just(new GenericSubscriptionQueryUpdateMessage<>(String.class, null)),
+                                                                 () -> true));
+
+        SubscriptionQueryResult<String, String> actual = testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+        assertNull(actual.initialResult().block());
+        assertEquals((Long) 0L, actual.updates().count().block());
+    }
+
     @SuppressWarnings("unused")
     private <Q, R> QueryMessage<Q, R> anyMessage(Class<Q> queryType, Class<R> responseType) {
+        return any();
+    }
+
+    private <Q, R> SubscriptionQueryMessage<Q, R, R> anySubscriptionMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
     }
 }
