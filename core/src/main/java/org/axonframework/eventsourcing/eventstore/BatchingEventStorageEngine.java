@@ -165,7 +165,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         return batchSize;
     }
 
-    private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+    protected static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
 
         private final Function<T, List<? extends T>> fetchFunction;
         private final int batchSize;
@@ -174,8 +174,9 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         private T lastItem;
         private int sizeOfLastBatch;
 
-        private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction, int batchSize,
-                                       boolean fetchUntilEmpty) {
+        protected EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
+                                         int batchSize,
+                                         boolean fetchUntilEmpty) {
             super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
             this.batchSize = batchSize;
