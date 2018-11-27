@@ -47,6 +47,8 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
@@ -411,6 +413,15 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                 format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
                         )
                 ));
+    }
+
+    @Override
+    protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
+        EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
+                lastItem -> fetchDomainEvents(identifier,
+                                              lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
+                                              batchSize), batchSize, true);
+        return StreamSupport.stream(spliterator, false);
     }
 
     @Override
