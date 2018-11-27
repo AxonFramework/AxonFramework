@@ -42,11 +42,11 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -188,6 +188,67 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
     }
 
+    @Test
+    public void testStreamCrossesConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
+        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
+        testSubject.appendEvents(createEvents(100));
+
+        try (Connection conn = dataSource.getConnection()) {
+            conn.prepareStatement("DELETE FROM DomainEventEntry WHERE globalIndex >= 20 and globalIndex < 40")
+                .executeUpdate();
+        }
+
+        Stream<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false);
+        List<? extends TrackedEventMessage<?>> actualEvents = actual.collect(toList());
+        assertEquals(80, actualEvents.size());
+    }
+
+    @Test
+    public void testStreamDoesNotCrossExtendedGapWhenDisabled() throws SQLException {
+        testSubject = JdbcEventStorageEngine.builder().upcasterChain(NoOpEventUpcaster.INSTANCE)
+                                            .batchSize(10)
+                                            .connectionProvider(dataSource::getConnection)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .schema(new EventSchema())
+                                            .dataType(byte[].class)
+                                            .extendedGapCheckEnabled(false)
+                                            .build();
+
+        try {
+            Connection connection = dataSource.getConnection();
+            connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
+            connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
+            testSubject.createSchema(HsqlEventTableFactory.INSTANCE);
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+
+        testSubject.appendEvents(createEvents(100));
+
+        try (Connection conn = dataSource.getConnection()) {
+            conn.prepareStatement("DELETE FROM DomainEventEntry WHERE globalIndex >= 20 and globalIndex < 40")
+                .executeUpdate();
+        }
+
+        Stream<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false);
+        List<? extends TrackedEventMessage<?>> actualEvents = actual.collect(toList());
+        assertEquals(20, actualEvents.size());
+    }
+
+    @Test
+    public void testStreamCrossesInitialConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
+        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
+        testSubject.appendEvents(createEvents(100));
+
+        try (Connection conn = dataSource.getConnection()) {
+            conn.prepareStatement("DELETE FROM DomainEventEntry WHERE globalIndex < 20")
+                .executeUpdate();
+        }
+
+        Stream<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false);
+        List<? extends TrackedEventMessage<?>> actualEvents = actual.collect(toList());
+        assertEquals(80, actualEvents.size());
+    }
 
     @Test
     public void testLoadSnapshotIfMatchesPredicate() {
