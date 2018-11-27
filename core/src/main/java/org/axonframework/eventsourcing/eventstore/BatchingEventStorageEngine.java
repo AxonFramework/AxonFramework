@@ -42,7 +42,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public abstract class BatchingEventStorageEngine extends AbstractEventStorageEngine {
 
     private static final int DEFAULT_BATCH_SIZE = 100;
-    private final int batchSize;
+
+    protected final int batchSize;
 
     /**
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain}, {@code
@@ -170,13 +171,14 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         private final Function<T, List<? extends T>> fetchFunction;
         private final int batchSize;
         private final boolean fetchUntilEmpty;
+
         private Iterator<? extends T> iterator;
         private T lastItem;
         private int sizeOfLastBatch;
 
-        protected EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
-                                         int batchSize,
-                                         boolean fetchUntilEmpty) {
+        public EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
+                                      int batchSize,
+                                      boolean fetchUntilEmpty) {
             super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
             this.batchSize = batchSize;
