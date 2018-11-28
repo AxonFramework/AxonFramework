@@ -72,6 +72,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
     private static final int DEFAULT_GAP_TIMEOUT = 60000;
     private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
+    private static final boolean DEFAULT_EXTENDED_GAP_CHECK_ENABLED = true;
 
     private final ConnectionProvider connectionProvider;
     private final TransactionManager transactionManager;
@@ -81,6 +82,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     private final long lowestGlobalSequence;
     private int gapTimeout = DEFAULT_GAP_TIMEOUT;
     private int gapCleaningThreshold = DEFAULT_GAP_CLEANING_THRESHOLD;
+    private final boolean extendedGapCheckEnabled;
 
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
@@ -213,6 +215,57 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                   TransactionManager transactionManager,
                                   Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset, Long lowestGlobalSequence) {
+        this(
+                snapshotSerializer, upcasterChain,
+                getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
+                eventSerializer, snapshotFilter, batchSize, connectionProvider, transactionManager, dataType, schema,
+                maxGapOffset, lowestGlobalSequence, DEFAULT_EXTENDED_GAP_CHECK_ENABLED
+        );
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events.
+     *
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
+     * @param snapshotFilter               Filter describing which snapshots are suitable to use, or {@code null} to
+     *                                     allow all snapshots to be considered viable.
+     * @param batchSize                    The number of events that should be read at each database access. When more
+     *                                     than this number of events must be read to rebuild an aggregate's state, the
+     *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
+     *                                     sure to choose snapshot trigger and batch size such that a single batch will
+     *                                     generally retrieve all events required to rebuild an aggregate's state.
+     * @param connectionProvider           The provider of connections to the underlying database.
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by
+     *                                     certain databases for reading blob data.
+     * @param dataType                     The data type for serialized event payload and metadata.
+     * @param schema                       Object that describes the database schema of event entries.
+     * @param maxGapOffset                 The maximum distance in sequence numbers between a missing event and the
+     *                                     event with the highest known index. If the gap is bigger it is assumed that
+     *                                     the missing event will not be committed to the store anymore. This event
+     *                                     storage engine will no longer look for those events the next time a batch is
+     *                                     fetched.
+     * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
+     *                                     is 1 unless the table has contained entries before.
+     * @param extendedGapCheckEnabled      whether to enable the "extended gap check". Will perform an additional query
+     *                                     if the initial batch of events does not contain any thing due to a large gap
+     *                                     in th event. Defaults to {@code true}.
+     */
+    public JdbcEventStorageEngine(Serializer snapshotSerializer,
+                                  EventUpcaster upcasterChain,
+                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  Serializer eventSerializer,
+                                  Predicate<? super DomainEventData<?>> snapshotFilter,
+                                  Integer batchSize,
+                                  ConnectionProvider connectionProvider,
+                                  TransactionManager transactionManager,
+                                  Class<?> dataType,
+                                  EventSchema schema,
+                                  Integer maxGapOffset,
+                                  Long lowestGlobalSequence,
+                                  boolean extendedGapCheckEnabled) {
         super(snapshotSerializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
               eventSerializer, snapshotFilter, batchSize);
         this.connectionProvider = connectionProvider;
@@ -221,6 +274,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         this.schema = schema;
         this.lowestGlobalSequence = getOrDefault(lowestGlobalSequence, DEFAULT_LOWEST_GLOBAL_SEQUENCE);
         this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
+        this.extendedGapCheckEnabled = getOrDefault(extendedGapCheckEnabled, DEFAULT_EXTENDED_GAP_CHECK_ENABLED);
     }
 
     /**
@@ -421,8 +475,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
-                      () -> "Unsupported token format: " + lastToken);
-        return transactionManager.fetchInTransaction(() -> {
+               () -> "Unsupported token format: " + lastToken);
+        List<TrackedEventData<?>> trackedEventData = transactionManager.fetchInTransaction(() -> {
             // If there are many gaps, it worthwhile checking if it is possible to clean them up.
             GapAwareTrackingToken cleanedToken;
             if (lastToken != null && ((GapAwareTrackingToken) lastToken).getGaps().size() > gapCleaningThreshold) {
@@ -431,22 +485,50 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                 cleanedToken = (GapAwareTrackingToken) lastToken;
             }
 
-            return executeQuery(
-                    getConnection(),
-                    connection -> readEventData(connection, cleanedToken, batchSize),
-                    resultSet -> {
-                        GapAwareTrackingToken previousToken = cleanedToken;
-                        List<TrackedEventData<?>> results = new ArrayList<>();
-                        while (resultSet.next()) {
-                            TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
-                            results.add(next);
-                            previousToken = (GapAwareTrackingToken) next.trackingToken();
-                        }
-                        return results;
-                    },
-                    e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e)
-            );
+            List<TrackedEventData<?>> eventData = executeEventDataQuery(cleanedToken, batchSize);
+
+            // Additional check for empty batches. This may be because there is a gap of more than _batchSize_ items ahead
+            // see
+            if (extendedGapCheckEnabled && eventData.isEmpty()) {
+                long index = cleanedToken == null ? -1 : cleanedToken.getIndex();
+                Long result = executeQuery(getConnection(),
+                                           connection -> {
+                                               PreparedStatement stat = connection.prepareStatement(
+                                                       format("SELECT min(%s) FROM %s WHERE %s > ?",
+                                                              schema.globalIndexColumn(),
+                                                              schema.domainEventTable(),
+                                                              schema.globalIndexColumn()));
+                                               stat.setLong(1, index);
+                                               return stat;
+                                           },
+                                           resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                                           e -> new EventStoreException("Failed to read globalIndex ahead of token", e));
+                if (result != null) {
+                    return executeEventDataQuery(cleanedToken, (int) (result - index));
+                }
+            }
+            return eventData;
         });
+
+        return trackedEventData;
+    }
+
+    private List<TrackedEventData<?>> executeEventDataQuery(GapAwareTrackingToken cleanedToken, int batchSize) {
+        return executeQuery(
+                getConnection(),
+                connection -> readEventData(connection, cleanedToken, batchSize),
+                resultSet -> {
+                    GapAwareTrackingToken previousToken = cleanedToken;
+                    List<TrackedEventData<?>> results = new ArrayList<>();
+                    while (resultSet.next()) {
+                        TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
+                        results.add(next);
+                        previousToken = (GapAwareTrackingToken) next.trackingToken();
+                    }
+                    return results;
+                },
+                e -> new EventStoreException(format("Failed to read events from token [%s]", cleanedToken), e)
+        );
     }
 
     private GapAwareTrackingToken cleanGaps(TrackingToken lastToken) {
