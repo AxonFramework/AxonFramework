@@ -97,8 +97,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      */
     public BatchingEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
                                       PersistenceExceptionResolver persistenceExceptionResolver,
-                                      Serializer eventSerializer, Predicate<? super DomainEventData<?>> snapshotFilter,
-                                      Integer batchSize) {
+                                      Serializer eventSerializer, Predicate<? super DomainEventData<?>> snapshotFilter, Integer batchSize) {
         super(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, snapshotFilter);
         this.batchSize = getOrDefault(batchSize, DEFAULT_BATCH_SIZE);
     }
