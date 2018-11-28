@@ -414,6 +414,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
+    protected boolean fetchForAggregateUntilEmpty() {
+        return true;
+    }
+
+    @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                       () -> "Unsupported token format: " + lastToken);
