@@ -17,9 +17,10 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
@@ -108,12 +109,9 @@ public class DefaultQueryGateway implements QueryGateway {
                 .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, updateBufferSize);
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
-                      .flatMap(msg -> {
-                          if (msg.isExceptional()) {
-                              return Mono.error(msg.exceptionResult());
-                          }
-                          return Mono.justOrEmpty(msg.getPayload());
-                      }),
+                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
+                      .map(Message::getPayload)
+                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
                 result.updates()
                       .filter(update -> Objects.nonNull(update.getPayload()))
                       .map(SubscriptionQueryUpdateMessage::getPayload),
