@@ -43,7 +43,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
 
     private static final int DEFAULT_BATCH_SIZE = 100;
 
-    protected final int batchSize;
+    private final int batchSize;
 
     /**
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain}, {@code
@@ -137,9 +137,9 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
                                                                             long firstSequenceNumber, int batchSize);
 
     /**
-     * Return a {@code boolean} specifying whether {@link #readEventData(String, long)} should proceed fetching events
-     * for an aggregate until an empty batch is returned. Defaults to {@code false}, as Aggregate event batches
-     * typically do not have gaps in them.
+     * Specifies whether the {@link #readEventData(String, long)} should proceed fetching events for an aggregate until
+     * an empty batch is returned. Defaults to {@code false}, as Aggregate event batches typically do not have gaps in
+     * them.
      *
      * @return a {@code boolean} specifying whether {@link #readEventData(String, long)} should proceed fetching events
      * for an aggregate until an empty batch is returned
