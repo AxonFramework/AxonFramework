@@ -93,7 +93,7 @@ public class StubDeadlineManager implements DeadlineManager {
 
         schedules.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                 deadlineName,
-                                                scheduledMessage.getIdentifier(),
+                                                scheduleId,
                                                 counter.getAndIncrement(),
                                                 scheduledMessage,
                                                 deadlineScope));
