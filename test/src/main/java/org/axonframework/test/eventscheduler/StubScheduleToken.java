@@ -17,6 +17,7 @@
 package org.axonframework.test.eventscheduler;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
 import java.time.Instant;
@@ -34,7 +35,7 @@ public class StubScheduleToken implements ScheduleToken, Comparable<StubSchedule
     private static final long serialVersionUID = 3763093001261110665L;
 
     private final Instant scheduleTime;
-    private final EventMessage event;
+    private final EventMessage<?> event;
     private final int counter;
 
     /**
@@ -58,7 +59,7 @@ public class StubScheduleToken implements ScheduleToken, Comparable<StubSchedule
 
     @Override
     public EventMessage getEvent() {
-        return event;
+        return new GenericEventMessage<>(event, () -> scheduleTime);
     }
 
     @Override

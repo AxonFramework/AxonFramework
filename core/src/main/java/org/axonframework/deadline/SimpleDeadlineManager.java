@@ -19,7 +19,9 @@ package org.axonframework.deadline;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -29,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -176,8 +179,11 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
         @Override
         public void run() {
-            DeadlineMessage<?> deadlineMessage =
-                    GenericDeadlineMessage.asDeadlineMessage(deadlineName, messageOrPayload);
+            Instant triggerInstant = GenericEventMessage.clock.instant();
+            DeadlineMessage<?> deadlineMessage = new GenericDeadlineMessage<>(
+                    deadlineName, new GenericMessage<>(messageOrPayload), () -> triggerInstant
+            );
+
             if (logger.isDebugEnabled()) {
                 logger.debug("Triggered deadline");
             }

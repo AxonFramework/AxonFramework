@@ -17,7 +17,6 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Instant;
@@ -36,7 +35,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
     private final String deadlineName;
     private final String scheduleId;
     private final int counter;
-    private final Object messageOrPayload;
+    private final DeadlineMessage<?> deadlineMessage;
     private final ScopeDescriptor deadlineScope;
 
     /**
@@ -48,7 +47,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
      * @param scheduleId       A {@link String} identifier representing the scheduled deadline; can be used together
      *                         with the {@code deadlineName} to cancel the deadline
      * @param counter          Used to differentiate two deadlines scheduled at the same time
-     * @param messageOrPayload The payload of the scheduled deadline. Might be {@code null} if none is provided
+     * @param deadlineMessage The deadline message of the scheduled deadline.
      * @param deadlineScope    A description of the {@link org.axonframework.messaging.Scope} in which the deadline is
      *                         scheduled
      */
@@ -56,13 +55,13 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
                                  String deadlineName,
                                  String scheduleId,
                                  int counter,
-                                 Object messageOrPayload,
+                                 DeadlineMessage<?> deadlineMessage,
                                  ScopeDescriptor deadlineScope) {
         this.scheduleTime = scheduleTime;
         this.deadlineName = deadlineName;
         this.scheduleId = scheduleId;
         this.counter = counter;
-        this.messageOrPayload = messageOrPayload;
+        this.deadlineMessage = deadlineMessage;
         this.deadlineScope = deadlineScope;
     }
 
@@ -107,15 +106,6 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
     }
 
     /**
-     * Retrieve the payload of the scheduled deadline. Might be {@code null} if none is provided.
-     *
-     * @return the payload of the scheduled deadline. Might be {@code null} if none is provided
-     */
-    public Object getMessageOrPayload() {
-        return messageOrPayload;
-    }
-
-    /**
      * Retrieve a description of the {@link org.axonframework.messaging.Scope} in which the deadline is scheduled.
      *
      * @return a description of the {@link org.axonframework.messaging.Scope} in which the deadline is scheduled
@@ -129,8 +119,8 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
      *
      * @return a {@link DeadlineMessage} constructed out of the {@code deadlineName} and {@code deadlineInfo}
      */
-    public DeadlineMessage deadlineMessage() {
-        return GenericDeadlineMessage.asDeadlineMessage(deadlineName, messageOrPayload);
+    public DeadlineMessage<?> deadlineMessage() {
+        return deadlineMessage;
     }
 
     @Override

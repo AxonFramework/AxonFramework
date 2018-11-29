@@ -17,6 +17,9 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Duration;
@@ -31,6 +34,8 @@ import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 
 /**
  * Stub implementation of {@link DeadlineManager}. Records all scheduled and met deadlines.
@@ -82,11 +87,15 @@ public class StubDeadlineManager implements DeadlineManager {
                          Object payloadOrMessage,
                          ScopeDescriptor deadlineScope,
                          String scheduleId) {
+        DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, payloadOrMessage);
+        DeadlineMessage<?> scheduledMessage =
+                new GenericDeadlineMessage<>(deadlineName, deadlineMessage, () -> triggerDateTime);
+
         schedules.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                 deadlineName,
-                                                scheduleId,
+                                                scheduledMessage.getIdentifier(),
                                                 counter.getAndIncrement(),
-                                                payloadOrMessage,
+                                                scheduledMessage,
                                                 deadlineScope));
     }
 
