@@ -40,6 +40,6 @@ public interface ErrorHandler {
      * @param errorContext Contextual information describing the error
      * @throws Exception if the handler decides to propagate the error
      */
-    void handleError(ErrorContext errorContext) throws Exception;
+    void handleError(ErrorContext errorContext) throws Throwable;
 
 }
