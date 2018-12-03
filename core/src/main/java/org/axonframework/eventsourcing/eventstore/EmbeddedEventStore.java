@@ -194,18 +194,15 @@ public class EmbeddedEventStore extends AbstractEventStore {
         producer = new EventProducer(timeUnit.toNanos(fetchDelay), cachedEvents);
         cleanupDelayMillis = timeUnit.toMillis(cleanupDelay);
         this.optimizeEventConsumption = getOrDefault(
-                optimizeEventConsumption,
-                EmbeddedEventStore::fetchEventConsumptionSystemPropertyOrDefault
+                optimizeEventConsumption, EmbeddedEventStore::fetchEventConsumptionSystemPropertyOrDefault
         );
     }
 
     private static boolean fetchEventConsumptionSystemPropertyOrDefault() {
-        try {
-            return Boolean.valueOf(System.getProperty(OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY));
-        } catch (Exception e) {
-            // Ignore exception of instantiating this field based on a system property; default to true
-            return OPTIMIZE_EVENT_CONSUMPTION;
-        }
+        String optimizeEventConsumptionSystemProperty = System.getProperty(OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY);
+        return optimizeEventConsumptionSystemProperty == null
+                ? OPTIMIZE_EVENT_CONSUMPTION // Default to optimize event consumption of no property has been set
+                : Boolean.TRUE.toString().equalsIgnoreCase(optimizeEventConsumptionSystemProperty);
     }
 
     /**
