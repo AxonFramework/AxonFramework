@@ -239,7 +239,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     public TrackingEventStream openStream(TrackingToken trackingToken) {
         Node node = findNode(trackingToken);
         EventConsumer eventConsumer;
-        if (node != null) {
+        if (node != null && optimizeEventConsumption) {
             eventConsumer = new EventConsumer(node);
             tailingConsumers.add(eventConsumer);
         } else {
@@ -419,7 +419,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            boolean allowSwitchToTailingConsumer = true;
+            boolean allowSwitchToTailingConsumer = optimizeEventConsumption;
             if (tailingConsumers.contains(this)) {
                 if (!behindGlobalCache()) {
                     return peekGlobalStream(timeout, timeUnit);
