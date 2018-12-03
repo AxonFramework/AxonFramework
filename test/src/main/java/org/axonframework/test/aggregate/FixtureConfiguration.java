@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.test.FixtureExecutionException;
@@ -242,6 +243,15 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers command target resolve within this fixture. This {@code commandTargetResolver} will replace the default
+     * one within this fixture.
+     *
+     * @param commandTargetResolver used to resolve aggregated for a given command
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerCommandTargetResolver(CommandTargetResolver commandTargetResolver);
 
     /**
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event

@@ -93,6 +93,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private boolean explicitCommandHandlersSet;
     private MultiParameterResolverFactory parameterResolverFactory;
     private HandlerDefinition handlerDefinition;
+    private CommandTargetResolver commandTargetResolver;
 
     /**
      * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
@@ -223,6 +224,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
         this.handlerDefinition = handlerDefinition;
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerCommandTargetResolver(CommandTargetResolver commandTargetResolver) {
+        this.commandTargetResolver = commandTargetResolver;
         return this;
     }
 
@@ -426,12 +433,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private void registerAggregateCommandHandlers() {
         ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
-            AggregateAnnotationCommandHandler<T> handler =
-                    AggregateAnnotationCommandHandler.<T>builder()
-                            .aggregateType(aggregateType)
-                            .parameterResolverFactory(parameterResolverFactory)
-                            .repository(repository)
-                            .build();
+            AggregateAnnotationCommandHandler.Builder<T> builder = AggregateAnnotationCommandHandler.<T>builder()
+                    .aggregateType(aggregateType)
+                    .parameterResolverFactory(parameterResolverFactory)
+                    .repository(this.repository);
+
+            if (commandTargetResolver != null) {
+                builder.commandTargetResolver(commandTargetResolver);
+            }
+
+            AggregateAnnotationCommandHandler<T> handler = builder.build();
             handler.subscribe(commandBus);
         }
     }
