@@ -90,6 +90,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final InMemorySagaStore sagaStore;
     private AnnotatedSagaManager<T> sagaManager;
     private SagaRepository<T> sagaRepository;
+    private EventBus eventBus;
     private boolean transienceCheckEnabled = true;
     private boolean resourcesInitialized = false;
 
@@ -103,7 +104,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        EventBus eventBus = SimpleEventBus.builder().build();
+        eventBus = SimpleEventBus.builder().build();
         sagaStore = new InMemorySagaStore();
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
@@ -372,6 +373,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
         }
         return aggregatePublishers.get(aggregateIdentifier);
+    }
+
+    public EventBus getEventBus() {
+        return eventBus;
+    }
+
+    public RecordingCommandBus getCommandBus() {
+        return commandBus;
     }
 
     /**
