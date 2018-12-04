@@ -42,7 +42,6 @@ import java.util.stream.Stream;
 import javax.annotation.PreDestroy;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Implementation of an {@link EventStore} that stores and fetches events using an {@link EventStorageEngine}. If
@@ -53,6 +52,11 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * events. This cache is shared between the streams of various event processors. So, assuming an event processor
  * processes events fast enough and is not far behind the head of the event log it will not need a private connection
  * to the underlying data store. The size of the cache (in number of events) is configurable.
+ * This 'event consumption optimization' might in some scenarios not be desirable, as it will spin up additional threads
+ * and perform some locking operations. Hence it is switchable by using the
+ * {@link #EmbeddedEventStore(EventStorageEngine, MessageMonitor, int, long, long, TimeUnit, ThreadFactory, boolean)}
+ * constructor and provided a {@code false} for the last parameter. Additionally, this can also be turned off by
+ * providing a system property with key {@code optimize-event-consumption}.
  * <p>
  * The embedded event store automatically fetches new events from the store if there is at least one registered tracking
  * event processor present. It will do so after new events are committed to the store, as well as periodically as
