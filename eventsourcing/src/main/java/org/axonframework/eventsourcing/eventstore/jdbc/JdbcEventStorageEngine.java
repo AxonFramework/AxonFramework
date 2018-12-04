@@ -23,7 +23,15 @@ import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericDomainEventEntry;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedDomainEventData;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
@@ -41,7 +49,12 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -122,6 +135,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code lowestGlobalSequence} defaults to a long of size {@code 1}.</li>
      * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
+     * <li>The {@code extendedGapCheckEnabled} defaults to {@code true}.</li>
      * </ul>
      * <p>
      * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should
@@ -269,6 +283,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param snapshot   The snapshot to append.
      * @param serializer The serializer that should be used when serializing the event's payload and metadata.
      * @return A {@link PreparedStatement} that appends the snapshot when executed.
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     protected PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
@@ -299,6 +314,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection          The connection to the database.
      * @param aggregateIdentifier The identifier of the aggregate whose snapshots to delete.
      * @return A {@link PreparedStatement} that deletes all the aggregate's snapshots when executed.
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier, long sequenceNumber)
@@ -324,6 +340,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                 format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
                         )
                 ));
+    }
+
+    @Override
+    protected boolean fetchForAggregateUntilEmpty() {
+        return true;
     }
 
     @Override
@@ -356,7 +377,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                                return stat;
                                            },
                                            resultSet -> nextAndExtract(resultSet, 1, Long.class),
-                                           e -> new EventStoreException("Failed to read globalIndex ahead of token", e));
+                                           e -> new EventStoreException("Failed to read globalIndex ahead of token",
+                                                                        e));
                 if (result != null) {
                     return executeEventDataQuery(cleanedToken, (int) (result - index));
                 }
@@ -442,6 +464,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param firstSequenceNumber The expected sequence number of the first returned entry.
      * @param batchSize           The number of items to include in the batch
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
 
@@ -470,6 +493,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param lastToken  Object describing the global index of the last processed event or {@code null} to return all
      *                   entries in the store.
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken,
@@ -506,6 +530,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection The connection to the database.
      * @param identifier The aggregate identifier.
      * @return A {@link PreparedStatement} that returns the last snapshot entry of the aggregate (if any) when executed.
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement readSnapshotData(Connection connection, String identifier) throws SQLException {
@@ -522,6 +547,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param resultSet     The results of a query for tracked events.
      * @param previousToken The last known token of the tracker before obtaining this result set.
      * @return The next tracked event.
+     *
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected TrackedEventData<?> getTrackedEventData(ResultSet resultSet,
@@ -567,6 +593,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param resultSet The results of a query for domain events of an aggregate.
      * @return The next domain event.
+     *
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
@@ -586,6 +613,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param resultSet The results of a query for a snapshot of an aggregate.
      * @return The next snapshot data.
+     *
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected DomainEventData<?> getSnapshotData(ResultSet resultSet) throws SQLException {
@@ -607,6 +635,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param resultSet  The resultSet containing the stored data.
      * @param columnName The name of the column containing the timestamp.
      * @return an object describing the timestamp.
+     *
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
     protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
@@ -633,6 +662,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param resultSet  The resultSet containing the stored data.
      * @param columnName The name of the column containing the payload.
      * @return an object describing the serialized data.
+     *
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
     @SuppressWarnings("unchecked")
@@ -726,6 +756,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code lowestGlobalSequence} defaults to a long of size {@code 1}.</li>
      * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
+     * <li>The {@code extendedGapCheckEnabled} defaults to {@code true}.</li>
      * </ul>
      * <p>
      * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should

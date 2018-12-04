@@ -27,10 +27,6 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.modelling.saga.AnnotatedSagaManager;
-import org.axonframework.modelling.saga.SagaRepository;
-import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
@@ -41,6 +37,10 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.modelling.saga.AnnotatedSagaManager;
+import org.axonframework.modelling.saga.SagaRepository;
+import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
@@ -327,6 +327,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
         this.handlerDefinition = handlerDefinition;
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecording) {
+        this.fixtureExecutionResult.registerStartRecordingCallback(onStartRecording);
         return this;
     }
 
