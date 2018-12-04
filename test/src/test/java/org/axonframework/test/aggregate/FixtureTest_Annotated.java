@@ -22,6 +22,8 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.hamcrest.Description;
@@ -37,6 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -162,6 +165,20 @@ public class FixtureTest_Annotated {
                               new TestCommand("aggregateId"))
                .when(new TestCommand("aggregateId"))
                .expectEvents(new MyEvent("aggregateId", 4));
+    }
+
+    @Test
+    public void testAggregateIdentifier_CustomTargetResolver() {
+        CommandTargetResolver mockCommandTargetResolver = mock(CommandTargetResolver.class);
+        when(mockCommandTargetResolver.resolveTarget(any())).thenReturn(new VersionedAggregateIdentifier("aggregateId", 0L));
+
+        fixture.registerCommandTargetResolver(mockCommandTargetResolver);
+        fixture.registerInjectableResource(new HardToCreateResource());
+        fixture.givenCommands(new CreateAggregateCommand("aggregateId"))
+                .when(new TestCommand("aggregateId"))
+                .expectEvents(new MyEvent("aggregateId", 1));
+
+        verify(mockCommandTargetResolver).resolveTarget(any());
     }
 
     @Test(expected = FixtureExecutionException.class)
