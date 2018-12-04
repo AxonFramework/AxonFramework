@@ -47,13 +47,10 @@ import static org.mockito.Mockito.*;
 public class FixtureTest_Annotated {
 
     private FixtureConfiguration<AnnotatedAggregate> fixture;
-    private CommandTargetResolver mockCommandTargetResolver;
 
     @Before
     public void setUp() {
         fixture = new AggregateTestFixture<>(AnnotatedAggregate.class);
-        mockCommandTargetResolver = mock(CommandTargetResolver.class);
-
     }
 
     @After
@@ -172,6 +169,7 @@ public class FixtureTest_Annotated {
 
     @Test
     public void testAggregateIdentifier_CustomTargetResolver() {
+        CommandTargetResolver mockCommandTargetResolver = mock(CommandTargetResolver.class);
         when(mockCommandTargetResolver.resolveTarget(any())).thenReturn(new VersionedAggregateIdentifier("aggregateId", 0L));
 
         fixture.registerCommandTargetResolver(mockCommandTargetResolver);

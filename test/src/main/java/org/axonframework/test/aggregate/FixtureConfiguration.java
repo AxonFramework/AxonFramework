@@ -245,10 +245,9 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
 
     /**
-     * Registers command target resolve within this fixture. This {@code commandTargetResolver} will replace the default
-     * one within this fixture.
+     * Registers the {@link CommandTargetResolver} within this fixture. The {@code commandTargetResolver} will replace the default implementation (defined by the {@link org.axonframework.modelling.command.AggregateAnnotationCommandHandler}  within this fixture.
      *
-     * @param commandTargetResolver used to resolve aggregated for a given command
+     * @param commandTargetResolver the {@link CommandTargetResolver} used to resolve an Aggregate for a given command
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandTargetResolver(CommandTargetResolver commandTargetResolver);
