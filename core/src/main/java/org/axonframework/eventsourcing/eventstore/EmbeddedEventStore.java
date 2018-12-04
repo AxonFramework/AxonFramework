@@ -24,14 +24,22 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PreDestroy;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
+import javax.annotation.PreDestroy;
 
 import static java.util.stream.Collectors.toList;
 
@@ -44,6 +52,11 @@ import static java.util.stream.Collectors.toList;
  * events. This cache is shared between the streams of various event processors. So, assuming an event processor
  * processes events fast enough and is not far behind the head of the event log it will not need a private connection
  * to the underlying data store. The size of the cache (in number of events) is configurable.
+ * This 'event consumption optimization' might in some scenarios not be desirable, as it will spin up additional threads
+ * and perform some locking operations. Hence it is switchable by using the
+ * {@link #EmbeddedEventStore(EventStorageEngine, MessageMonitor, int, long, long, TimeUnit, ThreadFactory, boolean)}
+ * constructor and provided a {@code false} for the last parameter. Additionally, this can also be turned off by
+ * providing a system property with key {@code optimize-event-consumption}.
  * <p>
  * The embedded event store automatically fetches new events from the store if there is at least one registered tracking
  * event processor present. It will do so after new events are committed to the store, as well as periodically as
@@ -53,8 +66,11 @@ import static java.util.stream.Collectors.toList;
  * @since 3.0
  */
 public class EmbeddedEventStore extends AbstractEventStore {
+
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
     private static final ThreadGroup THREAD_GROUP = new ThreadGroup(EmbeddedEventStore.class.getSimpleName());
+    private static final String OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY = "optimize-event-consumption";
+    private static final boolean OPTIMIZE_EVENT_CONSUMPTION = true;
 
     private final Lock consumerLock = new ReentrantLock();
     private final Condition consumableEventsCondition = consumerLock.newCondition();
@@ -65,6 +81,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private final ScheduledExecutorService cleanupService;
     private final AtomicBoolean producerStarted = new AtomicBoolean();
     private volatile Node oldest;
+    private final boolean optimizeEventConsumption;
 
     /**
      * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and default settings.
@@ -108,8 +125,10 @@ public class EmbeddedEventStore extends AbstractEventStore {
      */
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
                               int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit) {
-        this(storageEngine, monitor, 10000, 1000L, 10000L, TimeUnit.MILLISECONDS,
-            new AxonThreadFactory(THREAD_GROUP));
+        this(
+                storageEngine, monitor, cachedEvents, fetchDelay, cleanupDelay, timeUnit,
+                new AxonThreadFactory(THREAD_GROUP)
+        );
     }
 
     /**
@@ -136,11 +155,59 @@ public class EmbeddedEventStore extends AbstractEventStore {
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
                               int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit,
                               ThreadFactory threadFactory) {
+        this(
+                storageEngine, monitor, cachedEvents, fetchDelay, cleanupDelay, timeUnit, threadFactory,
+                fetchEventConsumptionSystemPropertyOrDefault()
+        );
+    }
+
+    /**
+     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and {@code monitor} and custom
+     * settings.
+     *
+     * @param storageEngine            the storage engine to use
+     * @param monitor                  the metrics monitor that tracks how many events are ingested by the event store
+     * @param cachedEvents             the maximum number of events in the cache that is shared between the streams of
+     *                                 tracking event processors
+     * @param fetchDelay               the time to wait before fetching new events from the backing storage engine while
+     *                                 tracking after a previous stream was fetched and read. Note that this only
+     *                                 applies to situations in which no events from the current application have
+     *                                 meanwhile been committed. If the current application commits events then those
+     *                                 events are fetched without delay.
+     * @param cleanupDelay             the delay between two clean ups of lagging event processors. An event processor
+     *                                 is lagging behind and removed from the set of processors that track cached events
+     *                                 if the oldest event in the cache is newer than the last processed event of the
+     *                                 event processor. Once removed the processor will be independently fetching
+     *                                 directly from the event storage engine until it has caught up again. Event
+     *                                 processors will not notice this change during tracking (i.e. the stream is not '
+     *                                 closed when an event processor falls behind and is removed).
+     * @param timeUnit                 time unit for fetch and clean up delay
+     * @param threadFactory            the factory to create threads with
+     * @param optimizeEventConsumption toggle whether event consumption should be optimized. If set to {@code true},
+     *                                 distinct Event Consumers will read events from the same stream as soon as they
+     *                                 reach the head of the stream. If {@code false}, they will stay on a private
+     *                                 stream. The latter means more database resources will be used. This can be
+     *                                 configured by either adjusting the property through the constructor or by
+     *                                 setting a system property with key {@code optimize-event-consumption} and value
+     *                                 {@code true}/{@code false}. If nothing is provided, this will be defaulted to
+     *                                 {@code true}
+     */
+    public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
+                              int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit,
+                              ThreadFactory threadFactory, boolean optimizeEventConsumption) {
         super(storageEngine, monitor);
         this.threadFactory = threadFactory;
         cleanupService = Executors.newScheduledThreadPool(1, this.threadFactory);
         producer = new EventProducer(timeUnit.toNanos(fetchDelay), cachedEvents);
         cleanupDelayMillis = timeUnit.toMillis(cleanupDelay);
+        this.optimizeEventConsumption = optimizeEventConsumption;
+    }
+
+    private static boolean fetchEventConsumptionSystemPropertyOrDefault() {
+        String optimizeEventConsumptionSystemProperty = System.getProperty(OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY);
+        return optimizeEventConsumptionSystemProperty == null
+                ? OPTIMIZE_EVENT_CONSUMPTION // Default to optimize event consumption of no property has been set
+                : Boolean.TRUE.toString().equalsIgnoreCase(optimizeEventConsumptionSystemProperty);
     }
 
     /**
@@ -177,7 +244,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     public TrackingEventStream openStream(TrackingToken trackingToken) {
         Node node = findNode(trackingToken);
         EventConsumer eventConsumer;
-        if (node != null) {
+        if (node != null && optimizeEventConsumption) {
             eventConsumer = new EventConsumer(node);
             tailingConsumers.add(eventConsumer);
         } else {
@@ -357,7 +424,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            boolean allowSwitchToTailingConsumer = true;
+            boolean allowSwitchToTailingConsumer = optimizeEventConsumption;
             if (tailingConsumers.contains(this)) {
                 if (!behindGlobalCache()) {
                     return peekGlobalStream(timeout, timeUnit);
