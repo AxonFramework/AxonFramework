@@ -155,7 +155,10 @@ public class EmbeddedEventStore extends AbstractEventStore {
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
                               int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit,
                               ThreadFactory threadFactory) {
-        this(storageEngine, monitor, cachedEvents, fetchDelay, cleanupDelay, timeUnit, threadFactory, null);
+        this(
+                storageEngine, monitor, cachedEvents, fetchDelay, cleanupDelay, timeUnit, threadFactory,
+                fetchEventConsumptionSystemPropertyOrDefault()
+        );
     }
 
     /**
@@ -191,15 +194,13 @@ public class EmbeddedEventStore extends AbstractEventStore {
      */
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
                               int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit,
-                              ThreadFactory threadFactory, Boolean optimizeEventConsumption) {
+                              ThreadFactory threadFactory, boolean optimizeEventConsumption) {
         super(storageEngine, monitor);
         this.threadFactory = threadFactory;
         cleanupService = Executors.newScheduledThreadPool(1, this.threadFactory);
         producer = new EventProducer(timeUnit.toNanos(fetchDelay), cachedEvents);
         cleanupDelayMillis = timeUnit.toMillis(cleanupDelay);
-        this.optimizeEventConsumption = getOrDefault(
-                optimizeEventConsumption, EmbeddedEventStore::fetchEventConsumptionSystemPropertyOrDefault
-        );
+        this.optimizeEventConsumption = optimizeEventConsumption;
     }
 
     private static boolean fetchEventConsumptionSystemPropertyOrDefault() {
