@@ -43,8 +43,10 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -62,22 +64,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.sql.DataSource;
+import java.util.concurrent.*;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ContextConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -120,6 +121,22 @@ public class JpaTokenStoreTest {
         assertEquals(1, tokens.size());
         assertNotNull(tokens.get(0).getOwner());
         assertNull(tokens.get(0).getToken(XStreamSerializer.builder().build()));
+    }
+
+    @Test
+    public void testCustomLockMode() {
+        EntityManager spyEntityManager = mock(EntityManager.class);
+
+        JpaTokenStore testSubject = JpaTokenStore.builder()
+                                                 .serializer(XStreamSerializer.builder().build())
+                                                 .loadingLockMode(LockModeType.NONE)
+                                                 .entityManagerProvider(new SimpleEntityManagerProvider(spyEntityManager))
+                                                 .nodeId("test")
+                                                 .build();
+
+        testSubject.fetchToken("processorName", 1);
+
+        verify(spyEntityManager).find(eq(TokenEntry.class), any(), eq(LockModeType.NONE));
     }
 
     @Transactional
