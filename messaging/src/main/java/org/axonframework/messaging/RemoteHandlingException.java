@@ -42,7 +42,7 @@ public class RemoteHandlingException extends AxonException {
      * @param exceptionDescription a {@link String} describing the remote exceptions
      */
     public RemoteHandlingException(RemoteExceptionDescription exceptionDescription) {
-        super("An exception was thrown by the remote message handling component.");
+        super("An exception was thrown by the remote message handling component: " + exceptionDescription.toString());
         this.exceptionDescriptions = exceptionDescription.getDescriptions();
     }
 
