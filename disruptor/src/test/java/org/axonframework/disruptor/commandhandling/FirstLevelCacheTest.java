@@ -1,4 +1,4 @@
-package org.axonframework.commandhandling.disruptor;
+package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.junit.Before;
