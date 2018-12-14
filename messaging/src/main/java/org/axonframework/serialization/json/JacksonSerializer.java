@@ -26,9 +26,21 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.UnknownSerializedType;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -46,6 +58,7 @@ public class JacksonSerializer implements Serializer {
     private final Converter converter;
     private final ObjectMapper objectMapper;
     private final ClassLoader classLoader;
+    private final Map<String, Class> classForType = new ConcurrentHashMap<>();
 
     /**
      * Instantiate a {@link JacksonSerializer} based on the fields contained in the {@link Builder}.
@@ -65,7 +78,7 @@ public class JacksonSerializer implements Serializer {
         this.classLoader = builder.classLoader;
 
         this.objectMapper.registerModule(
-                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
+            new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
         );
         this.objectMapper.registerModule(new JavaTimeModule());
         if (converter instanceof ChainingConverter) {
@@ -108,13 +121,13 @@ public class JacksonSerializer implements Serializer {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
                 return new SimpleSerializedObject<>((T) getWriter().writeValueAsString(object), expectedRepresentation,
-                                                    typeForClass(ObjectUtils.nullSafeTypeOf(object)));
+                    typeForClass(ObjectUtils.nullSafeTypeOf(object)));
             }
 
             byte[] serializedBytes = getWriter().writeValueAsBytes(object);
             T serializedContent = converter.convert(serializedBytes, expectedRepresentation);
             return new SimpleSerializedObject<>(serializedContent, expectedRepresentation,
-                                                typeForClass(ObjectUtils.nullSafeTypeOf(object)));
+                typeForClass(ObjectUtils.nullSafeTypeOf(object)));
         } catch (JsonProcessingException e) {
             throw new SerializationException("Unable to serialize object", e);
         }
@@ -153,7 +166,7 @@ public class JacksonSerializer implements Serializer {
     @Override
     public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
         return JsonNode.class.equals(expectedRepresentation) || String.class.equals(expectedRepresentation) ||
-                converter.canConvert(byte[].class, expectedRepresentation);
+            converter.canConvert(byte[].class, expectedRepresentation);
     }
 
     @Override
@@ -168,7 +181,7 @@ public class JacksonSerializer implements Serializer {
             }
             if (JsonNode.class.equals(serializedObject.getContentType())) {
                 return getReader(type)
-                        .readValue((JsonNode) serializedObject.getData());
+                    .readValue((JsonNode) serializedObject.getData());
             }
             SerializedObject<byte[]> byteSerialized = converter.convert(serializedObject, byte[].class);
             return getReader(type).readValue(byteSerialized.getData());
@@ -182,11 +195,13 @@ public class JacksonSerializer implements Serializer {
         if (SimpleSerializedType.emptyType().equals(type)) {
             return Void.class;
         }
-        try {
-            return classLoader.loadClass(resolveClassName(type));
-        } catch (ClassNotFoundException e) {
-            return UnknownSerializedType.class;
-        }
+        return classForType.computeIfAbsent(resolveClassName(type), key -> {
+            try {
+                return classLoader.loadClass(key);
+            } catch (ClassNotFoundException e) {
+                return UnknownSerializedType.class;
+            }
+        });
     }
 
     /**
