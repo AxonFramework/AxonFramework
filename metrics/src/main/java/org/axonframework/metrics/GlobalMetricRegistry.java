@@ -15,7 +15,6 @@
 
 package org.axonframework.metrics;
 
-import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
@@ -77,19 +76,6 @@ public class GlobalMetricRegistry {
         return configurer.configureMessageMonitor(
                 configuration -> (componentType, componentName) -> (MessageMonitor<Message<?>>) registerComponent(
                         componentType, componentName));
-    }
-
-    /**
-     * Registers a {@link Metric} to the registry under the given {@code name}.
-     *
-     * @param name   the name under which the metric should be registered to the registry
-     * @param metric the metric to register
-     * @param <T>    the metric type
-     * @deprecated Register metrics on the Metric Registry directly, instead. See {@link #getRegistry()}.
-     */
-    @Deprecated
-    public <T extends Metric> void registerMetric(String name, T metric) {
-        registry.register(name, metric);
     }
 
     /**

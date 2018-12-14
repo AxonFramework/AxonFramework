@@ -16,6 +16,12 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
@@ -93,8 +99,8 @@ public interface FixtureConfiguration {
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
-     * objects. The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectReturnValue(Object)},
-     * for example, use this filter.
+     * objects. The {@link ResultValidator#expectEvents(Object...)} and
+     * {@link ResultValidator#expectResultMessage(CommandResultMessage)}, for example, use this filter.
      * <p/>
      * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
      * accepted.
@@ -125,6 +131,39 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
+     * (scheduled) on the {@link org.axonframework.deadline.DeadlineManager} to perform a task specified in the
+     * interceptor.
+     *
+     * @param deadlineDispatchInterceptor the interceptor for dispatching (scheduling) deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerDeadlineDispatchInterceptor(
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor);
+
+    /**
+     * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
+     * task specified in the interceptor.
+     *
+     * @param deadlineHandlerInterceptor the interceptor for handling deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerDeadlineHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
+
+    /**
+     * Registers a callback to be invoked when the fixture execution starts recording. This happens right before
+     * invocation of the 'when' step (stimulus) of the fixture.
+     * <p/>
+     * Use this to manage Saga dependencies which are not an Axon first class citizen, but do require monitoring of
+     * their interactions. For example, register the callback to set a mock in recording mode.
+     *
+     * @param onStartRecordingCallback callback to invoke
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback);
 
     /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.
@@ -182,4 +221,21 @@ public interface FixtureConfiguration {
      * @return the simulated "current time" of the fixture.
      */
     Instant currentTime();
+
+    /**
+     * Returns the event bus used by this fixture. The event bus is provided for wiring purposes only, for example to
+     * allow command handlers to publish events other than Domain Events. Events published on the returned event bus
+     * are recorded an evaluated in the {@link ResultValidator} operations.
+     *
+     * @return the event bus used by this fixture
+     */
+    EventBus getEventBus();
+
+    /**
+     * Returns the command bus used by this fixture. The command bus is provided for wiring purposes only, for example
+     * to support composite commands (a single command that causes the execution of one or more others).
+     *
+     * @return the command bus used by this fixture
+     */
+    CommandBus getCommandBus();
 }

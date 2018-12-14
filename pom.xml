@@ -19,21 +19,20 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>3.4-SNAPSHOT</version>
+    <version>4.1-SNAPSHOT</version>
     <modules>
-        <module>core</module>
+        <module>messaging</module>
+        <module>modelling</module>
+        <module>eventsourcing</module>
+        <module>config</module>
+        <module>test</module>
+        <module>axon-server-connector</module>
+        <module>disruptor</module>
+        <module>metrics</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
-        <module>test</module>
-        <module>distributed-commandbus-jgroups</module>
-        <module>distributed-commandbus-springcloud</module>
-        <module>integrationtests</module>
-        <module>mongo</module>
-        <module>amqp</module>
-        <module>kafka</module>
-        <module>metrics</module>
         <module>spring-boot-starter</module>
-        <module>spring-boot-starter-jgroups</module>
+        <module>integrationtests</module>
         <module>legacy</module>
     </modules>
     <packaging>pom</packaging>
@@ -88,24 +87,54 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.1</version>
+
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
     <properties>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
-        <spring.version>4.3.11.RELEASE</spring.version>
-        <spring.boot.version>1.5.7.RELEASE</spring.boot.version>
-        <rabbitmq.version>4.1.0</rabbitmq.version>
+        <spring.version>5.1.1.RELEASE</spring.version>
+        <spring.boot.version>2.0.5.RELEASE</spring.boot.version>
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
         <felix.version>5.6.2</felix.version>
         <pax.exam.version>4.10.0</pax.exam.version>
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jgroups.version>4.0.6.Final</jgroups.version>
         <mockito.version>2.15.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
-        <kafka.version>1.0.0</kafka.version>
         <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
+        <jackson.version>2.9.7</jackson.version>
+        <grpc.version>1.13.1</grpc.version>
+        <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
+        <axonserver.api.version>4.0</axonserver.api.version>
     </properties>
 
     <dependencies>
@@ -251,6 +280,16 @@
                 <version>${spring.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-configuration-processor</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-core</artifactId>
                 <version>${projectreactor.version}</version>
@@ -271,22 +310,62 @@
                 <version>${mockito.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>${powermock.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>${powermock.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-test</artifactId>
                 <version>${projectreactor.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-server-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.axoniq</groupId>
+                <artifactId>axon-server-api</artifactId>
+                <version>${axonserver.api.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-tcnative-boringssl-static</artifactId>
+                <version>${netty.tcnative.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -358,7 +437,6 @@
                     <systemPropertyVariables>
                         <slf4j.version>${slf4j.version}</slf4j.version>
                         <log4j.version>${log4j.version}</log4j.version>
-                        <rabbitmq.version>${rabbitmq.version}</rabbitmq.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -376,6 +454,25 @@
                 </executions>
                 <configuration>
                     <additionalparam>-Xdoclint:none</additionalparam>
+                    <!-- These parameters are in preparation for resolution of this issue: -->
+                    <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
+                    <tags>
+                        <tag>
+                            <name>apiNote</name>
+                            <placement>a</placement>
+                            <head>API Note:</head>
+                        </tag>
+                        <tag>
+                            <name>implSpec</name>
+                            <placement>a</placement>
+                            <head>Implementation Requirements:</head>
+                        </tag>
+                        <tag>
+                            <name>implNote</name>
+                            <placement>a</placement>
+                            <head>Implementation Note:</head>
+                        </tag>
+                    </tags>
                 </configuration>
             </plugin>
             <plugin>
@@ -428,6 +525,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>sonatype</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
 
     <!-- deploy and release configuration -->
     <distributionManagement>

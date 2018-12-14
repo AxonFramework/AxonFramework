@@ -24,15 +24,23 @@ public class ResultValidatorImplTest {
         validator.expectEvents(expected);
     }
 
-    private List<EventMessage<?>> actualEvents() {
-        return singletonList(asEventMessage(new MyEvent("aggregateId", 123))
-                                     .andMetaData(singletonMap("key1", "value1")));
-    }
-
     @Test(expected = AxonAssertionError.class)
     public void shouldCompareKeysForEquality() {
         EventMessage<?> expected = actualEvents().iterator().next().andMetaData(singletonMap("KEY1", "value1"));
 
         validator.expectEvents(expected);
     }
+
+    @Test
+    public void shouldSuccesfullyCompareEqualMetadata() {
+        EventMessage<?> expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "value1"));
+
+        validator.expectEvents(expected);
+    }
+
+    private List<EventMessage<?>> actualEvents() {
+        return singletonList(asEventMessage(new MyEvent("aggregateId", 123))
+                .andMetaData(singletonMap("key1", "value1")));
+    }
+
 }

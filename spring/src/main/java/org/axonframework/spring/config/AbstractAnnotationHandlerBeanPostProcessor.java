@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.spring.config;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -36,6 +37,9 @@ import org.springframework.util.ClassUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.stream.StreamSupport;
+
+import static java.lang.reflect.Modifier.isAbstract;
 
 /**
  * Abstract bean post processor that finds candidates for proxying. Typically used to wrap annotated beans with their
@@ -91,7 +95,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
                 T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory, handlerDefinition);
                 return createAdapterProxy(proxyInvokingBean, adapter, getAdapterInterfaces(), false,
-                                                   classLoader);
+                                          classLoader);
             } catch (Exception e) {
                 throw new AxonConfigurationException("Unable to wrap annotated handler.", e);
             }
@@ -265,7 +269,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         public Object invoke(MethodInvocation invocation) throws Exception {
             Class<?> declaringClass = invocation.getMethod().getDeclaringClass();
             try {
-                if (declaringClass.isAssignableFrom(adapterInterface)) {
+                if (declaringClass.isAssignableFrom(adapterInterface) && genericParametersMatch(invocation, adapter)) {
                     return invocation.getMethod().invoke(adapter, invocation.getArguments());
                 }
                 return invocation.proceed();
@@ -276,6 +280,34 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                     throw (Error) e;
                 }
                 throw new InvocationTargetException(e);
+            }
+        }
+
+        private boolean genericParametersMatch(MethodInvocation invocation, Object adapter) {
+            try {
+                Method proxyMethod = invocation.getMethod();
+                Method methodOnAdapter = adapter.getClass()
+                                                .getMethod(proxyMethod.getName(), proxyMethod.getParameterTypes());
+
+                if (!methodOnAdapter.isSynthetic()) {
+                    return true;
+                }
+
+                return StreamSupport.stream(ReflectionUtils.methodsOf(adapter.getClass()).spliterator(), false)
+                                    .filter(m -> !m.isSynthetic())
+                                    .filter(m -> !isAbstract(m.getModifiers()))
+                                    .filter(m -> invocation.getMethod().getName().equals(m.getName()))
+                                    .filter(m -> m.getParameterCount() == invocation.getArguments().length)
+                                    .anyMatch(m -> {
+                                        for (int i = 0; i < m.getParameterTypes().length; i++) {
+                                            if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
+                                                return false;
+                                            }
+                                        }
+                                        return true;
+                                    });
+            } catch (NoSuchMethodException e) {
+                return false;
             }
         }
 

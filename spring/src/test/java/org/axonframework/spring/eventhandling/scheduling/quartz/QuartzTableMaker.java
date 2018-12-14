@@ -25,7 +25,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.test.jdbc.JdbcTestUtils;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,12 +87,12 @@ public class QuartzTableMaker implements ApplicationContextAware {
         List<String> statements = new LinkedList<>();
         try {
             LineNumberReader lnr = new LineNumberReader(resource.getReader());
-            String script = JdbcTestUtils.readScript(lnr);
-            char delimiter = ';';
-            if (!JdbcTestUtils.containsSqlScriptDelimiters(script, delimiter)) {
-                delimiter = '\n';
+            String delimiter = ";";
+            String script = ScriptUtils.readScript(lnr, "--", delimiter);
+            if (!ScriptUtils.containsSqlScriptDelimiters(script, delimiter)) {
+                delimiter = "\n";
             }
-            JdbcTestUtils.splitSqlScript(script, delimiter, statements);
+            ScriptUtils.splitSqlScript(script, delimiter, statements);
             for (String statement : statements) {
                 this.entityManager.createNativeQuery(statement).executeUpdate();
             }

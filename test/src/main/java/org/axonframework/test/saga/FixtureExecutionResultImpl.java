@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,10 +17,11 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
@@ -32,6 +33,7 @@ import org.hamcrest.Matcher;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
@@ -51,6 +53,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     private final DeadlineManagerValidator deadlineManagerValidator;
     private final CommandValidator commandValidator;
     private final FieldFilter fieldFilter;
+    private final List<Runnable> onStartRecordingCallbacks;
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
@@ -72,6 +75,21 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
         eventValidator = new EventValidator(eventBus, fieldFilter);
         eventSchedulerValidator = new EventSchedulerValidator(eventScheduler);
         deadlineManagerValidator = new DeadlineManagerValidator(deadlineManager, fieldFilter);
+        onStartRecordingCallbacks = new CopyOnWriteArrayList<>();
+    }
+
+    /**
+     * Registers a callback to be invoked when the fixture execution starts recording. This happens right before
+     * invocation of the 'when' step (stimulus) of the fixture.
+     * <p/>
+     * Use this to manage Saga dependencies which are not an Axon first class citizen, but do require monitoring of
+     * their interactions. For example, register the callback to set a mock in recording mode.
+     *
+     * @param onStartRecordingCallback callback to invoke
+     */
+    public void registerStartRecordingCallback(Runnable onStartRecordingCallback) {
+        Assert.notNull(onStartRecordingCallback, () -> "onStartRecordingCallback may not be null");
+        onStartRecordingCallbacks.add(onStartRecordingCallback);
     }
 
     /**
@@ -80,6 +98,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     public void startRecording() {
         eventValidator.startRecording();
         commandValidator.startRecording();
+        onStartRecordingCallbacks.forEach(Runnable::run);
     }
 
     @Override

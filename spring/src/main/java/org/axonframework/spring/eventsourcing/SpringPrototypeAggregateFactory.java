@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,12 @@
 
 package org.axonframework.spring.eventsourcing;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -39,11 +38,22 @@ import static java.lang.String.format;
 public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, InitializingBean,
                                                            ApplicationContextAware, BeanNameAware {
 
-    private String prototypeBeanName;
+    private final String prototypeBeanName;
     private ApplicationContext applicationContext;
     private String beanName;
     private Class<T> aggregateType;
     private AggregateFactory<T> delegate;
+
+    /**
+     * Initializes the factory to create beans instances for the bean with given {@code prototypeBeanName}.
+     * <p>
+     * Note that the the bean should have the prototype scope.
+     *
+     * @param prototypeBeanName the name of the prototype bean this repository serves.
+     */
+    public SpringPrototypeAggregateFactory(String prototypeBeanName) {
+        this.prototypeBeanName = prototypeBeanName;
+    }
 
     @Override
     public T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
@@ -57,17 +67,6 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
             aggregateType = (Class<T>) applicationContext.getType(prototypeBeanName);
         }
         return aggregateType;
-    }
-
-    /**
-     * Sets the name of the prototype bean this repository serves. Note that the the bean should have the prototype
-     * scope and have a constructor that takes a single UUID argument.
-     *
-     * @param prototypeBeanName the name of the prototype bean this repository serves.
-     */
-    @Required
-    public void setPrototypeBeanName(String prototypeBeanName) {
-        this.prototypeBeanName = prototypeBeanName;
     }
 
     @Override

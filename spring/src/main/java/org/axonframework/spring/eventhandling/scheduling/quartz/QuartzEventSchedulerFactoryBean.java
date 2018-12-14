@@ -68,7 +68,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         if (eventBus == null) {
             eventBus = applicationContext.getBean(EventBus.class);
         }
@@ -76,20 +76,22 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
             scheduler = applicationContext.getBean(Scheduler.class);
         }
 
-        eventScheduler = new QuartzEventScheduler();
-        eventScheduler.setScheduler(scheduler);
-        eventScheduler.setEventBus(eventBus);
+        QuartzEventScheduler.Builder eventSchedulerBuilder =
+                QuartzEventScheduler.builder().scheduler(scheduler).eventBus(eventBus);
+        if (eventJobDataBinder != null) {
+            eventSchedulerBuilder.jobDataBinder(eventJobDataBinder);
+        }
+
+        if (transactionManager != null) {
+            eventSchedulerBuilder.transactionManager(
+                    new SpringTransactionManager(transactionManager, transactionDefinition)
+            );
+        }
+
+        eventScheduler = eventSchedulerBuilder.build();
         if (groupIdentifier != null) {
             eventScheduler.setGroupIdentifier(groupIdentifier);
         }
-        if (eventJobDataBinder != null) {
-            eventScheduler.setEventJobDataBinder(eventJobDataBinder);
-        }
-        if (transactionManager != null) {
-            eventScheduler.setTransactionManager(new SpringTransactionManager(transactionManager,
-                                                                              transactionDefinition));
-        }
-        eventScheduler.initialize();
     }
 
     @Override
@@ -126,7 +128,8 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
 
     /**
      * Sets the {@link EventJobDataBinder} instance which reads / writes the event message to publish to the
-     * {@link JobDataMap}. Defaults to {@link QuartzEventScheduler.DirectEventJobDataBinder}.
+     * {@link JobDataMap}. Defaults to
+     * {@link org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder}.
      *
      * @param eventJobDataBinder to use
      */
