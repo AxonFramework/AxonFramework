@@ -48,7 +48,7 @@ public class JacksonSerializer implements Serializer {
     private final Converter converter;
     private final ObjectMapper objectMapper;
     private final ClassLoader classLoader;
-    private final Map<String, Class> classForType = new ConcurrentHashMap<>();
+    private final Map<String, Class> classForTypeCache = new ConcurrentHashMap<>();
 
     /**
      * Instantiate a {@link JacksonSerializer} based on the fields contained in the {@link Builder}.
@@ -185,7 +185,7 @@ public class JacksonSerializer implements Serializer {
         if (SimpleSerializedType.emptyType().equals(type)) {
             return Void.class;
         }
-        return classForType.computeIfAbsent(resolveClassName(type), key -> {
+        return classForTypeCache.computeIfAbsent(resolveClassName(type), key -> {
             try {
                 return classLoader.loadClass(key);
             } catch (ClassNotFoundException e) {
