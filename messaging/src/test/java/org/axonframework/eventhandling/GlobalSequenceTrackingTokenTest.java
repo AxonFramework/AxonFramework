@@ -16,9 +16,9 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.Test;
+import static junit.framework.TestCase.*;
 
-import static junit.framework.TestCase.assertSame;
+import org.junit.Test;
 
 public class GlobalSequenceTrackingTokenTest {
 
@@ -30,5 +30,25 @@ public class GlobalSequenceTrackingTokenTest {
         assertSame(token2, token1.upperBound(token2));
         assertSame(token2, token2.upperBound(token1));
         assertSame(token2, token2.upperBound(token2));
+    }
+
+    @Test
+    public void testLowerBound() {
+        GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
+        GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
+
+        assertSame(token1, token1.lowerBound(token2));
+        assertSame(token1, token2.lowerBound(token1));
+        assertSame(token2, token2.lowerBound(token2));
+    }
+
+    @Test
+    public void testCovers() {
+        GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
+        GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
+
+        assertFalse(token1.covers(token2));
+        assertTrue(token2.covers(token1));
+        assertTrue(token2.covers(token2));
     }
 }
