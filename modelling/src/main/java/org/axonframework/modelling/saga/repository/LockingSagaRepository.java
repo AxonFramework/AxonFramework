@@ -116,8 +116,8 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
         private LockFactory lockFactory = PessimisticLockFactory.usingDefaults();
 
         /**
-         * Sets the {@link LockFactory} used to lock an aggregate. Defaults to a pessimistic locking strategy,
-         * implemented in the {@link PessimisticLockFactory}.
+         * Sets the {@link LockFactory} used to lock a saga. Defaults to a pessimistic locking strategy, implemented in
+         * the {@link PessimisticLockFactory}.
          *
          * @param lockFactory a {@link LockFactory} used to lock an aggregate
          * @return the current Builder instance, for fluent interfacing
