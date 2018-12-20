@@ -31,7 +31,7 @@ public abstract class ReflectionUtils {
     /**
      * A map of Primitive types to their respective wrapper types.
      */
-    private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
+    private static final Map<Type, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
 
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
@@ -245,6 +245,18 @@ public abstract class ReflectionUtils {
         Class<?> primitiveWrapperType = primitiveWrapperTypeMap.get(primitiveType);
         Assert.notNull(primitiveWrapperType, () -> "no wrapper found for primitiveType: " + primitiveType);
         return primitiveWrapperType;
+    }
+
+    /**
+     * Returns the boxed wrapper type for the given {@code type} if it is primitive.
+     *
+     * @param type a {@link Type} to return boxed wrapper type for
+     * @return the boxed wrapper type for the give {@code type}, or {@code type} if no wrapper class was found.
+     */
+    public static Type resolvePrimitiveWrapperTypeIfPrimitive(Type type) {
+        Assert.notNull(type, () -> "type may not be null");
+
+        return Optional.<Type>ofNullable(primitiveWrapperTypeMap.get(type)).orElse(type);
     }
 
     private static void addMethodsOnDeclaredInterfaces(Class<?> currentClazz, List<Method> methods) {
