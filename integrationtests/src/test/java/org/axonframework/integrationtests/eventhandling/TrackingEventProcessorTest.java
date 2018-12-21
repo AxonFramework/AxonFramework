@@ -497,8 +497,8 @@ public class TrackingEventProcessorTest {
         testSubject.resetTokens();
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
-        assertEquals(handled.subList(0, 3), handled.subList(4, 7));
-        assertEquals(handled.subList(4, 7), handledInRedelivery);
+        assertEquals(handled.subList(0, 4), handled.subList(4, 8));
+        assertEquals(handled.subList(4, 8), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
@@ -528,8 +528,8 @@ public class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(6, handled.size()));
         assertFalse(handledInRedelivery.contains(handled.get(0)));
         assertFalse(handledInRedelivery.contains(handled.get(1)));
-        assertEquals(handled.subList(2, 3), handled.subList(4, 5));
-        assertEquals(handled.subList(4, 5), handledInRedelivery);
+        assertEquals(handled.subList(2, 4), handled.subList(4, 6));
+        assertEquals(handled.subList(4, 6), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
@@ -576,8 +576,8 @@ public class TrackingEventProcessorTest {
         testSubject.resetTokens();
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
-        assertEquals(handled.subList(0, 1), handled.subList(2, 3));
-        assertEquals(handled.subList(2, 3), handledInRedelivery);
+        assertEquals(handled.subList(0, 2), handled.subList(2, 4));
+        assertEquals(handled.subList(2, 4), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
