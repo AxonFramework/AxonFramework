@@ -16,26 +16,29 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.Priority;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts
- * parameters of a {@link String} type that are annotated with the {@link EventAggregateIdentifier}
- * annotation and assigns the identifier of the DomainEventMessage.
+ * parameters of a {@link String} type that are annotated with the {@link SourceId}
+ * annotation and assigns the aggregate identifier of the DomainEventMessage.
+ *
+ * @author Thomas van Putten (delta11)
+ * @since 4.1
  */
 @Priority(Priority.HIGH)
-public final class EventAggregateIdentifierParameterResolverFactory extends AbstractAnnotatedParameterResolverFactory<EventAggregateIdentifier, String> {
+public final class SourceIdParameterResolverFactory extends AbstractAnnotatedParameterResolverFactory<SourceId, String> {
 
     private final ParameterResolver<String> resolver;
 
     /**
-     * Initialize a {@link ParameterResolverFactory} for {@link EventAggregateIdentifier}
+     * Initialize a {@link ParameterResolverFactory} for {@link SourceId}
      * annotated parameters
      */
-    public EventAggregateIdentifierParameterResolverFactory() {
-        super(EventAggregateIdentifier.class, String.class);
-        resolver = new MessageIdentifierParameterResolver();
+    public SourceIdParameterResolverFactory() {
+        super(SourceId.class, String.class);
+        resolver = new SourceIdParameterResolver();
     }
 
     @Override
@@ -46,7 +49,7 @@ public final class EventAggregateIdentifierParameterResolverFactory extends Abst
     /**
      * ParameterResolver to resolve AggregateIdentifier parameters
      */
-    static class MessageIdentifierParameterResolver implements ParameterResolver<String> {
+    static class SourceIdParameterResolver implements ParameterResolver<String> {
 
         @Override
         public String resolveParameterValue(Message message) {

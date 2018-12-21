@@ -24,8 +24,11 @@ import java.lang.annotation.Target;
  * Annotation indication that a parameter on a Message Handler method should be
  * injected with the aggregate identifier of a DomainEventMessage. The parameter type must be
  * assignable from {@link String}.
+ *
+ * @author Thomas van Putten (delta11)
+ * @since 4.1
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface EventAggregateIdentifier {
+public @interface SourceId {
 }
