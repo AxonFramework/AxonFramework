@@ -18,12 +18,16 @@ package org.axonframework.test.eventscheduler;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.*;
-import org.junit.rules.*;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,6 +50,17 @@ public class StubEventSchedulerTest {
     public void testScheduleEvent() {
         testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
         assertEquals(1, testSubject.getScheduledItems().size());
+    }
+
+    @Test
+    public void testEventContainsTimestampOfScheduledTime() {
+        Instant triggerTime = Instant.now().plusSeconds(60);
+        testSubject.schedule(triggerTime, "gone");
+        List<EventMessage<?>> triggered = new ArrayList<>();
+        testSubject.advanceTimeBy(Duration.ofMinutes(75), triggered::add);
+
+        assertEquals(1, triggered.size());
+        assertEquals(triggerTime, triggered.get(0).getTimestamp());
     }
 
     @Test

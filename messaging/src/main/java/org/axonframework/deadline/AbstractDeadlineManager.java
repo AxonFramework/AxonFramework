@@ -28,10 +28,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Abstract implementation of the {@link DeadlineManager} to be implemented by concrete solutions for the
- * DeadlineManager. Provides functionality to perform a call to the DeadlineManager in the
- * {@link UnitOfWork.Phase#PREPARE_COMMIT} phase. This #runOnPrepareCommitOrNow(Runnable) functionality is required, as
- * the DeadlineManager schedules a {@link org.axonframework.messaging.Message} which needs to happen on order with the
- * other messages published throughout the system.
+ * DeadlineManager. Provides functionality to perform a call to the DeadlineManager in the a {@link UnitOfWork} it's
+ * 'prepare commit' phase. This #runOnPrepareCommitOrNow(Runnable) functionality is required, as the DeadlineManager
+ * schedules a Message which needs to happen on order with the other messages published throughout the system.
  *
  * @author Steven van Beelen
  * @since 3.3
@@ -42,7 +41,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
     private final List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
 
     /**
-     * Run a given {@code deadlineCall} immediately, or schedule it for the {@link UnitOfWork.Phase#PREPARE_COMMIT}
+     * Run a given {@code deadlineCall} immediately, or schedule it for the {@link UnitOfWork} it's 'prepare commit'
      * phase if a UnitOfWork is active. This is required as the DeadlineManager schedule message which we want to happen
      * on order with other message being handled.
      *

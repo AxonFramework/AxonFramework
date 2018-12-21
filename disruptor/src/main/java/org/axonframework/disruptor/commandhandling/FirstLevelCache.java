@@ -112,6 +112,11 @@ class FirstLevelCache<T> {
         }
     }
 
+    public int size() {
+        processQueue();
+        return delegate.size();
+    }
+
     private class WeakValue extends WeakReference<EventSourcedAggregate<T>> {
         private final String key;
 

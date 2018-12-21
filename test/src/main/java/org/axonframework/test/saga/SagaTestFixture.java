@@ -90,6 +90,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final InMemorySagaStore sagaStore;
     private AnnotatedSagaManager<T> sagaManager;
     private SagaRepository<T> sagaRepository;
+    private EventBus eventBus;
     private boolean transienceCheckEnabled = true;
     private boolean resourcesInitialized = false;
 
@@ -103,7 +104,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        EventBus eventBus = SimpleEventBus.builder().build();
+        eventBus = SimpleEventBus.builder().build();
         sagaStore = new InMemorySagaStore();
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
@@ -275,6 +276,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
+    public ContinuedGivenState andThenAPublished(Object event, Map<String, ?> metaData) {
+        EventMessage<?> msg = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
+
+        handleInSaga(timeCorrectedEventMessage(msg));
+        return this;
+    }
+
+    @Override
     public WhenAggregateEventPublisher whenAggregate(String aggregateIdentifier) {
         fixtureExecutionResult.startRecording();
         return getPublisherFor(aggregateIdentifier);
@@ -284,6 +293,15 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     public FixtureExecutionResult whenPublishingA(Object event) {
         fixtureExecutionResult.startRecording();
         handleInSaga(timeCorrectedEventMessage(event));
+        return fixtureExecutionResult;
+    }
+
+    @Override
+    public FixtureExecutionResult whenPublishingA(Object event, Map<String, ?> metaData) {
+        EventMessage<?> msg = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
+
+        fixtureExecutionResult.startRecording();
+        handleInSaga(timeCorrectedEventMessage(msg));
         return fixtureExecutionResult;
     }
 
@@ -344,11 +362,25 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return this;
     }
 
+    @Override
+    public FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback) {
+        this.fixtureExecutionResult.registerStartRecordingCallback(onStartRecordingCallback);
+        return this;
+    }
+
     private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
         }
         return aggregatePublishers.get(aggregateIdentifier);
+    }
+
+    public EventBus getEventBus() {
+        return eventBus;
+    }
+
+    public RecordingCommandBus getCommandBus() {
+        return commandBus;
     }
 
     /**
@@ -458,6 +490,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         @Override
         public FixtureExecutionResult publishes(Object event) {
             publish(event);
+            return fixtureExecutionResult;
+        }
+
+        @Override
+        public FixtureExecutionResult publishes(Object event, Map<String, ?> metaData) {
+            EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
+            publish(eventMessage);
+
             return fixtureExecutionResult;
         }
 

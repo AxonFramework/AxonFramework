@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
+import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
@@ -53,8 +54,13 @@ public class StubSaga {
 
     @StartSaga
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message) {
+    public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message, @MetaDataValue("extraIdentifier") String extraIdentifier) {
         handledEvents.add(event);
+
+        if (extraIdentifier != null) {
+            associateWith("extraIdentifier", extraIdentifier);
+        }
+
         timer = scheduler.schedule(message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }

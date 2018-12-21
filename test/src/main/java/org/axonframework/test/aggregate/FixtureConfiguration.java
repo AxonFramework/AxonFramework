@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +19,6 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
@@ -29,9 +27,13 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -228,6 +230,7 @@ public interface FixtureConfiguration<T> {
      * @param declaringClass The class declaring the field
      * @param fieldName      The name of the field
      * @return the current FixtureConfiguration, for fluent interfacing
+     *
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
@@ -240,6 +243,14 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers the {@link CommandTargetResolver} within this fixture. The {@code commandTargetResolver} will replace the default implementation (defined by the {@link org.axonframework.modelling.command.AggregateAnnotationCommandHandler}  within this fixture.
+     *
+     * @param commandTargetResolver the {@link CommandTargetResolver} used to resolve an Aggregate for a given command
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerCommandTargetResolver(CommandTargetResolver commandTargetResolver);
 
     /**
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
@@ -270,6 +281,7 @@ public interface FixtureConfiguration<T> {
      * no events in the {@link #given(java.util.List)} method.
      *
      * @return a TestExecutor instance that can execute the test with this configuration
+     *
      * @since 2.1.1
      */
     TestExecutor<T> givenNoPriorActivity();
@@ -336,6 +348,15 @@ public interface FixtureConfiguration<T> {
      * @return the repository used by this fixture
      */
     Repository<T> getRepository();
+
+    /**
+     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start
+     * of the given state.
+     *
+     * @param time an {@link Instant} defining the simulated "current time" at which the given state is initialized
+     * @return a TestExecutor instance that can execute the test with this configuration
+     */
+    TestExecutor<T> givenCurrentTime(Instant time);
 
     /**
      * Sets whether or not the fixture should detect and report state changes that occur outside of Event Handler

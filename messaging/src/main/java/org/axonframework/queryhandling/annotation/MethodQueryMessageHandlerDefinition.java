@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling.annotation;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -78,7 +79,8 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
                         "@QueryHandler annotated methods must not declare void return type", method
                 );
             }
-            return method.getGenericReturnType();
+
+            return ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive(method.getGenericReturnType());
         }
 
         @SuppressWarnings("unchecked")

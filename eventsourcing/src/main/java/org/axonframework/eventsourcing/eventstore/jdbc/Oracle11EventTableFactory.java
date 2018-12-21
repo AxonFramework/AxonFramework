@@ -49,9 +49,9 @@ public class Oracle11EventTableFactory extends AbstractEventTableFactory {
                 schema.sequenceNumberColumn() + "),\n" +
                 "UNIQUE (" + schema.eventIdentifierColumn() + ")\n" +
                 ")";
-        connection.prepareStatement(sql)
-                .execute();
-
+        try (PreparedStatement pst = connection.prepareStatement(sql)) {
+            pst.execute();
+        }
         Oracle11Utils.simulateAutoIncrement(connection, schema.domainEventTable(), schema.globalIndexColumn());
 
         return Oracle11Utils.createNullStatement(connection);

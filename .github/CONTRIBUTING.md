@@ -5,14 +5,14 @@ everybody, we've set up a number of guidelines to follow.
 
 There are different ways in which you can contribute to the framework:
 
-  1. You can report any bugs, feature requests or ideas about improvements on our issue page: http://issues.axonframework.org/.
+  1. You can report any bugs, feature requests or ideas about improvements on GitHub: https://github.com/AxonFramework/AxonFramework/issues/.
      All ideas are welcome. Please be as exact as possible when reporting bugs. This will help us reproduce and thus solve
      the problem faster.
-  1. If you have created a component for your own application that you think might be useful to include in the
+  2. If you have created a component for your own application that you think might be useful to include in the
      framework, send us a pull request (or patch or a zip containing the source code). We will evaluate it and try to
      fit it in the framework. Please make sure code is properly documented using javadoc. This helps us to understand
      what is going on.
-  1. If you know of any other way you think you can help us, do not hesitate to send a message to the
+  3. If you know of any other way you think you can help us, do not hesitate to send a message to the
      [Axon Framework mailinglist](axonframework@googlegroups.com).
 
 ## Code contributions
@@ -25,7 +25,7 @@ To keep everyone out of trouble (both you and us), we require that all contribut
 License Agreement. Basically, the agreement says that we may freely use the code you contribute to the Axon Framework,
 and that we won't hold you liable for any unfortunate side effects that the code may cause.
 
-To sign the CLA, visit: http://www.axonframework.org/cla. You can sign using a GitHub (preferred) or Google account.
+To sign the CLA, visit: https://www.clahub.com/agreements/AxonFramework/AxonFramework.
 
 ### Code style
 
@@ -33,8 +33,8 @@ We're trying very hard to maintain a consistent style of coding throughout the c
 indenting using 4 spaces, putting opening brackets (the '{') on the same line and putting proper Javadoc on all
 non-private members.
 
-If you're using IntelliJ IDEA, you can download the code style definition from
+<!--If you're using IntelliJ IDEA, you can download the code style definition from
 http://www.axonframework.org/axon_code_style.xml. Simply copy the file to ~/.IntelliJIdea13/config/codestyles. After
-(re)starting IntelliJ, you can pick this code style from the project settings.
+(re)starting IntelliJ, you can pick this code style from the project settings.-->
 
 

@@ -23,14 +23,13 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 /**
- * A resource injector that checks for {@link javax.inject.Inject} annotated fields and setter methods to inject
- * resources. If a field is annotated with {@link javax.inject.Inject}, a Resource of the type of that field is injected
- * into it, if present. If a method is annotated with {@link javax.inject.Inject}, the method is invoked with a Resource
- * of the type of the first parameter, if present.
+ * A resource injector that checks for @Inject annotated fields and setter methods to inject resources. If a field is
+ * annotated with @Inject, a Resource of the type of that field is injected into it, if present. If
+ * a method is annotated with @Inject, the method is invoked with a Resource of the type of the first parameter, if
+ * present.
  *
  * @author Allard Buijze
  * @since 1.1
- * @see javax.inject.Inject
  */
 public class SimpleResourceInjector extends AbstractResourceInjector {
 

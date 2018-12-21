@@ -19,8 +19,8 @@ package org.axonframework.queryhandling;
 import reactor.core.publisher.FluxSink;
 
 /**
- * Backpressure mechanism used for subscription queries. Uses underlying {@link FluxSink.OverflowStrategy} to express
- * the type of backpressure.
+ * Backpressure mechanism used for subscription queries. Uses underlying FluxSink.OverflowStrategy from Project Reactor
+ * to express the type of back pressure.
  *
  * @author Milan Savic
  * @since 3.3
@@ -39,9 +39,9 @@ public class SubscriptionQueryBackpressure {
     }
 
     /**
-     * Creates default backpressure - {@link FluxSink.OverflowStrategy#ERROR}.
+     * Creates default backpressure, using Project Reactor's FluxSink.OverflowStrategy ERROR strategy.
      *
-     * @return initialized backpressure - {@link FluxSink.OverflowStrategy#ERROR}
+     * @return initialized backpressure, using Project Reactor's FluxSink.OverflowStrategy ERROR strategy
      */
     public static SubscriptionQueryBackpressure defaultBackpressure() {
         return new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR);

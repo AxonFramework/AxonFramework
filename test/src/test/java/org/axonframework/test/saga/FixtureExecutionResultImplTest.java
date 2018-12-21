@@ -35,6 +35,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.junit.Assert.*;
@@ -337,6 +338,15 @@ public class FixtureExecutionResultImplTest {
         sagaStore.insertSaga(StubSaga.class, "test2", new StubSaga(), Collections.emptySet());
 
         testSubject.expectActiveSagas(1);
+    }
+
+    @Test
+    public void testStartRecordingCallback() {
+        AtomicInteger startRecordingCallbackInvocations = new AtomicInteger();
+        testSubject.registerStartRecordingCallback(startRecordingCallbackInvocations::incrementAndGet);
+        testSubject.startRecording();
+
+        assertThat(startRecordingCallbackInvocations.get(), equalTo(1));
     }
 
     private static class SimpleCommand {

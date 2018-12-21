@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * Interface providing an API to methods in the "when" state of the fixture execution. Unlike the methods in the
@@ -55,6 +56,19 @@ public interface WhenState {
      * @return an object allowing you to verify the test results
      */
     FixtureExecutionResult whenPublishingA(Object event);
+
+    /**
+     * Use this method to indicate an application is published with given additional {@code metaData},
+     * <em>while recording the outcome</em>.
+     * <p/>
+     * Note that if you inject resources using {@link FixtureConfiguration#registerResource(Object)}, you may need to
+     * reset them yourself if they are manipulated by the Saga in the "given" stage of the test.
+     *
+     * @param event the event to publish
+     * @param metaData The meta data to attach to the event
+     * @return an object allowing you to verify the test results
+     */
+    FixtureExecutionResult whenPublishingA(Object event, Map<String, ?> metaData);
 
     /**
      * Mimic an elapsed time with no relevant activity for the Saga. If any Events are scheduled to be published within

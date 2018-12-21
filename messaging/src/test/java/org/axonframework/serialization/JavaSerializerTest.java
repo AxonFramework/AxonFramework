@@ -78,6 +78,12 @@ public class JavaSerializerTest {
         assertNull(testSubject.deserialize(serializedNullString));
     }
 
+    @Test
+    public void testDeserializeEmptyBytes() {
+        assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
+        assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
+    }
+
     private static class MySerializableObject implements Serializable {
 
         private static final long serialVersionUID = 2166108932776672373L;

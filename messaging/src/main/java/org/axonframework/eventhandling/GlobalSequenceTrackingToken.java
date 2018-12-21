@@ -31,6 +31,8 @@ import java.util.Objects;
 public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken>,
                                                     Serializable {
 
+    private static final long serialVersionUID = -3658606104934080049L;
+
     private final long globalIndex;
 
     /**
@@ -98,7 +100,7 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
         Assert.isTrue(other instanceof GlobalSequenceTrackingToken, () -> "Incompatible token type provided.");
         GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
 
-        return otherToken.globalIndex < this.globalIndex;
+        return otherToken.globalIndex <= this.globalIndex;
     }
 
     @Override

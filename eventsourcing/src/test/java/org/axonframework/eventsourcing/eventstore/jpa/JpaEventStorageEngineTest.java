@@ -60,6 +60,7 @@ import javax.sql.DataSource;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
 
@@ -253,7 +254,6 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     public void testEventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
-        List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
 
         int testBatchSize = 2;
         testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, testBatchSize);
@@ -271,7 +271,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                            .filter(m -> m.getPayload() instanceof String)
                                                            .map(m -> (String) m.getPayload())
                                                            .collect(toList());
-        assertEquals(expected, eventStorageEngineResult);
+        assertEquals(Arrays.asList(expectedPayloadOne, expectedPayloadTwo), eventStorageEngineResult);
 
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
 

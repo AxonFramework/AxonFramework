@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.responsetypes;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.TypeReflectionUtils;
 
 import java.lang.reflect.*;
@@ -47,7 +48,8 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
      *                             or as the contained type for an array/list/etc
      */
     protected AbstractResponseType(Class<?> expectedResponseType) {
-        this.expectedResponseType = expectedResponseType;
+        this.expectedResponseType = (Class<?>) ReflectionUtils
+                .resolvePrimitiveWrapperTypeIfPrimitive(expectedResponseType);
     }
 
     @Override

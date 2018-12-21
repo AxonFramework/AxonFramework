@@ -497,8 +497,8 @@ public class TrackingEventProcessorTest {
         testSubject.resetTokens();
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
-        assertEquals(handled.subList(0, 3), handled.subList(4, 7));
-        assertEquals(handled.subList(4, 7), handledInRedelivery);
+        assertEquals(handled.subList(0, 4), handled.subList(4, 8));
+        assertEquals(handled.subList(4, 8), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
@@ -528,8 +528,8 @@ public class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(6, handled.size()));
         assertFalse(handledInRedelivery.contains(handled.get(0)));
         assertFalse(handledInRedelivery.contains(handled.get(1)));
-        assertEquals(handled.subList(2, 3), handled.subList(4, 5));
-        assertEquals(handled.subList(4, 5), handledInRedelivery);
+        assertEquals(handled.subList(2, 4), handled.subList(4, 6));
+        assertEquals(handled.subList(4, 6), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
@@ -576,8 +576,8 @@ public class TrackingEventProcessorTest {
         testSubject.resetTokens();
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
-        assertEquals(handled.subList(0, 1), handled.subList(2, 3));
-        assertEquals(handled.subList(2, 3), handledInRedelivery);
+        assertEquals(handled.subList(0, 2), handled.subList(2, 4));
+        assertEquals(handled.subList(2, 4), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
@@ -703,6 +703,37 @@ public class TrackingEventProcessorTest {
 
         assertEquals(1, testSubject.activeProcessorThreads());
     }
+
+    @Test
+    public void testUpdateActiveSegmentsWhenBatchIsEmpty() throws Exception {
+        StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
+        testSubject = TrackingEventProcessor.builder()
+                .name("test")
+                .eventHandlerInvoker(eventHandlerInvoker)
+                .messageSource(stubSource)
+                .tokenStore(tokenStore)
+                .transactionManager(NoTransactionManager.INSTANCE).build();
+
+        when(stubSource.openStream(any())).thenReturn(new StubTrackingEventStream(0, 1, 2, 5));
+        doReturn(true, false).when(eventHandlerInvoker).canHandle(any(), any());
+
+        List<TrackingToken> trackingTokens = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            trackingTokens.add(i.<TrackedEventMessage>getArgument(0).trackingToken());
+            return null;
+        }).when(eventHandlerInvoker).handle(any(), any());
+
+
+        testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
+        EventTrackerStatus eventTrackerStatus = testSubject.processingStatus().get(0);
+        assertTrue(eventTrackerStatus.isCaughtUp());
+        GapAwareTrackingToken expectedToken = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        TrackingToken lastToken = eventTrackerStatus.getTrackingToken();
+        assertTrue(lastToken.covers(expectedToken));
+    }
+
 
     @Test
     public void testReleaseSegment() {
