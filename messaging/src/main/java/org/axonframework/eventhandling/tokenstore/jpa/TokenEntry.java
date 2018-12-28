@@ -91,7 +91,7 @@ public class TokenEntry extends AbstractTokenEntry<byte[]> {
         /**
          * Constructor for JPA
          */
-        protected PK() {
+        public PK() {
         }
 
         /**
