@@ -121,22 +121,17 @@ public class AxonServerCommandBus implements CommandBus {
                                             @Override
                                             public void onNext(CommandResponse commandResponse) {
                                                 serverResponded.set(true);
-                                                if (!commandResponse.hasErrorMessage()) {
-                                                    logger.debug("response received - {}", commandResponse);
-                                                    try {
-                                                        //noinspection unchecked
-                                                        GenericCommandResultMessage<R> resultMessage = serializer
-                                                                .deserialize(commandResponse);
-                                                        commandCallback.onResult(command, resultMessage);
-                                                    } catch (Exception ex) {
-                                                        commandCallback.onResult(command, asCommandResultMessage(ex));
-                                                        logger.info("Failed to deserialize payload - {} - {}",
-                                                                    commandResponse.getPayload().getData(),
-                                                                    ex.getCause().getMessage());
-                                                    }
-                                                } else {
-                                                    commandCallback.onResult(command,
-                                                                             serializer.deserialize(commandResponse));
+                                                logger.debug("response received - {}", commandResponse);
+                                                try {
+                                                    //noinspection unchecked
+                                                    GenericCommandResultMessage<R> resultMessage = serializer
+                                                            .deserialize(commandResponse);
+                                                    commandCallback.onResult(command, resultMessage);
+                                                } catch (Exception ex) {
+                                                    commandCallback.onResult(command, asCommandResultMessage(ex));
+                                                    logger.info("Failed to deserialize payload - {} - {}",
+                                                                commandResponse.getPayload().getData(),
+                                                                ex.getCause().getMessage());
                                                 }
                                             }
 
