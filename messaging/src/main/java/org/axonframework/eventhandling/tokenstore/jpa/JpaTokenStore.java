@@ -18,21 +18,20 @@ package org.axonframework.eventhandling.tokenstore.jpa;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -54,6 +53,7 @@ public class JpaTokenStore implements TokenStore {
     private final Serializer serializer;
     private final TemporalAmount claimTimeout;
     private final String nodeId;
+    private final LockModeType loadingLockMode;
 
     /**
      * Instantiate a {@link JpaTokenStore} based on the fields contained in the {@link Builder}.
@@ -69,14 +69,15 @@ public class JpaTokenStore implements TokenStore {
         this.serializer = builder.serializer;
         this.claimTimeout = builder.claimTimeout;
         this.nodeId = builder.nodeId;
+        this.loadingLockMode = builder.loadingLockMode;
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link JpaTokenStore}.
      * <p>
-     * The {@code claimTimeout} to a 10 seconds duration, and the {@code nodeId} is defaulted to the
-     * {@link ManagementFactory#getRuntimeMXBean#getName} output. The {@link EntityManagerProvider} and
-     * {@link Serializer} are a <b>hard requirements</b> and as such should be provided.
+     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
+     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
+     * are a <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link JpaTokenStore}
      */
@@ -174,14 +175,12 @@ public class JpaTokenStore implements TokenStore {
      * @param segment       the segment of the event processor
      * @param entityManager the entity manager instance to use for the query
      * @return the token entry for the given processor name and segment
-     *
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
      *                                     it is claimed by another process.
      */
     protected TokenEntry loadOrCreateToken(String processorName, int segment, EntityManager entityManager) {
         TokenEntry token = entityManager
-                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment), LockModeType.PESSIMISTIC_WRITE,
-                      Collections.singletonMap("javax.persistence.query.timeout", 1));
+                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment), loadingLockMode);
 
         if (token == null) {
             token = new TokenEntry(processorName, segment, null, serializer);
@@ -200,12 +199,13 @@ public class JpaTokenStore implements TokenStore {
     /**
      * Builder class to instantiate a {@link JpaTokenStore}.
      * <p>
-     * The {@code claimTimeout} to a 10 seconds duration, and the {@code nodeId} is defaulted to the
-     * {@link ManagementFactory#getRuntimeMXBean#getName} output. The {@link EntityManagerProvider} and
-     * {@link Serializer} are a <b>hard requirements</b> and as such should be provided.
+     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
+     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
+     * are a <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
+        private LockModeType loadingLockMode = LockModeType.PESSIMISTIC_WRITE;
         private EntityManagerProvider entityManagerProvider;
         private Serializer serializer;
         private TemporalAmount claimTimeout = Duration.ofSeconds(10);
@@ -252,8 +252,8 @@ public class JpaTokenStore implements TokenStore {
         }
 
         /**
-         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to
-         * {@link ManagementFactory#getRuntimeMXBean#getName} output as the node id.
+         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for
+         * the runtime system of the Java virtual machine
          *
          * @param nodeId the id as a {@link String} to identify ownership of the tokens
          * @return the current Builder instance, for fluent interfacing
@@ -261,6 +261,19 @@ public class JpaTokenStore implements TokenStore {
         public Builder nodeId(String nodeId) {
             assertNodeId(nodeId, "The nodeId may not be null or empty");
             this.nodeId = nodeId;
+            return this;
+        }
+
+        /**
+         * The {@link LockModeType} to use when loading tokens from the underlying database. Defaults to
+         * {@code LockModeType.PESSIMISTIC_WRITE}, to force a write lock, which prevents lock upgrading and potential
+         * resulting deadlocks.
+         *
+         * @param loadingLockMode The lock mode to use when retrieving tokens from the underlying store
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder loadingLockMode(LockModeType loadingLockMode) {
+            this.loadingLockMode = loadingLockMode;
             return this;
         }
 

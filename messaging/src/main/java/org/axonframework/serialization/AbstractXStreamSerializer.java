@@ -141,6 +141,9 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (SerializedType.emptyType().equals(serializedObject.getType())) {
+            return null;
+        }
         if (UnknownSerializedType.class.isAssignableFrom(classForType(serializedObject.getType()))) {
             return (T) new UnknownSerializedType(this, serializedObject);
         }
@@ -149,7 +152,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) {
-        if (SimpleSerializedType.emptyType().equals(type)) {
+        if (SerializedType.emptyType().equals(type)) {
             return Void.class;
         }
         try {
@@ -256,7 +259,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage} and the {@link MetaData} objects among
-     * others. Additionally, a {@link MetaDataConverter} is registered too. Lastly, if the provided Converter instance
+     * others. Additionally, a MetaData Converter is registered too. Lastly, if the provided Converter instance
      * is of type ChainingConverter, then the {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)}
      * function will be called. Depending on the AbstractXStreamSerializer, this will add a number of Converter
      * instances to the chain.

@@ -128,7 +128,8 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
 
     /**
      * Sets the {@link EventJobDataBinder} instance which reads / writes the event message to publish to the
-     * {@link JobDataMap}. Defaults to {@link QuartzEventScheduler.DirectEventJobDataBinder}.
+     * {@link JobDataMap}. Defaults to
+     * {@link org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder}.
      *
      * @param eventJobDataBinder to use
      */

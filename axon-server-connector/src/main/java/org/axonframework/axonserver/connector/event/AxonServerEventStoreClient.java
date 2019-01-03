@@ -16,12 +16,8 @@
 
 package org.axonframework.axonserver.connector.event;
 
-import io.grpc.Channel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
-import io.grpc.stub.StreamObserver;
-import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.Confirmation;
+import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventStoreGrpc;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
@@ -35,6 +31,10 @@ import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
 import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrRequest;
 import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
 import io.axoniq.axonserver.grpc.event.TrackingToken;
+import io.grpc.Channel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerException;
@@ -130,9 +130,10 @@ public class AxonServerEventStoreClient {
     }
 
     /**
+     * Provide a list of events by using a {@link StreamObserver} for type {@link GetEventsRequest}.
      *
-     * @param responseStreamObserver: observer for messages from server
-     * @return stream observer to send request messages to server
+     * @param responseStreamObserver a {@link StreamObserver} for messages from the server
+     * @return the {@link StreamObserver} to send request messages to server with
      */
     public StreamObserver<GetEventsRequest> listEvents(StreamObserver<EventWithToken> responseStreamObserver) {
         StreamObserver<EventWithToken> wrappedStreamObserver = new StreamObserver<EventWithToken>() {

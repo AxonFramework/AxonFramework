@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +20,12 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -425,7 +425,7 @@ public interface Configurer {
     Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
 
     /**
-     * Retrievee the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't
+     * Retrieve the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't
      * any, it will create an {@link EventProcessingModule} and register it as a module. If there are multiple,
      * an {@link AxonConfigurationException} is thrown.
      *
@@ -451,6 +451,17 @@ public interface Configurer {
      */
     default Configurer eventProcessing(Consumer<EventProcessingConfigurer> eventProcessingConfigurer) throws AxonConfigurationException {
         eventProcessingConfigurer.accept(eventProcessing());
+        return this;
+    }
+
+    /**
+     * Registers a {@link Function} that builds an Event Handler instance.
+     *
+     * @param eventHandlerBuilder a {@link Function} that builds an Event Handler instance.
+     * @return the current instance of the Configurer, for chaining purposes.
+     */
+    default Configurer registerEventhandler(Function<Configuration, Object> eventHandlerBuilder) {
+        eventProcessing().registerEventHandler(eventHandlerBuilder);
         return this;
     }
 

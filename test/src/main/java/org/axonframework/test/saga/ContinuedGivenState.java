@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * Interface describing methods that can be executed after the first "given" state has been supplied. Either more
@@ -69,4 +70,15 @@ public interface ContinuedGivenState extends WhenState {
      * @throws Exception if an exception happens when the event is handled
      */
     ContinuedGivenState andThenAPublished(Object event);
+
+    /**
+     * Indicates that the given {@code event} with given {@code metaData} has been published in the past. This event is sent to the associated
+     * sagas.
+     *
+     * @param event The event to publish
+     * @param metaData The meta data to attach to the event
+     * @return an object that allows chaining of more given state
+     * @throws Exception if an exception happens when the event is handled
+     */
+    ContinuedGivenState andThenAPublished(Object event, Map<String, ?> metaData);
 }

@@ -31,6 +31,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,7 +39,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
@@ -111,11 +111,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
                 logger.debug("Loaded saga id [{}] of type [{}]", sagaIdentifier, loadedSaga.getClass().getName());
             }
 
-            Set<AssociationValue> associations = sqlSchema.readAssociationValues(
-                    sqlSchema.sql_findAssociations(conn, sagaIdentifier, sagaTypeName(sagaType)).executeQuery()
-            );
-
-            return new EntryImpl<>(associations, loadedSaga);
+            return new EntryImpl<>(loadAssociations(conn, sagaTypeName(sagaType), sagaIdentifier), loadedSaga);
         } catch (SQLException e) {
             throw new SagaStorageException("Exception while loading a Saga", e);
         } finally {
@@ -255,6 +251,20 @@ public class JdbcSagaStore implements SagaStore<Object> {
             closeQuietly(conn);
         }
     }
+
+    private Set<AssociationValue> loadAssociations(final Connection conn, final String sagaTypeName, final String sagaIdentifier) throws SQLException {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = sqlSchema.sql_findAssociations(conn, sagaIdentifier, sagaTypeName);
+            resultSet = statement.executeQuery();
+            return sqlSchema.readAssociationValues(resultSet);
+        } finally {
+            closeQuietly(statement);
+            closeQuietly(resultSet);
+        }
+    }
+
 
     private String sagaTypeName(Class<?> sagaType) {
         return serializer.typeForClass(sagaType).getName();

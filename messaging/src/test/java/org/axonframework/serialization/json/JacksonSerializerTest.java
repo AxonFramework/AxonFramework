@@ -21,14 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.ContentTypeConverter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.UnknownSerializedType;
-import org.junit.*;
+import org.axonframework.serialization.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -215,6 +210,12 @@ public class JacksonSerializerTest {
         );
         assertNull(testSubject.deserialize(serializedNull));
         assertNull(testSubject.deserialize(serializedNullString));
+    }
+
+    @Test
+    public void testDeserializeEmptyBytes() {
+        assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
+        assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
     }
 
     public static class ComplexObject {

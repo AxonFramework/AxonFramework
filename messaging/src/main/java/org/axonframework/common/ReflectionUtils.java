@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,8 @@ import java.lang.reflect.*;
 import java.security.AccessController;
 import java.util.*;
 
+import static org.axonframework.common.ObjectUtils.getOrDefault;
+
 /**
  * Utility class for working with Java Reflection API.
  *
@@ -31,7 +33,7 @@ public abstract class ReflectionUtils {
     /**
      * A map of Primitive types to their respective wrapper types.
      */
-    private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
+    private static final Map<Type, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
 
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
@@ -160,7 +162,7 @@ public abstract class ReflectionUtils {
      * @return {@code true} if the member is accessible, otherwise {@code false}.
      */
     public static boolean isAccessible(AccessibleObject member) {
-        return member.isAccessible() || (Member.class.isInstance(member) && isNonFinalPublicMember((Member) member));
+        return member.isAccessible() || (member instanceof Member && isNonFinalPublicMember((Member) member));
     }
 
     /**
@@ -245,6 +247,17 @@ public abstract class ReflectionUtils {
         Class<?> primitiveWrapperType = primitiveWrapperTypeMap.get(primitiveType);
         Assert.notNull(primitiveWrapperType, () -> "no wrapper found for primitiveType: " + primitiveType);
         return primitiveWrapperType;
+    }
+
+    /**
+     * Returns the boxed wrapper type for the given {@code type} if it is primitive.
+     *
+     * @param type a {@link Type} to return boxed wrapper type for
+     * @return the boxed wrapper type for the give {@code type}, or {@code type} if no wrapper class was found.
+     */
+    public static Type resolvePrimitiveWrapperTypeIfPrimitive(Type type) {
+        Assert.notNull(type, () -> "type may not be null");
+        return getOrDefault(primitiveWrapperTypeMap.get(type), type);
     }
 
     private static void addMethodsOnDeclaredInterfaces(Class<?> currentClazz, List<Method> methods) {

@@ -26,6 +26,8 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
@@ -80,6 +82,21 @@ public class AnnotatedSagaTest {
     }
 
     @Test
+    public void testFixtureApi_AggregatePublishedEventWithMetaData_NoHistoricActivity() {
+        String extraIdentifier = UUID.randomUUID().toString();
+        Map<String, String> metaData = new HashMap<>();
+        metaData.put("extraIdentifier", extraIdentifier);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"), metaData)
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlines()
+               .expectAssociationWith("identifier", "id")
+               .expectAssociationWith("extraIdentifier", extraIdentifier);
+    }
+
+    @Test
     public void testFixtureApi_NonTransientResourceInjected() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerResource(new NonTransientResource());
@@ -114,6 +131,21 @@ public class AnnotatedSagaTest {
                .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id")
+               .expectNoScheduledDeadlines();
+    }
+
+    @Test
+    public void testFixtureApi_PublishedEventWithMetaData_NoHistoricActivity() {
+        String extraIdentifier = UUID.randomUUID().toString();
+        Map<String, String> metaData = new HashMap<>();
+        metaData.put("extraIdentifier", extraIdentifier);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenPublishingA(new TriggerSagaStartEvent("id"), metaData)
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", "id")
+               .expectAssociationWith("extraIdentifier", extraIdentifier)
                .expectNoScheduledDeadlines();
     }
 

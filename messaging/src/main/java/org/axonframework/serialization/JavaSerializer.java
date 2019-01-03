@@ -35,7 +35,12 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  *
  * @author Allard Buijze
  * @since 2.0
+ * @deprecated in favor of the {@link org.axonframework.serialization.xml.XStreamSerializer} and
+ * {@link org.axonframework.serialization.json.JacksonSerializer}, as direct Java serialization is relatively error
+ * prone. We hence strongly encourage to use either the XStream or Jackson solution in favor of this {@link Serializer}
+ * implementation.
  */
+@Deprecated
 public class JavaSerializer implements Serializer {
 
     private final RevisionResolver revisionResolver;
@@ -99,6 +104,9 @@ public class JavaSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (SerializedType.emptyType().equals(serializedObject.getType())) {
+            return null;
+        }
         if (UnknownSerializedType.class.isAssignableFrom(classForType(serializedObject.getType()))) {
             return (T) new UnknownSerializedType(this, serializedObject);
         }
@@ -118,10 +126,9 @@ public class JavaSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) {
-        if (SimpleSerializedType.emptyType().equals(type)) {
+        if (SerializedType.emptyType().equals(type)) {
             return Void.class;
         }
-
         try {
             return Class.forName(type.getName());
         } catch (ClassNotFoundException e) {
