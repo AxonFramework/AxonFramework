@@ -16,23 +16,25 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import com.codahale.metrics.MetricRegistry;
-import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.dropwizard.DropwizardConfig;
-import io.micrometer.core.instrument.dropwizard.DropwizardMeterRegistry;
-import io.micrometer.core.instrument.util.HierarchicalNameMapper;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.axonframework.metrics.micrometer.GlobalMetricRegistry;
+import org.axonframework.metrics.micrometer.MetricsConfigurerModule;
+import org.axonframework.springboot.MetricsProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Auto configuration to set up Dropwizard Metrics for the infrastructure components
+ * Auto configuration to set up Micrometer Metrics for the infrastructure components.
  *
+ * @author Steven van Beelen
  * @author Marijn van Zelst
  * @since 4.0
  */
@@ -41,45 +43,33 @@ import org.springframework.context.annotation.Configuration;
         "org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration",
         "org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration"
 })
-@AutoConfigureBefore({
-        AxonAutoConfiguration.class,
-        MetricsAutoConfiguration.class
-})
+@AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(name = {
-        "com.codahale.metrics.MetricRegistry",
         "io.micrometer.core.instrument.MeterRegistry",
-        "org.axonframework.metrics.GlobalMetricRegistry"
+        "org.axonframework.metrics.micrometer.GlobalMetricRegistry"
 })
-public class DropwizardMetricsAutoConfiguration {
+@EnableConfigurationProperties(MetricsProperties.class)
+public class MicrometerMetricsAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean
-    public MetricRegistry metricRegistry(){
-        return new MetricRegistry();
+    @ConditionalOnMissingBean(MeterRegistry.class)
+    public static MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
     }
 
     @Bean
-    @ConditionalOnBean(MetricRegistry.class)
-    @ConditionalOnMissingBean
-    public MeterRegistry meterRegistry(MetricRegistry metricRegistry) {
-        DropwizardConfig dropwizardConfig = new DropwizardConfig() {
-            @Override
-            public String prefix() {
-                return "axon-metrics";
-            }
+    @ConditionalOnMissingBean(GlobalMetricRegistry.class)
+    @ConditionalOnBean(MeterRegistry.class)
+    public static GlobalMetricRegistry globalMetricRegistry(MeterRegistry meterRegistry) {
+        return new GlobalMetricRegistry(meterRegistry);
+    }
 
-            @Override
-            public String get(String key) {
-                return null;
-            }
-        };
-        return new DropwizardMeterRegistry(dropwizardConfig, metricRegistry, HierarchicalNameMapper.DEFAULT,
-                                           Clock.SYSTEM) {
-            @Override
-            protected Double nullGaugeValue() {
-                return null;
-            }
-        };
+    @Bean
+    @ConditionalOnMissingBean(MetricsConfigurerModule.class)
+    @ConditionalOnBean(GlobalMetricRegistry.class)
+    @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+        return new MetricsConfigurerModule(globalMetricRegistry);
     }
 
 }

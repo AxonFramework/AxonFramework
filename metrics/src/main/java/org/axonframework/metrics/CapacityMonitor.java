@@ -16,109 +16,111 @@
 
 package org.axonframework.metrics;
 
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.codahale.metrics.Clock;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.SlidingTimeWindowReservoir;
+import com.codahale.metrics.Snapshot;
 import org.axonframework.messaging.Message;
-import org.axonframework.metrics.reservoir.SlidingTimeWindowReservoir;
 import org.axonframework.monitoring.MessageMonitor;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Calculates capacity by tracking, within the configured time window, the average message processing time
  * and multiplying that by the amount of messages processed.
- * <p>
+ *
  * The capacity can be more than 1 if the monitored
  * message handler processes the messages in parallel. The capacity for a single threaded message handler will be
  * a value between 0 and 1.
- * <p>
+ *
  * If the value for a single threaded message handler is 1 the component is active 100% of the time. This means
  * that messages will have to wait to be processed.
  *
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class CapacityMonitor implements MessageMonitor<Message<?>> {
+public class CapacityMonitor implements MessageMonitor<Message<?>>, MetricSet {
 
-    private final SlidingTimeWindowReservoir timeWindowedDurationMeasurements;
+    private final Histogram processedDurationHistogram;
     private final TimeUnit timeUnit;
-    private final Clock clock;
     private final long window;
+    private final Clock clock;
+    private final Metric capacity;
 
     /**
      * Creates a capacity monitor with the default time window 10 minutes
-     *
-     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
-     * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the created capacity monitor
      */
-    public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
-        return buildMonitor(meterNamePrefix, meterRegistry, 10, TimeUnit.MINUTES);
+    public CapacityMonitor() {
+        this(10, TimeUnit.MINUTES);
     }
 
     /**
      * Creates a capacity monitor with the default time window 10 minutes
      *
-     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
-     * @param meterRegistry   The meter registry used to create and register the meters
-     * @param window          The length of the window to measure the capacity over
-     * @param timeUnit        The temporal unit of the time window
-     * @return the created capacity monitor
+     * @param window The length of the window to measure the capacity over
+     * @param timeUnit The time unit of the time window
      */
-    public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
-                                               TimeUnit timeUnit) {
-        return buildMonitor(meterNamePrefix, meterRegistry, window, timeUnit, Clock.SYSTEM);
+    public CapacityMonitor(long window, TimeUnit timeUnit) {
+        this(window, timeUnit, Clock.defaultClock());
     }
 
     /**
      * Creates a capacity monitor with the given time window. Uses the provided clock
      * to measure process time per message.
      *
-     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
-     * @param meterRegistry   The meter registry used to create and register the meters
-     * @param window          The length of the window to measure the capacity over
-     * @param timeUnit        The temporal unit of the time window
-     * @param clock           The clock used to measure the process time per message
-     * @return the created capacity monitor
+     * @param window The length of the window to measure the capacity over
+     * @param timeUnit The time unit of the time window
+     * @param clock The clock used to measure the process time per message
      */
-    public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
-                                               TimeUnit timeUnit, Clock clock) {
-        CapacityMonitor capacityMonitor = new CapacityMonitor(window, timeUnit, clock);
-        meterRegistry.gauge(meterNamePrefix + ".capacity", capacityMonitor, CapacityMonitor::calculateCapacity);
-        return capacityMonitor;
-    }
-
-
-    private CapacityMonitor(long window, TimeUnit timeUnit, Clock clock) {
-        this.timeWindowedDurationMeasurements = new SlidingTimeWindowReservoir(window, timeUnit, clock);
+    public CapacityMonitor(long window, TimeUnit timeUnit, Clock clock) {
+        SlidingTimeWindowReservoir slidingTimeWindowReservoir = new SlidingTimeWindowReservoir(window, timeUnit, clock);
+        this.processedDurationHistogram = new Histogram(slidingTimeWindowReservoir);
         this.timeUnit = timeUnit;
-        this.clock = clock;
         this.window = window;
+        this.clock = clock;
+        this.capacity = new CapacityGauge();
     }
 
     @Override
     public MonitorCallback onMessageIngested(Message<?> message) {
-        final long start = clock.monotonicTime();
+        final long start = clock.getTime();
         return new MonitorCallback() {
             @Override
             public void reportSuccess() {
-                timeWindowedDurationMeasurements.update(clock.monotonicTime() - start);
+                processedDurationHistogram.update(clock.getTime() - start);
             }
 
             @Override
             public void reportFailure(Throwable cause) {
-                timeWindowedDurationMeasurements.update(clock.monotonicTime() - start);
+                processedDurationHistogram.update(clock.getTime() - start);
             }
 
             @Override
             public void reportIgnored() {
-                timeWindowedDurationMeasurements.update(clock.monotonicTime() - start);
+                processedDurationHistogram.update(clock.getTime() - start);
             }
         };
     }
 
-    private double calculateCapacity() {
-        long totalProcessTime = timeWindowedDurationMeasurements.getMeasurements().stream().reduce(0L, Long::sum);
-        return (double) totalProcessTime / timeUnit.toNanos(window);
+    @Override
+    public Map<String, Metric> getMetrics() {
+        Map<String, Metric> metrics = new HashMap<>();
+        metrics.put("capacity", capacity);
+        return metrics;
+    }
+
+    private class CapacityGauge implements Gauge<Double> {
+        @Override
+        public Double getValue() {
+            Snapshot snapshot = processedDurationHistogram.getSnapshot();
+            double meanProcessTime = snapshot.getMean();
+            int numProcessed = snapshot.getValues().length;
+            return  (numProcessed * meanProcessTime) / timeUnit.toMillis(window);
+        }
     }
 }

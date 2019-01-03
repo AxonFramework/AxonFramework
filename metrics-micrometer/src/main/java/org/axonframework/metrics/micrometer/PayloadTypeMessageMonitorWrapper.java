@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics;
+package org.axonframework.metrics.micrometer;
 
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * A {@link MessageMonitor} implementation which creates a new MessageMonitor for every {@link Message} payload type
@@ -33,17 +29,19 @@ import java.util.function.Supplier;
  * and only creates a new one if there is none present.
  * <p>
  * The type of MessageMonitor which is created for every payload type is configurable, as long as it implements
- * MessageMonitor and {@link MetricSet}.
+ * MessageMonitor}.
  *
  * @param <T> The type of the MessageMonitor created for every payload type.Must implement both {@link MessageMonitor}
- *           and {@link MetricSet}
+ *
+ * @author Marijn van Zelst
+ * @since 4.0
  */
-public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>> & MetricSet> implements MessageMonitor<Message<?>>, MetricSet {
+public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>>>
+        implements MessageMonitor<Message<?>> {
 
-    private final Supplier<T> monitorSupplier;
-    private final Function<Class<?>, String> monitorNameBuilder;
+    private final Function<String, T> monitorSupplier;
     private final Map<String, T> payloadTypeMonitors;
-    private final Map<String, Metric> metricSet;
+    private final Function<Class<?>, String> monitorNameBuilder;
 
     /**
      * Create a PayloadTypeMessageMonitorWrapper which builds monitors through a given {@code monitorSupplier} for
@@ -51,7 +49,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
      *
      * @param monitorSupplier A Supplier of MessageMonitors of type {@code T} for every encountered payload type
      */
-    public PayloadTypeMessageMonitorWrapper(Supplier<T> monitorSupplier) {
+    public PayloadTypeMessageMonitorWrapper(Function<String, T> monitorSupplier) {
         this(monitorSupplier, Class::getName);
     }
 
@@ -59,15 +57,16 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
      * Create a PayloadTypeMessageMonitorWrapper which builds monitors through a given {@code monitorSupplier} for
      * every message payload type encountered and sets the monitor name as specified by the {@code monitorNameBuilder}.
      *
-     * @param monitorSupplier    A Supplier of MessageMonitors of type {@code T} for every encountered payload type
+     * @param monitorSupplier    A Function to create a MessageMonitor of type {@code T}, with the given {@code String}
+     *                           as name, for every encountered payload type
      * @param monitorNameBuilder A Function where the payload type is the input (of type {@code Class<?>}) and output
      *                           is the desired name for the monitor (of type {@code String})
      */
-    public PayloadTypeMessageMonitorWrapper(Supplier<T> monitorSupplier, Function<Class<?>, String> monitorNameBuilder) {
+    public PayloadTypeMessageMonitorWrapper(Function<String, T> monitorSupplier,
+                                            Function<Class<?>, String> monitorNameBuilder) {
         this.monitorSupplier = monitorSupplier;
-        this.monitorNameBuilder = monitorNameBuilder;
         this.payloadTypeMonitors = new ConcurrentHashMap<>();
-        this.metricSet = Collections.unmodifiableMap(payloadTypeMonitors);
+        this.monitorNameBuilder = monitorNameBuilder;
     }
 
     @Override
@@ -75,15 +74,8 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
         String monitorName = monitorNameBuilder.apply(message.getPayloadType());
 
         MessageMonitor<Message<?>> messageMonitorForPayloadType =
-                payloadTypeMonitors.computeIfAbsent(monitorName, payloadType -> monitorSupplier.get());
+                payloadTypeMonitors.computeIfAbsent(monitorName, monitorSupplier);
 
         return messageMonitorForPayloadType.onMessageIngested(message);
     }
-
-    @SuppressWarnings({"unchecked"})
-    @Override
-    public Map<String, Metric> getMetrics() {
-        return metricSet;
-    }
-
 }

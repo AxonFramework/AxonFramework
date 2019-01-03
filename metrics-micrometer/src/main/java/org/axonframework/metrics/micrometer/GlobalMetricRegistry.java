@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics;
+package org.axonframework.metrics.micrometer;
 
-import com.codahale.metrics.MetricRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.config.Configurer;
@@ -34,33 +35,35 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
  * Registry for application metrics with convenient ways to register Axon components.
  *
  * @author Rene de Waele
+ * @author Marijn van Zelst
+ * @since 4.0
  */
 public class GlobalMetricRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalMetricRegistry.class);
-    private final MetricRegistry registry;
+
+    private final MeterRegistry registry;
 
     /**
-     * Initializes a new {@link GlobalMetricRegistry} delegating to a new {@link MetricRegistry} with default settings.
+     * Initializes a new {@link GlobalMetricRegistry} delegating to a new {@link MeterRegistry} with default settings.
      */
     public GlobalMetricRegistry() {
-        this(new MetricRegistry());
+        this(new SimpleMeterRegistry());
     }
 
     /**
-     * Initializes a {@link GlobalMetricRegistry} delegating to the given {@code metricRegistry}.
+     * Initializes a {@link GlobalMetricRegistry} delegating to the given {@code meterRegistry}.
      *
-     * @param metricRegistry the metric registry which will record the metrics
+     * @param meterRegistry the metric registry which will record the metrics
      */
-    public GlobalMetricRegistry(MetricRegistry metricRegistry) {
-        this.registry = metricRegistry;
+    public GlobalMetricRegistry(MeterRegistry meterRegistry) {
+        this.registry = meterRegistry;
     }
 
     /**
@@ -86,6 +89,7 @@ public class GlobalMetricRegistry {
      * @param componentType the type of component to register
      * @param componentName the name under which the component should be registered to the registry
      * @return MessageMonitor to monitor the behavior of a given type
+     *
      * @throws IllegalArgumentException if the component type is not recognized
      */
     public MessageMonitor<? extends Message<?>> registerComponent(Class<?> componentType, String componentName) {
@@ -111,20 +115,15 @@ public class GlobalMetricRegistry {
      * the registry under the given {@code eventProcessorName}. The returned {@link MessageMonitor} can be installed
      * on the event processor to initiate the monitoring.
      *
-     * @param eventProcessorName the name under which the EventProcessor should be registered to the registry
+     * @param name the name under which the EventProcessor should be registered to the registry
      * @return MessageMonitor to monitor the behavior of an EventProcessor
      */
-    public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName) {
-        MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
-        EventProcessorLatencyMonitor eventProcessorLatencyMonitor = new EventProcessorLatencyMonitor();
-        CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
-        MessageCountingMonitor messageCountingMonitor = new MessageCountingMonitor();
-
-        MetricRegistry eventProcessingRegistry = new MetricRegistry();
-        eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
-        eventProcessingRegistry.register("latency", eventProcessorLatencyMonitor);
-        eventProcessingRegistry.register("messageCounter", messageCountingMonitor);
-        registry.register(eventProcessorName, eventProcessingRegistry);
+    public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String name) {
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry);
+        EventProcessorLatencyMonitor eventProcessorLatencyMonitor = EventProcessorLatencyMonitor.buildMonitor(name,
+                                                                                                              registry);
+        CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry);
+        MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name, registry);
 
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(messageTimerMonitor);
@@ -143,15 +142,10 @@ public class GlobalMetricRegistry {
      * @return MessageMonitor to monitor the behavior of an EventBus
      */
     public MessageMonitor<? super EventMessage<?>> registerEventBus(String name) {
-        MessageCountingMonitor messageCounterMonitor = new MessageCountingMonitor();
-        MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
+        MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name, registry);
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry);
 
-        MetricRegistry eventProcessingRegistry = new MetricRegistry();
-        eventProcessingRegistry.register("messageCounter", messageCounterMonitor);
-        eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
-        registry.register(name, eventProcessingRegistry);
-
-        return new MultiMessageMonitor<>(Arrays.asList(messageCounterMonitor, messageTimerMonitor));
+        return new MultiMessageMonitor<>(Arrays.asList(messageCountingMonitor, messageTimerMonitor));
     }
 
     /**
@@ -179,25 +173,19 @@ public class GlobalMetricRegistry {
     }
 
     private MessageMonitor<Message<?>> registerDefaultHandlerMessageMonitor(String name) {
-        MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
-        CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
-        MessageCountingMonitor messageCountingMonitor = new MessageCountingMonitor();
-
-        MetricRegistry handlerRegistry = new MetricRegistry();
-        handlerRegistry.register("messageTimer", messageTimerMonitor);
-        handlerRegistry.register("capacity", capacityMonitor);
-        handlerRegistry.register("messageCounter", messageCountingMonitor);
-        registry.register(name, handlerRegistry);
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry);
+        CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry);
+        MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name, registry);
 
         return new MultiMessageMonitor<>(messageTimerMonitor, capacityMonitor, messageCountingMonitor);
     }
 
     /**
-     * Returns the global {@link MetricRegistry} to which components are registered.
+     * Returns the global {@link MeterRegistry} to which components are registered.
      *
      * @return the global registry
      */
-    public MetricRegistry getRegistry() {
+    public MeterRegistry getRegistry() {
         return registry;
     }
 }

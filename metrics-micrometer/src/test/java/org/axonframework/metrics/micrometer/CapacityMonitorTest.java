@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics;
+package org.axonframework.metrics.micrometer;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MockClock;
+import io.micrometer.core.instrument.simple.CountingMode;
+import io.micrometer.core.instrument.simple.SimpleConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
@@ -35,40 +38,56 @@ public class CapacityMonitorTest {
 
     @Test
     public void testSingleThreadedCapacity() {
-        TestClock testClock = new TestClock();
-        CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(new SimpleConfig() {
+            @Override
+            public String get(String key) {
+                return null;
+            }
+
+            @Override
+            public CountingMode mode() {
+                return CountingMode.STEP;
+            }
+        }, testClock);
+        CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1", meterRegistry, 1, TimeUnit.SECONDS, testClock);
+
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
-        testClock.increase(1000);
+
+        testClock.addSeconds(1);
+
         monitorCallback.reportSuccess();
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
-        assertEquals(1, capacityGauge.getValue(), 0);
+        Gauge capacityGauge = meterRegistry.get("1.capacity").gauge();
+        assertEquals(1, capacityGauge.value(), 0);
     }
 
     @Test
     public void testMultithreadedCapacity() {
-        TestClock testClock = new TestClock();
-        CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1", meterRegistry, 1, TimeUnit.SECONDS, testClock);
+
         EventMessage<Object> foo = asEventMessage("foo");
         EventMessage<Object> bar = asEventMessage("bar");
         Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar));
-        testClock.increase(1000);
+
+        testClock.addSeconds(1);
+
         callbacks.get(foo).reportSuccess();
         callbacks.get(bar).reportFailure(null);
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
-        assertEquals(2, capacityGauge.getValue(), 0);
+        Gauge capacityGauge = meterRegistry.get("1.capacity").gauge();
+        assertEquals(2, capacityGauge.value(), 0);
     }
 
     @Test
     public void testEmptyCapacity() {
-        TestClock testClock = new TestClock();
-        CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
-        Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
-        assertEquals(0, capacityGauge.getValue(), 0);
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        CapacityMonitor.buildMonitor("1", meterRegistry, 1, TimeUnit.SECONDS, testClock);
+        Gauge capacityGauge = meterRegistry.get("1.capacity").gauge();
+        assertEquals(0, capacityGauge.value(), 0);
     }
 }

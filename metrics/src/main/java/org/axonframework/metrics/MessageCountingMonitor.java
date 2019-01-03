@@ -16,10 +16,14 @@
 
 package org.axonframework.metrics;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Counts the number of ingested, successful, failed and processed messages
@@ -27,64 +31,47 @@ import org.axonframework.monitoring.MessageMonitor;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
+public class MessageCountingMonitor implements MessageMonitor<Message<?>>, MetricSet {
 
-    private final Counter ingestedCounter;
-    private final Counter successCounter;
-    private final Counter failureCounter;
-    private final Counter processedCounter;
-    private final Counter ignoredCounter;
-
-    private MessageCountingMonitor(Counter ingestedCounter, Counter successCounter, Counter failureCounter,
-                                   Counter processedCounter, Counter ignoredCounter) {
-        this.ingestedCounter = ingestedCounter;
-        this.successCounter = successCounter;
-        this.failureCounter = failureCounter;
-        this.processedCounter = processedCounter;
-        this.ignoredCounter = ignoredCounter;
-    }
-
-    /**
-     * Creates a message counting monitor
-     *
-     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
-     * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the message counting monitor
-     */
-    public static MessageCountingMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
-        Counter ingestedCounter = meterRegistry.counter(meterNamePrefix + ".ingestedCounter");
-        Counter successCounter = meterRegistry.counter(meterNamePrefix + ".successCounter");
-        Counter failureCounter = meterRegistry.counter(meterNamePrefix + ".failureCounter");
-        Counter processedCounter = meterRegistry.counter(meterNamePrefix + ".processedCounter");
-        Counter ignoredCounter = meterRegistry.counter(meterNamePrefix + ".ignoredCounter");
-
-        return new MessageCountingMonitor(ingestedCounter,
-                                          successCounter,
-                                          failureCounter,
-                                          processedCounter,
-                                          ignoredCounter);
-    }
+    private final Counter ingestedCounter = new Counter();
+    private final Counter successCounter = new Counter();
+    private final Counter failureCounter = new Counter();
+    private final Counter processedCounter = new Counter();
+    private final Counter ignoredCounter = new Counter();
 
     @Override
     public MonitorCallback onMessageIngested(Message<?> message) {
-        ingestedCounter.increment();
-        return new MonitorCallback() {
+        ingestedCounter.inc();
+        return new MessageMonitor.MonitorCallback() {
             @Override
             public void reportSuccess() {
-                processedCounter.increment();
-                successCounter.increment();
+                processedCounter.inc();
+                successCounter.inc();
             }
 
             @Override
             public void reportFailure(Throwable cause) {
-                processedCounter.increment();
-                failureCounter.increment();
+                processedCounter.inc();
+                failureCounter.inc();
             }
 
             @Override
             public void reportIgnored() {
-                ignoredCounter.increment();
+                ignoredCounter.inc();
             }
         };
     }
+
+    @Override
+    public Map<String, Metric> getMetrics() {
+        Map<String, Metric> metricSet = new HashMap<>();
+        metricSet.put("ingestedCounter", ingestedCounter);
+        metricSet.put("processedCounter", processedCounter);
+        metricSet.put("successCounter", successCounter);
+        metricSet.put("failureCounter", failureCounter);
+        metricSet.put("ignoredCounter", ignoredCounter);
+        return metricSet;
+    }
+
+
 }
