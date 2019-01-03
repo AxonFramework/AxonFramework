@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonserver.grpc.event.Event;
-import io.axoniq.axonserver.grpc.event.EventWithToken;
-import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
-import io.axoniq.axonserver.grpc.event.GetAggregateSnapshotsRequest;
-import io.axoniq.axonserver.grpc.event.GetEventsRequest;
-import io.axoniq.axonserver.grpc.event.QueryEventsRequest;
-import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
-import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
+import io.axoniq.axonserver.grpc.event.*;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -35,20 +28,10 @@ import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.eventhandling.DomainEventData;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.EventStreamUtils;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.SerializedObject;
@@ -60,11 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -360,6 +339,9 @@ public class AxonServerEventStore extends AbstractEventStore {
             try {
                 appendEventTransaction.commit();
             } catch (ExecutionException e) {
+                if (e.getCause() instanceof RuntimeException) {
+                    throw (RuntimeException) e.getCause();
+                }
                 throw new EventStoreException(e.getMessage(), e.getCause());
             } catch (TimeoutException e) {
                 throw new org.axonframework.messaging.ExecutionException("Timeout while executing request", e);

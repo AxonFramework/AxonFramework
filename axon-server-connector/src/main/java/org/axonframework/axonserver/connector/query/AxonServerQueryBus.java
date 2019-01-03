@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,9 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.query.QueryComplete;
-import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
-import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
-import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
-import io.axoniq.axonserver.grpc.query.QueryRequest;
-import io.axoniq.axonserver.grpc.query.QueryResponse;
-import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
+import io.axoniq.axonserver.grpc.query.*;
 import io.axoniq.axonserver.grpc.query.QuerySubscription;
+import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -46,35 +41,14 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -166,11 +140,8 @@ public class AxonServerQueryBus implements QueryBus {
                                public void onNext(QueryResponse queryResponse) {
                                    logger.debug("Received response: {}", queryResponse);
                                    if (queryResponse.hasErrorMessage()) {
-                                       AxonServerRemoteQueryHandlingException exception =
-                                               new AxonServerRemoteQueryHandlingException(
-                                                       queryResponse.getErrorCode(), queryResponse.getErrorMessage()
-                                               );
-                                       completableFuture.completeExceptionally(exception);
+                                       completableFuture.completeExceptionally(
+                                               ErrorCode.getFromCode(queryResponse.getErrorCode()).convert(queryResponse.getErrorMessage()));
                                    } else {
                                        completableFuture.complete(serializer.deserializeResponse(queryResponse));
                                    }
@@ -181,21 +152,19 @@ public class AxonServerQueryBus implements QueryBus {
                                    logger.warn("Received error while waiting for first response: {}",
                                                throwable.getMessage(),
                                                throwable);
-                                   completableFuture.completeExceptionally(new AxonServerQueryDispatchException(
-                                           ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
-                                           ExceptionSerializer.serialize(configuration.getClientId(), throwable)
-                                   ));
+                                   completableFuture.completeExceptionally(
+                                           ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), throwable));
                                }
 
                                @Override
                                public void onCompleted() {
                                    if (!completableFuture.isDone()) {
-                                       completableFuture.completeExceptionally(new AxonServerQueryDispatchException(
-                                               ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
-                                               ErrorMessage.newBuilder()
-                                                           .setMessage("No result from query executor")
-                                                           .build()
-                                       ));
+                                       completableFuture.completeExceptionally(
+                                               ErrorCode.QUERY_DISPATCH_ERROR.convert(
+                                                       ErrorMessage.newBuilder()
+                                                                   .setMessage("No result from query executor")
+                                                                   .build()
+                                               ));
                                    }
                                }
                            });

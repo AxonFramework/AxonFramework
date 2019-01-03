@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,13 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +57,7 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
 
 /**
  * Axon CommandBus implementation that connects to AxonServer to submit and receive commands.
+ *
  * @author Marc Gathier
  */
 public class AxonServerCommandBus implements CommandBus {
@@ -73,15 +74,17 @@ public class AxonServerCommandBus implements CommandBus {
 
     public AxonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager, AxonServerConfiguration configuration,
                                 CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy) {
-        this(axonServerConnectionManager, configuration, localSegment, serializer, routingStrategy, new CommandPriorityCalculator(){});
+        this(axonServerConnectionManager, configuration, localSegment, serializer, routingStrategy, new CommandPriorityCalculator() {
+        });
     }
+
     /**
      * @param axonServerConnectionManager creates connection to AxonServer platform
-     * @param configuration contains client and component names used to identify the application in AxonServer
-     * @param localSegment handles incoming commands
-     * @param serializer serializer/deserializer for command requests and responses
-     * @param routingStrategy determines routing key based on command message
-     * @param priorityCalculator calculates the request priority based on the content and adds it to the request
+     * @param configuration               contains client and component names used to identify the application in AxonServer
+     * @param localSegment                handles incoming commands
+     * @param serializer                  serializer/deserializer for command requests and responses
+     * @param routingStrategy             determines routing key based on command message
+     * @param priorityCalculator          calculates the request priority based on the content and adds it to the request
      */
     public AxonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager, AxonServerConfiguration configuration,
                                 CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy, CommandPriorityCalculator priorityCalculator) {
@@ -92,13 +95,14 @@ public class AxonServerCommandBus implements CommandBus {
         this.priorityCalculator = priorityCalculator;
         this.configuration = configuration;
         this.commandRouterSubscriber = new CommandRouterSubscriber();
-        interceptors = new ClientInterceptor[]{ new TokenAddingInterceptor(configuration.getToken()),
+        interceptors = new ClientInterceptor[]{new TokenAddingInterceptor(configuration.getToken()),
                 new ContextAddingInterceptor(configuration.getContext())};
     }
 
     @Override
     public <C> void dispatch(CommandMessage<C> command) {
-        dispatch(command, (commandMessage, commandResultMessage) -> { });
+        dispatch(command, (commandMessage, commandResultMessage) -> {
+        });
     }
 
     @Override
@@ -131,47 +135,35 @@ public class AxonServerCommandBus implements CommandBus {
                                                                     ex.getCause().getMessage());
                                                     }
                                                 } else {
-                                                    commandCallback.onResult(command, asCommandResultMessage(
-                                                            new AxonServerRemoteCommandHandlingException(
-                                                                    commandResponse
-                                                                            .getErrorCode(),
-                                                                    commandResponse
-                                                                            .getErrorMessage())));
+                                                    commandCallback.onResult(command,
+                                                                             serializer.deserialize(commandResponse));
                                                 }
                                             }
 
                                             @Override
                                             public void onError(Throwable throwable) {
                                                 serverResponded.set(true);
-                                                commandCallback.onResult(command,
-                                                                         asCommandResultMessage(new AxonServerCommandDispatchException(
-                                                                                 ErrorCode.COMMAND_DISPATCH_ERROR
-                                                                                         .errorCode(),
-                                                                                 ExceptionSerializer
-                                                                                         .serialize(configuration
-                                                                                                            .getClientId(),
-                                                                                                    throwable))));
+                                                commandCallback.onResult(command, asCommandResultMessage(
+                                                        ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), throwable)
+                                                ));
                                             }
 
                                             @Override
                                             public void onCompleted() {
                                                 if (!serverResponded.get()) {
-                                                    commandCallback.onResult(command,
-                                                                             asCommandResultMessage(new AxonServerCommandDispatchException(
-                                                                                     ErrorCode.COMMAND_DISPATCH_ERROR
-                                                                                             .errorCode(),
-                                                                                     ErrorMessage.newBuilder()
-                                                                                                 .setMessage("No result from command executor")
-                                                                                                 .build())));
+                                                    commandCallback.onResult(command, asCommandResultMessage(
+                                                            ErrorCode.COMMAND_DISPATCH_ERROR.convert(
+                                                                    ErrorMessage.newBuilder()
+                                                                                .setMessage("No result from command executor")
+                                                                                .build())));
                                                 }
                                             }
                                         });
         } catch (Exception e) {
             logger.warn("There was a problem dispatching a command {}.", command, e);
             commandCallback.onResult(command,
-                                     asCommandResultMessage(new AxonServerCommandDispatchException(
-                                             ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
-                                             ExceptionSerializer.serialize(configuration.getClientId(), e))));
+                                     asCommandResultMessage(
+                                             ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), e)));
         }
     }
 
@@ -195,6 +187,10 @@ public class AxonServerCommandBus implements CommandBus {
         commandRouterSubscriber.disconnect();
     }
 
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
+    }
+
     protected class CommandRouterSubscriber {
         private final CopyOnWriteArraySet<String> subscribedCommands = new CopyOnWriteArraySet<>();
         private final PriorityBlockingQueue<Command> commandQueue;
@@ -209,16 +205,16 @@ public class AxonServerCommandBus implements CommandBus {
             axonServerConnectionManager.addReconnectListener(this::resubscribe);
             axonServerConnectionManager.addDisconnectListener(this::unsubscribeAll);
             commandQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
-            IntStream.range(0, configuration.getCommandThreads()).forEach( i -> executor.submit(this::commandExecutor));
+            IntStream.range(0, configuration.getCommandThreads()).forEach(i -> executor.submit(this::commandExecutor));
         }
 
         private void commandExecutor() {
             logger.debug("Starting command Executor");
             boolean interrupted = false;
-            while(!interrupted && running) {
+            while (!interrupted && running) {
                 try {
                     Command command = commandQueue.poll(1, TimeUnit.SECONDS);
-                    if( command != null) {
+                    if (command != null) {
                         logger.debug("Received command: {}", command);
                         processCommand(command);
                     }
@@ -231,17 +227,19 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         private void resubscribe() {
-            if( subscribedCommands.isEmpty() || subscribing) return;
+            if (subscribedCommands.isEmpty() || subscribing) {
+                return;
+            }
 
             try {
                 StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
                 subscribedCommands.forEach(command -> outboundStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
                         CommandSubscription.newBuilder()
-                                .setCommand(command)
-                                .setComponentName(configuration.getComponentName())
-                                .setClientId(configuration.getClientId())
-                                .setMessageId(UUID.randomUUID().toString())
-                                .build()
+                                           .setCommand(command)
+                                           .setComponentName(configuration.getComponentName())
+                                           .setClientId(configuration.getClientId())
+                                           .setMessageId(UUID.randomUUID().toString())
+                                           .build()
                 ).build()));
             } catch (Exception ex) {
                 logger.warn("Error while resubscribing - {}", ex.getMessage());
@@ -255,11 +253,11 @@ public class AxonServerCommandBus implements CommandBus {
                 StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
                 outboundStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
                         CommandSubscription.newBuilder()
-                                .setCommand(command)
-                                .setClientId(configuration.getClientId())
-                                .setComponentName(configuration.getComponentName())
-                                .setMessageId(UUID.randomUUID().toString())
-                                .build()
+                                           .setCommand(command)
+                                           .setClientId(configuration.getClientId())
+                                           .setComponentName(configuration.getComponentName())
+                                           .setMessageId(UUID.randomUUID().toString())
+                                           .build()
                 ).build());
             } catch (Exception sre) {
                 logger.debug("Subscribing command {} with AxonServer failed. Will resubscribe when connection is established.", command, sre);
@@ -267,7 +265,6 @@ public class AxonServerCommandBus implements CommandBus {
                 subscribing = false;
             }
         }
-
 
 
         private void processCommand(Command command) {
@@ -322,9 +319,9 @@ public class AxonServerCommandBus implements CommandBus {
                 StreamObserver<CommandProviderOutbound> stream = axonServerConnectionManager.getCommandStream(commandsFromRoutingServer, interceptors);
                 logger.info("Creating new subscriber");
                 subscriberStreamObserver = new FlowControllingStreamObserver<>(stream,
-                        configuration,
-                        flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
-                        t -> t.getRequestCase().equals(CommandProviderOutbound.RequestCase.COMMAND_RESPONSE)).sendInitialPermits();
+                                                                               configuration,
+                                                                               flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
+                                                                               t -> t.getRequestCase().equals(CommandProviderOutbound.RequestCase.COMMAND_RESPONSE)).sendInitialPermits();
 
             }
             return subscriberStreamObserver;
@@ -335,10 +332,10 @@ public class AxonServerCommandBus implements CommandBus {
             try {
                 getSubscriberObserver().onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
                         CommandSubscription.newBuilder()
-                                .setCommand(command)
-                                .setClientId(configuration.getClientId())
-                                .setMessageId(UUID.randomUUID().toString())
-                                .build()
+                                           .setCommand(command)
+                                           .setClientId(configuration.getClientId())
+                                           .setMessageId(UUID.randomUUID().toString())
+                                           .build()
                 ).build());
             } catch (Exception ignored) {
             }
@@ -349,10 +346,10 @@ public class AxonServerCommandBus implements CommandBus {
                 try {
                     getSubscriberObserver().onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
                             CommandSubscription.newBuilder()
-                                    .setCommand(command)
-                                    .setClientId(configuration.getClientId())
-                                    .setMessageId(UUID.randomUUID().toString())
-                                    .build()
+                                               .setCommand(command)
+                                               .setClientId(configuration.getClientId())
+                                               .setMessageId(UUID.randomUUID().toString())
+                                               .build()
                     ).build());
                 } catch (Exception ignored) {
                 }
@@ -369,7 +366,9 @@ public class AxonServerCommandBus implements CommandBus {
                             CommandResponse.newBuilder()
                                            .setMessageIdentifier(UUID.randomUUID().toString())
                                            .setRequestIdentifier(command.getIdentifier())
-                                           .setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode())
+                                           .setErrorCode(throwable instanceof ConcurrencyException
+                                                                 ? ErrorCode.CONCURRENCY_EXCEPTION.errorCode()
+                                                                 : ErrorCode.COMMAND_EXECUTION_ERROR.errorCode())
                                            .setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable))
                     ).build();
 
@@ -383,15 +382,11 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         public void disconnect() {
-            if( subscriberStreamObserver != null) {
+            if (subscriberStreamObserver != null) {
                 subscriberStreamObserver.onCompleted();
             }
             running = false;
             executor.shutdown();
         }
-    }
-
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
-        return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 }
