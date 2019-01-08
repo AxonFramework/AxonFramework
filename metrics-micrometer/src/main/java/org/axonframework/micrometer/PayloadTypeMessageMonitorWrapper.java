@@ -33,6 +33,7 @@ import java.util.function.Function;
  *
  * @param <T> The type of the MessageMonitor created for every payload type.Must implement both {@link MessageMonitor}
  *
+ * @author Steven van Beelen
  * @author Marijn van Zelst
  * @since 4.1
  */

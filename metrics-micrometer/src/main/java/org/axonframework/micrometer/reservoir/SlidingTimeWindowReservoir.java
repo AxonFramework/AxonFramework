@@ -42,6 +42,11 @@ public class SlidingTimeWindowReservoir {
         this.count = new AtomicLong();
     }
 
+    /**
+     * Add new measurement value
+     *
+     * @param value the measurement value
+     */
     public void update(long value) {
         if (count.incrementAndGet() % TRIM_THRESHOLD == 0) {
             trim();
@@ -49,6 +54,11 @@ public class SlidingTimeWindowReservoir {
         measurements.put(getTick(), value);
     }
 
+    /**
+     * Retrieve the measurements
+     *
+     * @return the measurements
+     */
     public List<Long> getMeasurements() {
         trim();
         return new ArrayList<>(measurements.values());
