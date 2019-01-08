@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,7 +25,7 @@ import org.axonframework.monitoring.MessageMonitor;
  * Counts the number of ingested, successful, failed and processed messages
  *
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
 

@@ -1,4 +1,4 @@
-package org.axonframework.metrics.micrometer.reservoir;
+package org.axonframework.micrometer.reservoir;
 
 import io.micrometer.core.instrument.Clock;
 

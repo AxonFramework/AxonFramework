@@ -1,4 +1,4 @@
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
@@ -34,7 +34,7 @@ import java.util.function.Function;
  * @param <T> The type of the MessageMonitor created for every payload type.Must implement both {@link MessageMonitor}
  *
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>>>
         implements MessageMonitor<Message<?>> {

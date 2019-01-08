@@ -18,8 +18,8 @@ package org.axonframework.springboot.autoconfig;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.axonframework.metrics.micrometer.GlobalMetricRegistry;
-import org.axonframework.metrics.micrometer.MetricsConfigurerModule;
+import org.axonframework.micrometer.GlobalMetricRegistry;
+import org.axonframework.micrometer.MetricsConfigurerModule;
 import org.axonframework.springboot.MetricsProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -46,7 +46,7 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "io.micrometer.core.instrument.MeterRegistry",
-        "org.axonframework.metrics.micrometer.GlobalMetricRegistry"
+        "org.axonframework.micrometer.GlobalMetricRegistry"
 })
 @EnableConfigurationProperties(MetricsProperties.class)
 public class MicrometerMetricsAutoConfiguration {

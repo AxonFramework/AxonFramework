@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -42,7 +42,7 @@ import java.util.function.Function;
  *
  * @author Rene de Waele
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 public class GlobalMetricRegistry {
 

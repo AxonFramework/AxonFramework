@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Measures the difference in message timestamps between the last ingested and the last processed message.
  *
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>> {
 

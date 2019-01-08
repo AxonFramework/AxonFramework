@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.MockClock;
 import io.micrometer.core.instrument.Timer;

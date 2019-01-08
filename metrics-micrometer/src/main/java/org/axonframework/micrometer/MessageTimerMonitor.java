@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * Times allTimer messages, successful and failed messages
  *
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
 

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.messaging.Message;
-import org.axonframework.metrics.micrometer.reservoir.SlidingTimeWindowReservoir;
+import org.axonframework.micrometer.reservoir.SlidingTimeWindowReservoir;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * that messages will have to wait to be processed.
  *
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 public class CapacityMonitor implements MessageMonitor<Message<?>> {
 

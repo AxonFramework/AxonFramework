@@ -66,7 +66,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.metrics</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.micrometer</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -83,7 +83,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.metrics.*
+                            org.axonframework.micrometer.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,

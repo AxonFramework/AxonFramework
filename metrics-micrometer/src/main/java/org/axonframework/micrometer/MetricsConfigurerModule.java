@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics.micrometer;
+package org.axonframework.micrometer;
 
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
@@ -26,7 +26,7 @@ import org.axonframework.config.ConfigurerModule;
  *
  * @author Steven van Beelen
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 public class MetricsConfigurerModule implements ConfigurerModule {
 

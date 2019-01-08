@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import org.axonframework.metrics.micrometer.GlobalMetricRegistry;
+import org.axonframework.micrometer.GlobalMetricRegistry;
 import org.axonframework.springboot.autoconfig.MetricsAutoConfiguration;
 import org.junit.*;
 import org.junit.runner.*;
