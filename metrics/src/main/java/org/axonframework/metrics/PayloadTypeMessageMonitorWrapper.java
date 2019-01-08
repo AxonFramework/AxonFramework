@@ -36,9 +36,12 @@ import java.util.function.Supplier;
  * MessageMonitor and {@link MetricSet}.
  *
  * @param <T> The type of the MessageMonitor created for every payload type.Must implement both {@link MessageMonitor}
- *           and {@link MetricSet}
+ *            and {@link MetricSet}
+ * @author Steven van Beelen
+ * @since 3.0
  */
-public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>> & MetricSet> implements MessageMonitor<Message<?>>, MetricSet {
+public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>> & MetricSet>
+        implements MessageMonitor<Message<?>>, MetricSet {
 
     private final Supplier<T> monitorSupplier;
     private final Function<Class<?>, String> monitorNameBuilder;
@@ -63,7 +66,8 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
      * @param monitorNameBuilder A Function where the payload type is the input (of type {@code Class<?>}) and output
      *                           is the desired name for the monitor (of type {@code String})
      */
-    public PayloadTypeMessageMonitorWrapper(Supplier<T> monitorSupplier, Function<Class<?>, String> monitorNameBuilder) {
+    public PayloadTypeMessageMonitorWrapper(Supplier<T> monitorSupplier,
+                                            Function<Class<?>, String> monitorNameBuilder) {
         this.monitorSupplier = monitorSupplier;
         this.monitorNameBuilder = monitorNameBuilder;
         this.payloadTypeMonitors = new ConcurrentHashMap<>();
@@ -85,5 +89,4 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
     public Map<String, Metric> getMetrics() {
         return metricSet;
     }
-
 }
