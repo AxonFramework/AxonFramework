@@ -39,6 +39,7 @@ import java.util.stream.IntStream;
  *
  * @author Wouter Coekaerts <wouter@coekaerts.be>
  * @author Steven van Beelen
+ * @since 3.2
  */
 public abstract class TypeReflectionUtils {
 

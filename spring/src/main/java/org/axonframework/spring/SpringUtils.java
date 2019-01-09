@@ -35,6 +35,7 @@ import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
  * Utility class for Spring specific helper functions.
  *
  * @author Steven van Beelen
+ * @since 3.1
  */
 public class SpringUtils {
 
