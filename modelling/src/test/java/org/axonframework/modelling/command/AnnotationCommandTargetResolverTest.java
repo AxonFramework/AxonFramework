@@ -21,16 +21,14 @@ import org.junit.Test;
 
 import java.util.UUID;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import org.axonframework.commandhandling.RoutingKey;
-
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author Allard Buijze

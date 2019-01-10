@@ -46,8 +46,8 @@ import static org.axonframework.common.ReflectionUtils.*;
  */
 public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 
-	private final Class<? extends Annotation> identifierAnnotation;
-	private final Class<? extends Annotation> versionAnnotation;
+    private final Class<? extends Annotation> identifierAnnotation;
+    private final Class<? extends Annotation> versionAnnotation;
 
     /**
      * Instantiate a Builder to be able to create a {@link AnnotationCommandTargetResolver}.
@@ -55,27 +55,27 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
      * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}, 
      * TargetAggregateVersionAnnotation to {@link TargetAggregateVersion}.
      *
-     * @return a Builder to be able to create a {@link AnnotationCommandTargetResolver}
+     * @return a Builder to be able to create a{@link AnnotationCommandTargetResolver}
      */
-	public static final Builder builder() {	
-		return new Builder();
-	}
+    public static final Builder builder() {
+        return new Builder();
+    }
 
-	/**
-	 * @deprecated Please use the {@link #builder()}.
-	 */
-	@Deprecated
-	public AnnotationCommandTargetResolver() {
-		this.identifierAnnotation = TargetAggregateIdentifier.class;
-		this.versionAnnotation = TargetAggregateVersion.class;
-	}
+    /**
+     * @deprecated Please use the {@link #builder()}.
+     */
+    @Deprecated
+    public AnnotationCommandTargetResolver() {
+        this.identifierAnnotation = TargetAggregateIdentifier.class;
+        this.versionAnnotation = TargetAggregateVersion.class;
+    }
 
-	protected AnnotationCommandTargetResolver(Builder builder) {
-		this.identifierAnnotation = builder.identifierAnnotation;
-		this.versionAnnotation = builder.versionAnnotation;
-	}
-	
-	@Override
+    protected AnnotationCommandTargetResolver(Builder builder) {
+        this.identifierAnnotation = builder.identifierAnnotation;
+        this.versionAnnotation = builder.versionAnnotation;
+    }
+
+    @Override
     public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
         String aggregateIdentifier;
         Long aggregateVersion;
@@ -101,29 +101,29 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
     }
 
-	private String findIdentifier(Message<?> command) throws InvocationTargetException, IllegalAccessException {
-		return Optional.ofNullable(invokeAnnotated(command, identifierAnnotation)).map(Object::toString).orElse(null);
-	}
+    private String findIdentifier(CommandMessage<?> command)
+            throws InvocationTargetException, IllegalAccessException {
+        return Optional.ofNullable(invokeAnnotated(command, identifierAnnotation)).map(Object::toString).orElse(null);
+    }
 
-	private Long findVersion(Message<?> command) throws InvocationTargetException, IllegalAccessException {
-		return asLong(invokeAnnotated(command, versionAnnotation));
-	}
+    private Long findVersion(CommandMessage<?> command) throws InvocationTargetException, IllegalAccessException {
+        return asLong(invokeAnnotated(command, versionAnnotation));
+    }
 
-	private static Object invokeAnnotated(Message<?> command, Class<? extends Annotation> annotation)
-			throws InvocationTargetException, IllegalAccessException {
-		for (Method m : methodsOf(command.getPayloadType())) {
-			if (AnnotationUtils.isAnnotationPresent(m, annotation)) {
-				ensureAccessible(m);
-				return m.invoke(command.getPayload());
-			}
-		}
-		for (Field f : fieldsOf(command.getPayloadType())) {
-			if (AnnotationUtils.isAnnotationPresent(f, annotation)) {
-				return getFieldValue(f, command.getPayload());
-			}
-		}
-		return null;
-	}
+    private static Object invokeAnnotated(Message<?> command, Class<? extends Annotation> annotation) throws InvocationTargetException, IllegalAccessException {
+        for (Method m : methodsOf(command.getPayloadType())) {
+            if (AnnotationUtils.isAnnotationPresent(m, annotation)) {
+                ensureAccessible(m);
+                return m.invoke(command.getPayload());
+            }
+        }
+        for (Field f : fieldsOf(command.getPayloadType())) {
+            if (AnnotationUtils.isAnnotationPresent(f, annotation)) {
+                return getFieldValue(f, command.getPayload());
+            }
+        }
+        return null;
+    }
 
     private Long asLong(Object fieldValue) {
         if (fieldValue == null) {
@@ -134,15 +134,15 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
             return Long.parseLong(fieldValue.toString());
         }
     }
-    
 
-	@Override
-	public String toString() {
-		return "AnnotationCommandTargetResolver [identifierAnnotation=" + identifierAnnotation + ", versionAnnotation="
-				+ versionAnnotation + "]";
-	}
+    @Override
+    public String toString() {
+        return "AnnotationCommandTargetResolver [identifierAnnotation="
+                + identifierAnnotation + ", versionAnnotation="
+                + versionAnnotation + "]";
+    }
 
-	/**
+    /**
      * Builder class to instantiate a {@link AnnotationCommandTargetResolver}.
      * <p>
      * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}, 
@@ -150,57 +150,60 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
      * 
      * @author JohT
      */
-	public static final class Builder {
-		
-		private Class<? extends Annotation> identifierAnnotation = TargetAggregateIdentifier.class;
-		private Class<? extends Annotation> versionAnnotation = TargetAggregateVersion.class;
+    public static final class Builder {
 
-		/**
-		 * Sets the annotation, that marks the target aggregate identifier.
-		 * <p>
-		 * Defaults to {@link TargetAggregateIdentifier}.<br>
-		 * <p>
-		 * If you do not want your messages-module (as inner bounded context "API") to
-		 * be dependent of axon annotations (e.g. to aim empty pom dependencies), then
-		 * you can write your own annotation based on the
-		 * {@link TargetAggregateIdentifier} without referencing the original one (as
-		 * meta-annotation).
-		 * 
-		 * @param annotation - {@link Class} of type {@link Annotation}.
-		 * @return {@link Builder}
-		 */
-		public Builder setTargetAggregateIdentifierAnnotation(Class<? extends Annotation> annotation) {
-			assertNonNull(annotation, "TargetAggregateIdentifierAnnotation may not be null");
+        private Class<? extends Annotation> identifierAnnotation = TargetAggregateIdentifier.class;
+        private Class<? extends Annotation> versionAnnotation = TargetAggregateVersion.class;
+
+        /**
+         * Sets the annotation, that marks the target aggregate identifier.
+         * <p>
+         * Defaults to {@link TargetAggregateIdentifier}.<br>
+         * <p>
+         * If you do not want your messages-module (as inner bounded context
+         * "API") to be dependent of axon annotations (e.g. to aim empty pom
+         * dependencies), then you can write your own annotation based on the
+         * {@link TargetAggregateIdentifier} without referencing the original
+         * one (as meta-annotation).
+         * 
+         * @param annotation
+         *            - {@link Class} of type {@link Annotation}.
+         * @return {@link Builder}
+         */
+        public Builder setTargetAggregateIdentifierAnnotation(Class<? extends Annotation> annotation) {
+            assertNonNull(annotation, "TargetAggregateIdentifierAnnotation may not be null");
             this.identifierAnnotation = annotation;
             return this;
-		}
+        }
 
-		/**
-		 * Sets the annotation, that marks the target aggregate version.
-		 * <p>
-		 * Defaults to {@link TargetAggregateVersion}.
-		 * <p>
-		 * If you do not want your messages-module (as inner bounded context "API") to
-		 * be dependent of axon annotations (e.g. to aim empty pom dependencies), then
-		 * you can write your own annotation based on the {@link TargetAggregateVersion}
-		 * without referencing the original one (as meta-annotation).
-		 * 
-		 * @param annotation - {@link Class} of type {@link Annotation}.
-		 * @return {@link Builder}
-		 */
-		public Builder setTargetAggregateVersionAnnotation(Class<? extends Annotation> annotation) {
-			assertNonNull(annotation, "TargetAggregateVersionAnnotation may not be null");
+        /**
+         * Sets the annotation, that marks the target aggregate version.
+         * <p>
+         * Defaults to {@link TargetAggregateVersion}.
+         * <p>
+         * If you do not want your messages-module (as inner bounded context
+         * "API") to be dependent of axon annotations (e.g. to aim empty pom
+         * dependencies), then you can write your own annotation based on the
+         * {@link TargetAggregateVersion} without referencing the original one
+         * (as meta-annotation).
+         * 
+         * @param annotation
+         *            - {@link Class} of type {@link Annotation}.
+         * @return {@link Builder}
+         */
+        public Builder setTargetAggregateVersionAnnotation(Class<? extends Annotation> annotation) {
+            assertNonNull(annotation, "TargetAggregateVersionAnnotation may not be null");
             this.versionAnnotation = annotation;
             return this;
-		}
+        }
 
         /**
          * Initializes a {@link AnnotationCommandTargetResolver} as specified through this Builder.
          *
          * @return a {@link AnnotationCommandTargetResolver} as specified through this Builder
          */
-		public AnnotationCommandTargetResolver build() {
-			return new AnnotationCommandTargetResolver(this);
-		}
-	}
+        public AnnotationCommandTargetResolver build() {
+            return new AnnotationCommandTargetResolver(this);
+        }
+    }
 }
