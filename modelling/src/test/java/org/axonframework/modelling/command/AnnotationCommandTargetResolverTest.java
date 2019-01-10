@@ -16,19 +16,21 @@
 
 package org.axonframework.modelling.command;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.UUID;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.UUID;
 
 import org.axonframework.commandhandling.RoutingKey;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Allard Buijze
@@ -39,7 +41,7 @@ public class AnnotationCommandTargetResolverTest {
 
     @Before
     public void setUp() {
-        testSubject = new AnnotationCommandTargetResolver();
+        testSubject = AnnotationCommandTargetResolver.builder().build();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -156,7 +158,7 @@ public class AnnotationCommandTargetResolverTest {
     }
 
 	@Test
-	public void testMetaAnnotations_OnMethods() {
+	public void testMetaAnnotationsOnMethods() {
 		final UUID aggregateIdentifier = UUID.randomUUID();
 		final Long version = Long.valueOf(98765432109L);
 
@@ -176,7 +178,7 @@ public class AnnotationCommandTargetResolverTest {
 	}
 
 	@Test
-	public void testMetaAnnotations_OnFields() {
+	public void testMetaAnnotationsOnFields() {
 		final UUID aggregateIdentifier = UUID.randomUUID();
 		final Long version = Long.valueOf(98765432109L);
 
@@ -188,7 +190,7 @@ public class AnnotationCommandTargetResolverTest {
 	}
 
 	@Test
-	public void testCustomAnnotations_OnMethods() {
+	public void testCustomAnnotationsOnMethods() {
 		testSubject = AnnotationCommandTargetResolver.builder()
 				.setTargetAggregateIdentifierAnnotation(CustomTargetAggregateIdentifier.class)
 				.setTargetAggregateVersionAnnotation(CustomTargetAggregateVersion.class)
@@ -213,7 +215,7 @@ public class AnnotationCommandTargetResolverTest {
 	}
 
 	@Test
-	public void testCustomAnnotations_OnFields() {
+	public void testCustomAnnotationsOnFields() {
 		testSubject = AnnotationCommandTargetResolver.builder()
 				.setTargetAggregateIdentifierAnnotation(CustomTargetAggregateIdentifier.class)
 				.setTargetAggregateVersionAnnotation(CustomTargetAggregateVersion.class)
@@ -229,19 +231,19 @@ public class AnnotationCommandTargetResolverTest {
 		assertEquals(version, actual.getVersion());
 	}
 
-	private static class FieldAnnotatedCommand {
+    private static class FieldAnnotatedCommand {
 
-		@TargetAggregateIdentifier
-		private final Object aggregateIdentifier;
+        @TargetAggregateIdentifier
+        private final Object aggregateIdentifier;
 
-		@TargetAggregateVersion
-		private final Object version;
+        @TargetAggregateVersion
+        private final Object version;
 
-		public FieldAnnotatedCommand(Object aggregateIdentifier, Object version) {
-			this.aggregateIdentifier = aggregateIdentifier;
-			this.version = version;
-		}
-	}
+        public FieldAnnotatedCommand(Object aggregateIdentifier, Object version) {
+            this.aggregateIdentifier = aggregateIdentifier;
+            this.version = version;
+        }
+    }
 
 	private static class FieldMetaAnnotatedCommand {
 
@@ -271,7 +273,6 @@ public class AnnotationCommandTargetResolverTest {
 		}
 	}
 
-	@RoutingKey
 	@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE })
 	@Retention(RetentionPolicy.RUNTIME)
 	@TargetAggregateIdentifier
@@ -284,7 +285,6 @@ public class AnnotationCommandTargetResolverTest {
 	public static @interface MetaTargetAggregateVersion {
 	}
 
-	@RoutingKey
 	@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE })
 	@Retention(RetentionPolicy.RUNTIME)
 	public static @interface CustomTargetAggregateIdentifier {

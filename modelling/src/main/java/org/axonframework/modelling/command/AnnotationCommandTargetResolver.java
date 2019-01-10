@@ -16,21 +16,18 @@
 
 package org.axonframework.modelling.command;
 
-import static java.lang.String.format;
-import static org.axonframework.common.ReflectionUtils.ensureAccessible;
-import static org.axonframework.common.ReflectionUtils.fieldsOf;
-import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.axonframework.common.ReflectionUtils.methodsOf;
-
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.Message;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.Message;
+import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ReflectionUtils.*;
 
 /**
  * CommandTargetResolver that uses annotations on the command to identify the methods that provide the
@@ -49,21 +46,36 @@ import org.axonframework.messaging.Message;
  */
 public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 
-	private Class<? extends Annotation> identifierAnnotation = TargetAggregateIdentifier.class;
-	private Class<? extends Annotation> versionAnnotation = TargetAggregateVersion.class;
+	private final Class<? extends Annotation> identifierAnnotation;
+	private final Class<? extends Annotation> versionAnnotation;
 
-	public static final Builder builder() {
+    /**
+     * Instantiate a Builder to be able to create a {@link AnnotationCommandTargetResolver}.
+     * <p>
+     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}, 
+     * TargetAggregateVersionAnnotation to {@link TargetAggregateVersion}.
+     *
+     * @return a Builder to be able to create a {@link AnnotationCommandTargetResolver}
+     */
+	public static final Builder builder() {	
 		return new Builder();
 	}
 
 	/**
-	 * Default settings. Use {@link #builder()} for custom setup.
+	 * @deprecated Please use the {@link #builder()}.
 	 */
+	@Deprecated
 	public AnnotationCommandTargetResolver() {
-		super();
+		this.identifierAnnotation = TargetAggregateIdentifier.class;
+		this.versionAnnotation = TargetAggregateVersion.class;
 	}
 
-    @Override
+	protected AnnotationCommandTargetResolver(Builder builder) {
+		this.identifierAnnotation = builder.identifierAnnotation;
+		this.versionAnnotation = builder.versionAnnotation;
+	}
+	
+	@Override
     public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
         String aggregateIdentifier;
         Long aggregateVersion;
@@ -113,15 +125,16 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 		return null;
 	}
 
-	private Long asLong(Object fieldValue) {
-		if (fieldValue == null) {
-			return null;
-		} else if (Number.class.isInstance(fieldValue)) {
-			return ((Number) fieldValue).longValue();
-		} else {
-			return Long.parseLong(fieldValue.toString());
-		}
-	}
+    private Long asLong(Object fieldValue) {
+        if (fieldValue == null) {
+            return null;
+        } else if (Number.class.isInstance(fieldValue)) {
+            return ((Number) fieldValue).longValue();
+        } else {
+            return Long.parseLong(fieldValue.toString());
+        }
+    }
+    
 
 	@Override
 	public String toString() {
@@ -129,12 +142,18 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 				+ versionAnnotation + "]";
 	}
 
+	/**
+     * Builder class to instantiate a {@link AnnotationCommandTargetResolver}.
+     * <p>
+     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}, 
+     * TargetAggregateVersionAnnotation to {@link TargetAggregateVersion}.
+     * 
+     * @author JohT
+     */
 	public static final class Builder {
-		private AnnotationCommandTargetResolver resolver;
-
-		public Builder() {
-			this.resolver = new AnnotationCommandTargetResolver();
-		}
+		
+		private Class<? extends Annotation> identifierAnnotation = TargetAggregateIdentifier.class;
+		private Class<? extends Annotation> versionAnnotation = TargetAggregateVersion.class;
 
 		/**
 		 * Sets the annotation, that marks the target aggregate identifier.
@@ -151,8 +170,9 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 		 * @return {@link Builder}
 		 */
 		public Builder setTargetAggregateIdentifierAnnotation(Class<? extends Annotation> annotation) {
-			this.resolver.identifierAnnotation = annotation;
-			return this;
+			assertNonNull(annotation, "TargetAggregateIdentifierAnnotation may not be null");
+            this.identifierAnnotation = annotation;
+            return this;
 		}
 
 		/**
@@ -169,21 +189,18 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 		 * @return {@link Builder}
 		 */
 		public Builder setTargetAggregateVersionAnnotation(Class<? extends Annotation> annotation) {
-			this.resolver.versionAnnotation = annotation;
-			return this;
+			assertNonNull(annotation, "TargetAggregateVersionAnnotation may not be null");
+            this.versionAnnotation = annotation;
+            return this;
 		}
 
+        /**
+         * Initializes a {@link AnnotationCommandTargetResolver} as specified through this Builder.
+         *
+         * @return a {@link AnnotationCommandTargetResolver} as specified through this Builder
+         */
 		public AnnotationCommandTargetResolver build() {
-			try {
-				return resolver;
-			} finally {
-				resolver = null; // builder can only be used once.
-			}
-		}
-
-		@Override
-		public String toString() {
-			return "Builder [resolver=" + resolver + "]";
+			return new AnnotationCommandTargetResolver(this);
 		}
 	}
 }
