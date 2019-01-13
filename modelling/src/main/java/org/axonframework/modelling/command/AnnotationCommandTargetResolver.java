@@ -70,11 +70,19 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         this.versionAnnotation = TargetAggregateVersion.class;
     }
 
+    /**
+     * Instantiate a {@link AnnotationCommandTargetResolver} based on the fields contained in the {@link Builder}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link AnnotationCommandTargetResolver} instance
+     */
     protected AnnotationCommandTargetResolver(Builder builder) {
         this.identifierAnnotation = builder.identifierAnnotation;
         this.versionAnnotation = builder.versionAnnotation;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
         String aggregateIdentifier;
@@ -159,17 +167,15 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
          * <p>
          * Defaults to {@link TargetAggregateIdentifier}.<br>
          * <p>
-         * If you do not want your messages-module (as inner bounded context
-         * "API") to be dependent of axon annotations (e.g. to aim empty pom
-         * dependencies), then you can write your own annotation based on the
-         * {@link TargetAggregateIdentifier} without referencing the original
-         * one (as meta-annotation).
+         * Use this method if you use an other annotation to mark the field or method
+         * that identifies the target aggregate
+         * and it is not possible to put @{@link TargetAggregateIdentifier}
+         * into that annotation (to use it as meta-annotation).
          * 
-         * @param annotation
-         *            - {@link Class} of type {@link Annotation}.
-         * @return {@link Builder}
+         * @param annotation {@link Class} of type {@link Annotation}.
+         * @return the current {@link Builder} instance, for fluent interfacing
          */
-        public Builder setTargetAggregateIdentifierAnnotation(Class<? extends Annotation> annotation) {
+        public Builder targetAggregateIdentifierAnnotation(Class<? extends Annotation> annotation) {
             assertNonNull(annotation, "TargetAggregateIdentifierAnnotation may not be null");
             this.identifierAnnotation = annotation;
             return this;
@@ -180,17 +186,15 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
          * <p>
          * Defaults to {@link TargetAggregateVersion}.
          * <p>
-         * If you do not want your messages-module (as inner bounded context
-         * "API") to be dependent of axon annotations (e.g. to aim empty pom
-         * dependencies), then you can write your own annotation based on the
-         * {@link TargetAggregateVersion} without referencing the original one
-         * (as meta-annotation).
+         * Use this method if you use an other annotation to mark the field or method
+         * that identifies the version of the aggregate
+         * and it is not possible to put @{@link TargetAggregateVersion}
+         * into that annotation (to use it as meta-annotation).
          * 
-         * @param annotation
-         *            - {@link Class} of type {@link Annotation}.
-         * @return {@link Builder}
+         * @param annotation {@link Class} of type {@link Annotation}.
+         * @return the current {@link Builder} instance, for fluent interfacing
          */
-        public Builder setTargetAggregateVersionAnnotation(Class<? extends Annotation> annotation) {
+        public Builder targetAggregateVersionAnnotation(Class<? extends Annotation> annotation) {
             assertNonNull(annotation, "TargetAggregateVersionAnnotation may not be null");
             this.versionAnnotation = annotation;
             return this;
