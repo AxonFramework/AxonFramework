@@ -24,6 +24,8 @@ import java.util.stream.Stream;
  * Forward all messages {@code T} regardless of their set up.
  *
  * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
+ * @author Steven van Beelen
+ * @since 3.1
  */
 public class ForwardToAll<T extends Message<?>> implements ForwardingMode<T> {
 

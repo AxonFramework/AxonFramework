@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.modelling.command.inspection.EntityModel;
 import org.axonframework.messaging.Message;
+import org.axonframework.modelling.command.inspection.EntityModel;
 
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
@@ -25,6 +25,9 @@ import java.util.stream.Stream;
 /**
  * Interface describing the required functionality to forward a message.
  * An example implementation is the {@link ForwardToAll}, which forwards all incoming messages.
+ *
+ * @author Steven van Beelen
+ * @since 3.1
  */
 public interface ForwardingMode<T extends Message<?>> {
 
