@@ -36,14 +36,14 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Steven van Beelen
  * @author Marijn van Zelst
- * @since 4.0
+ * @since 4.1
  */
 @Configuration
 @AutoConfigureAfter(name = {
         "org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration",
         "org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration"
 })
-@AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureBefore({AxonAutoConfiguration.class, MetricsAutoConfiguration.class})
 @ConditionalOnClass(name = {
         "io.micrometer.core.instrument.MeterRegistry",
         "org.axonframework.micrometer.GlobalMetricRegistry"
@@ -53,14 +53,14 @@ public class MicrometerMetricsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(MeterRegistry.class)
-    public static MeterRegistry meterRegistry() {
+    public static MeterRegistry meterRegistryMicrometer() {
         return new SimpleMeterRegistry();
     }
 
     @Bean
     @ConditionalOnMissingBean(GlobalMetricRegistry.class)
     @ConditionalOnBean(MeterRegistry.class)
-    public static GlobalMetricRegistry globalMetricRegistry(MeterRegistry meterRegistry) {
+    public static GlobalMetricRegistry globalMetricRegistryMicrometer(MeterRegistry meterRegistry) {
         return new GlobalMetricRegistry(meterRegistry);
     }
 
@@ -68,7 +68,7 @@ public class MicrometerMetricsAutoConfiguration {
     @ConditionalOnMissingBean(MetricsConfigurerModule.class)
     @ConditionalOnBean(GlobalMetricRegistry.class)
     @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
-    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+    public static MetricsConfigurerModule metricsConfigurerModuleMicrometer(GlobalMetricRegistry globalMetricRegistry) {
         return new MetricsConfigurerModule(globalMetricRegistry);
     }
 

@@ -13,6 +13,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * in the last {@code N} seconds (or other time unit).
  * <p>
  * Adapted from com.codahale.metrics.SlidingTimeWindowReservoir from io.dropwizard.metrics:metrics-core:3.1.2
+ *
+ * @author Volker Fritzsch
+ * @author Coda Hale
+ * @author ceetav
+ * @author Marijn van Zelst
+ * @since 4.1
  */
 public class SlidingTimeWindowReservoir {
 

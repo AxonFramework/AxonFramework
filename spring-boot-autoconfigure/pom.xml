@@ -52,7 +52,7 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-metrics-micrometer</artifactId>
+            <artifactId>axon-micrometer</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>

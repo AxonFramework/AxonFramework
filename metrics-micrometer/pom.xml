@@ -23,9 +23,9 @@
         <version>4.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>axon-metrics-micrometer</artifactId>
+    <artifactId>axon-micrometer</artifactId>
 
-    <name>Axon Framework Metrics Micrometer</name>
+    <name>Axon Framework Micrometer Metrics</name>
     <description>
         This module contains components that provide metrics for standard Axon components using the micrometer library.
     </description>
