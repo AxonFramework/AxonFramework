@@ -124,6 +124,7 @@ public class GlobalMetricRegistry {
         eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
         eventProcessingRegistry.register("latency", eventProcessorLatencyMonitor);
         eventProcessingRegistry.register("messageCounter", messageCountingMonitor);
+        eventProcessingRegistry.register("capacity", capacityMonitor);
         registry.register(eventProcessorName, eventProcessingRegistry);
 
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
