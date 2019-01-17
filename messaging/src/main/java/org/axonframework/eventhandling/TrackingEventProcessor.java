@@ -416,6 +416,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
+     * Returns the {@link StreamableMessageSource} this processor is using
+     * @return {@link StreamableMessageSource}
+     */
+    public StreamableMessageSource<? extends TrackedEventMessage<?>> getMessageSource() {
+        return messageSource;
+    }
+
+    /**
      * Shut down the processor.
      */
     @Override

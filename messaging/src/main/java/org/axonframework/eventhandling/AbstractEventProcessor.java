@@ -165,7 +165,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      *
      * @return the invoker assigned to this processor
      */
-    protected EventHandlerInvoker eventHandlerInvoker() {
+    public EventHandlerInvoker eventHandlerInvoker() {
         return eventHandlerInvoker;
     }
 
