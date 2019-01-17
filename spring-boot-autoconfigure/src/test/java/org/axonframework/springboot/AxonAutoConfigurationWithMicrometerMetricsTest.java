@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import com.codahale.metrics.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.micrometer.GlobalMetricRegistry;
 import org.axonframework.micrometer.MetricsConfigurerModule;
@@ -53,6 +54,15 @@ public class AxonAutoConfigurationWithMicrometerMetricsTest {
     @Autowired
     private MetricsConfigurerModule metricsConfigurerModule;
 
+    @Autowired(required = false)
+    private MetricRegistry dropwizardMetricRegistry;
+
+    @Autowired(required = false)
+    private org.axonframework.metrics.GlobalMetricRegistry metricsModuleGlobalMetricRegistry;
+
+    @Autowired(required = false)
+    private org.axonframework.metrics.MetricsConfigurerModule metricsModuleMetricsConfigurerModule;
+
     @Test
     public void testContextInitialization() {
         assertNotNull(applicationContext);
@@ -67,5 +77,9 @@ public class AxonAutoConfigurationWithMicrometerMetricsTest {
         assertTrue(applicationContext.containsBean("metricsConfigurerModule"));
         assertNotNull(applicationContext.getBean(MetricsConfigurerModule.class));
         assertEquals(MetricsConfigurerModule.class, metricsConfigurerModule.getClass());
+
+        assertNull(dropwizardMetricRegistry);
+        assertNull(metricsModuleGlobalMetricRegistry);
+        assertNull(metricsModuleMetricsConfigurerModule);
     }
 }

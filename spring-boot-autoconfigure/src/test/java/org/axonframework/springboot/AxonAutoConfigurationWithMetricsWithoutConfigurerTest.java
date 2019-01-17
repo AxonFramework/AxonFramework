@@ -67,6 +67,7 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
     @Autowired
     private MetricRegistry metricRegistry;
+
     @Autowired
     private GlobalMetricRegistry globalMetricRegistry;
 

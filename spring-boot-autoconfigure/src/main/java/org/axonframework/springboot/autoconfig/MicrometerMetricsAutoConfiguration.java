@@ -53,14 +53,14 @@ public class MicrometerMetricsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(MeterRegistry.class)
-    public static MeterRegistry meterRegistryMicrometer() {
+    public static MeterRegistry meterRegistry() {
         return new SimpleMeterRegistry();
     }
 
     @Bean
     @ConditionalOnMissingBean(GlobalMetricRegistry.class)
     @ConditionalOnBean(MeterRegistry.class)
-    public static GlobalMetricRegistry globalMetricRegistryMicrometer(MeterRegistry meterRegistry) {
+    public static GlobalMetricRegistry globalMetricRegistry(MeterRegistry meterRegistry) {
         return new GlobalMetricRegistry(meterRegistry);
     }
 
@@ -68,7 +68,7 @@ public class MicrometerMetricsAutoConfiguration {
     @ConditionalOnMissingBean(MetricsConfigurerModule.class)
     @ConditionalOnBean(GlobalMetricRegistry.class)
     @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
-    public static MetricsConfigurerModule metricsConfigurerModuleMicrometer(GlobalMetricRegistry globalMetricRegistry) {
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
         return new MetricsConfigurerModule(globalMetricRegistry);
     }
 

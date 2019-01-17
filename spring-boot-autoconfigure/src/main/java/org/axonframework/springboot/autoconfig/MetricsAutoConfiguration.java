@@ -53,6 +53,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
+@ConditionalOnMissingBean(MicrometerMetricsAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "com.codahale.metrics.MetricRegistry",
         "org.axonframework.metrics.GlobalMetricRegistry"
