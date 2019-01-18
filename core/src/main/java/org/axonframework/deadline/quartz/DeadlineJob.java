@@ -72,6 +72,11 @@ public class DeadlineJob implements Job {
      */
     public static final String JOB_DATA_SERIALIZER = Serializer.class.getName();
 
+    /**
+     * The refireImmediately value to construct the {@link JobExecutionException#JobExecutionException(Throwable, boolean)}
+     */
+    private static final Boolean REFIRE_IMMEDIATELY = true;
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         if (LOGGER.isDebugEnabled()) {
@@ -101,7 +106,7 @@ public class DeadlineJob implements Job {
             }
         } catch (Exception e) {
             LOGGER.error("Exception occurred during processing a deadline job [{}]", jobDetail.getDescription(), e);
-            throw new JobExecutionException(e, true);
+            throw new JobExecutionException(e, REFIRE_IMMEDIATELY);
         }
     }
 
