@@ -101,7 +101,7 @@ public class DeadlineJob implements Job {
             }
         } catch (Exception e) {
             LOGGER.error("Exception occurred during processing a deadline job [{}]", jobDetail.getDescription(), e);
-            throw new JobExecutionException(e);
+            throw new JobExecutionException(e, true);
         }
     }
 
