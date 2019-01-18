@@ -16,6 +16,7 @@
 
 package org.axonframework.deadline.quartz;
 
+import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Map;
 
+import static org.axonframework.common.ExceptionUtils.findException;
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineMessage;
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineScope;
 import static org.axonframework.messaging.Headers.*;
@@ -105,7 +107,13 @@ public class DeadlineJob implements Job {
                             deadlineMessage.getPayloadType().getSimpleName());
             }
         } catch (Exception e) {
-            LOGGER.error("Exception occurred during processing a deadline job [{}]", jobDetail.getDescription(), e);
+            if (findException(e, t -> t instanceof AxonNonTransientException).isPresent()) {
+                LOGGER.error("Non transient exception occurred during processing a deadline job [{}]",
+                             jobDetail.getDescription(), e);
+                throw new JobExecutionException(e);
+            }
+            LOGGER.warn("Transient exception occurred during processing a deadline job [{}]",
+                        jobDetail.getDescription(), e);
             throw new JobExecutionException(e, REFIRE_IMMEDIATELY);
         }
     }
