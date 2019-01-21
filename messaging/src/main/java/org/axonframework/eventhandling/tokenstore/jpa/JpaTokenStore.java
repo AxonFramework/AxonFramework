@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,19 @@ public class JpaTokenStore implements TokenStore {
     private final LockModeType loadingLockMode;
 
     /**
+     * Instantiate a Builder to be able to create a {@link JpaTokenStore}.
+     * <p>
+     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
+     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
+     * are a <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link JpaTokenStore}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Instantiate a {@link JpaTokenStore} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link EntityManager}, {@link Serializer}, {@code claimTimeout} and {@code nodeId} are not
@@ -70,19 +84,6 @@ public class JpaTokenStore implements TokenStore {
         this.claimTimeout = builder.claimTimeout;
         this.nodeId = builder.nodeId;
         this.loadingLockMode = builder.loadingLockMode;
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link JpaTokenStore}.
-     * <p>
-     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
-     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
-     * are a <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link JpaTokenStore}
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
     @Override
@@ -107,7 +108,7 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        TokenEntry tokenEntry = loadOrCreateToken(processorName, segment, entityManager);
+        TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
         tokenEntry.updateToken(token, serializer);
     }
 
@@ -129,9 +130,42 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
+    public void initializeSegment(TrackingToken token, String processorName, int segment) throws UnableToInitializeTokenException {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+
+        TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
+        entityManager.persist(entry);
+        entityManager.flush();
+
+    }
+
+    @Override
+    public boolean requiresExplicitInitialization() {
+        return true;
+    }
+
+    @Override
+    public void deleteToken(String processorName, int segment) throws UnableToClaimTokenException {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+
+        int updates = entityManager.createQuery(
+                "DELETE FROM TokenEntry te " +
+                        "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                        "AND te.segment = :segment")
+                                   .setParameter("processorName", processorName)
+                                   .setParameter("segment", segment)
+                                   .setParameter("owner", nodeId)
+                                   .executeUpdate();
+
+        if (updates == 0) {
+            throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
+        }
+    }
+
+    @Override
     public TrackingToken fetchToken(String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return loadOrCreateToken(processorName, segment, entityManager).getToken(serializer);
+        return loadToken(processorName, segment, entityManager).getToken(serializer);
     }
 
     @Override
@@ -178,20 +212,18 @@ public class JpaTokenStore implements TokenStore {
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
      *                                     it is claimed by another process.
      */
-    protected TokenEntry loadOrCreateToken(String processorName, int segment, EntityManager entityManager) {
+    protected TokenEntry loadToken(String processorName, int segment, EntityManager entityManager) {
         TokenEntry token = entityManager
                 .find(TokenEntry.class, new TokenEntry.PK(processorName, segment), loadingLockMode);
 
         if (token == null) {
-            token = new TokenEntry(processorName, segment, null, serializer);
-            token.claim(nodeId, claimTimeout);
-            entityManager.persist(token);
-            // hibernate complains about updates in different transactions if this isn't flushed
-            entityManager.flush();
+            throw new UnableToClaimTokenException(
+                    format("Unable to claim token '%s[%s]'. It has not been initialized yet", processorName,
+                           segment));
         } else if (!token.claim(nodeId, claimTimeout)) {
             throw new UnableToClaimTokenException(
-                    format("Unable to claim token '%s[%s]'. It is owned by '%s'", token.getProcessorName(),
-                           token.getSegment(), token.getOwner()));
+                    format("Unable to claim token '%s[%s]'. It is owned by '%s'", processorName,
+                           segment, token.getOwner()));
         }
         return token;
     }

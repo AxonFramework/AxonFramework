@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -43,13 +43,16 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Collections;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @SpringBootTest
 @SpringBootConfiguration
@@ -74,12 +77,18 @@ public class TrackingEventProcessorIntegrationTest {
     @Autowired
     private TokenStore tokenStore;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Test
     public void testPublishSomeEvents() throws InterruptedException {
         eventProcessingModule.shutdown();
 
         publishEvent("test1", "test2");
         transactionManager.executeInTransaction(() -> {
+            entityManager.createQuery("DELETE FROM TokenEntry t").executeUpdate();
+            tokenStore.initializeTokenSegments("first", 1);
+            tokenStore.initializeTokenSegments("second", 1);
             tokenStore.storeToken(GapAwareTrackingToken.newInstance(1, new TreeSet<>(Collections.singleton(0L))),
                                   "first",
                                   0);
@@ -94,12 +103,12 @@ public class TrackingEventProcessorIntegrationTest {
         assertTrue("Expected all 4 events to have been delivered", countDownLatch2.await(2, TimeUnit.SECONDS));
 
         eventProcessingModule.eventProcessors().forEach((name, ep) -> assertFalse(((TrackingEventProcessor) ep)
-                                                                                           .isError()));
+                                                                                          .isError()));
 
         eventProcessingModule.shutdown();
         eventProcessingModule.eventProcessors().forEach((name, ep) -> assertFalse("Processor ended with error",
                                                                                   ((TrackingEventProcessor) ep)
-                                                                                           .isError()));
+                                                                                          .isError()));
     }
 
     private void publishEvent(String... events) {

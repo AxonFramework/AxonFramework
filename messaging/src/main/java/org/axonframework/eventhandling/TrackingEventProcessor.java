@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,20 +33,13 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static java.util.Collections.singletonList;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -84,7 +77,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final int batchSize;
     private final int segmentsSize;
 
-    private final ActivityCountingThreadFactory threadFactory;
+    private final ThreadFactory threadFactory;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
     private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<Integer, Long> segmentReleaseDeadlines = new ConcurrentSkipListMap<>();
@@ -92,6 +85,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final String lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
+
+    private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
+
+    /**
+     * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
+     * <p>
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a
+     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
+     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
+     * are <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link TrackingEventProcessor}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
 
     /**
      * Instantiate a {@link TrackingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -115,7 +126,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.transactionManager = builder.transactionManager;
 
         this.availableThreads = new AtomicInteger(config.getMaxThreadCount());
-        this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(builder.name));
+        this.threadFactory = config.getThreadFactory(builder.name);
         this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
@@ -125,28 +136,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
             }
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isLastMessage()) {
-                unitOfWork.onPrepareCommit(uow -> tokenStore.storeToken(unitOfWork.getResource(lastTokenResourceKey),
-                                                                        builder.name,
-                                                                        unitOfWork.getResource(segmentIdResourceKey)));
+                unitOfWork.onPrepareCommit(uow -> {
+                    TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey);
+                    tokenStore.storeToken(lastToken,
+                                          builder.name,
+                                          unitOfWork.getResource(segmentIdResourceKey));
+                });
             }
             return interceptorChain.proceed();
         });
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
-     * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
-     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a
-     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
-     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
-     * are <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link TrackingEventProcessor}
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
     /**
@@ -163,6 +161,71 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
+     * Instruct the processor to split the segment with given {@code segmentId} into two segments, allowing an
+     * additional thread to start processing events concurrently.
+     * <p>
+     * To be able to split segments, the {@link TokenStore} configured with this processor must use explicitly
+     * initialized tokens. See {@link TokenStore#requiresExplicitInitialization()}. Also, the given {@code segmentId}
+     * must be currently processed by a thread owned by this processor instance.
+     *
+     * @param segmentId The identifier of the segment to split
+     * @return a CompletableFuture providing the result of the split operation
+     */
+    public CompletableFuture<Boolean> splitSegment(int segmentId) {
+        if (!this.activeSegments.containsKey(segmentId)) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        if (!tokenStore.requiresExplicitInitialization()) {
+            result.completeExceptionally(new UnsupportedOperationException("TokenStore must use explicit initialization to be able to safely split tokens"));
+        }
+        this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
+                         .add(new SplitSegmentInstruction(result, segmentId));
+        return result;
+    }
+
+    /**
+     * Instruct the processor to merge the segment with given {@code segmentId} back with the segment that it was
+     * originally split from. The processor must be able to claim the other segment, in order to merge it. Therefore,
+     * this other segment must not have any active claims in the TokenStore.
+     * <p>
+     * The Processor must currently be actively processing the segment with given {@code segmentId}.
+     * <p>
+     * Use {@link #releaseSegment(int)} to force this processor to release any claims with tokens required to merge
+     * the segments.
+     * <p>
+     * To find out which segment a given {@code segmentId} should be merged with, use the following procedure:
+     * <pre>
+     *     EventTrackerStatus status = processor.processingStatus().get(segmentId);
+     *     if (status == null) {
+     *         // this processor is not processing segmentId, and will not be able to merge
+     *     }
+     *     return status.getSegment().mergeableSegmentId();
+     * </pre>
+     *
+     * @param segmentId The identifier of the segment to merge into this one.
+     * @return a CompletableFuture indicating whether the merge was executed successfully
+     */
+    public CompletableFuture<Boolean> mergeSegment(int segmentId) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        if (!tokenStore.requiresExplicitInitialization()) {
+            result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely split tokens"));
+            return result;
+        }
+
+        TrackerStatus segmentStatus = this.activeSegments.get(segmentId);
+        if (segmentStatus == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        int segmentToMerge = segmentStatus.getSegment().mergeableSegmentId();
+        this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
+                         .add(new MergeSegmentInstruction(result, segmentId, segmentToMerge));
+        return result;
+    }
+
+    /**
      * Fetch and process event batches continuously for as long as the processor is not shutting down. The processor
      * will process events in batches. The maximum size of size of each event batch is configurable.
      * <p>
@@ -175,7 +238,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         BlockingStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
         try {
-            while (state.get().isRunning() && canClaimSegment(segment.getSegmentId())) {
+            // only execute the loop when in running state, no processing instructions have been executed, and the
+            // segment is not blacklisted for release
+            while (state.get().isRunning() && !processInstructions(segment.getSegmentId())
+                    && canClaimSegment(segment.getSegmentId())) {
                 try {
                     eventStream = ensureEventStreamOpened(eventStream, segment);
                     processBatch(segment, eventStream);
@@ -202,6 +268,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
+    private boolean processInstructions(int segmentId) {
+        List<Instruction> toExecute = instructions.getOrDefault(segmentId, Collections.emptyList());
+        boolean instructionsPresent = !toExecute.isEmpty();
+        for (Instruction instruction : toExecute) {
+            toExecute.remove(instruction);
+            transactionManager.executeInTransaction(instruction);
+        }
+
+        return instructionsPresent;
+    }
+
     private void releaseToken(Segment segment) {
         try {
             transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
@@ -210,16 +287,50 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
+    /**
+     * Indicates whether the {@code eventMessage} identified with given {@code token} should be processed as part of the
+     * given {@code segment}. This implementation is away of merge tokens and will recursively detect the (sub)segment
+     * in which an event should be handled.
+     *
+     * @param token   The token to check segment validity for
+     * @param segment The segment to process the event in
+     * @return {@code true} if this event should be handled, otherwise {@code false}
+     */
+    protected List<Segment> processingSegments(TrackingToken token, Segment segment) {
+        Optional<MergedTrackingToken> mergedToken = WrappedToken.unwrap(token, MergedTrackingToken.class);
+        if (mergedToken.isPresent()) {
+            Segment[] splitSegments = segment.split();
+            List<Segment> segments = new ArrayList<>();
+            if (mergedToken.get().isLowerSegmentAdvanced()) {
+                segments.addAll(processingSegments(mergedToken.get().lowerSegmentToken(), splitSegments[0]));
+            }
+
+            if (mergedToken.get().isUpperSegmentAdvanced()) {
+                segments.addAll(processingSegments(mergedToken.get().upperSegmentToken(), splitSegments[1]));
+            }
+            return segments;
+        }
+        return singletonList(segment);
+    }
+
     private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             checkSegmentCaughtUp(segment, eventStream);
-            TrackingToken lastToken = null;
+            TrackingToken lastToken;
+            List<Segment> processingSegments;
             if (eventStream.hasNextAvailable(1, SECONDS)) {
-                for (int i = 0; i < batchSize * 10 && batch.size() < batchSize && eventStream.hasNextAvailable(); i++) {
+                final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
+                lastToken = firstMessage.trackingToken();
+                processingSegments = processingSegments(lastToken, segment);
+                if (canHandle(firstMessage, processingSegments)) {
+                    batch.add(firstMessage);
+                }
+                for (int i = 0; singletonList(segment).equals(processingSegments) && i < batchSize * 10 && batch.size() < batchSize
+                        && eventStream.peek().map(e -> isRegularProcessing(segment, e.trackingToken())).orElse(false); i++) {
                     final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                     lastToken = trackedEventMessage.trackingToken();
-                    if (canHandle(trackedEventMessage, segment)) {
+                    if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
                     } else {
                         reportIgnored(trackedEventMessage);
@@ -247,7 +358,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             while (lastToken != null
                     && eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
-                if (canHandle(trackedEventMessage, segment)) {
+                if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
                 }
             }
@@ -256,7 +367,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
-            processInUnitOfWork(batch, unitOfWork, segment);
+            processInUnitOfWork(batch, unitOfWork, processingSegments);
 
             activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
         } catch (InterruptedException e) {
@@ -264,6 +375,20 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             this.shutDown();
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Indicates whether the given tracking token represents a regular processing for the given segment.
+     * <p>
+     * This is not the case when the tracking token indicates the given segment was partially processed by the token.
+     *
+     * @param segment       The segment assigned to the Worker Thread to process
+     * @param trackingToken The token of the message to assess
+     * @return true of this is a token to process normally, false if was partially processed
+     */
+    private boolean isRegularProcessing(Segment segment, TrackingToken trackingToken) {
+        List<Segment> segments = singletonList(segment);
+        return segments.equals(processingSegments(trackingToken, segment));
     }
 
     private void checkSegmentCaughtUp(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) {
@@ -287,11 +412,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private BlockingStream<TrackedEventMessage<?>> doOpenStream(TrackingToken trackingToken) {
-        if (trackingToken instanceof ReplayToken) {
-            return new ReplayingMessageStream((ReplayToken) trackingToken,
-                                              messageSource.openStream(((ReplayToken) trackingToken).unwrap()));
+        if (trackingToken instanceof WrappedToken) {
+            return new WrappedMessageStream((WrappedToken) trackingToken, messageSource.openStream(WrappedToken.unwrapLowerBound(trackingToken)));
         }
-        return messageSource.openStream(trackingToken);
+        return messageSource.openStream(WrappedToken.unwrapLowerBound(trackingToken));
     }
 
     /**
@@ -417,6 +541,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     /**
      * Returns the {@link StreamableMessageSource} this processor is using
+     *
      * @return {@link StreamableMessageSource}
      */
     public StreamableMessageSource<? extends TrackedEventMessage<?>> getMessageSource() {
@@ -431,7 +556,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         if (state.getAndSet(State.SHUT_DOWN).isRunning()) {
             logger.info("Shutdown state set for Processor '{}'. Awaiting termination...", getName());
             try {
-                while (threadFactory.activeThreads() > 0) {
+                while (activeProcessorThreads() > 0) {
                     Thread.sleep(1);
                 }
             } catch (InterruptedException e) {
@@ -560,46 +685,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private static class ActivityCountingThreadFactory implements ThreadFactory {
-
-        private final AtomicInteger threadCount = new AtomicInteger(0);
-        private final ThreadFactory delegate;
-
-        public ActivityCountingThreadFactory(ThreadFactory delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public Thread newThread(Runnable r) {
-            return delegate.newThread(new CountingRunnable(r, threadCount));
-        }
-
-        public int activeThreads() {
-            return threadCount.get();
-        }
-    }
-
-    private static class CountingRunnable implements Runnable {
-
-        private final Runnable delegate;
-        private final AtomicInteger counter;
-
-        public CountingRunnable(Runnable delegate, AtomicInteger counter) {
-            this.delegate = delegate;
-            this.counter = counter;
-        }
-
-        @Override
-        public void run() {
-            counter.incrementAndGet();
-            try {
-                delegate.run();
-            } finally {
-                counter.decrementAndGet();
-            }
-        }
-    }
-
     private static final class TrackerStatus implements EventTrackerStatus {
 
         private final Segment segment;
@@ -648,192 +733,35 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         @Override
         public TrackingToken getTrackingToken() {
-            if (trackingToken instanceof ReplayToken) {
-                return ((ReplayToken) trackingToken).unwrap();
+            return WrappedToken.unwrapLowerBound(trackingToken);
+        }
+
+        public TrackerStatus[] split() {
+            Segment[] newSegments = segment.split();
+            TrackingToken tokenAtReset = null;
+            TrackingToken workingToken = trackingToken;
+            TrackingToken[] splitTokens = new TrackingToken[2];
+            if (workingToken instanceof ReplayToken) {
+                tokenAtReset = ((ReplayToken) workingToken).getTokenAtReset();
+                workingToken = ((ReplayToken) workingToken).lowerBound();
             }
-            return trackingToken;
-        }
-    }
-
-    private class TrackingSegmentWorker implements Runnable {
-
-        private final Segment segment;
-
-        public TrackingSegmentWorker(Segment segment) {
-            this.segment = segment;
-        }
-
-        @Override
-        public void run() {
-            try {
-                processingLoop(segment);
-            } catch (Throwable e) {
-                logger.error("Processing loop ended due to uncaught exception. Pausing processor in Error State.", e);
-                state.set(State.PAUSED_ERROR);
-            } finally {
-                activeSegments.remove(segment.getSegmentId());
-                if (availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
-                    logger.info("No Worker Launcher active. Using current thread to assign segments.");
-                    new WorkerLauncher().run();
-                }
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "TrackingSegmentWorker{" +
-                    "processor=" + getName() +
-                    ", segment=" + segment +
-                    '}';
-        }
-    }
-
-    private class WorkerLauncher implements Runnable {
-
-        @Override
-        public void run() {
-            int waitTime = 1;
-            String processorName = TrackingEventProcessor.this.getName();
-            while (getState().isRunning()) {
-                int[] tokenStoreCurrentSegments;
-
-                try {
-                    tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
-
-                    // When in an initial stage, split segments to the requested number.
-                    if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
-                        tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
-                                () -> {
-                                    TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
-                                    tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
-                                    return tokenStore.fetchSegments(processorName);
-                                });
-                    }
-                    waitTime = 1;
-                } catch (Exception e) {
-                    logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
-                                processorName, e.getMessage(), waitTime);
-                    doSleepFor(SECONDS.toMillis(waitTime));
-                    waitTime = Math.min(waitTime * 2, 60);
-
-                    continue;
-                }
-
-                Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
-
-                // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
-                // Keep track of the last processed segments...
-                TrackingSegmentWorker workingInCurrentThread = null;
-                for (int i = 0; i < segments.length && availableThreads.get() > 0; i++) {
-                    Segment segment = segments[i];
-
-                    if (!activeSegments.containsKey(segment.getSegmentId())
-                            && canClaimSegment(segment.getSegmentId())) {
-                        try {
-                            transactionManager.executeInTransaction(() -> {
-                                TrackingToken token = tokenStore.fetchToken(processorName, segment.getSegmentId());
-                                activeSegments.putIfAbsent(segment.getSegmentId(), new TrackerStatus(segment, token));
-                            });
-                        } catch (UnableToClaimTokenException ucte) {
-                            // When not able to claim a token for a given segment, we skip the
-                            logger.debug("Unable to claim the token for segment: {}. It is owned by another process",
-                                         segment.getSegmentId());
-                            activeSegments.remove(segment.getSegmentId());
-                            continue;
-                        } catch (Exception e) {
-                            activeSegments.remove(segment.getSegmentId());
-                            if (AxonNonTransientException.isCauseOf(e)) {
-                                logger.error(
-                                        "An unrecoverable error has occurred wile attempting to claim a token "
-                                                + "for segment: {}. Shutting down processor [{}].",
-                                        segment.getSegmentId(),
-                                        getName(),
-                                        e
-                                );
-                                state.set(State.PAUSED_ERROR);
-                                break;
-                            }
-                            logger.info(
-                                    "An error occurred while attempting to claim a token for segment: {}. "
-                                            + "Will retry later...",
-                                    segment.getSegmentId(),
-                                    e
-                            );
-                            continue;
-                        }
-
-                        TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(segment);
-                        if (availableThreads.decrementAndGet() > 0) {
-                            logger.info("Dispatching new tracking segment worker: {}", trackingSegmentWorker);
-                            threadFactory.newThread(trackingSegmentWorker).start();
-                        } else {
-                            workingInCurrentThread = trackingSegmentWorker;
-                            break;
-                        }
-                    }
-                }
-
-                // We're not able to spawn new threads, so this thread should also start processing.
-                if (nonNull(workingInCurrentThread)) {
-                    logger.info("Using current Thread for last segment worker: {}", workingInCurrentThread);
-                    workingInCurrentThread.run();
-                    return;
-                }
-                doSleepFor(tokenClaimInterval);
-            }
-        }
-    }
-
-    private class ReplayingMessageStream implements BlockingStream<TrackedEventMessage<?>> {
-
-        private final BlockingStream<TrackedEventMessage<?>> delegate;
-        private ReplayToken lastToken;
-
-        public ReplayingMessageStream(ReplayToken token, BlockingStream<TrackedEventMessage<?>> delegate) {
-            this.delegate = delegate;
-            this.lastToken = token;
-        }
-
-        @Override
-        public Optional<TrackedEventMessage<?>> peek() {
-            return delegate.peek();
-        }
-
-        @Override
-        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
-            return delegate.hasNextAvailable(timeout, unit);
-        }
-
-        @Override
-        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
-            TrackedEventMessage<?> trackedEventMessage = alterToken(delegate.nextAvailable());
-            this.lastToken = trackedEventMessage.trackingToken() instanceof ReplayToken
-                    ? (ReplayToken) trackedEventMessage.trackingToken()
-                    : null;
-            return trackedEventMessage;
-        }
-
-        @Override
-        public void close() {
-            delegate.close();
-        }
-
-        @Override
-        public boolean hasNextAvailable() {
-            return delegate.hasNextAvailable();
-        }
-
-        @SuppressWarnings("unchecked")
-        public <T> TrackedEventMessage<T> alterToken(TrackedEventMessage<T> message) {
-            if (lastToken == null) {
-                return message;
-            }
-            if (message instanceof DomainEventMessage) {
-                return new GenericTrackedDomainEventMessage<>(lastToken.advancedTo(message.trackingToken()),
-                                                              (DomainEventMessage<T>) message);
+            if (workingToken instanceof MergedTrackingToken) {
+                splitTokens[0] = ((MergedTrackingToken) workingToken).lowerSegmentToken();
+                splitTokens[1] = ((MergedTrackingToken) workingToken).upperSegmentToken();
             } else {
-                return new GenericTrackedEventMessage<>(lastToken.advancedTo(message.trackingToken()), message);
+                splitTokens[0] = workingToken;
+                splitTokens[1] = workingToken;
             }
+
+            if (tokenAtReset != null) {
+                // we were in a replay. Need to re-initialize the replay wrapper
+                splitTokens[0] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[0]);
+                splitTokens[1] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[1]);
+            }
+            TrackerStatus[] newStatus = new TrackerStatus[2];
+            newStatus[0] = new TrackerStatus(newSegments[0], splitTokens[0]);
+            newStatus[1] = new TrackerStatus(newSegments[1], splitTokens[1]);
+            return newStatus;
         }
     }
 
@@ -970,6 +898,263 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+        }
+    }
+
+    private abstract static class Instruction implements Runnable {
+
+        private final CompletableFuture<Boolean> result;
+
+        public Instruction(CompletableFuture<Boolean> result) {
+            this.result = result;
+        }
+
+        public void run() {
+            try {
+                result.complete(runSafe());
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+        }
+
+        protected abstract boolean runSafe() throws Exception;
+    }
+
+    private class TrackingSegmentWorker implements Runnable {
+
+        private final Segment segment;
+
+        public TrackingSegmentWorker(Segment segment) {
+            this.segment = segment;
+        }
+
+        @Override
+        public void run() {
+            try {
+                processingLoop(segment);
+            } catch (Throwable e) {
+                logger.error("Processing loop ended due to uncaught exception. Pausing processor in Error State.", e);
+                state.set(State.PAUSED_ERROR);
+            } finally {
+                activeSegments.remove(segment.getSegmentId());
+                if (availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
+                    logger.info("No Worker Launcher active. Using current thread to assign segments.");
+                    new WorkerLauncher().run();
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "TrackingSegmentWorker{" +
+                    "processor=" + getName() +
+                    ", segment=" + segment +
+                    '}';
+        }
+    }
+
+    private class WorkerLauncher implements Runnable {
+
+        @Override
+        public void run() {
+            int waitTime = 1;
+            String processorName = TrackingEventProcessor.this.getName();
+            while (getState().isRunning()) {
+                int[] tokenStoreCurrentSegments;
+
+                try {
+                    tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
+
+                    // When in an initial stage, split segments to the requested number.
+                    if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
+                        tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                                () -> {
+                                    TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
+                                    tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
+                                    return tokenStore.fetchSegments(processorName);
+                                });
+                    }
+                    waitTime = 1;
+                } catch (Exception e) {
+                    logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
+                                processorName, e.getMessage(), waitTime);
+                    doSleepFor(SECONDS.toMillis(waitTime));
+                    waitTime = Math.min(waitTime * 2, 60);
+
+                    continue;
+                }
+
+                // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
+                // Keep track of the last processed segments...
+                TrackingSegmentWorker workingInCurrentThread = null;
+                for (int i = 0; i < tokenStoreCurrentSegments.length && availableThreads.get() > 0; i++) {
+                    int segmentId = tokenStoreCurrentSegments[i];
+
+                    if (!activeSegments.containsKey(segmentId)
+                            && canClaimSegment(segmentId)) {
+                        try {
+                            transactionManager.executeInTransaction(() -> {
+                                TrackingToken token = tokenStore.fetchToken(processorName, segmentId);
+                                int[] segmentIds = tokenStore.fetchSegments(processorName);
+                                Segment segment = Segment.computeSegment(segmentId, segmentIds);
+                                activeSegments.putIfAbsent(segmentId, new TrackerStatus(segment, token));
+                            });
+                        } catch (UnableToClaimTokenException ucte) {
+                            // When not able to claim a token for a given segment, we skip the
+                            logger.debug("Unable to claim the token for segment: {}. It is owned by another process",
+                                         segmentId);
+                            activeSegments.remove(segmentId);
+                            continue;
+                        } catch (Exception e) {
+                            activeSegments.remove(segmentId);
+                            if (AxonNonTransientException.isCauseOf(e)) {
+                                logger.error(
+                                        "An unrecoverable error has occurred wile attempting to claim a token "
+                                                + "for segment: {}. Shutting down processor [{}].",
+                                        segmentId,
+                                        getName(),
+                                        e
+                                );
+                                state.set(State.PAUSED_ERROR);
+                                break;
+                            }
+                            logger.info(
+                                    "An error occurred while attempting to claim a token for segment: {}. "
+                                            + "Will retry later...",
+                                    segmentId,
+                                    e
+                            );
+                            break;
+                        }
+
+                        TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(activeSegments.get(segmentId).getSegment());
+                        if (availableThreads.decrementAndGet() > 0) {
+                            logger.info("Dispatching new tracking segment worker: {}", trackingSegmentWorker);
+                            threadFactory.newThread(trackingSegmentWorker).start();
+                        } else {
+                            workingInCurrentThread = trackingSegmentWorker;
+                            break;
+                        }
+                    }
+                }
+
+                // We're not able to spawn new threads, so this thread should also start processing.
+                if (nonNull(workingInCurrentThread)) {
+                    logger.info("Using current Thread for last segment worker: {}", workingInCurrentThread);
+                    workingInCurrentThread.run();
+                    return;
+                }
+                doSleepFor(tokenClaimInterval);
+            }
+        }
+    }
+
+    private class WrappedMessageStream implements BlockingStream<TrackedEventMessage<?>> {
+
+        private final BlockingStream<TrackedEventMessage<?>> delegate;
+        private WrappedToken lastToken;
+
+        public WrappedMessageStream(WrappedToken token, BlockingStream<TrackedEventMessage<?>> delegate) {
+            this.delegate = delegate;
+            this.lastToken = token;
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return delegate.peek();
+        }
+
+        @Override
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+            return delegate.hasNextAvailable(timeout, unit);
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            TrackedEventMessage<?> trackedEventMessage = alterToken(delegate.nextAvailable());
+            this.lastToken = trackedEventMessage.trackingToken() instanceof WrappedToken
+                    ? (WrappedToken) trackedEventMessage.trackingToken()
+                    : null;
+            return trackedEventMessage;
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public boolean hasNextAvailable() {
+            return delegate.hasNextAvailable();
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> TrackedEventMessage<T> alterToken(TrackedEventMessage<T> message) {
+            if (lastToken == null) {
+                return message;
+            }
+            if (message instanceof DomainEventMessage) {
+                return new GenericTrackedDomainEventMessage<>(lastToken.advancedTo(message.trackingToken()),
+                                                              (DomainEventMessage<T>) message);
+            } else {
+                return new GenericTrackedEventMessage<>(lastToken.advancedTo(message.trackingToken()), message);
+            }
+        }
+    }
+
+    private class SplitSegmentInstruction extends Instruction {
+        private final int segmentId;
+
+        public SplitSegmentInstruction(CompletableFuture<Boolean> result, int segmentId) {
+            super(result);
+            this.segmentId = segmentId;
+        }
+
+        @Override
+        protected boolean runSafe() {
+            TrackerStatus status = activeSegments.get(segmentId);
+            TrackerStatus[] newStatus = status.split();
+            int newSegmentId = newStatus[1].getSegment().getSegmentId();
+            tokenStore.initializeSegment(newStatus[1].getTrackingToken(), getName(), newSegmentId);
+            activeSegments.put(segmentId, newStatus[0]);
+            return true;
+        }
+    }
+
+    private class MergeSegmentInstruction extends Instruction {
+        private final int segmentId;
+        private final int otherSegment;
+
+        public MergeSegmentInstruction(CompletableFuture<Boolean> result, int ownedSegment, int otherSegment) {
+            super(result);
+            this.segmentId = ownedSegment;
+            this.otherSegment = otherSegment;
+        }
+
+        @Override
+        protected boolean runSafe() {
+            logger.info("Processing merge instruction for segments [{}] and [{}] in processor [{}]",
+                        segmentId, otherSegment, getName());
+            releaseSegment(otherSegment);
+            while (activeSegments.containsKey(otherSegment)) {
+                Thread.yield();
+            }
+            TrackerStatus status = activeSegments.get(segmentId);
+            TrackingToken otherToken = tokenStore.fetchToken(getName(), otherSegment);
+            Segment segmentToMergeWith = Segment.computeSegment(otherSegment, tokenStore.fetchSegments(getName()));
+            if (!status.getSegment().isMergeableWith(segmentToMergeWith)) {
+                tokenStore.releaseClaim(getName(), otherSegment);
+                return false;
+            }
+            Segment newSegment = status.getSegment().mergedWith(segmentToMergeWith);
+            tokenStore.deleteToken(getName(), otherSegment);
+
+            TrackingToken mergedToken = otherSegment < segmentId
+                    ? new MergedTrackingToken(otherToken, status.getTrackingToken())
+                    : new MergedTrackingToken(status.getTrackingToken(), otherToken);
+
+            tokenStore.storeToken(mergedToken, getName(), newSegment.getSegmentId());
+            return true;
         }
     }
 }
