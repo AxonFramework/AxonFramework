@@ -736,6 +736,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             return WrappedToken.unwrapLowerBound(trackingToken);
         }
 
+        private TrackingToken getInternalTrackingToken() {
+            return trackingToken;
+        }
+
         public TrackerStatus[] split() {
             Segment[] newSegments = segment.split();
             TrackingToken tokenAtReset = null;
@@ -1150,8 +1154,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             tokenStore.deleteToken(getName(), otherSegment);
 
             TrackingToken mergedToken = otherSegment < segmentId
-                    ? new MergedTrackingToken(otherToken, status.getTrackingToken())
-                    : new MergedTrackingToken(status.getTrackingToken(), otherToken);
+                    ? new MergedTrackingToken(otherToken, status.getInternalTrackingToken())
+                    : new MergedTrackingToken(status.getInternalTrackingToken(), otherToken);
 
             tokenStore.storeToken(mergedToken, getName(), newSegment.getSegmentId());
             return true;

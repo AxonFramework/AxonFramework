@@ -775,14 +775,10 @@ public class TrackingEventProcessorTest {
     public void testSplitSegments() throws InterruptedException {
         tokenStore.initializeTokenSegments(testSubject.getName(), 1);
         testSubject.start();
-        while (!testSubject.processingStatus().containsKey(0)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentStart(0);
         assertTrue("Expected split to succeed", testSubject.splitSegment(0).join());
         assertArrayEquals(new int[]{0, 1}, tokenStore.fetchSegments(testSubject.getName()));
-        while (!testSubject.processingStatus().containsKey(0)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentStart(0);
     }
 
     @Test(timeout = 10000)
@@ -793,11 +789,9 @@ public class TrackingEventProcessorTest {
             Thread.sleep(10);
         }
 
-        assertTrue("Expected split to succeed", testSubject.mergeSegment(0).join());
+        assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        while (!testSubject.processingStatus().containsKey(0)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentStart(0);
     }
 
     @Test(timeout = 10000)
@@ -807,20 +801,14 @@ public class TrackingEventProcessorTest {
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
 
-        for (int i = 0; i < 10; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        publishEvents(10);
 
         testSubject.start();
-        while (testSubject.processingStatus().size() < 2) {
-            Thread.sleep(10);
-        }
+        waitForActiveThreads(2);
 
-        assertTrue("Expected split to succeed", testSubject.mergeSegment(0).join());
+        assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        while (!testSubject.processingStatus().containsKey(0)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentStart(0);
 
         while (!testSubject.processingStatus().get(0).isCaughtUp()) {
             Thread.sleep(10);
@@ -843,20 +831,14 @@ public class TrackingEventProcessorTest {
         when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
         eventBus.publish(events);
         testSubject.start();
-        while (testSubject.processingStatus().size() < 2) {
-            Thread.sleep(10);
-        }
+        waitForActiveThreads(2);
 
         testSubject.releaseSegment(1);
-        while (testSubject.processingStatus().containsKey(1)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentRelease(1);
 
-        assertTrue("Expected split to succeed", testSubject.mergeSegment(0).join());
+        assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        while (!testSubject.processingStatus().containsKey(0)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentStart(0);
 
         while (!Optional.ofNullable(testSubject.processingStatus().get(0)).map(EventTrackerStatus::isCaughtUp).orElse(false)) {
             Thread.sleep(10);
@@ -865,6 +847,43 @@ public class TrackingEventProcessorTest {
         handledEvents.forEach(e -> System.out.println(((TrackedEventMessage) e).trackingToken()));
 
         assertEquals(10, handledEvents.size());
+    }
+
+    @Test(timeout = 10000)
+    public void testDoubleSplitAndMerge() throws Exception {
+        tokenStore.initializeTokenSegments(testSubject.getName(), 1);
+        List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
+        when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
+
+        publishEvents(10);
+
+        testSubject.start();
+        waitForActiveThreads(1);
+
+        assertTrue("Expected split to succeed", testSubject.splitSegment(0).join());
+        waitForActiveThreads(1);
+
+        assertTrue("Expected split to succeed", testSubject.splitSegment(0).join());
+        waitForActiveThreads(1);
+
+        assertArrayEquals(new int[]{0, 1, 2}, tokenStore.fetchSegments(testSubject.getName()));
+
+        publishEvents(20);
+
+        waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
+
+        assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
+        assertArrayEquals(new int[]{0, 1}, tokenStore.fetchSegments(testSubject.getName()));
+
+        publishEvents(10);
+
+        waitForSegmentStart(0);
+        waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
+
+        assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
+        assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
+
+        assertWithin(3, TimeUnit.SECONDS, () -> assertEquals(40, handledEvents.size()));
     }
 
     @Test(timeout = 10000)
@@ -886,9 +905,7 @@ public class TrackingEventProcessorTest {
             System.out.println(Thread.currentThread().getName() + " handled " + message.trackingToken());
             return handledEvents.add(message);});
 
-        for (int i = 0; i < 10; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        publishEvents(10);
         testSubject.start();
 
         while (testSubject.processingStatus().size() < 2 ||
@@ -904,15 +921,11 @@ public class TrackingEventProcessorTest {
             Thread.sleep(10);
         }
 
-        for (int i = 0; i < 10; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        publishEvents(10);
 
         testSubject.mergeSegment(0);
 
-        for (int i = 0; i < 10; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        publishEvents(10);
 
         while (testSubject.processingStatus().size() != 1 ||
                 !testSubject.processingStatus().values().stream().allMatch(EventTrackerStatus::isCaughtUp)) {
@@ -953,23 +966,17 @@ public class TrackingEventProcessorTest {
 
         testSubject.releaseSegment(1);
         testSubject.start();
-        while (testSubject.processingStatus().size() < 1) {
-            Thread.sleep(10);
-        }
+        waitForActiveThreads(1);
 
         CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(0);
 
-        for (int i = 0; i < 20; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        publishEvents(20);
 
         System.out.println("Number of events handled at merge: " + handledEvents.size());
 
         assertTrue("Expected split to succeed", mergeResult.join());
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        while (!testSubject.processingStatus().containsKey(0)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentStart(0);
 
         assertWithin(10, TimeUnit.SECONDS, () -> assertEquals(40, handledEvents.size()));
         Thread.sleep(100);
@@ -1008,9 +1015,7 @@ public class TrackingEventProcessorTest {
             Thread.yield();
         }
 
-        for (int i = 0; i < 10; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        publishEvents(10);
 
 
         CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(0);
@@ -1019,22 +1024,16 @@ public class TrackingEventProcessorTest {
         testSubject.shutDown();
         testSubject.resetTokens();
 
-        for (int i = 0; i < 10; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        publishEvents(10);
 
         testSubject.start();
-        while (testSubject.processingStatus().size() < 1) {
-            Thread.sleep(10);
-        }
+        waitForActiveThreads(1);
 
 
         System.out.println("Number of events handled at merge: " + handledEvents.size());
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        while (!testSubject.processingStatus().containsKey(0)) {
-            Thread.sleep(10);
-        }
+        waitForSegmentStart(0);
 
         while (!testSubject.processingStatus().get(0).isCaughtUp()) {
             Thread.sleep(10);
@@ -1050,9 +1049,7 @@ public class TrackingEventProcessorTest {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(3));
 
         testSubject.start();
-        while (testSubject.processingStatus().size() < 3) {
-            Thread.sleep(10);
-        }
+        waitForActiveThreads(3);
         assertTrue(testSubject.processingStatus().containsKey(0));
         assertTrue(testSubject.processingStatus().containsKey(1));
         assertTrue(testSubject.processingStatus().containsKey(2));
@@ -1116,6 +1113,39 @@ public class TrackingEventProcessorTest {
         @Override
         public void close() {
 
+        }
+
+
+    }
+    private void waitForSegmentStart(int segmentId) throws InterruptedException {
+        while (!testSubject.processingStatus().containsKey(segmentId)) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void waitForSegmentRelease(int segmentId) throws InterruptedException {
+        while (testSubject.processingStatus().containsKey(segmentId)) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void waitForActiveThreads(int minimalthreadCount) throws InterruptedException {
+        while (testSubject.processingStatus().size() < minimalthreadCount) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void waitForProcessingStatus(int segmentId, Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
+        while (!Optional.ofNullable(testSubject.processingStatus().get(segmentId))
+                        .map(expectedStatus::test)
+                        .orElse(false)) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void publishEvents(int i2) {
+        for (int i = 0; i < i2; i++) {
+            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
         }
     }
 }
