@@ -16,16 +16,11 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FailureLoggingCallback;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.common.Registration;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.Message;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +80,6 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @param command The command to send
      * @param <R>     The expected type of return value
      * @return The result of the command handler execution
-     *
      * @throws org.axonframework.commandhandling.CommandExecutionException when command execution threw a checked
      *                                                                     exception
      */
@@ -112,7 +106,6 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @param unit    The time unit of the timeout argument
      * @param <R>     The expected type of return value
      * @return The result of the command handler execution
-     *
      * @throws org.axonframework.commandhandling.CommandExecutionException when command execution threw a checked
      *                                                                     exception
      */
@@ -132,7 +125,20 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     public <R> CompletableFuture<R> send(Object command) {
         FutureCallback<Object, R> callback = new FutureCallback<>();
         send(command, new FailureLoggingCallback<>(logger, callback));
-        return callback.thenApply(Message::getPayload);
+        CompletableFuture<R> result = new CompletableFuture<>();
+        callback.exceptionally(GenericCommandResultMessage::asCommandResultMessage)
+                .thenAccept(r -> {
+                    try {
+                        if (r.isExceptional()) {
+                            result.completeExceptionally(r.exceptionResult());
+                        } else {
+                            result.complete(r.getPayload());
+                        }
+                    } catch (Exception e) {
+                        result.completeExceptionally(e);
+                    }
+                });
+        return result;
     }
 
     @Override

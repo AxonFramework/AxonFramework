@@ -68,6 +68,20 @@
             <version>2.3.4</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- explicitly define transitive dependencies to increase version priority -->
+        <!-- see https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Transitive_Dependencies -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-modelling</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

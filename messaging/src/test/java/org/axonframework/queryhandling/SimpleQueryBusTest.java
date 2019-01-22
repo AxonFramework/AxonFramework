@@ -30,6 +30,7 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.junit.Before;
 import org.junit.Test;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -560,5 +561,26 @@ public class SimpleQueryBusTest {
         assertEquals(testQueryMessage.getIdentifier(), queryResponseMessage.getMetaData().get("traceId"));
         assertEquals(testQueryMessage.getIdentifier(), queryResponseMessage.getMetaData().get("correlationId"));
         assertEquals("Hello, World1234", queryResponseMessage.getPayload());
+    }
+
+    @Test
+    public void testSubscriptionQueryReportsExceptionInInitialResult() {
+        testSubject.subscribe(String.class.getName(), String.class, q -> {throw new MockException();});
+
+        SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result = testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>("test", ResponseTypes.instanceOf(String.class), ResponseTypes.instanceOf(String.class)));
+        Mono<QueryResponseMessage<String>> initialResult = result.initialResult();
+        assertFalse("Exception by handler should be reported in result, not on Mono",
+                    initialResult.map(r -> false).onErrorReturn(MockException.class::isInstance, true).block());
+        assertTrue(initialResult.block().isExceptional());
+    }
+
+    @Test
+    public void testQueryReportsExceptionInResponseMessage() throws ExecutionException, InterruptedException {
+        testSubject.subscribe(String.class.getName(), String.class, q -> {throw new MockException();});
+
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(new GenericQueryMessage<>("test", ResponseTypes.instanceOf(String.class)));
+        assertFalse("Exception by handler should be reported in result, not on Mono",
+                    result.thenApply(r -> false).exceptionally(MockException.class::isInstance).get());
+        assertTrue(result.get().isExceptional());
     }
 }
