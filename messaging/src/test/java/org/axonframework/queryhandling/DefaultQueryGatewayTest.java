@@ -25,13 +25,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class DefaultQueryGatewayTest {
@@ -165,6 +164,22 @@ public class DefaultQueryGatewayTest {
         SubscriptionQueryResult<String, String> actual = testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
         assertNull(actual.initialResult().block());
         assertEquals((Long) 0L, actual.updates().count().block());
+    }
+
+    @Test
+    public void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
+        when(mockBus.query(anyMessage(String.class, String.class)))
+                .thenReturn(CompletableFuture.completedFuture(new GenericQueryResponseMessage<String>("test") {
+                    @Override
+                    public String getPayload() {
+                        throw new MockException("Faking serialization problem");
+                    }
+                }));
+
+        CompletableFuture<String> actual = testSubject.query("query", String.class);
+        assertTrue(actual.isDone());
+        assertTrue(actual.isCompletedExceptionally());
+        assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
     }
 
     @SuppressWarnings("unused")

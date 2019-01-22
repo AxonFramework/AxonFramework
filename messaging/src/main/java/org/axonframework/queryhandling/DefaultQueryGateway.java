@@ -80,10 +80,14 @@ public class DefaultQueryGateway implements QueryGateway {
         CompletableFuture<R> result = new CompletableFuture<>();
         queryResponse.exceptionally(cause -> asResponseMessage(responseType.responseMessagePayloadType(), cause))
                      .thenAccept(queryResponseMessage -> {
-                         if (queryResponseMessage.isExceptional()) {
-                             result.completeExceptionally(queryResponseMessage.exceptionResult());
-                         } else {
-                             result.complete(queryResponseMessage.getPayload());
+                         try {
+                             if (queryResponseMessage.isExceptional()) {
+                                 result.completeExceptionally(queryResponseMessage.exceptionResult());
+                             } else {
+                                 result.complete(queryResponseMessage.getPayload());
+                             }
+                         } catch (Exception e) {
+                             result.completeExceptionally(e);
                          }
                      });
         return result;
