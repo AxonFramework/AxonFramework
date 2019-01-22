@@ -10,7 +10,7 @@ jdk:
   - oraclejdk8
 
 before_install:
-  - docker run -d -p 49161:1521 deepdiver/oracle-xe-11g
+  - docker run -d -p 49161:1521 deepdiver/docker-oracle-xe-11g
   - docker ps
   - mysql -e 'CREATE DATABASE axon;'
 
