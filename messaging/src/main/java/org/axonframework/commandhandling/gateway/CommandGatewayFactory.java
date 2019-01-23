@@ -45,6 +45,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -216,12 +219,8 @@ public class CommandGatewayFactory {
     }
 
     private boolean hasCallbackParameters(Method gatewayMethod) {
-        for (Class<?> parameter : gatewayMethod.getParameterTypes()) {
-            if (CommandCallback.class.isAssignableFrom(parameter)) {
-                return true;
-            }
-        }
-        return false;
+        return Stream.of(gatewayMethod.getParameterTypes())
+                .anyMatch(CommandCallback.class::isAssignableFrom);
     }
 
     /**
@@ -318,12 +317,8 @@ public class CommandGatewayFactory {
     }
 
     private boolean contains(Class<?>[] declaredExceptions, Class<?> exceptionClass) {
-        for (Class<?> declaredException : declaredExceptions) {
-            if (declaredException.isAssignableFrom(exceptionClass)) {
-                return true;
-            }
-        }
-        return false;
+        return Stream.of(declaredExceptions)
+                .anyMatch(declaredException -> declaredException.isAssignableFrom(exceptionClass));
     }
 
     /**
@@ -631,9 +626,7 @@ public class CommandGatewayFactory {
         @Override
         public void onResult(CommandMessage<? extends C> commandMessage,
                              CommandResultMessage<? extends R> commandResultMessage) {
-            for (CommandCallback<? super C, ? super R> callback : callbacks) {
-                callback.onResult(commandMessage, commandResultMessage);
-            }
+            callbacks.forEach(callback -> callback.onResult(commandMessage, commandResultMessage));
         }
     }
 

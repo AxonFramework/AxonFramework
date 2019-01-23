@@ -56,6 +56,11 @@ public class ConsistentHashTest {
     }
 
     @Test
+    public void testToString() {
+        assertEquals(testSubject.toString(), "ConsistentHash [member1(2),member2(2),member3(2)]");
+    }
+
+    @Test
     public void testConsistentHashChangesVersionWhenModified() {
         assertEquals(3, testSubject.version());
         assertEquals(4, testSubject.without(member1).version());
