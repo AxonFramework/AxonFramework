@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.utils.MockException;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -25,16 +25,19 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.utils.MockException;
 import org.junit.Before;
 import org.junit.Test;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -582,5 +585,39 @@ public class SimpleQueryBusTest {
         assertFalse("Exception by handler should be reported in result, not on Mono",
                     result.thenApply(r -> false).exceptionally(MockException.class::isInstance).get());
         assertTrue(result.get().isExceptional());
+    }
+
+    @Test
+    public void testQueryHandlerDeclaresFutureResponseType() throws Exception {
+        Type responseType = ReflectionUtils.methodOf(getClass(), "futureMethod").getGenericReturnType();
+        testSubject.subscribe(String.class.getName(), responseType, (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
+
+        QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
+
+        assertTrue("SimpleQueryBus should resolve CompletableFutures directly", result.isDone());
+        assertEquals("hello1234", result.get().getPayload());
+    }
+
+    @Test
+    public void testQueryHandlerDeclaresCompletableFutureResponseType() throws Exception {
+        Type responseType = ReflectionUtils.methodOf(getClass(), "completableFutureMethod").getGenericReturnType();
+        testSubject.subscribe(String.class.getName(), responseType, (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
+
+        QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
+
+        assertTrue("SimpleQueryBus should resolve CompletableFutures directly", result.isDone());
+        assertEquals("hello1234", result.get().getPayload());
+    }
+
+    @SuppressWarnings("unused")
+    public Future<String> futureMethod(){
+        return null;
+    }
+
+    @SuppressWarnings("unused")
+    public CompletableFuture<String> completableFutureMethod(){
+        return null;
     }
 }
