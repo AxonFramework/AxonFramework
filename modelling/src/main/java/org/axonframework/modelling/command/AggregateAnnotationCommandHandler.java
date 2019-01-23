@@ -16,15 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandMessageHandler;
-import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
@@ -32,12 +24,11 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -103,17 +94,11 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
-        Collection<Registration> subscriptions = new ArrayList<>();
-        for (String supportedCommand : supportedCommandNames()) {
-            Registration subscription = commandBus.subscribe(supportedCommand, this);
-            if (subscription != null) {
-                subscriptions.add(subscription);
-            }
-        }
-        return () -> {
-            subscriptions.forEach(Registration::cancel);
-            return true;
-        };
+        List<Registration> subscriptions = supportedCommandNames()
+                .stream()
+                .map(supportedCommand -> commandBus.subscribe(supportedCommand, this))
+                .filter(Objects::nonNull).collect(Collectors.toList());
+        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
     private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
