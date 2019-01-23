@@ -4,6 +4,8 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.junit.Before;
 import org.junit.Test;
+import org.axonframework.test.saga.SagaTestFixtureTest.MyTestSaga.MyEvent;
+import org.junit.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,7 +27,7 @@ public class SagaTestFixtureTest {
     }
 
     @Test
-    public void startRecordingCallbackIsInvokedOnWhenPublishingAnEvent() throws Exception {
+    public void startRecordingCallbackIsInvokedOnWhenPublishingAnEvent() {
         fixture.givenAPublished(new MyTestSaga.MyEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
 

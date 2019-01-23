@@ -376,7 +376,11 @@ public class SubscriptionQueryTest {
 
         // then
         StepVerifier.create(result.initialResult())
-                    .expectErrorMatches(chatQueryHandler.toBeThrown::equals)
+                    .assertNext(m -> {
+                        assertTrue(m.isExceptional());
+                        assertEquals(chatQueryHandler.toBeThrown, m.exceptionResult());
+                    })
+                    .expectComplete()
                     .verify();
     }
 

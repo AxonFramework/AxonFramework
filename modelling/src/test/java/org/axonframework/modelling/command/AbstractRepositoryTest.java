@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
@@ -31,6 +32,7 @@ import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -165,4 +167,21 @@ public class AbstractRepositoryTest {
 
         verifyZeroInteractions(spiedAggregate);
     }
+
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCheckedExceptionFromConstructorDoesNotAttemptToStoreAggregate() throws Exception {
+        // committing the unit of work does not throw an exception
+        UnitOfWork uow = CurrentUnitOfWork.get();
+        uow.executeWithResult(() -> testSubject.newInstance(() -> {
+            throw new Exception("Throwing checked exception");
+        }), RuntimeException.class::isInstance);
+
+        assertFalse(uow.isActive());
+        assertFalse(uow.isRolledBack());
+        assertTrue(uow.getExecutionResult().isExceptionResult());
+        assertEquals("Throwing checked exception", uow.getExecutionResult().getExceptionResult().getMessage());
+    }
+
 }

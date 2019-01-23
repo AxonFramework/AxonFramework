@@ -79,7 +79,13 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
-        uow.onPrepareCommit(x -> prepareForCommit(aggregateReference.get()));
+        uow.onPrepareCommit(x -> {
+            A aggregate = aggregateReference.get();
+            // aggregate construction may have failed with an exception. In that case, no action is required on commit
+            if (aggregate != null) {
+                prepareForCommit(aggregate);
+            }
+        });
 
         A aggregate = doCreateNew(factoryMethod);
         aggregateReference.set(aggregate);
