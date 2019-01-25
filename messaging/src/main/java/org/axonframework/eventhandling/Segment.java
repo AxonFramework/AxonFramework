@@ -89,8 +89,11 @@ public class Segment implements Comparable<Segment> {
     public static Segment computeSegment(int segmentId, int... availableSegmentIds) {
         Arrays.sort(availableSegmentIds);
 
+        // as a 1 can only happen within the mask, the smallest possible mask is the lowest power of 2 (minus one)
+        // higher than that value
         int splitCandidate = segmentId == 0 ? 1 : (Integer.highestOneBit(segmentId) << 1);
         while (Arrays.binarySearch(availableSegmentIds, splitCandidate | segmentId) >= 0) {
+            // We have found the split value for the smallest mast. We need to increase the mask
             splitCandidate = splitCandidate << 1;
         }
 

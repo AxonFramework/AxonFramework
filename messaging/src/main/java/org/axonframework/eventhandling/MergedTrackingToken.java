@@ -39,26 +39,21 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
 
     /**
      * Initialize a Merged Token, with the {@code lowerSegmentToken} representing the progress of the segment with the
-     * lower segmentId, and {@code upperSegmentToken} representing the progress of the segment with the higer segmentId.
+     * lower segmentId, and {@code upperSegmentToken} representing the progress of the segment with the higher segmentId.
      *
      * @param lowerSegmentToken the token of the half with the lower segment ID
      * @param upperSegmentToken the token of the half with the higher segment ID
      */
     @JsonCreator
     public MergedTrackingToken(
-            @JsonProperty("lowerSegmentToken")
-                    TrackingToken lowerSegmentToken,
-            @JsonProperty("upperSegmentToken")
-                    TrackingToken upperSegmentToken) {
-        this.lowerSegmentToken = lowerSegmentToken;
-        this.upperSegmentToken = upperSegmentToken;
-        this.lowerSegmentAdvanced = false;
-        this.upperSegmentAdvanced = false;
+            @JsonProperty("lowerSegmentToken") TrackingToken lowerSegmentToken,
+            @JsonProperty("upperSegmentToken") TrackingToken upperSegmentToken) {
+        this(lowerSegmentToken, upperSegmentToken, false, false);
     }
 
     /**
      * Initialize a Merged Token, with the {@code lowerSegmentToken} representing the progress of the segment with the
-     * lower segmentId, and {@code upperSegmentToken} representing the progress of the segment with the higer segmentId,
+     * lower segmentId, and {@code upperSegmentToken} representing the progress of the segment with the higher segmentId,
      * additionally indicating if either of these segments were advanced by the latest call to
      * {@link #advancedTo(TrackingToken)}
      *
@@ -67,7 +62,8 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
      * @param lowerSegmentAdvanced whether the lower segment advanced in the last call
      * @param upperSegmentAdvanced whether the upper segment advanced in the last call
      */
-    protected MergedTrackingToken(TrackingToken lowerSegmentToken, TrackingToken upperSegmentToken, boolean lowerSegmentAdvanced, boolean upperSegmentAdvanced) {
+    protected MergedTrackingToken(TrackingToken lowerSegmentToken, TrackingToken upperSegmentToken,
+                                  boolean lowerSegmentAdvanced, boolean upperSegmentAdvanced) {
         this.lowerSegmentToken = lowerSegmentToken;
         this.upperSegmentToken = upperSegmentToken;
         this.lowerSegmentAdvanced = lowerSegmentAdvanced;

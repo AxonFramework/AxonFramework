@@ -814,9 +814,9 @@ public class TrackingEventProcessorTest {
             Thread.sleep(10);
         }
 
-        assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(10, handledEvents.size()));
+        assertWithin(5, TimeUnit.SECONDS, () -> assertEquals("Expected all 10 messages to be handled", 10, handledEvents.stream().map(EventMessage::getIdentifier).distinct().count()));
         Thread.sleep(100);
-        assertEquals(10, handledEvents.size());
+        assertEquals("Number of handler invocations doesn't match number of unique events", 10, handledEvents.size());
     }
 
     @Test(timeout = 10000)
@@ -843,8 +843,6 @@ public class TrackingEventProcessorTest {
         while (!Optional.ofNullable(testSubject.processingStatus().get(0)).map(EventTrackerStatus::isCaughtUp).orElse(false)) {
             Thread.sleep(10);
         }
-
-        handledEvents.forEach(e -> System.out.println(((TrackedEventMessage) e).trackingToken()));
 
         assertEquals(10, handledEvents.size());
     }
@@ -902,8 +900,8 @@ public class TrackingEventProcessorTest {
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         when(mockHandler.handle(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
-            System.out.println(Thread.currentThread().getName() + " handled " + message.trackingToken());
-            return handledEvents.add(message);});
+            return handledEvents.add(message);
+        });
 
         publishEvents(10);
         testSubject.start();
@@ -978,7 +976,7 @@ public class TrackingEventProcessorTest {
 
         System.out.println("Number of events handled at merge: " + handledEvents.size());
 
-        assertTrue("Expected split to succeed", mergeResult.join());
+        assertTrue("Expected merge to succeed", mergeResult.join());
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForSegmentStart(0);
 
@@ -1085,6 +1083,38 @@ public class TrackingEventProcessorTest {
         }
     }
 
+    private void waitForSegmentStart(int segmentId) throws InterruptedException {
+        while (!testSubject.processingStatus().containsKey(segmentId)) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void waitForSegmentRelease(int segmentId) throws InterruptedException {
+        while (testSubject.processingStatus().containsKey(segmentId)) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void waitForActiveThreads(int minimalthreadCount) throws InterruptedException {
+        while (testSubject.processingStatus().size() < minimalthreadCount) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void waitForProcessingStatus(int segmentId, Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
+        while (!Optional.ofNullable(testSubject.processingStatus().get(segmentId))
+                        .map(expectedStatus::test)
+                        .orElse(false)) {
+            Thread.sleep(10);
+        }
+    }
+
+    private void publishEvents(int nrOfEvents) {
+        for (int i = 0; i < nrOfEvents; i++) {
+            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
+        }
+    }
+
     private static class StubTrackingEventStream implements TrackingEventStream {
 
 
@@ -1123,36 +1153,5 @@ public class TrackingEventProcessorTest {
         }
 
 
-    }
-    private void waitForSegmentStart(int segmentId) throws InterruptedException {
-        while (!testSubject.processingStatus().containsKey(segmentId)) {
-            Thread.sleep(10);
-        }
-    }
-
-    private void waitForSegmentRelease(int segmentId) throws InterruptedException {
-        while (testSubject.processingStatus().containsKey(segmentId)) {
-            Thread.sleep(10);
-        }
-    }
-
-    private void waitForActiveThreads(int minimalthreadCount) throws InterruptedException {
-        while (testSubject.processingStatus().size() < minimalthreadCount) {
-            Thread.sleep(10);
-        }
-    }
-
-    private void waitForProcessingStatus(int segmentId, Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
-        while (!Optional.ofNullable(testSubject.processingStatus().get(segmentId))
-                        .map(expectedStatus::test)
-                        .orElse(false)) {
-            Thread.sleep(10);
-        }
-    }
-
-    private void publishEvents(int i2) {
-        for (int i = 0; i < i2; i++) {
-            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
-        }
     }
 }

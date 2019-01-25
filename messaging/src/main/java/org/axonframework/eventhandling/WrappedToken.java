@@ -27,14 +27,42 @@ import java.util.Optional;
  */
 public interface WrappedToken extends TrackingToken {
 
+    /**
+     * Extracts a raw token describing the current processing position of the given {@code token}. If the given token
+     * is a wrapped token, it will be unwrapped until the raw token (as received from the event stream) is reached.
+     * <p>
+     * The returned token represents the minimal position described by the given token (which may express a range)
+     *
+     * @param token The token to unwrap
+     * @return the raw lower bound token described by given token
+     */
     static TrackingToken unwrapLowerBound(TrackingToken token) {
         return token instanceof WrappedToken ? ((WrappedToken) token).lowerBound() : token;
     }
 
+    /**
+     * Extracts a raw token describing the current processing position of the given {@code token}. If the given token
+     * is a wrapped token, it will be unwrapped until the raw token (as received from the event stream) is reached.
+     * <p>
+     * The returned token represents the furthest position described by the given token (which may express a range)
+     *
+     * @param token The token to unwrap
+     * @return the raw upper bound token described by given token
+     */
     static TrackingToken unwrapUpperBound(TrackingToken token) {
         return token instanceof WrappedToken ? ((WrappedToken) token).upperBound() : token;
     }
 
+    /**
+     * Unwrap the given {@code token} until a token of given {@code tokenType} is exposed. Returns an empty optional
+     * if the given {@code token} is not a WrappedToken instance, or if it does not wrap a token of expected
+     * {@code tokenType}.
+     *
+     * @param token The token to unwrap
+     * @param tokenType The type of token to reveal
+     * @param <R> The generic type of the token to reveal
+     * @return an optional with the unwrapped token, if found
+     */
     static <R extends TrackingToken> Optional<R> unwrap(TrackingToken token, Class<R> tokenType) {
         if (token instanceof WrappedToken) {
             return ((WrappedToken) token).unwrap(tokenType);
@@ -60,7 +88,20 @@ public interface WrappedToken extends TrackingToken {
      */
     TrackingToken lowerBound();
 
+    /**
+     * Returns the token representing the furthest position in the stream described by this token.
+     * This is usually a position that has been (partially) processed before.
+     *
+     * @return the token representing the furthest position reached in the stream
+     */
     TrackingToken upperBound();
 
+    /**
+     * Retrieve a token of given {@code tokenType} is wrapped by this token.
+     *
+     * @param tokenType The type of token to unwrap to
+     * @param <R>       The generic type of the token to unwrap to
+     * @return an optional with the unwrapped token, if found
+     */
     <R extends TrackingToken> Optional<R> unwrap(Class<R> tokenType);
 }

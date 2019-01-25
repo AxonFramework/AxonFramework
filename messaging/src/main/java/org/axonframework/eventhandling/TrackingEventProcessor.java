@@ -326,8 +326,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 if (canHandle(firstMessage, processingSegments)) {
                     batch.add(firstMessage);
                 }
-                for (int i = 0; singletonList(segment).equals(processingSegments) && i < batchSize * 10 && batch.size() < batchSize
-                        && eventStream.peek().map(e -> isRegularProcessing(segment, e.trackingToken())).orElse(false); i++) {
+                // besides checking batch sizes, we must also ensure that both the current message in the batch
+                // and the next (if present) allow for processing with a batch
+                for (int i = 0; isRegularProcessing(segment, processingSegments)
+                        && i < batchSize * 10 && batch.size() < batchSize
+                        && eventStream.peek().map(m -> isRegularProcessing(segment, m)).orElse(false); i++) {
                     final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                     lastToken = trackedEventMessage.trackingToken();
                     if (canHandle(trackedEventMessage, processingSegments)) {
@@ -377,18 +380,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
+    private boolean isRegularProcessing(Segment segment, TrackedEventMessage<?> nextMessage) {
+        return nextMessage != null && isRegularProcessing(segment, processingSegments(nextMessage.trackingToken(), segment));
+    }
+
     /**
-     * Indicates whether the given tracking token represents a regular processing for the given segment.
-     * <p>
-     * This is not the case when the tracking token indicates the given segment was partially processed by the token.
+     * Indicates if the given {@code processingSegments} should be considered normal processing for the given
+     * {@code segment}. This is the case if only given {@code segment} is included in the {@code processingSegments}.
      *
-     * @param segment       The segment assigned to the Worker Thread to process
-     * @param trackingToken The token of the message to assess
-     * @return true of this is a token to process normally, false if was partially processed
+     * @param segment            The segment assigned to this thread for processing
+     * @param processingSegments The segments for which a received event should be processed
+     * @return {@code true} if this is considered regular processor, {@code false} if this event should be treated
+     * specially (in its own batch)
      */
-    private boolean isRegularProcessing(Segment segment, TrackingToken trackingToken) {
-        List<Segment> segments = singletonList(segment);
-        return segments.equals(processingSegments(trackingToken, segment));
+    private boolean isRegularProcessing(Segment segment, List<Segment> processingSegments) {
+        return processingSegments.size() == 1 && Objects.equals(processingSegments.get(0), segment);
     }
 
     private void checkSegmentCaughtUp(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) {
@@ -1116,6 +1122,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         @Override
         protected boolean runSafe() {
+            logger.info("Processing split instruction for segment [{}] in processor [{}]", segmentId, getName());
             TrackerStatus status = activeSegments.get(segmentId);
             TrackerStatus[] newStatus = status.split();
             int newSegmentId = newStatus[1].getSegment().getSegmentId();
