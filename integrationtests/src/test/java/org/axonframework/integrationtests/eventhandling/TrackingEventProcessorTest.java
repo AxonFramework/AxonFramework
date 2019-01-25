@@ -756,10 +756,10 @@ public class TrackingEventProcessorTest {
     @Test
     public void testReleaseSegment() {
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
-        testSubject.releaseSegment(0);
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
-        assertWithin(15, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+        assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+        testSubject.releaseSegment(0, 1, TimeUnit.SECONDS);
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
     }
 
     @Test
@@ -878,7 +878,7 @@ public class TrackingEventProcessorTest {
         publishEvents(10);
 
         waitForSegmentStart(0);
-        waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
+        waitForProcessingStatus(0, est -> est.getSegment().getMask() == 1 && est.isCaughtUp());
 
         assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
@@ -943,18 +943,21 @@ public class TrackingEventProcessorTest {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
-        List<EventMessage<?>> events = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            events.add(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        List<EventMessage<?>> replayedEvents = new CopyOnWriteArrayList<>();
         when(mockHandler.handle(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
-            if(!ReplayToken.isReplay(message)) {
+            if (ReplayToken.isReplay(message)) {
+                System.out.println("[replay]" + Thread.currentThread().getName() + " " + message.trackingToken());
+                replayedEvents.add(message);
+            } else {
                 System.out.println(Thread.currentThread().getName() + " " + message.trackingToken());
+                handledEvents.add(message);
             }
-            return handledEvents.add(message);
+            return null;
         });
-        eventBus.publish(events);
+        for (int i = 0; i < 10; i++) {
+            eventBus.publish(createEvent(UUID.randomUUID().toString(), 0));
+        }
         testSubject.start();
         while (testSubject.processingStatus().size() < 2
                 || !testSubject.processingStatus().values().stream().allMatch(EventTrackerStatus::isCaughtUp)) {
@@ -967,6 +970,7 @@ public class TrackingEventProcessorTest {
         testSubject.releaseSegment(1);
         testSubject.start();
         waitForActiveThreads(1);
+        Thread.yield();
 
         CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(0);
 
@@ -978,9 +982,12 @@ public class TrackingEventProcessorTest {
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForSegmentStart(0);
 
-        assertWithin(10, TimeUnit.SECONDS, () -> assertEquals(40, handledEvents.size()));
+        assertWithin(10, TimeUnit.SECONDS, () -> assertEquals(30, handledEvents.size()));
         Thread.sleep(100);
-        assertEquals(40, handledEvents.size());
+        assertEquals(30, handledEvents.size());
+
+        // make sure replay events are only delivered once.
+        assertEquals(replayedEvents.stream().map(EventMessage::getIdentifier).distinct().count(), replayedEvents.size());
     }
 
     @Test(timeout = 10000)

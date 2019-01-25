@@ -131,7 +131,12 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
         if (currentToken == null) {
             return newToken;
         } else if (currentToken instanceof WrappedToken) {
-            return ((WrappedToken) currentToken).advancedTo(newToken);
+            if (currentToken.covers(newToken)) {
+                // this segment is still way ahead.
+                return currentToken;
+            } else {
+                return ((WrappedToken) currentToken).advancedTo(newToken);
+            }
         }
         return currentToken.upperBound(newToken);
     }

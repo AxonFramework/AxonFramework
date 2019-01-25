@@ -93,6 +93,25 @@ public class MergedTrackingTokenTest {
         }
     }
 
+    @Test
+    public void testAdvanceWithNestedReplayToken() {
+        TrackingToken incomingMessage = new GlobalSequenceTrackingToken(0);
+//        MergedTrackingToken{
+//            lowerSegmentToken=ReplayToken{currentToken=IndexTrackingToken{globalIndex=9}, tokenAtReset=IndexTrackingToken{globalIndex=9}},
+//            upperSegmentToken=ReplayToken{currentToken=IndexTrackingToken{globalIndex=-1}, tokenAtReset=IndexTrackingToken{globalIndex=9}}}
+        MergedTrackingToken currentToken = new MergedTrackingToken(
+                new ReplayToken(new GlobalSequenceTrackingToken(9), new GlobalSequenceTrackingToken(9)),
+                new ReplayToken(new GlobalSequenceTrackingToken(9), new GlobalSequenceTrackingToken(-1))
+        );
+
+        TrackingToken advancedToken = currentToken.advancedTo(incomingMessage);
+
+        assertTrue(advancedToken instanceof MergedTrackingToken);
+        MergedTrackingToken actual = (MergedTrackingToken) advancedToken;
+        assertTrue(actual.lowerSegmentToken() instanceof ReplayToken); // this token should not have been modified
+        assertTrue("Wrong upper segment: " + actual.upperSegmentToken(), actual.upperSegmentToken() instanceof ReplayToken); // this token should not have been modified
+    }
+
     private GlobalSequenceTrackingToken token(int sequence) {
         return new GlobalSequenceTrackingToken(sequence);
     }
