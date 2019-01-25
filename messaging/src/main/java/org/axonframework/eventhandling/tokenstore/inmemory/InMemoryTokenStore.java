@@ -69,7 +69,7 @@ public class InMemoryTokenStore implements TokenStore {
     public TrackingToken fetchToken(String processorName, int segment) {
         TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
         if (trackingToken == null) {
-            throw new UnableToClaimTokenException("No token was initialized for this segment");
+            throw new UnableToClaimTokenException("No token was initialized for segment " + segment + " for processor " + processorName);
         } else if (NULL_TOKEN == trackingToken) {
             return null;
         }
