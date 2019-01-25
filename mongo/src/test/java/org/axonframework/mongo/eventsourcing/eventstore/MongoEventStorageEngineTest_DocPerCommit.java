@@ -107,7 +107,6 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
         mongoTemplate.snapshotCollection().dropIndexes();
         testSubject = context.getBean(MongoEventStorageEngine.class);
         setTestSubject(testSubject);
-        testSubject.ensureIndexes();
     }
 
     @Test
@@ -143,6 +142,7 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
     }
 
     @Test
+    @DirtiesContext
     public void testFetchingEventsReturnsResultsWhenMoreThanBatchSizeCommitsAreAvailable_PartiallyReadingCommit() {
         testSubject.appendEvents(createEvent(0), createEvent(1), createEvent(2));
         testSubject.appendEvents(createEvent(3), createEvent(4), createEvent(5));

@@ -100,7 +100,6 @@ public class MongoTokenStoreTest {
                                          claimTimeout,
                                          testOwner,
                                          contentType);
-        tokenStore.ensureIndexes();
         tokenStoreDifferentOwner = new MongoTokenStore(mongoTemplate,
                                                        serializer,
                                                        claimTimeout,

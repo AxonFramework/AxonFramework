@@ -91,8 +91,6 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractM
         mongoTemplate.snapshotCollection().dropIndexes();
         testSubject = context.getBean(MongoEventStorageEngine.class);
         setTestSubject(testSubject);
-
-        testSubject.ensureIndexes();
     }
 
     @Test

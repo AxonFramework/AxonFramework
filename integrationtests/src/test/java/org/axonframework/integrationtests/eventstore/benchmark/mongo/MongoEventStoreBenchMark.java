@@ -46,7 +46,6 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
         DefaultMongoTemplate mongoTemplate = new DefaultMongoTemplate(mongoDb);
         mongoTemplate.eventCollection().drop();
         mongoTemplate.snapshotCollection().drop();
-        getStorageEngine().ensureIndexes();
         super.prepareForBenchmark();
     }
 
