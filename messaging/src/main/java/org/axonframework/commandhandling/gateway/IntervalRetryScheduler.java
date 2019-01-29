@@ -40,6 +40,9 @@ public class IntervalRetryScheduler implements RetryScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(IntervalRetryScheduler.class);
 
+    private static final int DEFAULT_RETRY_INTERVAL = 100;
+    private static final int DEFAULT_MAX_RETRIES = 1;
+
     private final int retryInterval;
     private final int maxRetryCount;
     private final ScheduledExecutorService retryExecutor;
@@ -133,8 +136,8 @@ public class IntervalRetryScheduler implements RetryScheduler {
      */
     public static class Builder {
 
-        private int retryInterval = 100;
-        private int maxRetryCount = 1;
+        private int retryInterval = DEFAULT_RETRY_INTERVAL;
+        private int maxRetryCount = DEFAULT_MAX_RETRIES;
         private ScheduledExecutorService retryExecutor;
 
         /**
