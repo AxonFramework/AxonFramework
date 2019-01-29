@@ -27,8 +27,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * RetryScheduler implementation that retries commands at regular intervals when they fail because of an exception that
@@ -134,8 +133,8 @@ public class IntervalRetryScheduler implements RetryScheduler {
      */
     public static class Builder {
 
-        private int retryInterval;
-        private int maxRetryCount;
+        private int retryInterval = 100;
+        private int maxRetryCount = 1;
         private ScheduledExecutorService retryExecutor;
 
         /**
@@ -158,7 +157,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxRetryCount(int maxRetryCount) {
-            assertPositive(maxRetryCount, "The maxRetryCount must be a positive number");
+            assertStrictPositive(maxRetryCount, "The maxRetryCount must be a positive number");
             this.maxRetryCount = maxRetryCount;
             return this;
         }
@@ -192,12 +191,9 @@ public class IntervalRetryScheduler implements RetryScheduler {
          */
         protected void validate() throws AxonConfigurationException {
             assertPositive(retryInterval, "The retryInterval is a hard requirement and should be provided");
-            assertPositive(maxRetryCount, "The maxRetryCount is a hard requirement and should be provided");
+            assertStrictPositive(maxRetryCount, "The maxRetryCount is a hard requirement and should be provided");
             assertNonNull(retryExecutor, "The ScheduledExecutorService is a hard requirement and should be provided");
         }
 
-        private void assertPositive(int integer, String exceptionDescription) {
-            assertThat(integer, number -> number >= 0, exceptionDescription);
-        }
     }
 }
