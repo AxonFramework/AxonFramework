@@ -44,6 +44,7 @@ import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingConfiguration;
@@ -52,6 +53,7 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -61,6 +63,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 
 /**
@@ -96,31 +99,22 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @Bean( destroyMethod = "disconnect")
     @Primary
-    @ConditionalOnMissingBean(CommandBus.class)
-    public AxonServerCommandBus commandBus(TransactionManager txManager,
+    @ConditionalOnMissingQualifiedBean(qualifier = "!unqualified", beanClass = CommandBus.class)
+    public AxonServerCommandBus axonServerCommandBus(TransactionManager txManager,
                                            AxonConfiguration axonConfiguration,
                                            AxonServerConfiguration axonServerConfiguration,
                                            Serializer serializer,
                                            AxonServerConnectionManager axonServerConnectionManager,
                                            RoutingStrategy routingStrategy,
-                                           CommandPriorityCalculator priorityCalculator) {
-
-        SimpleCommandBus commandBus =
-                SimpleCommandBus.builder()
-                                .transactionManager(txManager)
-                                .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
-                                .build();
-
-        commandBus.registerHandlerInterceptor(
-                new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
-        );
+                                           CommandPriorityCalculator priorityCalculator,
+                                           @Qualifier("localSegment") CommandBus localSegment) {
 
         return new AxonServerCommandBus(axonServerConnectionManager,
-                                        axonServerConfiguration,
-                                        commandBus,
-                                        serializer,
-                                        routingStrategy,
-                                        priorityCalculator);
+                axonServerConfiguration,
+                localSegment,
+                serializer,
+                routingStrategy,
+                priorityCalculator);
     }
 
     @Bean
