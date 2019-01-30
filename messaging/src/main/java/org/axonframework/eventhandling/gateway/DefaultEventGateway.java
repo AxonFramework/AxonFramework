@@ -30,7 +30,7 @@ import java.util.List;
  * this would be used to add gateway specific meta data to the Event.
  *
  * @author Bert laverman
- * @since 4.0.4
+ * @since 4.1
  */
 public class DefaultEventGateway extends AbstractEventGateway implements EventGateway {
 
@@ -41,8 +41,9 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
     }
 
     /**
-     * Return a builder.
-     * @return A new Builder.
+     * Instantiate a Builder to be able to create a {@link DefaultEventGateway}.
+     *
+     * @return a Builder to be able to create a {@link DefaultEventGateway}
      */
     public static Builder builder() {
         return new Builder();
@@ -54,7 +55,10 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
     }
 
     /**
-     * A Builder class for DefaultEventGateways.
+     * A Builder class for {@link DefaultEventGateway}s.
+     * <p>
+     *  * The {@code dispatchInterceptors} are defaulted to an empty list.
+     *  * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder extends AbstractEventGateway.Builder {
 
@@ -82,7 +86,6 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
          * @return a {@link DefaultEventGateway} as specified through this Builder
          */
         public DefaultEventGateway build() {
-            validate();
             return new DefaultEventGateway(this);
         }
     }

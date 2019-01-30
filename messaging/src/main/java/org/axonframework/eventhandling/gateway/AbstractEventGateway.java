@@ -34,20 +34,26 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
  * actual publishing of events is left to the subclasses.
  *
  * @author Bert Laverman
- * @since 4.0.4
+ * @since 4.1
  */
 public abstract class AbstractEventGateway {
 
     private final EventBus eventBus;
     private final List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors;
 
+    /**
+     * Constructs the gateway from the builder.
+     * @param builder The gateway's builder.
+     */
     protected AbstractEventGateway(Builder builder) {
+        builder.validate();
+
         this.eventBus = builder.eventBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
     }
 
     /**
-     * Publishes an event.
+     * Publishes (dispatches) an event.
      * @param event The event to publish.
      */
     protected void publish(Object event) {
@@ -55,9 +61,9 @@ public abstract class AbstractEventGateway {
     }
 
     /**
-     * Registers a command dispatch interceptor within an {@link EventGateway}.
+     * Registers an event dispatch interceptor within an {@link EventGateway}.
      *
-     * @param interceptor To intercept command messages
+     * @param interceptor To intercept event messages
      * @return a registration which can be used to cancel the registration of given interceptor
      */
     public Registration registerDispatchInterceptor(
@@ -69,8 +75,8 @@ public abstract class AbstractEventGateway {
     /**
      * Invokes all the dispatch interceptors and returns the EventMessage instance that should be dispatched.
      *
-     * @param eventMessage The incoming command message
-     * @return The command message to dispatch
+     * @param eventMessage The incoming event message
+     * @return The event message to dispatch
      */
     @SuppressWarnings("unchecked")
     protected <C> EventMessage<? extends C> processInterceptors(EventMessage<C> eventMessage) {
@@ -94,7 +100,7 @@ public abstract class AbstractEventGateway {
      * Abstract Builder class to instantiate {@link AbstractEventGateway} implementations.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link EventBus} is a <b>hard requirements</b> and as such should be provided.
+     * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder {
 
@@ -103,9 +109,9 @@ public abstract class AbstractEventGateway {
                 new CopyOnWriteArrayList<>();
 
         /**
-         * Sets the {@link EventBus} used to dispatch commands.
+         * Sets the {@link EventBus} used to publish events.
          *
-         * @param eventBus an {@link EventBus} used to dispatch commands
+         * @param eventBus an {@link EventBus} used to publish events
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventBus(EventBus eventBus) {
@@ -118,7 +124,7 @@ public abstract class AbstractEventGateway {
          * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s.
          * Are invoked when a command is being dispatched.
          *
-         * @param dispatchInterceptors which are invoked when a command is being dispatched
+         * @param dispatchInterceptors which are invoked when an event is being dispatched
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder dispatchInterceptors(
@@ -128,9 +134,9 @@ public abstract class AbstractEventGateway {
 
         /**
          * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s.
-         * Are invoked when a command is being dispatched.
+         * Are invoked when an event is being dispatched.
          *
-         * @param dispatchInterceptors which are invoked when a command is being dispatched
+         * @param dispatchInterceptors which are invoked when an event is being dispatched
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder dispatchInterceptors(

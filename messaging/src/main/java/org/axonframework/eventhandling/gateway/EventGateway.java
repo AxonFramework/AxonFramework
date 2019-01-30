@@ -28,7 +28,7 @@ import java.util.List;
  *
  * @author Bert Laverman
  * @see DefaultEventGateway
- * @since 4.0.4
+ * @since 4.1
  */
 public interface EventGateway extends MessageDispatchInterceptorSupport<EventMessage<?>> {
 
