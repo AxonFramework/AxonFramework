@@ -42,6 +42,9 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
 
     /**
      * Instantiate a Builder to be able to create a {@link DefaultEventGateway}.
+     * <p>
+     * The {@code dispatchInterceptors} are defaulted to an empty list.
+     * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link DefaultEventGateway}
      */
