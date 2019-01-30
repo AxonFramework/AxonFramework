@@ -66,6 +66,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
     /**
      * Instantiate a Builder to be able to create a {@link IntervalRetryScheduler}.
      * <p>
+     * The default for {@code retryInterval} is set to 100ms, while {@code maxRetryCount} gets a single retry.
      * The {@code retryInterval}, {@code maxRetryCount} and {@link ScheduledExecutorService} are
      * <b>hard requirements</b> and as such should be provided.
      *
@@ -110,7 +111,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
      * occur
      * again.
      *
-     * @param failure The exception that occurred while processing a command
+     * @param failure the exception that occurred while processing a command
      * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
      * retried, or {@code false} when the command has a chance of succeeding if it retried.
      */
@@ -131,6 +132,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
     /**
      * Builder class to instantiate a {@link IntervalRetryScheduler}.
      * <p>
+     * The default for {@code retryInterval} is set to 100ms, while {@code maxRetryCount} gets a single retry.
      * The {@code retryInterval}, {@code maxRetryCount} and {@link ScheduledExecutorService} are
      * <b>hard requirements</b> and as such should be provided.
      */
@@ -141,7 +143,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
         private ScheduledExecutorService retryExecutor;
 
         /**
-         * Sets the retry interval in milliseconds at which to schedule a retry.
+         * Sets the retry interval in milliseconds at which to schedule a retry, defaulted to 100ms.
          *
          * @param retryInterval an {@code int} specifying the retry interval in milliseconds at which to schedule a
          *                      retry
@@ -154,7 +156,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
         }
 
         /**
-         * Sets the maximum number of retries allowed for a single command.
+         * Sets the maximum number of retries allowed for a single command, defaulted to 1.
          *
          * @param maxRetryCount an {@code int} specifying the maximum number of retries allowed for a single command
          * @return the current Builder instance, for fluent interfacing
