@@ -34,7 +34,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;

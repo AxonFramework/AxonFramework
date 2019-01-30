@@ -106,19 +106,14 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * This implementation will delegate the decision to the {@link EventHandlerInvoker}.
      *
      * @param eventMessage The message for which to identify if the processor can handle it
-     * @param processingSegments      The segments for which the event should be processed
+     * @param segment      The segment for which the event should be processed
      * @return {@code true} if the event message should be handled, otherwise {@code false}
      * @throws Exception if the {@code errorHandler} throws an Exception back on the
      *                   {@link ErrorHandler#handleError(ErrorContext)} call
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, List<Segment> processingSegments) throws Exception {
+    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment) throws Exception {
         try {
-            for (Segment processingSegment : processingSegments) {
-                if(eventHandlerInvoker.canHandle(eventMessage, processingSegment)) {
-                    return true;
-                }
-            }
-            return false;
+            return eventHandlerInvoker.canHandle(eventMessage, segment);
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
             return false;

@@ -153,7 +153,7 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public boolean requiresExplicitInitialization() {
+    public boolean requiresExplicitSegmentInitialization() {
         return true;
     }
 

@@ -95,7 +95,7 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public boolean requiresExplicitInitialization() {
+    public boolean requiresExplicitSegmentInitialization() {
         return true;
     }
 

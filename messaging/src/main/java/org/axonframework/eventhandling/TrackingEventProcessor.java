@@ -165,7 +165,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * additional thread to start processing events concurrently.
      * <p>
      * To be able to split segments, the {@link TokenStore} configured with this processor must use explicitly
-     * initialized tokens. See {@link TokenStore#requiresExplicitInitialization()}. Also, the given {@code segmentId}
+     * initialized tokens. See {@link TokenStore#requiresExplicitSegmentInitialization()}. Also, the given {@code segmentId}
      * must be currently processed by a thread owned by this processor instance.
      *
      * @param segmentId The identifier of the segment to split
@@ -177,7 +177,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
 
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        if (!tokenStore.requiresExplicitInitialization()) {
+        if (!tokenStore.requiresExplicitSegmentInitialization()) {
             result.completeExceptionally(new UnsupportedOperationException("TokenStore must use explicit initialization to be able to safely split tokens"));
         }
         this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
@@ -209,7 +209,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        if (!tokenStore.requiresExplicitInitialization()) {
+        if (!tokenStore.requiresExplicitSegmentInitialization()) {
             result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely split tokens"));
             return result;
         }
@@ -378,6 +378,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             this.shutDown();
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Indicates whether any of the components handling events for this Processor are able to handle the given
+     * {@code eventMessage} for any of the given {@code segments}.
+     *
+     * @param eventMessage The message to handle
+     * @param segments     The segments to handle the message in
+     * @return whether the given message should be handled as part of anyof the give segments
+     * @throws Exception when an exception occurs evaluating the message
+     */
+    protected boolean canHandle(EventMessage<?> eventMessage, List<Segment> segments) throws Exception {
+        for (Segment segment : segments) {
+            if (canHandle(eventMessage, segment)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isRegularProcessing(Segment segment, TrackedEventMessage<?> nextMessage) {

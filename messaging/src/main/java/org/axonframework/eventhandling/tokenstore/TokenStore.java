@@ -81,7 +81,7 @@ public interface TokenStore {
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
      * initialized with a Token (albeit {@code null} yet. In that case, a segment must have been explicitly initialized.
-     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitInitialization()}
+     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitSegmentInitialization()}
      * method. If that method returns false, this method may implicitly initialize a token and return that token upon
      * invocation.
      *
@@ -99,7 +99,7 @@ public interface TokenStore {
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
      * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly initialized.
-     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitInitialization()}
+     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitSegmentInitialization()}
      * method. If that method returns false, this method may implicitly initialize a token and return that token upon
      * invocation.
      * <p>
@@ -156,17 +156,17 @@ public interface TokenStore {
      * @param segment       The identifier of the segment to initialize
      * @throws UnableToInitializeTokenException if a Token already exists
      * @throws UnsupportedOperationException    if this implementation does not support explicit initialization.
-     *                                          See {@link #requiresExplicitInitialization()}.
+     *                                          See {@link #requiresExplicitSegmentInitialization()}.
      */
     default void initializeSegment(TrackingToken token, String processorName, int segment) throws UnableToInitializeTokenException {
-        throw new UnsupportedOperationException("");
+        throw new UnsupportedOperationException("Explicit initialization is not supported by this TokenStore implementation");
     }
 
     /**
      * Deletes the token for the processor with given {@code processorName} and {@code segment}. The token must
      * be owned by the current node, to be able to delete it.
      * <p>
-     * Implementations should implement this method only when {@link #requiresExplicitInitialization()} is overridden to
+     * Implementations should implement this method only when {@link #requiresExplicitSegmentInitialization()} is overridden to
      * return {@code true}. Deleting tokens using implementations that do not require explicit token initialization is
      * unsafe, as a claim will automatically recreate the deleted token instance, which may result in concurrency
      * issues.
@@ -177,7 +177,7 @@ public interface TokenStore {
      * @throws UnsupportedOperationException if this operation is not supported by this implementation
      */
     default void deleteToken(String processorName, int segment) throws UnableToClaimTokenException {
-        throw new UnsupportedOperationException("");
+        throw new UnsupportedOperationException("Explicit initialization (which is required to reliably delete tokens) is not supported by this TokenStore implementation");
     }
 
     /**
@@ -189,7 +189,7 @@ public interface TokenStore {
      * @see #initializeTokenSegments(String, int, TrackingToken)
      * @see #initializeSegment(TrackingToken, String, int)
      */
-    default boolean requiresExplicitInitialization() {
+    default boolean requiresExplicitSegmentInitialization() {
         return false;
     }
 

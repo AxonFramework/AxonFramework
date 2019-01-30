@@ -140,7 +140,7 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public boolean requiresExplicitInitialization() {
+    public boolean requiresExplicitSegmentInitialization() {
         return true;
     }
 
