@@ -124,7 +124,6 @@ public class AxonServerAutoConfigurationTest {
     @Test
     public void testNonAxonServerCommandBusConfiguration() {
         this.contextRunner
-                //.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                 .run((context) -> {
                     assertThat(context).getBeanNames(CommandBus.class).hasSize(1);
                     assertThat(context).getBean(CommandBus.class).isExactlyInstanceOf(SimpleCommandBus.class);
