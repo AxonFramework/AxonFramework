@@ -34,8 +34,6 @@ import java.util.List;
  */
 public class DefaultEventGateway extends AbstractEventGateway implements EventGateway {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultEventGateway.class);
-
     private DefaultEventGateway(Builder builder) {
         super(builder);
     }
@@ -60,8 +58,8 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
     /**
      * A Builder class for {@link DefaultEventGateway}s.
      * <p>
-     *  * The {@code dispatchInterceptors} are defaulted to an empty list.
-     *  * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
+     *  The {@code dispatchInterceptors} are defaulted to an empty list.
+     *  The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder extends AbstractEventGateway.Builder {
 
