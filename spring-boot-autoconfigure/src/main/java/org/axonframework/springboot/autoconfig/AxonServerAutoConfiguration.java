@@ -96,7 +96,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @Bean(destroyMethod = "disconnect")
     @Primary
-    @ConditionalOnMissingQualifiedBean(qualifier = "!unqualified", beanClass = CommandBus.class)
+    @ConditionalOnMissingQualifiedBean(qualifier = "!localSegment", beanClass = CommandBus.class)
     public AxonServerCommandBus axonServerCommandBus(TransactionManager txManager,
                                                      AxonConfiguration axonConfiguration,
                                                      AxonServerConfiguration axonServerConfiguration,

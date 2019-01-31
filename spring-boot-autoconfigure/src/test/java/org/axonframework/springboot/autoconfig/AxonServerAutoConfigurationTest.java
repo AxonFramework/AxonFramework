@@ -117,7 +117,18 @@ public class AxonServerAutoConfigurationTest {
                 .run((context) -> {
                     assertThat(context).getBeanNames(CommandBus.class).hasSize(2);
                     assertThat(context).getBean("axonServerCommandBus").isExactlyInstanceOf(AxonServerCommandBus.class);
-                    assertThat(context).getBean("commandBus").isExactlyInstanceOf(SimpleCommandBus.class);
+                    assertThat(context).getBean("commandBus").isExactlyInstanceOf(DisruptorCommandBus.class);
+                });
+    }
+
+    @Test
+    public void testAxonServerWrongUserDefinedLocalSegmentConfiguration() {
+        this.contextRunner
+                .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
+                .withUserConfiguration(ExplicitWrongUserLocalSegmentConfiguration.class)
+                .run((context) -> {
+                    assertThat(context).getBeanNames(CommandBus.class).hasSize(1);
+                    assertThat(context).getBean(CommandBus.class).isExactlyInstanceOf(DisruptorCommandBus.class);
                 });
     }
 
@@ -138,7 +149,16 @@ public class AxonServerAutoConfigurationTest {
     }
 
     public static class ExplicitUserLocalSegmentConfiguration {
+        @Bean
         @Qualifier("localSegment")
+        public DisruptorCommandBus commandBus() {
+            return DisruptorCommandBus.builder().build();
+        }
+    }
+
+    public static class ExplicitWrongUserLocalSegmentConfiguration {
+        @Bean
+        @Qualifier("wrongSegment")
         public DisruptorCommandBus commandBus() {
             return DisruptorCommandBus.builder().build();
         }
