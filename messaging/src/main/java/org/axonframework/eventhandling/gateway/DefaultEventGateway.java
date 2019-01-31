@@ -16,16 +16,16 @@
 
 package org.axonframework.eventhandling.gateway;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 /**
- * Default implementation of the EventGateway interface. It allow configuration of {@link MessageDispatchInterceptor EventDispatchInterceptors}.
+ * Default implementation of the EventGateway interface. It allow configuration of
+ * {@link MessageDispatchInterceptor EventDispatchInterceptors}.
  * The Event Dispatch Interceptors can intercept and alter events dispatched on this specific gateway. Typically,
  * this would be used to add gateway specific meta data to the Event.
  *
@@ -34,7 +34,16 @@ import java.util.List;
  */
 public class DefaultEventGateway extends AbstractEventGateway implements EventGateway {
 
-    private DefaultEventGateway(Builder builder) {
+    /**
+     * Instantiate a {@link DefaultEventGateway} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EventBus} is not {@code null} and will throw an {@link AxonConfigurationException}
+     * if this is the case.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link DefaultEventGateway}
+     *                instance
+     */
+    protected DefaultEventGateway(Builder builder) {
         super(builder);
     }
 
@@ -58,8 +67,8 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
     /**
      * A Builder class for {@link DefaultEventGateway}s.
      * <p>
-     *  The {@code dispatchInterceptors} are defaulted to an empty list.
-     *  The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
+     * The {@code dispatchInterceptors} are defaulted to an empty list.
+     * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder extends AbstractEventGateway.Builder {
 
@@ -70,13 +79,15 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
         }
 
         @Override
-        public Builder dispatchInterceptors(MessageDispatchInterceptor<? super EventMessage<?>>... dispatchInterceptors) {
+        public Builder dispatchInterceptors(
+                MessageDispatchInterceptor<? super EventMessage<?>>... dispatchInterceptors) {
             super.dispatchInterceptors(dispatchInterceptors);
             return this;
         }
 
         @Override
-        public Builder dispatchInterceptors(List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors) {
+        public Builder dispatchInterceptors(
+                List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors) {
             super.dispatchInterceptors(dispatchInterceptors);
             return this;
         }

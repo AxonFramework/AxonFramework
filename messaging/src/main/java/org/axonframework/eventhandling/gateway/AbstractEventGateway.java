@@ -42,18 +42,22 @@ public abstract class AbstractEventGateway {
     private final List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors;
 
     /**
-     * Constructs the gateway from the builder.
-     * @param builder The gateway's builder.
+     * Instantiate an {@link AbstractEventGateway} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EventBus} is not {@code null} and throws an {@link AxonConfigurationException}
+     * if it is.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventGateway} instance
      */
     protected AbstractEventGateway(Builder builder) {
         builder.validate();
-
         this.eventBus = builder.eventBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
     }
 
     /**
      * Publishes (dispatches) an event.
+     *
      * @param event The event to publish.
      */
     protected void publish(Object event) {
@@ -79,8 +83,8 @@ public abstract class AbstractEventGateway {
      * @return The event message to dispatch
      */
     @SuppressWarnings("unchecked")
-    protected <C> EventMessage<? extends C> processInterceptors(EventMessage<C> eventMessage) {
-        EventMessage<? extends C> message = eventMessage;
+    protected <E> EventMessage<? extends E> processInterceptors(EventMessage<E> eventMessage) {
+        EventMessage<? extends E> message = eventMessage;
         for (MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor : dispatchInterceptors) {
             message = (EventMessage) dispatchInterceptor.handle(message);
         }
@@ -122,7 +126,7 @@ public abstract class AbstractEventGateway {
 
         /**
          * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s.
-         * Are invoked when a command is being dispatched.
+         * Are invoked when an event is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when an event is being dispatched
          * @return the current Builder instance, for fluent interfacing
