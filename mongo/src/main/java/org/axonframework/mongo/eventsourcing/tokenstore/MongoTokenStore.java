@@ -291,8 +291,13 @@ public class MongoTokenStore implements TokenStore {
 
     /**
      * Creates the indexes required to work with the TokenStore.
+     *
+     * @deprecated  This method is now called by the constructor instead of the dependency injection framework running
+     *              the @PostConstruct. i.e. You no longer have to call it manually if you don't use a dependency
+     *              injection framework.
      */
-    private void ensureIndexes() {
+    @Deprecated
+    public void ensureIndexes() {
         mongoTemplate.trackingTokensCollection().createIndex(Indexes.ascending("processorName", "segment"),
                                                              new IndexOptions().unique(true));
     }

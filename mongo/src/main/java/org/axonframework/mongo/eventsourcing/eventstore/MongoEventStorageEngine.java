@@ -160,8 +160,13 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
 
     /**
      * Make sure an index is created on the collection that stores domain events.
+     *
+     * @deprecated  This method is now called by the constructor instead of the dependency injection framework running
+     *              the @PostConstruct. i.e. You no longer have to call it manually if you don't use a dependency
+     *              injection framework.
      */
-    private void ensureIndexes() {
+    @Deprecated
+    public void ensureIndexes() {
         storageStrategy.ensureIndexes(template.eventCollection(), template.snapshotCollection());
     }
 
