@@ -172,14 +172,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @return a CompletableFuture providing the result of the split operation
      */
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        if (!tokenStore.requiresExplicitSegmentInitialization()) {
+            result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely split tokens"));
+            return result;
+        }
+
         if (!this.activeSegments.containsKey(segmentId)) {
             return CompletableFuture.completedFuture(false);
         }
 
-        CompletableFuture<Boolean> result = new CompletableFuture<>();
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            result.completeExceptionally(new UnsupportedOperationException("TokenStore must use explicit initialization to be able to safely split tokens"));
-        }
         this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
                          .add(new SplitSegmentInstruction(result, segmentId));
         return result;
@@ -210,7 +212,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely split tokens"));
+            result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely merge tokens"));
             return result;
         }
 
