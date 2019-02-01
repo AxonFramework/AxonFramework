@@ -31,7 +31,6 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -151,6 +150,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
         super(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, batchSize);
         this.template = template;
         this.storageStrategy = storageStrategy;
+        ensureIndexes();
     }
 
     private static boolean isDuplicateKeyException(Exception exception) {
@@ -160,8 +160,12 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
 
     /**
      * Make sure an index is created on the collection that stores domain events.
+     *
+     * @deprecated  This method is now called by the constructor instead of the dependency injection framework running
+     *              the @PostConstruct. i.e. You no longer have to call it manually if you don't use a dependency
+     *              injection framework.
      */
-    @PostConstruct
+    @Deprecated
     public void ensureIndexes() {
         storageStrategy.ensureIndexes(template.eventCollection(), template.snapshotCollection());
     }

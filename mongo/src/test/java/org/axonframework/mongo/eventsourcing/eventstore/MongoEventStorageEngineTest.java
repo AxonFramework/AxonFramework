@@ -95,8 +95,6 @@ public class MongoEventStorageEngineTest extends AbstractMongoEventStorageEngine
         mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
         testSubject = context.getBean(MongoEventStorageEngine.class);
         setTestSubject(testSubject);
-
-        testSubject.ensureIndexes();
     }
 
     @Test
