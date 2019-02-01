@@ -24,6 +24,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 public class MergedTrackingTokenTest {
 
@@ -96,9 +97,7 @@ public class MergedTrackingTokenTest {
     @Test
     public void testAdvanceWithNestedReplayToken() {
         TrackingToken incomingMessage = new GlobalSequenceTrackingToken(0);
-//        MergedTrackingToken{
-//            lowerSegmentToken=ReplayToken{currentToken=IndexTrackingToken{globalIndex=9}, tokenAtReset=IndexTrackingToken{globalIndex=9}},
-//            upperSegmentToken=ReplayToken{currentToken=IndexTrackingToken{globalIndex=-1}, tokenAtReset=IndexTrackingToken{globalIndex=9}}}
+
         MergedTrackingToken currentToken = new MergedTrackingToken(
                 new ReplayToken(new GlobalSequenceTrackingToken(9), new GlobalSequenceTrackingToken(9)),
                 new ReplayToken(new GlobalSequenceTrackingToken(9), new GlobalSequenceTrackingToken(-1))
@@ -110,6 +109,39 @@ public class MergedTrackingTokenTest {
         MergedTrackingToken actual = (MergedTrackingToken) advancedToken;
         assertTrue(actual.lowerSegmentToken() instanceof ReplayToken); // this token should not have been modified
         assertTrue("Wrong upper segment: " + actual.upperSegmentToken(), actual.upperSegmentToken() instanceof ReplayToken); // this token should not have been modified
+    }
+
+    @Test
+    public void testUnwrapPrefersLastAdvancedToken_LowerSegmenAdvanced() {
+        TrackingToken merged = new MergedTrackingToken(token(1), token(3)).advancedTo(token(2));
+        assertTrue(merged instanceof MergedTrackingToken);
+        assertEquals(token(2), WrappedToken.unwrap(merged, GlobalSequenceTrackingToken.class).orElse(null));
+    }
+
+    @Test
+    public void testUnwrapPrefersLastAdvancedToken_UpperSegmentAdvanced() {
+        TrackingToken merged = new MergedTrackingToken(token(3), token(1)).advancedTo(token(2));
+        assertTrue(merged instanceof MergedTrackingToken);
+        assertEquals(token(2), WrappedToken.unwrap(merged, GlobalSequenceTrackingToken.class).orElse(null));
+    }
+
+    @Test
+    public void testUnwrapPrefersLastAdvancedToken_NeitherSegmentAdvanced() {
+        TrackingToken merged = new MergedTrackingToken(token(3), token(3)).advancedTo(token(2));
+        assertTrue(merged instanceof MergedTrackingToken);
+        assertEquals(token(3), WrappedToken.unwrap(merged, GlobalSequenceTrackingToken.class).orElse(null));
+    }
+
+    @Test
+    public void testUnwrapPrefersLastAdvancedToken_NeitherSegmentAdvanced_OnlyLowerIsCandidate() {
+        MergedTrackingToken merged = new MergedTrackingToken(token(3), mock(TrackingToken.class));
+        assertEquals(token(3), merged.unwrap(GlobalSequenceTrackingToken.class).orElse(null));
+    }
+
+    @Test
+    public void testUnwrapPrefersLastAdvancedToken_NeitherSegmentAdvanced_OnlyUpperIsCandidate() {
+        MergedTrackingToken merged = new MergedTrackingToken(mock(TrackingToken.class), token(3));
+        assertEquals(token(3), merged.unwrap(GlobalSequenceTrackingToken.class).orElse(null));
     }
 
     private GlobalSequenceTrackingToken token(int sequence) {

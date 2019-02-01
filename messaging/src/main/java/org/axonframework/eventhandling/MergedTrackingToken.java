@@ -26,6 +26,9 @@ import java.util.Optional;
  * Special Wrapped Token implementation that keeps track of two separate tokens, of which the streams have been merged
  * into a single one. This token keeps track of the progress of the two original "halves", by advancing each
  * individually, until both halves represent the same position.
+ *
+ * @author Allard Buijze
+ * @since 4.1
  */
 public class MergedTrackingToken implements TrackingToken, Serializable, WrappedToken {
 
@@ -113,14 +116,25 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
     public <R extends TrackingToken> Optional<R> unwrap(Class<R> tokenType) {
         if (tokenType.isInstance(this)) {
             return Optional.of(tokenType.cast(this));
-        } else if (lowerSegmentAdvanced) {
-            return WrappedToken.unwrap(lowerSegmentToken, tokenType);
-        } else if (upperSegmentAdvanced) {
-            return WrappedToken.unwrap(upperSegmentToken, tokenType);
         } else {
-            // let's see if either works
-            return Optional.empty();
+            Optional<R> unwrappedLower = WrappedToken.unwrap(lowerSegmentToken, tokenType);
+            Optional<R> unwrappedUpper = WrappedToken.unwrap(upperSegmentToken, tokenType);
+
+            if (lowerSegmentAdvanced && unwrappedLower.isPresent()) {
+                return unwrappedLower;
+            } else {
+                if (upperSegmentAdvanced && unwrappedUpper.isPresent()) {
+                    return unwrappedUpper;
+                } else {
+                    // either will do
+                    if (unwrappedLower.isPresent()) {
+                        return unwrappedLower;
+                    }
+                    return unwrappedUpper;
+                }
+            }
         }
+
     }
 
     private TrackingToken doAdvance(TrackingToken currentToken, TrackingToken newToken) {

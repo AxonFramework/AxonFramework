@@ -80,7 +80,7 @@ public interface TokenStore {
      * Any claims made by the current process have their timestamp updated.
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
-     * initialized with a Token (albeit {@code null} yet. In that case, a segment must have been explicitly initialized.
+     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly initialized.
      * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitSegmentInitialization()}
      * method. If that method returns false, this method may implicitly initialize a token and return that token upon
      * invocation.

@@ -35,8 +35,9 @@ import static java.util.stream.Collectors.toList;
  */
 public class Segment implements Comparable<Segment> {
 
-    public static final Segment[] EMPTY_SEGMENTS = new Segment[0];
+    private static final Segment[] EMPTY_SEGMENTS = new Segment[0];
     private static final int ZERO_MASK = 0x0;
+
     /**
      * Represents the Segment that matches against all input, but can be split to start processing elements in parallel.
      */
@@ -93,7 +94,7 @@ public class Segment implements Comparable<Segment> {
         // higher than that value
         int splitCandidate = segmentId == 0 ? 1 : (Integer.highestOneBit(segmentId) << 1);
         while (Arrays.binarySearch(availableSegmentIds, splitCandidate | segmentId) >= 0) {
-            // We have found the split value for the smallest mast. We need to increase the mask
+            // We have found the split value for the smallest mask. We need to increase the mask
             splitCandidate = splitCandidate << 1;
         }
 
@@ -130,8 +131,8 @@ public class Segment implements Comparable<Segment> {
      * @param mask      The mask of the segment
      */
     protected Segment(int segmentId, int mask) {
+        Assert.isTrue(mask == 0 || mask + 1 == Integer.highestOneBit(mask + 1), () -> "Invalid mask. It must end on a consecutive series of 1s");
         this.segmentId = segmentId;
-        // REVIEW: We could validate the mask consisting of 1's only, expect the 0 mask.
         this.mask = mask;
     }
 

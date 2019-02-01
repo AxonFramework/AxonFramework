@@ -115,10 +115,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
-        return hasHandler(eventMessage) && segment.matches(Objects.hashCode(getOrDefault(
-                sequencingPolicy.getSequenceIdentifierFor(eventMessage),
-                eventMessage::getIdentifier)
-        ));
+        return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
     }
 
     private boolean hasHandler(EventMessage<?> eventMessage) {

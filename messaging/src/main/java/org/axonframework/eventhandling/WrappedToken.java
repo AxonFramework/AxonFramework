@@ -97,7 +97,7 @@ public interface WrappedToken extends TrackingToken {
     TrackingToken upperBound();
 
     /**
-     * Retrieve a token of given {@code tokenType} is wrapped by this token.
+     * Retrieve a token of given {@code tokenType} if it is wrapped by this token.
      *
      * @param tokenType The type of token to unwrap to
      * @param <R>       The generic type of the token to unwrap to

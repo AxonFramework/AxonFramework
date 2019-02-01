@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static java.util.Collections.singletonList;
+import static java.util.Collections.singleton;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -296,11 +296,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param segment The segment to process the event in
      * @return {@code true} if this event should be handled, otherwise {@code false}
      */
-    protected List<Segment> processingSegments(TrackingToken token, Segment segment) {
+    protected Set<Segment> processingSegments(TrackingToken token, Segment segment) {
         Optional<MergedTrackingToken> mergedToken = WrappedToken.unwrap(token, MergedTrackingToken.class);
         if (mergedToken.isPresent()) {
             Segment[] splitSegments = segment.split();
-            List<Segment> segments = new ArrayList<>();
+            Set<Segment> segments = new TreeSet<>();
             if (mergedToken.get().isLowerSegmentAdvanced()) {
                 segments.addAll(processingSegments(mergedToken.get().lowerSegmentToken(), splitSegments[0]));
             }
@@ -310,7 +310,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
             return segments;
         }
-        return singletonList(segment);
+        return singleton(segment);
     }
 
     private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
@@ -318,7 +318,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         try {
             checkSegmentCaughtUp(segment, eventStream);
             TrackingToken lastToken;
-            List<Segment> processingSegments;
+            Collection<Segment> processingSegments;
             if (eventStream.hasNextAvailable(1, SECONDS)) {
                 final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
                 lastToken = firstMessage.trackingToken();
@@ -389,7 +389,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @return whether the given message should be handled as part of anyof the give segments
      * @throws Exception when an exception occurs evaluating the message
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, List<Segment> segments) throws Exception {
+    protected boolean canHandle(EventMessage<?> eventMessage, Collection<Segment> segments) throws Exception {
         for (Segment segment : segments) {
             if (canHandle(eventMessage, segment)) {
                 return true;
@@ -411,8 +411,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @return {@code true} if this is considered regular processor, {@code false} if this event should be treated
      * specially (in its own batch)
      */
-    private boolean isRegularProcessing(Segment segment, List<Segment> processingSegments) {
-        return processingSegments.size() == 1 && Objects.equals(processingSegments.get(0), segment);
+    private boolean isRegularProcessing(Segment segment, Collection<Segment> processingSegments) {
+        return processingSegments.size() == 1 && Objects.equals(processingSegments.iterator().next(), segment);
     }
 
     private void checkSegmentCaughtUp(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) {

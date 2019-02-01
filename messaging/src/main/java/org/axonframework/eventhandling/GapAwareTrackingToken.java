@@ -118,14 +118,14 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      * Note that truncation information is not serialized as part of the token.
      *
      * @param truncationPoint The index up to (and including) which gaps are to be disregarded.
-     * @return a Token
+     * @return a Token without any gaps strictly smaller than given {@code truncationPoint}
      */
     public GapAwareTrackingToken withGapsTruncatedAt(long truncationPoint) {
         if (gaps.isEmpty() || gaps.first() > truncationPoint) {
             return this;
         }
-        SortedSet<Long> gaps = new ConcurrentSkipListSet<>(this.gaps.tailSet(truncationPoint));
-        return new GapAwareTrackingToken(this.index, gaps, truncationPoint);
+        SortedSet<Long> truncatedGaps = new ConcurrentSkipListSet<>(this.gaps.tailSet(truncationPoint));
+        return new GapAwareTrackingToken(this.index, truncatedGaps, truncationPoint);
     }
 
     /**

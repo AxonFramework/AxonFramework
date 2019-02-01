@@ -136,7 +136,6 @@ public class JpaTokenStore implements TokenStore {
         TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
         entityManager.persist(entry);
         entityManager.flush();
-
     }
 
     @Override

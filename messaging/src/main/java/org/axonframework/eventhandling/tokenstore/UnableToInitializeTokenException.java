@@ -18,12 +18,31 @@ package org.axonframework.eventhandling.tokenstore;
 
 import org.axonframework.common.AxonTransientException;
 
+/**
+ * Exception indicating that the TokenStore was unable to initialize a Token for a tracking processor and Segment.
+ *
+ * @author Allard Buijze
+ * @since 4.1
+ */
 public class UnableToInitializeTokenException extends AxonTransientException {
 
+    private static final long serialVersionUID = -1224243390860214161L;
+
+    /**
+     * Initialize the exception with given {@code message}
+     *
+     * @param message The message explaining the cause of the initialization problem
+     */
     public UnableToInitializeTokenException(String message) {
         super(message);
     }
 
+    /**
+     * Initialize the exception with given {@code message} and underlying {@code cause}.
+     *
+     * @param message The message explaining the cause of the initialization problem
+     * @param cause   The exception that cause the initialization to fail
+     */
     public UnableToInitializeTokenException(String message, Throwable cause) {
         super(message, cause);
     }
