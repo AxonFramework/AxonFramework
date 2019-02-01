@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,6 +57,7 @@ public enum ErrorCode {
     NO_HANDLER_FOR_COMMAND("AXONIQ-4000", (code, error) -> new NoHandlerForCommandException(error.getMessage())),
     COMMAND_EXECUTION_ERROR("AXONIQ-4002", (code, error) -> new CommandExecutionException(error.getMessage(),  new AxonServerRemoteCommandHandlingException(code, error))),
     COMMAND_DISPATCH_ERROR("AXONIQ-4003", AxonServerCommandDispatchException::new),
+    CONCURRENCY_EXCEPTION("AXONIQ-4004", (code, error) -> new ConcurrencyException(error.getMessage(), new AxonServerRemoteCommandHandlingException(code, error))),
 
     //Query errors
     NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
