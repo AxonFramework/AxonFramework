@@ -115,6 +115,8 @@ public class AxonServerConnectionManager {
                 }
                 scheduleReconnect(false);
                 throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "No connection to AxonServer available");
+            } else if (!connectInformation.getSuppressDownloadMessage()) {
+                connectInformation.setSuppressDownloadMessage(true);
             }
         }
         return channel;

@@ -31,14 +31,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 
@@ -83,10 +87,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
      */
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
-        if (trackingToken == null) {
-            return events.values().stream();
-        }
-        return events.tailMap(trackingToken, false).values().stream();
+        return StreamSupport.stream(new MapEntrySpliterator(events, trackingToken), false);
     }
 
     @Override
@@ -146,5 +147,33 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     protected GlobalSequenceTrackingToken nextTrackingToken() {
         return events.isEmpty() ? new GlobalSequenceTrackingToken(0) :
                 ((GlobalSequenceTrackingToken) events.lastKey()).next();
+    }
+
+    private static class MapEntrySpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+
+        private final NavigableMap<TrackingToken, TrackedEventMessage<?>> source;
+        private volatile TrackingToken lastToken;
+
+        public MapEntrySpliterator(NavigableMap<TrackingToken, TrackedEventMessage<?>> source,
+                                   TrackingToken trackingToken) {
+            super(Long.MAX_VALUE, Spliterator.ORDERED);
+            this.source = source;
+            this.lastToken = trackingToken;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
+            Map.Entry<TrackingToken, TrackedEventMessage<?>> next;
+            if (lastToken != null) {
+                next = source.higherEntry(lastToken);
+            } else {
+                next = source.firstEntry();
+            }
+            if (next != null) {
+                lastToken = next.getKey();
+                action.accept(next.getValue());
+            }
+            return next != null;
+        }
     }
 }

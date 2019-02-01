@@ -21,6 +21,11 @@ import org.junit.Test;
 
 import java.util.UUID;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -34,7 +39,7 @@ public class AnnotationCommandTargetResolverTest {
 
     @Before
     public void setUp() {
-        testSubject = new AnnotationCommandTargetResolver();
+        testSubject = AnnotationCommandTargetResolver.builder().build();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -150,6 +155,80 @@ public class AnnotationCommandTargetResolverTest {
         testSubject.resolveTarget(asCommandMessage(new FieldAnnotatedCommand(aggregateIdentifier, version)));
     }
 
+	@Test
+	public void testMetaAnnotationsOnMethods() {
+		final UUID aggregateIdentifier = UUID.randomUUID();
+		final Long version = Long.valueOf(98765432109L);
+
+		VersionedAggregateIdentifier actual = testSubject.resolveTarget(asCommandMessage(new Object() {
+			@MetaTargetAggregateIdentifier
+			private UUID getIdentifier() {
+				return aggregateIdentifier;
+			}
+
+			@MetaTargetAggregateVersion
+			private Long version() {
+				return version;
+			}
+		}));
+		assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
+		assertEquals(version, actual.getVersion());
+	}
+
+	@Test
+	public void testMetaAnnotationsOnFields() {
+		final UUID aggregateIdentifier = UUID.randomUUID();
+		final Long version = Long.valueOf(98765432109L);
+
+		VersionedAggregateIdentifier actual = testSubject.resolveTarget(
+				asCommandMessage(new FieldMetaAnnotatedCommand(aggregateIdentifier, version)));
+
+		assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
+		assertEquals(version, actual.getVersion());
+	}
+
+	@Test
+	public void testCustomAnnotationsOnMethods() {
+		testSubject = AnnotationCommandTargetResolver.builder()
+                .targetAggregateIdentifierAnnotation(CustomTargetAggregateIdentifier.class)
+                .targetAggregateVersionAnnotation(CustomTargetAggregateVersion.class)
+				.build();
+
+		final UUID aggregateIdentifier = UUID.randomUUID();
+		final Long version = Long.valueOf(98765432109L);
+
+		VersionedAggregateIdentifier actual = testSubject.resolveTarget(asCommandMessage(new Object() {
+			@CustomTargetAggregateIdentifier
+			private UUID getIdentifier() {
+				return aggregateIdentifier;
+			}
+
+			@CustomTargetAggregateVersion
+			private Long version() {
+				return version;
+			}
+		}));
+		assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
+		assertEquals(version, actual.getVersion());
+	}
+
+	@Test
+	public void testCustomAnnotationsOnFields() {
+		testSubject = AnnotationCommandTargetResolver.builder()
+                .targetAggregateIdentifierAnnotation(CustomTargetAggregateIdentifier.class)
+                .targetAggregateVersionAnnotation(CustomTargetAggregateVersion.class)
+				.build();
+
+		final UUID aggregateIdentifier = UUID.randomUUID();
+		final Long version = Long.valueOf(98765432109L);
+
+		VersionedAggregateIdentifier actual = testSubject.resolveTarget(
+				asCommandMessage(new FieldCustomAnnotatedCommand(aggregateIdentifier, version)));
+
+		assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
+		assertEquals(version, actual.getVersion());
+	}
+
     private static class FieldAnnotatedCommand {
 
         @TargetAggregateIdentifier
@@ -162,13 +241,55 @@ public class AnnotationCommandTargetResolverTest {
             this.aggregateIdentifier = aggregateIdentifier;
             this.version = version;
         }
-
-        public Object getAggregateIdentifier() {
-            return aggregateIdentifier;
-        }
-
-        public Object getVersion() {
-            return version;
-        }
     }
+
+	private static class FieldMetaAnnotatedCommand {
+
+		@MetaTargetAggregateIdentifier
+		private final Object aggregateIdentifier;
+
+		@MetaTargetAggregateVersion
+		private final Object version;
+
+		public FieldMetaAnnotatedCommand(Object aggregateIdentifier, Object version) {
+			this.aggregateIdentifier = aggregateIdentifier;
+			this.version = version;
+		}
+	}
+
+	private static class FieldCustomAnnotatedCommand {
+
+		@CustomTargetAggregateIdentifier
+		private final Object aggregateIdentifier;
+
+		@CustomTargetAggregateVersion
+		private final Object version;
+
+		public FieldCustomAnnotatedCommand(Object aggregateIdentifier, Object version) {
+			this.aggregateIdentifier = aggregateIdentifier;
+			this.version = version;
+		}
+	}
+
+	@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE })
+	@Retention(RetentionPolicy.RUNTIME)
+	@TargetAggregateIdentifier
+	public static @interface MetaTargetAggregateIdentifier {
+	}
+
+	@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE })
+	@Retention(RetentionPolicy.RUNTIME)
+	@TargetAggregateVersion
+	public static @interface MetaTargetAggregateVersion {
+	}
+
+	@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE })
+	@Retention(RetentionPolicy.RUNTIME)
+	public static @interface CustomTargetAggregateIdentifier {
+	}
+
+	@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE })
+	@Retention(RetentionPolicy.RUNTIME)
+	public static @interface CustomTargetAggregateVersion {
+	}
 }

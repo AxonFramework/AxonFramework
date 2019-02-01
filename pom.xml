@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2018. Axon Framework
+  ~ Copyright (c) 2010-2019. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -131,8 +131,8 @@
         <mockito.version>2.15.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
         <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
-        <jackson.version>2.9.7</jackson.version>
-        <grpc.version>1.13.1</grpc.version>
+        <jackson.version>2.9.8</jackson.version>
+        <grpc.version>1.16.1</grpc.version>
         <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
         <axonserver.api.version>4.0</axonserver.api.version>
     </properties>
@@ -422,6 +422,7 @@
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
                 </configuration>
             </plugin>
             <plugin>

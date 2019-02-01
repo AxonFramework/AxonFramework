@@ -33,10 +33,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.springboot.DistributedCommandBusProperties;
-import org.axonframework.springboot.EventProcessorProperties;
-import org.axonframework.springboot.SerializerProperties;
-import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
+import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
@@ -45,11 +42,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -60,21 +53,15 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.JavaSerializer;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.queryhandling.*;
+import org.axonframework.serialization.*;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.springboot.DistributedCommandBusProperties;
+import org.axonframework.springboot.EventProcessorProperties;
+import org.axonframework.springboot.SerializerProperties;
+import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -274,7 +261,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return sequencingPolicy;
     }
 
-    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class}, value = CommandBus.class)
+    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class, AxonServerCommandBus.class}, value = CommandBus.class)
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {

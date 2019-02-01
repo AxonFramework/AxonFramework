@@ -16,9 +16,9 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.modelling.command.inspection.EntityModel;
 import org.axonframework.common.property.Property;
 import org.axonframework.messaging.Message;
+import org.axonframework.modelling.command.inspection.EntityModel;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
@@ -32,6 +32,8 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
  * this means that events are only forwarded if the Message mentions the identifier of the entity instance.
  *
  * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
+ * @author Steven van Beelen
+ * @since 3.1
  */
 public class ForwardMatchingInstances<T extends Message<?>> implements ForwardingMode<T> {
 

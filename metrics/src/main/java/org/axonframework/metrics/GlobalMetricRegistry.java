@@ -124,6 +124,7 @@ public class GlobalMetricRegistry {
         eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
         eventProcessingRegistry.register("latency", eventProcessorLatencyMonitor);
         eventProcessingRegistry.register("messageCounter", messageCountingMonitor);
+        eventProcessingRegistry.register("capacity", capacityMonitor);
         registry.register(eventProcessorName, eventProcessingRegistry);
 
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
@@ -167,12 +168,12 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor a {@link CommandBus}. The monitor will be registered with the
+     * Registers new metrics to the registry to monitor a {@link QueryBus}. The monitor will be registered with the
      * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
-     * on the command bus to initiate the monitoring.
+     * on the query bus to initiate the monitoring.
      *
      * @param name the name under which the commandBus should be registered to the registry
-     * @return MessageMonitor to monitor the behavior of a CommandBus
+     * @return MessageMonitor to monitor the behavior of a QueryBus
      */
     public MessageMonitor<? super QueryMessage<?, ?>> registerQueryBus(String name) {
         return registerDefaultHandlerMessageMonitor(name);

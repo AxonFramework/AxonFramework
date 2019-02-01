@@ -282,12 +282,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          */
         @SuppressWarnings("unchecked")
         protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
-            for (MessageHandlingMember<? super T> handler : eventHandlers) {
-                if (handler.canHandle(message)) {
-                    return Optional.of(handler);
-                }
-            }
-            return Optional.empty();
+            return eventHandlers.stream().filter(handler -> handler.canHandle(message)).findAny();
         }
 
         @Override

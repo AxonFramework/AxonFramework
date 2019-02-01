@@ -105,4 +105,55 @@ public class ConcatenatingDomainEventStreamTest {
         assertSame(event4.getPayload(), concat.next().getPayload());
         assertFalse(concat.hasNext());
     }
+
+
+    @Test
+    public void testLastKnownSequenceReturnsTheLastEventItsSequence() {
+        DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1),
+                                                                      DomainEventStream.of(event2, event3),
+                                                                      DomainEventStream.of(event4, event5));
+        // This is still null if we have not traversed the stream yet.
+        assertNull(concat.getLastSequenceNumber());
+
+        assertTrue(concat.hasNext());
+        assertSame(event1.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 0L, concat.getLastSequenceNumber());
+
+        assertSame(event2.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 1L, concat.getLastSequenceNumber());
+
+        assertSame(event3.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 2L, concat.getLastSequenceNumber());
+
+        assertSame(event4.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 3L, concat.getLastSequenceNumber());
+
+        assertSame(event5.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 4L, concat.getLastSequenceNumber());
+
+        assertFalse(concat.hasNext());
+    }
+
+    @Test
+    public void testLastKnownSequenceReturnsTheLastEventItsSequenceEventIfEventsHaveGaps() {
+        DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event3),
+                                                                      DomainEventStream.of(event4, event5));
+        // This is still null if we have not traversed the stream yet.
+        assertNull(concat.getLastSequenceNumber());
+
+        assertTrue(concat.hasNext());
+        assertSame(event1.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 0L, concat.getLastSequenceNumber());
+
+        assertSame(event3.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 2L, concat.getLastSequenceNumber());
+
+        assertSame(event4.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 3L, concat.getLastSequenceNumber());
+
+        assertSame(event5.getPayload(), concat.next().getPayload());
+        assertEquals((Long) 4L, concat.getLastSequenceNumber());
+
+        assertFalse(concat.hasNext());
+    }
 }

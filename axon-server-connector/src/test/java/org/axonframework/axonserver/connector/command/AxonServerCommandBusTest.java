@@ -79,6 +79,8 @@ public class AxonServerCommandBusTest {
     @After
     public void tearDown() {
         dummyMessagePlatformServer.stop();
+        axonServerConnectionManager.shutdown();
+        testSubject.disconnect();
     }
 
     @Test
@@ -218,13 +220,13 @@ public class AxonServerCommandBusTest {
     @Test
     public void resubscribe() throws Exception {
         testSubject.subscribe(String.class.getName(), c -> "Done");
-        Thread.sleep(30);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(1, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
         dummyMessagePlatformServer.stop();
         assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
         dummyMessagePlatformServer.start();
-        Thread.sleep(3000);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(5, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
 
     @Test
@@ -239,15 +241,14 @@ public class AxonServerCommandBusTest {
         assertEquals(1, results.size());
     }
 
-
     @Test
     public void reconnectAfterConnectionLost() throws InterruptedException {
         testSubject.subscribe(String.class.getName(), c -> "Done");
-        Thread.sleep(30);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(1, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
         dummyMessagePlatformServer.onError(String.class.getName());
-        Thread.sleep(200);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(2, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
 
 

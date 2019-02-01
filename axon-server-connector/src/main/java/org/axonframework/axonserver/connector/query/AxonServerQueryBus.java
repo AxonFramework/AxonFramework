@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.query.*;
+import io.axoniq.axonserver.grpc.query.*;
+import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
 import io.axoniq.axonserver.grpc.query.QuerySubscription;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
 import io.grpc.ClientInterceptor;
@@ -65,7 +67,9 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
  * @since 4.0
  */
 public class AxonServerQueryBus implements QueryBus {
+
     private final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
+
     private final AxonServerConfiguration configuration;
     private final QueryUpdateEmitter updateEmitter;
     private final QueryBus localSegment;
@@ -84,13 +88,15 @@ public class AxonServerQueryBus implements QueryBus {
      * Creates an instance of the AxonServerQueryBus
      *
      * @param axonServerConnectionManager creates connection to AxonServer platform
-     * @param configuration             contains client and component names used to identify the application in
-     *                                  AxonServer
-     * @param updateEmitter             emits incremental updates to subscription queries
-     * @param localSegment              handles incoming query requests
-     * @param messageSerializer         serializer/deserializer for payload and metadata of query requests and responses
-     * @param genericSerializer         serializer for communication of other objects than payload and metadata
-     * @param priorityCalculator        calculates the request priority based on the content and adds it to the request
+     * @param configuration               contains client and component names used to identify the application in
+     *                                    AxonServer
+     * @param updateEmitter               emits incremental updates to subscription queries
+     * @param localSegment                handles incoming query requests
+     * @param messageSerializer           serializer/deserializer for payload and metadata of query requests and
+     *                                    responses
+     * @param genericSerializer           serializer for communication of other objects than payload and metadata
+     * @param priorityCalculator          calculates the request priority based on the content and adds it to the
+     *                                    request
      */
     public AxonServerQueryBus(AxonServerConnectionManager axonServerConnectionManager,
                               AxonServerConfiguration configuration,
@@ -108,7 +114,9 @@ public class AxonServerQueryBus implements QueryBus {
         this.axonServerConnectionManager.addDisconnectListener(queryProvider::unsubscribeAll);
         interceptors = new ClientInterceptor[]{new TokenAddingInterceptor(configuration.getToken()),
                 new ContextAddingInterceptor(configuration.getContext())};
-        this.subscriptionSerializer = new SubscriptionMessageSerializer(configuration, messageSerializer, genericSerializer);
+        this.subscriptionSerializer = new SubscriptionMessageSerializer(configuration,
+                                                                        messageSerializer,
+                                                                        genericSerializer);
         axonServerConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
         axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
         SubscriptionQueryRequestTarget target =
@@ -121,8 +129,13 @@ public class AxonServerQueryBus implements QueryBus {
     @Override
     public <R> Registration subscribe(String queryName, Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
-        return new AxonServerRegistration(queryProvider.subscribe(queryName, responseType, configuration.getComponentName(), handler),
-                                          () -> queryProvider.unsubscribe(queryName, responseType, configuration.getComponentName()));
+        return new AxonServerRegistration(queryProvider.subscribe(queryName,
+                                                                  responseType,
+                                                                  configuration.getComponentName(),
+                                                                  handler),
+                                          () -> queryProvider.unsubscribe(queryName,
+                                                                          responseType,
+                                                                          configuration.getComponentName()));
     }
 
     @Override
@@ -139,7 +152,7 @@ public class AxonServerQueryBus implements QueryBus {
                                @Override
                                public void onNext(QueryResponse queryResponse) {
                                    logger.debug("Received response: {}", queryResponse);
-                                       completableFuture.complete(serializer.deserializeResponse(queryResponse));
+                                   completableFuture.complete(serializer.deserializeResponse(queryResponse));
                                }
 
                                @Override
@@ -148,7 +161,8 @@ public class AxonServerQueryBus implements QueryBus {
                                                throwable.getMessage(),
                                                throwable);
                                    completableFuture.completeExceptionally(
-                                           ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), throwable));
+                                           ErrorCode.QUERY_DISPATCH_ERROR
+                                                   .convert(configuration.getClientId(), throwable));
                                }
 
                                @Override
@@ -177,51 +191,57 @@ public class AxonServerQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage, long timeout, TimeUnit timeUnit) {
+    public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage, long timeout,
+                                                                TimeUnit timeUnit) {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
-        QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator = new QueueBackedSpliterator<>(timeout, timeUnit);
+        QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator = new QueueBackedSpliterator<>(timeout,
+                                                                                                         timeUnit);
         queryServiceStub()
-                        .withDeadlineAfter(timeout, timeUnit)
-                        .query(serializer.serializeRequest(interceptedQuery, -1, timeUnit.toMillis(timeout),
-                                                           priorityCalculator.determinePriority(interceptedQuery)),
-                               new StreamObserver<QueryResponse>() {
-                                   @Override
-                                   public void onNext(QueryResponse queryResponse) {
-                                       logger.debug("Received response: {}", queryResponse);
+                .withDeadlineAfter(timeout, timeUnit)
+                .query(serializer.serializeRequest(interceptedQuery, -1, timeUnit.toMillis(timeout),
+                                                   priorityCalculator.determinePriority(interceptedQuery)),
+                       new StreamObserver<QueryResponse>() {
+                           @Override
+                           public void onNext(QueryResponse queryResponse) {
+                               logger.debug("Received response: {}", queryResponse);
 
-                                       if( queryResponse.hasErrorMessage()) {
-                                           logger.warn("Received exception: {}", queryResponse.getErrorMessage());
-                                       } else {
-                                           resultSpliterator.put(serializer.deserializeResponse(queryResponse));
-                                       }
-                                   }
+                               if (queryResponse.hasErrorMessage()) {
+                                   logger.warn("Received exception: {}", queryResponse.getErrorMessage());
+                               } else {
+                                   resultSpliterator.put(serializer.deserializeResponse(queryResponse));
+                               }
+                           }
 
-                                   @Override
-                                   public void onError(Throwable throwable) {
-                                       if (!isDeadlineExceeded(throwable)) {
-                                           logger.warn("Received error while waiting for responses: {}", throwable.getMessage(), throwable);
-                                       }
-                                       resultSpliterator.cancel(throwable);
-                                   }
+                           @Override
+                           public void onError(Throwable throwable) {
+                               if (!isDeadlineExceeded(throwable)) {
+                                   logger.warn("Received error while waiting for responses: {}",
+                                               throwable.getMessage(),
+                                               throwable);
+                               }
+                               resultSpliterator.cancel(throwable);
+                           }
 
-                                   @Override
-                                   public void onCompleted() {
-                                       resultSpliterator.cancel(null);
-                                   }
-                               });
+                           @Override
+                           public void onCompleted() {
+                               resultSpliterator.cancel(null);
+                           }
+                       });
 
         return StreamSupport.stream(resultSpliterator, false);
     }
 
     private boolean isDeadlineExceeded(Throwable throwable) {
-        return throwable instanceof StatusRuntimeException && ((StatusRuntimeException) throwable).getStatus().getCode().equals(Status.Code.DEADLINE_EXCEEDED);
+        return throwable instanceof StatusRuntimeException && ((StatusRuntimeException) throwable).getStatus().getCode()
+                                                                                                  .equals(Status.Code.DEADLINE_EXCEEDED);
     }
 
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor){
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor) {
         return localSegment.registerHandlerInterceptor(interceptor);
     }
 
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super QueryMessage<?, ?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super QueryMessage<?, ?>> dispatchInterceptor) {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 
@@ -229,237 +249,23 @@ public class AxonServerQueryBus implements QueryBus {
         queryProvider.disconnect();
     }
 
-    class QueryProvider {
-        private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries = new ConcurrentHashMap<>();
-        private final PriorityBlockingQueue<QueryRequest> queryQueue;
-        private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getQueryThreads());
-        private StreamObserver<QueryProviderOutbound> outboundStreamObserver;
-        private volatile boolean subscribing;
-        private volatile boolean running = true;
-
-        QueryProvider() {
-            queryQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
-            IntStream.range(0, configuration.getQueryThreads()).forEach(i -> executor.submit(this::queryExecutor));
-        }
-
-        private void queryExecutor() {
-            logger.debug("Starting Query Executor");
-            boolean interrupted = false;
-
-            while (running && !interrupted) {
-                try {
-                    QueryRequest query = queryQueue.poll(1, TimeUnit.SECONDS);
-                    if (query != null) {
-                        logger.debug("Received query: {}", query);
-                        processQuery(query);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    logger.warn("Interrupted queryExecutor", e);
-                    interrupted = true;
-                }
-            }
-
-        }
-
-        private void processQuery(QueryRequest query) {
-            String requestId = query.getMessageIdentifier();
-            try {
-                //noinspection unchecked
-                if( numberOfResults(query.getProcessingInstructionsList()) == 1) {
-                    QueryResponseMessage<Object> response = localSegment.query(serializer.deserializeRequest(query))
-                                                                        .get();
-                    outboundStreamObserver.onNext(
-                            QueryProviderOutbound.newBuilder()
-                                                 .setQueryResponse(serializer.serializeResponse(response,
-                                                                                                requestId))
-                                                 .build());
-                } else {
-                    localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
-                                .forEach(response -> outboundStreamObserver.onNext(
-                                        QueryProviderOutbound.newBuilder()
-                                                             .setQueryResponse(serializer.serializeResponse(response,
-                                                                                                            requestId))
-                                                             .build()));
-                }
-                outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
-                        QueryComplete.newBuilder().setMessageId(UUID.randomUUID().toString()).setRequestId(requestId)).build());
-            } catch (Exception ex) {
-                logger.warn("Received error from localSegment: {}", ex.getMessage(), ex);
-                outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder()
-                                                                   .setQueryResponse(QueryResponse.newBuilder()
-                                                                                                  .setMessageIdentifier(UUID.randomUUID().toString())
-                                                                                                  .setRequestIdentifier(requestId)
-                                                                                                  .setErrorMessage(ExceptionSerializer
-                                                                                                                 .serialize(configuration.getClientId(), ex))
-                                                                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                                                                                                  .build())
-                                                                   .build());
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        public <R> Registration subscribe(String queryName, Type responseType, String componentName, MessageHandler<? super QueryMessage<?, R>> handler) {
-            subscribing = true;
-            Set registrations = subscribedQueries.computeIfAbsent(new QueryDefinition(queryName, responseType.getTypeName(), componentName), k -> new CopyOnWriteArraySet<>());
-            registrations.add(handler);
-
-            try {
-                getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder()
-                                                                    .setSubscribe(QuerySubscription.newBuilder()
-                                                                                                   .setMessageId(UUID.randomUUID().toString())
-                                                                                                   .setClientId(configuration.getClientId())
-                                                                                                   .setComponentName(componentName)
-                                                                                                   .setQuery(queryName)
-                                                                                                   .setResultName(responseType.getTypeName())
-                                                                                                   .setNrOfHandlers(registrations.size())
-                                                                                                   .build())
-                                                                    .build());
-            } catch (Exception ex) {
-                logger.warn("Subscribe failed - {}", ex.getMessage());
-            } finally {
-                subscribing = false;
-            }
-            return localSegment.subscribe(queryName, responseType, handler);
-        }
-
-        private synchronized StreamObserver<QueryProviderOutbound> getSubscriberObserver() {
-            if (outboundStreamObserver == null) {
-                StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
-                    @Override
-                    public void onNext(QueryProviderInbound inboundRequest) {
-                        RequestCase requestCase = inboundRequest.getRequestCase();
-                        queryHandlers.getOrDefault(requestCase, Collections.emptySet())
-                                     .forEach(consumer -> consumer.accept(inboundRequest));
-                        switch (requestCase) {
-                            case CONFIRMATION:
-                                break;
-                            case QUERY:
-                                queryQueue.add(inboundRequest.getQuery());
-                                break;
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable ex){
-                        logger.warn("Received error from server: {}", ex.getMessage());
-                        outboundStreamObserver = null;
-                        if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode().equals(Status.UNAVAILABLE.getCode())) {
-                            return;
-                        }
-                        resubscribe();
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        logger.debug("Received completed from server");
-                        outboundStreamObserver = null;
-                    }
-                };
-
-                StreamObserver<QueryProviderOutbound> stream = axonServerConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
-                logger.info("Creating new subscriber");
-                outboundStreamObserver = new FlowControllingStreamObserver<>(stream,
-                                                                             configuration,
-                                                                             flowControl -> QueryProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
-                                                                             t -> t.getRequestCase().equals(QueryProviderOutbound.RequestCase.QUERY_RESPONSE)).sendInitialPermits();
-            }
-            return outboundStreamObserver;
-        }
-
-        public void unsubscribe(String queryName, Type responseType, String componentName) {
-            QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType.getTypeName(), componentName);
-            subscribedQueries.remove(queryDefinition);
-            try {
-                getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder().setUnsubscribe(
-                        subscriptionBuilder(queryDefinition, 1)
-                ).build());
-            } catch (Exception ignored) {
-
-            }
-        }
-
-        private void unsubscribeAll() {
-            subscribedQueries.forEach((d, count) -> {
-                try {
-                    getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder().setUnsubscribe(
-                            subscriptionBuilder(d, 1)
-                    ).build());
-                } catch (Exception ignored) {
-
-                }
-            });
-            outboundStreamObserver = null;
-        }
-
-        private void resubscribe() {
-            if( subscribedQueries.isEmpty() || subscribing) return;
-            try {
-                StreamObserver<QueryProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
-                subscribedQueries.forEach((queryDefinition, handlers) ->
-                                                      subscriberStreamObserver.onNext(QueryProviderOutbound.newBuilder().setSubscribe(
-                                                              subscriptionBuilder(queryDefinition, handlers.size())
-                                                      ).build())
-                );
-            } catch (Exception ex) {
-                logger.warn("Error while resubscribing - {}", ex.getMessage());
-            }
-        }
-
-        public void disconnect() {
-            if (outboundStreamObserver != null) {
-                outboundStreamObserver.onCompleted();
-            }
-
-            running = false;
-            executor.shutdown();
-        }
-
-        private QuerySubscription.Builder subscriptionBuilder(QueryDefinition queryDefinition, int nrHandlers) {
-            return QuerySubscription.newBuilder()
-                                    .setClientId(configuration.getClientId())
-                                    .setMessageId(UUID.randomUUID().toString())
-                                    .setComponentName(queryDefinition.componentName)
-                                    .setQuery(queryDefinition.queryName)
-                                    .setNrOfHandlers(nrHandlers)
-                                    .setResultName(queryDefinition.responseName);
-        }
-
-        class QueryDefinition {
-            private final String queryName;
-            private final String responseName;
-            private final String componentName;
-
-            QueryDefinition(String queryName, String responseName, String componentName) {
-                this.queryName = queryName;
-                this.responseName = responseName;
-                this.componentName = componentName;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-                QueryDefinition that = (QueryDefinition) o;
-                return Objects.equals(queryName, that.queryName) &&
-                        Objects.equals(responseName, that.responseName) &&
-                        Objects.equals(componentName, that.componentName);
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(queryName, responseName, componentName);
-            }
-        }
+    /**
+     * Returns the local segment configurated for this instance. The local segment is responsible for publishing queries
+     * to handlers in the local JVM.
+     *
+     * @return the local segment of the Query Bus
+     */
+    public QueryBus localSegment() {
+        return localSegment;
     }
 
-    public void publish(QueryProviderOutbound providerOutbound){
+    public void publish(QueryProviderOutbound providerOutbound) {
         this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
     }
 
     public void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
         Collection<Consumer<QueryProviderInbound>> consumers =
-                queryHandlers.computeIfAbsent(requestCase,rc -> new CopyOnWriteArraySet<>());
+                queryHandlers.computeIfAbsent(requestCase, rc -> new CopyOnWriteArraySet<>());
         consumers.add(consumer);
     }
 
@@ -504,4 +310,268 @@ public class AxonServerQueryBus implements QueryBus {
         subscriptions.clear();
     }
 
+    class QueryProvider {
+
+        private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries = new ConcurrentHashMap<>();
+        private final PriorityBlockingQueue<QueryRequest> queryQueue;
+        private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getQueryThreads());
+        private StreamObserver<QueryProviderOutbound> outboundStreamObserver;
+        private volatile boolean subscribing;
+        private volatile boolean running = true;
+
+        QueryProvider() {
+            queryQueue = new PriorityBlockingQueue<>(1000,
+                                                     Comparator
+                                                             .comparingLong(c -> -priority(c.getProcessingInstructionsList())));
+            IntStream.range(0, configuration.getQueryThreads()).forEach(i -> executor.submit(this::queryExecutor));
+        }
+
+        private void queryExecutor() {
+            logger.debug("Starting Query Executor");
+            boolean interrupted = false;
+
+            while (running && !interrupted) {
+                try {
+                    QueryRequest query = queryQueue.poll(1, TimeUnit.SECONDS);
+                    if (query != null) {
+                        logger.debug("Received query: {}", query);
+                        processQuery(query);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("Interrupted queryExecutor", e);
+                    interrupted = true;
+                }
+            }
+        }
+
+        private void processQuery(QueryRequest query) {
+            String requestId = query.getMessageIdentifier();
+            try {
+                //noinspection unchecked
+                if (numberOfResults(query.getProcessingInstructionsList()) == 1) {
+                    QueryResponseMessage<Object> response = localSegment.query(serializer.deserializeRequest(query))
+                                                                        .get();
+                    outboundStreamObserver.onNext(
+                            QueryProviderOutbound.newBuilder()
+                                                 .setQueryResponse(serializer.serializeResponse(response,
+                                                                                                requestId))
+                                                 .build());
+                } else {
+                    localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
+                                .forEach(response -> outboundStreamObserver.onNext(
+                                        QueryProviderOutbound.newBuilder()
+                                                             .setQueryResponse(serializer.serializeResponse(response,
+                                                                                                            requestId))
+                                                             .build()));
+                }
+                outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
+                        QueryComplete.newBuilder().setMessageId(UUID.randomUUID().toString()).setRequestId(requestId))
+                                                                   .build());
+            } catch (Exception ex) {
+                logger.warn("Received error from localSegment: {}", ex.getMessage(), ex);
+                outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder()
+                                                                   .setQueryResponse(QueryResponse.newBuilder()
+                                                                                                  .setMessageIdentifier(
+                                                                                                          UUID.randomUUID()
+                                                                                                              .toString())
+                                                                                                  .setRequestIdentifier(
+                                                                                                          requestId)
+                                                                                                  .setErrorMessage(
+                                                                                                          ExceptionSerializer
+                                                                                                                  .serialize(
+                                                                                                                          configuration
+                                                                                                                                  .getClientId(),
+                                                                                                                          ex))
+                                                                                                  .setErrorCode(
+                                                                                                          ErrorCode.QUERY_EXECUTION_ERROR
+                                                                                                                  .errorCode())
+                                                                                                  .build())
+                                                                   .build());
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public <R> Registration subscribe(String queryName, Type responseType, String componentName,
+                                          MessageHandler<? super QueryMessage<?, R>> handler) {
+            subscribing = true;
+            Set registrations = subscribedQueries.computeIfAbsent(new QueryDefinition(queryName,
+                                                                                      responseType.getTypeName(),
+                                                                                      componentName),
+                                                                  k -> new CopyOnWriteArraySet<>());
+            registrations.add(handler);
+
+            try {
+                getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder()
+                                                                    .setSubscribe(QuerySubscription.newBuilder()
+                                                                                                   .setMessageId(UUID.randomUUID()
+                                                                                                                     .toString())
+                                                                                                   .setClientId(
+                                                                                                           configuration
+                                                                                                                   .getClientId())
+                                                                                                   .setComponentName(
+                                                                                                           componentName)
+                                                                                                   .setQuery(queryName)
+                                                                                                   .setResultName(
+                                                                                                           responseType
+                                                                                                                   .getTypeName())
+                                                                                                   .setNrOfHandlers(
+                                                                                                           registrations
+                                                                                                                   .size())
+                                                                                                   .build())
+                                                                    .build());
+            } catch (Exception ex) {
+                logger.warn("Subscribe failed - {}", ex.getMessage());
+            } finally {
+                subscribing = false;
+            }
+            return localSegment.subscribe(queryName, responseType, handler);
+        }
+
+        private synchronized StreamObserver<QueryProviderOutbound> getSubscriberObserver() {
+            if (outboundStreamObserver == null) {
+                StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
+                    @Override
+                    public void onNext(QueryProviderInbound inboundRequest) {
+                        RequestCase requestCase = inboundRequest.getRequestCase();
+                        queryHandlers.getOrDefault(requestCase, Collections.emptySet())
+                                     .forEach(consumer -> consumer.accept(inboundRequest));
+                        switch (requestCase) {
+                            case CONFIRMATION:
+                                break;
+                            case QUERY:
+                                queryQueue.add(inboundRequest.getQuery());
+                                break;
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable ex) {
+                        logger.warn("Received error from server: {}", ex.getMessage());
+                        outboundStreamObserver = null;
+                        if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode()
+                                                                                                 .equals(Status.UNAVAILABLE
+                                                                                                                 .getCode())) {
+                            return;
+                        }
+                        resubscribe();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        logger.debug("Received completed from server");
+                        outboundStreamObserver = null;
+                    }
+                };
+
+                StreamObserver<QueryProviderOutbound> stream = axonServerConnectionManager.getQueryStream(
+                        queryProviderInboundStreamObserver,
+                        interceptors);
+                logger.info("Creating new subscriber");
+                outboundStreamObserver = new FlowControllingStreamObserver<>(stream,
+                                                                             configuration,
+                                                                             flowControl -> QueryProviderOutbound
+                                                                                     .newBuilder()
+                                                                                     .setFlowControl(flowControl)
+                                                                                     .build(),
+                                                                             t -> t.getRequestCase()
+                                                                                   .equals(QueryProviderOutbound.RequestCase.QUERY_RESPONSE))
+                        .sendInitialPermits();
+            }
+            return outboundStreamObserver;
+        }
+
+        public void unsubscribe(String queryName, Type responseType, String componentName) {
+            QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType.getTypeName(), componentName);
+            subscribedQueries.remove(queryDefinition);
+            try {
+                getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder().setUnsubscribe(
+                        subscriptionBuilder(queryDefinition, 1)
+                ).build());
+            } catch (Exception ignored) {
+
+            }
+        }
+
+        private void unsubscribeAll() {
+            subscribedQueries.forEach((d, count) -> {
+                try {
+                    getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder().setUnsubscribe(
+                            subscriptionBuilder(d, 1)
+                    ).build());
+                } catch (Exception ignored) {
+
+                }
+            });
+            outboundStreamObserver = null;
+        }
+
+        private void resubscribe() {
+            if (subscribedQueries.isEmpty() || subscribing) {
+                return;
+            }
+            try {
+                StreamObserver<QueryProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
+                subscribedQueries.forEach((queryDefinition, handlers) ->
+                                                  subscriberStreamObserver
+                                                          .onNext(QueryProviderOutbound.newBuilder().setSubscribe(
+                                                                  subscriptionBuilder(queryDefinition, handlers.size())
+                                                          ).build())
+                );
+            } catch (Exception ex) {
+                logger.warn("Error while resubscribing - {}", ex.getMessage());
+            }
+        }
+
+        public void disconnect() {
+            if (outboundStreamObserver != null) {
+                outboundStreamObserver.onCompleted();
+            }
+
+            running = false;
+            executor.shutdown();
+        }
+
+        private QuerySubscription.Builder subscriptionBuilder(QueryDefinition queryDefinition, int nrHandlers) {
+            return QuerySubscription.newBuilder()
+                                    .setClientId(configuration.getClientId())
+                                    .setMessageId(UUID.randomUUID().toString())
+                                    .setComponentName(queryDefinition.componentName)
+                                    .setQuery(queryDefinition.queryName)
+                                    .setNrOfHandlers(nrHandlers)
+                                    .setResultName(queryDefinition.responseName);
+        }
+
+        class QueryDefinition {
+
+            private final String queryName;
+            private final String responseName;
+            private final String componentName;
+
+            QueryDefinition(String queryName, String responseName, String componentName) {
+                this.queryName = queryName;
+                this.responseName = responseName;
+                this.componentName = componentName;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) {
+                    return true;
+                }
+                if (o == null || getClass() != o.getClass()) {
+                    return false;
+                }
+                QueryDefinition that = (QueryDefinition) o;
+                return Objects.equals(queryName, that.queryName) &&
+                        Objects.equals(responseName, that.responseName) &&
+                        Objects.equals(componentName, that.componentName);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(queryName, responseName, componentName);
+            }
+        }
+    }
 }

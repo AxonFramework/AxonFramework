@@ -57,6 +57,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * events. This cache is shared between the streams of various event processors. So, assuming an event processor
  * processes events fast enough and is not far behind the head of the event log it will not need a private connection
  * to the underlying data store. The size of the cache (in number of events) is configurable.
+ * This 'event consumption optimization' might in some scenarios not be desirable, as it will spin up additional threads
+ * and perform some locking operations. Hence it is switchable by using the
+ * {@link Builder#optimizeEventConsumption(boolean)} upon creation. Additionally, this can also be turned off by
+ * providing a system property with key {@code optimize-event-consumption}.
  * <p>
  * The embedded event store automatically fetches new events from the store if there is at least one registered tracking
  * event processor present. It will do so after new events are committed to the store, as well as periodically as
@@ -70,6 +74,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
 
     private static final ThreadGroup THREAD_GROUP = new ThreadGroup(EmbeddedEventStore.class.getSimpleName());
+    private static final String OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY = "optimize-event-consumption";
 
     private final Lock consumerLock = new ReentrantLock();
     private final Condition consumableEventsCondition = consumerLock.newCondition();
@@ -77,6 +82,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private final EventProducer producer;
     private final long cleanupDelayMillis;
     private final ThreadFactory threadFactory;
+    private final boolean optimizeEventConsumption;
     private final ScheduledExecutorService cleanupService;
     private final AtomicBoolean producerStarted = new AtomicBoolean();
     private volatile Node oldest;
@@ -92,6 +98,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     protected EmbeddedEventStore(Builder builder) {
         super(builder);
         this.threadFactory = builder.threadFactory;
+        this.optimizeEventConsumption = builder.optimizeEventConsumption;
         cleanupService = Executors.newScheduledThreadPool(1, this.threadFactory);
         TimeUnit timeUnit = builder.timeUnit;
         producer = new EventProducer(timeUnit.toNanos(builder.fetchDelay), builder.cachedEvents);
@@ -110,6 +117,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
      * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
      * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
      * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
      * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      *
@@ -153,7 +161,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     public TrackingEventStream openStream(TrackingToken trackingToken) {
         Node node = findNode(trackingToken);
         EventConsumer eventConsumer;
-        if (node != null) {
+        if (node != null && optimizeEventConsumption) {
             eventConsumer = new EventConsumer(node);
             tailingConsumers.add(eventConsumer);
         } else {
@@ -336,7 +344,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            boolean allowSwitchToTailingConsumer = true;
+            boolean allowSwitchToTailingConsumer = optimizeEventConsumption;
             if (tailingConsumers.contains(this)) {
                 if (!behindGlobalCache()) {
                     return peekGlobalStream(timeout, timeUnit);
@@ -470,6 +478,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
      * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
      * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
      * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
      * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      */
@@ -480,6 +489,14 @@ public class EmbeddedEventStore extends AbstractEventStore {
         private long cleanupDelay = 10000L;
         private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         private ThreadFactory threadFactory = new AxonThreadFactory(THREAD_GROUP);
+        private boolean optimizeEventConsumption = fetchEventConsumptionSystemPropertyOrDefault();
+
+        // Default to optimize event consumption of no property has been set
+        private static boolean fetchEventConsumptionSystemPropertyOrDefault() {
+            String optimizeEventConsumptionSystemProperty = System.getProperty(OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY);
+            return optimizeEventConsumptionSystemProperty == null ||
+                    Boolean.TRUE.toString().equalsIgnoreCase(optimizeEventConsumptionSystemProperty);
+        }
 
         @Override
         public Builder storageEngine(EventStorageEngine storageEngine) {
@@ -567,6 +584,24 @@ public class EmbeddedEventStore extends AbstractEventStore {
         public Builder threadFactory(ThreadFactory threadFactory) {
             assertNonNull(threadFactory, "ThreadFactory may not be null");
             this.threadFactory = threadFactory;
+            return this;
+        }
+
+        /**
+         * Sets whether event consumption should be optimized between Event Stream. If set to {@code true}, distinct
+         * Event Consumers will read events from the same stream as soon as they reach the head of the stream. If
+         * {@code false}, they will stay on a private stream. The latter means more database resources will be used, but
+         * no side threads are created to fill the consumer cache nor locking is done on consumer threads. This field
+         * can also be configured by providing a system property with key {@code optimize-event-consumption}. Defaults
+         * to {@code true}.
+         *
+         * @param optimizeEventConsumption a {@code boolean} defining whether to optimize event consumption of threads
+         *                                 by introducing a Event Cache Production thread tailing the head of the stream
+         *                                 for the consumers
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder optimizeEventConsumption(boolean optimizeEventConsumption) {
+            this.optimizeEventConsumption = optimizeEventConsumption;
             return this;
         }
 

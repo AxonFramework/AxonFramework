@@ -130,7 +130,7 @@ public abstract class AbstractCommandGateway {
      * Abstract Builder class to instantiate {@link AbstractCommandGateway} implementations.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
+     * The {@link CommandBus} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder {
 
