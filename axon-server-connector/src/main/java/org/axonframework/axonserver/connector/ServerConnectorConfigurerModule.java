@@ -32,7 +32,10 @@ import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,11 +99,12 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         SimpleQueryBus localSegment = SimpleQueryBus.builder()
                                                     .transactionManager(c.getComponent(TransactionManager.class, NoTransactionManager::instance))
                                                     .errorHandler(c.getComponent(QueryInvocationErrorHandler.class, () -> LoggingQueryInvocationErrorHandler.builder().build()))
+                                                    .queryUpdateEmitter(c.queryUpdateEmitter())
                                                     .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                                                     .build();
         AxonServerQueryBus queryBus = new AxonServerQueryBus(c.getComponent(AxonServerConnectionManager.class),
                                                              c.getComponent(AxonServerConfiguration.class),
-                                                             c.getComponent(QueryUpdateEmitter.class, localSegment::queryUpdateEmitter),
+                                                             c.queryUpdateEmitter(),
                                                              localSegment, c.messageSerializer(), c.serializer(), c.getComponent(QueryPriorityCalculator.class, () -> new QueryPriorityCalculator() {}));
         c.onShutdown(queryBus::disconnect);
         return queryBus;

@@ -38,7 +38,7 @@ public abstract class BuilderUtils {
      *
      * @param value            a {@code T} specifying the value to assert
      * @param assertion        a {@link Predicate} to test {@code value} against
-     * @param exceptionMessage a {@link Supplier} of the exception {@code X} if {@code assertion} evaluates to false
+     * @param exceptionMessage The message for the exception.
      * @param <T>              a generic specifying the type of the {@code value}, which is the input for the
      *                         {@code assertion}
      * @throws AxonConfigurationException if the {@code value} asserts to {@code false} by the {@code assertion}
@@ -54,11 +54,34 @@ public abstract class BuilderUtils {
      * containing the provided {@code exceptionMessage}.
      *
      * @param value a {@code T} specifying the value to assert
+     * @param exceptionMessage The message for the exception.
      * @param <T>   a generic specifying the type of the {@code value}, which is the input for the
      *              {@code assertion}
      * @throws AxonConfigurationException if the {@code value} equals {@code null}
      */
     public static <T> void assertNonNull(T value, String exceptionMessage) throws AxonConfigurationException {
         assertThat(value, Objects::nonNull, exceptionMessage);
+    }
+
+    /**
+     * Assert that the given {@code value} is positive, meaning greater than, or equal to, zero. If not, an
+     * {@link AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
+     *
+     * @param integer the value to assert
+     * @param exceptionMessage the message for the exception
+     */
+    public static void assertPositive(int integer, String exceptionMessage) {
+        assertThat(integer, number -> number >= 0, exceptionMessage);
+    }
+
+    /**
+     * Assert that the given {@code value} is strictly positive, meaning greater than zero. If not, an
+     * {@link AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
+     *
+     * @param integer the value to assert
+     * @param exceptionMessage the message for the exception.
+     */
+    public static void assertStrictPositive(int integer, String exceptionMessage) {
+        assertThat(integer, number -> number > 0, exceptionMessage);
     }
 }

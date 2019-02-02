@@ -41,11 +41,12 @@ public interface FixtureConfiguration {
 
     /**
      * Disables the check that injected resources are stored in fields that are marked 'transient'.
-     *
+     * <p>
      * By default, Saga fixtures check for the transient modifier on fields that hold injected resources. These
      * resources are generally not means to be serialized as part of the Saga.
-     *
+     * <p>
      * When the transience check reports false positives, this method allows this check to be skipped.
+     *
      * @return this instance for fluent interfacing.
      */
     FixtureConfiguration withTransienceCheckDisabled();
@@ -117,8 +118,9 @@ public interface FixtureConfiguration {
      * is ignored when performing deep equality checks.
      *
      * @param declaringClass The class declaring the field
-     * @param fieldName The name of the field
+     * @param fieldName      The name of the field
      * @return the current FixtureConfiguration, for fluent interfacing
+     *
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName);

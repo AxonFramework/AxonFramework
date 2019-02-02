@@ -16,19 +16,33 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngineTest;
-import org.junit.Before;
+import org.junit.*;
 
-import java.sql.SQLException;
+import java.util.stream.Stream;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Rene de Waele
  */
 public class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
+    private InMemoryEventStorageEngine testSubject;
+
     @Before
     public void setUp() {
-        setTestSubject(new InMemoryEventStorageEngine());
+        testSubject = new InMemoryEventStorageEngine();
+        setTestSubject(testSubject);
     }
 
+    @Test
+    public void testPublishedEventsEmittedToExistingStreams() {
+        Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
+        testSubject.appendEvents(GenericEventMessage.asEventMessage("test"));
+
+        assertTrue(stream.findFirst().isPresent());
+    }
 }
