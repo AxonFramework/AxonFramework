@@ -16,19 +16,17 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.axonframework.utils.MockException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -260,6 +258,25 @@ public class DefaultCommandGatewayTest {
                 && "value".equals(x.getMetaData().get("header"))), isA(CommandCallback.class));
 
         CurrentUnitOfWork.clear(unitOfWork);
+    }
+
+    @Test
+    public void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
+        doAnswer(i -> {
+            CommandCallback<String,String> callback = i.getArgument(1);
+            callback.onResult(i.getArgument(0), new GenericCommandResultMessage<String>("result") {
+                @Override
+                public String getPayload() {
+                    throw new MockException("Faking serialization problem");
+                }
+            });
+            return null;
+        }).when(mockCommandBus).dispatch(any(), any());
+
+        CompletableFuture<String> actual = testSubject.send("command");
+        assertTrue(actual.isDone());
+        assertTrue(actual.isCompletedExceptionally());
+        assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
     }
 
     private static class RescheduleCommand implements Answer<Boolean> {

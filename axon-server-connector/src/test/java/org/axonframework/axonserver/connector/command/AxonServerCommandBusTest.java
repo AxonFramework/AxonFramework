@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,9 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.After;
 import org.junit.Before;
@@ -81,6 +79,8 @@ public class AxonServerCommandBusTest {
     @After
     public void tearDown() {
         dummyMessagePlatformServer.stop();
+        axonServerConnectionManager.shutdown();
+        testSubject.disconnect();
     }
 
     @Test
@@ -142,6 +142,34 @@ public class AxonServerCommandBusTest {
     }
 
     @Test
+    public void dispatchWithConcurrencyException() throws Exception {
+        CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is a concurrency issue");
+        CountDownLatch waiter = new CountDownLatch(1);
+        AtomicReference<CommandResultMessage> resultHolder = new AtomicReference<>();
+        testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
+            resultHolder.set(result);
+            waiter.countDown();
+        });
+        waiter.await();
+        assertTrue(resultHolder.get().isExceptional());
+        assertTrue(resultHolder.get().exceptionResult() instanceof ConcurrencyException);
+    }
+
+    @Test
+    public void dispatchWithExceptionFromHandler() throws Exception {
+        CommandMessage<String> commandMessage = new GenericCommandMessage<>("give me an exception");
+        CountDownLatch waiter = new CountDownLatch(1);
+        AtomicReference<CommandResultMessage> resultHolder = new AtomicReference<>();
+        testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
+            resultHolder.set(result);
+            waiter.countDown();
+        });
+        waiter.await();
+        assertTrue(resultHolder.get().isExceptional());
+        assertTrue(resultHolder.get().exceptionResult() instanceof CommandExecutionException);
+    }
+
+    @Test
     public void subscribe() {
         Registration registration = testSubject.subscribe(String.class.getName(), c -> "Done");
         assertWithin(100, TimeUnit.MILLISECONDS, () ->
@@ -192,13 +220,13 @@ public class AxonServerCommandBusTest {
     @Test
     public void resubscribe() throws Exception {
         testSubject.subscribe(String.class.getName(), c -> "Done");
-        Thread.sleep(30);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(1, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
         dummyMessagePlatformServer.stop();
         assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
         dummyMessagePlatformServer.start();
-        Thread.sleep(3000);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(5, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
 
     @Test
@@ -213,15 +241,14 @@ public class AxonServerCommandBusTest {
         assertEquals(1, results.size());
     }
 
-
     @Test
     public void reconnectAfterConnectionLost() throws InterruptedException {
         testSubject.subscribe(String.class.getName(), c -> "Done");
-        Thread.sleep(30);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(1, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
         dummyMessagePlatformServer.onError(String.class.getName());
-        Thread.sleep(200);
-        assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+        assertWithin(2, TimeUnit.SECONDS, () ->
+                assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
 
 

@@ -21,8 +21,7 @@ import org.axonframework.common.AxonException;
 import java.util.List;
 
 /**
- * Exception indicating that an error has occurred while remotely handling a message. This may mean that a message was
- * dispatched, but the node/segment that handled the message is no longer available.
+ * Exception indicating that an error has occurred while remotely handling a message.
  * <p/>
  * The sender of the message <strong>cannot</strong> assume that the message has not been handled. It may, if the type
  * of message or the infrastructure allows it, try to dispatch the message again.
@@ -42,7 +41,7 @@ public class RemoteHandlingException extends AxonException {
      * @param exceptionDescription a {@link String} describing the remote exceptions
      */
     public RemoteHandlingException(RemoteExceptionDescription exceptionDescription) {
-        super("An exception was thrown by the remote message handling component.");
+        super("An exception was thrown by the remote message handling component: " + exceptionDescription.toString());
         this.exceptionDescriptions = exceptionDescription.getDescriptions();
     }
 

@@ -17,6 +17,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
@@ -78,10 +80,14 @@ public class DefaultQueryGateway implements QueryGateway {
         CompletableFuture<R> result = new CompletableFuture<>();
         queryResponse.exceptionally(cause -> asResponseMessage(responseType.responseMessagePayloadType(), cause))
                      .thenAccept(queryResponseMessage -> {
-                         if (queryResponseMessage.isExceptional()) {
-                             result.completeExceptionally(queryResponseMessage.exceptionResult());
-                         } else {
-                             result.complete(queryResponseMessage.getPayload());
+                         try {
+                             if (queryResponseMessage.isExceptional()) {
+                                 result.completeExceptionally(queryResponseMessage.exceptionResult());
+                             } else {
+                                 result.complete(queryResponseMessage.getPayload());
+                             }
+                         } catch (Exception e) {
+                             result.completeExceptionally(e);
                          }
                      });
         return result;
@@ -108,7 +114,8 @@ public class DefaultQueryGateway implements QueryGateway {
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
                       .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
-                      .map(QueryResponseMessage::getPayload),
+                      .map(Message::getPayload)
+                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
                 result.updates()
                       .filter(update -> Objects.nonNull(update.getPayload()))
                       .map(SubscriptionQueryUpdateMessage::getPayload),

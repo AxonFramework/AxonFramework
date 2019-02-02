@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.junit.Assert.assertEquals;
@@ -496,7 +497,7 @@ public class EventProcessingModuleTest {
     private class StubErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
 
         private final CountDownLatch latch;
-        private long errorCounter = 0;
+        private final AtomicInteger errorCounter = new AtomicInteger();
 
         private StubErrorHandler(int count) {
             this.latch = new CountDownLatch(count);
@@ -504,19 +505,19 @@ public class EventProcessingModuleTest {
 
         @Override
         public void handleError(ErrorContext errorContext) {
-            errorCounter++;
+            errorCounter.incrementAndGet();
             latch.countDown();
         }
 
         @Override
         public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
-            errorCounter++;
+            errorCounter.incrementAndGet();
             latch.countDown();
         }
 
         @SuppressWarnings("WeakerAccess")
-        public long getErrorCounter() {
-            return errorCounter;
+        public int getErrorCounter() {
+            return errorCounter.get();
         }
 
         public boolean await(long timeout, TimeUnit timeUnit) throws InterruptedException {

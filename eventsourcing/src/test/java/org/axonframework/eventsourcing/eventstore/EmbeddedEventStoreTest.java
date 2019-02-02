@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
@@ -26,6 +25,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -57,6 +57,7 @@ public class EmbeddedEventStoreTest {
     private static final int CACHED_EVENTS = 10;
     private static final long FETCH_DELAY = 1000;
     private static final long CLEANUP_DELAY = 10000;
+    private static final boolean OPTIMIZE_EVENT_CONSUMPTION = true;
 
     private EmbeddedEventStore testSubject;
     private EventStorageEngine storageEngine;
@@ -66,10 +67,13 @@ public class EmbeddedEventStoreTest {
     public void setUp() {
         storageEngine = spy(new InMemoryEventStorageEngine());
         threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
-        newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY);
+        newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
     }
 
-    private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
+    private void newTestSubject(int cachedEvents,
+                                long fetchDelay,
+                                long cleanupDelay,
+                                boolean optimizeEventConsumption) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
         testSubject = EmbeddedEventStore.builder()
                                         .storageEngine(storageEngine)
@@ -77,6 +81,7 @@ public class EmbeddedEventStoreTest {
                                         .fetchDelay(fetchDelay)
                                         .cleanupDelay(cleanupDelay)
                                         .threadFactory(threadFactory)
+                                        .optimizeEventConsumption(optimizeEventConsumption)
                                         .build();
     }
 
@@ -171,7 +176,7 @@ public class EmbeddedEventStoreTest {
 
     @Test(timeout = 5000)
     public void testPeriodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
-        newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY);
+        newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
         TrackingEventStream stream = testSubject.openStream(null);
         CountDownLatch lock = new CountDownLatch(1);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
@@ -184,7 +189,7 @@ public class EmbeddedEventStoreTest {
 
     @Test(timeout = 5000)
     public void testConsumerStopsTailingWhenItFallsBehindTheCache() throws Exception {
-        newTestSubject(CACHED_EVENTS, FETCH_DELAY, 20);
+        newTestSubject(CACHED_EVENTS, FETCH_DELAY, 20, OPTIMIZE_EVENT_CONSUMPTION);
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable()); //now we should be tailing
         testSubject.publish(createEvents(CACHED_EVENTS)); //triggers event producer to open a stream
@@ -221,7 +226,7 @@ public class EmbeddedEventStoreTest {
     /* Reproduces issue reported in https://github.com/AxonFramework/AxonFramework/issues/485 */
     @Test
     public void testStreamEventsShouldNotReturnDuplicateTokens() throws InterruptedException {
-        newTestSubject(0, 1000, 1000);
+        newTestSubject(0, 1000, 1000, OPTIMIZE_EVENT_CONSUMPTION);
         Stream mockStream = mock(Stream.class);
         Iterator mockIterator = mock(Iterator.class);
         when(mockStream.iterator()).thenReturn(mockIterator);
@@ -308,6 +313,67 @@ public class EmbeddedEventStoreTest {
         assertEquals(0, lock.getCount());
 
         verify(threadFactory, atLeastOnce()).newThread(any(Runnable.class));
+    }
+
+    @Test
+    public void testOpenStreamReadsEventsFromAnEventProducedByVerifyThreadFactoryOperation()
+            throws InterruptedException {
+        TrackingEventStream eventStream = testSubject.openStream(null);
+
+        assertFalse(eventStream.hasNextAvailable()); // There are no events published yet, so stream will tail
+        testSubject.publish(createEvents(5));// Publish some events which should be returned to the stream by a producer
+
+        Thread.sleep(100); // Give the Event Producer thread time to fill the cache
+        assertTrue(eventStream.hasNextAvailable()); // Stream should contain events again, from the producer
+
+        // Consume events until the end
+        while (eventStream.hasNextAvailable()) {
+            eventStream.nextAvailable();
+        }
+
+        assertFalse(eventStream.hasNextAvailable()); // Should have reached the end, hence returned false
+
+        verify(threadFactory, atLeastOnce()).newThread(any(Runnable.class)); // Verify a producer thread was created
+    }
+
+    @Test
+    public void testTailingConsumptionThreadIsNeverCreatedIfEventConsumptionOptimizationIsSwitchedOff()
+            throws InterruptedException {
+        boolean doNotOptimizeEventConsumption = false;
+        //noinspection ConstantConditions
+        newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, doNotOptimizeEventConsumption);
+
+        TrackingEventStream eventStream = testSubject.openStream(null);
+        testSubject.publish(createEvents(5));
+
+        // Consume some events
+        while (eventStream.hasNextAvailable()) {
+            eventStream.nextAvailable();
+        }
+
+        // No tailing-consumer Producer thread has ever been created
+        verifyZeroInteractions(threadFactory);
+    }
+
+    @Test
+    public void testEventStreamKeepsReturningEventsIfEventConsumptionOptimizationIsSwitchedOff()
+            throws InterruptedException {
+        boolean doNotOptimizeEventConsumption = false;
+        //noinspection ConstantConditions
+        newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, doNotOptimizeEventConsumption);
+
+        TrackingEventStream eventStream = testSubject.openStream(null);
+
+        assertFalse(eventStream.hasNextAvailable()); // There are no events published yet, so should be false
+
+        testSubject.publish(createEvents(5)); // Publish some events which should be returned to the stream
+
+        assertTrue(eventStream.hasNextAvailable()); // There are new events, so should be true
+        // Consume until the end
+        while (eventStream.hasNextAvailable()) {
+            eventStream.nextAvailable();
+        }
+        assertFalse(eventStream.hasNextAvailable()); // Should have no events anymore
     }
 
     private static class SynchronizedBooleanAnswer implements Answer<Boolean> {

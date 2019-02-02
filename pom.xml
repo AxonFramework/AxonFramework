@@ -135,7 +135,7 @@
         <micrometer.version>1.0.4</micrometer.version>
         <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
         <jackson.version>2.9.8</jackson.version>
-        <grpc.version>1.13.1</grpc.version>
+        <grpc.version>1.16.1</grpc.version>
         <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
         <axonserver.api.version>4.0</axonserver.api.version>
     </properties>
@@ -425,6 +425,7 @@
                     <mavenExecutorId>forked-path</mavenExecutorId>
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
                 </configuration>
             </plugin>
             <plugin>

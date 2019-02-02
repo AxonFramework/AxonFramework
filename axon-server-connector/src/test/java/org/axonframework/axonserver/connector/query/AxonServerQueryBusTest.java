@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,16 +28,17 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -152,6 +153,21 @@ public class AxonServerQueryBusTest {
             AxonServerQueryDispatchException queryDispatchException = (AxonServerQueryDispatchException) actual.getCause();
             assertEquals(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), queryDispatchException.code());
         }
+    }
+
+    @Test
+    public void testQueryReportsCorrectException() throws ExecutionException, InterruptedException {
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", instanceOf(String.class))
+                .andMetaData(Collections.singletonMap("errorCode", ErrorCode.QUERY_EXECUTION_ERROR.errorCode()));
+        CompletableFuture<QueryResponseMessage<String>> result = queryBus.query(queryMessage);
+        assertNotNull(result.get());
+        assertFalse(result.isCompletedExceptionally());
+
+        assertTrue(result.get().isExceptional());
+        Throwable actual = result.get().exceptionResult();
+            assertTrue(actual instanceof QueryExecutionException);
+        AxonServerRemoteQueryHandlingException queryDispatchException = (AxonServerRemoteQueryHandlingException) actual.getCause();
+        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), queryDispatchException.getErrorCode());
     }
 
     @Test
