@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -161,12 +161,12 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor a {@link CommandBus}. The monitor will be registered with the
+     * Registers new metrics to the registry to monitor a {@link QueryBus}. The monitor will be registered with the
      * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
      * on the command bus to initiate the monitoring.
      *
      * @param name the name under which the commandBus should be registered to the registry
-     * @return MessageMonitor to monitor the behavior of a CommandBus
+     * @return MessageMonitor to monitor the behavior of a QueryBus
      */
     public MessageMonitor<? super QueryMessage<?, ?>> registerQueryBus(String name) {
         return registerDefaultHandlerMessageMonitor(name);
