@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics;
+package org.axonframework.micrometer;
 
 import org.axonframework.config.Configurer;
 import org.junit.*;

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.metrics;
+package org.axonframework.micrometer;
 
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.axonframework.commandhandling.CommandMessage;
@@ -36,10 +35,12 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
-public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> & MetricSet> {
+public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>>> {
 
     private static final CommandMessage<Object> STRING_MESSAGE = asCommandMessage("stringCommand");
     private static final CommandMessage<Object> INTEGER_MESSAGE = asCommandMessage(1);
+    private SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+
 
     private PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject;
 
@@ -53,7 +54,7 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
         logger.addAppender(appender);
 
         expectedMonitorClass = CapacityMonitor.class;
-        testSubject = new PayloadTypeMessageMonitorWrapper<>(CapacityMonitor::new);
+        testSubject = new PayloadTypeMessageMonitorWrapper<>(name -> CapacityMonitor.buildMonitor(name, meterRegistry));
     }
 
     @After
@@ -71,14 +72,12 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
         testSubject.onMessageIngested(STRING_MESSAGE);
 
         Map<String, T> payloadTypeMonitors = ReflectionUtils.getFieldValue(payloadTypeMonitorsField, testSubject);
-        assertTrue(payloadTypeMonitors.size() == 1);
+        assertEquals(1, payloadTypeMonitors.size());
         MessageMonitor<Message<?>> messageMessageMonitor = payloadTypeMonitors.get(expectedMonitorName);
         assertNotNull(messageMessageMonitor);
         assertTrue(expectedMonitorClass.isInstance(messageMessageMonitor));
 
-        Map<String, Metric> resultMetrics = testSubject.getMetrics();
-        assertTrue(resultMetrics.size() == 1);
-        assertNotNull(resultMetrics.get(expectedMonitorName));
+        assertEquals(1, meterRegistry.find(expectedMonitorName + ".capacity").meters().size());
     }
 
     @Test
@@ -94,7 +93,7 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
         testSubject.onMessageIngested(INTEGER_MESSAGE); // Second unique payload type
 
         Map<String, T> payloadTypeMonitors = ReflectionUtils.getFieldValue(payloadTypeMonitorsField, testSubject);
-        assertTrue(payloadTypeMonitors.size() == 2);
+        assertEquals(2, payloadTypeMonitors.size());
 
         MessageMonitor<Message<?>> messageMessageMonitor = payloadTypeMonitors.get(expectedStringMonitorName);
         assertNotNull(messageMessageMonitor);
@@ -104,25 +103,21 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
         assertNotNull(messageMessageMonitor);
         assertTrue(expectedMonitorClass.isInstance(messageMessageMonitor));
 
-        Map<String, Metric> resultMetrics = testSubject.getMetrics();
-        assertTrue(resultMetrics.size() == 2);
-        assertNotNull(resultMetrics.get(expectedStringMonitorName));
-        assertNotNull(resultMetrics.get(expectedStringMonitorName));
+        assertEquals(1, meterRegistry.find(expectedStringMonitorName + ".capacity").meters().size());
+        assertEquals(1, meterRegistry.find(expectedIntegerMonitorName + ".capacity").meters().size());
     }
 
     @Test
     public void testMonitorNameFollowsGivenMonitorNameBuilderSpecifics() {
         String testPrefix = "additional-monitor-name.";
         PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject = new PayloadTypeMessageMonitorWrapper<>(
-                CapacityMonitor::new, payloadType -> testPrefix + payloadType.getName());
+                name -> CapacityMonitor.buildMonitor(name, meterRegistry),
+                payloadType -> testPrefix + payloadType.getName());
 
         String expectedMonitorName = testPrefix + STRING_MESSAGE.getPayloadType().getName();
 
         testSubject.onMessageIngested(STRING_MESSAGE);
 
-        Map<String, Metric> resultMetrics = testSubject.getMetrics();
-        assertTrue(resultMetrics.size() == 1);
-        assertNotNull(resultMetrics.get(expectedMonitorName));
+        assertEquals(1, meterRegistry.find(expectedMonitorName + ".capacity").meters().size());
     }
-
 }

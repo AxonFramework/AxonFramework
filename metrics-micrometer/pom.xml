@@ -23,11 +23,11 @@
         <version>4.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>axon-metrics</artifactId>
+    <artifactId>axon-micrometer</artifactId>
 
-    <name>Axon Framework Metrics</name>
+    <name>Axon Framework Micrometer Metrics</name>
     <description>
-        This module contains components that provide metrics for standard Axon components.
+        This module contains components that provide metrics for standard Axon components using the micrometer library.
     </description>
 
     <packaging>bundle</packaging>
@@ -46,9 +46,16 @@
         </dependency>
 
         <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
             <version>${dropwizard.metrics.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -59,7 +66,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.metrics</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.micrometer</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -76,7 +83,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.metrics.*
+                            org.axonframework.micrometer.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,
