@@ -123,8 +123,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean
     public CommandPriorityCalculator commandPriorityCalculator() {
-        return new CommandPriorityCalculator() {
-        };
+        return CommandPriorityCalculator.defaultCommandPriorityCalculator();
     }
 
     @Bean

@@ -26,13 +26,16 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -43,20 +46,20 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Author: marc
+ * @author Marc Gathier
  */
 public class AxonServerCommandBusTest {
+
     private AxonServerCommandBus testSubject;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private AxonServerConfiguration conf;
     private XStreamSerializer ser;
     private SimpleCommandBus localSegment;
     private AxonServerConnectionManager axonServerConnectionManager;
-
 
     @Before
     public void setup() throws Exception {
@@ -70,8 +73,10 @@ public class AxonServerCommandBusTest {
         localSegment = SimpleCommandBus.builder().build();
         ser = XStreamSerializer.builder().build();
         axonServerConnectionManager = spy(new AxonServerConnectionManager(conf));
-        testSubject = new AxonServerCommandBus(axonServerConnectionManager, conf, localSegment, ser,
-                                               command -> "RoutingKey", new CommandPriorityCalculator() {});
+        testSubject = new AxonServerCommandBus(
+                axonServerConnectionManager, conf, localSegment, ser, command -> "RoutingKey",
+                CommandPriorityCalculator.defaultCommandPriorityCalculator()
+        );
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);
         dummyMessagePlatformServer.start();
     }
@@ -202,19 +207,22 @@ public class AxonServerCommandBusTest {
                 }
             };
         }).when(mockAxonServerConnectionManager).getCommandStream(any(), any());
-        AxonServerCommandBus testSubject2 = new AxonServerCommandBus(mockAxonServerConnectionManager, conf, localSegment, ser,
-                                                                     command -> "RoutingKey", new CommandPriorityCalculator() {});
+        AxonServerCommandBus testSubject2 = new AxonServerCommandBus(
+                mockAxonServerConnectionManager, conf, localSegment, ser,
+                command -> "RoutingKey", CommandPriorityCalculator.defaultCommandPriorityCalculator()
+        );
         testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
 
-        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder()
-                                                                    .setCommand(Command.newBuilder().setName(String.class.getName())
-                                                                                       .setPayload(SerializedObject.newBuilder()
-                                                                                                                   .setType(String.class.getName())
-                                                                                                                   .setData(ByteString.copyFromUtf8("<string>test</string>")))
-                                                                                       .putMetaData("test1", MetaDataValue.newBuilder().setTextValue("Text").build())
-                                                                    )
-                                                                    .build());
-
+        Command command = Command.newBuilder()
+                                 .setName(String.class.getName())
+                                 .setPayload(SerializedObject.newBuilder()
+                                                             .setType(String.class.getName())
+                                                             .setData(ByteString.copyFromUtf8("<string>test</string>")))
+                                 .putMetaData("test1", MetaDataValue.newBuilder()
+                                                                    .setTextValue("Text")
+                                                                    .build())
+                                 .build();
+        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder().setCommand(command).build());
     }
 
     @Test
@@ -242,7 +250,7 @@ public class AxonServerCommandBusTest {
     }
 
     @Test
-    public void reconnectAfterConnectionLost() throws InterruptedException {
+    public void reconnectAfterConnectionLost() {
         testSubject.subscribe(String.class.getName(), c -> "Done");
         assertWithin(1, TimeUnit.SECONDS, () ->
                 assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
@@ -250,6 +258,4 @@ public class AxonServerCommandBusTest {
         assertWithin(2, TimeUnit.SECONDS, () ->
                 assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
-
-
 }

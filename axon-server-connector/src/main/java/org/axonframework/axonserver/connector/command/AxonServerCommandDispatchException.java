@@ -30,6 +30,7 @@ import java.util.List;
 public class AxonServerCommandDispatchException extends CommandDispatchException {
 
     private static final long serialVersionUID = -6427074119385898085L;
+
     private final String errorCode;
     private final String server;
     private final List<String> exceptionDescriptions;

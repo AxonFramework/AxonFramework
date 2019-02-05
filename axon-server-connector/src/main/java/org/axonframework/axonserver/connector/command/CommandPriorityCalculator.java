@@ -16,17 +16,30 @@
 package org.axonframework.axonserver.connector.command;
 
 import org.axonframework.commandhandling.CommandMessage;
+
 /**
  * Calculate priority of message based on it content. Higher value means higher priority.
+ *
  * @author Marc Gathier
+ * @since 3.4
  */
+@FunctionalInterface
 public interface CommandPriorityCalculator {
+
     /**
-     * default implementation returns 0 for all messages
-     * @param command command to prioritize
-     * @return priority
+     * Determines the priority of the given {@code command}.
+     *
+     * @param command a {@link CommandMessage} to prioritize
+     * @return an {@code int} defining the priority of the given {@code command}
      */
-    default int determinePriority(CommandMessage<?> command) {
-        return 0;
+    int determinePriority(CommandMessage<?> command);
+
+    /**
+     * Returns a default implementation of the {@link CommandPriorityCalculator}, always returning priority {@code 0}.
+     *
+     * @return a lambda taking in a {@link CommandMessage} to prioritize to the default of priority {@code 0}
+     */
+    static CommandPriorityCalculator defaultCommandPriorityCalculator() {
+        return command -> 0;
     }
 }

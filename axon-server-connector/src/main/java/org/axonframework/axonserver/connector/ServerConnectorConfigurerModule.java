@@ -84,13 +84,16 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     }
 
     private AxonServerCommandBus buildCommandBus(Configuration c) {
-        AxonServerCommandBus commandBus = new AxonServerCommandBus(c.getComponent(AxonServerConnectionManager.class),
-                                                                   c.getComponent(AxonServerConfiguration.class),
-                                                                   SimpleCommandBus.builder().build(),
-                                                                   c.messageSerializer(),
-                                                                   c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new),
-                                                                   c.getComponent(CommandPriorityCalculator.class,
-                                                                                  () -> new CommandPriorityCalculator() {}));
+        AxonServerCommandBus commandBus = new AxonServerCommandBus(
+                c.getComponent(AxonServerConnectionManager.class),
+                c.getComponent(AxonServerConfiguration.class),
+                SimpleCommandBus.builder().build(),
+                c.messageSerializer(),
+                c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new),
+                c.getComponent(
+                        CommandPriorityCalculator.class, CommandPriorityCalculator::defaultCommandPriorityCalculator
+                )
+        );
         c.onShutdown(commandBus::disconnect);
         return commandBus;
     }

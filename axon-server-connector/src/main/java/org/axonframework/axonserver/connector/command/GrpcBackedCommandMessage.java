@@ -28,14 +28,25 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import java.util.Map;
 
 /**
- * Wrapper that allows clients to access a GRPC Command as a command message.
+ * Wrapper that allows clients to access a gRPC {@link Command} as a {@link CommandMessage}.
+ *
  * @author Marc Gathier
+ * @since 3.4
  */
 public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
+
     private final Command request;
     private final Serializer serializer;
     private MetaData metaData;
 
+    /**
+     * Instantiate a {@link GrpcBackedCommandMessage} with the given {@code request} and using the provided {@link
+     * Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     *
+     * @param request    the {@link Command} which is being wrapped as a {@link CommandMessage}
+     * @param serializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     *                   {@code request}
+     */
     public GrpcBackedCommandMessage(Command request, Serializer serializer) {
         this.request = request;
         this.serializer = serializer;
@@ -53,7 +64,7 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
 
     @Override
     public MetaData getMetaData() {
-        if( metaData == null) {
+        if (metaData == null) {
             metaData = deserializeMetaData(request.getMetaDataMap());
         }
         return metaData;
@@ -62,15 +73,20 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     @Override
     public C getPayload() {
         String revision = request.getPayload().getRevision();
-        SerializedObject object =  new SimpleSerializedObject<>(request.getPayload().getData().toByteArray(),
-                byte[].class, request.getPayload().getType(),
-                "".equals(revision) ? null : revision);
-        return (C)serializer.deserialize(object);
+        SerializedObject serializedObject = new SimpleSerializedObject<>(
+                request.getPayload().getData().toByteArray(),
+                byte[].class,
+                request.getPayload().getType(),
+                "".equals(revision) ? null : revision
+        );
+        //noinspection unchecked
+        return (C) serializer.deserialize(serializedObject);
     }
 
     @Override
     public Class<C> getPayloadType() {
         try {
+            //noinspection unchecked
             return (Class<C>) Class.forName(request.getPayload().getType());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
