@@ -31,7 +31,7 @@ import java.util.Map;
  * Wrapper that allows clients to access a gRPC {@link Command} as a {@link CommandMessage}.
  *
  * @author Marc Gathier
- * @since 3.4
+ * @since 4.0
  */
 public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
 
@@ -40,15 +40,15 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     private MetaData metaData;
 
     /**
-     * Instantiate a {@link GrpcBackedCommandMessage} with the given {@code request} and using the provided {@link
-     * Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * Instantiate a {@link GrpcBackedCommandMessage} with the given {@code command} and using the provided
+     * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
      *
-     * @param request    the {@link Command} which is being wrapped as a {@link CommandMessage}
+     * @param command    the {@link Command} which is being wrapped as a {@link CommandMessage}
      * @param serializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
-     *                   {@code request}
+     * {@code command}
      */
-    public GrpcBackedCommandMessage(Command request, Serializer serializer) {
-        this.request = request;
+    public GrpcBackedCommandMessage(Command command, Serializer serializer) {
+        this.request = command;
         this.serializer = serializer;
     }
 
@@ -94,12 +94,12 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     }
 
     @Override
-    public CommandMessage<C> withMetaData(Map<String, ?> map) {
+    public CommandMessage<C> withMetaData(Map<String, ?> metaData) {
         return this;
     }
 
     @Override
-    public CommandMessage<C> andMetaData(Map<String, ?> map) {
+    public CommandMessage<C> andMetaData(Map<String, ?> metaData) {
         return this;
     }
 

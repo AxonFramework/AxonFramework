@@ -45,7 +45,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * Converter between Axon Framework {@link CommandMessage}s and Axon Server gRPC {@link Command} messages.
  *
  * @author Marc Gathier
- * @since 3.4
+ * @since 4.0
  */
 public class CommandSerializer {
 
@@ -58,10 +58,10 @@ public class CommandSerializer {
     /**
      * Instantiate a serializer used to convert Axon {@link CommandMessage}s and {@link CommandResultMessage}s into Axon
      * Server gRPC messages and vice versa.
-     * The provided {@code serializer} is used for both serialization and deserialization.
+     * The provided {@code serializer} is used for both from and to framework-server conversions.
      *
      * @param serializer    a {@link Serializer} used to de-/serialize an Axon Server gRPC message into a {@link
-     *                      CommandMessage} and vice versa
+     *                      CommandMessage} or {@link CommandResultMessage} and vice versa
      * @param configuration an {@link AxonServerConfiguration} used to set the configurable component id and name in the
      *                      messages
      */
@@ -141,11 +141,11 @@ public class CommandSerializer {
     }
 
     /**
-     * Convert a {@link CommandResponse} into a {@link GenericCommandResultMessage}.
+     * Convert a {@link CommandResponse} into a {@link CommandResultMessage}.
      *
-     * @param commandResponse the {@link CommandResponse} to convert into a {@link GenericCommandResultMessage}
+     * @param commandResponse the {@link CommandResponse} to convert into a {@link CommandResultMessage}
      * @param <R>             a generic specifying the response payload type
-     * @return a {@link GenericCommandResultMessage} of generic {@code R} based on the provided {@code commandResponse}
+     * @return a {@link CommandResultMessage} of generic {@code R} based on the provided {@code commandResponse}
      */
     public <R> CommandResultMessage<R> deserialize(CommandResponse commandResponse) {
         MetaData metaData = new GrpcMetaDataConverter(messageSerializer).convert(commandResponse.getMetaDataMap());

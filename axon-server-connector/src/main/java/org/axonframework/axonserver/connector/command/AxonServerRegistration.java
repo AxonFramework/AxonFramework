@@ -23,7 +23,7 @@ import org.axonframework.common.Registration;
  * cancelled or closed, and delegates the close/cancel to the normal registration.
  *
  * @author Marc Gathier
- * @since 3.4
+ * @since 4.0
  */
 public class AxonServerRegistration implements Registration {
 

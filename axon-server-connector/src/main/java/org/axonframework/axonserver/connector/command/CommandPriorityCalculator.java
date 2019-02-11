@@ -19,16 +19,16 @@ package org.axonframework.axonserver.connector.command;
 import org.axonframework.commandhandling.CommandMessage;
 
 /**
- * Calculate priority of message based on it content. Higher value means higher priority.
+ * Calculate the priority of {@link CommandMessage} based on its content. Higher value means higher priority.
  *
  * @author Marc Gathier
- * @since 3.4
+ * @since 4.0
  */
 @FunctionalInterface
 public interface CommandPriorityCalculator {
 
     /**
-     * Determines the priority of the given {@code command}.
+     * Determines the priority of the given {@code command}. The higher the returned value, the higher the priority is.
      *
      * @param command a {@link CommandMessage} to prioritize
      * @return an {@code int} defining the priority of the given {@code command}
