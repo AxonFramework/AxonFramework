@@ -53,8 +53,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     @Override
     public void configureModule(Configurer configurer) {
         configurer.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration());
-
-        configurer.registerComponent(AxonServerConnectionManager.class, c -> buildAxonServerConnectionManager(c));
+        configurer.registerComponent(AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         configurer.configureEventStore(this::buildEventStore);
         configurer.configureCommandBus(this::buildCommandBus);
         configurer.configureQueryBus(this::buildQueryBus);
@@ -67,8 +66,8 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     }
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
-        AxonServerConnectionManager axonServerConnectionManager = new AxonServerConnectionManager(c.getComponent(
-                AxonServerConfiguration.class));
+        AxonServerConnectionManager axonServerConnectionManager =
+                new AxonServerConnectionManager(c.getComponent(AxonServerConfiguration.class));
         c.onShutdown(axonServerConnectionManager::shutdown);
         return axonServerConnectionManager;
     }
@@ -99,16 +98,27 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     }
 
     private QueryBus buildQueryBus(Configuration c) {
-        SimpleQueryBus localSegment = SimpleQueryBus.builder()
-                                                    .transactionManager(c.getComponent(TransactionManager.class, NoTransactionManager::instance))
-                                                    .errorHandler(c.getComponent(QueryInvocationErrorHandler.class, () -> LoggingQueryInvocationErrorHandler.builder().build()))
-                                                    .queryUpdateEmitter(c.queryUpdateEmitter())
-                                                    .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
-                                                    .build();
-        AxonServerQueryBus queryBus = new AxonServerQueryBus(c.getComponent(AxonServerConnectionManager.class),
-                                                             c.getComponent(AxonServerConfiguration.class),
-                                                             c.queryUpdateEmitter(),
-                                                             localSegment, c.messageSerializer(), c.serializer(), c.getComponent(QueryPriorityCalculator.class, () -> new QueryPriorityCalculator() {}));
+        SimpleQueryBus localSegment =
+                SimpleQueryBus.builder()
+                              .transactionManager(
+                                      c.getComponent(TransactionManager.class, NoTransactionManager::instance)
+                              )
+                              .errorHandler(c.getComponent(
+                                      QueryInvocationErrorHandler.class,
+                                      () -> LoggingQueryInvocationErrorHandler.builder().build()
+                              ))
+                              .queryUpdateEmitter(c.queryUpdateEmitter())
+                              .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
+                              .build();
+        AxonServerQueryBus queryBus = new AxonServerQueryBus(
+                c.getComponent(AxonServerConnectionManager.class),
+                c.getComponent(AxonServerConfiguration.class),
+                c.queryUpdateEmitter(),
+                localSegment,
+                c.messageSerializer(),
+                c.serializer(),
+                c.getComponent(QueryPriorityCalculator.class, QueryPriorityCalculator::defaultQueryPriorityCalculator)
+        );
         c.onShutdown(queryBus::disconnect);
         return queryBus;
     }

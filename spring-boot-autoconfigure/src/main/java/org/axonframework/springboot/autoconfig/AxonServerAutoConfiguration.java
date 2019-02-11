@@ -48,7 +48,11 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
@@ -67,6 +71,7 @@ import org.springframework.context.annotation.Primary;
  * Configures AxonServer as implementation for the CommandBus and QueryBus
  *
  * @author Marc Gathier
+ * @since 4.0
  */
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
@@ -97,21 +102,18 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean(destroyMethod = "disconnect")
     @Primary
     @ConditionalOnMissingQualifiedBean(qualifier = "!localSegment", beanClass = CommandBus.class)
-    public AxonServerCommandBus axonServerCommandBus(TransactionManager txManager,
-                                                     AxonConfiguration axonConfiguration,
-                                                     AxonServerConfiguration axonServerConfiguration,
+    public AxonServerCommandBus axonServerCommandBus(AxonServerConfiguration axonServerConfiguration,
                                                      Serializer serializer,
                                                      AxonServerConnectionManager axonServerConnectionManager,
                                                      RoutingStrategy routingStrategy,
                                                      CommandPriorityCalculator priorityCalculator,
                                                      @Qualifier("localSegment") CommandBus localSegment) {
-
         return new AxonServerCommandBus(axonServerConnectionManager,
-                axonServerConfiguration,
-                localSegment,
-                serializer,
-                routingStrategy,
-                priorityCalculator);
+                                        axonServerConfiguration,
+                                        localSegment,
+                                        serializer,
+                                        routingStrategy,
+                                        priorityCalculator);
     }
 
     @Bean
@@ -129,8 +131,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean
     public QueryPriorityCalculator queryPriorityCalculator() {
-        return new QueryPriorityCalculator() {
-        };
+        return QueryPriorityCalculator.defaultQueryPriorityCalculator();
     }
 
     @Bean
@@ -139,7 +140,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return LoggingQueryInvocationErrorHandler.builder().build();
     }
 
-    @Bean( destroyMethod = "disconnect")
+    @Bean(destroyMethod = "disconnect")
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonServerQueryBus queryBus(AxonServerConnectionManager axonServerConnectionManager,
                                        AxonServerConfiguration axonServerConfiguration,
@@ -156,8 +157,9 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
                               .build();
-        simpleQueryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration
-                                                                                           .correlationDataProviders()));
+        simpleQueryBus.registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
+        );
 
         return new AxonServerQueryBus(axonServerConnectionManager,
                                       axonServerConfiguration,
