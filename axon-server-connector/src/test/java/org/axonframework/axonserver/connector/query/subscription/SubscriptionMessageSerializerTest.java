@@ -16,13 +16,23 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
-import io.axoniq.axonserver.grpc.query.*;
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,12 +40,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
- * Created by Sara Pellegrini on 27/06/2018.
- * sara.pellegrini@gmail.com
+ * @author Sara Pellegrini
  */
 public class SubscriptionMessageSerializerTest {
 
@@ -48,10 +56,8 @@ public class SubscriptionMessageSerializerTest {
         this.setComponentName("component");
     }};
 
-    private final SubscriptionMessageSerializer testSubject = new SubscriptionMessageSerializer(configuration,
-                                                                                                jacksonSerializer,
-                                                                                                xStreamSerializer);
-
+    private final SubscriptionMessageSerializer testSubject =
+            new SubscriptionMessageSerializer(jacksonSerializer, xStreamSerializer, configuration);
 
     @Test
     public void testInitialResponse() {
@@ -101,7 +107,8 @@ public class SubscriptionMessageSerializerTest {
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertEquals(message.getQueryName(), deserialized.getQueryName());
         assertTrue(message.getResponseType().matches(deserialized.getResponseType().responseMessagePayloadType()));
-        assertTrue(message.getUpdateResponseType().matches(deserialized.getUpdateResponseType().responseMessagePayloadType()));
+        assertTrue(message.getUpdateResponseType()
+                          .matches(deserialized.getUpdateResponseType().responseMessagePayloadType()));
     }
 
     @Test
@@ -117,7 +124,6 @@ public class SubscriptionMessageSerializerTest {
         SubscriptionQueryResponse subscriptionQueryResponse = grpcMessage.getSubscriptionQueryResponse();
         assertEquals("subscriptionId", subscriptionQueryResponse.getSubscriptionIdentifier());
         QueryUpdateCompleteExceptionally completeExceptionally = subscriptionQueryResponse.getCompleteExceptionally();
-        assertEquals("Error",completeExceptionally.getErrorMessage().getMessage());
-
+        assertEquals("Error", completeExceptionally.getErrorMessage().getMessage());
     }
 }

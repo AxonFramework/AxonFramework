@@ -146,7 +146,7 @@ public class AxonServerQueryBus implements QueryBus {
         this.localSegment = localSegment;
         this.serializer = new QuerySerializer(messageSerializer, genericSerializer, configuration);
         this.subscriptionSerializer =
-                new SubscriptionMessageSerializer(configuration, messageSerializer, genericSerializer);
+                new SubscriptionMessageSerializer(messageSerializer, genericSerializer, configuration);
         this.priorityCalculator = priorityCalculator;
 
         this.queryProvider = new QueryHandlerProvider();

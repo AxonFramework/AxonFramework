@@ -42,38 +42,37 @@ import org.axonframework.serialization.Serializer;
 public class QuerySerializer {
 
     private final Serializer messageSerializer;
-    private final Serializer genericSerializer;
+    private final Serializer serializer;
     private final AxonServerConfiguration configuration;
 
     private final GrpcPayloadSerializer payloadSerializer;
-    private final GrpcObjectSerializer<Object> responseTypeSerializer;
     private final GrpcMetadataSerializer metadataSerializer;
+    private final GrpcObjectSerializer<Object> responseTypeSerializer;
 
     /**
      * Instantiate a serializer used to convert Axon {@link QueryMessage}s and {@link QueryResponseMessage}s into Axon
      * Server gRPC messages and vice versa.
      * The provided {@code messageSerializer} is used for converting a message's payload and metadata, whilst the
-     * {@code genericSerializer} is used to convert a {@link QueryMessage}'s
+     * {@code serializer} is used to convert a {@link QueryMessage}'s
      * {@link org.axonframework.messaging.responsetypes.ResponseType}.
      *
      * @param messageSerializer a {@link Serializer} used to de-/serialize an Axon Server gRPC message into {@link
      *                          QueryMessage}s and {@link QueryResponseMessage}s and vice versa
-     * @param genericSerializer a {@link Serializer} used to create a dedicated converter for a {@link QueryMessage}
+     * @param serializer        a {@link Serializer} used to create a dedicated converter for a {@link QueryMessage}
      *                          {@link org.axonframework.messaging.responsetypes.ResponseType}
      * @param configuration     an {@link AxonServerConfiguration} used to set the configurable component id and name in
-     *                          the
-     *                          messages
+     *                          the messages
      */
     public QuerySerializer(Serializer messageSerializer,
-                           Serializer genericSerializer,
+                           Serializer serializer,
                            AxonServerConfiguration configuration) {
         this.messageSerializer = messageSerializer;
-        this.genericSerializer = genericSerializer;
+        this.serializer = serializer;
         this.configuration = configuration;
 
         this.payloadSerializer = new GrpcPayloadSerializer(messageSerializer);
         this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(this.messageSerializer));
-        this.responseTypeSerializer = new GrpcObjectSerializer<>(genericSerializer);
+        this.responseTypeSerializer = new GrpcObjectSerializer<>(serializer);
     }
 
     /**
@@ -149,13 +148,13 @@ public class QuerySerializer {
     /**
      * Convert a {@link QueryRequest} into a {@link QueryMessage}.
      *
-     * @param query a {@link QueryRequest} to convert into a {@link QueryMessage}
-     * @param <Q>   a generic specifying the payload type of the {@link QueryMessage} to convert to
-     * @param <R>   a generic specifying the response type of the {@link QueryMessage} to convert to
-     * @return a {@link QueryMessage} based on the provided {@code query}
+     * @param queryRequest a {@link QueryRequest} to convert into a {@link QueryMessage}
+     * @param <Q>          a generic specifying the payload type of the {@link QueryMessage} to convert to
+     * @param <R>          a generic specifying the response type of the {@link QueryMessage} to convert to
+     * @return a {@link QueryMessage} based on the provided {@code queryRequest}
      */
-    public <Q, R> QueryMessage<Q, R> deserializeRequest(QueryRequest query) {
-        return new GrpcBackedQueryMessage<>(query, messageSerializer, genericSerializer);
+    public <Q, R> QueryMessage<Q, R> deserializeRequest(QueryRequest queryRequest) {
+        return new GrpcBackedQueryMessage<>(queryRequest, messageSerializer, serializer);
     }
 
     /**

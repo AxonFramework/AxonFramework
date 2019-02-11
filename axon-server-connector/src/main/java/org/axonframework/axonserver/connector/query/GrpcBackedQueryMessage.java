@@ -31,8 +31,8 @@ import java.util.function.Supplier;
 /**
  * Wrapper that allows clients to access a gRPC {@link QueryRequest} as a {@link QueryMessage}.
  *
- * @param <Q>a generic specifying the type of the {@link QueryMessage}'s payload
- * @param <R>  a generic specifying the expected response type of the {@link QueryMessage}
+ * @param <Q> a generic specifying the type of the {@link QueryMessage}'s payload
+ * @param <R> a generic specifying the expected response type of the {@link QueryMessage}
  * @author Marc Gathier
  * @since 4.0
  */
@@ -45,24 +45,24 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
     private final Supplier<MetaData> metadata;
 
     /**
-     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
+     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryRequest}, using the provided
      * {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The
-     * {@code genericSerializer} is solely used to deserialize the response type.
+     * {@code serializer} is solely used to deserialize the response type.
      *
-     * @param queryRequest      the {@Link QueryRequest} which is being wrapped as a {@link QueryMessage}
+     * @param queryRequest      the {@link QueryRequest} which is being wrapped as a {@link QueryMessage}
      * @param messageSerializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the
      *                          given {@code queryRequest}
-     * @param genericSerializer the {@link Serializer} used to deserialize the response type
+     * @param serializer        the {@link Serializer} used to deserialize the response type
      */
-    public GrpcBackedQueryMessage(QueryRequest queryRequest, Serializer messageSerializer,
-                                  Serializer genericSerializer) {
+    public GrpcBackedQueryMessage(QueryRequest queryRequest,
+                                  Serializer messageSerializer,
+                                  Serializer serializer) {
         this.query = queryRequest;
         this.messageSerializer = messageSerializer;
         this.serializedPayload =
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer);
         this.serializedResponseType =
-                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()),
-                                              genericSerializer);
+                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer);
         this.metadata = new GrpcMetadata(queryRequest.getMetaDataMap(), messageSerializer);
     }
 

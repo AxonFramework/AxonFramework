@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,21 +25,30 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * SubscriptionQueryUpdateMessage decorator to deserialize QueryResponse and QueryUpdate messages.
+ * A decorator of the {@link SubscriptionQueryUpdateMessage} to deserialize a {@link QueryResponseMessage} and
+ * {@link QueryUpdate} messages.
  *
+ * @param <I> a generic specifying the type of the initial result of the {@link SubscriptionQueryResult}
+ * @param <U> a generic specifying the type of the subsequent updates of the {@link SubscriptionQueryResult}
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class DeserializedResult<I, U>
-        implements SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> {
+public class DeserializedResult<I, U> implements SubscriptionQueryResult<QueryResponseMessage<I>,
+        SubscriptionQueryUpdateMessage<U>> {
 
     private final SubscriptionQueryResult<QueryResponse, QueryUpdate> delegate;
-
     private final SubscriptionMessageSerializer serializer;
 
-    public DeserializedResult(
-            SubscriptionQueryResult<QueryResponse, QueryUpdate> delegate,
-            SubscriptionMessageSerializer serializer) {
+    /**
+     * Instantiate a {@link DeserializedResult} wrapping the {@code delegate} which will be serialized by the given
+     * {@code serializer}.
+     *
+     * @param delegate   a {@link SubscriptionQueryResult} which will be wrapped
+     * @param serializer a {@link SubscriptionMessageSerializer} used to serialize the initial results and the
+     *                   subsequent updates
+     */
+    public DeserializedResult(SubscriptionQueryResult<QueryResponse, QueryUpdate> delegate,
+                              SubscriptionMessageSerializer serializer) {
         this.delegate = delegate;
         this.serializer = serializer;
     }
