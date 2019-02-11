@@ -28,11 +28,13 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -46,21 +48,22 @@ import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWit
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Author: marc
+ * @author Marc Gathier
  */
 public class AxonServerQueryBusTest {
 
-    private AxonServerQueryBus queryBus;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private AxonServerConfiguration conf;
     private SimpleQueryBus localSegment;
     private AxonServerConnectionManager axonServerConnectionManager;
     private AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserverRef;
     private XStreamSerializer ser;
+
+    private AxonServerQueryBus testSubject;
 
     @Before
     public void setup() throws Exception {
@@ -73,14 +76,10 @@ public class AxonServerQueryBusTest {
         conf.setNrOfNewPermits(1000);
         localSegment = SimpleQueryBus.builder().build();
         ser = XStreamSerializer.builder().build();
-        queryBus = new AxonServerQueryBus(new AxonServerConnectionManager(conf),
-                                          conf,
-                                          localSegment.queryUpdateEmitter(),
-                                          localSegment,
-                                          ser,
-                                          ser,
-                                          new QueryPriorityCalculator() {
-                                          });
+        testSubject = new AxonServerQueryBus(
+                new AxonServerConnectionManager(conf), conf, localSegment.queryUpdateEmitter(), localSegment, ser, ser,
+                QueryPriorityCalculator.defaultQueryPriorityCalculator()
+        );
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
         axonServerConnectionManager = mock(AxonServerConnectionManager.class);
@@ -113,7 +112,7 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void subscribe() throws Exception {
-        Registration response = queryBus.subscribe("testQuery", String.class, q -> "test");
+        Registration response = testSubject.subscribe("testQuery", String.class, q -> "test");
         Thread.sleep(1000);
         assertWithin(1000,
                      TimeUnit.MILLISECONDS,
@@ -131,17 +130,17 @@ public class AxonServerQueryBusTest {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World",
                                                                               instanceOf(String.class));
 
-        assertEquals("test", queryBus.query(queryMessage).get().getPayload());
+        assertEquals("test", testSubject.query(queryMessage).get().getPayload());
     }
 
     @Test
     public void queryWhenQueryServiceStubFails() {
         RuntimeException expected = new RuntimeException("oops");
-        queryBus = spy(queryBus);
-        when(queryBus.queryServiceStub()).thenThrow(expected);
+        testSubject = spy(testSubject);
+        when(testSubject.queryService()).thenThrow(expected);
 
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
-        CompletableFuture<QueryResponseMessage<String>> result = queryBus.query(queryMessage);
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(queryMessage);
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
 
@@ -150,7 +149,8 @@ public class AxonServerQueryBusTest {
             fail("Expected an exception here");
         } catch (Exception actual) {
             assertTrue(actual.getCause() instanceof AxonServerQueryDispatchException);
-            AxonServerQueryDispatchException queryDispatchException = (AxonServerQueryDispatchException) actual.getCause();
+            AxonServerQueryDispatchException queryDispatchException = (AxonServerQueryDispatchException) actual
+                    .getCause();
             assertEquals(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), queryDispatchException.code());
         }
     }
@@ -159,28 +159,24 @@ public class AxonServerQueryBusTest {
     public void testQueryReportsCorrectException() throws ExecutionException, InterruptedException {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", instanceOf(String.class))
                 .andMetaData(Collections.singletonMap("errorCode", ErrorCode.QUERY_EXECUTION_ERROR.errorCode()));
-        CompletableFuture<QueryResponseMessage<String>> result = queryBus.query(queryMessage);
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(queryMessage);
         assertNotNull(result.get());
         assertFalse(result.isCompletedExceptionally());
 
         assertTrue(result.get().isExceptional());
         Throwable actual = result.get().exceptionResult();
-            assertTrue(actual instanceof QueryExecutionException);
-        AxonServerRemoteQueryHandlingException queryDispatchException = (AxonServerRemoteQueryHandlingException) actual.getCause();
+        assertTrue(actual instanceof QueryExecutionException);
+        AxonServerRemoteQueryHandlingException queryDispatchException = (AxonServerRemoteQueryHandlingException) actual
+                .getCause();
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), queryDispatchException.getErrorCode());
     }
 
     @Test
     public void processQuery() {
-
-        AxonServerQueryBus queryBus2 = new AxonServerQueryBus(axonServerConnectionManager,
-                                                              conf,
-                                                              localSegment.queryUpdateEmitter(),
-                                                              localSegment,
-                                                              ser,
-                                                              ser,
-                                                              new QueryPriorityCalculator() {
-                                                              });
+        AxonServerQueryBus queryBus2 = new AxonServerQueryBus(
+                axonServerConnectionManager, conf, localSegment.queryUpdateEmitter(), localSegment, ser, ser,
+                QueryPriorityCalculator.defaultQueryPriorityCalculator()
+        );
         Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
 
         QueryProviderInbound inboundMessage = testQueryMessage();
@@ -195,7 +191,7 @@ public class AxonServerQueryBusTest {
                                                                               instanceOf(String.class))
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 10));
 
-        assertEquals(10, queryBus.scatterGather(queryMessage, 12, TimeUnit.SECONDS).count());
+        assertEquals(10, testSubject.scatterGather(queryMessage, 12, TimeUnit.SECONDS).count());
     }
 
     @Test
@@ -204,17 +200,17 @@ public class AxonServerQueryBusTest {
                                                                               instanceOf(String.class))
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 100));
 
-        assertTrue(8 > queryBus.scatterGather(queryMessage, 550, TimeUnit.MILLISECONDS).count());
+        assertTrue(8 > testSubject.scatterGather(queryMessage, 550, TimeUnit.MILLISECONDS).count());
     }
 
     @Test
     public void dispatchInterceptor() {
         List<Object> results = new LinkedList<>();
-        queryBus.registerDispatchInterceptor(messages -> (a, b) -> {
+        testSubject.registerDispatchInterceptor(messages -> (a, b) -> {
             results.add(b.getPayload());
             return b;
         });
-        queryBus.query(new GenericQueryMessage<>("payload", new InstanceResponseType<>(String.class)));
+        testSubject.query(new GenericQueryMessage<>("payload", new InstanceResponseType<>(String.class)));
         assertEquals("payload", results.get(0));
         assertEquals(1, results.size());
     }
@@ -222,13 +218,10 @@ public class AxonServerQueryBusTest {
     @Test
     public void handlerInterceptor() {
         SimpleQueryBus localSegment = SimpleQueryBus.builder().build();
-        AxonServerQueryBus bus = new AxonServerQueryBus(axonServerConnectionManager, conf,
-                                                        localSegment.queryUpdateEmitter(),
-                                                        localSegment,
-                                                        ser,
-                                                        ser,
-                                                        new QueryPriorityCalculator() {
-                                                        });
+        AxonServerQueryBus bus = new AxonServerQueryBus(
+                axonServerConnectionManager, conf, localSegment.queryUpdateEmitter(), localSegment, ser, ser,
+                QueryPriorityCalculator.defaultQueryPriorityCalculator()
+        );
         bus.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
         List<Object> results = new LinkedList<>();
         bus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
@@ -243,7 +236,7 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void reconnectAfterConnectionLost() throws InterruptedException {
-        queryBus.subscribe("testQuery", String.class, q -> "test");
+        testSubject.subscribe("testQuery", String.class, q -> "test");
         Thread.sleep(50);
         assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
         dummyMessagePlatformServer.onError("testQuery", String.class.getName());

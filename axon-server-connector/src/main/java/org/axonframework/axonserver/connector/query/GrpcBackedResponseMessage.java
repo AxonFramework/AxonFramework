@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,39 +30,53 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Wrapper around GRPC QueryRequest to implement the QueryMessage interface
+ * Wrapper that allows clients to access a gRPC {@link QueryResponse} as a {@link QueryResponseMessage}.
  *
+ * @param <R> a generic specifying the type of the {@link QueryResponseMessage}
  * @author Marc Gathier
+ * @since 4.0
  */
 public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     private final QueryResponse queryResponse;
     private final Serializer messageSerializer;
+
     private final LazyDeserializingObject<R> serializedPayload;
     private final Throwable exception;
     private final Supplier<MetaData> metadata;
 
-    public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer) {
+    /**
+     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
+     * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     *
+     * @param queryResponse the {@Link QueryResponse} which is being wrapped as a {@link QueryResponseMessage}
+     * @param serializer    the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     *                      {@code queryResponse}
+     */
+    public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer serializer) {
         this.queryResponse = queryResponse;
-        this.messageSerializer = messageSerializer;
-        this.metadata = new GrpcMetadata(queryResponse.getMetaDataMap(), messageSerializer);
+        this.messageSerializer = serializer;
+        this.metadata = new GrpcMetadata(queryResponse.getMetaDataMap(), serializer);
         if (queryResponse.hasErrorMessage()) {
-            this.exception = ErrorCode.getFromCode(queryResponse.getErrorCode()).convert(queryResponse.getErrorMessage());
+            this.exception = ErrorCode.getFromCode(queryResponse.getErrorCode())
+                                      .convert(queryResponse.getErrorMessage());
         } else {
             this.exception = null;
         }
         if (queryResponse.hasPayload() && !"empty".equalsIgnoreCase(queryResponse.getPayload().getType())) {
-            this.serializedPayload = new LazyDeserializingObject<>(new GrpcSerializedObject(queryResponse.getPayload()),
-                                                                   messageSerializer);
+            this.serializedPayload = new LazyDeserializingObject<>(
+                    new GrpcSerializedObject(queryResponse.getPayload()), serializer
+            );
         } else {
             this.serializedPayload = null;
         }
     }
 
-    private GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer,
-                                      LazyDeserializingObject<R> serializedPayload, Throwable exception,
+    private GrpcBackedResponseMessage(QueryResponse queryResponse,
+                                      Serializer messageSerializer,
+                                      LazyDeserializingObject<R> serializedPayload,
+                                      Throwable exception,
                                       Supplier<MetaData> metadata) {
-
         this.queryResponse = queryResponse;
         this.messageSerializer = messageSerializer;
         this.serializedPayload = serializedPayload;

@@ -25,54 +25,53 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Converts the push interface for QueryResponses from AxonServer to a pull interface to be used by Axon Framework
- * Uses a queue to cache messages
+ * Converts the push interface for QueryResponses from Axon Server to a pull interface to be used by Axon Framework.
+ * Uses a queue to cache messages.
+ *
+ * @param <R> a generic defining the type this queue will contain
  * @author Marc Gathier
+ * @since 4.0
  */
-public class QueueBackedSpliterator<R> implements Spliterator<R>{
+public class QueueBackedSpliterator<R> implements Spliterator<R> {
+
     private final static Logger logger = LoggerFactory.getLogger(QueueBackedSpliterator.class);
-    private final long myTimeOut;
-    private final BlockingQueue<WrappedElement<R>> blockingQueue = new LinkedBlockingQueue<>();
 
-    class WrappedElement<W> {
-        private final W wrapped;
-        private final boolean stop;
-        private final Throwable exception;
+    private final long timeoutMs;
+    private final BlockingQueue<WrappedElement<R>> blockingQueue;
 
-        WrappedElement(W wrapped) {
-            this.wrapped = wrapped;
-            this.stop = false;
-            this.exception = null;
-        }
-        WrappedElement(boolean stop, Throwable exception) {
-            this.wrapped = null;
-            this.stop = stop;
-            this.exception = exception;
-        }
-    }
-
-    public QueueBackedSpliterator(long timeout, TimeUnit timeUnit ) {
-        myTimeOut = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+    /**
+     * Instantiate a queue backed {@link Spliterator} implementation. The given {@code timeout} combined with the
+     * {@code timeUnit} define for how long the {@link #tryAdvance(Consumer)} method can be invoked. After the timeout
+     * has exceeded, {@code tryAdvance(Consumer)} defaults to {@code false}.
+     *
+     * @param timeout  a {@code long} defining the timeout, together with the provided {@code timeUnit}
+     * @param timeUnit a {@link TimeUnit} defining the unit of time for the provided {@code timeout}
+     */
+    public QueueBackedSpliterator(long timeout, TimeUnit timeUnit) {
+        timeoutMs = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+        blockingQueue = new LinkedBlockingQueue<>();
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super R> action) {
         WrappedElement<R> element = null;
         try {
-            long remaining = myTimeOut - System.currentTimeMillis();
-            if(remaining > 0) {
-                element = blockingQueue.poll(myTimeOut - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
-                if( element != null) {
-                    if(  element.stop ) return false;
-                    if ( element.wrapped != null)
+            long remaining = timeoutMs - System.currentTimeMillis();
+            if (remaining > 0) {
+                element = blockingQueue.poll(timeoutMs - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+                if (element != null) {
+                    if (element.stop) {
+                        return false;
+                    }
+                    if (element.wrapped != null) {
                         action.accept(element.wrapped);
+                    }
                 }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warn("Interrupted tryAdvance", e);
             return false;
-
         }
         return element != null;
     }
@@ -92,23 +91,50 @@ public class QueueBackedSpliterator<R> implements Spliterator<R>{
         return 0;
     }
 
+    /**
+     * Add an element to the queue.
+     *
+     * @param object an {@code R} to be added to the queue
+     */
     public void put(R object) {
         try {
             blockingQueue.put(new WrappedElement<>(object));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.warn("Interrupted put", e);
+            logger.warn("Put operation was interrupted", e);
             throw new RuntimeException(e);
         }
     }
 
-    public void cancel( Throwable t) {
+    /**
+     * Cancel further element retrieval of this queue.
+     *
+     * @param t a {@link Throwable} marking why the queue was canceled. Can be {@code null}
+     */
+    public void cancel(Throwable t) {
         try {
             blockingQueue.put(new WrappedElement<>(true, t));
         } catch (InterruptedException e) {
-            logger.warn("Interrupted cancel", e);
+            logger.warn("Cancel operation was interrupted", e);
         }
-
     }
 
+    private class WrappedElement<W> {
+
+        private final W wrapped;
+        private final boolean stop;
+        private final Throwable exception;
+
+        WrappedElement(W wrapped) {
+            this.wrapped = wrapped;
+            this.stop = false;
+            this.exception = null;
+        }
+
+        WrappedElement(boolean stop, Throwable exception) {
+            this.wrapped = null;
+            this.stop = stop;
+            this.exception = exception;
+        }
+    }
 }
