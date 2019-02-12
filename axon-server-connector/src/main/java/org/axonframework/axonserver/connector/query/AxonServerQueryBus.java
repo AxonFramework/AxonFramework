@@ -498,6 +498,10 @@ public class AxonServerQueryBus implements QueryBus {
                 logger.warn("Failed to dispatch query [{}] locally - Cause: {}",
                             queryMessage.getQueryName(), e.getMessage(), e);
 
+                if (outboundStreamObserver == null) {
+                    return;
+                }
+
                 outboundStreamObserver.onNext(
                         QueryProviderOutbound.newBuilder().setQueryResponse(
                                 QueryResponse.newBuilder()
