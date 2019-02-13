@@ -22,6 +22,7 @@ import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
@@ -219,8 +220,12 @@ public class AxonServerCommandBus implements CommandBus {
                 try {
                     Command command = commandQueue.poll(1, TimeUnit.SECONDS);
                     if( command != null) {
-                        logger.debug("Received command: {}", command);
-                        processCommand(command);
+                        try {
+                            logger.debug("Received command: {}", command);
+                            processCommand(command);
+                        } catch (RuntimeException | OutOfDirectMemoryError e) {
+                            logger.warn("Command Executor had an exception on command [{}]", command, e);
+                        }                        logger.debug("Received command: {}", command);
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -275,16 +280,22 @@ public class AxonServerCommandBus implements CommandBus {
             try {
                 dispatchLocal(serializer.deserialize(command), outboundStreamObserver);
             } catch (RuntimeException throwable) {
-                logger.error("Error while dispatching command {} - {}", command.getName(), throwable.getMessage(), throwable);
-                CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
-                        CommandResponse.newBuilder()
-                                       .setMessageIdentifier(UUID.randomUUID().toString())
-                                       .setRequestIdentifier(command.getMessageIdentifier())
-                                       .setErrorCode(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode())
-                                       .setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable))
-                ).build();
+                if( outboundStreamObserver != null) {
+                    logger.error("Error while dispatching command {} - {}",
+                                 command.getName(),
+                                 throwable.getMessage(),
+                                 throwable);
+                    CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
+                            CommandResponse.newBuilder()
+                                           .setMessageIdentifier(UUID.randomUUID().toString())
+                                           .setRequestIdentifier(command.getMessageIdentifier())
+                                           .setErrorCode(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode())
+                                           .setErrorMessage(ExceptionSerializer
+                                                                    .serialize(configuration.getClientId(), throwable))
+                    ).build();
 
-                outboundStreamObserver.onNext(response);
+                    outboundStreamObserver.onNext(response);
+                }
             }
         }
 

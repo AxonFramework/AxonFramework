@@ -24,6 +24,7 @@ import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
@@ -321,8 +322,12 @@ public class AxonServerQueryBus implements QueryBus {
                 try {
                     QueryRequest query = queryQueue.poll(1, TimeUnit.SECONDS);
                     if (query != null) {
-                        logger.debug("Received query: {}", query);
-                        processQuery(query);
+                        try {
+                            logger.debug("Received query: {}", query);
+                            processQuery(query);
+                        } catch (RuntimeException | OutOfDirectMemoryError e) {
+                            logger.warn("Command Executor had an exception on query [{}]", query, e);
+                        }
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -356,16 +361,27 @@ public class AxonServerQueryBus implements QueryBus {
                 outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
                         QueryComplete.newBuilder().setMessageId(UUID.randomUUID().toString()).setRequestId(requestId)).build());
             } catch (Exception ex) {
-                logger.warn("Received error from localSegment: {}", ex.getMessage(), ex);
-                outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder()
-                                                                   .setQueryResponse(QueryResponse.newBuilder()
-                                                                                                  .setMessageIdentifier(UUID.randomUUID().toString())
-                                                                                                  .setRequestIdentifier(requestId)
-                                                                                                  .setErrorMessage(ExceptionSerializer
-                                                                                                                           .serialize(configuration.getClientId(), ex))
-                                                                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                                                                                                  .build())
-                                                                   .build());
+                if( outboundStreamObserver != null) {
+                    logger.warn("Received error from localSegment: {}", ex.getMessage(), ex);
+                    outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder()
+                                                                       .setQueryResponse(QueryResponse.newBuilder()
+                                                                                                      .setMessageIdentifier(
+                                                                                                              UUID.randomUUID()
+                                                                                                                  .toString())
+                                                                                                      .setRequestIdentifier(
+                                                                                                              requestId)
+                                                                                                      .setErrorMessage(
+                                                                                                              ExceptionSerializer
+                                                                                                                      .serialize(
+                                                                                                                              configuration
+                                                                                                                                      .getClientId(),
+                                                                                                                              ex))
+                                                                                                      .setErrorCode(
+                                                                                                              ErrorCode.QUERY_EXECUTION_ERROR
+                                                                                                                      .errorCode())
+                                                                                                      .build())
+                                                                       .build());
+                }
             }
         }
 
