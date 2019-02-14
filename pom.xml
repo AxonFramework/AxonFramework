@@ -129,7 +129,7 @@
         <pax.exam.version>4.10.0</pax.exam.version>
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mockito.version>2.15.0</mockito.version>
+        <mockito.version>2.24.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
         <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
         <micrometer.version>1.0.4</micrometer.version>
