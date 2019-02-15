@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -78,6 +78,12 @@ public interface TokenStore {
      * {@code processorName} and {@code segment}. The given {@code token} may be {@code null}.
      * <p/>
      * Any claims made by the current process have their timestamp updated.
+     * <p>
+     * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
+     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly initialized.
+     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitSegmentInitialization()}
+     * method. If that method returns false, this method may implicitly initialize a token and return that token upon
+     * invocation.
      *
      * @param token         The token to store for a given process and segment. May be {@code null}.
      * @param processorName The name of the process for which to store the token
@@ -88,9 +94,15 @@ public interface TokenStore {
 
     /**
      * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
-     * Returns {@code null} if the store holds no token or if the stored token for the given process and segment is
+     * Returns {@code null} if the stored token for the given process and segment is
      * {@code null}.
-     * <p/>
+     * <p>
+     * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
+     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly initialized.
+     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitSegmentInitialization()}
+     * method. If that method returns false, this method may implicitly initialize a token and return that token upon
+     * invocation.
+     * <p>
      * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release
      * the claim, use {@link #releaseClaim(String, int)}
      *
@@ -129,6 +141,57 @@ public interface TokenStore {
      */
     void releaseClaim(String processorName, int segment);
 
+    /**
+     * Initializes a segment with given {@code segment} for the processor with given {@code processorName} to contain
+     * the given {@code token}.
+     * <p>
+     * This method fails if a Token already exists for the given processor and segment, even if that token has been
+     * claimed by the active instance.
+     * <p>
+     * This method will not claim the initialized segment. Use {@link #fetchToken(String, int)} to retrieve and claim
+     * the token.
+     *
+     * @param token         The token to initialize the segment with
+     * @param processorName The name of the processor to create the segment for
+     * @param segment       The identifier of the segment to initialize
+     * @throws UnableToInitializeTokenException if a Token already exists
+     * @throws UnsupportedOperationException    if this implementation does not support explicit initialization.
+     *                                          See {@link #requiresExplicitSegmentInitialization()}.
+     */
+    default void initializeSegment(TrackingToken token, String processorName, int segment) throws UnableToInitializeTokenException {
+        throw new UnsupportedOperationException("Explicit initialization is not supported by this TokenStore implementation");
+    }
+
+    /**
+     * Deletes the token for the processor with given {@code processorName} and {@code segment}. The token must
+     * be owned by the current node, to be able to delete it.
+     * <p>
+     * Implementations should implement this method only when {@link #requiresExplicitSegmentInitialization()} is overridden to
+     * return {@code true}. Deleting tokens using implementations that do not require explicit token initialization is
+     * unsafe, as a claim will automatically recreate the deleted token instance, which may result in concurrency
+     * issues.
+     *
+     * @param processorName The name of the processor to remove the token for
+     * @param segment       The segment to delete
+     * @throws UnableToClaimTokenException   if the token is not currently claimed by this node
+     * @throws UnsupportedOperationException if this operation is not supported by this implementation
+     */
+    default void deleteToken(String processorName, int segment) throws UnableToClaimTokenException {
+        throw new UnsupportedOperationException("Explicit initialization (which is required to reliably delete tokens) is not supported by this TokenStore implementation");
+    }
+
+    /**
+     * Indicates whether this TokenStore instance requires segments to be explicitly initialized, before any tokens
+     * can be claimed for that segment.
+     *
+     * @return {@code true} if this instance requires tokens to be explicitly initialized, otherwise {@code false}.
+     * @see #initializeTokenSegments(String, int)
+     * @see #initializeTokenSegments(String, int, TrackingToken)
+     * @see #initializeSegment(TrackingToken, String, int)
+     */
+    default boolean requiresExplicitSegmentInitialization() {
+        return false;
+    }
 
     /**
      * Returns an array of known {@code segments} for a given {@code processorName}.
