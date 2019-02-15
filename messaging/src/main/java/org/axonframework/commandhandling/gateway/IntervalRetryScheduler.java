@@ -27,8 +27,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * RetryScheduler implementation that retries commands at regular intervals when they fail because of an exception that
@@ -40,6 +39,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 public class IntervalRetryScheduler implements RetryScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(IntervalRetryScheduler.class);
+
+    private static final int DEFAULT_RETRY_INTERVAL = 100;
+    private static final int DEFAULT_MAX_RETRIES = 1;
 
     private final int retryInterval;
     private final int maxRetryCount;
@@ -64,6 +66,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
     /**
      * Instantiate a Builder to be able to create a {@link IntervalRetryScheduler}.
      * <p>
+     * The default for {@code retryInterval} is set to 100ms, while {@code maxRetryCount} gets a single retry.
      * The {@code retryInterval}, {@code maxRetryCount} and {@link ScheduledExecutorService} are
      * <b>hard requirements</b> and as such should be provided.
      *
@@ -108,7 +111,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
      * occur
      * again.
      *
-     * @param failure The exception that occurred while processing a command
+     * @param failure the exception that occurred while processing a command
      * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
      * retried, or {@code false} when the command has a chance of succeeding if it retried.
      */
@@ -129,17 +132,18 @@ public class IntervalRetryScheduler implements RetryScheduler {
     /**
      * Builder class to instantiate a {@link IntervalRetryScheduler}.
      * <p>
+     * The default for {@code retryInterval} is set to 100ms, while {@code maxRetryCount} gets a single retry.
      * The {@code retryInterval}, {@code maxRetryCount} and {@link ScheduledExecutorService} are
      * <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
-        private int retryInterval;
-        private int maxRetryCount;
+        private int retryInterval = DEFAULT_RETRY_INTERVAL;
+        private int maxRetryCount = DEFAULT_MAX_RETRIES;
         private ScheduledExecutorService retryExecutor;
 
         /**
-         * Sets the retry interval in milliseconds at which to schedule a retry.
+         * Sets the retry interval in milliseconds at which to schedule a retry, defaulted to 100ms.
          *
          * @param retryInterval an {@code int} specifying the retry interval in milliseconds at which to schedule a
          *                      retry
@@ -152,13 +156,13 @@ public class IntervalRetryScheduler implements RetryScheduler {
         }
 
         /**
-         * Sets the maximum number of retries allowed for a single command.
+         * Sets the maximum number of retries allowed for a single command, defaulted to 1.
          *
          * @param maxRetryCount an {@code int} specifying the maximum number of retries allowed for a single command
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxRetryCount(int maxRetryCount) {
-            assertPositive(maxRetryCount, "The maxRetryCount must be a positive number");
+            assertStrictPositive(maxRetryCount, "The maxRetryCount must be a positive number");
             this.maxRetryCount = maxRetryCount;
             return this;
         }
@@ -192,12 +196,9 @@ public class IntervalRetryScheduler implements RetryScheduler {
          */
         protected void validate() throws AxonConfigurationException {
             assertPositive(retryInterval, "The retryInterval is a hard requirement and should be provided");
-            assertPositive(maxRetryCount, "The maxRetryCount is a hard requirement and should be provided");
+            assertStrictPositive(maxRetryCount, "The maxRetryCount is a hard requirement and should be provided");
             assertNonNull(retryExecutor, "The ScheduledExecutorService is a hard requirement and should be provided");
         }
 
-        private void assertPositive(int integer, String exceptionDescription) {
-            assertThat(integer, number -> number >= 0, exceptionDescription);
-        }
     }
 }

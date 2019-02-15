@@ -16,7 +16,11 @@
 
 package org.axonframework.metrics;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Clock;
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.Timer;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 

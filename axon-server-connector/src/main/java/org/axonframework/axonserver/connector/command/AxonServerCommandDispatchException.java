@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.List;
 public class AxonServerCommandDispatchException extends CommandDispatchException {
 
     private static final long serialVersionUID = -6427074119385898085L;
+
     private final String errorCode;
     private final String server;
     private final List<String> exceptionDescriptions;

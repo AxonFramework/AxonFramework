@@ -33,9 +33,9 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.springboot.MetricsProperties;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
+import org.axonframework.springboot.MetricsProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -53,6 +53,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
+@ConditionalOnMissingBean(MicrometerMetricsAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "com.codahale.metrics.MetricRegistry",
         "org.axonframework.metrics.GlobalMetricRegistry"
@@ -61,7 +62,7 @@ import org.springframework.context.annotation.Configuration;
 public class MetricsAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(MetricRegistry.class)
     public static MetricRegistry metricRegistry() {
         return new MetricRegistry();
     }

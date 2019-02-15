@@ -34,6 +34,7 @@ package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
+import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +55,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
-        DataSourceAutoConfiguration.class
+        DataSourceAutoConfiguration.class, MicrometerMetricsAutoConfiguration.class
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
 @RunWith(SpringRunner.class)
@@ -66,6 +67,7 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
     @Autowired
     private MetricRegistry metricRegistry;
+
     @Autowired
     private GlobalMetricRegistry globalMetricRegistry;
 

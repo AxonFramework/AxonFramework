@@ -29,6 +29,7 @@
         <module>axon-server-connector</module>
         <module>disruptor</module>
         <module>metrics</module>
+        <module>metrics-micrometer</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
@@ -128,9 +129,11 @@
         <pax.exam.version>4.10.0</pax.exam.version>
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mockito.version>2.15.0</mockito.version>
+        <mockito.version>2.24.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
         <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
+        <micrometer.version>1.0.4</micrometer.version>
+        <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
         <jackson.version>2.9.8</jackson.version>
         <grpc.version>1.16.1</grpc.version>
         <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>

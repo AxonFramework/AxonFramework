@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,24 +16,18 @@
 
 package org.axonframework.axonserver.connector.command;
 
-import io.axoniq.axonserver.grpc.command.Command;
-import io.axoniq.axonserver.grpc.command.CommandResponse;
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PlatformService;
-import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
-import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
 import io.axoniq.axonserver.grpc.SerializedObject;
+import io.axoniq.axonserver.grpc.command.*;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.PlatformService;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Author: marc
@@ -107,11 +102,22 @@ public class DummyMessagePlatformServer {
             String data = request.getPayload().getData().toStringUtf8();
             if(data.contains("error")) {
                 responseObserver.onNext(CommandResponse.newBuilder()
-                        .setErrorCode(ErrorCode.DATAFILE_READ_ERROR.errorCode())
-                        .setMessageIdentifier(request.getMessageIdentifier())
-                        .setErrorMessage(ErrorMessage.newBuilder().setMessage(data))
-                        .build());
-
+                                                       .setErrorCode(ErrorCode.DATAFILE_READ_ERROR.errorCode())
+                                                       .setMessageIdentifier(request.getMessageIdentifier())
+                                                       .setErrorMessage(ErrorMessage.newBuilder().setMessage(data))
+                                                       .build());
+            } else if (data.contains("concurrency")) {
+                responseObserver.onNext(CommandResponse.newBuilder()
+                                                       .setErrorCode(ErrorCode.CONCURRENCY_EXCEPTION.errorCode())
+                                                       .setMessageIdentifier(request.getMessageIdentifier())
+                                                       .setErrorMessage(ErrorMessage.newBuilder().setMessage(data))
+                                                       .build());
+            } else if (data.contains("exception")) {
+                responseObserver.onNext(CommandResponse.newBuilder()
+                                                       .setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode())
+                                                       .setMessageIdentifier(request.getMessageIdentifier())
+                                                       .setErrorMessage(ErrorMessage.newBuilder().setMessage(data))
+                                                       .build());
             } else {
                 responseObserver.onNext(CommandResponse.newBuilder()
                         .setMessageIdentifier(request.getMessageIdentifier())

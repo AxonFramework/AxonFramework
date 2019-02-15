@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,16 +28,27 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import java.util.Map;
 
 /**
- * Wrapper that allows clients to access a GRPC Command as a command message.
+ * Wrapper that allows clients to access a gRPC {@link Command} as a {@link CommandMessage}.
+ *
  * @author Marc Gathier
+ * @since 4.0
  */
 public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
+
     private final Command request;
     private final Serializer serializer;
     private MetaData metaData;
 
-    public GrpcBackedCommandMessage(Command request, Serializer serializer) {
-        this.request = request;
+    /**
+     * Instantiate a {@link GrpcBackedCommandMessage} with the given {@code command} and using the provided
+     * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     *
+     * @param command    the {@link Command} which is being wrapped as a {@link CommandMessage}
+     * @param serializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     * {@code command}
+     */
+    public GrpcBackedCommandMessage(Command command, Serializer serializer) {
+        this.request = command;
         this.serializer = serializer;
     }
 
@@ -53,7 +64,7 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
 
     @Override
     public MetaData getMetaData() {
-        if( metaData == null) {
+        if (metaData == null) {
             metaData = deserializeMetaData(request.getMetaDataMap());
         }
         return metaData;
@@ -62,15 +73,20 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     @Override
     public C getPayload() {
         String revision = request.getPayload().getRevision();
-        SerializedObject object =  new SimpleSerializedObject<>(request.getPayload().getData().toByteArray(),
-                byte[].class, request.getPayload().getType(),
-                "".equals(revision) ? null : revision);
-        return (C)serializer.deserialize(object);
+        SerializedObject serializedObject = new SimpleSerializedObject<>(
+                request.getPayload().getData().toByteArray(),
+                byte[].class,
+                request.getPayload().getType(),
+                "".equals(revision) ? null : revision
+        );
+        //noinspection unchecked
+        return (C) serializer.deserialize(serializedObject);
     }
 
     @Override
     public Class<C> getPayloadType() {
         try {
+            //noinspection unchecked
             return (Class<C>) Class.forName(request.getPayload().getType());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -78,12 +94,12 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     }
 
     @Override
-    public CommandMessage<C> withMetaData(Map<String, ?> map) {
+    public CommandMessage<C> withMetaData(Map<String, ?> metaData) {
         return this;
     }
 
     @Override
-    public CommandMessage<C> andMetaData(Map<String, ?> map) {
+    public CommandMessage<C> andMetaData(Map<String, ?> metaData) {
         return this;
     }
 

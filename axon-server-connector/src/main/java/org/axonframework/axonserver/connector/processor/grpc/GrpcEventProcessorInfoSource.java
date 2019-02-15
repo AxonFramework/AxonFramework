@@ -17,10 +17,13 @@
 package org.axonframework.axonserver.connector.processor.grpc;
 
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.EventProcessorInfoSource;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +37,7 @@ import java.util.function.Function;
  * @since 4.0
  */
 public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
+    private static final Logger logger = LoggerFactory.getLogger(GrpcEventProcessorInfoSource.class);
 
     private final Map<String, PlatformInboundInstruction> lastProcessorsInfo = new HashMap<>();
 
@@ -61,13 +65,16 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
 
     @Override
     public void notifyInformation() {
-        eventProcessors.forEach(processor -> {
-            PlatformInboundInstruction instruction = mapping.apply(processor).instruction();
-            if (!instruction.equals(lastProcessorsInfo.get(processor.getName()))){
-                send.accept(instruction);
-            }
-            lastProcessorsInfo.put(processor.getName(), instruction);
-        });
+        try {
+            eventProcessors.forEach(processor -> {
+                PlatformInboundInstruction instruction = mapping.apply(processor).instruction();
+                if (!instruction.equals(lastProcessorsInfo.get(processor.getName()))) {
+                    send.accept(instruction);
+                }
+                lastProcessorsInfo.put(processor.getName(), instruction);
+            });
+        } catch (Exception | OutOfDirectMemoryError ex) {
+            logger.warn("Sending processor status failed: {}", ex.getMessage());
+        }
     }
-
 }
