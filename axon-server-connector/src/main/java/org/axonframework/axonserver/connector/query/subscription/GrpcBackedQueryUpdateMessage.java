@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
-import org.axonframework.axonserver.connector.util.GrpcMetadata;
+import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -37,7 +37,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     private final QueryUpdate queryUpdate;
     private final LazyDeserializingObject<U> payload;
-    private final GrpcMetadata metadata;
+    private final GrpcMetaData metadata;
 
     /**
      * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided
@@ -50,7 +50,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     public GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate, Serializer serializer) {
         this.queryUpdate = queryUpdate;
         this.payload = new LazyDeserializingObject<>(new GrpcSerializedObject(queryUpdate.getPayload()), serializer);
-        this.metadata = new GrpcMetadata(queryUpdate.getMetaDataMap(), serializer);
+        this.metadata = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
     }
 
     @Override

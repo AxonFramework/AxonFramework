@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.GrpcMetadata;
+import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -56,7 +56,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer serializer) {
         this.queryResponse = queryResponse;
         this.messageSerializer = serializer;
-        this.metadata = new GrpcMetadata(queryResponse.getMetaDataMap(), serializer);
+        this.metadata = new GrpcMetaData(queryResponse.getMetaDataMap(), serializer);
         if (queryResponse.hasErrorMessage()) {
             this.exception = ErrorCode.getFromCode(queryResponse.getErrorCode())
                                       .convert(queryResponse.getErrorMessage());

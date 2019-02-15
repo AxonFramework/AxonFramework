@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryRequest;
-import org.axonframework.axonserver.connector.util.GrpcMetadata;
+import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -42,7 +42,7 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
     private final Serializer messageSerializer;
     private final LazyDeserializingObject<Q> serializedPayload;
     private final LazyDeserializingObject<ResponseType<R>> serializedResponseType;
-    private final Supplier<MetaData> metadata;
+    private final Supplier<MetaData> metaDataSupplier;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryRequest}, using the provided
@@ -63,19 +63,19 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer);
         this.serializedResponseType =
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer);
-        this.metadata = new GrpcMetadata(queryRequest.getMetaDataMap(), messageSerializer);
+        this.metaDataSupplier = new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer);
     }
 
     private GrpcBackedQueryMessage(QueryRequest query,
                                    Serializer messageSerializer,
                                    LazyDeserializingObject<Q> serializedPayload,
                                    LazyDeserializingObject<ResponseType<R>> serializedResponseType,
-                                   Supplier<MetaData> metadata) {
-        this.query = query;
+                                   Supplier<MetaData> metaDataSupplier) {
+        this.query = queryRequest;
         this.messageSerializer = messageSerializer;
         this.serializedPayload = serializedPayload;
         this.serializedResponseType = serializedResponseType;
-        this.metadata = metadata;
+        this.metaDataSupplier = metaDataSupplier;
     }
 
     @Override
@@ -95,7 +95,7 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
 
     @Override
     public MetaData getMetaData() {
-        return metadata.get();
+        return metaDataSupplier.get();
     }
 
     @Override
