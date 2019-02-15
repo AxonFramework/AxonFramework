@@ -766,6 +766,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             return trackingToken;
         }
 
+        /**
+         * Splits the current status object to reflect the status of their underlying segments
+         * being split.
+         *
+         * @return an array with two status object, representing the status of the split segments.
+         */
         public TrackerStatus[] split() {
             Segment[] newSegments = segment.split();
             TrackingToken tokenAtReset = null;
