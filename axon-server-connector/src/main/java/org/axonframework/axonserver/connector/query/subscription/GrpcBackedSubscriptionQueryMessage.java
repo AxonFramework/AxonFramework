@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,10 +42,12 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
 
     private final SubscriptionQuery subscriptionQuery;
     private final GrpcBackedQueryMessage<Q, I> grpcBackedQueryMessage;
-    private final LazyDeserializingObject<ResponseType<U>> updateType;
+    private final LazyDeserializingObject<ResponseType<U>> serializedUpdateResponseType;
 
     /**
-     * Instantiate a {@link GrpcBackedSubscriptionQueryMessage}
+     * Instantiate a {@link GrpcBackedSubscriptionQueryMessage} with the given {@code subscriptionQuery}, using the
+     * provided {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The
+     * {@code serializer} is solely used to deserialize the response type of the update message.
      *
      * @param subscriptionQuery the {@link SubscriptionQuery} which is being wrapped as a
      *                          {@link SubscriptionQueryMessage}
@@ -57,14 +59,23 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
                                               Serializer messageSerializer,
                                               Serializer serializer) {
         this.subscriptionQuery = subscriptionQuery;
-        QueryRequest query = subscriptionQuery.getQueryRequest();
-        this.updateType = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getResponseType()), serializer);
-        grpcBackedQueryMessage = new GrpcBackedQueryMessage<>(query, messageSerializer, serializer);
+        QueryRequest queryRequest = subscriptionQuery.getQueryRequest();
+        this.serializedUpdateResponseType =
+                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer);
+        grpcBackedQueryMessage = new GrpcBackedQueryMessage<>(queryRequest, messageSerializer, serializer);
+    }
+
+    private GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery,
+                                               GrpcBackedQueryMessage<Q, I> grpcBackedQueryMessage,
+                                               LazyDeserializingObject<ResponseType<U>> serializedUpdateResponseType) {
+        this.subscriptionQuery = subscriptionQuery;
+        this.grpcBackedQueryMessage = grpcBackedQueryMessage;
+        this.serializedUpdateResponseType = serializedUpdateResponseType;
     }
 
     @Override
     public ResponseType<U> getUpdateResponseType() {
-        return updateType.getObject();
+        return serializedUpdateResponseType.getObject();
     }
 
     @Override
@@ -98,12 +109,14 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
     }
 
     @Override
-    public SubscriptionQueryMessage<Q, I, U> withMetaData(Map<String, ?> metaData) {
-        throw new UnsupportedOperationException();
+    public GrpcBackedSubscriptionQueryMessage<Q, I, U> withMetaData(Map<String, ?> metaData) {
+        return new GrpcBackedSubscriptionQueryMessage<>(
+                subscriptionQuery, grpcBackedQueryMessage.withMetaData(metaData), serializedUpdateResponseType
+        );
     }
 
     @Override
-    public SubscriptionQueryMessage<Q, I, U> andMetaData(Map<String, ?> additionalMetaData) {
-        throw new UnsupportedOperationException();
+    public GrpcBackedSubscriptionQueryMessage<Q, I, U> andMetaData(Map<String, ?> metaData) {
+        return withMetaData(getMetaData().mergedWith(metaData));
     }
 }
