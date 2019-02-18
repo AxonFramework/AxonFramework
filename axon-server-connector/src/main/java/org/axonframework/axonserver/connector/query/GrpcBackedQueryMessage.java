@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,7 +39,6 @@ import java.util.function.Supplier;
 public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
 
     private final QueryRequest query;
-    private final Serializer messageSerializer;
     private final LazyDeserializingObject<Q> serializedPayload;
     private final LazyDeserializingObject<ResponseType<R>> serializedResponseType;
     private final Supplier<MetaData> metaDataSupplier;
@@ -58,7 +57,6 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
                                   Serializer messageSerializer,
                                   Serializer serializer) {
         this.query = queryRequest;
-        this.messageSerializer = messageSerializer;
         this.serializedPayload =
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer);
         this.serializedResponseType =
@@ -66,13 +64,11 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
         this.metaDataSupplier = new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer);
     }
 
-    private GrpcBackedQueryMessage(QueryRequest query,
-                                   Serializer messageSerializer,
+    private GrpcBackedQueryMessage(QueryRequest queryRequest,
                                    LazyDeserializingObject<Q> serializedPayload,
                                    LazyDeserializingObject<ResponseType<R>> serializedResponseType,
                                    Supplier<MetaData> metaDataSupplier) {
         this.query = queryRequest;
-        this.messageSerializer = messageSerializer;
         this.serializedPayload = serializedPayload;
         this.serializedResponseType = serializedResponseType;
         this.metaDataSupplier = metaDataSupplier;
@@ -109,14 +105,14 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
     }
 
     @Override
-    public QueryMessage<Q, R> withMetaData(Map<String, ?> metaData) {
+    public GrpcBackedQueryMessage<Q, R> withMetaData(Map<String, ?> metaData) {
         return new GrpcBackedQueryMessage<>(
-                query, messageSerializer, serializedPayload, serializedResponseType, () -> MetaData.from(metaData)
+                query, serializedPayload, serializedResponseType, () -> MetaData.from(metaData)
         );
     }
 
     @Override
-    public QueryMessage<Q, R> andMetaData(Map<String, ?> metaData) {
+    public GrpcBackedQueryMessage<Q, R> andMetaData(Map<String, ?> metaData) {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 }
