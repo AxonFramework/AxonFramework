@@ -40,16 +40,6 @@ public class GrpcBackedCommandMessageTest {
             new CommandSerializer(serializer, new AxonServerConfiguration());
 
     @Test
-    public void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheGrpcCommand() {
-        TestCommand expectedCommand = TEST_COMMAND;
-        CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(expectedCommand);
-        Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
-        GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
-
-        assertEquals(expectedCommand, testSubject.getPayload());
-    }
-
-    @Test
     public void testGetCommandNameReturnsTheNameOfTheCommandAsSpecifiedInTheGrpcCommand() {
         CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(TEST_COMMAND);
         Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
@@ -68,15 +58,6 @@ public class GrpcBackedCommandMessageTest {
     }
 
     @Test
-    public void testGetPayloadTypeReturnsTheTypeOfTheInsertedCommand() {
-        CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(TEST_COMMAND);
-        Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
-        GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
-
-        assertEquals(TestCommand.class, testSubject.getPayloadType());
-    }
-
-    @Test
     public void testGetMetaDataReturnsTheSameMapAsWasInsertedInTheGrpcCommand() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         CommandMessage<TestCommand> testCommandMessage =
@@ -85,6 +66,25 @@ public class GrpcBackedCommandMessageTest {
         GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
 
         assertEquals(expectedMetaData, testSubject.getMetaData());
+    }
+
+    @Test
+    public void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheGrpcCommand() {
+        TestCommand expectedCommand = TEST_COMMAND;
+        CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(expectedCommand);
+        Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
+        GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
+
+        assertEquals(expectedCommand, testSubject.getPayload());
+    }
+
+    @Test
+    public void testGetPayloadTypeReturnsTheTypeOfTheInsertedCommand() {
+        CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(TEST_COMMAND);
+        Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
+        GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
+
+        assertEquals(TestCommand.class, testSubject.getPayloadType());
     }
 
     @Test
