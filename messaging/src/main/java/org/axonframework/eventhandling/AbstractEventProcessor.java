@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -45,13 +46,14 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Segment)} for processing.
+ * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
  *
  * @author Rene de Waele
  * @since 3.0
  */
 public abstract class AbstractEventProcessor implements EventProcessor {
 
+    private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final String name;
@@ -107,7 +109,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param eventMessage The message for which to identify if the processor can handle it
      * @param segment      The segment for which the event should be processed
      * @return {@code true} if the event message should be handled, otherwise {@code false}
-     *
      * @throws Exception if the {@code errorHandler} throws an Exception back on the
      *                   {@link ErrorHandler#handleError(ErrorContext)} call
      */
@@ -125,20 +126,36 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
      * interceptors}.
      *
-     * @param eventMessages The batch of messages that is to be processed
-     * @param unitOfWork    The Unit of Work that has been prepared to process the messages
-     * @param segment       The segment for which the events should be processed
+     * @param eventMessages      The batch of messages that is to be processed
+     * @param unitOfWork         The Unit of Work that has been prepared to process the messages
+     * @throws Exception when an exception occurred during processing of the batch
+     */
+    protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                       UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
+        processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
+    }
+
+    /**
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
+     * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
+     * interceptors}.
+     *
+     * @param eventMessages      The batch of messages that is to be processed
+     * @param unitOfWork         The Unit of Work that has been prepared to process the messages
+     * @param processingSegments The segments for which the events should be processed in this unit of work
      * @throws Exception when an exception occurred during processing of the batch
      */
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                       Segment segment) throws Exception {
+                                       Collection<Segment> processingSegments) throws Exception {
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
             MessageMonitor.MonitorCallback monitorCallback =
                     messageMonitor.onMessageIngested(unitOfWork.getMessage());
             return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
                 try {
-                    eventHandlerInvoker.handle(m, segment);
+                    for (Segment processingSegment : processingSegments) {
+                        eventHandlerInvoker.handle(m, processingSegment);
+                    }
                     monitorCallback.reportSuccess();
                     return null;
                 } catch (Exception exception) {

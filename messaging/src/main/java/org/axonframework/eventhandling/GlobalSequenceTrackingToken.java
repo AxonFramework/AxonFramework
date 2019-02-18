@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -97,10 +97,11 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
 
     @Override
     public boolean covers(TrackingToken other) {
-        Assert.isTrue(other instanceof GlobalSequenceTrackingToken, () -> "Incompatible token type provided.");
+        Assert.isTrue(other == null || other instanceof GlobalSequenceTrackingToken,
+                      () -> "Incompatible token type provided:" + other.getClass().getSimpleName());
         GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
 
-        return otherToken.globalIndex <= this.globalIndex;
+        return otherToken == null || otherToken.globalIndex <= this.globalIndex;
     }
 
     @Override

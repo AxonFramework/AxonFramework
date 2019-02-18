@@ -50,7 +50,10 @@ public interface EventTrackerStatus {
     boolean isReplaying();
 
     /**
-     * The tracking token of the last event that has been seen by this Segment
+     * The tracking token of the last event that has been seen by this Segment.
+     * <p>
+     * The returned tracking token represents the position of this segment in the event stream. In case of a recent
+     * merge of segments, the token represents the lowest position of the two merged segments.
      *
      * @return tracking token of the last event that has been seen by this Segment
      */

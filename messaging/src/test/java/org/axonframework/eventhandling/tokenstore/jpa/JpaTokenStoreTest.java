@@ -1,27 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -78,7 +62,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @ContextConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -104,6 +89,7 @@ public class JpaTokenStoreTest {
     private PlatformTransactionManager transactionManager;
     private TransactionTemplate txTemplate;
 
+    @Transactional
     @Before
     public void setUp() {
         this.txTemplate = new TransactionTemplate(transactionManager);
@@ -112,6 +98,7 @@ public class JpaTokenStoreTest {
     @Transactional
     @Test
     public void testUpdateNullToken() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
         jpaTokenStore.storeToken(null, "test", 0);
         List<TokenEntry> tokens = entityManager.createQuery("SELECT t FROM TokenEntry t " +
                                                                     "WHERE t.processorName = :processorName",
@@ -123,6 +110,7 @@ public class JpaTokenStoreTest {
         assertNull(tokens.get(0).getToken(XStreamSerializer.builder().build()));
     }
 
+    @Transactional
     @Test
     public void testCustomLockMode() {
         EntityManager spyEntityManager = mock(EntityManager.class);
@@ -134,8 +122,11 @@ public class JpaTokenStoreTest {
                                                  .nodeId("test")
                                                  .build();
 
-        testSubject.fetchToken("processorName", 1);
-
+        try {
+            testSubject.fetchToken("processorName", 1);
+        } catch (Exception e) {
+            // ignore. This fails
+        }
         verify(spyEntityManager).find(eq(TokenEntry.class), any(), eq(LockModeType.NONE));
     }
 
@@ -173,7 +164,44 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
+    public void testDeleteTokenRejectedIfNotClaimedOrNotInitialized() {
+        jpaTokenStore.initializeTokenSegments("test", 2);
+
+        try {
+            jpaTokenStore.deleteToken("test", 0);
+            fail("Expected delete to fail");
+        } catch (UnableToClaimTokenException e) {
+            // expected
+        }
+
+        try {
+            jpaTokenStore.deleteToken("unknown", 0);
+            fail("Expected delete to fail");
+        } catch (UnableToClaimTokenException e) {
+            // expected
+        }
+    }
+
+    @Transactional
+    @Test
+    public void testDeleteToken() {
+        jpaTokenStore.initializeSegment(null, "delete", 0);
+        jpaTokenStore.fetchToken("delete", 0);
+
+        entityManager.flush();
+        jpaTokenStore.deleteToken("delete", 0);
+
+        assertEquals(0L, (long) entityManager.createQuery("SELECT count(t) FROM TokenEntry t " +
+                                                                  "WHERE t.processorName = :processorName", Long.class)
+                                             .setParameter("processorName", "delete")
+                                             .getSingleResult());
+    }
+
+    @Transactional
+    @Test
     public void testClaimAndUpdateToken() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+
         assertNull(jpaTokenStore.fetchToken("test", 0));
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
 
@@ -196,11 +224,15 @@ public class JpaTokenStoreTest {
     @Transactional
     @Test
     public void testQuerySegments() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        jpaTokenStore.initializeTokenSegments("proc1", 2);
+        jpaTokenStore.initializeTokenSegments("proc2", 1);
+
         assertNull(jpaTokenStore.fetchToken("test", 0));
 
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
-        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 0);
 
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc1");
@@ -224,6 +256,7 @@ public class JpaTokenStoreTest {
     @Transactional
     @Test
     public void testClaimTokenConcurrently() {
+        jpaTokenStore.initializeTokenSegments("concurrent", 1);
         jpaTokenStore.fetchToken("concurrent", 0);
         try {
             concurrentJpaTokenStore.fetchToken("concurrent", 0);
@@ -236,6 +269,8 @@ public class JpaTokenStoreTest {
     @Transactional
     @Test
     public void testStealToken() {
+        jpaTokenStore.initializeTokenSegments("stealing", 1);
+
         jpaTokenStore.fetchToken("stealing", 0);
         stealingJpaTokenStore.fetchToken("stealing", 0);
 
@@ -253,6 +288,7 @@ public class JpaTokenStoreTest {
     @Transactional
     @Test
     public void testExtendingLostClaimFails() {
+        jpaTokenStore.initializeTokenSegments("processor", 1);
         jpaTokenStore.fetchToken("processor", 0);
 
         try {
@@ -266,6 +302,8 @@ public class JpaTokenStoreTest {
     @Transactional
     @Test
     public void testStealingFromOtherThreadFailsWithRowLock() throws Exception {
+        jpaTokenStore.initializeTokenSegments("processor", 1);
+
         ExecutorService executor1 = Executors.newSingleThreadExecutor();
         CountDownLatch cdl = new CountDownLatch(1);
         try {
@@ -305,6 +343,11 @@ public class JpaTokenStoreTest {
     @Test
     public void testStoreAndLoadAcrossTransactions() {
         txTemplate.execute(status -> {
+            jpaTokenStore.initializeTokenSegments("multi", 1);
+            return null;
+        });
+
+        txTemplate.execute(status -> {
             jpaTokenStore.fetchToken("multi", 0);
             jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1), "multi", 0);
             return null;
@@ -326,19 +369,6 @@ public class JpaTokenStoreTest {
 
     @Configuration
     public static class Context {
-
-        @Configuration
-        public static class PersistenceConfig {
-
-            @PersistenceContext
-            private EntityManager entityManager;
-
-            @Bean
-            public EntityManagerProvider entityManagerProvider() {
-                return new SimpleEntityManagerProvider(entityManager);
-            }
-
-        }
 
         @SuppressWarnings("Duplicates")
         @Bean
@@ -414,6 +444,19 @@ public class JpaTokenStoreTest {
                     }
                 };
             };
+        }
+
+        @Configuration
+        public static class PersistenceConfig {
+
+            @PersistenceContext
+            private EntityManager entityManager;
+
+            @Bean
+            public EntityManagerProvider entityManagerProvider() {
+                return new SimpleEntityManagerProvider(entityManager);
+            }
+
         }
     }
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,22 +35,15 @@ import static java.util.stream.Collectors.toList;
  */
 public class Segment implements Comparable<Segment> {
 
+    private static final Segment[] EMPTY_SEGMENTS = new Segment[0];
     private static final int ZERO_MASK = 0x0;
 
     /**
      * Represents the Segment that matches against all input, but can be split to start processing elements in parallel.
      */
     public static final Segment ROOT_SEGMENT = new Segment(0, ZERO_MASK);
-    public static final Segment[] EMPTY_SEGMENTS = new Segment[0];
-
     private final int segmentId;
     private final int mask;
-
-    Segment(int segmentId, int mask) {
-        this.segmentId = segmentId;
-        // REVIEW: We could validate the mask consisting of 1's only, expect the 0 mask.
-        this.mask = mask;
-    }
 
     private static boolean computeSegments(Segment segment, List<Integer> segments, Set<Segment> applicableSegments) {
 
@@ -88,6 +81,28 @@ public class Segment implements Comparable<Segment> {
     }
 
     /**
+     * Creates a Segment instance for the given {@code segmentId} based on the given {@code availableSegmentsIds}.
+     *
+     * @param segmentId           The Id of the segment to return
+     * @param availableSegmentIds The available segment Ids, to base the mask of the segment on
+     * @return the Segment instance representing for the given id
+     */
+    public static Segment computeSegment(int segmentId, int... availableSegmentIds) {
+        Arrays.sort(availableSegmentIds);
+
+        // as a 1 can only happen within the mask, the smallest possible mask is the lowest power of 2 (minus one)
+        // higher than that value
+        int splitCandidate = segmentId == 0 ? 1 : (Integer.highestOneBit(segmentId) << 1);
+        while (Arrays.binarySearch(availableSegmentIds, splitCandidate | segmentId) >= 0) {
+            // We have found the split value for the smallest mask. We need to increase the mask
+            splitCandidate = splitCandidate << 1;
+        }
+
+        int mask = splitCandidate - 1;
+        return new Segment(segmentId, mask);
+    }
+
+    /**
      * Split a given {@link Segment} n-times in round robin fashion.
      * <br/>
      *
@@ -110,13 +125,25 @@ public class Segment implements Comparable<Segment> {
     }
 
     /**
+     * Construct a new Segment instance with given {@code segmentId} and {@code mask}
+     *
+     * @param segmentId The id of the segment
+     * @param mask      The mask of the segment
+     */
+    protected Segment(int segmentId, int mask) {
+        Assert.isTrue(mask == 0 || mask + 1 == Integer.highestOneBit(mask + 1), () -> "Invalid mask. It must end on a consecutive series of 1s");
+        this.segmentId = segmentId;
+        this.mask = mask;
+    }
+
+    /**
      * Calculates the Segment that represents the merger of this segment with the given {@code other} segment.
      *
      * @param other the segment to merge this one with
      * @return The Segment representing the merged segments
      */
     public Segment mergedWith(Segment other) {
-        Assert.isTrue(this.isMergeableWith(other), () -> "Given Segment cannot be merged with this segment.");
+        Assert.isTrue(this.isMergeableWith(other), () -> "Given " + other + " cannot be merged with " + this);
         return new Segment(Math.min(this.segmentId, other.segmentId), this.mask >>> 1);
     }
 
@@ -203,7 +230,6 @@ public class Segment implements Comparable<Segment> {
 
         Segment[] segments = new Segment[2];
         int newMask = ((mask << 1) + 1);
-
         final int newSegment = segmentId + (mask == 0 ? 1 : newMask ^ mask);
         segments[0] = new Segment(segmentId, newMask);
         segments[1] = new Segment(newSegment, newMask);
@@ -211,10 +237,23 @@ public class Segment implements Comparable<Segment> {
         return segments;
     }
 
+    /**
+     * Returns the segmentId of the counterpart of this segment, if this segment were to be split.
+     *
+     * @return the segmentId of the counterpart of this segment
+     */
+    public int splitSegmentId() {
+        return segmentId + (mask == 0 ? 1 : ((mask << 1) + 1) ^ mask);
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Segment that = (Segment) o;
         return segmentId == that.segmentId &&
                 mask == that.mask;

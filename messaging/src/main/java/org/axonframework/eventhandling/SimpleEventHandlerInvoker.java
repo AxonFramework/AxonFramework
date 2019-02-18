@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,11 +22,7 @@ import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EventListener;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -106,21 +102,20 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        for (EventMessageHandler handler : wrappedEventHandlers) {
-            try {
-                handler.handle(message);
-            } catch (Exception e) {
-                listenerInvocationErrorHandler.onError(e, message, handler);
+        if (sequencingPolicyMatchesSegment(message, segment)) {
+            for (EventMessageHandler handler : wrappedEventHandlers) {
+                try {
+                    handler.handle(message);
+                } catch (Exception e) {
+                    listenerInvocationErrorHandler.onError(e, message, handler);
+                }
             }
         }
     }
 
     @Override
     public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
-        return hasHandler(eventMessage) && segment.matches(Objects.hashCode(getOrDefault(
-                sequencingPolicy.getSequenceIdentifierFor(eventMessage),
-                eventMessage::getIdentifier)
-        ));
+        return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
     }
 
     private boolean hasHandler(EventMessage<?> eventMessage) {
@@ -140,6 +135,13 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
             }
         }
         return true;
+    }
+
+    private boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
+        return segment.matches(Objects.hashCode(getOrDefault(
+                sequencingPolicy.getSequenceIdentifierFor(message),
+                message::getIdentifier)
+        ));
     }
 
     @Override
@@ -296,7 +298,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            assertThat(eventHandlers, list -> !list.isEmpty(), "At least one EventMessageHandler should be provided");
+            assertThat(eventHandlers, list -> list != null && !list.isEmpty(), "At least one EventMessageHandler should be provided");
         }
     }
 }

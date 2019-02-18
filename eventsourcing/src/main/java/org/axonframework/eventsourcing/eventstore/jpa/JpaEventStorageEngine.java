@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,37 +22,25 @@ import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DomainEventData;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GapAwareTrackingToken;
-import org.axonframework.eventhandling.GenericDomainEventEntry;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackedDomainEventData;
-import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -185,7 +173,10 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                 : Collections.emptySortedSet()
                 );
             } else {
-                token = token.advanceTo(globalSequence, maxGapOffset, allowGaps);
+                token = token.advanceTo(globalSequence, maxGapOffset);
+                if (!allowGaps) {
+                    token = token.withGapsTruncatedAt(globalSequence);
+                }
             }
             result.add(new TrackedDomainEventData<>(token, domainEvent));
         }
@@ -214,7 +205,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                         break;
                     }
                     if (previousToken.getGaps().contains(sequenceNumber - 1)) {
-                        previousToken = previousToken.advanceTo(sequenceNumber - 1, maxGapOffset, false);
+                        previousToken = previousToken.withGapsTruncatedAt(sequenceNumber);
                     }
                 } catch (DateTimeParseException e) {
                     logger.info("Unable to parse timestamp to clean old gaps", e);
