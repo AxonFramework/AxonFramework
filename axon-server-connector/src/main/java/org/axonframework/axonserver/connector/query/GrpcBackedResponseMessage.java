@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.GrpcMetadata;
+import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -39,49 +39,38 @@ import java.util.function.Supplier;
 public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     private final QueryResponse queryResponse;
-    private final Serializer messageSerializer;
-
     private final LazyDeserializingObject<R> serializedPayload;
     private final Throwable exception;
-    private final Supplier<MetaData> metadata;
+    private final Supplier<MetaData> metaDataSupplier;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
      * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
      *
-     * @param queryResponse the {@Link QueryResponse} which is being wrapped as a {@link QueryResponseMessage}
+     * @param queryResponse the {@link QueryResponse} which is being wrapped as a {@link QueryResponseMessage}
      * @param serializer    the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
      *                      {@code queryResponse}
      */
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer serializer) {
         this.queryResponse = queryResponse;
-        this.messageSerializer = serializer;
-        this.metadata = new GrpcMetadata(queryResponse.getMetaDataMap(), serializer);
-        if (queryResponse.hasErrorMessage()) {
-            this.exception = ErrorCode.getFromCode(queryResponse.getErrorCode())
-                                      .convert(queryResponse.getErrorMessage());
-        } else {
-            this.exception = null;
-        }
-        if (queryResponse.hasPayload() && !"empty".equalsIgnoreCase(queryResponse.getPayload().getType())) {
-            this.serializedPayload = new LazyDeserializingObject<>(
-                    new GrpcSerializedObject(queryResponse.getPayload()), serializer
-            );
-        } else {
-            this.serializedPayload = null;
-        }
+        this.serializedPayload = queryResponse.hasPayload() && !"empty".equalsIgnoreCase(queryResponse.getPayload()
+                                                                                                      .getType())
+                ? new LazyDeserializingObject<>(new GrpcSerializedObject(queryResponse.getPayload()), serializer)
+                : null;
+        this.exception = queryResponse.hasErrorMessage()
+                ? ErrorCode.getFromCode(queryResponse.getErrorCode()).convert(queryResponse.getErrorMessage())
+                : null;
+        this.metaDataSupplier = new GrpcMetaData(queryResponse.getMetaDataMap(), serializer);
     }
 
     private GrpcBackedResponseMessage(QueryResponse queryResponse,
-                                      Serializer messageSerializer,
                                       LazyDeserializingObject<R> serializedPayload,
                                       Throwable exception,
-                                      Supplier<MetaData> metadata) {
+                                      Supplier<MetaData> metaDataSupplier) {
         this.queryResponse = queryResponse;
-        this.messageSerializer = messageSerializer;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
-        this.metadata = metadata;
+        this.metaDataSupplier = metaDataSupplier;
     }
 
     @Override
@@ -91,23 +80,17 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public MetaData getMetaData() {
-        return metadata.get();
+        return metaDataSupplier.get();
     }
 
     @Override
     public R getPayload() {
-        if (serializedPayload == null) {
-            return null;
-        }
-        return serializedPayload.getObject();
+        return serializedPayload == null ? null : serializedPayload.getObject();
     }
 
     @Override
     public Class<R> getPayloadType() {
-        if (serializedPayload == null) {
-            return null;
-        }
-        return serializedPayload.getType();
+        return serializedPayload == null ? null : serializedPayload.getType();
     }
 
     @Override
@@ -122,15 +105,13 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public GrpcBackedResponseMessage<R> withMetaData(Map<String, ?> metaData) {
-        return new GrpcBackedResponseMessage<>(queryResponse,
-                                               messageSerializer,
-                                               serializedPayload,
-                                               exception,
-                                               () -> MetaData.from(metaData));
+        return new GrpcBackedResponseMessage<>(
+                queryResponse, serializedPayload, exception, () -> MetaData.from(metaData)
+        );
     }
 
     @Override
-    public QueryResponseMessage<R> andMetaData(Map<String, ?> var1) {
-        return withMetaData(getMetaData().mergedWith(var1));
+    public GrpcBackedResponseMessage<R> andMetaData(Map<String, ?> metaData) {
+        return withMetaData(getMetaData().mergedWith(metaData));
     }
 }
