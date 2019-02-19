@@ -16,7 +16,6 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
-import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
@@ -58,11 +57,13 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
     public GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery,
                                               Serializer messageSerializer,
                                               Serializer serializer) {
-        this.subscriptionQuery = subscriptionQuery;
-        QueryRequest queryRequest = subscriptionQuery.getQueryRequest();
-        this.serializedUpdateResponseType =
-                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer);
-        grpcBackedQueryMessage = new GrpcBackedQueryMessage<>(queryRequest, messageSerializer, serializer);
+        this(
+                subscriptionQuery,
+                new GrpcBackedQueryMessage<>(subscriptionQuery.getQueryRequest(), messageSerializer, serializer),
+                new LazyDeserializingObject<>(
+                        new GrpcSerializedObject(subscriptionQuery.getQueryRequest().getResponseType()), serializer
+                )
+        );
     }
 
     private GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery,

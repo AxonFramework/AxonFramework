@@ -29,6 +29,12 @@ import java.util.Objects;
 
 import static org.junit.Assert.*;
 
+/**
+ * Test all the functions provided on the {@link GrpcBackedCommandMessage}. The {@link Command} to be passed to a
+ * GrpcBackedCommandMessage is created by using the {@link CommandSerializer}.
+ *
+ * @author Steven van Beelen
+ */
 public class GrpcBackedCommandMessageTest {
 
     private static final TestCommand TEST_COMMAND = new TestCommand("aggregateId", 42);

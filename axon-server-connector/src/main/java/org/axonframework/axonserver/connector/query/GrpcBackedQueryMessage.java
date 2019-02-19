@@ -56,12 +56,12 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
     public GrpcBackedQueryMessage(QueryRequest queryRequest,
                                   Serializer messageSerializer,
                                   Serializer serializer) {
-        this.query = queryRequest;
-        this.serializedPayload =
-                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer);
-        this.serializedResponseType =
-                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer);
-        this.metaDataSupplier = new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer);
+        this(
+                queryRequest,
+                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer),
+                new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer),
+                new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer)
+        );
     }
 
     private GrpcBackedQueryMessage(QueryRequest queryRequest,

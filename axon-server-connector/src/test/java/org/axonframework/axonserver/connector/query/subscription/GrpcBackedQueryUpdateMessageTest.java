@@ -29,6 +29,12 @@ import java.util.Objects;
 
 import static org.junit.Assert.*;
 
+/**
+ * Test all the functions provided on the {@link GrpcBackedQueryUpdateMessage}. The {@link QueryUpdate} to be passed to
+ * a GrpcBackedQueryUpdateMessage is created by using the {@link SubscriptionMessageSerializer}.
+ *
+ * @author Steven van Beelen
+ */
 public class GrpcBackedQueryUpdateMessageTest {
 
     private static final TestQueryUpdate TEST_QUERY_UPDATE = new TestQueryUpdate("aggregateId", 42);
