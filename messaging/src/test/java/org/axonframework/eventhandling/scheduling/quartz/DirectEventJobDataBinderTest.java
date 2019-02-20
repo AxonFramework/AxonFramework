@@ -30,6 +30,8 @@ import org.junit.runner.*;
 import org.junit.runners.*;
 import org.quartz.JobDataMap;
 
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -124,7 +126,7 @@ public class DirectEventJobDataBinderTest {
         EventMessage<String> resultEventMessage = (EventMessage<String>) result;
 
         assertEquals(testEventMessage.getIdentifier(), resultEventMessage.getIdentifier());
-        assertEquals(testEventMessage.getTimestamp(), resultEventMessage.getTimestamp());
+        assertEquals(testEventMessage.getTimestamp().truncatedTo(ChronoUnit.MILLIS), resultEventMessage.getTimestamp());
         assertEquals(testEventMessage.getPayload(), resultEventMessage.getPayload());
         assertEquals(testEventMessage.getPayloadType(), resultEventMessage.getPayloadType());
         assertEquals(testEventMessage.getMetaData(), resultEventMessage.getMetaData());

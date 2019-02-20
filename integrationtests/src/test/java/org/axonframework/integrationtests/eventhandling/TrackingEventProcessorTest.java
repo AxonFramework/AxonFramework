@@ -806,7 +806,8 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         waitForActiveThreads(2);
 
-        assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
+        assertWithin(50, TimeUnit.MILLISECONDS, () ->
+                assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join()));
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForSegmentStart(0);
 
@@ -836,7 +837,8 @@ public class TrackingEventProcessorTest {
         testSubject.releaseSegment(1);
         waitForSegmentRelease(1);
 
-        assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
+        assertWithin(50, TimeUnit.MILLISECONDS, () ->
+                assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join()));
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForSegmentStart(0);
 
@@ -858,10 +860,10 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         waitForActiveThreads(1);
 
-        assertTrue("Expected split to succeed", testSubject.splitSegment(0).join());
+        assertWithin(50, TimeUnit.MILLISECONDS, () -> assertTrue("Expected split to succeed", testSubject.splitSegment(0).join()));
         waitForActiveThreads(1);
 
-        assertTrue("Expected split to succeed", testSubject.splitSegment(0).join());
+        assertWithin(50, TimeUnit.MILLISECONDS, () -> assertTrue("Expected split to succeed", testSubject.splitSegment(0).join()));
         waitForActiveThreads(1);
 
         assertArrayEquals(new int[]{0, 1, 2}, tokenStore.fetchSegments(testSubject.getName()));
