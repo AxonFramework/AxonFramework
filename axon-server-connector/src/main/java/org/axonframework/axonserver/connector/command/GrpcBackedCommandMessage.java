@@ -49,10 +49,11 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
      *                   {@code command}
      */
     public GrpcBackedCommandMessage(Command command, Serializer serializer) {
-        this.command = command;
-        this.serializedPayload =
-                new LazyDeserializingObject<>(new GrpcSerializedObject(command.getPayload()), serializer);
-        this.metaDataSupplier = new GrpcMetaData(command.getMetaDataMap(), serializer);
+        this(
+                command,
+                new LazyDeserializingObject<>(new GrpcSerializedObject(command.getPayload()), serializer),
+                new GrpcMetaData(command.getMetaDataMap(), serializer)
+        );
     }
 
     private GrpcBackedCommandMessage(Command command,

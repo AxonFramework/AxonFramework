@@ -31,6 +31,12 @@ import java.util.Objects;
 
 import static org.junit.Assert.*;
 
+/**
+ * Test all the functions provided on the {@link GrpcBackedSubscriptionQueryMessage}. The {@link SubscriptionQuery} to
+ * be passed to a GrpcBackedSubscriptionQueryMessage is created by using the {@link SubscriptionMessageSerializer}.
+ *
+ * @author Steven van Beelen
+ */
 public class GrpcBackedSubscriptionQueryMessageTest {
 
     private static final TestQuery TEST_QUERY = new TestQuery("aggregateId", 42);
