@@ -125,9 +125,6 @@
         <spring.version>5.1.1.RELEASE</spring.version>
         <spring.boot.version>2.0.5.RELEASE</spring.boot.version>
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
-        <felix.version>5.6.2</felix.version>
-        <pax.exam.version>4.10.0</pax.exam.version>
-        <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mockito.version>2.24.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
@@ -202,43 +199,6 @@
             </exclusions>
         </dependency>
 
-        <!-- OSGi test -->
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.framework</artifactId>
-            <version>${felix.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-container-native</artifactId>
-            <version>${pax.exam.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-junit4</artifactId>
-            <version>${pax.exam.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.exam</groupId>
-            <artifactId>pax-exam-link-mvn</artifactId>
-            <version>${pax.exam.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.url</groupId>
-            <artifactId>pax-url-aether</artifactId>
-            <version>${pax.url.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.url</groupId>
-            <artifactId>pax-url-reference</artifactId>
-            <version>${pax.url.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
