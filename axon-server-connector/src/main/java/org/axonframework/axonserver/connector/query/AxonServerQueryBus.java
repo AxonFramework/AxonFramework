@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -74,11 +74,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -125,7 +124,7 @@ public class AxonServerQueryBus implements QueryBus {
      *                                    component names used to identify the application in Axon Server among others
      * @param updateEmitter               the {@link QueryUpdateEmitter} used to emits incremental updates to
      *                                    subscription queries
-     * @param localSegment                a {@link QueryBus} handling the incoming queriees for the local application
+     * @param localSegment                a {@link QueryBus} handling the incoming queries for the local application
      * @param messageSerializer           a {@link Serializer} used to de-/serialize the payload and metadata of query
      *                                    messages and responses
      * @param genericSerializer           a {@link Serializer} used for communication of other objects than query
@@ -373,47 +372,32 @@ public class AxonServerQueryBus implements QueryBus {
 
     private class QueryHandlerProvider {
 
-        private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries =
-                new ConcurrentHashMap<>();
-        private final PriorityBlockingQueue<QueryRequest> queryQueue;
-        private final ExecutorService executor = Executors.newFixedThreadPool(
-                configuration.getQueryThreads(), new AxonThreadFactory("AxonServerQueryProvider")
-        );
+        private static final int QUERY_QUEUE_CAPACITY = 1000;
+        private static final int DEFAULT_PRIORITY = 0;
+        private static final long THREAD_KEEP_ALIVE_TIME = 100L;
+
+        private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries;
+        private final ExecutorService queryExecutor;
 
         private volatile boolean subscribing;
         private volatile boolean running = true;
         private volatile StreamObserver<QueryProviderOutbound> outboundStreamObserver;
 
         QueryHandlerProvider() {
-            queryQueue = new PriorityBlockingQueue<>(
-                    1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList()))
+            subscribedQueries = new ConcurrentHashMap<>();
+            PriorityBlockingQueue<Runnable> queryProcessQueue =
+                    new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY, Comparator.comparingLong(
+                            r -> r instanceof QueryProcessor ? ((QueryProcessor) r).getPriority() : DEFAULT_PRIORITY
+                    ));
+            int queryThreads = configuration.getQueryThreads();
+            queryExecutor = new ThreadPoolExecutor(
+                    queryThreads,
+                    queryThreads,
+                    THREAD_KEEP_ALIVE_TIME,
+                    TimeUnit.MILLISECONDS,
+                    queryProcessQueue,
+                    new AxonThreadFactory("AxonServerQueryProvider")
             );
-            IntStream.range(0, configuration.getQueryThreads()).forEach(i -> executor.submit(this::queryExecutor));
-        }
-
-        private void queryExecutor() {
-            logger.debug("Starting Query Executor");
-            boolean interrupted = false;
-
-            while (running && !interrupted) {
-                try {
-                    QueryRequest query = queryQueue.poll(1, TimeUnit.SECONDS);
-                    if (query == null) {
-                        continue;
-                    }
-
-                    try {
-                        logger.debug("Received Query: {}", query);
-                        processQuery(query);
-                    } catch (RuntimeException | OutOfDirectMemoryError e) {
-                        logger.warn("Query Executor had an exception on query [{}]", query, e);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    logger.warn("Interrupted queryExecutor", e);
-                    interrupted = true;
-                }
-            }
         }
 
         private void resubscribe() {
@@ -532,7 +516,8 @@ public class AxonServerQueryBus implements QueryBus {
                         case CONFIRMATION:
                             break;
                         case QUERY:
-                            queryQueue.add(inboundRequest.getQuery());
+                            queryExecutor.execute(new QueryProcessor(inboundRequest.getQuery()));
+//                            queryProcessQueue.add(new QueryProcessor(inboundRequest.getQuery()));
                             break;
                     }
                 }
@@ -605,7 +590,7 @@ public class AxonServerQueryBus implements QueryBus {
                 outboundStreamObserver.onCompleted();
             }
             running = false;
-            executor.shutdown();
+            queryExecutor.shutdown();
         }
 
         private QuerySubscription buildQuerySubscription(QueryDefinition queryDefinition, int nrHandlers) {
@@ -648,6 +633,42 @@ public class AxonServerQueryBus implements QueryBus {
             @Override
             public int hashCode() {
                 return Objects.hash(queryName, responseName, componentName);
+            }
+        }
+
+        /**
+         * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the
+         * query {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided
+         * {@link QueryRequest} and used to priorities this {@link QueryProcessor} among others of it's kind.
+         */
+        private class QueryProcessor implements Runnable {
+
+            private final long priority;
+            private final QueryRequest queryRequest;
+
+            private QueryProcessor(QueryRequest queryRequest) {
+                this.priority = priority(queryRequest.getProcessingInstructionsList());
+                this.queryRequest = queryRequest;
+            }
+
+            public long getPriority() {
+                return priority;
+            }
+
+            @Override
+            public void run() {
+                if (!running) {
+                    logger.debug("Query Handler Provider has stopped running, "
+                                         + "hence query [{}] will no longer be processed");
+                    return;
+                }
+
+                try {
+                    logger.debug("Will process query [{}]", queryRequest);
+                    processQuery(queryRequest);
+                } catch (RuntimeException | OutOfDirectMemoryError e) {
+                    logger.warn("Query Processor had an exception when processing query [{}]", queryRequest, e);
+                }
             }
         }
     }

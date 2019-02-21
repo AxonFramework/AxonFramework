@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,7 +39,6 @@ import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -57,11 +56,10 @@ import java.util.Comparator;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -146,6 +144,9 @@ public class AxonServerCommandBus implements CommandBus {
                 new ContextAddingInterceptor(configuration.getContext())
         };
         dispatchInterceptors = new DispatchInterceptors<>();
+
+        this.axonServerConnectionManager.addReconnectListener(commandHandlerProvider::resubscribe);
+        this.axonServerConnectionManager.addDisconnectListener(commandHandlerProvider::unsubscribeAll);
     }
 
     @Override
@@ -254,48 +255,32 @@ public class AxonServerCommandBus implements CommandBus {
 
     private class CommandHandlerProvider {
 
-        private final CopyOnWriteArraySet<String> subscribedCommands = new CopyOnWriteArraySet<>();
-        private final PriorityBlockingQueue<Command> commandQueue;
-        private final ExecutorService executor = Executors.newFixedThreadPool(
-                configuration.getCommandThreads(), new AxonThreadFactory("AxonServerCommandReceiver")
-        );
+        private static final int COMMAND_QUEUE_CAPACITY = 1000;
+        private static final int DEFAULT_PRIORITY = 0;
+        private static final long THREAD_KEEP_ALIVE_TIME = 100L;
+
+        private final CopyOnWriteArraySet<String> subscribedCommands;
+        private final ExecutorService commandExecutor;
 
         private volatile boolean subscribing;
         private volatile boolean running = true;
         private volatile StreamObserver<CommandProviderOutbound> subscriberStreamObserver;
 
         CommandHandlerProvider() {
-            axonServerConnectionManager.addReconnectListener(this::resubscribe);
-            axonServerConnectionManager.addDisconnectListener(this::unsubscribeAll);
-            commandQueue = new PriorityBlockingQueue<>(
-                    1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList()))
+            subscribedCommands = new CopyOnWriteArraySet<>();
+            PriorityBlockingQueue<Runnable> commandProcessQueue =
+                    new PriorityBlockingQueue<>(COMMAND_QUEUE_CAPACITY, Comparator.comparingLong(
+                            r -> r instanceof CommandProcessor ? ((CommandProcessor) r).getPriority() : DEFAULT_PRIORITY
+                    ));
+            Integer commandThreads = configuration.getCommandThreads();
+            commandExecutor = new ThreadPoolExecutor(
+                    commandThreads,
+                    commandThreads,
+                    THREAD_KEEP_ALIVE_TIME,
+                    TimeUnit.MILLISECONDS,
+                    commandProcessQueue,
+                    new AxonThreadFactory("AxonServerCommandReceiver")
             );
-            IntStream.range(0, configuration.getCommandThreads()).forEach(i -> executor.submit(this::commandExecutor));
-        }
-
-        private void commandExecutor() {
-            logger.debug("Starting Command Executor");
-
-            boolean interrupted = false;
-            while (!interrupted && running) {
-                try {
-                    Command command = commandQueue.poll(1, TimeUnit.SECONDS);
-                    if (command == null) {
-                        continue;
-                    }
-
-                    try {
-                        logger.debug("Received command: {}", command);
-                        processCommand(command);
-                    } catch (RuntimeException | OutOfDirectMemoryError e) {
-                        logger.warn("Command Executor had an exception on command [{}]", command, e);
-                    }
-                } catch (InterruptedException e) {
-                    logger.warn("Command Executor got interrupted", e);
-                    Thread.currentThread().interrupt();
-                    interrupted = true;
-                }
-            }
         }
 
         private void resubscribe() {
@@ -378,7 +363,7 @@ public class AxonServerCommandBus implements CommandBus {
                 public void onNext(CommandProviderInbound commandToSubscriber) {
                     logger.debug("Received command from server: {}", commandToSubscriber);
                     if (commandToSubscriber.getRequestCase() == CommandProviderInbound.RequestCase.COMMAND) {
-                        commandQueue.add(commandToSubscriber.getCommand());
+                        commandExecutor.execute(new CommandProcessor(commandToSubscriber.getCommand()));
                     }
                 }
 
@@ -482,7 +467,43 @@ public class AxonServerCommandBus implements CommandBus {
                 subscriberStreamObserver.onCompleted();
             }
             running = false;
-            executor.shutdown();
+            commandExecutor.shutdown();
+        }
+
+        /**
+         * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the
+         * command {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided
+         * {@link Command} and used to priorities this {@link CommandProcessor} among others of it's kind.
+         */
+        private class CommandProcessor implements Runnable {
+
+            private final long priority;
+            private final Command command;
+
+            private CommandProcessor(Command command) {
+                this.priority = priority(command.getProcessingInstructionsList());
+                this.command = command;
+            }
+
+            public long getPriority() {
+                return priority;
+            }
+
+            @Override
+            public void run() {
+                if (!running) {
+                    logger.debug("Command Handler Provider has stopped running, "
+                                         + "hence command [{}] will no longer be processed");
+                    return;
+                }
+
+                try {
+                    logger.debug("Will process command: {}", command);
+                    processCommand(command);
+                } catch (RuntimeException | OutOfDirectMemoryError e) {
+                    logger.warn("Command Processor had an exception when processing command [{}]", command, e);
+                }
+            }
         }
     }
 }
