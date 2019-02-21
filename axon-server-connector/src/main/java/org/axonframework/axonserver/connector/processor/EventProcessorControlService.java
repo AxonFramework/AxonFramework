@@ -48,7 +48,7 @@ public class EventProcessorControlService {
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final EventProcessorController eventProcessorController;
-    private final Function<EventProcessor, PlatformInboundMessage> mapping;
+    private final Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper;
 
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
@@ -65,7 +65,7 @@ public class EventProcessorControlService {
                                         EventProcessorController eventProcessorController) {
         this.axonServerConnectionManager = axonServerConnectionManager;
         this.eventProcessorController = eventProcessorController;
-        this.mapping = new GrpcEventProcessorMapping();
+        this.platformInboundMessageMapper = new GrpcEventProcessorMapping();
     }
 
     /**
@@ -108,7 +108,7 @@ public class EventProcessorControlService {
         String processorName = requestInfo.getProcessorName();
         try {
             EventProcessor processor = eventProcessorController.getEventProcessor(processorName);
-            axonServerConnectionManager.send(mapping.apply(processor).instruction());
+            axonServerConnectionManager.send(platformInboundMessageMapper.apply(processor).instruction());
         } catch (Exception e) {
             logger.debug("Problem getting the information about Event Processor [{}]", processorName, e);
         }
@@ -116,11 +116,23 @@ public class EventProcessorControlService {
 
     private void splitSegment(PlatformOutboundInstruction platformOutboundInstruction) {
         SplitEventProcessorSegment splitSegment = platformOutboundInstruction.getSplitEventProcessorSegment();
-        eventProcessorController.splitSegment(splitSegment.getProcessorName(), splitSegment.getSegmentIdentifier());
+        int segmentId = splitSegment.getSegmentIdentifier();
+        String processorName = splitSegment.getProcessorName();
+        try {
+            eventProcessorController.splitSegment(processorName, segmentId);
+        } catch (Exception e) {
+            logger.error("Failed to split segment [{}] for processor [{}]", segmentId, processorName, e);
+        }
     }
 
     private void mergeSegment(PlatformOutboundInstruction platformOutboundInstruction) {
         MergeEventProcessorSegment mergeSegment = platformOutboundInstruction.getMergeEventProcessorSegment();
-        eventProcessorController.mergeSegment(mergeSegment.getProcessorName(), mergeSegment.getSegmentIdentifier());
+        String processorName = mergeSegment.getProcessorName();
+        int segmentId = mergeSegment.getSegmentIdentifier();
+        try {
+            eventProcessorController.mergeSegment(processorName, segmentId);
+        } catch (Exception e) {
+            logger.error("Failed to merge segment [{}] for processor [{}]", segmentId, processorName, e);
+        }
     }
 }
