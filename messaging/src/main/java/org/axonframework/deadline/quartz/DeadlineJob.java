@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineMessage;
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineScope;
@@ -77,7 +78,18 @@ public class DeadlineJob implements Job {
      */
     public static final String JOB_DATA_SERIALIZER = Serializer.class.getName();
 
+    /**
+     * The key under which the {@link MessageHandlerInterceptor}s are stored within the {@link SchedulerContext}.
+     */
     public static final String HANDLER_INTERCEPTORS = MessageHandlerInterceptor.class.getName();
+
+    /**
+     * The key under which a {@link Predicate} is stored within the {@link SchedulerContext}. Used to decided whether a
+     * job should be 'refired' immediately for a given {@link Throwable}.
+     */
+    public static final String REFIRE_IMMEDIATELY_POLICY = "refireImmediatelyPolicy";
+
+    private static final Boolean REFIRE_IMMEDIATELY = true;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -118,12 +130,21 @@ public class DeadlineJob implements Job {
                                                                            deadlineScope);
                                                   return null;
                                               });
+
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
         if (resultMessage.isExceptional()) {
+            Throwable exceptionResult = resultMessage.exceptionResult();
+
+            @SuppressWarnings("unchecked")
+            Predicate<Throwable> refirePolicy = (Predicate<Throwable>) schedulerContext.get(REFIRE_IMMEDIATELY_POLICY);
+            if (refirePolicy.test(exceptionResult)) {
+                logger.error("Exception occurred during processing a deadline job which will be retried [{}]",
+                             jobDetail.getDescription(), exceptionResult);
+                throw new JobExecutionException(exceptionResult, REFIRE_IMMEDIATELY);
+            }
             logger.error("Exception occurred during processing a deadline job [{}]",
-                         jobDetail.getDescription(),
-                         resultMessage.exceptionResult());
-            throw new JobExecutionException(resultMessage.exceptionResult());
+                         jobDetail.getDescription(), exceptionResult);
+            throw new JobExecutionException(exceptionResult);
         } else if (logger.isInfoEnabled()) {
             logger.info("Job successfully executed. Deadline message [{}] processed.",
                         deadlineMessage.getPayloadType().getSimpleName());
@@ -196,6 +217,7 @@ public class DeadlineJob implements Job {
             return jobData;
         }
 
+        @SuppressWarnings("Duplicates")
         private static void putDeadlineMessage(JobDataMap jobData,
                                                DeadlineMessage deadlineMessage,
                                                Serializer serializer) {

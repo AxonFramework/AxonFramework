@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.deadline.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
@@ -35,8 +36,10 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.function.Predicate;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ExceptionUtils.findException;
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.quartz.JobKey.jobKey;
 
@@ -57,6 +60,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private final ScopeAwareProvider scopeAwareProvider;
     private final TransactionManager transactionManager;
     private final Serializer serializer;
+    private final Predicate<Throwable> refireImmediatelyPolicy;
 
     /**
      * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
@@ -88,6 +92,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         this.scopeAwareProvider = builder.scopeAwareProvider;
         this.transactionManager = builder.transactionManager;
         this.serializer = builder.serializer;
+        this.refireImmediatelyPolicy = builder.refireImmediatelyPolicy;
 
         try {
             initialize();
@@ -101,6 +106,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         scheduler.getContext().put(DeadlineJob.SCOPE_AWARE_RESOLVER, scopeAwareProvider);
         scheduler.getContext().put(DeadlineJob.JOB_DATA_SERIALIZER, serializer);
         scheduler.getContext().put(DeadlineJob.HANDLER_INTERCEPTORS, handlerInterceptors());
+        scheduler.getContext().put(DeadlineJob.REFIRE_IMMEDIATELY_POLICY, refireImmediatelyPolicy);
     }
 
     @Override
@@ -190,6 +196,8 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         private ScopeAwareProvider scopeAwareProvider;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private Serializer serializer = XStreamSerializer.builder().build();
+        private Predicate<Throwable> refireImmediatelyPolicy =
+                throwable -> !findException(throwable, t -> t instanceof AxonNonTransientException).isPresent();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
@@ -242,6 +250,21 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
             this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets a {@link Predicate} taking a {@link Throwable} to decided whether a failed {@link DeadlineJob} should
+         * be 'refired' immediately. Defaults to a Predicate which will refire immediately on
+         * non-{@link AxonNonTransientException}s.
+         *
+         * @param refireImmediatelyPolicy a {@link Predicate} taking a {@link Throwable} to decided whether a failed
+         *                                {@link DeadlineJob} should be 'refired' immediately
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder refireImmediatelyPolicy(Predicate<Throwable> refireImmediatelyPolicy) {
+            assertNonNull(refireImmediatelyPolicy, "The refire policy may not be null");
+            this.refireImmediatelyPolicy = refireImmediatelyPolicy;
             return this;
         }
 
