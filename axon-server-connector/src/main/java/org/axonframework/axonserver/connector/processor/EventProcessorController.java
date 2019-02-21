@@ -78,52 +78,46 @@ public class EventProcessorController {
         ((TrackingEventProcessor) eventProcessor).releaseSegment(segmentId);
     }
 
-    void splitSegment(String processorName, int segmentId) {
+    boolean splitSegment(String processorName, int segmentId) {
         EventProcessor eventProcessor = getEventProcessor(processorName);
         if (!(eventProcessor instanceof TrackingEventProcessor)) {
             logger.info("Split segment requested for processor [{}] which is not a Tracking Event Processor");
-            return;
+            return false;
         }
 
-        ((TrackingEventProcessor) eventProcessor).splitSegment(segmentId).whenComplete(
-                (result, throwable) -> {
-                    if (throwable != null) {
-                        logger.error("Failed to split segment [{}] for processor [{}]",
-                                     segmentId, processorName, throwable);
-                        return;
-                    }
-
+        return ((TrackingEventProcessor) eventProcessor)
+                .splitSegment(segmentId)
+                .thenApply(result -> {
                     if (result) {
-                        logger.info("Successfully split segment [{}] of processor [{}]", segmentId, processorName);
+                        logger.info("Successfully split segment [{}] of processor [{}]",
+                                    segmentId, processorName);
                     } else {
-                        logger.warn("Was not able to split segment [{}] for processor [{}]", segmentId, processorName);
+                        logger.warn("Was not able to split segment [{}] for processor [{}]",
+                                    segmentId, processorName);
                     }
-                }
-        );
+                    return result;
+                }).join();
     }
 
-    void mergeSegment(String processorName, int segmentId) {
+    boolean mergeSegment(String processorName, int segmentId) {
         EventProcessor eventProcessor = getEventProcessor(processorName);
         if (!(eventProcessor instanceof TrackingEventProcessor)) {
             logger.info("Merge segment requested for processor [{}] which is not a Tracking Event Processor");
-            return;
+            return false;
         }
 
-        ((TrackingEventProcessor) eventProcessor).mergeSegment(segmentId).whenComplete(
-                (result, throwable) -> {
-                    if (throwable != null) {
-                        logger.error("Failed to merge segment [{}] for processor [{}]",
-                                     segmentId, processorName, throwable);
-                        return;
-                    }
-
+        return ((TrackingEventProcessor) eventProcessor)
+                .mergeSegment(segmentId)
+                .thenApply(result -> {
                     if (result) {
-                        logger.info("Successfully merged segment [{}] of processor [{}]", segmentId, processorName);
+                        logger.info("Successfully merged segment [{}] of processor [{}]",
+                                    segmentId, processorName);
                     } else {
-                        logger.warn("Was not able to merge segment [{}] for processor [{}]", segmentId, processorName);
+                        logger.warn("Was not able to merge segment [{}] for processor [{}]",
+                                    segmentId, processorName);
                     }
-                }
-        );
+                    return result;
+                }).join();
     }
 
     /**

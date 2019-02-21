@@ -94,29 +94,57 @@ public class EventProcessorControllerTest {
 
     @Test
     public void testSplitSegmentCallSplitOnAnEventProcessor() {
-        testSubject.splitSegment(TRACKING_PROCESSOR_NAME, SEGMENT_ID);
+        boolean result = testSubject.splitSegment(TRACKING_PROCESSOR_NAME, SEGMENT_ID);
 
         verify(testTrackingProcessor).splitSegment(SEGMENT_ID);
+        assertTrue(result);
     }
 
     @Test
     public void testSplitSegmentDoesNothingIfTheEventProcessorIsNotOfTypeTracking() {
-        testSubject.splitSegment(SUBSCRIBING_PROCESSOR_NAME, SEGMENT_ID);
+        boolean result = testSubject.splitSegment(SUBSCRIBING_PROCESSOR_NAME, SEGMENT_ID);
 
         verifyZeroInteractions(testSubscribingProcessor);
+        assertFalse(result);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSplitSegmentThrowsAnExceptionIfSplittingFails() {
+        String testEventProcessorName = "failing-event-processor";
+        TrackingEventProcessor testTrackingProcessor = mock(TrackingEventProcessor.class);
+
+        when(eventProcessingConfiguration.eventProcessor(testEventProcessorName))
+                .thenReturn(Optional.of(testTrackingProcessor));
+        when(testTrackingProcessor.splitSegment(SEGMENT_ID)).thenThrow(new IllegalStateException("some-exception"));
+
+        testSubject.splitSegment(testEventProcessorName, SEGMENT_ID);
     }
 
     @Test
     public void testMergeSegmentCallMergeOnAnEventProcessor() {
-        testSubject.mergeSegment(TRACKING_PROCESSOR_NAME, SEGMENT_ID);
+        boolean result = testSubject.mergeSegment(TRACKING_PROCESSOR_NAME, SEGMENT_ID);
 
         verify(testTrackingProcessor).mergeSegment(SEGMENT_ID);
+        assertTrue(result);
     }
 
     @Test
     public void testMergeSegmentDoesNothingIfTheEventProcessorIsNotOfTypeTracking() {
-        testSubject.mergeSegment(SUBSCRIBING_PROCESSOR_NAME, SEGMENT_ID);
+        boolean result = testSubject.mergeSegment(SUBSCRIBING_PROCESSOR_NAME, SEGMENT_ID);
 
         verifyZeroInteractions(testSubscribingProcessor);
+        assertFalse(result);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testMergeSegmentThrowsAnExceptionIfMergingFails() {
+        String testEventProcessorName = "failing-event-processor";
+        TrackingEventProcessor testTrackingProcessor = mock(TrackingEventProcessor.class);
+
+        when(eventProcessingConfiguration.eventProcessor(testEventProcessorName))
+                .thenReturn(Optional.of(testTrackingProcessor));
+        when(testTrackingProcessor.mergeSegment(SEGMENT_ID)).thenThrow(new IllegalStateException("some-exception"));
+
+        testSubject.mergeSegment(testEventProcessorName, SEGMENT_ID);
     }
 }
