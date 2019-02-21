@@ -428,13 +428,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerTrackingEventProcessor(String name,
                                                                     Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return registerTrackingEventProcessor(
-                name,
-                source,
-                c -> c.getComponent(
-                        TrackingEventProcessorConfiguration.class, defaultTrackingEventProcessorConfiguration::get
-                )
-        );
+        return registerTrackingEventProcessor(name, source, c -> defaultTrackingEventProcessorConfiguration.get());
     }
 
     @Override
@@ -623,9 +617,7 @@ public class EventProcessingModule
             return trackingEventProcessor(
                     name,
                     eventHandlerInvoker,
-                    conf.getComponent(
-                            TrackingEventProcessorConfiguration.class, defaultTrackingEventProcessorConfiguration::get
-                    ),
+                    defaultTrackingEventProcessorConfiguration.get(),
                     (StreamableMessageSource) conf.eventBus()
             );
         } else {
