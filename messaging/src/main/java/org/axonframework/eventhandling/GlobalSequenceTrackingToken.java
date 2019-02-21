@@ -27,6 +27,7 @@ import java.util.Objects;
  * Tracking token based on the global sequence number of an event.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken>,
                                                     Serializable {
