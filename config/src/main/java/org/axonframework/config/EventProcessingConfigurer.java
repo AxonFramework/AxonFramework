@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,24 @@ package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.function.BiFunction;
@@ -69,7 +77,8 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default <T> EventProcessingConfigurer registerSaga(Class<T> sagaType) {
-        return registerSaga(sagaType, c -> {});
+        return registerSaga(sagaType, c -> {
+        });
     }
 
     /**
@@ -132,8 +141,10 @@ public interface EventProcessingConfigurer {
         return registerTrackingEventProcessor(name, c -> {
             EventBus eventBus = c.eventBus();
             if (!(eventBus instanceof StreamableMessageSource)) {
-                throw new AxonConfigurationException("Cannot create Tracking Event Processor with name '" + name + "'. " +
-                                                             "The available EventBus does not support tracking processors.");
+                throw new AxonConfigurationException(
+                        "Cannot create Tracking Event Processor with name '" + name + "'. " +
+                                "The available EventBus does not support tracking processors."
+                );
             }
             //noinspection unchecked
             return (StreamableMessageSource) eventBus;
@@ -149,13 +160,8 @@ public interface EventProcessingConfigurer {
      * @param source a {@link Function} that builds a {@link StreamableMessageSource}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerTrackingEventProcessor(String name,
-                                                                     Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return registerTrackingEventProcessor(name,
-                                              source,
-                                              c -> c.getComponent(TrackingEventProcessorConfiguration.class,
-                                                                  TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
-    }
+    EventProcessingConfigurer registerTrackingEventProcessor(String name,
+                                                             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source);
 
     /**
      * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name}, {@code
@@ -373,6 +379,7 @@ public interface EventProcessingConfigurer {
      *
      * @param assignmentRule a {@link Function} which takes a processing group and returns a processor name
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     *
      * @see #assignProcessingGroup(String, String)
      */
     EventProcessingConfigurer assignProcessingGroup(Function<String, String> assignmentRule);
@@ -478,4 +485,14 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerTransactionManager(String name,
                                                          Function<Configuration, TransactionManager> transactionManagerBuilder);
 
+    /**
+     * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to use as the default.
+     *
+     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a
+     *                                                   {@link TrackingEventProcessorConfiguration}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
+            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+    );
 }
