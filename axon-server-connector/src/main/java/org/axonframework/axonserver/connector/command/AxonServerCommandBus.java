@@ -481,7 +481,7 @@ public class AxonServerCommandBus implements CommandBus {
             private final Command command;
 
             private CommandProcessor(Command command) {
-                this.priority = priority(command.getProcessingInstructionsList());
+                this.priority = -priority(command.getProcessingInstructionsList());
                 this.command = command;
             }
 

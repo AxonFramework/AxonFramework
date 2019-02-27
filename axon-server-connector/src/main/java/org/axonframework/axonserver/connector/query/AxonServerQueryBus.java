@@ -647,7 +647,7 @@ public class AxonServerQueryBus implements QueryBus {
             private final QueryRequest queryRequest;
 
             private QueryProcessor(QueryRequest queryRequest) {
-                this.priority = priority(queryRequest.getProcessingInstructionsList());
+                this.priority = -priority(queryRequest.getProcessingInstructionsList());
                 this.queryRequest = queryRequest;
             }
 
