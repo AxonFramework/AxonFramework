@@ -120,13 +120,14 @@
     </profiles>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- dependency versions -->
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <spring.version>5.1.1.RELEASE</spring.version>
         <spring-security.version>5.1.1.RELEASE</spring-security.version>
         <spring.boot.version>2.0.5.RELEASE</spring.boot.version>
-        <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mockito.version>2.24.0</mockito.version>
         <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
         <micrometer.version>1.0.4</micrometer.version>
@@ -134,20 +135,35 @@
         <jackson.version>2.9.8</jackson.version>
         <grpc.version>1.16.1</grpc.version>
         <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+        <javax.cache-api.version>1.0.0</javax.cache-api.version>
+        <javax.el-api.version>2.2.4</javax.el-api.version>
+        <javax.inject.version>1</javax.inject.version>
+        <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
+        <javax.jaxb-api.version>2.3.0</javax.jaxb-api.version>
+        <mysql-connector-java.version>5.1.31</mysql-connector-java.version>
+        <ehcache.version>2.8.1</ehcache.version>
+        <quartz.version>2.2.1</quartz.version>
+        <hsqldb.version>2.3.4</hsqldb.version>
+        <hibernate-validator.version>5.2.4.Final</hibernate-validator.version>
+        <hibernate-jpa-2.1-api.version>1.0.0.Final</hibernate-jpa-2.1-api.version>
+        <hibernate-entitymanager.version>5.1.0.Final</hibernate-entitymanager.version>
+        <findbugs-jsr305.version>3.0.1</findbugs-jsr305.version>
+        <commons-io.version>1.3.2</commons-io.version>
+        <javassist.version>3.24.1-GA</javassist.version>
+        <junit4.version>4.12</junit4.version>
         <axonserver.api.version>4.1-SNAPSHOT</axonserver.api.version>
+
+        <!-- plugin versions -->
+        <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
     </properties>
 
     <dependencies>
         <!-- test dependencies -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit4.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -199,16 +215,9 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>1.3.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <!-- Not pat of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <version>2.3.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -254,7 +263,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.24.1-GA</version>
+                <version>${javassist.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -282,12 +291,6 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-protobuf</artifactId>
                 <version>${grpc.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -305,69 +308,79 @@
                 <version>${netty.tcnative.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
-                <version>3.0.1</version>
+                <version>${findbugs-jsr305.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-entitymanager</artifactId>
-                <version>5.1.0.Final</version>
+                <version>${hibernate-entitymanager.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
                 <artifactId>hibernate-jpa-2.1-api</artifactId>
-                <version>1.0.0.Final</version>
+                <version>${hibernate-jpa-2.1-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.2.4.Final</version>
+                <version>${hibernate-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hsqldb</groupId>
                 <artifactId>hsqldb</artifactId>
-                <version>2.3.4</version>
+                <version>${hsqldb.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.quartz-scheduler</groupId>
                 <artifactId>quartz</artifactId>
-                <version>2.2.1</version>
+                <version>${quartz.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
                 <artifactId>ehcache</artifactId>
-                <version>2.8.1</version>
+                <version>${ehcache.version}</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>5.1.31</version>
+                <version>${mysql-connector-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
-                <version>1.3.2</version>
+                <version>${javax.annotation-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.cache</groupId>
                 <artifactId>cache-api</artifactId>
-                <version>1.0.0</version>
+                <version>${javax.cache-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.el</groupId>
                 <artifactId>javax.el-api</artifactId>
-                <version>2.2.4</version>
+                <version>${javax.el-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
-                <version>1</version>
+                <version>${javax.inject.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.validation</groupId>
                 <artifactId>validation-api</artifactId>
-                <version>1.1.0.Final</version>
+                <version>${javax.validation-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${javax.jaxb-api.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
