@@ -1075,6 +1075,19 @@ public class TrackingEventProcessorTest {
         assertFalse("Expected merge to be rejected", actual.join());
     }
 
+    @Test(timeout = 10000)
+    public void testMergeWithSingleSegmentRejected() throws InterruptedException {
+        int numberOfSegments = 1;
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(numberOfSegments));
+
+        testSubject.start();
+        waitForActiveThreads(1);
+
+        CompletableFuture<Boolean> actual = testSubject.mergeSegment(0);
+
+        assertFalse("Expected merge to be rejected", actual.join());
+    }
+
     private void waitForStatus(String description, long time, TimeUnit unit, Predicate<Map<Integer, EventTrackerStatus>> status) throws InterruptedException {
         long deadline = System.currentTimeMillis() + unit.toMillis(time);
         while (!status.test(testSubject.processingStatus())) {
