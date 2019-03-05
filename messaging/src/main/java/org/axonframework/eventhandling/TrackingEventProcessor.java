@@ -33,8 +33,22 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -212,12 +226,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely merge tokens"));
+            result.completeExceptionally(new UnsupportedOperationException(
+                    "TokenStore must require explicit initialization to safely merge tokens"));
             return result;
         }
 
         TrackerStatus segmentStatus = this.activeSegments.get(segmentId);
         if (segmentStatus == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (segmentId == segmentStatus.getSegment().mergeableSegmentId()) {
+            logger.info("A merge request can only be fulfilled if there is more than one segment");
             return CompletableFuture.completedFuture(false);
         }
 
