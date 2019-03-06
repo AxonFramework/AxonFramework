@@ -123,17 +123,17 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- dependency versions -->
-        <slf4j.version>1.7.25</slf4j.version>
+        <slf4j.version>1.7.26</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
-        <spring.version>5.1.1.RELEASE</spring.version>
-        <spring-security.version>5.1.1.RELEASE</spring-security.version>
-        <spring.boot.version>2.0.5.RELEASE</spring.boot.version>
-        <mockito.version>2.24.0</mockito.version>
-        <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
-        <micrometer.version>1.0.4</micrometer.version>
+        <spring.version>5.1.5.RELEASE</spring.version>
+        <spring-security.version>5.1.4.RELEASE</spring-security.version>
+        <spring.boot.version>2.1.3.RELEASE</spring.boot.version>
+        <mockito.version>2.25.0</mockito.version>
+        <projectreactor.version>3.2.6.RELEASE</projectreactor.version>
+        <micrometer.version>1.1.3</micrometer.version>
         <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
         <jackson.version>2.9.8</jackson.version>
-        <grpc.version>1.16.1</grpc.version>
+        <grpc.version>1.19.0</grpc.version>
         <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.0.0</javax.cache-api.version>
@@ -141,18 +141,21 @@
         <javax.inject.version>1</javax.inject.version>
         <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
         <javax.jaxb-api.version>2.3.0</javax.jaxb-api.version>
-        <disruptor.version>3.3.6</disruptor.version>
+        <disruptor.version>3.4.2</disruptor.version>
         <mysql-connector-java.version>5.1.31</mysql-connector-java.version>
-        <ehcache.version>2.8.1</ehcache.version>
-        <quartz.version>2.2.1</quartz.version>
+        <ehcache.version>2.10.6</ehcache.version>
+        <quartz.version>2.3.0</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.3.4</hsqldb.version>
         <hibernate-validator.version>5.2.4.Final</hibernate-validator.version>
         <hibernate-jpa-2.1-api.version>1.0.0.Final</hibernate-jpa-2.1-api.version>
         <hibernate-entitymanager.version>5.1.0.Final</hibernate-entitymanager.version>
         <findbugs-jsr305.version>3.0.1</findbugs-jsr305.version>
-        <commons-io.version>1.3.2</commons-io.version>
+        <commons-io.version>2.6</commons-io.version>
         <javassist.version>3.24.1-GA</javassist.version>
+        <el-impl.version>2.2</el-impl.version>
+        <eaio-uuid.version>3.2</eaio-uuid.version>
+        <postgresql.version>42.2.5</postgresql.version>
         <junit4.version>4.12</junit4.version>
         <axonserver.api.version>4.1-SNAPSHOT</axonserver.api.version>
 
@@ -258,6 +261,11 @@
                 <version>${spring.boot.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-core</artifactId>
                 <version>${projectreactor.version}</version>
@@ -291,18 +299,10 @@
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
-                <artifactId>grpc-protobuf</artifactId>
+                <artifactId>grpc-bom</artifactId>
                 <version>${grpc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-stub</artifactId>
-                <version>${grpc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-netty</artifactId>
-                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
@@ -363,6 +363,21 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql-connector-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.eaio.uuid</groupId>
+                <artifactId>uuid</artifactId>
+                <version>${eaio-uuid.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.web</groupId>
+                <artifactId>el-impl</artifactId>
+                <version>${el-impl.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.annotation</groupId>
