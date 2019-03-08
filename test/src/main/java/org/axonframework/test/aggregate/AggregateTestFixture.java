@@ -389,19 +389,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public ResultValidator andThenTimeElapses(Duration elapsedTime) {
-        return whenThenTimeElapses(elapsedTime);
-    }
-
-    @Override
     public ResultValidator whenThenTimeElapses(Duration elapsedTime) {
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return buildResultValidator();
-    }
-
-    @Override
-    public ResultValidator andThenTimeAdvancesTo(Instant newPointInTime) {
-        return whenThenTimeAdvancesTo(newPointInTime);
     }
 
     @Override

@@ -131,7 +131,9 @@ public interface TestExecutor<T> {
      * return type
      */
     @Deprecated
-    ResultValidator andThenTimeElapses(Duration elapsedTime);
+    default ResultValidator andThenTimeElapses(Duration elapsedTime) {
+        return whenThenTimeElapses(elapsedTime);
+    }
 
     /**
      * Simulates the time elapsing in the current given state using a {@link Duration} as the unit of time. This can be
@@ -156,7 +158,9 @@ public interface TestExecutor<T> {
      * return type
      */
     @Deprecated
-    ResultValidator andThenTimeAdvancesTo(Instant newPointInTime);
+    default ResultValidator andThenTimeAdvancesTo(Instant newPointInTime) {
+        return whenThenTimeAdvancesTo(newPointInTime);
+    }
 
     /**
      * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
