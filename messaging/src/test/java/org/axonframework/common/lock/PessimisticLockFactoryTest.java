@@ -82,7 +82,7 @@ public class PessimisticLockFactoryTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 7500)
     public void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
         final PessimisticLockFactory lock1 = PessimisticLockFactory.builder().build();
         final PessimisticLockFactory lock2 = PessimisticLockFactory.builder().build();
