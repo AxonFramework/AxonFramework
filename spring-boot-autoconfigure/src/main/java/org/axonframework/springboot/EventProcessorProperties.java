@@ -92,12 +92,12 @@ public class EventProcessorProperties {
         private int initialSegmentCount = 1;
 
         /**
-         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         * Indicates the time to wait after a failed attempt to claim any token, before making another attempt.
          */
         private long tokenClaimInterval = 5000;
 
         /**
-         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         * The time unit of the token claim interval.
          */
         private TimeUnit tokenClaimIntervalTimeUnit = TimeUnit.MILLISECONDS;
 
@@ -178,8 +178,10 @@ public class EventProcessorProperties {
         }
 
         /**
-         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
-         * @return the tokenClaimInterval
+         * Returns the interval between attempts to claim the token.
+         * Defaults to 5000 milliseconds.
+         *
+         * @return interval between attempts to claim the token.
          */
         public long getTokenClaimInterval() {
             return tokenClaimInterval;
@@ -187,26 +189,29 @@ public class EventProcessorProperties {
 
 
         /**
-         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         * Sets the time to wait after a failed attempt to claim any token, before making another attempt.
+         * Defaults to 5000 milliseconds.
          *
-         * @param tokenClaimInterval the token claim interval
+         * @param tokenClaimInterval the interval between attempts to claim the token.
          */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
         }
 
         /**
-         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
-         * @return the tokenClaimIntervalTimeUnit
+         * Returns the time unit used to define the token claim interval. Defaults to MILLISECONDS.
+         *
+         * @return the time unit used to defined the token claim interval.
          */
         public TimeUnit getTokenClaimIntervalTimeUnit() {
             return tokenClaimIntervalTimeUnit;
         }
 
         /**
-         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         * Sets the time unit used to defined the token claim interval. It must be a valid value of {@link TimeUnit}.
+         * Defaults to MILLISECONDS.
          *
-         * @param tokenClaimIntervalTimeUnit the token claim interval time unit
+         * @param tokenClaimIntervalTimeUnit the time unit used to defined the token claim interval.
          */
         public void setTokenClaimIntervalTimeUnit(TimeUnit tokenClaimIntervalTimeUnit) {
             this.tokenClaimIntervalTimeUnit = tokenClaimIntervalTimeUnit;
