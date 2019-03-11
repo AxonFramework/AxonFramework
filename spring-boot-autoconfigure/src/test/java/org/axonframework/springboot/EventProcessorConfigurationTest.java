@@ -97,7 +97,6 @@ public class EventProcessorConfigurationTest {
         long tokenClaimInterval = ReflectionUtils.getFieldValue(TrackingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor);
         assertEquals("It must be possible to override token claim interval via Spring Configuration",
                 tokenClaimInterval, 60000000L);
-
     }
 
     @Configuration
