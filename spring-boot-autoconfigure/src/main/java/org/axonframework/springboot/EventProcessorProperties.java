@@ -177,18 +177,37 @@ public class EventProcessorProperties {
             this.initialSegmentCount = initialSegmentCount;
         }
 
+        /**
+         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         * @return the tokenClaimInterval
+         */
         public long getTokenClaimInterval() {
             return tokenClaimInterval;
         }
 
+
+        /**
+         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         *
+         * @param tokenClaimInterval the token claim interval
+         */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
         }
 
+        /**
+         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         * @return the tokenClaimIntervalTimeUnit
+         */
         public TimeUnit getTokenClaimIntervalTimeUnit() {
             return tokenClaimIntervalTimeUnit;
         }
 
+        /**
+         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         *
+         * @param tokenClaimIntervalTimeUnit the token claim interval time unit
+         */
         public void setTokenClaimIntervalTimeUnit(TimeUnit tokenClaimIntervalTimeUnit) {
             this.tokenClaimIntervalTimeUnit = tokenClaimIntervalTimeUnit;
         }
