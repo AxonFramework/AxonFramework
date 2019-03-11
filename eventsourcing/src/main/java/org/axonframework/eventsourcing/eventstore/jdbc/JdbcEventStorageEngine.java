@@ -42,6 +42,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -494,8 +495,15 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         if (previousToken != null) {
             gaps = new ArrayList<>(previousToken.getGaps());
             if (!gaps.isEmpty()) {
-                sql += " OR " + schema.globalIndexColumn() + " IN (" +
-                        String.join(",", Collections.nCopies(gaps.size(), "?")) + ") ";
+                final AtomicInteger counter = new AtomicInteger(0);
+                sql += " OR " + Collections
+                        .nCopies(gaps.size(), "?")
+                        .stream()
+                        .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / 1000))
+                        .values()
+                        .stream()
+                        .map(placeholders -> placeholders.stream().collect(Collectors.joining(", ", schema.globalIndexColumn() + " IN (", ")")))
+                        .collect(Collectors.joining(" OR "));
             }
         } else {
             gaps = Collections.emptyList();
