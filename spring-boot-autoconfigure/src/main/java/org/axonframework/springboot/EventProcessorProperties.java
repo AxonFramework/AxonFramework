@@ -92,14 +92,14 @@ public class EventProcessorProperties {
         private int initialSegmentCount = 1;
 
         /**
-         * Indicates the time to wait after a failed attempt to claim any token, before making another attempt.
+         * The interval between attempts to claim tokens by a {@link org.axonframework.eventhandling.TrackingEventProcessor}.
          *
          * Defaults to 5000 milliseconds.
          */
         private long tokenClaimInterval = 5000;
 
         /**
-         * The time unit of the token claim interval.
+         * The time unit of tokens claim interval.
          *
          * Defaults to MILLISECONDS.
          */
@@ -182,10 +182,10 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Returns the interval between attempts to claim the token.
+         * Returns the interval between attempts to claim tokens by a {@link org.axonframework.eventhandling.TrackingEventProcessor}.
          * Defaults to 5000 milliseconds.
          *
-         * @return interval between attempts to claim the token.
+         * @return the interval between attempts to claim tokens by a {@link org.axonframework.eventhandling.TrackingEventProcessor}.
          */
         public long getTokenClaimInterval() {
             return tokenClaimInterval;
@@ -195,26 +195,26 @@ public class EventProcessorProperties {
          * Sets the time to wait after a failed attempt to claim any token, before making another attempt.
          * Defaults to 5000 milliseconds.
          *
-         * @param tokenClaimInterval the interval between attempts to claim the token.
+         * @param tokenClaimInterval the interval between attempts to claim tokens by a {@link org.axonframework.eventhandling.TrackingEventProcessor}.
          */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
         }
 
         /**
-         * Returns the time unit used to define the token claim interval. Defaults to MILLISECONDS.
+         * Returns the time unit used to define tokens claim interval. Defaults to MILLISECONDS.
          *
-         * @return the time unit used to defined the token claim interval.
+         * @return the time unit used to defined tokens claim interval.
          */
         public TimeUnit getTokenClaimIntervalTimeUnit() {
             return tokenClaimIntervalTimeUnit;
         }
 
         /**
-         * Sets the time unit used to defined the token claim interval. It must be a valid value of {@link TimeUnit}.
+         * Sets the time unit used to defined tokens claim interval. It must be a valid value of {@link TimeUnit}.
          * Defaults to MILLISECONDS.
          *
-         * @param tokenClaimIntervalTimeUnit the time unit used to defined the token claim interval.
+         * @param tokenClaimIntervalTimeUnit the time unit used to defined tokens claim interval.
          */
         public void setTokenClaimIntervalTimeUnit(TimeUnit tokenClaimIntervalTimeUnit) {
             this.tokenClaimIntervalTimeUnit = tokenClaimIntervalTimeUnit;
