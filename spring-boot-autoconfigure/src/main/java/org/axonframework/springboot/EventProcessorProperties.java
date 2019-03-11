@@ -191,7 +191,6 @@ public class EventProcessorProperties {
             return tokenClaimInterval;
         }
 
-
         /**
          * Sets the time to wait after a failed attempt to claim any token, before making another attempt.
          * Defaults to 5000 milliseconds.
