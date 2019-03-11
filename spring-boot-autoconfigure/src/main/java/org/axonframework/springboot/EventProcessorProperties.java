@@ -32,10 +32,12 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Properties describing the settings for Event Processors.
@@ -88,6 +90,16 @@ public class EventProcessorProperties {
          * Indicates the number of segments that should be created when the processor starts for the first time.
          */
         private int initialSegmentCount = 1;
+
+        /**
+         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         */
+        private long tokenClaimInterval = 5000;
+
+        /**
+         * See {@link TrackingEventProcessorConfiguration#andTokenClaimInterval(long, java.util.concurrent.TimeUnit)}
+         */
+        private TimeUnit tokenClaimIntervalTimeUnit = TimeUnit.MILLISECONDS;
 
         /**
          * The maximum number of threads the processor should process events with. Defaults to the number of initial
@@ -163,6 +175,22 @@ public class EventProcessorProperties {
          */
         public void setInitialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
+        }
+
+        public long getTokenClaimInterval() {
+            return tokenClaimInterval;
+        }
+
+        public void setTokenClaimInterval(long tokenClaimInterval) {
+            this.tokenClaimInterval = tokenClaimInterval;
+        }
+
+        public TimeUnit getTokenClaimIntervalTimeUnit() {
+            return tokenClaimIntervalTimeUnit;
+        }
+
+        public void setTokenClaimIntervalTimeUnit(TimeUnit tokenClaimIntervalTimeUnit) {
+            this.tokenClaimIntervalTimeUnit = tokenClaimIntervalTimeUnit;
         }
 
         /**

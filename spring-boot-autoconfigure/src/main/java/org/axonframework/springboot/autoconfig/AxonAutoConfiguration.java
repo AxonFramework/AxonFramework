@@ -223,7 +223,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
                         .forParallelProcessing(v.getThreadCount())
                         .andBatchSize(v.getBatchSize())
-                        .andInitialSegmentsCount(v.getInitialSegmentCount());
+                        .andInitialSegmentsCount(v.getInitialSegmentCount())
+                        .andTokenClaimInterval(v.getTokenClaimInterval(), v.getTokenClaimIntervalTimeUnit());
                 Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource = resolveMessageSource(applicationContext, v);
                 eventProcessingConfigurer.registerTrackingEventProcessor(k, messageSource, c -> config);
             } else {
