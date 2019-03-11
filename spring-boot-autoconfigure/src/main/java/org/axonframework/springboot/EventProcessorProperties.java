@@ -93,11 +93,15 @@ public class EventProcessorProperties {
 
         /**
          * Indicates the time to wait after a failed attempt to claim any token, before making another attempt.
+         *
+         * Defaults to 5000 milliseconds.
          */
         private long tokenClaimInterval = 5000;
 
         /**
          * The time unit of the token claim interval.
+         *
+         * Defaults to MILLISECONDS.
          */
         private TimeUnit tokenClaimIntervalTimeUnit = TimeUnit.MILLISECONDS;
 
