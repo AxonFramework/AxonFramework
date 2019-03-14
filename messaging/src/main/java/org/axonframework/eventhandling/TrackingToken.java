@@ -61,7 +61,7 @@ public interface TrackingToken {
      * @return the position this token represents
      */
     default long position() {
-        return -1l;
+        return -1L;
     }
 
 }
