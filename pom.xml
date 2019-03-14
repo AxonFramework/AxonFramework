@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>4.1-SNAPSHOT</version>
+    <version>4.2-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
         <module>modelling</module>
@@ -96,7 +96,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.1</version>
+                        <version>0.8.3</version>
 
                         <executions>
                             <execution>
@@ -157,7 +157,7 @@
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <postgresql.version>42.2.5</postgresql.version>
         <junit4.version>4.12</junit4.version>
-        <axonserver.api.version>4.1-SNAPSHOT</axonserver.api.version>
+        <axonserver.api.version>4.1</axonserver.api.version>
 
         <!-- plugin versions -->
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
