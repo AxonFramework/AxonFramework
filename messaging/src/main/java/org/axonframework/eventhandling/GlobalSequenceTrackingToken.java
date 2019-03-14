@@ -131,4 +131,9 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
     public int compareTo(GlobalSequenceTrackingToken o) {
         return Long.compare(globalIndex, o.globalIndex);
     }
+
+    @Override
+    public long position() {
+        return globalIndex;
+    }
 }

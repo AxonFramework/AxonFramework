@@ -242,4 +242,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 ", tokenAtReset=" + tokenAtReset +
                 '}';
     }
+
+    @Override
+    public long position() {
+        if(currentToken != null){
+            return currentToken.position();
+        }
+        return -1L;
+    }
 }

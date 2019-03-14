@@ -56,4 +56,12 @@ public interface TrackingToken {
      */
     boolean covers(TrackingToken other);
 
+    /**
+     * Return the position this token represents
+     * @return the position this token represents
+     */
+    default long position() {
+        return -1l;
+    }
+
 }

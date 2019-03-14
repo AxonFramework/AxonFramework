@@ -228,4 +228,9 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     public String toString() {
         return "GapAwareTrackingToken{" + "index=" + index + ", gaps=" + gaps + '}';
     }
+
+    @Override
+    public long position() {
+        return index;
+    }
 }
