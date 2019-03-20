@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -303,11 +303,21 @@ public class AxonServerConnectionManager {
         inputStream.onNext(instruction);
     }
 
+    /**
+     * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
+     */
     public void shutdown() {
+        shutdown = true;
+        disconnect();
+        scheduler.shutdown();
+    }
+
+    /**
+     * Disconnects any active connection, forcing a new connection to be established when one is requested.
+     */
+    public void disconnect() {
         if (channel != null) {
             shutdown(channel);
         }
-        shutdown = true;
-        scheduler.shutdown();
     }
 }
