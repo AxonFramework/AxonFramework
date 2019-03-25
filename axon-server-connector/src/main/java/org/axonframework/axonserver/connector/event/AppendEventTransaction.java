@@ -29,11 +29,14 @@ import java.util.concurrent.TimeoutException;
  * Sends one or more events to AxonServer in a single transaction.
  */
 public class AppendEventTransaction {
+
+    private final int timeout;
     private final StreamObserver<Event> eventStreamObserver;
     private final CompletableFuture<Confirmation> observer;
     private final EventCipher eventCipher;
 
-    public AppendEventTransaction(StreamObserver<Event> eventStreamObserver, CompletableFuture<Confirmation> observer, EventCipher eventCipher) {
+    public AppendEventTransaction(int timeout, StreamObserver<Event> eventStreamObserver, CompletableFuture<Confirmation> observer, EventCipher eventCipher) {
+        this.timeout = timeout;
         this.eventStreamObserver = eventStreamObserver;
         this.observer = observer;
         this.eventCipher = eventCipher;
@@ -45,7 +48,7 @@ public class AppendEventTransaction {
 
     public void commit() throws InterruptedException, ExecutionException, TimeoutException {
         eventStreamObserver.onCompleted();
-        observer.get(10, TimeUnit.SECONDS);
+        observer.get(timeout, TimeUnit.MILLISECONDS);
     }
 
     public void rollback(Throwable reason) {
