@@ -152,7 +152,7 @@ public class AxonServerConfiguration {
     /**
      * Timeout (in milliseconds) to wait for response on commit
      */
-    private int commitTimeout = 30000;
+    private int commitTimeout = 10000;
 
     /**
      * Instantiate a default {@link AxonServerConfiguration}.
