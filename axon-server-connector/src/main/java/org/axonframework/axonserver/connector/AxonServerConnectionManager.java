@@ -300,7 +300,9 @@ public class AxonServerConnectionManager {
     }
 
     public void send(PlatformInboundInstruction instruction){
-        inputStream.onNext(instruction);
+        if (getChannel() != null) {
+            inputStream.onNext(instruction);
+        }
     }
 
     public void shutdown() {

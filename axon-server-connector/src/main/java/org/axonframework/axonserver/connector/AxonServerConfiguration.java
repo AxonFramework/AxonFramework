@@ -149,6 +149,10 @@ public class AxonServerConfiguration {
      * GRPC max inbound message size, 0 keeps default value
      */
     private int maxMessageSize = 0;
+    /**
+     * Timeout (in milliseconds) to wait for response on commit
+     */
+    private int commitTimeout = 10000;
 
     /**
      * Instantiate a default {@link AxonServerConfiguration}.
@@ -354,6 +358,14 @@ public class AxonServerConfiguration {
 
     public void setSnapshotPrefetch(int snapshotPrefetch) {
         this.snapshotPrefetch = snapshotPrefetch;
+    }
+
+    public int getCommitTimeout() {
+        return commitTimeout;
+    }
+
+    public void setCommitTimeout(int commitTimeout) {
+        this.commitTimeout = commitTimeout;
     }
 
     @SuppressWarnings("unused")

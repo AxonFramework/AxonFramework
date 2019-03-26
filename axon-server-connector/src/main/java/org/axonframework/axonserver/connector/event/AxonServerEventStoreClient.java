@@ -60,6 +60,7 @@ public class AxonServerEventStoreClient {
     private final ContextAddingInterceptor contextAddingInterceptor;
     private final EventCipher eventCipher;
     private final AxonServerConnectionManager axonServerConnectionManager;
+    private final int timeout;
 
     private boolean shutdown;
 
@@ -73,6 +74,7 @@ public class AxonServerEventStoreClient {
         this.tokenAddingInterceptor = new TokenAddingInterceptor(eventStoreConfiguration.getToken());
         this.eventCipher = eventStoreConfiguration.getEventCipher();
         this.axonServerConnectionManager = axonServerConnectionManager;
+        this.timeout = eventStoreConfiguration.getCommitTimeout();
         contextAddingInterceptor = new ContextAddingInterceptor(eventStoreConfiguration.getContext());
     }
 
@@ -191,7 +193,7 @@ public class AxonServerEventStoreClient {
 
     public AppendEventTransaction createAppendEventConnection() {
         CompletableFuture<Confirmation> futureConfirmation = new CompletableFuture<>();
-        return new AppendEventTransaction(eventStoreStub().appendEvent(new StreamObserver<Confirmation>() {
+        return new AppendEventTransaction(timeout, eventStoreStub().appendEvent(new StreamObserver<Confirmation>() {
             @Override
             public void onNext(Confirmation confirmation) {
                 futureConfirmation.complete(confirmation);
