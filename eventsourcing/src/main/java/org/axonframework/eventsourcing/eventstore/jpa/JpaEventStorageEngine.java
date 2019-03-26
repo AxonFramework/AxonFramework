@@ -22,25 +22,37 @@ import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericDomainEventEntry;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedDomainEventData;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -263,14 +275,17 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         if (events.isEmpty()) {
             return;
         }
-        try {
-            events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
-            if (explicitFlush) {
-                entityManager().flush();
+
+        transactionManager.executeInTransaction(() -> {
+            try {
+                events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
+                if (explicitFlush) {
+                    entityManager().flush();
+                }
+            } catch (Exception e) {
+                handlePersistenceException(e, events.get(0));
             }
-        } catch (Exception e) {
-            handlePersistenceException(e, events.get(0));
-        }
+        });
     }
 
     @Override

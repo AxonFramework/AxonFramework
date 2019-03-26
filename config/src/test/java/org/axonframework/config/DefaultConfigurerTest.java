@@ -198,7 +198,8 @@ public class DefaultConfigurerTest {
         assertEquals(1, config.getModules().size());
         assertExpectedModules(config,
                               AggregateConfiguration.class);
-        verify(transactionManager).startTransaction();
+
+        verify(transactionManager, times(2)).startTransaction();
     }
 
     @Test
@@ -222,7 +223,8 @@ public class DefaultConfigurerTest {
         assertTrue(config.getModules()
                          .stream()
                          .anyMatch(m -> m instanceof AggregateConfiguration));
-        verify(transactionManager).startTransaction();
+
+        verify(transactionManager, times(2)).startTransaction();
     }
 
     @Test
@@ -274,7 +276,8 @@ public class DefaultConfigurerTest {
         assertEquals(1, config.getModules().size());
         assertExpectedModules(config,
                               AggregateConfiguration.class);
-        verify(transactionManager).startTransaction();
+
+        verify(transactionManager, times(2)).startTransaction();
     }
 
     @Test

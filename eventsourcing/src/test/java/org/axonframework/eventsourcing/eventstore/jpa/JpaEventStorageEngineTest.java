@@ -20,6 +20,8 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
@@ -60,9 +62,9 @@ import javax.sql.DataSource;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
@@ -77,13 +79,11 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @PersistenceContext
     private EntityManager entityManager;
-
     private EntityManagerProvider entityManagerProvider;
-
     @Autowired
     private DataSource dataSource;
-
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
+    private TransactionManager transactionManager = spy(new NoOpTransactionManager());
 
     @Before
     public void setUp() throws SQLException {
@@ -283,6 +283,13 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         assertFalse(eventStoreResult.hasNextAvailable());
     }
 
+    @Test
+    public void testAppendEventsIsPerformedInATransaction() {
+        testSubject.appendEvents(createEvents(2));
+
+        verify(transactionManager).executeInTransaction(any());
+    }
+
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
@@ -306,7 +313,28 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                     .persistenceExceptionResolver(persistenceExceptionResolver)
                                     .batchSize(batchSize)
                                     .entityManagerProvider(entityManagerProvider)
-                                    .transactionManager(NoTransactionManager.INSTANCE)
+                                    .transactionManager(transactionManager)
                                     .build();
+    }
+
+    /**
+     * A non-final {@link TransactionManager} implementation, so that it can be spied upon through Mockito.
+     */
+    private class NoOpTransactionManager implements TransactionManager {
+
+        @Override
+        public Transaction startTransaction() {
+            return new Transaction() {
+                @Override
+                public void commit() {
+                    // No-op
+                }
+
+                @Override
+                public void rollback() {
+                    // No-op
+                }
+            };
+        }
     }
 }
