@@ -327,7 +327,8 @@ public class AxonServerQueryBus implements QueryBus {
             SubscriptionQueryBackpressure backPressure,
             int updateBufferSize
     ) {
-        String subscriptionId = query.getIdentifier();
+        SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(query);
+        String subscriptionId = interceptedQuery.getIdentifier();
 
         if (subscriptions.contains(subscriptionId)) {
             String errorMessage = "There already is a subscription query with subscription Id [" + subscriptionId + "]";
@@ -339,7 +340,7 @@ public class AxonServerQueryBus implements QueryBus {
         subscriptions.add(subscriptionId);
 
         AxonServerSubscriptionQueryResult result = new AxonServerSubscriptionQueryResult(
-                subscriptionSerializer.serialize(query),
+                subscriptionSerializer.serialize(interceptedQuery),
                 this.queryService()::subscription,
                 configuration,
                 backPressure,

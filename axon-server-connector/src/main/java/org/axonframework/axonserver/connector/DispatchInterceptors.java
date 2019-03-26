@@ -37,6 +37,7 @@ public class DispatchInterceptors<M extends Message<?>> {
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends M> T intercept(T message) {
         T messageToDispatch = message;
         for (MessageDispatchInterceptor<? super M> interceptor : dispatchInterceptors) {

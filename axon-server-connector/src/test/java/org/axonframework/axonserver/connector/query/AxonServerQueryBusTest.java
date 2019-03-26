@@ -29,6 +29,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
@@ -201,6 +203,23 @@ public class AxonServerQueryBusTest {
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 100));
 
         assertTrue(8 > testSubject.scatterGather(queryMessage, 550, TimeUnit.MILLISECONDS).count());
+    }
+
+    @Test
+    public void testSubscriptionQueryIsHandledByDispatchInterceptors() {
+        AtomicInteger counter = new AtomicInteger(0);
+
+        // Add a dispatch interceptor which increase the counter, to check whether it was called during a sub.query
+        testSubject.registerDispatchInterceptor(messages -> {
+            counter.incrementAndGet();
+            return (i, m) -> m;
+        });
+
+        testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>(
+                "query-payload", instanceOf(String.class), instanceOf(String.class)
+        ));
+
+        assertEquals(1, counter.get());
     }
 
     @Test
