@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -375,10 +374,7 @@ public class EventProcessingModuleTest {
     @Test
     public void testShutdown() throws NoSuchFieldException {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                .configureEventBus(c -> EmbeddedEventStore
-                        .builder()
-                        .storageEngine(new InMemoryEventStorageEngine())
-                        .build())
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
                         .registerEventHandler(c -> new TrackingEventHandler())
                         .registerTrackingEventProcessor("tracking")
