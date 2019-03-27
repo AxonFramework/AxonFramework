@@ -17,11 +17,13 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -42,6 +44,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class EventProcessingModuleTest {
@@ -367,6 +371,27 @@ public class EventProcessingModuleTest {
         } finally {
             config.shutdown();
         }
+    }
+
+    @Test
+    public void testShutdown() throws NoSuchFieldException {
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                .configureEventBus(c -> EmbeddedEventStore
+                        .builder()
+                        .storageEngine(new InMemoryEventStorageEngine())
+                        .build())
+                .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                        .registerEventHandler(c -> new TrackingEventHandler())
+                        .registerTrackingEventProcessor("tracking")
+                        .registerSubscribingEventProcessor("subscribing"))
+                .start();
+
+        configuration.shutdown();
+
+        assertNull(ReflectionUtils
+                .getFieldValue(SubscribingEventProcessor.class.getDeclaredField("eventBusRegistration"),
+                        configuration.eventProcessingConfiguration().eventProcessor("subscribing", SubscribingEventProcessor.class).get()));
+        assertFalse(configuration.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class).get().isRunning());
     }
 
     private void buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {

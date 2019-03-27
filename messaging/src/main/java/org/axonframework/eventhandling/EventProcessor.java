@@ -59,4 +59,14 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
      * Stop processing events.
      */
     void shutDown();
+
+    /**
+     * Returns the priority in the shutdown cycle of this processor
+     * A higher value means it is shutdown earlier
+     *
+     * @return the shutdownPriority of this event processor
+     */
+    default int shutDownPriority() {
+        return 0;
+    }
 }

@@ -184,7 +184,12 @@ public class EventProcessingModule
 
     @Override
     public void shutdown() {
-        eventProcessors.forEach((name, component) -> component.get().shutDown());
+        eventProcessors
+                .values()
+                .stream()
+                .map(Component::get)
+                .sorted(comparing(EventProcessor::shutDownPriority).reversed())
+                .forEach(EventProcessor::shutDown);
     }
     //</editor-fold>
 

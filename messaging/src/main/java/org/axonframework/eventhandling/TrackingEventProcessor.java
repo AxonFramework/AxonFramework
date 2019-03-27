@@ -612,6 +612,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
+    @Override
+    public int shutDownPriority() {
+        return Integer.MAX_VALUE;
+    }
+
     /**
      * Returns the number of threads this processor has available to assign segments. These threads may or may not
      * already be active.
