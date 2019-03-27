@@ -17,7 +17,6 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -388,8 +387,7 @@ public class EventProcessingModuleTest {
 
         configuration.shutdown();
 
-        assertNull(ReflectionUtils
-                .getFieldValue(SubscribingEventProcessor.class.getDeclaredField("eventBusRegistration"),
+        assertNull(getFieldValue(SubscribingEventProcessor.class.getDeclaredField("eventBusRegistration"),
                         configuration.eventProcessingConfiguration().eventProcessor("subscribing", SubscribingEventProcessor.class).get()));
         assertFalse(configuration.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class).get().isRunning());
     }
