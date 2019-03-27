@@ -373,7 +373,7 @@ public class EventProcessingModuleTest {
 
     @Test
     public void testShutdown() throws NoSuchFieldException {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+        Configuration configuration = configurer
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
                         .registerEventHandler(c -> new TrackingEventHandler())
