@@ -47,6 +47,8 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -219,6 +221,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return SimpleEventBus.builder()
                              .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
                              .build();
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public EventGateway eventGateway(EventBus eventBus) {
+        return DefaultEventGateway.builder().eventBus(eventBus).build();
     }
 
     @SuppressWarnings("unchecked")

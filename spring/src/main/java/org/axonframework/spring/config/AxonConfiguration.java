@@ -19,6 +19,8 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
@@ -136,6 +138,18 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Bean
     public QueryGateway queryGateway(QueryBus queryBus) {
         return DefaultQueryGateway.builder().queryBus(queryBus).build();
+    }
+
+    /**
+     * Returns the EventGateway used to publish events
+     *
+     * @param eventBus the event bus to be used by the gateway
+     * @return the EventGateway used to publish events
+     */
+    @NoBeanOfType(EventGateway.class)
+    @Bean
+    public EventGateway eventGateway(EventBus eventBus) {
+        return DefaultEventGateway.builder().eventBus(eventBus).build();
     }
 
     @Override
