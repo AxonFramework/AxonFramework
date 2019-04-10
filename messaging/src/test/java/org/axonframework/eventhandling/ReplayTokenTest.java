@@ -69,7 +69,7 @@ public class ReplayTokenTest {
     }
 
     @Test
-    public void testPosition_isNotPresent() {
+    public void testPositionIsNotPresent() {
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
         assertFalse(replayToken.position().isPresent());
     }

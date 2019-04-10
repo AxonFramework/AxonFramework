@@ -145,7 +145,7 @@ public class MergedTrackingTokenTest {
     }
 
     @Test
-    public void testPosition_isNotPresent() {
+    public void testPositionIsNotPresent() {
         MergedTrackingToken merged = new MergedTrackingToken(mock(TrackingToken.class), token(3));
         assertFalse(merged.position().isPresent());
     }
