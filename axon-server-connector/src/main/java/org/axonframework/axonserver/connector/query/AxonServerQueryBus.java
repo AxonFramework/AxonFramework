@@ -42,6 +42,7 @@ import org.axonframework.axonserver.connector.query.subscription.SubscriptionQue
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
+import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
@@ -528,23 +529,21 @@ public class AxonServerQueryBus implements QueryBus {
                 public void onError(Throwable ex) {
                     logger.warn("Received error from server: {}", ex.getMessage());
                     outboundStreamObserver = null;
-                    if (ex instanceof StatusRuntimeException
-                            && ((StatusRuntimeException) ex).getStatus().getCode()
-                                                            .equals(Status.UNAVAILABLE.getCode())) {
-                        return;
-                    }
-                    resubscribe();
                 }
 
                 @Override
                 public void onCompleted() {
-                    logger.debug("Received completed from server");
+                    logger.info("Received completed from server.");
                     outboundStreamObserver = null;
                 }
             };
 
+            ResubscribableStreamObserver<QueryProviderInbound> resubscribableStreamObserver = new ResubscribableStreamObserver<>(
+                    queryProviderInboundStreamObserver,
+                    t -> resubscribe());
+
             StreamObserver<QueryProviderOutbound> streamObserver =
-                    axonServerConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
+                    axonServerConnectionManager.getQueryStream(resubscribableStreamObserver, interceptors);
 
             logger.info("Creating new query stream subscriber");
 
