@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.LongStream;
@@ -230,7 +231,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     }
 
     @Override
-    public long position() {
-        return index;
+    public OptionalLong position() {
+        return OptionalLong.of(index);
     }
 }

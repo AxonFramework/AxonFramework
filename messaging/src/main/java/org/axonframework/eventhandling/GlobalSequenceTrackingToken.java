@@ -22,6 +22,7 @@ import org.axonframework.common.Assert;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.OptionalLong;
 
 /**
  * Tracking token based on the global sequence number of an event.
@@ -133,7 +134,7 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
     }
 
     @Override
-    public long position() {
-        return globalIndex;
+    public OptionalLong position() {
+        return OptionalLong.of(globalIndex);
     }
 }

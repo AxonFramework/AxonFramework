@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import java.util.OptionalLong;
+
 /**
  * Tag interface identifying a token that is used to identify the position of an event in an event stream. Event
  * processors use this token to keep track of the events they have processed and still need to process.
@@ -57,11 +59,13 @@ public interface TrackingToken {
     boolean covers(TrackingToken other);
 
     /**
-     * Return the position this token represents
-     * @return the position this token represents
+     * Return the estimated relative position this token represents.
+     * In case no estimation can be given an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return the estimated relative position of this token
      */
-    default long position() {
-        return -1L;
+    default OptionalLong position() {
+        return OptionalLong.empty();
     }
 
 }

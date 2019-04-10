@@ -144,6 +144,12 @@ public class MergedTrackingTokenTest {
         assertEquals(token(3), merged.unwrap(GlobalSequenceTrackingToken.class).orElse(null));
     }
 
+    @Test
+    public void testPosition_isNotPresent() {
+        MergedTrackingToken merged = new MergedTrackingToken(mock(TrackingToken.class), token(3));
+        assertFalse(merged.position().isPresent());
+    }
+
     private GlobalSequenceTrackingToken token(int sequence) {
         return new GlobalSequenceTrackingToken(sequence);
     }

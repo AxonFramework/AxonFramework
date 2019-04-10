@@ -65,6 +65,12 @@ public class ReplayTokenTest {
     @Test
     public void testPosition() {
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken, GapAwareTrackingToken.newInstance(11L, Collections.singleton(9L)));
-        assertEquals(11L, replayToken.position());
+        assertEquals(11L, replayToken.position().getAsLong());
+    }
+
+    @Test
+    public void testPosition_isNotPresent() {
+        TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
+        assertFalse(replayToken.position().isPresent());
     }
 }

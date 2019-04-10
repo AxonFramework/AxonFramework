@@ -57,6 +57,6 @@ public class GlobalSequenceTrackingTokenTest {
     public void testPosition() {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(1L);
 
-        assertEquals(1L, token.position());
+        assertEquals(1L, token.position().getAsLong());
     }
 }
