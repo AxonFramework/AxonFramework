@@ -35,6 +35,7 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
+import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
@@ -372,23 +373,21 @@ public class AxonServerCommandBus implements CommandBus {
                 public void onError(Throwable ex) {
                     logger.warn("Received error from server: {}", ex.getMessage());
                     subscriberStreamObserver = null;
-                    if (ex instanceof StatusRuntimeException
-                            && ((StatusRuntimeException) ex).getStatus().getCode()
-                                                            .equals(Status.UNAVAILABLE.getCode())) {
-                        return;
-                    }
-                    resubscribe();
                 }
 
                 @Override
                 public void onCompleted() {
-                    logger.debug("Received completed from server");
+                    logger.info("Received completed from server.");
                     subscriberStreamObserver = null;
                 }
             };
 
+            ResubscribableStreamObserver<CommandProviderInbound> resubscribableStreamObserver = new ResubscribableStreamObserver<>(
+                    commandsFromRoutingServer,
+                    t -> resubscribe());
+
             StreamObserver<CommandProviderOutbound> streamObserver =
-                    axonServerConnectionManager.getCommandStream(commandsFromRoutingServer, interceptors);
+                    axonServerConnectionManager.getCommandStream(resubscribableStreamObserver, interceptors);
 
             logger.info("Creating new command stream subscriber");
 

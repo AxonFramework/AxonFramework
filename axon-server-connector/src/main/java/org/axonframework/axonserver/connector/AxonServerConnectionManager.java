@@ -225,7 +225,7 @@ public class AxonServerConnectionManager {
 
                     @Override
                     public void onError(Throwable throwable) {
-                        logger.debug("Lost instruction stream from {} - {}", name, throwable.getMessage());
+                        logger.warn("Lost instruction stream from {} - {}", name, throwable.getMessage());
                         disconnectListeners.forEach(Runnable::run);
                         if( throwable instanceof StatusRuntimeException) {
                             StatusRuntimeException sre = (StatusRuntimeException)throwable;
