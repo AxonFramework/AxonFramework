@@ -158,7 +158,7 @@
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <postgresql.version>42.2.5</postgresql.version>
         <junit4.version>4.12</junit4.version>
-        <axonserver.api.version>4.1</axonserver.api.version>
+        <axonserver.api.version>4.2-SNAPSHOT</axonserver.api.version>
 
         <!-- plugin versions -->
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>

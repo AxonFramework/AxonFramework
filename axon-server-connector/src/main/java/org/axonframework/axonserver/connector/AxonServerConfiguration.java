@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.control.NodeInfo;
+import org.axonframework.axonserver.connector.connectionpreference.ConnectionPreference;
 import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -153,6 +154,11 @@ public class AxonServerConfiguration {
      * Timeout (in milliseconds) to wait for response on commit
      */
     private int commitTimeout = 10000;
+
+    /**
+     * Preference toward choosing the most suitable Axon Server node to connect to.
+     */
+    private ConnectionPreference connectionPreference;
 
     /**
      * Instantiate a default {@link AxonServerConfiguration}.
@@ -368,6 +374,14 @@ public class AxonServerConfiguration {
         this.commitTimeout = commitTimeout;
     }
 
+    public ConnectionPreference getConnectionPreference() {
+        return connectionPreference;
+    }
+
+    public void setConnectionPreference(ConnectionPreference connectionPreference) {
+        this.connectionPreference = connectionPreference;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
 
@@ -449,6 +463,11 @@ public class AxonServerConfiguration {
 
         public Builder clientId(String clientId) {
             instance.setClientId(clientId);
+            return this;
+        }
+
+        public Builder connectionPreference(ConnectionPreference connectionPreference) {
+            instance.setConnectionPreference(connectionPreference);
             return this;
         }
     }

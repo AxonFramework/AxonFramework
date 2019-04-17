@@ -82,10 +82,15 @@ public class AxonServerConnectionManager {
                 PlatformServiceGrpc.PlatformServiceBlockingStub stub = PlatformServiceGrpc.newBlockingStub(candidate)
                         .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
                 try {
-                    PlatformInfo clusterInfo = stub.getPlatformServer(ClientIdentification.newBuilder()
-                            .setClientId(connectInformation.getClientId())
-                            .setComponentName(connectInformation.getComponentName())
-                            .build());
+                    ClientIdentification.Builder clientIdentificationBuilder =
+                            ClientIdentification.newBuilder()
+                                                .setClientId(connectInformation.getClientId())
+                                                .setComponentName(connectInformation.getComponentName());
+                    if (connectInformation.getConnectionPreference() != null) {
+                        clientIdentificationBuilder.setConnectionPreference(connectInformation.getConnectionPreference()
+                                                                                              .convert());
+                    }
+                    PlatformInfo clusterInfo = stub.getPlatformServer(clientIdentificationBuilder.build());
                     if(isPrimary(nodeInfo, clusterInfo)) {
                         channel = candidate;
                     } else {

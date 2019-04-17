@@ -15,7 +15,6 @@
 
 package org.axonframework.axonserver.connector;
 
-import io.axoniq.axonserver.grpc.control.*;
 import io.grpc.stub.StreamObserver;
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
@@ -24,11 +23,18 @@ import io.axoniq.axonserver.grpc.control.PlatformInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Author: marc
  */
 public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase {
+
     private final int port;
+
+    private final List<ClientIdentification> clientIdentificationRequests = new CopyOnWriteArrayList<>();
 
     public PlatformService(int port) {
 
@@ -37,20 +43,25 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
 
     @Override
     public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
+        clientIdentificationRequests.add(request);
         responseObserver.onNext(PlatformInfo.newBuilder()
-                .setPrimary(NodeInfo.newBuilder()
-                                    .setGrpcPort(port)
-                                    .setHostName("localhost")
-                                    .setNodeName("test")
-                                    .setVersion(0)
-                                    .build())
-                .build());
+                                            .setPrimary(NodeInfo.newBuilder()
+                                                                .setGrpcPort(port)
+                                                                .setHostName("localhost")
+                                                                .setNodeName("test")
+                                                                .setVersion(0)
+                                                                .build())
+                                            .build());
         responseObserver.onCompleted();
+    }
 
+    public List<ClientIdentification> getClientIdentificationRequests() {
+        return Collections.unmodifiableList(clientIdentificationRequests);
     }
 
     @Override
-    public StreamObserver<PlatformInboundInstruction> openStream(StreamObserver<PlatformOutboundInstruction> responseObserver) {
+    public StreamObserver<PlatformInboundInstruction> openStream(
+            StreamObserver<PlatformOutboundInstruction> responseObserver) {
         return new StreamObserver<PlatformInboundInstruction>() {
             @Override
             public void onNext(PlatformInboundInstruction platformInboundInstruction) {
