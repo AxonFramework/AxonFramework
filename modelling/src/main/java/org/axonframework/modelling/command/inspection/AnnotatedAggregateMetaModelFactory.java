@@ -31,6 +31,7 @@ import org.axonframework.messaging.annotation.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -244,7 +245,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         private void doPublish(EventMessage<?> message, T target) {
-            getHandler(message).ifPresent(h -> {
+            getHandler(message).forEach(h -> {
                 try {
                     h.handle(message, target);
                 } catch (Exception e) {
@@ -281,8 +282,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          * @return the handler of the message if present on the model
          */
         @SuppressWarnings("unchecked")
-        protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
-            return eventHandlers.stream().filter(handler -> handler.canHandle(message)).findAny();
+        protected Stream<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
+            return eventHandlers.stream().filter(handler -> handler.canHandle(message));
         }
 
         @Override

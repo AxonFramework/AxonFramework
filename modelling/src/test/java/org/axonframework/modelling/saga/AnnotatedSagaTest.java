@@ -92,7 +92,7 @@ public class AnnotatedSagaTest {
         s.handle(new GenericEventMessage<>(new RegularEvent("id")));
         s.handle(new GenericEventMessage<>(new Object()));
         s.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
-        assertEquals(2, testSubject.invocationCount);
+        assertEquals(3, testSubject.invocationCount);
         assertFalse(s.isActive());
     }
 
@@ -118,7 +118,7 @@ public class AnnotatedSagaTest {
         s.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));
         s.handle(new GenericEventMessage<>(new Object()));
         s.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
-        assertEquals(2, testSubject.invocationCount);
+        assertEquals(3, testSubject.invocationCount);
         assertFalse(s.isActive());
     }
 

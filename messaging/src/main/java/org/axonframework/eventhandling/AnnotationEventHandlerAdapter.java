@@ -76,12 +76,14 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public Object handle(EventMessage<?> event) throws Exception {
+        Object firstResult = null;
         for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
             if (handler.canHandle(event)) {
-                return handler.handle(event, annotatedEventListener);
+                final Object intermediate = handler.handle(event, annotatedEventListener);
+                firstResult = firstResult == null ? intermediate : firstResult;
             }
         }
-        return null;
+        return firstResult;
     }
 
     @Override

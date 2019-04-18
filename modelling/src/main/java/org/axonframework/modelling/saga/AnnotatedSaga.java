@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -103,17 +104,19 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
     public final Object handle(EventMessage<?> event) {
+        Object firstResult = null;
         if (isActive) {
-            return metaModel.findHandlerMethods(event).stream()
+            metaModel.findHandlerMethods(event).stream()
                             .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)
                                                       .map(sh -> getAssociationValues()
                                                               .contains(sh.getAssociationValue(event)))
                                                       .orElse(true))
-                            .findFirst()
-                            .map(handler -> handle(handler, event))
+                            .map(handler -> Optional.ofNullable(handle(handler, event)))
+                            .reduce((a, b) -> a)
+                            .flatMap(x -> x)
                             .orElse(null);
         }
-        return null;
+        return firstResult;
     }
 
     private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
