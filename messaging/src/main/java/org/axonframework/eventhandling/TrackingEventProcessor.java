@@ -33,22 +33,8 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -277,6 +263,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         logger.warn("Error occurred. Starting retry mode.", e);
                     }
                     logger.warn("Releasing claim on token and preparing for retry in {}s", errorWaitTime);
+                    activeSegments.computeIfPresent(segment.getSegmentId(), (k, status) -> status.markError(e));
                     releaseToken(segment);
                     closeQuietly(eventStream);
                     eventStream = null;
@@ -736,31 +723,36 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         private final Segment segment;
         private final boolean caughtUp;
         private final TrackingToken trackingToken;
+        private final Throwable errorState;
 
         private TrackerStatus(Segment segment, TrackingToken trackingToken) {
-            this(segment, false, trackingToken);
+            this(segment, false, trackingToken, null);
         }
 
-        private TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken) {
+        private TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken, Throwable errorState) {
             this.segment = segment;
             this.caughtUp = caughtUp;
             this.trackingToken = trackingToken;
+            this.errorState = errorState;
         }
 
         private TrackerStatus caughtUp() {
             if (caughtUp) {
                 return this;
             }
-            return new TrackerStatus(segment, true, trackingToken);
+            return new TrackerStatus(segment, true, trackingToken, null);
         }
 
         private TrackerStatus advancedTo(TrackingToken trackingToken) {
             if (Objects.equals(this.trackingToken, trackingToken)) {
                 return this;
             }
-            return new TrackerStatus(segment, caughtUp, trackingToken);
+            return new TrackerStatus(segment, caughtUp, trackingToken, null);
         }
 
+        private TrackerStatus markError(Throwable error) {
+            return new TrackerStatus(segment, caughtUp, trackingToken, error);
+        }
 
         @Override
         public Segment getSegment() {
@@ -780,6 +772,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public TrackingToken getTrackingToken() {
             return WrappedToken.unwrapLowerBound(trackingToken);
+        }
+
+        @Override
+        public boolean isErrorState() {
+            return errorState != null;
+        }
+
+        @Override
+        public Throwable getError() {
+            return errorState;
         }
 
         private TrackingToken getInternalTrackingToken() {
