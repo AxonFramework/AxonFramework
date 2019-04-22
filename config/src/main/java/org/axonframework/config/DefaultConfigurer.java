@@ -227,6 +227,7 @@ public class DefaultConfigurer implements Configurer {
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
         components.put(EventUpcaster.class, upcasterChain);
+        components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
     }
 
     /**

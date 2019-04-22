@@ -40,6 +40,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -73,6 +74,7 @@ import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.DistributedCommandBusProperties;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.SerializerProperties;
+import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,22 +99,31 @@ import java.util.function.Function;
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
         DistributedCommandBusProperties.class,
-        SerializerProperties.class
+        SerializerProperties.class,
+        TagsConfigurationProperties.class
 })
 public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     private final EventProcessorProperties eventProcessorProperties;
     private final SerializerProperties serializerProperties;
+    private final TagsConfigurationProperties tagsConfigurationProperties;
     private final ApplicationContext applicationContext;
 
     private ClassLoader beanClassLoader;
 
     public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties,
                                  SerializerProperties serializerProperties,
+                                 TagsConfigurationProperties tagsConfigurationProperties,
                                  ApplicationContext applicationContext) {
         this.eventProcessorProperties = eventProcessorProperties;
         this.serializerProperties = serializerProperties;
+        this.tagsConfigurationProperties = tagsConfigurationProperties;
         this.applicationContext = applicationContext;
+    }
+
+    @Bean
+    public TagsConfiguration tagsConfiguration() {
+        return tagsConfigurationProperties.toTagsConfiguration();
     }
 
     @Bean

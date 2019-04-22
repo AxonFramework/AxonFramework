@@ -17,13 +17,14 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
-import org.axonframework.axonserver.connector.connectionpreference.ConnectionPreference;
-import org.axonframework.axonserver.connector.connectionpreference.ConnectionProperty;
 import org.axonframework.axonserver.connector.event.StubServer;
+import org.axonframework.config.TagsConfiguration;
 import org.junit.*;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -48,31 +49,18 @@ public class AxonServerConnectionManagerTest {
 
     @Test
     public void checkWhetherConnectionPreferenceIsSent() {
-        ConnectionPreference connectionPreference = new ConnectionPreference();
-        ConnectionProperty usRegion = new ConnectionProperty();
-        usRegion.setRequired(true);
-        usRegion.setValue("US");
-        usRegion.setWeight(10);
-        connectionPreference.addProperty("region", usRegion);
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder()
-                                                                       .connectionPreference(connectionPreference)
-                                                                       .build();
-        AxonServerConnectionManager axonServerConnectionManager = new AxonServerConnectionManager(configuration);
+        TagsConfiguration tags = new TagsConfiguration(Collections.singletonMap("key", "value"));
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        AxonServerConnectionManager axonServerConnectionManager = new AxonServerConnectionManager(configuration, tags);
 
         assertNotNull(axonServerConnectionManager.getChannel());
 
         List<ClientIdentification> clientIdentificationRequests = stubServer.getPlatformService()
                                                                             .getClientIdentificationRequests();
         assertEquals(1, clientIdentificationRequests.size());
-        io.axoniq.axonserver.grpc.control.ConnectionPreference expectedConnectionPreference =
-                clientIdentificationRequests.get(0).getConnectionPreference();
-        assertNotNull(expectedConnectionPreference);
-        assertEquals(1, expectedConnectionPreference.getPropertiesCount());
-        assertTrue(expectedConnectionPreference.containsProperties("region"));
-        io.axoniq.axonserver.grpc.control.ConnectionProperty region =
-                expectedConnectionPreference.getPropertiesMap().get("region");
-        assertTrue(region.getRequired());
-        assertEquals("US", region.getValue());
-        assertEquals(10, region.getWeight());
+        Map<String, String> expectedTags = clientIdentificationRequests.get(0).getTagsMap();
+        assertNotNull(expectedTags);
+        assertEquals(1, expectedTags.size());
+        assertEquals("value", expectedTags.get("key"));
     }
 }
