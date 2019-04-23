@@ -993,6 +993,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 state.set(State.PAUSED_ERROR);
             } finally {
                 activeSegments.remove(segment.getSegmentId());
+                logger.info("Worker for segment {} stopped.", segment);
                 if (availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
                     logger.info("No Worker Launcher active. Using current thread to assign segments.");
                     new WorkerLauncher().run();
@@ -1053,6 +1054,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                 TrackingToken token = tokenStore.fetchToken(processorName, segmentId);
                                 int[] segmentIds = tokenStore.fetchSegments(processorName);
                                 Segment segment = Segment.computeSegment(segmentId, segmentIds);
+                                logger.info("Worker assigned to segment {} for processing", segment);
                                 activeSegments.putIfAbsent(segmentId, new TrackerStatus(segment, token));
                             });
                         } catch (UnableToClaimTokenException ucte) {
