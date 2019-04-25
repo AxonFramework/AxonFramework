@@ -21,14 +21,15 @@ import org.junit.Test;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
-public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
+public class OptionalResponseTypeTest extends AbstractResponseTypeTest<Optional<AbstractResponseTypeTest.QueryResponse>> {
 
-    public InstanceResponseTypeTest() {
-        super(new InstanceResponseType<>(QueryResponse.class));
+    public OptionalResponseTypeTest() {
+        super(new OptionalResponseType<>(QueryResponse.class));
     }
 
     @Test
@@ -206,32 +207,41 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     }
 
     @Test
-    public void testConvertReturnsSingleResponseAsIs() {
+    public void testConvertReturnsSingleResponseAsProvidedOptional() {
         QueryResponse testResponse = new QueryResponse();
 
-        QueryResponse result = testSubject.convert(testResponse);
+        Optional<QueryResponse> result = testSubject.convert(testResponse);
 
-        assertEquals(testResponse, result);
+        assertTrue(result.isPresent());
+        assertEquals(testResponse, result.get());
+    }
+
+    @Test
+    public void testConvertReturnsNullResponseAsEmptyOptional() {
+        Optional<QueryResponse> result = testSubject.convert(null);
+
+        assertFalse(result.isPresent());
     }
 
     @Test
     public void testConvertReturnsSingleResponseAsIsForSubTypedResponse() {
         SubTypedQueryResponse testResponse = new SubTypedQueryResponse();
 
-        QueryResponse result = testSubject.convert(testResponse);
+        Optional<QueryResponse> result = testSubject.convert(testResponse);
 
-        assertEquals(testResponse, result);
+        assertTrue(result.isPresent());
+        assertEquals(testResponse, result.get());
     }
 
     @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForDifferentSingleInstanceResponse() {
-        QueryResponse result = testSubject.convert(new QueryResponseInterface() {});
+        Optional<QueryResponse> result = testSubject.convert(new QueryResponseInterface() {});
     }
 
     @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForMultipleInstanceResponse() {
-        QueryResponse result = testSubject.convert(new ArrayList<QueryResponse>());
+        Optional<QueryResponse> result = testSubject.convert(new ArrayList<QueryResponse>());
     }
 }
