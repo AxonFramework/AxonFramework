@@ -26,15 +26,17 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
+import org.axonframework.axonserver.connector.util.BufferingSpliterator;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
+import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Generic client for EventStore through AxonServer. Does not require any Axon framework classes.
@@ -47,6 +49,7 @@ public class AxonServerEventStoreClient {
     private final EventCipher eventCipher;
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final int timeout;
+    private final AxonServerConfiguration eventStoreConfiguration;
 
     private boolean shutdown;
 
@@ -57,6 +60,7 @@ public class AxonServerEventStoreClient {
      * @param axonServerConnectionManager manager for connections to AxonServer platform
      */
     public AxonServerEventStoreClient(AxonServerConfiguration eventStoreConfiguration, AxonServerConnectionManager axonServerConnectionManager) {
+        this.eventStoreConfiguration = eventStoreConfiguration;
         this.tokenAddingInterceptor = new TokenAddingInterceptor(eventStoreConfiguration.getToken());
         this.eventCipher = eventStoreConfiguration.getEventCipher();
         this.axonServerConnectionManager = axonServerConnectionManager;
@@ -83,38 +87,11 @@ public class AxonServerEventStoreClient {
      *
      * @param request The request describing the aggregate to retrieve messages for
      * @return a Stream providing access to Events published by the aggregate described in the request
-     * @throws ExecutionException   when an error was reported while reading events
-     * @throws InterruptedException when the thread was interrupted while reading events from the server
      */
-    public Stream<Event> listAggregateEvents(GetAggregateEventsRequest request) throws ExecutionException, InterruptedException {
-        CompletableFuture<Stream<Event>> stream = new CompletableFuture<>();
-        long before = System.currentTimeMillis();
-
-        eventStoreStub().listAggregateEvents(request, new StreamObserver<Event>() {
-            Stream.Builder<Event> eventStream = Stream.builder();
-            int count;
-
-            @Override
-            public void onNext(Event event) {
-                eventStream.accept(eventCipher.decrypt(event));
-                count++;
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                checkConnectionException(throwable);
-                stream.completeExceptionally(GrpcExceptionParser.parse(throwable));
-            }
-
-            @Override
-            public void onCompleted() {
-                stream.complete(eventStream.build());
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Done request for {}: {}ms, {} events", request.getAggregateId(), System.currentTimeMillis() - before, count);
-                }
-            }
-        });
-        return stream.get();
+    public Stream<Event> listAggregateEvents(GetAggregateEventsRequest request) {
+        BufferingSpliterator<Event> queue = new BufferingSpliterator<>();
+        eventStoreStub().listAggregateEvents(request, new StreamingEventStreamObserver<GetAggregateEventsRequest>(queue, request.getAggregateId()));
+        return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
     /**
@@ -238,36 +215,10 @@ public class AxonServerEventStoreClient {
         return completableFuture;
     }
 
-    public Stream<Event> listAggregateSnapshots(GetAggregateSnapshotsRequest request)
-            throws ExecutionException, InterruptedException {
-        CompletableFuture<Stream<Event>> stream = new CompletableFuture<>();
-        long before = System.currentTimeMillis();
-
-        eventStoreStub().listAggregateSnapshots(request, new StreamObserver<Event>() {
-            Stream.Builder<Event> eventStream = Stream.builder();
-            int count;
-
-            @Override
-            public void onNext(Event event) {
-                eventStream.accept(eventCipher.decrypt(event));
-                count++;
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                checkConnectionException(throwable);
-                stream.completeExceptionally(GrpcExceptionParser.parse(throwable));
-            }
-
-            @Override
-            public void onCompleted() {
-                stream.complete(eventStream.build());
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Done request for {}: {}ms, {} events", request.getAggregateId(), System.currentTimeMillis() - before, count);
-                }
-            }
-        });
-        return stream.get();
+    public Stream<Event> listAggregateSnapshots(GetAggregateSnapshotsRequest request) {
+        BufferingSpliterator<Event> queue = new BufferingSpliterator<>(eventStoreConfiguration.getInitialNrOfPermits());
+        eventStoreStub().listAggregateSnapshots(request, new StreamingEventStreamObserver(queue, request.getAggregateId()));
+        return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
     private class SingleResultStreamObserver<T> implements StreamObserver<T> {
@@ -292,5 +243,41 @@ public class AxonServerEventStoreClient {
         public void onCompleted() {
             if( ! future.isDone()) future.completeExceptionally(new AxonServerException("AXONIQ-0001", "Async call completed before answer"));
         }
+    }
+
+    private class StreamingEventStreamObserver<ReqT> extends UpstreamAwareStreamObserver<ReqT, Event> {
+        private final long before;
+        private final String aggregateId;
+        private int count;
+        private final BufferingSpliterator<Event> events;
+
+        public StreamingEventStreamObserver(BufferingSpliterator<Event> queue, String aggregateId) {
+            this.before = System.currentTimeMillis();
+            this.events = queue;
+            this.aggregateId = aggregateId;
+        }
+
+        @Override
+        public void onNext(Event event) {
+            if (!events.put(eventCipher.decrypt(event))) {
+                getRequestStream().cancel("Client requested cancellation", null);
+            }
+            count++;
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            checkConnectionException(throwable);
+            events.cancel(throwable);
+        }
+
+        @Override
+        public void onCompleted() {
+            events.cancel(null);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done request for {}: {}ms, {} events", aggregateId, System.currentTimeMillis() - before, count);
+            }
+        }
+
     }
 }

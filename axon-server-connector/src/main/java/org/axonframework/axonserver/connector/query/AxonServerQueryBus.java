@@ -17,14 +17,9 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.query.QueryComplete;
-import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
-import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
-import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
-import io.axoniq.axonserver.grpc.query.QueryRequest;
-import io.axoniq.axonserver.grpc.query.QueryResponse;
-import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
+import io.axoniq.axonserver.grpc.query.*;
 import io.axoniq.axonserver.grpc.query.QuerySubscription;
+import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -39,44 +34,21 @@ import org.axonframework.axonserver.connector.query.subscription.AxonServerSubsc
 import org.axonframework.axonserver.connector.query.subscription.DeserializedResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionQueryRequestTarget;
-import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
-import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
+import org.axonframework.axonserver.connector.util.*;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -253,8 +225,8 @@ public class AxonServerQueryBus implements QueryBus {
                                                                 long timeout,
                                                                 TimeUnit timeUnit) {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
-        QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator =
-                new QueueBackedSpliterator<>(timeout, timeUnit);
+        BufferingSpliterator<QueryResponseMessage<R>> resultSpliterator =
+                new BufferingSpliterator<>(Instant.now().plusMillis(timeUnit.toMillis(timeout)));
         QueryRequest queryRequest = serializer.serializeRequest(interceptedQuery,
                                                                 SCATTER_GATHER_NUMBER_OF_RESULTS,
                                                                 timeUnit.toMillis(timeout),
@@ -262,15 +234,17 @@ public class AxonServerQueryBus implements QueryBus {
         queryService()
                 .withDeadlineAfter(timeout, timeUnit)
                 .query(queryRequest,
-                       new StreamObserver<QueryResponse>() {
+                       new UpstreamAwareStreamObserver<QueryRequest, QueryResponse>() {
                            @Override
                            public void onNext(QueryResponse queryResponse) {
                                logger.debug("Received query response [{}]", queryResponse);
                                if (queryResponse.hasErrorMessage()) {
-                                   logger.warn("The received query response has error message [{}]",
+                                   logger.debug("The received query response has error message [{}]",
                                                queryResponse.getErrorMessage());
                                } else {
-                                   resultSpliterator.put(serializer.deserializeResponse(queryResponse));
+                                   if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse))) {
+                                       getRequestStream().cancel("Cancellation requested by client", null);
+                                   }
                                }
                            }
 
@@ -289,7 +263,7 @@ public class AxonServerQueryBus implements QueryBus {
                            }
                        });
 
-        return StreamSupport.stream(resultSpliterator, false);
+        return StreamSupport.stream(resultSpliterator, false).onClose(() -> resultSpliterator.cancel(null));
     }
 
     private boolean isDeadlineExceeded(Throwable throwable) {
@@ -315,7 +289,7 @@ public class AxonServerQueryBus implements QueryBus {
         this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
     }
 
-    public void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
+    private void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
         Collection<Consumer<QueryProviderInbound>> consumers =
                 queryHandlers.computeIfAbsent(requestCase, rc -> new CopyOnWriteArraySet<>());
         consumers.add(consumer);
