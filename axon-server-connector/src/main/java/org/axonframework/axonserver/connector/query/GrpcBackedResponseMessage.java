@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
@@ -53,12 +54,12 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
      */
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer serializer) {
         this.queryResponse = queryResponse;
-        this.serializedPayload = queryResponse.hasPayload() && !"empty".equalsIgnoreCase(queryResponse.getPayload()
-                                                                                                      .getType())
+        this.serializedPayload = queryResponse.hasPayload() && !SerializedType.emptyType().getName().equalsIgnoreCase(queryResponse.getPayload().getType())
                 ? new LazyDeserializingObject<>(new GrpcSerializedObject(queryResponse.getPayload()), serializer)
                 : null;
         this.exception = queryResponse.hasErrorMessage()
-                ? ErrorCode.getFromCode(queryResponse.getErrorCode()).convert(queryResponse.getErrorMessage())
+                ? ErrorCode.getFromCode(queryResponse.getErrorCode()).convert(queryResponse.getErrorMessage(),
+                                                                              serializedPayload == null ? () -> null : serializedPayload::getObject)
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryResponse.getMetaDataMap(), serializer);
     }

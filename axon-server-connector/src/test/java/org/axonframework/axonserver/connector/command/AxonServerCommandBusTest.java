@@ -26,16 +26,13 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -46,7 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -171,7 +168,8 @@ public class AxonServerCommandBusTest {
         });
         waiter.await();
         assertTrue(resultHolder.get().isExceptional());
-        assertTrue(resultHolder.get().exceptionResult() instanceof CommandExecutionException);
+        assertEquals(CommandExecutionException.class, resultHolder.get().exceptionResult().getClass());
+        assertEquals("give me an exception", ((CommandExecutionException)resultHolder.get().exceptionResult()).getDetails().orElse(null));
     }
 
     @Test

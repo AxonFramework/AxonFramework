@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +17,13 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.command.Command;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.commandhandling.*;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +53,8 @@ public class CommandSerializerTest {
         CommandMessage message = new GenericCommandMessage<>("payload", metadata);
         Command command = testSubject.serialize(message, "routingKey", 1);
         CommandMessage<?> deserialize = testSubject.deserialize(command);
+
+        assertEquals(message.getIdentifier(), deserialize.getIdentifier());
         assertEquals(message.getIdentifier(), deserialize.getIdentifier());
         assertEquals(message.getCommandName(), deserialize.getCommandName());
         assertEquals(message.getMetaData(), deserialize.getMetaData());
@@ -68,6 +68,8 @@ public class CommandSerializerTest {
                                                                           MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
         CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
+
+        assertEquals(response.getIdentifier(), deserialize.getIdentifier());
         assertEquals(response.getPayload(), deserialize.getPayload());
         assertEquals(response.getMetaData(), deserialize.getMetaData());
         assertFalse(response.isExceptional());
@@ -81,10 +83,31 @@ public class CommandSerializerTest {
                                                                           MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
         CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
+
+        assertEquals(response.getIdentifier(), deserialize.getIdentifier());
         assertEquals(response.getMetaData(), deserialize.getMetaData());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+    }
+
+    @Test
+    public void testSerializeExceptionalResponseWithDetails() {
+        Exception exception = new CommandExecutionException("oops", null, "Details");
+        CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
+                                                                          MetaData.with("test", "testValue"));
+        CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
+        assertEquals(response.getIdentifier(), outbound.getCommandResponse().getMessageIdentifier());
+        CommandResultMessage<?> deserialize = testSubject.deserialize(outbound.getCommandResponse());
+
+        assertEquals(response.getIdentifier(), deserialize.getIdentifier());
+        assertEquals(response.getMetaData(), deserialize.getMetaData());
+        assertTrue(deserialize.isExceptional());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+        Throwable actual = deserialize.optionalExceptionResult().get();
+        assertTrue(actual instanceof CommandExecutionException);
+        assertEquals("Details", ((CommandExecutionException)actual).getDetails().orElse("None"));
     }
 
 }

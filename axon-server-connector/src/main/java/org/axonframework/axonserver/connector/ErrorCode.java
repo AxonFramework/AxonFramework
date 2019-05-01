@@ -27,11 +27,12 @@ import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.EventPublicationFailedException;
+import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryExecutionException;
 
-import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import static java.util.Arrays.stream;
 
@@ -41,59 +42,60 @@ import static java.util.Arrays.stream;
  */
 public enum ErrorCode {
     // Generic errors processing client request
-    AUTHENTICATION_TOKEN_MISSING("AXONIQ-1000", AxonServerException::new),
-    AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", AxonServerException::new),
+    AUTHENTICATION_TOKEN_MISSING("AXONIQ-1000", (code, error, details) -> new AxonServerException(code, error)),
+    AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", (code, error, details) -> new AxonServerException(code, error)),
 
     //Event publishing errors
-    INVALID_EVENT_SEQUENCE("AXONIQ-2000", (code, error) -> new ConcurrencyException(error.getMessage(), new AxonServerException(code, error))),
-    NO_EVENT_STORE_MASTER_AVAILABLE("AXONIQ-2100", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
-    EVENT_PAYLOAD_TOO_LARGE("AXONIQ-2001", (code, error) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
+    INVALID_EVENT_SEQUENCE("AXONIQ-2000", (code, error, details) -> new ConcurrencyException(error.getMessage(), new AxonServerException(code, error))),
+    NO_EVENT_STORE_MASTER_AVAILABLE("AXONIQ-2100", (code, error, details) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
+    EVENT_PAYLOAD_TOO_LARGE("AXONIQ-2001", (code, error, details) -> new EventPublicationFailedException(error.getMessage(), new AxonServerException(code, error))),
 
     //Communication errors
-    CONNECTION_FAILED("AXONIQ-3001", AxonServerException::new),
-    GRPC_MESSAGE_TOO_LARGE("AXONIQ-3002", AxonServerException::new),
+    CONNECTION_FAILED("AXONIQ-3001", (code, error, details) -> new AxonServerException(code, error)),
+    GRPC_MESSAGE_TOO_LARGE("AXONIQ-3002", (code, error, details) -> new AxonServerException(code, error)),
 
     // Command errors
-    NO_HANDLER_FOR_COMMAND("AXONIQ-4000", (code, error) -> new NoHandlerForCommandException(error.getMessage())),
-    COMMAND_EXECUTION_ERROR("AXONIQ-4002", (code, error) -> new CommandExecutionException(error.getMessage(),  new AxonServerRemoteCommandHandlingException(code, error))),
-    COMMAND_DISPATCH_ERROR("AXONIQ-4003", AxonServerCommandDispatchException::new),
-    CONCURRENCY_EXCEPTION("AXONIQ-4004", (code, error) -> new ConcurrencyException(error.getMessage(), new AxonServerRemoteCommandHandlingException(code, error))),
+    NO_HANDLER_FOR_COMMAND("AXONIQ-4000", (code, error, details) -> new NoHandlerForCommandException(error.getMessage())),
+    COMMAND_EXECUTION_ERROR("AXONIQ-4002", (code, error, details) -> new CommandExecutionException(error.getMessage(), new AxonServerRemoteCommandHandlingException(code, error), details.get())),
+    COMMAND_DISPATCH_ERROR("AXONIQ-4003", (code, error, details) -> new AxonServerCommandDispatchException(code, error)),
+    CONCURRENCY_EXCEPTION("AXONIQ-4004", (code, error, details) -> new ConcurrencyException(error.getMessage(), new AxonServerRemoteCommandHandlingException(code, error))),
 
     //Query errors
-    NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code,error) -> new NoHandlerForQueryException(error.getMessage())),
-    QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error) -> new QueryExecutionException(
-            error.getMessage(), new AxonServerRemoteQueryHandlingException(code, error))
+    NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code, error, details) -> new NoHandlerForQueryException(error.getMessage())),
+    QUERY_EXECUTION_ERROR("AXONIQ-5001", (code, error, details) -> new QueryExecutionException(error.getMessage(),
+                                                                                               new AxonServerRemoteQueryHandlingException(code, error),
+                                                                                               details.get())
     ),
-    QUERY_DISPATCH_ERROR("AXONIQ-5002", AxonServerQueryDispatchException::new),
+    QUERY_DISPATCH_ERROR("AXONIQ-5002", (code, error, details) -> new AxonServerQueryDispatchException(code, error)),
 
     // Internal errors
-    DATAFILE_READ_ERROR( "AXONIQ-9000", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
-    INDEX_READ_ERROR( "AXONIQ-9001", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
-    DATAFILE_WRITE_ERROR( "AXONIQ-9100", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
-    INDEX_WRITE_ERROR( "AXONIQ-9101", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
-    DIRECTORY_CREATION_FAILED("AXONIQ-9102", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
-    VALIDATION_FAILED( "AXONIQ-9200", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
-    TRANSACTION_ROLLED_BACK( "AXONIQ-9900", (code, error) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    DATAFILE_READ_ERROR("AXONIQ-9000", (code, error, details) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    INDEX_READ_ERROR("AXONIQ-9001", (code, error, details) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    DATAFILE_WRITE_ERROR("AXONIQ-9100", (code, error, details) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    INDEX_WRITE_ERROR("AXONIQ-9101", (code, error, details) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    DIRECTORY_CREATION_FAILED("AXONIQ-9102", (code, error, details) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    VALIDATION_FAILED("AXONIQ-9200", (code, error, details) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
+    TRANSACTION_ROLLED_BACK("AXONIQ-9900", (code, error, details) -> new EventStoreException(error.getMessage(), new AxonServerException(code, error))),
 
     //Default
-    OTHER("AXONIQ-0001", AxonServerException::new);
+    OTHER("AXONIQ-0001", (code, error, details) -> new AxonServerException(code, error));
 
     private final String errorCode;
-    private final BiFunction<String, ErrorMessage, ? extends AxonException> exceptionBuilder;
+    private final ExceptionBuilder exceptionBuilder;
+
+    public static ErrorCode getFromCode(String code) {
+        return stream(values()).filter(value -> value.errorCode.equals(code)).findFirst().orElse(OTHER);
+    }
 
     /**
      * Initializes the ErrorCode using the given {@code code} and {@code exceptionBuilder}
      *
-     * @param errorCode the code of the error
+     * @param errorCode        the code of the error
      * @param exceptionBuilder the function to build the relevant Axon Framework exception
      */
-    ErrorCode(String errorCode, BiFunction<String, ErrorMessage, ? extends AxonException> exceptionBuilder) {
+    ErrorCode(String errorCode, ExceptionBuilder exceptionBuilder) {
         this.errorCode = errorCode;
         this.exceptionBuilder = exceptionBuilder;
-    }
-
-    public static ErrorCode getFromCode(String code){
-        return stream(values()).filter(value -> value.errorCode.equals(code)).findFirst().orElse(OTHER);
     }
 
     public String errorCode() {
@@ -104,10 +106,26 @@ public enum ErrorCode {
      * Converts the {@code errorMessage} to the relevant AxonException
      *
      * @param errorMessage the descriptor of the error
+     * @param details      a supplier of (optional) application-specific details to be included in Exception, when
+     *                     appropriate
      * @return the Axon Framework exception
      */
-    public AxonException convert(ErrorMessage errorMessage){
-        return exceptionBuilder.apply(errorCode, errorMessage);
+    public AxonException convert(ErrorMessage errorMessage, Supplier<Object> details) {
+        if (details == null) {
+            // safeguard to prevent NullPointerException
+            return convert(errorMessage);
+        }
+        return exceptionBuilder.buildException(errorCode, errorMessage, details);
+    }
+
+    /**
+     * Converts the {@code errorMessage} to the relevant AxonException
+     *
+     * @param errorMessage the descriptor of the error
+     * @return the Axon Framework exception
+     */
+    public AxonException convert(ErrorMessage errorMessage) {
+        return exceptionBuilder.buildException(errorCode, errorMessage, () -> null);
     }
 
     /**
@@ -116,18 +134,24 @@ public enum ErrorCode {
      * @param throwable the descriptor of the error
      * @return the Axon Framework exception
      */
-    public AxonException convert(Throwable throwable){
+    public AxonException convert(Throwable throwable) {
         return convert("", throwable);
     }
 
     /**
      * Converts the {@code source} and the {@code throwable} to the relevant AxonException
      *
-     * @param source The location that originally reported the error
+     * @param source    The location that originally reported the error
      * @param throwable the descriptor of the error
      * @return the Axon Framework exception
      */
-    public AxonException convert(String source, Throwable throwable){
-        return convert(ExceptionSerializer.serialize(source, throwable));
+    public AxonException convert(String source, Throwable throwable) {
+        return convert(ExceptionSerializer.serialize(source, throwable), () -> HandlerExecutionException.resolveDetails(throwable).orElse(null));
+    }
+
+    private interface ExceptionBuilder {
+
+        AxonException buildException(String message, ErrorMessage errorMessage, Supplier<Object> details);
+
     }
 }
