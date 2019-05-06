@@ -54,6 +54,6 @@ public class TagsConfiguration {
      * @return tags represented by key-value pairs
      */
     public Map<String, String> getTags() {
-        return tags;
+        return Collections.unmodifiableMap(tags);
     }
 }
