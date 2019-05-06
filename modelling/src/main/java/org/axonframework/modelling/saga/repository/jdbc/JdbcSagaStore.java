@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,6 +39,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
@@ -71,7 +72,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
         builder.validate();
         this.connectionProvider = builder.connectionProvider;
         this.sqlSchema = builder.sqlSchema;
-        this.serializer = builder.serializer;
+        this.serializer = builder.serializer.get();
     }
 
     /**
@@ -307,7 +308,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
 
         private ConnectionProvider connectionProvider;
         private SagaSqlSchema sqlSchema = new GenericSagaSqlSchema();
-        private Serializer serializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
 
         /**
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
@@ -361,7 +362,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
-            this.serializer = serializer;
+            this.serializer = () -> serializer;
             return this;
         }
 
