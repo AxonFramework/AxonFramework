@@ -25,11 +25,13 @@ import java.util.concurrent.TimeUnit;
 public class StubServer {
 
     private final Server server;
+    private final PlatformService platformService;
 
     public StubServer(int port) {
+        platformService = new PlatformService(port);
         server = NettyServerBuilder.forPort(port)
                                    .addService(new EventStoreImpl())
-                                   .addService(new PlatformService(port))
+                                   .addService(platformService)
                                    .build();
     }
 
@@ -40,5 +42,9 @@ public class StubServer {
     public void shutdown() throws InterruptedException {
         server.shutdown();
         server.awaitTermination(1, TimeUnit.SECONDS);
+    }
+
+    public PlatformService getPlatformService() {
+        return platformService;
     }
 }

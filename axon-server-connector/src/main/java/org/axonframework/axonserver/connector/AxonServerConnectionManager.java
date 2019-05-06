@@ -31,6 +31,7 @@ import io.netty.handler.ssl.SslContext;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.config.TagsConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,10 +66,29 @@ public class AxonServerConnectionManager {
     private final List<Function<Runnable, Runnable>> reconnectInterceptors = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonServerConfiguration connectInformation;
+    private final TagsConfiguration tagsConfiguration;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
+    /**
+     * Initializes the Axon Server Connection Manager with the connect information. The empty tags configuration is used
+     * in this case.
+     *
+     * @param connectInformation Axon Server Configuration
+     */
     public AxonServerConnectionManager(AxonServerConfiguration connectInformation) {
+        this(connectInformation, new TagsConfiguration());
+    }
+
+    /**
+     * Initializes the Axon Server Connection Manager with connect information and tags configuration.
+     *
+     * @param connectInformation Axon Server Configuration
+     * @param tagsConfiguration Tags Configuration
+     */
+    public AxonServerConnectionManager(AxonServerConfiguration connectInformation,
+                                       TagsConfiguration tagsConfiguration) {
         this.connectInformation = connectInformation;
+        this.tagsConfiguration = tagsConfiguration;
     }
 
     public synchronized Channel getChannel() {
@@ -82,10 +102,14 @@ public class AxonServerConnectionManager {
                 PlatformServiceGrpc.PlatformServiceBlockingStub stub = PlatformServiceGrpc.newBlockingStub(candidate)
                         .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
                 try {
-                    PlatformInfo clusterInfo = stub.getPlatformServer(ClientIdentification.newBuilder()
-                            .setClientId(connectInformation.getClientId())
-                            .setComponentName(connectInformation.getComponentName())
-                            .build());
+                    ClientIdentification clientIdentification =
+                            ClientIdentification.newBuilder()
+                                                .setClientId(connectInformation.getClientId())
+                                                .setComponentName(connectInformation.getComponentName())
+                                                .putAllTags(tagsConfiguration.getTags())
+                                                .build();
+
+                    PlatformInfo clusterInfo = stub.getPlatformServer(clientIdentification);
                     if(isPrimary(nodeInfo, clusterInfo)) {
                         channel = candidate;
                     } else {

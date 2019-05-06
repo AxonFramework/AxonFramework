@@ -55,12 +55,14 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
@@ -76,6 +78,7 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
+@EnableConfigurationProperties(TagsConfigurationProperties.class)
 public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
@@ -95,8 +98,9 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean(destroyMethod = "shutdown")
-    public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration routingConfiguration) {
-        return new AxonServerConnectionManager(routingConfiguration);
+    public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration routingConfiguration,
+                                                                 TagsConfigurationProperties tagsConfigurationProperties) {
+        return new AxonServerConnectionManager(routingConfiguration, tagsConfigurationProperties.toTagsConfiguration());
     }
 
     @Bean(destroyMethod = "disconnect")
