@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,12 +17,7 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.command.Command;
-import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
-import io.axoniq.axonserver.grpc.command.CommandResponse;
-import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.command.CommandSubscription;
+import io.axoniq.axonserver.grpc.command.*;
 import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -54,11 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -216,7 +207,7 @@ public class AxonServerCommandBus implements CommandBus {
                               }
                     );
         } catch (Exception e) {
-            logger.warn("There was a problem dispatching command [{}].", commandMessage, e);
+            logger.debug("There was a problem dispatching command [{}].", commandMessage, e);
             commandCallback.onResult(
                     commandMessage,
                     asCommandResultMessage(ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), e))
@@ -288,6 +279,7 @@ public class AxonServerCommandBus implements CommandBus {
                 return;
             }
 
+            logger.info("Resubscribing Command handlers with AxonServer");
             try {
                 StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
                 subscribedCommands.forEach(command -> outboundStreamObserver.onNext(
@@ -370,7 +362,7 @@ public class AxonServerCommandBus implements CommandBus {
                 @SuppressWarnings("Duplicates")
                 @Override
                 public void onError(Throwable ex) {
-                    logger.warn("Received error from server: {}", ex.getMessage());
+                    logger.warn("Command Inbound Stream closed with error", ex);
                     subscriberStreamObserver = null;
                     if (ex instanceof StatusRuntimeException
                             && ((StatusRuntimeException) ex).getStatus().getCode()
@@ -493,7 +485,7 @@ public class AxonServerCommandBus implements CommandBus {
             public void run() {
                 if (!running) {
                     logger.debug("Command Handler Provider has stopped running, "
-                                         + "hence command [{}] will no longer be processed");
+                                         + "hence command [{}] will no longer be processed", command.getName());
                     return;
                 }
 

@@ -43,7 +43,6 @@ public class MergedTrackingTokenTest {
 
         assertEquals(new MergedTrackingToken(token(2), token(3)), testSubject.upperBound(token(2)));
         assertEquals(token(3), testSubject.upperBound(token(3)));
-
     }
 
     @Test
@@ -142,6 +141,18 @@ public class MergedTrackingTokenTest {
     public void testUnwrapPrefersLastAdvancedToken_NeitherSegmentAdvanced_OnlyUpperIsCandidate() {
         MergedTrackingToken merged = new MergedTrackingToken(mock(TrackingToken.class), token(3));
         assertEquals(token(3), merged.unwrap(GlobalSequenceTrackingToken.class).orElse(null));
+    }
+
+    @Test
+    public void testPositionReportsLowestSegment() {
+        MergedTrackingToken merged = new MergedTrackingToken(token(4), token(3));
+        assertEquals(3L, merged.position().orElse(0L));
+    }
+
+    @Test
+    public void testPositionIsNotPresent() {
+        MergedTrackingToken merged = new MergedTrackingToken(mock(TrackingToken.class), token(3));
+        assertFalse(merged.position().isPresent());
     }
 
     private GlobalSequenceTrackingToken token(int sequence) {

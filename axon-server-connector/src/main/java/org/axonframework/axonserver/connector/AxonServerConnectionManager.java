@@ -248,7 +248,7 @@ public class AxonServerConnectionManager {
 
                     @Override
                     public void onCompleted() {
-                        logger.warn("Closed instruction stream to {}", name);
+                        logger.info("Closed instruction stream to {}", name);
                         disconnectListeners.forEach(Runnable::run);
                         scheduleReconnect(true);
                     }

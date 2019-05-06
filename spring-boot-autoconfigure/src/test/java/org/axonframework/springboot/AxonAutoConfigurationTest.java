@@ -40,6 +40,7 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -118,6 +119,7 @@ public class AxonAutoConfigurationTest {
         assertNotNull(applicationContext.getBean(QueryBus.class));
         assertNotNull(applicationContext.getBean(EventStore.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
+        assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertEquals(MultiParameterResolverFactory.class,
                      applicationContext.getBean(ParameterResolverFactory.class).getClass());

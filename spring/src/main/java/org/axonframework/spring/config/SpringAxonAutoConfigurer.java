@@ -82,8 +82,8 @@ import java.util.stream.StreamSupport;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.spring.SpringUtils.isQualifierMatch;
+import static org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
-
 /**
  * ImportBeanDefinitionRegistrar implementation that sets up an infrastructure Configuration based on beans available
  * in the application context.
@@ -404,18 +404,18 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private <T> Optional<String> findComponent(Class<T> componentType, String componentQualifier) {
-        return Stream.of(beanFactory.getBeanNamesForType(componentType))
+        return Stream.of(beanNamesForTypeIncludingAncestors( beanFactory, componentType ))
                      .filter(bean -> isQualifierMatch(bean, beanFactory, componentQualifier))
                      .findFirst();
     }
 
     private <T> Optional<String> findComponent(Class<T> componentType) {
-        String[] beans = beanFactory.getBeanNamesForType(componentType);
+        String[] beans = beanNamesForTypeIncludingAncestors( beanFactory, componentType );
         if (beans.length == 1) {
             return Optional.of(beans[0]);
         } else if (beans.length > 1) {
             for (String bean : beans) {
-                BeanDefinition beanDef = beanFactory.getBeanDefinition(bean);
+                BeanDefinition beanDef = beanFactory.getMergedBeanDefinition(bean);
                 if (beanDef.isPrimary()) {
                     return Optional.of(bean);
                 }
