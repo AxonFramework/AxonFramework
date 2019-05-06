@@ -39,7 +39,7 @@ public class TagsConfigurationProperties {
     /**
      * Gets tags.
      *
-     * @return tags represented by key-value pairs
+     * @return the map of {@link String} to {@link String} representing tags key-value pairs
      */
     public Map<String, String> getTags() {
         return tags;
@@ -48,7 +48,7 @@ public class TagsConfigurationProperties {
     /**
      * Sets tags.
      *
-     * @param tags represented by key-value pairs
+     * @param tags the map of {@link String} to {@link String} representing tags key-value pairs
      */
     public void setTags(Map<String, String> tags) {
         this.tags = tags;

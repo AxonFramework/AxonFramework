@@ -69,10 +69,22 @@ public class AxonServerConnectionManager {
     private final TagsConfiguration tagsConfiguration;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
+    /**
+     * Initializes the Axon Server Connection Manager with the connect information. The empty tags configuration is used
+     * in this case.
+     *
+     * @param connectInformation Axon Server Configuration
+     */
     public AxonServerConnectionManager(AxonServerConfiguration connectInformation) {
         this(connectInformation, new TagsConfiguration());
     }
 
+    /**
+     * Initializes the Axon Server Connection Manager with connect information and tags configuration.
+     *
+     * @param connectInformation Axon Server Configuration
+     * @param tagsConfiguration Tags Configuration
+     */
     public AxonServerConnectionManager(AxonServerConfiguration connectInformation,
                                        TagsConfiguration tagsConfiguration) {
         this.connectInformation = connectInformation;

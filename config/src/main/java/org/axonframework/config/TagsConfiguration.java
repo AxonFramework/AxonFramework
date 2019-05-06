@@ -42,7 +42,7 @@ public class TagsConfiguration {
     /**
      * Initializes tags configuration with key-value pairs.
      *
-     * @param tags key-value pairs
+     * @param tags the map of {@link String} to {@link String} representing tags key-value pairs
      */
     public TagsConfiguration(Map<String, String> tags) {
         this.tags = tags;
@@ -51,7 +51,7 @@ public class TagsConfiguration {
     /**
      * Gets tags.
      *
-     * @return tags represented by key-value pairs
+     * @return the map of {@link String} to {@link String} representing tags key-value pairs
      */
     public Map<String, String> getTags() {
         return Collections.unmodifiableMap(tags);
