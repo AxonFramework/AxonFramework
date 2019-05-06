@@ -24,6 +24,8 @@ import org.springframework.context.SmartLifecycle;
 
 import java.util.Collection;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 /**
  * Registers Spring beans that implement {@link QueryHandlerAdapter} with the query bus.
  * @since 3.1
@@ -62,11 +64,11 @@ public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLif
 
     @Override
     public void start() {
-        if (queryBus == null && !applicationContext.getBeansOfType(QueryBus.class).isEmpty()) {
+        if (queryBus == null && !beansOfTypeIncludingAncestors( applicationContext, QueryBus.class ).isEmpty()) {
             queryBus = applicationContext.getBean(QueryBus.class);
         }
         if (queryHandlers == null) {
-            queryHandlers = applicationContext.getBeansOfType(QueryHandlerAdapter.class).values();
+            queryHandlers = beansOfTypeIncludingAncestors( applicationContext, QueryHandlerAdapter.class ).values();
         }
         queryHandlers.forEach(queryHandler -> queryHandler.subscribe(queryBus));
         this.started = true;
