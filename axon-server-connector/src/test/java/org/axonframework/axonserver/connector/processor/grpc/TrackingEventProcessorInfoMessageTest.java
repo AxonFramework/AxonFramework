@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,17 +20,17 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.axonframework.eventhandling.Segment.ROOT_SEGMENT;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by Sara Pellegrini on 01/08/2018.
@@ -43,7 +43,8 @@ public class TrackingEventProcessorInfoMessageTest {
     private TrackingEventProcessor trackingEventProcessor;
 
     private Map<Integer, EventTrackerStatus> processingStatus = new HashMap<Integer, EventTrackerStatus>(){{
-        this.put(0, new FakeEventTrackerStatus(ROOT_SEGMENT, true, false, new GlobalSequenceTrackingToken(100)));
+        this.put(0, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[0], true, false, new GlobalSequenceTrackingToken(100), null));
+        this.put(1, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[1], true, false, new GlobalSequenceTrackingToken(100), new RuntimeException("Testing")));
     }};
 
     @Test
@@ -54,18 +55,29 @@ public class TrackingEventProcessorInfoMessageTest {
         when(trackingEventProcessor.availableProcessorThreads()).thenReturn(5);
         when(trackingEventProcessor.isRunning()).thenReturn(false);
         when(trackingEventProcessor.isError()).thenReturn(true);
+
         TrackingEventProcessorInfoMessage testSubject = new TrackingEventProcessorInfoMessage(trackingEventProcessor);
         EventProcessorInfo eventProcessorInfo = testSubject.instruction().getEventProcessorInfo();
         assertEquals("ProcessorName", eventProcessorInfo.getProcessorName());
         assertEquals(3, eventProcessorInfo.getActiveThreads());
-        assertEquals(1, eventProcessorInfo.getEventTrackersInfoCount());
+        assertEquals(2, eventProcessorInfo.getEventTrackersInfoCount());
         assertFalse(eventProcessorInfo.getRunning());
         assertTrue(eventProcessorInfo.getError());
         assertTrue(eventProcessorInfo.getAvailableThreads()>0);
-        EventProcessorInfo.EventTrackerInfo eventTrackersInfo = eventProcessorInfo.getEventTrackersInfo(0);
-        assertEquals(0,eventTrackersInfo.getSegmentId());
-        assertEquals(1, eventTrackersInfo.getOnePartOf());
-        assertTrue(eventTrackersInfo.getCaughtUp());
-        assertFalse(eventTrackersInfo.getReplaying());
+        EventProcessorInfo.EventTrackerInfo eventTrackersInfo1 = eventProcessorInfo.getEventTrackersInfo(0);
+        assertEquals(0,eventTrackersInfo1.getSegmentId());
+        assertEquals(2, eventTrackersInfo1.getOnePartOf());
+        assertTrue(eventTrackersInfo1.getCaughtUp());
+        assertFalse(eventTrackersInfo1.getReplaying());
+        assertEquals(100, eventTrackersInfo1.getTokenPosition());
+        assertEquals("", eventTrackersInfo1.getErrorState());
+
+        EventProcessorInfo.EventTrackerInfo eventTrackersInfo2 = eventProcessorInfo.getEventTrackersInfo(1);
+        assertEquals(1,eventTrackersInfo2.getSegmentId());
+        assertEquals(2, eventTrackersInfo2.getOnePartOf());
+        assertTrue(eventTrackersInfo2.getCaughtUp());
+        assertFalse(eventTrackersInfo2.getReplaying());
+        assertEquals(100, eventTrackersInfo2.getTokenPosition());
+        assertEquals("java.lang.RuntimeException: Testing", eventTrackersInfo2.getErrorState());
     }
 }
