@@ -80,7 +80,7 @@ public class BufferingSpliterator<R> implements Spliterator<R> {
     }
 
     /**
-     * Instantiate a queue backed {@link Spliterator} implementation with the given {@code bufferCapacity} for the
+     * Instantiate a buffering {@link Spliterator} implementation with the given {@code bufferCapacity} for the
      * underlying buffer. Offering operations will block until space is available on the buffer
      *
      * @param bufferCapacity The number of items allowed in this buffer before suppliers are blocked
