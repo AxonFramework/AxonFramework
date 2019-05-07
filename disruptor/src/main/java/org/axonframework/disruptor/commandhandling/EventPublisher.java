@@ -120,7 +120,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         }
         if (phaseExceptionResult != null || entry.getCallback().hasDelegate()) {
             executor.execute(new ReportResultTask(
-                    entry.getMessage(), entry.getCallback(), asCommandResultMessage(phaseExceptionResult)
+                    entry.getMessage(), entry.getCallback(), asCommandResultMessage(phaseExceptionResult != null ? phaseExceptionResult : entry.getResult())
             ));
         }
     }
