@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.junit.Test;
+import org.junit.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -26,7 +26,13 @@ import java.util.Optional;
 import static org.axonframework.common.ReflectionUtils.methodOf;
 import static org.junit.Assert.*;
 
-public class OptionalResponseTypeTest extends AbstractResponseTypeTest<Optional<AbstractResponseTypeTest.QueryResponse>> {
+/**
+ * Test all possible permutations of Query Handler return types through the {@link OptionalResponseType}. To that end,
+ * leveraging the  {@link AbstractResponseTypeTest} to cover all usual suspects between the different
+ * {@link ResponseType} implementations.
+ */
+public class OptionalResponseTypeTest
+        extends AbstractResponseTypeTest<Optional<AbstractResponseTypeTest.QueryResponse>> {
 
     public OptionalResponseTypeTest() {
         super(new OptionalResponseType<>(QueryResponse.class));
@@ -236,7 +242,8 @@ public class OptionalResponseTypeTest extends AbstractResponseTypeTest<Optional<
     @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForDifferentSingleInstanceResponse() {
-        Optional<QueryResponse> result = testSubject.convert(new QueryResponseInterface() {});
+        Optional<QueryResponse> result = testSubject.convert(new QueryResponseInterface() {
+        });
     }
 
     @SuppressWarnings("unused")

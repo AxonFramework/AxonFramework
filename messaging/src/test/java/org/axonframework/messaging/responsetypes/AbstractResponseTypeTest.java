@@ -29,8 +29,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Helper test implementation of {@link ResponseType} tests.
  *
- * @param <R> a generic for the expected response type of the
- *            {@link ResponseType} test subject
+ * @param <R> a generic for the expected response type of the {@link ResponseType} test subject
  */
 public abstract class AbstractResponseTypeTest<R> {
 

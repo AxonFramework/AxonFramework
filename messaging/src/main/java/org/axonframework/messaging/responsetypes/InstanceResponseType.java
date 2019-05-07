@@ -18,11 +18,12 @@ package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.axonframework.common.ReflectionUtils;
 
 import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.concurrent.Future;
+
+import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
  * A {@link ResponseType} implementation that will match with query
@@ -58,7 +59,7 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      */
     @Override
     public boolean matches(Type responseType) {
-        Type unwrapped = ReflectionUtils.unwrapIfType(responseType, Future.class, Optional.class);
+        Type unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
         return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
     }
 

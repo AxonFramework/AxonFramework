@@ -16,15 +16,20 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.junit.Test;
+import org.junit.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
+/**
+ * Test all possible permutations of Query Handler return types through the {@link InstanceResponseType}. To that end,
+ * leveraging the  {@link AbstractResponseTypeTest} to cover all usual suspects between the different
+ * {@link ResponseType} implementations.
+ */
 public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
 
     public InstanceResponseTypeTest() {
@@ -226,7 +231,8 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForDifferentSingleInstanceResponse() {
-        QueryResponse result = testSubject.convert(new QueryResponseInterface() {});
+        QueryResponse result = testSubject.convert(new QueryResponseInterface() {
+        });
     }
 
     @SuppressWarnings("unused")

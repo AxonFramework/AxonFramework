@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Utility class containing static methods to obtain instances of
- * {@link ResponseType}.
+ * Utility class containing static methods to obtain instances of {@link ResponseType}.
  *
  * @author Steven van Beelen
  * @since 3.2
@@ -32,10 +31,8 @@ public abstract class ResponseTypes {
      * Specify the desire to retrieve a single instance of type {@code R} when performing a query.
      *
      * @param type the {@code R} which is expected to be the response type
-     * @param <R>  the generic type of the instantiated
-     *             {@link ResponseType}
-     * @return a {@link ResponseType} specifying the desire to retrieve a
-     * single instance of type {@code R}
+     * @param <R>  the generic type of the instantiated {@link ResponseType}
+     * @return a {@link ResponseType} specifying the desire to retrieve a single instance of type {@code R}
      */
     public static <R> ResponseType<R> instanceOf(Class<R> type) {
         return new InstanceResponseType<>(type);
@@ -43,14 +40,13 @@ public abstract class ResponseTypes {
 
     /**
      * Specify the desire to retrieve an {@code Optional<R>} when performing a query.
-     *
+     * <p>
      * Note that this {@code ResponseType} will declare the same expectations on the Query Result as the
      * {@code ResponseType} returned by {@link #instanceOf(Class)}. The difference is that the result provided by this
-     * {@code ResponseType} is wrapped in an {@code Optional}
+     * {@code ResponseType} is wrapped in an {@code Optional}.
      *
      * @param type the {@code R} which is expected to be the response type
-     * @param <R>  the generic type of the instantiated
-     *             {@link ResponseType}
+     * @param <R>  the generic type of the instantiated {@link ResponseType}
      * @return a {@link ResponseType} specifying the desire to retrieve an optional instance of type {@code R}
      */
     public static <R> ResponseType<Optional<R>> optionalInstanceOf(Class<R> type) {
@@ -61,10 +57,8 @@ public abstract class ResponseTypes {
      * Specify the desire to retrieve a collection of instances of type {@code R} when performing a query.
      *
      * @param type the {@code R} which is expected to be the response type
-     * @param <R>  the generic type of the instantiated
-     *             {@link ResponseType}
-     * @return a {@link ResponseType} specifying the desire to retrieve a
-     * collection of instances of type {@code R}
+     * @param <R>  the generic type of the instantiated {@link ResponseType}
+     * @return a {@link ResponseType} specifying the desire to retrieve a collection of instances of type {@code R}
      */
     public static <R> ResponseType<List<R>> multipleInstancesOf(Class<R> type) {
         return new MultipleInstancesResponseType<>(type);

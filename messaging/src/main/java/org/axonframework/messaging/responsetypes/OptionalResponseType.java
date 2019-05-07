@@ -30,6 +30,10 @@ import java.util.concurrent.Future;
  * the result. If matching succeeds, the
  * {@link ResponseType#convert(Object)} function will be called, which will wrap the query handler's response into an
  * Optional.
+ * <p>
+ * Note that this {@code ResponseType} will declare the same expectations on the Query Result as the
+ * {@code ResponseType} returned by {@link InstanceResponseType}. The difference is that the result provided by this
+ * {@code ResponseType} is wrapped in an {@link Optional}.
  *
  * @param <R> The response type which will be matched against and converted to
  * @author Allard Buijze

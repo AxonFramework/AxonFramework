@@ -28,6 +28,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.*;
 
+/**
+ * Test whether the {@link MethodQueryMessageHandlerDefinition} correctly deals with return types, as well as for
+ * example {@link java.util.concurrent.Future} and {@link Optional} which contain a generic type.
+ */
 public class MethodQueryMessageHandlerDefinitionTest {
 
     private MethodQueryMessageHandlerDefinition testSubject;

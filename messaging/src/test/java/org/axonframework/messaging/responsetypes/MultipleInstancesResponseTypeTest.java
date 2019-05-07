@@ -16,16 +16,20 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+/**
+ * Test all possible permutations of Query Handler return types through the {@link MultipleInstancesResponseType}. To
+ * that end, leveraging the  {@link AbstractResponseTypeTest} to cover all usual suspects between the different
+ * {@link ResponseType} implementations.
+ */
 public class MultipleInstancesResponseTypeTest
         extends AbstractResponseTypeTest<List<AbstractResponseTypeTest.QueryResponse>> {
 
