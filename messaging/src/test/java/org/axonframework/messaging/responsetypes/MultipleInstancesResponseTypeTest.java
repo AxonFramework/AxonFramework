@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,15 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MultipleInstancesResponseTypeTest
         extends AbstractResponseTypeTest<List<AbstractResponseTypeTest.QueryResponse>> {
@@ -34,38 +35,38 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsTheSame() throws NoSuchMethodException {
-        testMatches("someQuery", DOES_NOT_MATCHES);
+        testMatches("someQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsSubTypeOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSubTypedQuery", DOES_NOT_MATCHES);
+        testMatches("someSubTypedQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsSuperTypeOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSuperTypedQuery", DOES_NOT_MATCHES);
+        testMatches("someSuperTypedQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGeneric() throws NoSuchMethodException {
-        testMatches("someUnboundedGenericQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsBoundedGenericOfProvidedType() throws NoSuchMethodException {
-        testMatches("someBoundedGenericQuery", DOES_NOT_MATCHES);
+        testMatches("someBoundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedGenericOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiBoundedGenericQuery", DOES_NOT_MATCHES);
+        testMatches("someMultiBoundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingBoundedGenericQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingBoundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -80,12 +81,12 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsArrayWithSuperTypeOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSuperTypedArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someSuperTypedArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericArray() throws NoSuchMethodException {
-        testMatches("someUnboundedGenericArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -101,7 +102,7 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericArrayOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingBoundedGenericArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingBoundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -116,7 +117,7 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsSuperListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSuperListQuery", DOES_NOT_MATCHES);
+        testMatches("someSuperListQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -126,7 +127,7 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericList() throws NoSuchMethodException {
-        testMatches("someUnboundedGenericListQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -137,17 +138,17 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericListOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingBoundedGenericListQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingBoundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedWildcardList() throws NoSuchMethodException {
-        testMatches("someUnboundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsLowerBoundedWildcardList() throws NoSuchMethodException {
-        testMatches("someLowerBoundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someLowerBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -158,7 +159,7 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsWildcardListOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingUpperBoundedWildcardQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingUpperBoundedWildcardQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -176,7 +177,7 @@ public class MultipleInstancesResponseTypeTest
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericUpperBoundedWildcardList()
             throws NoSuchMethodException {
-        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -207,7 +208,7 @@ public class MultipleInstancesResponseTypeTest
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someUnboundedListImplementationQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedListImplementationQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -219,7 +220,7 @@ public class MultipleInstancesResponseTypeTest
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMultiUnboundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiUnboundedListImplementationQuery", DOES_NOT_MATCHES);
+        testMatches("someMultiUnboundedListImplementationQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -240,7 +241,7 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMapOfProvidedType() throws NoSuchMethodException {
-        testMatches("someMapQuery", DOES_NOT_MATCHES);
+        testMatches("someMapQuery", DOES_NOT_MATCH);
     }
 
     @Test
