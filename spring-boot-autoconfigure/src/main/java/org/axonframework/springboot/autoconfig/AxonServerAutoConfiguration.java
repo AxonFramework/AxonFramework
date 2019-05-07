@@ -35,6 +35,7 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
@@ -42,17 +43,15 @@ import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfi
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
@@ -107,13 +106,15 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                      AxonServerConnectionManager axonServerConnectionManager,
                                                      RoutingStrategy routingStrategy,
                                                      CommandPriorityCalculator priorityCalculator,
-                                                     @Qualifier("localSegment") CommandBus localSegment) {
+                                                     @Qualifier("localSegment") CommandBus localSegment,
+                                                     TargetContextResolver<? super CommandMessage<?>> targetContextResolver) {
         return new AxonServerCommandBus(axonServerConnectionManager,
                                         axonServerConfiguration,
                                         localSegment,
                                         serializer,
                                         routingStrategy,
-                                        priorityCalculator);
+                                        priorityCalculator,
+                                        targetContextResolver);
     }
 
     @Bean
@@ -149,7 +150,8 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator,
-                                       QueryInvocationErrorHandler queryInvocationErrorHandler) {
+                                       QueryInvocationErrorHandler queryInvocationErrorHandler,
+                                       TargetContextResolver<? super QueryMessage<?,?>> targetContextResolver) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
                               .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
@@ -167,7 +169,14 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                       simpleQueryBus,
                                       messageSerializer,
                                       genericSerializer,
-                                      priorityCalculator);
+                                      priorityCalculator,
+                                      targetContextResolver);
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public TargetContextResolver<Message<?>> defaultTargetResolver() {
+        return m -> null;
     }
 
     @Override

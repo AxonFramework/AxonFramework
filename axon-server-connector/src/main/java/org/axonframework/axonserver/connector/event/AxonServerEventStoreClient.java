@@ -27,8 +27,6 @@ import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.event.util.EventCipher;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
 import org.axonframework.axonserver.connector.util.BufferingSpliterator;
-import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
-import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,42 +42,41 @@ import java.util.stream.StreamSupport;
 public class AxonServerEventStoreClient {
     private final Logger logger = LoggerFactory.getLogger(AxonServerEventStoreClient.class);
 
-    private final TokenAddingInterceptor tokenAddingInterceptor;
-    private final ContextAddingInterceptor contextAddingInterceptor;
     private final EventCipher eventCipher;
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final int timeout;
-    private final AxonServerConfiguration eventStoreConfiguration;
-
-    private boolean shutdown;
+    private final String defaultContext;
+    private final int bufferCapacity;
 
     /**
      * Initialize the Event Store Client using given {@code eventStoreConfiguration} and given {@code platformConnectionManager}.
      *
-     * @param eventStoreConfiguration The configuration describing the bounded context that this application operates in
+     * @param eventStoreConfiguration     The configuration describing the bounded context that this application operates in
      * @param axonServerConnectionManager manager for connections to AxonServer platform
      */
     public AxonServerEventStoreClient(AxonServerConfiguration eventStoreConfiguration, AxonServerConnectionManager axonServerConnectionManager) {
-        this.eventStoreConfiguration = eventStoreConfiguration;
-        this.tokenAddingInterceptor = new TokenAddingInterceptor(eventStoreConfiguration.getToken());
         this.eventCipher = eventStoreConfiguration.getEventCipher();
         this.axonServerConnectionManager = axonServerConnectionManager;
         this.timeout = eventStoreConfiguration.getCommitTimeout();
-        contextAddingInterceptor = new ContextAddingInterceptor(eventStoreConfiguration.getContext());
+        this.bufferCapacity = eventStoreConfiguration.getInitialNrOfPermits();
+        this.defaultContext = eventStoreConfiguration.getContext();
     }
 
+    /**
+     * @deprecated no-op method. To close connections, shutdown the connection manager
+     */
+    @Deprecated
     public void shutdown() {
-        shutdown = true;
+
     }
 
-    private EventStoreGrpc.EventStoreStub eventStoreStub() {
-        return EventStoreGrpc.newStub(getChannelToEventStore()).withInterceptors(tokenAddingInterceptor).withInterceptors(contextAddingInterceptor);
+    private EventStoreGrpc.EventStoreStub eventStoreStub(String context) {
+        return EventStoreGrpc.newStub(getChannelToEventStore(context));
     }
 
 
-    private Channel getChannelToEventStore() {
-        if (shutdown) return null;
-        return axonServerConnectionManager.getChannel();
+    private Channel getChannelToEventStore(String context) {
+        return axonServerConnectionManager.getChannel(context);
     }
 
     /**
@@ -88,9 +85,14 @@ public class AxonServerEventStoreClient {
      * @param request The request describing the aggregate to retrieve messages for
      * @return a Stream providing access to Events published by the aggregate described in the request
      */
+    @Deprecated
     public Stream<Event> listAggregateEvents(GetAggregateEventsRequest request) {
+        return listAggregateEvents(defaultContext, request);
+    }
+
+    public Stream<Event> listAggregateEvents(String context, GetAggregateEventsRequest request) {
         BufferingSpliterator<Event> queue = new BufferingSpliterator<>();
-        eventStoreStub().listAggregateEvents(request, new StreamingEventStreamObserver<GetAggregateEventsRequest>(queue, request.getAggregateId()));
+        eventStoreStub(context).listAggregateEvents(request, new StreamingEventStreamObserver(queue, context, request.getAggregateId()));
         return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
@@ -100,7 +102,12 @@ public class AxonServerEventStoreClient {
      * @param responseStreamObserver a {@link StreamObserver} for messages from the server
      * @return the {@link StreamObserver} to send request messages to server with
      */
+    @Deprecated
     public StreamObserver<GetEventsRequest> listEvents(StreamObserver<EventWithToken> responseStreamObserver) {
+        return listEvents(defaultContext, responseStreamObserver);
+    }
+
+    public StreamObserver<GetEventsRequest> listEvents(String context, StreamObserver<EventWithToken> responseStreamObserver) {
         StreamObserver<EventWithToken> wrappedStreamObserver = new StreamObserver<EventWithToken>() {
             @Override
             public void onNext(EventWithToken eventWithToken) {
@@ -109,7 +116,7 @@ public class AxonServerEventStoreClient {
 
             @Override
             public void onError(Throwable throwable) {
-                checkConnectionException(throwable);
+                checkConnectionException(throwable, context);
                 responseStreamObserver.onError(GrpcExceptionParser.parse(throwable));
             }
 
@@ -119,44 +126,67 @@ public class AxonServerEventStoreClient {
 
             }
         };
-        return eventStoreStub().listEvents(wrappedStreamObserver);
+        return eventStoreStub(context).listEvents(wrappedStreamObserver);
     }
 
+    @Deprecated
     public CompletableFuture<Confirmation> appendSnapshot(Event snapshot) {
+        return appendSnapshot(defaultContext, snapshot);
+    }
+
+    public CompletableFuture<Confirmation> appendSnapshot(String context, Event snapshot) {
         CompletableFuture<Confirmation> confirmationFuture = new CompletableFuture<>();
-        eventStoreStub().appendSnapshot(eventCipher.encrypt(snapshot),
-                                        new SingleResultStreamObserver<>(confirmationFuture ));
-
-
+        eventStoreStub(context).appendSnapshot(eventCipher.encrypt(snapshot),
+                                               new SingleResultStreamObserver<>(context, confirmationFuture));
         return confirmationFuture;
     }
 
+    @Deprecated
     public CompletableFuture<TrackingToken> getLastToken() {
+        return getLastToken(defaultContext);
+    }
+
+    public CompletableFuture<TrackingToken> getLastToken(String context) {
         CompletableFuture<TrackingToken> trackingTokenFuture = new CompletableFuture<>();
-        eventStoreStub().getLastToken(GetLastTokenRequest.getDefaultInstance(),
-                                      new SingleResultStreamObserver<>(trackingTokenFuture));
+        eventStoreStub(context).getLastToken(GetLastTokenRequest.getDefaultInstance(),
+                                             new SingleResultStreamObserver<>(context, trackingTokenFuture));
         return trackingTokenFuture;
     }
 
+    @Deprecated
     public CompletableFuture<TrackingToken> getFirstToken() {
+        return getFirstToken(defaultContext);
+    }
+
+    public CompletableFuture<TrackingToken> getFirstToken(String context) {
         CompletableFuture<TrackingToken> trackingTokenFuture = new CompletableFuture<>();
-        eventStoreStub().getFirstToken(GetFirstTokenRequest.getDefaultInstance(),
-                                       new SingleResultStreamObserver<>(trackingTokenFuture));
+        eventStoreStub(context).getFirstToken(GetFirstTokenRequest.getDefaultInstance(),
+                                              new SingleResultStreamObserver<>(context, trackingTokenFuture));
         return trackingTokenFuture;
     }
 
+    @Deprecated
     public CompletableFuture<TrackingToken> getTokenAt(Instant instant) {
+        return getTokenAt(defaultContext, instant);
+    }
+
+    public CompletableFuture<TrackingToken> getTokenAt(String context, Instant instant) {
         CompletableFuture<TrackingToken> trackingTokenFuture = new CompletableFuture<>();
-        eventStoreStub().getTokenAt(GetTokenAtRequest.newBuilder()
-                                                     .setInstant(instant.toEpochMilli())
-                                                     .build(), new SingleResultStreamObserver<>(trackingTokenFuture));
+        eventStoreStub(context).getTokenAt(GetTokenAtRequest.newBuilder()
+                                                            .setInstant(instant.toEpochMilli())
+                                                            .build(), new SingleResultStreamObserver<>(context, trackingTokenFuture));
         return trackingTokenFuture;
     }
 
 
+    @Deprecated
     public AppendEventTransaction createAppendEventConnection() {
+        return createAppendEventConnection(defaultContext);
+    }
+
+    public AppendEventTransaction createAppendEventConnection(String context) {
         CompletableFuture<Confirmation> futureConfirmation = new CompletableFuture<>();
-        return new AppendEventTransaction(timeout, eventStoreStub().appendEvent(new StreamObserver<Confirmation>() {
+        return new AppendEventTransaction(timeout, eventStoreStub(context).appendEvent(new StreamObserver<Confirmation>() {
             @Override
             public void onNext(Confirmation confirmation) {
                 futureConfirmation.complete(confirmation);
@@ -164,7 +194,7 @@ public class AxonServerEventStoreClient {
 
             @Override
             public void onError(Throwable throwable) {
-                checkConnectionException(throwable);
+                checkConnectionException(throwable, context);
                 futureConfirmation.completeExceptionally(GrpcExceptionParser.parse(throwable));
             }
 
@@ -175,7 +205,12 @@ public class AxonServerEventStoreClient {
         }), futureConfirmation, eventCipher);
     }
 
+    @Deprecated
     public StreamObserver<QueryEventsRequest> query(StreamObserver<QueryEventsResponse> responseStreamObserver) {
+        return query(defaultContext, responseStreamObserver);
+    }
+
+    public StreamObserver<QueryEventsRequest> query(String context, StreamObserver<QueryEventsResponse> responseStreamObserver) {
         StreamObserver<QueryEventsResponse> wrappedStreamObserver = new StreamObserver<QueryEventsResponse>() {
             @Override
             public void onNext(QueryEventsResponse eventWithToken) {
@@ -184,7 +219,7 @@ public class AxonServerEventStoreClient {
 
             @Override
             public void onError(Throwable throwable) {
-                checkConnectionException(throwable);
+                checkConnectionException(throwable, context);
                 responseStreamObserver.onError(GrpcExceptionParser.parse(throwable));
             }
 
@@ -194,37 +229,49 @@ public class AxonServerEventStoreClient {
 
             }
         };
-        return eventStoreStub().queryEvents(wrappedStreamObserver);
+        return eventStoreStub(context).queryEvents(wrappedStreamObserver);
     }
 
-    private void checkConnectionException(Throwable ex) {
+    private void checkConnectionException(Throwable ex, String context) {
         if (ex instanceof StatusRuntimeException && ((StatusRuntimeException) ex).getStatus().getCode().equals(Status.UNAVAILABLE.getCode())) {
-            stopChannelToEventStore();
+            stopChannelToEventStore(context);
         }
     }
 
-    private void stopChannelToEventStore() {
-        axonServerConnectionManager.disconnect();
+    private void stopChannelToEventStore(String context) {
+        axonServerConnectionManager.disconnect(context);
     }
 
+    @Deprecated
     public CompletableFuture<ReadHighestSequenceNrResponse> lastSequenceNumberFor(String aggregateIdentifier) {
+        return lastSequenceNumberFor(defaultContext, aggregateIdentifier);
+    }
+
+    public CompletableFuture<ReadHighestSequenceNrResponse> lastSequenceNumberFor(String context, String aggregateIdentifier) {
         CompletableFuture<ReadHighestSequenceNrResponse> completableFuture = new CompletableFuture<>();
-        eventStoreStub().readHighestSequenceNr(ReadHighestSequenceNrRequest.newBuilder()
-                                                                           .setAggregateId(aggregateIdentifier).build(),
-                                               new SingleResultStreamObserver<>(completableFuture));
+        eventStoreStub(context).readHighestSequenceNr(ReadHighestSequenceNrRequest.newBuilder()
+                                                                                  .setAggregateId(aggregateIdentifier).build(),
+                                                      new SingleResultStreamObserver<>(context, completableFuture));
         return completableFuture;
     }
 
+    @Deprecated
     public Stream<Event> listAggregateSnapshots(GetAggregateSnapshotsRequest request) {
-        BufferingSpliterator<Event> queue = new BufferingSpliterator<>(eventStoreConfiguration.getInitialNrOfPermits());
-        eventStoreStub().listAggregateSnapshots(request, new StreamingEventStreamObserver(queue, request.getAggregateId()));
+        return listAggregateSnapshots(defaultContext, request);
+    }
+
+    public Stream<Event> listAggregateSnapshots(String context, GetAggregateSnapshotsRequest request) {
+        BufferingSpliterator<Event> queue = new BufferingSpliterator<>(bufferCapacity);
+        eventStoreStub(context).listAggregateSnapshots(request, new StreamingEventStreamObserver(queue, context, request.getAggregateId()));
         return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
     private class SingleResultStreamObserver<T> implements StreamObserver<T> {
+        private final String context;
         private final CompletableFuture<T> future;
 
-        private SingleResultStreamObserver(CompletableFuture<T> future) {
+        private SingleResultStreamObserver(String context, CompletableFuture<T> future) {
+            this.context = context;
             this.future = future;
         }
 
@@ -235,23 +282,26 @@ public class AxonServerEventStoreClient {
 
         @Override
         public void onError(Throwable throwable) {
-            checkConnectionException(throwable);
+            checkConnectionException(throwable, context);
             future.completeExceptionally(GrpcExceptionParser.parse(throwable));
         }
 
         @Override
         public void onCompleted() {
-            if( ! future.isDone()) future.completeExceptionally(new AxonServerException("AXONIQ-0001", "Async call completed before answer"));
+            if (!future.isDone())
+                future.completeExceptionally(new AxonServerException("AXONIQ-0001", "Async call completed before answer"));
         }
     }
 
-    private class StreamingEventStreamObserver<ReqT> extends UpstreamAwareStreamObserver<ReqT, Event> {
+    private class StreamingEventStreamObserver extends UpstreamAwareStreamObserver<Event> {
         private final long before;
         private final String aggregateId;
-        private int count;
         private final BufferingSpliterator<Event> events;
+        private final String context;
+        private int count;
 
-        public StreamingEventStreamObserver(BufferingSpliterator<Event> queue, String aggregateId) {
+        public StreamingEventStreamObserver(BufferingSpliterator<Event> queue, String context, String aggregateId) {
+            this.context = context;
             this.before = System.currentTimeMillis();
             this.events = queue;
             this.aggregateId = aggregateId;
@@ -267,7 +317,7 @@ public class AxonServerEventStoreClient {
 
         @Override
         public void onError(Throwable throwable) {
-            checkConnectionException(throwable);
+            checkConnectionException(throwable, context);
             events.cancel(throwable);
         }
 

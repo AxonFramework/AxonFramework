@@ -20,21 +20,20 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.query.*;
 import io.axoniq.axonserver.grpc.query.QuerySubscription;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
-import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.DispatchInterceptors;
-import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.*;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.DeserializedResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionQueryRequestTarget;
-import org.axonframework.axonserver.connector.util.*;
+import org.axonframework.axonserver.connector.util.BufferingSpliterator;
+import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
+import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -49,6 +48,7 @@ import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -66,12 +66,10 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
  */
 public class AxonServerQueryBus implements QueryBus {
 
-    private final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
-
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
     private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
-
+    private final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
     private final QueryUpdateEmitter updateEmitter;
@@ -81,10 +79,10 @@ public class AxonServerQueryBus implements QueryBus {
     private final QueryPriorityCalculator priorityCalculator;
 
     private final QueryHandlerProvider queryProvider;
-    private final ClientInterceptor[] interceptors;
     private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors;
-    private final Collection<String> subscriptions;
+    private final Map<String, Set<String>> subscriptions = new ConcurrentHashMap<>();
     private final Map<RequestCase, Collection<Consumer<QueryProviderInbound>>> queryHandlers;
+    private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
 
     /**
      * Creates an instance of the Axon Server {@link QueryBus} client. Will connect to an Axon Server instance to submit
@@ -111,6 +109,18 @@ public class AxonServerQueryBus implements QueryBus {
                               Serializer messageSerializer,
                               Serializer genericSerializer,
                               QueryPriorityCalculator priorityCalculator) {
+        this(axonServerConnectionManager, configuration, updateEmitter, localSegment, messageSerializer, genericSerializer,
+             priorityCalculator, q -> configuration.getContext());
+    }
+
+    public AxonServerQueryBus(AxonServerConnectionManager axonServerConnectionManager,
+                              AxonServerConfiguration configuration,
+                              QueryUpdateEmitter updateEmitter,
+                              QueryBus localSegment,
+                              Serializer messageSerializer,
+                              Serializer genericSerializer,
+                              QueryPriorityCalculator priorityCalculator,
+                              TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver) {
         this.axonServerConnectionManager = axonServerConnectionManager;
         this.configuration = configuration;
         this.updateEmitter = updateEmitter;
@@ -121,34 +131,32 @@ public class AxonServerQueryBus implements QueryBus {
         this.priorityCalculator = priorityCalculator;
 
         this.queryProvider = new QueryHandlerProvider();
-        interceptors = new ClientInterceptor[]{
-                new TokenAddingInterceptor(configuration.getToken()),
-                new ContextAddingInterceptor(configuration.getContext())
-        };
         dispatchInterceptors = new DispatchInterceptors<>();
-        subscriptions = new CopyOnWriteArraySet<>();
         queryHandlers = new EnumMap<>(RequestCase.class);
 
-        this.axonServerConnectionManager.addReconnectListener(queryProvider::resubscribe);
+        String context = configuration.getContext();
+        this.axonServerConnectionManager.addReconnectListener(context, queryProvider::resubscribe);
         this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
 
-        this.axonServerConnectionManager.addDisconnectListener(queryProvider::unsubscribeAll);
+        this.axonServerConnectionManager.addDisconnectListener(context, queryProvider::unsubscribeAll);
         this.axonServerConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
         SubscriptionQueryRequestTarget target =
                 new SubscriptionQueryRequestTarget(localSegment, this::publish, subscriptionSerializer);
         this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
         this.axonServerConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
+        this.targetContextResolver = targetContextResolver.orElse(m -> configuration.getContext());
     }
 
-    private Runnable interceptReconnectRequest(Runnable reconnect) {
+
+    private Consumer<String> interceptReconnectRequest(Consumer<String> reconnect) {
         if (subscriptions.isEmpty()) {
             return reconnect;
         }
-        return () -> logger.info("Reconnect refused because there are active subscription queries.");
+        return (c) -> logger.info("Reconnect refused because there are active subscription queries.");
     }
 
-    private void onApplicationDisconnected() {
-        subscriptions.clear();
+    private void onApplicationDisconnected(String context) {
+        subscriptions.remove(context);
     }
 
     @Override
@@ -170,8 +178,9 @@ public class AxonServerQueryBus implements QueryBus {
                     interceptedQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, DIRECT_QUERY_TIMEOUT_MS,
                     priorityCalculator.determinePriority(interceptedQuery)
             );
+            String context = targetContextResolver.resolveContext(interceptedQuery);
 
-            queryService()
+            queryService(context)
                     .query(queryRequest,
                            new StreamObserver<QueryResponse>() {
                                @Override
@@ -231,16 +240,18 @@ public class AxonServerQueryBus implements QueryBus {
                                                                 SCATTER_GATHER_NUMBER_OF_RESULTS,
                                                                 timeUnit.toMillis(timeout),
                                                                 priorityCalculator.determinePriority(interceptedQuery));
-        queryService()
+
+        String context = targetContextResolver.resolveContext(interceptedQuery);
+        queryService(context)
                 .withDeadlineAfter(timeout, timeUnit)
                 .query(queryRequest,
-                       new UpstreamAwareStreamObserver<QueryRequest, QueryResponse>() {
+                       new UpstreamAwareStreamObserver<QueryResponse>() {
                            @Override
                            public void onNext(QueryResponse queryResponse) {
                                logger.debug("Received query response [{}]", queryResponse);
                                if (queryResponse.hasErrorMessage()) {
                                    logger.debug("The received query response has error message [{}]",
-                                               queryResponse.getErrorMessage());
+                                                queryResponse.getErrorMessage());
                                } else {
                                    if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse))) {
                                        getRequestStream().cancel("Cancellation requested by client", null);
@@ -289,44 +300,43 @@ public class AxonServerQueryBus implements QueryBus {
         this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
     }
 
-    private void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
+    private void on(RequestCase requestCase, BiConsumer<String, QueryProviderInbound> consumer) {
         Collection<Consumer<QueryProviderInbound>> consumers =
                 queryHandlers.computeIfAbsent(requestCase, rc -> new CopyOnWriteArraySet<>());
-        consumers.add(consumer);
+        consumers.add(qpi -> consumer.accept(configuration.getContext(), qpi));
     }
 
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backPressure,
-            int updateBufferSize
-    ) {
+            int updateBufferSize) {
+
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(query);
         String subscriptionId = interceptedQuery.getIdentifier();
+        String context = targetContextResolver.resolveContext(interceptedQuery);
 
-        if (subscriptions.contains(subscriptionId)) {
-            String errorMessage = "There already is a subscription query with subscription Id [" + subscriptionId + "]";
+        Set<String> contextSubscriptions = subscriptions.computeIfAbsent(context, k -> new ConcurrentSkipListSet<>());
+        if (!contextSubscriptions.add(subscriptionId)) {
+            String errorMessage = "There already is a subscription query with subscription Id [" + subscriptionId + "] for context [" + context + "]";
             logger.warn(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
         logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);
 
-        subscriptions.add(subscriptionId);
-
         AxonServerSubscriptionQueryResult result = new AxonServerSubscriptionQueryResult(
                 subscriptionSerializer.serialize(interceptedQuery),
-                this.queryService()::subscription,
+                this.queryService(context)::subscription,
                 configuration,
                 backPressure,
                 updateBufferSize,
-                () -> subscriptions.remove(subscriptionId)
+                () -> contextSubscriptions.remove(subscriptionId)
         );
         return new DeserializedResult<>(result.get(), subscriptionSerializer);
     }
 
-    QueryServiceGrpc.QueryServiceStub queryService() {
-        return QueryServiceGrpc.newStub(axonServerConnectionManager.getChannel())
-                               .withInterceptors(interceptors);
+    QueryServiceGrpc.QueryServiceStub queryService(String context) {
+        return QueryServiceGrpc.newStub(axonServerConnectionManager.getChannel(context));
     }
 
     @Override
@@ -518,7 +528,7 @@ public class AxonServerQueryBus implements QueryBus {
             };
 
             StreamObserver<QueryProviderOutbound> streamObserver =
-                    axonServerConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
+                    axonServerConnectionManager.getQueryStream(configuration.getContext(), queryProviderInboundStreamObserver);
 
             logger.info("Creating new query stream subscriber");
 
@@ -634,12 +644,12 @@ public class AxonServerQueryBus implements QueryBus {
             public void run() {
                 if (!running) {
                     logger.debug("Query Handler Provider has stopped running, "
-                                         + "hence query [{}] will no longer be processed");
+                                         + "hence query [{}] will no longer be processed", queryRequest.getQuery());
                     return;
                 }
 
                 try {
-                    logger.debug("Will process query [{}]", queryRequest);
+                    logger.debug("Will process query [{}]", queryRequest.getQuery());
                     processQuery(queryRequest);
                 } catch (RuntimeException | OutOfDirectMemoryError e) {
                     logger.warn("Query Processor had an exception when processing query [{}]", queryRequest, e);

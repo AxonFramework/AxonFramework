@@ -28,14 +28,11 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -50,7 +47,7 @@ import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWit
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -76,6 +73,7 @@ public class AxonServerQueryBusTest {
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
+        conf.setContext("default");
         localSegment = SimpleQueryBus.builder().build();
         ser = XStreamSerializer.builder().build();
         testSubject = new AxonServerQueryBus(
@@ -87,7 +85,7 @@ public class AxonServerQueryBusTest {
         axonServerConnectionManager = mock(AxonServerConnectionManager.class);
         inboundStreamObserverRef = new AtomicReference<>();
         doAnswer(invocationOnMock -> {
-            inboundStreamObserverRef.set(invocationOnMock.getArgument(0));
+            inboundStreamObserverRef.set(invocationOnMock.getArgument(1));
             return new StreamObserver<QueryProviderOutbound>() {
                 @Override
                 public void onNext(QueryProviderOutbound commandProviderOutbound) {
@@ -139,7 +137,7 @@ public class AxonServerQueryBusTest {
     public void queryWhenQueryServiceStubFails() {
         RuntimeException expected = new RuntimeException("oops");
         testSubject = spy(testSubject);
-        when(testSubject.queryService()).thenThrow(expected);
+        when(testSubject.queryService(anyString())).thenThrow(expected);
 
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(queryMessage);

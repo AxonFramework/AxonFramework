@@ -18,19 +18,13 @@ package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.command.*;
-import io.grpc.ClientInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.DispatchInterceptors;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
+import org.axonframework.axonserver.connector.*;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
-import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -75,8 +69,8 @@ public class AxonServerCommandBus implements CommandBus {
     private final CommandPriorityCalculator priorityCalculator;
 
     private final CommandHandlerProvider commandHandlerProvider;
-    private final ClientInterceptor[] interceptors;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors;
+    private final TargetContextResolver<? super CommandMessage<?>> targetContextResolver;
 
     /**
      * Instantiate an Axon Server {@link CommandBus} client. Will connect to an Axon Server instance to submit and
@@ -122,22 +116,43 @@ public class AxonServerCommandBus implements CommandBus {
                                 Serializer serializer,
                                 RoutingStrategy routingStrategy,
                                 CommandPriorityCalculator priorityCalculator) {
+        this(axonServerConnectionManager, configuration, localSegment, serializer, routingStrategy, priorityCalculator,
+             c -> configuration.getContext());
+    }
+
+    public AxonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
+                                AxonServerConfiguration configuration,
+                                CommandBus localSegment,
+                                Serializer serializer,
+                                RoutingStrategy routingStrategy,
+                                CommandPriorityCalculator priorityCalculator,
+                                TargetContextResolver<? super CommandMessage<?>> targetContextResolver) {
         this.axonServerConnectionManager = axonServerConnectionManager;
         this.configuration = configuration;
         this.localSegment = localSegment;
         this.serializer = new CommandSerializer(serializer, configuration);
         this.routingStrategy = routingStrategy;
         this.priorityCalculator = priorityCalculator;
+        this.targetContextResolver = targetContextResolver.orElse(m -> configuration.getContext());
 
-        this.commandHandlerProvider = new CommandHandlerProvider();
-        interceptors = new ClientInterceptor[]{
-                new TokenAddingInterceptor(configuration.getToken()),
-                new ContextAddingInterceptor(configuration.getContext())
-        };
+        this.commandHandlerProvider = new CommandHandlerProvider(configuration.getContext());
+
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        this.axonServerConnectionManager.addReconnectListener(commandHandlerProvider::resubscribe);
-        this.axonServerConnectionManager.addDisconnectListener(commandHandlerProvider::unsubscribeAll);
+        this.axonServerConnectionManager.addReconnectListener(this::resubscribe);
+        this.axonServerConnectionManager.addDisconnectListener(this::unsubscribe);
+    }
+
+    private void resubscribe(String context) {
+        if (commandHandlerProvider != null && configuration.getContext().equals(context)) {
+            commandHandlerProvider.resubscribe();
+        }
+    }
+
+    private void unsubscribe(String context) {
+        if (commandHandlerProvider != null && configuration.getContext().equals(context)) {
+            commandHandlerProvider.unsubscribeAll();
+        }
     }
 
     @Override
@@ -156,13 +171,13 @@ public class AxonServerCommandBus implements CommandBus {
                                    CommandCallback<? super C, ? super R> commandCallback) {
         AtomicBoolean serverResponded = new AtomicBoolean(false);
         try {
+            String context = targetContextResolver.resolveContext(commandMessage);
             Command command = serializer.serialize(commandMessage,
                                                    routingStrategy.getRoutingKey(commandMessage),
                                                    priorityCalculator.determinePriority(commandMessage));
 
             CommandServiceGrpc
-                    .newStub(axonServerConnectionManager.getChannel())
-                    .withInterceptors(interceptors)
+                    .newStub(axonServerConnectionManager.getChannel(context))
                     .dispatch(command,
                               new StreamObserver<CommandResponse>() {
                                   @Override
@@ -235,7 +250,9 @@ public class AxonServerCommandBus implements CommandBus {
      * Disconnect the command bus from the Axon Server.
      */
     public void disconnect() {
-        commandHandlerProvider.disconnect();
+        if (commandHandlerProvider != null) {
+            commandHandlerProvider.disconnect();
+        }
     }
 
     @Override
@@ -252,12 +269,14 @@ public class AxonServerCommandBus implements CommandBus {
 
         private final CopyOnWriteArraySet<String> subscribedCommands;
         private final ExecutorService commandExecutor;
+        private final String context;
 
         private volatile boolean subscribing;
         private volatile boolean running = true;
         private volatile StreamObserver<CommandProviderOutbound> subscriberStreamObserver;
 
-        CommandHandlerProvider() {
+        CommandHandlerProvider(String context) {
+            this.context = context;
             subscribedCommands = new CopyOnWriteArraySet<>();
             PriorityBlockingQueue<Runnable> commandProcessQueue =
                     new PriorityBlockingQueue<>(COMMAND_QUEUE_CAPACITY, Comparator.comparingLong(
@@ -280,7 +299,7 @@ public class AxonServerCommandBus implements CommandBus {
             }
 
             try {
-                StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
+                StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver(context);
                 subscribedCommands.forEach(command -> outboundStreamObserver.onNext(
                         CommandProviderOutbound.newBuilder().setSubscribe(
                                 CommandSubscription.newBuilder()
@@ -300,7 +319,7 @@ public class AxonServerCommandBus implements CommandBus {
             subscribing = true;
             subscribedCommands.add(commandName);
             try {
-                StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
+                StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver(context);
                 outboundStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
                         CommandSubscription.newBuilder()
                                            .setCommand(commandName)
@@ -319,7 +338,7 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         private void processCommand(Command command) {
-            StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver();
+            StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver(context);
             try {
                 dispatchLocal(serializer.deserialize(command), outboundStreamObserver);
             } catch (RuntimeException throwable) {
@@ -344,7 +363,7 @@ public class AxonServerCommandBus implements CommandBus {
             }
         }
 
-        private synchronized StreamObserver<CommandProviderOutbound> getSubscriberObserver() {
+        private synchronized StreamObserver<CommandProviderOutbound> getSubscriberObserver(String context) {
             if (subscriberStreamObserver != null) {
                 return subscriberStreamObserver;
             }
@@ -379,7 +398,7 @@ public class AxonServerCommandBus implements CommandBus {
             };
 
             StreamObserver<CommandProviderOutbound> streamObserver =
-                    axonServerConnectionManager.getCommandStream(commandsFromRoutingServer, interceptors);
+                    axonServerConnectionManager.getCommandStream(context, commandsFromRoutingServer);
 
             logger.info("Creating new command stream subscriber");
 
@@ -393,9 +412,10 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         public void unsubscribe(String command) {
+            String context = configuration.getContext();
             subscribedCommands.remove(command);
             try {
-                getSubscriberObserver().onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
+                getSubscriberObserver(context).onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
                         CommandSubscription.newBuilder()
                                            .setCommand(command)
                                            .setClientId(configuration.getClientId())
@@ -408,9 +428,10 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         private void unsubscribeAll() {
+            String context = configuration.getContext();
             for (String subscribedCommand : subscribedCommands) {
                 try {
-                    getSubscriberObserver().onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
+                    getSubscriberObserver(context).onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
                             CommandSubscription.newBuilder()
                                                .setCommand(subscribedCommand)
                                                .setClientId(configuration.getClientId())

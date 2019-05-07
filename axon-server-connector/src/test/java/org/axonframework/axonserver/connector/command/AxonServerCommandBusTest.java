@@ -110,7 +110,7 @@ public class AxonServerCommandBusTest {
         CountDownLatch waiter = new CountDownLatch(1);
         AtomicBoolean failure = new AtomicBoolean(false);
         AtomicReference<Throwable> throwable = new AtomicReference<>();
-        when(axonServerConnectionManager.getChannel()).thenThrow(new RuntimeException("oops"));
+        when(axonServerConnectionManager.getChannel(anyString())).thenThrow(new RuntimeException("oops"));
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             if (result.isExceptional()) {
                 failure.set(true);
@@ -186,7 +186,7 @@ public class AxonServerCommandBusTest {
         AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
         AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
         doAnswer(invocationOnMock -> {
-            inboundStreamObserverRef.set(invocationOnMock.getArgument(0));
+            inboundStreamObserverRef.set(invocationOnMock.getArgument(1));
             return new StreamObserver<CommandProviderOutbound>() {
                 @Override
                 public void onNext(CommandProviderOutbound commandProviderOutbound) {

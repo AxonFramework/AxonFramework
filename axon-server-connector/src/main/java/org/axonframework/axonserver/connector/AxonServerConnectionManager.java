@@ -30,6 +30,7 @@ import io.grpc.stub.StreamObserver;
 import io.netty.handler.ssl.SslContext;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
+import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.AxonThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,10 +49,6 @@ import java.util.function.Function;
  */
 public class AxonServerConnectionManager {
     private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
-
-    private volatile ManagedChannel channel;
-    private volatile boolean shutdown;
-    private volatile StreamObserver<PlatformInboundInstruction> inputStream;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new AxonThreadFactory("AxonServerConnector") {
         @Override
         public Thread newThread(Runnable r) {
@@ -60,73 +57,88 @@ public class AxonServerConnectionManager {
             return thread;
         }
     });
-    private volatile ScheduledFuture<?> reconnectTask;
-    private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
-    private final List<Function<Runnable, Runnable>> reconnectInterceptors = new CopyOnWriteArrayList<>();
-    private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
+    private final Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
+    private final Map<String, ScheduledFuture<?>> reconnectTasks = new ConcurrentHashMap<>();
+    private final List<Consumer<String>> disconnectListeners = new CopyOnWriteArrayList<>();
+    private final List<Function<Consumer<String>, Consumer<String>>> reconnectInterceptors = new CopyOnWriteArrayList<>();
+    private final List<Consumer<String>> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonServerConfiguration connectInformation;
-    private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
+    private final Map<String, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new ConcurrentHashMap<>();
+    private volatile boolean shutdown;
+    private Map<String, StreamObserver<PlatformInboundInstruction>> instructionStreams = new ConcurrentHashMap<>();
 
     public AxonServerConnectionManager(AxonServerConfiguration connectInformation) {
         this.connectInformation = connectInformation;
     }
 
-    public synchronized Channel getChannel() {
-        checkConnectionState();
-        if( channel == null || channel.isShutdown()) {
-            channel = null;
-            logger.info("Connecting using {}...", connectInformation.isSslEnabled()?"TLS":"unencrypted connection");
+    public Channel getChannel() {
+        return getChannel(connectInformation.getContext());
+    }
+
+    public synchronized Channel getChannel(String context) {
+        checkConnectionState(context);
+        final ManagedChannel channel = channels.get(context);
+        if (channel == null || channel.isShutdown()) {
+            channels.remove(context);
+            logger.info("Connecting using {}...", connectInformation.isSslEnabled() ? "TLS" : "unencrypted connection");
             boolean unavailable = false;
-            for(NodeInfo nodeInfo : connectInformation.routingServers()) {
-                ManagedChannel candidate = createChannel( nodeInfo.getHostName(), nodeInfo.getGrpcPort());
+            for (NodeInfo nodeInfo : connectInformation.routingServers()) {
+                ManagedChannel candidate = createChannel(nodeInfo.getHostName(), nodeInfo.getGrpcPort());
                 PlatformServiceGrpc.PlatformServiceBlockingStub stub = PlatformServiceGrpc.newBlockingStub(candidate)
-                        .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
+                                                                                          .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
                 try {
                     PlatformInfo clusterInfo = stub.getPlatformServer(ClientIdentification.newBuilder()
-                            .setClientId(connectInformation.getClientId())
-                            .setComponentName(connectInformation.getComponentName())
-                            .build());
-                    if(isPrimary(nodeInfo, clusterInfo)) {
-                        channel = candidate;
+                                                                                          .setClientId(connectInformation.getClientId())
+                                                                                          .setComponentName(connectInformation.getComponentName())
+                                                                                          .build());
+                    if (isPrimary(nodeInfo, clusterInfo)) {
+                        channels.put(context, candidate);
                     } else {
                         shutdown(candidate);
                         logger.info("Connecting to {} ({}:{})", clusterInfo.getPrimary().getNodeName(),
                                     clusterInfo.getPrimary().getHostName(),
                                     clusterInfo.getPrimary().getGrpcPort());
-                        channel = createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
+                        channels.put(context, createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort()));
                     }
-                    startInstructionStream(clusterInfo.getPrimary().getNodeName());
+                    startInstructionStream(context, clusterInfo.getPrimary().getNodeName());
                     unavailable = false;
                     logger.info("Re-subscribing commands and queries");
-                    reconnectListeners.forEach(Runnable::run);
+                    reconnectListeners.forEach(rl -> rl.accept(context));
                     break;
-                } catch( StatusRuntimeException sre) {
+                } catch (StatusRuntimeException sre) {
                     shutdown(candidate);
                     logger.warn("Connecting to AxonServer node {}:{} failed: {}", nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage());
-                    if( sre.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
+                    if (sre.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
                         unavailable = true;
                     }
                 }
             }
-            if( unavailable) {
-                if(!connectInformation.getSuppressDownloadMessage()) {
+            if (unavailable) {
+                if (!connectInformation.getSuppressDownloadMessage()) {
                     connectInformation.setSuppressDownloadMessage(true);
                     writeDownloadMessage();
                 }
-                scheduleReconnect(false);
+                scheduleReconnect(context, false);
                 throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "No connection to AxonServer available");
             } else if (!connectInformation.getSuppressDownloadMessage()) {
                 connectInformation.setSuppressDownloadMessage(true);
             }
         }
-        return channel;
+        return intercepted(context, channels.get(context));
     }
 
-    private void checkConnectionState() {
+    private Channel intercepted(String context, Channel candidate) {
+        return ClientInterceptors.intercept(candidate,
+                                            new TokenAddingInterceptor(connectInformation.getToken()),
+                                            new ContextAddingInterceptor(context));
+    }
+
+    private void checkConnectionState(String context) {
         if (shutdown) {
             throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "Shutdown in progress");
         }
 
+        ScheduledFuture<?> reconnectTask = reconnectTasks.get(context);
         if (reconnectTask != null && !reconnectTask.isDone()) {
             throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(),
                                           "No connection to AxonServer available");
@@ -155,27 +167,27 @@ public class AxonServerConnectionManager {
     }
 
     private boolean isPrimary(NodeInfo nodeInfo, PlatformInfo clusterInfo) {
-        if( clusterInfo.getSameConnection()) return true;
+        if (clusterInfo.getSameConnection()) return true;
         return clusterInfo.getPrimary().getGrpcPort() == nodeInfo.getGrpcPort() && clusterInfo.getPrimary().getHostName().equals(nodeInfo.getHostName());
     }
 
     private ManagedChannel createChannel(String hostName, int port) {
         NettyChannelBuilder builder = NettyChannelBuilder.forAddress(hostName, port);
 
-        if( connectInformation.getKeepAliveTime() > 0) {
+        if (connectInformation.getKeepAliveTime() > 0) {
             builder.keepAliveTime(connectInformation.getKeepAliveTime(), TimeUnit.MILLISECONDS)
                    .keepAliveTimeout(connectInformation.getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
                    .keepAliveWithoutCalls(true);
         }
 
-        if( connectInformation.getMaxMessageSize() > 0) {
+        if (connectInformation.getMaxMessageSize() > 0) {
             builder.maxInboundMessageSize(connectInformation.getMaxMessageSize());
         }
         if (connectInformation.isSslEnabled()) {
             try {
-                if( connectInformation.getCertFile() != null) {
+                if (connectInformation.getCertFile() != null) {
                     File certFile = new File(connectInformation.getCertFile());
-                    if( ! certFile.exists()) {
+                    if (!certFile.exists()) {
                         throw new RuntimeException("Certificate file " + connectInformation.getCertFile() + " does not exist");
                     }
                     SslContext sslContext = GrpcSslContexts.forClient()
@@ -192,116 +204,147 @@ public class AxonServerConnectionManager {
         return builder.build();
     }
 
-    private synchronized void startInstructionStream(String name) {
-        logger.debug("Start instruction stream to {}", name);
-        inputStream = new SynchronizedStreamObserver<>(PlatformServiceGrpc.newStub(channel)
-                                                                        .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
-                                                                        .openStream(new StreamObserver<PlatformOutboundInstruction>() {
-                    @Override
-                    public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
-                        handlers.getOrDefault(messagePlatformOutboundInstruction.getRequestCase(), new ArrayDeque<>())
-                                .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
+    private synchronized void startInstructionStream(String context, String name) {
+        logger.debug("Start instruction stream to node {} for context {}", name, context);
+        SynchronizedStreamObserver<PlatformInboundInstruction> inputStream = new SynchronizedStreamObserver<>(
+                PlatformServiceGrpc.newStub(intercepted(
+                        context, channels.get(context)))
+                                   .openStream(new UpstreamAwareStreamObserver<PlatformOutboundInstruction>() {
+                                       @Override
+                                       public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
+                                           handlers.getOrDefault(context, Collections.emptyList())
+                                                   .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
 
-                        switch (messagePlatformOutboundInstruction.getRequestCase()) {
-                            case NODE_NOTIFICATION:
-                                logger.debug("Received: {}", messagePlatformOutboundInstruction.getNodeNotification());
-                                break;
-                            case REQUEST_RECONNECT:
-                                Runnable reconnect = () -> {
-                                    disconnectListeners.forEach(Runnable::run);
-                                    inputStream.onCompleted();
-                                    scheduleReconnect(true);
-                                };
-                                for (Function<Runnable,Runnable> interceptor : reconnectInterceptors) {
-                                    reconnect = interceptor.apply(reconnect);
-                                }
-                                reconnect.run();
-                                break;
-                            case REQUEST_NOT_SET:
+                                           switch (messagePlatformOutboundInstruction.getRequestCase()) {
+                                               case NODE_NOTIFICATION:
+                                                   logger.debug("Received: {}", messagePlatformOutboundInstruction.getNodeNotification());
+                                                   break;
+                                               case REQUEST_RECONNECT:
+                                                   Consumer<String> reconnect = (c) -> {
+                                                       disconnectListeners.forEach(rl -> rl.accept(c));
+                                                       getRequestStream().onCompleted();
+                                                       scheduleReconnect(context, true);
+                                                   };
+                                                   for (Function<Consumer<String>, Consumer<String>> interceptor : reconnectInterceptors) {
+                                                       reconnect = interceptor.apply(reconnect);
+                                                   }
+                                                   reconnect.accept(context);
+                                                   break;
+                                               case REQUEST_NOT_SET:
 
-                                break;
-                        }
-                    }
+                                                   break;
+                                           }
+                                       }
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        logger.debug("Lost instruction stream from {} - {}", name, throwable.getMessage());
-                        disconnectListeners.forEach(Runnable::run);
-                        if( throwable instanceof StatusRuntimeException) {
-                            StatusRuntimeException sre = (StatusRuntimeException)throwable;
-                            if( sre.getStatus().getCode().equals(Status.Code.PERMISSION_DENIED)) return;
-                        }
-                        scheduleReconnect(true);
-                    }
+                                       @Override
+                                       public void onError(Throwable throwable) {
+                                           logger.debug("Lost instruction stream from {} - {}", name, throwable.getMessage());
+                                           disconnectListeners.forEach(rl -> rl.accept(context));
+                                           if (throwable instanceof StatusRuntimeException) {
+                                               StatusRuntimeException sre = (StatusRuntimeException) throwable;
+                                               if (sre.getStatus().getCode().equals(Status.Code.PERMISSION_DENIED))
+                                                   return;
+                                           }
+                                           scheduleReconnect(context, true);
+                                       }
 
-                    @Override
-                    public void onCompleted() {
-                        logger.warn("Closed instruction stream to {}", name);
-                        disconnectListeners.forEach(Runnable::run);
-                        scheduleReconnect(true);
-                    }
-                }));
-        inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
-                .setClientId(connectInformation.getClientId())
-                .setComponentName(connectInformation.getComponentName())
-        ).build());
+                                       @Override
+                                       public void onCompleted() {
+                                           logger.warn("Closed instruction stream to {}", name);
+                                           disconnectListeners.forEach(rl -> rl.accept(context));
+                                           scheduleReconnect(context, true);
+                                       }
+                                   }));
+        inputStream.onNext(PlatformInboundInstruction.newBuilder()
+                                                     .setRegister(ClientIdentification.newBuilder()
+                                                                                      .setClientId(connectInformation.getClientId())
+                                                                                      .setComponentName(connectInformation.getComponentName())
+                                                     ).build());
+        StreamObserver<PlatformInboundInstruction> existingStream = instructionStreams.put(context, inputStream);
+        if (existingStream != null) {
+            existingStream.onCompleted();
+        }
     }
 
-    private synchronized void tryReconnect() {
-        if( channel != null || shutdown) return;
+    private synchronized void tryReconnect(String context) {
+        if (channels.containsKey(context) || shutdown) return;
         try {
-            reconnectTask = null;
-            getChannel();
+            reconnectTasks.remove(context);
+            getChannel(context);
         } catch (Exception ignored) {
         }
     }
 
-    public void addReconnectListener(Runnable action) {
+    public void addReconnectListener(String context, Runnable action) {
+        addReconnectListener(c -> {
+            if (context.equals(c)) {
+                action.run();
+            }
+        });
+    }
+
+    public void addDisconnectListener(String context, Runnable action) {
+        addDisconnectListener(c -> {
+            if (context.equals(c)) {
+                action.run();
+            }
+        });
+    }
+
+    public void addReconnectListener(Consumer<String> action) {
         reconnectListeners.add(action);
     }
 
-    public void addDisconnectListener(Runnable action) {
+    public void addDisconnectListener(Consumer<String> action) {
         disconnectListeners.add(action);
     }
 
-    public void addReconnectInterceptor(Function<Runnable, Runnable> interceptor){
+    public void addReconnectInterceptor(Function<Consumer<String>, Consumer<String>> interceptor) {
         reconnectInterceptors.add(interceptor);
     }
 
-    private synchronized void scheduleReconnect(boolean immediate) {
-        if( !shutdown && (reconnectTask == null || reconnectTask.isDone())) {
-            if( channel != null) {
+    private synchronized void scheduleReconnect(String context, boolean immediate) {
+        ScheduledFuture<?> reconnectTask = reconnectTasks.get(context);
+        ManagedChannel channel = channels.get(context);
+        if (!shutdown && (reconnectTask == null || reconnectTask.isDone())) {
+            if (channel != null) {
                 try {
                     channel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
-                } catch(Exception ignored) {
+                } catch (Exception ignored) {
 
                 }
             }
-            channel = null;
-            reconnectTask = scheduler.schedule(this::tryReconnect, immediate ? 100 : 5000, TimeUnit.MILLISECONDS);
+            channels.remove(context);
+            reconnectTasks.put(context, scheduler.schedule(() -> tryReconnect(context), immediate ? 100 : 5000, TimeUnit.MILLISECONDS));
         }
     }
 
-    public StreamObserver<CommandProviderOutbound> getCommandStream(StreamObserver<CommandProviderInbound> commandsFromRoutingServer, ClientInterceptor[] interceptors) {
-        return CommandServiceGrpc.newStub(getChannel())
-                .withInterceptors(interceptors)
-                .openStream(commandsFromRoutingServer);
+    public StreamObserver<CommandProviderOutbound> getCommandStream(String context, StreamObserver<CommandProviderInbound> commandsFromRoutingServer) {
+        return CommandServiceGrpc.newStub(getChannel(context))
+                                 .openStream(commandsFromRoutingServer);
     }
 
-    public StreamObserver<QueryProviderOutbound> getQueryStream(StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver, ClientInterceptor[] interceptors) {
-        return QueryServiceGrpc.newStub(getChannel())
-                .withInterceptors(interceptors)
-                .openStream(queryProviderInboundStreamObserver);
+    public StreamObserver<QueryProviderOutbound> getQueryStream(String context, StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver) {
+        return QueryServiceGrpc.newStub(getChannel(context))
+                               .openStream(queryProviderInboundStreamObserver);
     }
 
-    public void onOutboundInstruction(PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer){
-        Collection<Consumer<PlatformOutboundInstruction>> consumers = this.handlers.computeIfAbsent(requestCase, (rc) -> new LinkedList<>());
-        consumers.add(consumer);
+    @Deprecated
+    public void onOutboundInstruction(PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer) {
+        onOutboundInstruction(getDefaultContext(), requestCase, consumer);
     }
 
-    public void send(PlatformInboundInstruction instruction){
-        if (getChannel() != null) {
-            inputStream.onNext(instruction);
+    public void onOutboundInstruction(String context, PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer) {
+        this.handlers.computeIfAbsent(context, (rc) -> new LinkedList<>()).add(i -> {
+            if (i.getRequestCase().equals(requestCase)) {
+                consumer.accept(i);
+            }
+        });
+    }
+
+    public void send(String context, PlatformInboundInstruction instruction) {
+        if (getChannel(context) != null) {
+            instructionStreams.get(context).onNext(instruction);
         }
     }
 
@@ -317,9 +360,21 @@ public class AxonServerConnectionManager {
     /**
      * Disconnects any active connection, forcing a new connection to be established when one is requested.
      */
-    public void disconnect() {
+    public void disconnect(String context) {
+        ManagedChannel channel = channels.get(context);
         if (channel != null) {
             shutdown(channel);
         }
+    }
+
+    /**
+     * Disconnects any active connection, forcing a new connection to be established when one is requested.
+     */
+    public void disconnect() {
+        channels.forEach((k, v) -> shutdown(v));
+    }
+
+    public String getDefaultContext() {
+        return connectInformation.getContext();
     }
 }

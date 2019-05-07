@@ -69,7 +69,9 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
                                                                     new EventProcessorController(
                                                                             this.eventProcessingConfiguration.get())));
         this.processorInfoSource = new Component<>(() -> config, "eventProcessorInfoSource", c -> {
-            GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(this.eventProcessingConfiguration.get(), this.connectionManager.get());
+            GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(this.eventProcessingConfiguration.get(),
+                                                                                       this.connectionManager.get(),
+                                                                                       this.axonServerConfiguration.get().getContext());
             return new ScheduledEventProcessorInfoSource(
                     this.axonServerConfiguration.get().getProcessorsNotificationInitialDelay(),
                     this.axonServerConfiguration.get().getProcessorsNotificationRate(),
