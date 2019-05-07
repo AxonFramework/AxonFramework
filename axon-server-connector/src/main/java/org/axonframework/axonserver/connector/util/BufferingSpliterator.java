@@ -57,7 +57,7 @@ public class BufferingSpliterator<R> implements Spliterator<R> {
     }
 
     /**
-     * Instantiate a queue backed {@link Spliterator} implementation with a queue capacity of
+     * Instantiate a buffering {@link Spliterator} implementation with a queue capacity of
      * {@code Integer.MAX_VALUE}.
      */
     public BufferingSpliterator() {
