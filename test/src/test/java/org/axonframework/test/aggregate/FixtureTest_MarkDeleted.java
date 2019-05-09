@@ -53,17 +53,13 @@ public class FixtureTest_MarkDeleted {
                .expectNotMarkedDeleted();
     }
 
-    @Test
+    @Test(expected = AxonAssertionError.class)
     public void testCreateAggregateYieldsLiveAggregateInverted() {
-        try {
-            fixture.registerInjectableResource(new HardToCreateResource());
-            fixture.givenNoPriorActivity()
-                    .when(new CreateAggregateCommand("id"))
-                    .expectEvents(new MyEvent("id", 0))
-                    .expectMarkedDeleted();
-        } catch (Throwable t) {
-            assertEquals(AxonAssertionError.class, t.getClass());
-        }
+        fixture.registerInjectableResource(new HardToCreateResource());
+        fixture.givenNoPriorActivity()
+                .when(new CreateAggregateCommand("id"))
+                .expectEvents(new MyEvent("id", 0))
+                .expectMarkedDeleted();
     }
 
     @Test
@@ -74,16 +70,12 @@ public class FixtureTest_MarkDeleted {
                .expectMarkedDeleted();
     }
 
-    @Test
+    @Test(expected = AxonAssertionError.class)
     public void testDeletedAggregateYieldsAggregateMarkedDeletedInverted() {
-        try {
-            fixture.given(new MyEvent("id", 0))
-                    .when(new DeleteCommand("id", false))
-                    .expectEvents(new MyAggregateDeletedEvent(false))
-                    .expectNotMarkedDeleted();
-        } catch (Throwable t) {
-            assertEquals(AxonAssertionError.class, t.getClass());
-        }
+        fixture.given(new MyEvent("id", 0))
+                .when(new DeleteCommand("id", false))
+                .expectEvents(new MyAggregateDeletedEvent(false))
+                .expectNotMarkedDeleted();
     }
 
 }
