@@ -22,7 +22,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -45,6 +44,7 @@ public class FixtureTest_MarkDeleted {
     }
 
     @Test
+    @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
     public void testCreateAggregateYieldsLiveAggregate() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenNoPriorActivity()
@@ -63,6 +63,7 @@ public class FixtureTest_MarkDeleted {
     }
 
     @Test
+    @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
     public void testDeletedAggregateYieldsAggregateMarkedDeleted() {
         fixture.given(new MyEvent("id", 0))
                .when(new DeleteCommand("id", false))
