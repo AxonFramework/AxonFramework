@@ -20,18 +20,14 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
-import org.axonframework.test.matchers.EqualFieldsMatcher;
-import org.axonframework.test.matchers.FieldFilter;
-import org.axonframework.test.matchers.Matchers;
-import org.axonframework.test.matchers.MapEntryMatcher;
-import org.axonframework.test.matchers.PayloadMatcher;
+import org.axonframework.test.matchers.*;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -297,6 +293,24 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         if (!matcher.matches(actualException)) {
             reporter.reportWrongException(actualException, description);
         }
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectMarkedDeleted() {
+        if (!state.get().isDeleted()) {
+            reporter.reportIncorrectDeletedState(true);
+        }
+
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectNotMarkedDeleted() {
+        if (state.get().isDeleted()) {
+            reporter.reportIncorrectDeletedState(false);
+        }
+
         return this;
     }
 
