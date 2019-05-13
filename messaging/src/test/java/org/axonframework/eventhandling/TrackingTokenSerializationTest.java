@@ -71,6 +71,21 @@ public class TrackingTokenSerializationTest {
         }
     }
 
+//    @Test
+//    public void testMultiSourceTrackingToken(){
+//        GlobalSequenceTrackingToken globalToken = new GlobalSequenceTrackingToken(35);
+//        GapAwareTrackingToken gapToken = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
+//        Map<String,TrackingToken> trackingTokenMap = new HashMap<String,TrackingToken>() {{put("global", globalToken); put("gap", gapToken);}};
+//
+//        MultiSourceTrackingToken token = new MultiSourceTrackingToken(trackingTokenMap);
+//        MultiSourceTrackingToken[] results = serializeToken(token);
+//
+//        for (int i = 0; i < results.length; i++) {
+//            assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
+//            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result", token, results[i]);
+//        }
+//    }
+
     @SuppressWarnings("unchecked")
     private <T extends TrackingToken> T[] serializeToken(T token) {
         T[] results = (T[]) Array.newInstance(token.getClass(), serializers.length);
