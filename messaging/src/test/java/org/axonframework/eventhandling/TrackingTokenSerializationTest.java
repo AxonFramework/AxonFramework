@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.serialization.JavaSerializer;
+import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -24,6 +25,8 @@ import org.junit.*;
 
 import java.lang.reflect.Array;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -71,27 +74,31 @@ public class TrackingTokenSerializationTest {
         }
     }
 
-//    @Test
-//    public void testMultiSourceTrackingToken(){
-//        GlobalSequenceTrackingToken globalToken = new GlobalSequenceTrackingToken(35);
-//        GapAwareTrackingToken gapToken = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
-//        Map<String,TrackingToken> trackingTokenMap = new HashMap<String,TrackingToken>() {{put("global", globalToken); put("gap", gapToken);}};
-//
-//        MultiSourceTrackingToken token = new MultiSourceTrackingToken(trackingTokenMap);
-//        MultiSourceTrackingToken[] results = serializeToken(token);
-//
-//        for (int i = 0; i < results.length; i++) {
-//            assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
-//            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result", token, results[i]);
-//        }
-//    }
+    @Test
+    public void testMultiSourceTrackingToken(){
+        GlobalSequenceTrackingToken globalToken = new GlobalSequenceTrackingToken(35);
+        GapAwareTrackingToken gapToken = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
+        Map<String,TrackingToken> trackingTokenMap = new HashMap<String,TrackingToken>();
+        trackingTokenMap.put("global", globalToken);
+        trackingTokenMap.put("gap", gapToken);
+
+        MultiSourceTrackingToken token = new MultiSourceTrackingToken(trackingTokenMap);
+        MultiSourceTrackingToken[] results = serializeToken(token);
+
+        for (int i = 0; i < results.length; i++) {
+            assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
+            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result", token, results[i]);
+        }
+    }
 
     @SuppressWarnings("unchecked")
     private <T extends TrackingToken> T[] serializeToken(T token) {
         T[] results = (T[]) Array.newInstance(token.getClass(), serializers.length);
         for (int i = 0; i < serializers.length; i++) {
             Serializer serializer = serializers[i];
-            results[i] = serializer.deserialize(serializer.serialize(token, byte[].class));
+            SerializedObject<byte[]> serialized = serializer.serialize(token, byte[].class);
+            System.out.println(new String(serialized.getData()));
+            results[i] = serializer.deserialize(serialized);
         }
         return results;
     }

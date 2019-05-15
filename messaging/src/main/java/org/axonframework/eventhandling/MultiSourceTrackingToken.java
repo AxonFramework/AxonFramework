@@ -2,10 +2,12 @@ package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -16,10 +18,11 @@ import java.util.OptionalLong;
  * @author Greg Woods
  * @since 4.x
  */
-public class MultiSourceTrackingToken implements TrackingToken {
+public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
     private static final Logger logger = LoggerFactory.getLogger(MultiSourceTrackingToken.class);
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
     private final Map<String,TrackingToken> trackingTokens;
 
     /**
@@ -35,7 +38,7 @@ public class MultiSourceTrackingToken implements TrackingToken {
     /**
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other} token
      * @param other The token to compare to this one
-     * @return token represeting the lower bound of of both tokens
+     * @return token representing the lower bound of of both tokens
      */
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
@@ -121,6 +124,10 @@ public class MultiSourceTrackingToken implements TrackingToken {
      */
     public TrackingToken getTokenForStream(String streamName){
         return trackingTokens.get(streamName);
+    }
+
+    public Map<String,TrackingToken> getTrackingTokens(){
+        return trackingTokens;
     }
 
     /**
