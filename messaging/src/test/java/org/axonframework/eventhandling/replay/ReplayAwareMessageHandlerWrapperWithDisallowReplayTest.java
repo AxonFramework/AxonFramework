@@ -16,8 +16,13 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.AllowReplay;
+import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
+import org.axonframework.eventhandling.DisallowReplay;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +34,7 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class ReplayAwareMessageHandlerWrapperTest {
+public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
     private SomeHandler handler;
     private AnnotationEventHandlerAdapter testSubject;
@@ -57,7 +62,7 @@ public class ReplayAwareMessageHandlerWrapperTest {
         assertFalse(handler.receivedStrings.isEmpty());
     }
 
-    @AllowReplay(false)
+    @DisallowReplay
     private static class SomeHandler {
 
         private List<String> receivedStrings = new ArrayList<>();
