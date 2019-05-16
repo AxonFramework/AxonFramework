@@ -17,6 +17,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +40,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
     private MultiSourceTrackingToken trackingToken;
     private final Comparator<TrackedEventMessage<?>> comparator;
     private TrackedEventMessage<?> peekedMessage;
+    private String longPollingSource;
 
     /**
      * Instantiate a {@link MultiStreamableMessageSource} based on the fields contained in the
@@ -49,6 +52,16 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      */
     public MultiStreamableMessageSource(Builder builder){
         this.eventStreams = builder.messageSourceMap;
+
+        //ensure longPollingSource is last item in the LinkedHashMap
+        if(! builder.longPollingSource.equals("")) {
+            this.longPollingSource = builder.longPollingSource;
+            StreamableMessageSource sourcreToReAdd = this.eventStreams.remove(longPollingSource);
+            this.eventStreams.put(longPollingSource, sourcreToReAdd);
+        } else {
+            this.longPollingSource = builder.lastSourceInserted;
+        }
+
         this.comparator = builder.comparator;
     }
 
@@ -177,20 +190,31 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
 
         /**
-         * @param timeout the maximum number of time units to wait for messages to become available (divided equally
-         *                between streams).
+         * @param timeout the maximum number of time units to wait for messages to become available. This time
+         *                is spent polling on one particular stream (specified by {@link Builder#configureLongPollingSource(String)}
+         *                or by default to last stream provide to {@link Builder#addMessageSource(String, StreamableMessageSource)}.
+         *                Between polling on this stream, {@link #hasNextAvailable()} is called on the others to check
+         *                if a message is immediately consumable on the other streams.
          * @param unit    the time unit for the timeout.
          * @return true if any stream has an available message. Otherwise false.
          * @throws InterruptedException when the thread is interrupted before the indicated time is up.
          */
         @Override
         public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
-            //divide the timeout equally between streams
-            int pollingIntervalPerStream = timeout/messageSources.size();
+            long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
+            int longPollTime = timeout/10;
 
-            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources.entrySet()) {
-                if (singleMessageSource.getValue().hasNextAvailable(pollingIntervalPerStream, unit)){
-                    return true;
+            while (System.currentTimeMillis() < deadline) {
+                Iterator<Map.Entry<String, BlockingStream<TrackedEventMessage<?>>>> it = messageSources.entrySet().iterator();
+
+                while (it.hasNext()) {
+                    Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> current = it.next();
+
+                    if (it.hasNext() != false) {
+                        if (current.getValue().hasNextAvailable()) return true;
+                    } else {
+                        if (current.getValue().hasNextAvailable(longPollTime, unit)) return true;
+                    }
                 }
             }
 
@@ -199,8 +223,8 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
 
         /**
          * Checks each stream to see if a message is available. If more than one stream has a message it decides which
-         * message to return using the {@link comparator}.
-         * @return selected message using {@link comparator}.
+         * message to return using the {@link #comparator}.
+         * @return selected message using {@link #comparator}.
          * @throws InterruptedException thrown if polling is interrupted during polling a stream.
          */
         @Override
@@ -257,7 +281,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
     public static class Builder{
 
         private Comparator<TrackedEventMessage<?>> comparator = Comparator.comparing(EventMessage::getTimestamp);
-        private Map<String,StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new HashMap<>();
+        private Map<String,StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
+        private String longPollingSource = "";
+        private String lastSourceInserted = "";
 
         /**
          * Adds a message source to the list of sources.
@@ -270,6 +296,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             Assert.isFalse(messageSourceMap.containsValue(messageSource), () -> "this message source is duplicated");
 
             messageSourceMap.put(messageSourceName, messageSource);
+            lastSourceInserted = messageSourceName;
             return this;
         }
 
@@ -280,6 +307,26 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         public Builder withComparator(Comparator<TrackedEventMessage<?>> comparator){
             this.comparator = comparator;
+            return this;
+        }
+
+
+        /**
+         * Select the message source which is most suitable for long polling. To prevent excessive polling on all sources
+         * it is preferable to do the majority of polling on a single source. All other streams will be checked first
+         * using {@link BlockingStream#hasNextAvailable()} before {@link BlockingStream#hasNextAvailable(int, TimeUnit)} is
+         * called on the source chosen for long polling. This is then repeated multiple times to increase the chance of
+         * successfully finding a message before the timeout. If no particular source is configured, long polling with be
+         * done on the last configured source.
+         *  whilst other streams will be using {@link BlockingStream#hasNextAvailable()}
+         *
+         * @param longPollingSource
+         * @return
+         */
+        public Builder configureLongPollingSource(String longPollingSource){
+            Assert.isTrue(messageSourceMap.containsKey(longPollingSource), () -> "Current configuration does not contain this message source");
+
+            this.longPollingSource = longPollingSource;
             return this;
         }
 

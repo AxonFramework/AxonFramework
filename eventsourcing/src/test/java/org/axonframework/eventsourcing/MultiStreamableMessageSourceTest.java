@@ -30,9 +30,10 @@ public class MultiStreamableMessageSourceTest {
         eventStoreB = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
 
         testSubject = MultiStreamableMessageSource.builder()
-                                    .addMessageSource("eventStoreA", eventStoreA)
-                                    .addMessageSource("eventStoreB", eventStoreB)
-                                    .build();
+                                                  .addMessageSource("eventStoreA", eventStoreA)
+                                                  .addMessageSource("eventStoreB", eventStoreB)
+                                                  .configureLongPollingSource("eventStoreA")
+                                                  .build();
     }
 
     @Test
@@ -62,6 +63,23 @@ public class MultiStreamableMessageSourceTest {
         assertFalse(singleEventStream.hasNextAvailable(100, TimeUnit.MILLISECONDS));
         long afterPollTime = System.currentTimeMillis();
         assertTrue(afterPollTime-beforePollTime > 90);
+        assertTrue(afterPollTime-beforePollTime < 120);
+
+        singleEventStream.close();
+    }
+
+    @Test
+    public void longPollMessageImmediatelyAvailable() throws InterruptedException{
+        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject.createTokenAt(Instant.now()));
+
+        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event1");
+        eventStoreB.publish(pubToStreamB);
+
+        long beforePollTime = System.currentTimeMillis();
+        boolean hasNextAvailable = singleEventStream.hasNextAvailable(100, TimeUnit.MILLISECONDS);
+        long afterPollTime = System.currentTimeMillis();
+        assertTrue(hasNextAvailable);
+        assertTrue(afterPollTime-beforePollTime < 10);
 
         singleEventStream.close();
     }
