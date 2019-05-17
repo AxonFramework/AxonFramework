@@ -39,14 +39,12 @@ public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     private SomeHandler handler;
     private AnnotationEventHandlerAdapter testSubject;
     private ReplayToken replayToken;
-    private GlobalSequenceTrackingToken regularToken;
 
     @Before
     public void setUp() {
         handler = new SomeHandler();
         testSubject = new AnnotationEventHandlerAdapter(handler);
-        regularToken = new GlobalSequenceTrackingToken(1L);
-        replayToken = new ReplayToken(regularToken);
+        replayToken = new ReplayToken(new GlobalSequenceTrackingToken(1L));
     }
 
     @Test
