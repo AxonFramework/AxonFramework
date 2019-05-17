@@ -17,14 +17,21 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.EventWithToken;
+import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.slf4j.Logger;
@@ -65,6 +72,7 @@ public class EventBuffer implements TrackingEventStream {
     private volatile boolean closed;
     private Consumer<Integer> consumeListener = i -> {
     };
+    private Consumer<SerializedType> blacklistListener = type -> {};
 
     /**
      * Initializes an Event Buffer, passing messages through given {@code upcasterChain} and deserializing events using
@@ -107,6 +115,23 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     /**
+     * Calls the blacklist listener if the message contains an UnknownSerializedType as payload. The listener reports the
+     * type and revision to AxonServer, so it will not send events with this payload type and revision anymore.
+     * @param trackedEventMessage
+     */
+    @Override
+    public void reportIgnored(TrackedEventMessage<?> trackedEventMessage) {
+        if( blacklistListener == null) return;
+        if(trackedEventMessage instanceof GenericEventMessage) {
+            GenericEventMessage genericTrackedEventMessage = (GenericEventMessage) trackedEventMessage;
+            if( genericTrackedEventMessage.getPayload() instanceof UnknownSerializedType) {
+                UnknownSerializedType unknownSerializedType = (UnknownSerializedType) genericTrackedEventMessage.getPayload();
+                blacklistListener.accept(unknownSerializedType.serializedType());
+            }
+        }
+    }
+
+    /**
      * Registers the callback to invoke when the reader wishes to close the stream.
      *
      * @param closeCallback The callback to invoke when the reader wishes to close the stream
@@ -122,6 +147,10 @@ public class EventBuffer implements TrackingEventStream {
      */
     public void registerConsumeListener(Consumer<Integer> consumeListener) {
         this.consumeListener = consumeListener;
+    }
+
+    public void registerBlacklistListener(Consumer<SerializedType> blacklistListener) {
+        this.blacklistListener = blacklistListener;
     }
 
     @Override

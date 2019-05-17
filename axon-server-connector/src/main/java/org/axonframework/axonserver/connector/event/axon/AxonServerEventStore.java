@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -457,6 +458,20 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             consumer.registerCloseListener((eventConsumer) -> observer.onCompleted());
             consumer.registerConsumeListener(observer::markConsumed);
+            if( configuration.isBlacklistingEnabled()) {
+                Set<PayloadDescription> blacklisted = new CopyOnWriteArraySet<>();
+                consumer.registerBlacklistListener(type -> {
+                    PayloadDescription payloadType = PayloadDescription.newBuilder()
+                                                                       .setRevision(getOrDefault(type.getRevision(),
+                                                                                                 ""))
+                                                                       .setType(type.getName())
+                                                                       .build();
+                    if (blacklisted.add(payloadType)) {
+                        observer.onNext(GetEventsRequest.newBuilder()
+                                                        .addBlacklist(payloadType).build());
+                    }
+                });
+            }
             return consumer;
         }
 

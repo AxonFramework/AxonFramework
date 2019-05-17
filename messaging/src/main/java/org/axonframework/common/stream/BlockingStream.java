@@ -91,4 +91,12 @@ public interface BlockingStream<M> extends AutoCloseable {
     default Stream<M> asStream() {
         return StreamUtils.asStream(this);
     }
+
+    /**
+     * Report the stream that a specific message was ignored by the consumer. Stream implementation can use this information
+     * for instance to blacklist similar messages.
+     * @param ignoredMessage the ignored message
+     */
+    default void reportIgnored(M ignoredMessage) {
+    }
 }

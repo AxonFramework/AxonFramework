@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.util;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.grpc.FlowControl;
 import io.grpc.stub.StreamObserver;
+import org.axonframework.serialization.SerializedType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,5 +113,4 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
             logger.info("Granting new permits: {}", newPermitsRequest);
         }
     }
-
 }

@@ -151,6 +151,11 @@ public class AxonServerConfiguration {
     private int maxMessageSize = 0;
 
     /**
+     * Blacklist events with unknown payload types.
+     */
+    private boolean blacklistingEnabled = true;
+
+    /**
      * Instantiate a default {@link AxonServerConfiguration}.
      */
     public AxonServerConfiguration() {
@@ -354,6 +359,14 @@ public class AxonServerConfiguration {
 
     public void setSnapshotPrefetch(int snapshotPrefetch) {
         this.snapshotPrefetch = snapshotPrefetch;
+    }
+
+    public boolean isBlacklistingEnabled() {
+        return blacklistingEnabled;
+    }
+
+    public void setBlacklistingEnabled(boolean blacklistingEnabled) {
+        this.blacklistingEnabled = blacklistingEnabled;
     }
 
     @SuppressWarnings("unused")

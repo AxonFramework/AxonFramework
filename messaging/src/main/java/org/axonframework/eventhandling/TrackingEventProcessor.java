@@ -327,6 +327,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 processingSegments = processingSegments(lastToken, segment);
                 if (canHandle(firstMessage, processingSegments)) {
                     batch.add(firstMessage);
+                } else {
+                    eventStream.reportIgnored(firstMessage);
+                    reportIgnored(firstMessage);
                 }
                 // besides checking batch sizes, we must also ensure that both the current message in the batch
                 // and the next (if present) allow for processing with a batch
@@ -338,6 +341,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
                     } else {
+                        eventStream.reportIgnored(trackedEventMessage);
                         reportIgnored(trackedEventMessage);
                     }
                 }
@@ -365,6 +369,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                 if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
+                } else {
+                    eventStream.reportIgnored(trackedEventMessage);
+                    reportIgnored(trackedEventMessage);
                 }
             }
 
