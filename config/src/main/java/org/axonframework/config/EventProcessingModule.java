@@ -637,6 +637,7 @@ public class EventProcessingModule
                                         .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
                                         .messageSource(messageSource.apply(conf))
                                         .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                                        .transactionManager(transactionManager(name))
                                         .build();
     }
 
