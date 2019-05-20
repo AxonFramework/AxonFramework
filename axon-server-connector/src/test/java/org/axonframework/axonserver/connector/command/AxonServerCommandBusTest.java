@@ -26,16 +26,13 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -46,7 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -93,18 +90,18 @@ public class AxonServerCommandBusTest {
         CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is the payload");
         CountDownLatch waiter = new CountDownLatch(1);
         AtomicReference<String> resultHolder = new AtomicReference<>();
-        AtomicBoolean failure = new AtomicBoolean(false);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             if (result.isExceptional()) {
-                failure.set(true);
+                failure.set(result.exceptionResult());
             } else {
                 resultHolder.set(result.getPayload());
             }
             waiter.countDown();
         });
         waiter.await();
-        assertEquals(resultHolder.get(), "this is the payload");
-        assertFalse(failure.get());
+        assertNull(failure.get());
+        assertEquals("this is the payload", resultHolder.get());
     }
 
     @Test

@@ -399,14 +399,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && !snapshotFilterSet) {
                 request.setAllowSnapshots(true);
             }
-            try {
-                return eventStoreClient.listAggregateEvents(request.build()).map(GrpcBackedDomainEventData::new);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new EventStoreException(e.getMessage(), e);
-            } catch (ExecutionException e) {
-                throw new EventStoreException(e.getMessage(), e);
-            }
+            return eventStoreClient.listAggregateEvents(request.build()).map(GrpcBackedDomainEventData::new);
         }
 
         public TrackingEventStream openStream(TrackingToken trackingToken) {
@@ -622,15 +615,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                                                            .setMaxSequence(
                                                                                                    sequenceNumber)
                                                                                            .build();
-                        try {
-                            eventStoreClient.listAggregateSnapshots(request).map(GrpcBackedDomainEventData::new)
-                                            .forEach(e -> prefetched.add(e));
-                        } catch (ExecutionException e) {
-                            throw new EventStoreException(e.getMessage(), e);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            return false;
-                        }
+                        eventStoreClient.listAggregateSnapshots(request).map(GrpcBackedDomainEventData::new)
+                                        .forEach(e -> prefetched.add(e));
                     }
 
                     if (prefetched.isEmpty()) {
