@@ -283,15 +283,12 @@ public class AxonServerConnectionManager {
                         scheduleReconnect(true);
                     }
                 }));
-        inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
-                                                                                                   .setClientId(connectInformation.getClientId())
-                                                                                                   .setComponentName(
-                                                                                                           connectInformation
-                                                                                                                   .getComponentName())
-                                                                                                   .putAllTags(
-                                                                                                           tagsConfiguration
-                                                                                                                   .getTags())
-        ).build());
+        ClientIdentification client = ClientIdentification
+                .newBuilder()
+                .setClientId(connectInformation.getClientId())
+                .setComponentName(connectInformation.getComponentName())
+                .putAllTags(tagsConfiguration.getTags()).build();
+        inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(client).build());
     }
 
     private synchronized void tryReconnect() {
