@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ import java.lang.annotation.Target;
  * <p>
  * Marking methods as not allowing replay will not change the routing of a message (i.e. will not invoke another
  * handler method). Messages that would otherwise be handled by such handler are simply ignored.
+ *
+ * @author Tom Briers
+ * @since 4.2
  */
 @Documented
 @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE, ElementType.METHOD})
