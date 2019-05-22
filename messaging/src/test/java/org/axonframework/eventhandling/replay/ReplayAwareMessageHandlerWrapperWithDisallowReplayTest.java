@@ -37,13 +37,17 @@ import static org.junit.Assert.assertTrue;
 public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
     private SomeHandler handler;
+    private SomeMethodHandler methodHandler;
     private AnnotationEventHandlerAdapter testSubject;
+    private AnnotationEventHandlerAdapter testMethodSubject;
     private ReplayToken replayToken;
 
     @Before
     public void setUp() {
         handler = new SomeHandler();
+        methodHandler = new SomeMethodHandler();
         testSubject = new AnnotationEventHandlerAdapter(handler);
+        testMethodSubject = new AnnotationEventHandlerAdapter(methodHandler);
         replayToken = new ReplayToken(new GlobalSequenceTrackingToken(1L));
     }
 
@@ -52,12 +56,18 @@ public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
         GenericTrackedEventMessage<Object> stringEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage("1"));
         GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
         assertTrue(testSubject.canHandle(stringEvent));
+        assertTrue(testMethodSubject.canHandle(stringEvent));
         assertTrue(testSubject.canHandle(longEvent));
+        assertTrue(testMethodSubject.canHandle(longEvent));
         testSubject.handle(stringEvent);
+        testMethodSubject.handle(stringEvent);
         testSubject.handle(longEvent);
+        testMethodSubject.handle(longEvent);
 
         assertTrue(handler.receivedLongs.isEmpty());
+        assertTrue(methodHandler.receivedLongs.isEmpty());
         assertFalse(handler.receivedStrings.isEmpty());
+        assertFalse(methodHandler.receivedStrings.isEmpty());
     }
 
     @DisallowReplay
@@ -74,6 +84,26 @@ public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
         }
 
         @EventHandler()
+        public void handle(Long event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
+            receivedLongs.add(event);
+        }
+    }
+
+    private static class SomeMethodHandler {
+
+        private List<String> receivedStrings = new ArrayList<>();
+        private List<Long> receivedLongs = new ArrayList<>();
+
+        @AllowReplay
+        @EventHandler
+        public void handle(String event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
+            receivedStrings.add(event);
+        }
+
+        @EventHandler
+        @DisallowReplay
         public void handle(Long event, TrackingToken token) {
             assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
