@@ -35,7 +35,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test in order to verify that the {@link DisallowReplay} class has the expected behaviour.
+ * Test in order to verify that the {@link DisallowReplay} annotation has the expected behaviour.
  */
 public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
