@@ -38,7 +38,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
 
     private final Map<String,StreamableMessageSource<TrackedEventMessage<?>>> eventStreams;
     private MultiSourceTrackingToken trackingToken;
-    private final Comparator<TrackedEventMessage<?>> comparator;
+    private final Comparator<TrackedSourcedEventMessage<?>> comparator;
     private TrackedEventMessage<?> peekedMessage;
     private String longPollingSource;
 
@@ -162,18 +162,18 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
 
         private TrackedEventMessage<?> doConsumeNext() {
-            HashMap<String, TrackedEventMessage> candidateMessagesToReturn = new HashMap<>();
+            HashMap<String, TrackedSourcedEventMessage> candidateMessagesToReturn = new HashMap<>();
 
             for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources.entrySet()) {
-                Optional<TrackedEventMessage<?>> peekedMessage = singleMessageSource.getValue().peek();
-                peekedMessage.ifPresent(
+                Optional<TrackedEventMessage<?>> currentPeekedMessage = singleMessageSource.getValue().peek();
+                currentPeekedMessage.ifPresent(
                         trackedEventMessage ->
                                 candidateMessagesToReturn.put(singleMessageSource.getKey(),
                                                               new GenericTrackedSourcedEventMessage(singleMessageSource.getKey(), trackedEventMessage)));
             }
 
             //select message to return from candidates
-            final Optional<Map.Entry<String, TrackedEventMessage>> chosenMessage =
+            final Optional<Map.Entry<String, TrackedSourcedEventMessage>> chosenMessage =
                     candidateMessagesToReturn.entrySet().stream().min((m1,m2) -> comparator.compare(m1.getValue(),m2.getValue()));
 
             // Ensure the chosen message is actually consumed from the stream
@@ -213,7 +213,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
                     if (it.hasNext() != false) {
                         if (current.getValue().hasNextAvailable()) return true;
                     } else {
-                        if (current.getValue().hasNextAvailable(longPollTime, unit)) return true;
+                        if (current.getValue().hasNextAvailable((int) Math.min(longPollTime, deadline - System.currentTimeMillis()), unit)) return true;
                     }
                 }
             }
@@ -236,19 +236,20 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
                 return next;
             }
 
-            HashMap<String,TrackedSourcedEventMessage> candidateMessagesToReturn = new HashMap<>();
+            HashMap<String, TrackedSourcedEventMessage> candidateMessagesToReturn = new HashMap<>();
 
-            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources.entrySet()) {
-                Optional<TrackedEventMessage<?>> peekedMessage = singleMessageSource.getValue().peek();
-                peekedMessage.ifPresent(trackedEventMessage ->
-                                                candidateMessagesToReturn.put(singleMessageSource.getKey(),new GenericTrackedSourcedEventMessage(singleMessageSource.getKey(), trackedEventMessage)));
- ;
+            while(candidateMessagesToReturn.size() == 0) {
+                for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources.entrySet()) {
+                    Optional<TrackedEventMessage<?>> currentPeekedMessage = singleMessageSource.getValue().peek();
+                    currentPeekedMessage.ifPresent(trackedEventMessage ->
+                                                           candidateMessagesToReturn.put(singleMessageSource.getKey(),new GenericTrackedSourcedEventMessage(singleMessageSource.getKey(), trackedEventMessage)));
                 }
+            }
 
             //get streamId of message to return after running the comparator
             String streamIdOfMessage =
                     candidateMessagesToReturn.entrySet().stream().min((m1,m2) -> comparator.compare(m1.getValue(),m2.getValue()))
-                                                                .map(Map.Entry::getKey).orElse(null);
+                                             .map(Map.Entry::getKey).orElse(null);
 
             // Actually consume the message from the stream
             TrackedEventMessage<?> messageToReturn = messageSources.get(streamIdOfMessage).nextAvailable();
@@ -280,7 +281,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      */
     public static class Builder{
 
-        private Comparator<TrackedEventMessage<?>> comparator = Comparator.comparing(EventMessage::getTimestamp);
+        private Comparator<TrackedSourcedEventMessage<?>> comparator = Comparator.comparing(EventMessage::getTimestamp);
         private Map<String,StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
         private String longPollingSource = "";
         private String lastSourceInserted = "";
@@ -305,7 +306,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          * @param comparator the comparator to use when deciding on which message to return.
          * @return the current Builder instance, for fluent interfacing.
          */
-        public Builder withComparator(Comparator<TrackedEventMessage<?>> comparator){
+        public Builder withComparator(Comparator<TrackedSourcedEventMessage<?>> comparator){
             this.comparator = comparator;
             return this;
         }

@@ -6,6 +6,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiSourceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackedSourcedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
@@ -13,6 +14,7 @@ import org.junit.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -63,7 +65,7 @@ public class MultiStreamableMessageSourceTest {
         assertFalse(singleEventStream.hasNextAvailable(100, TimeUnit.MILLISECONDS));
         long afterPollTime = System.currentTimeMillis();
         assertTrue(afterPollTime-beforePollTime > 90);
-        assertTrue(afterPollTime-beforePollTime < 120);
+        assertTrue(afterPollTime-beforePollTime < 105);
 
         singleEventStream.close();
     }
@@ -215,33 +217,42 @@ public class MultiStreamableMessageSourceTest {
         assertEquals(-1L, createdSinceToken.getTokenForStream("eventStoreB").position().getAsLong());
     }
 
-//    @Test
-//    public void configuredDifferentComparator() throws InterruptedException{
-//
-//        //todo replace with priority test
-//        Comparator<TrackedEventMessage<?>> eventStoreAPriority =
-//                Comparator.comparing(m -> m.getTimestamp());
-//
-//        MultiStreamableMessageSource prioritySourceTestSubject =
-//                MultiStreamableMessageSource.builder()
-//                                            .addMessageSource("eventStoreA", eventStoreA)
-//                                            .addMessageSource("eventStoreB", eventStoreB)
-//                                            .withComparator(eventStoreAPriority)
-//                                            .build();
-//
-//        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
-//        eventStoreA.publish(pubToStreamA);
-//        eventStoreA.publish(pubToStreamA);
-//        eventStoreA.publish(pubToStreamA);
-//
-//        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event2");
-//        eventStoreB.publish(pubToStreamB);
-//
-//        BlockingStream<TrackedEventMessage<?>> singleEventStream = prioritySourceTestSubject.openStream(prioritySourceTestSubject.createTailToken());
-//
-//        singleEventStream.nextAvailable();
-//        singleEventStream.nextAvailable();
-//        singleEventStream.nextAvailable();
-//        assertTrue(singleEventStream.nextAvailable().getPayload().equals(pubToStreamB.getPayload()));
-//    }
+    @Test
+    public void configuredDifferentComparator() throws InterruptedException{
+
+        Comparator<TrackedSourcedEventMessage<?>> eventStoreAPriority =
+                Comparator.<TrackedSourcedEventMessage<?>, Boolean>comparing(m -> !m.source().equals("eventStoreA")).
+                        <TrackedSourcedEventMessage<?>, Instant>thenComparing((m1,m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()));
+
+        EmbeddedEventStore eventStoreC = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+
+        MultiStreamableMessageSource prioritySourceTestSubject =
+                MultiStreamableMessageSource.builder()
+                                            .addMessageSource("eventStoreA", eventStoreA)
+                                            .addMessageSource("eventStoreB", eventStoreB)
+                                            .addMessageSource("eventStoreC", eventStoreC)
+                                            .withComparator(eventStoreAPriority)
+                                            .build();
+
+        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        eventStoreA.publish(pubToStreamA);
+        eventStoreA.publish(pubToStreamA);
+        eventStoreA.publish(pubToStreamA);
+
+        EventMessage pubToStreamC = GenericEventMessage.asEventMessage("Event2");
+        eventStoreC.publish(pubToStreamC);
+
+        Thread.sleep(5);
+
+        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event3");
+        eventStoreB.publish(pubToStreamB);
+
+        BlockingStream<TrackedEventMessage<?>> singleEventStream = prioritySourceTestSubject.openStream(prioritySourceTestSubject.createTailToken());
+
+        singleEventStream.nextAvailable();
+        singleEventStream.nextAvailable();
+        singleEventStream.nextAvailable();
+        assertTrue(singleEventStream.nextAvailable().getPayload().equals(pubToStreamC.getPayload()));
+        assertTrue(singleEventStream.nextAvailable().getPayload().equals(pubToStreamB.getPayload()));
+    }
 }
