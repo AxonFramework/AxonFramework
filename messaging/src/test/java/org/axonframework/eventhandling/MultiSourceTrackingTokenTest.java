@@ -27,10 +27,13 @@ public class MultiSourceTrackingTokenTest {
 
     @Test
     public void lowerBound() {
-        Map<String,TrackingToken> newTokens =
-                new HashMap<String,TrackingToken>(){{put("token1",new GlobalSequenceTrackingToken(1)); put("token2", new GlobalSequenceTrackingToken(2));}};
-        Map<String,TrackingToken> expectedTokens =
-                new HashMap<String,TrackingToken>(){{put("token1",new GlobalSequenceTrackingToken(0)); put("token2", new GlobalSequenceTrackingToken(0));}};
+        Map<String,TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1",new GlobalSequenceTrackingToken(1));
+        newTokens.put("token2", new GlobalSequenceTrackingToken(2));
+
+        Map<String,TrackingToken> expectedTokens = new HashMap<>();
+        expectedTokens.put("token1",new GlobalSequenceTrackingToken(0));
+        expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));;
 
         MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject.lowerBound(new MultiSourceTrackingToken(newTokens));
 
@@ -39,8 +42,10 @@ public class MultiSourceTrackingTokenTest {
 
     @Test
     public void upperBound() {
-        Map<String,TrackingToken> newTokens =
-                new HashMap<String,TrackingToken>(){{put("token1",new GlobalSequenceTrackingToken(1)); put("token2", new GlobalSequenceTrackingToken(2));}};
+        Map<String,TrackingToken> newTokens = new HashMap<>();
+
+        newTokens.put("token1",new GlobalSequenceTrackingToken(1));
+        newTokens.put("token2", new GlobalSequenceTrackingToken(2));
 
         MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject.upperBound(new MultiSourceTrackingToken(newTokens));
 
@@ -49,16 +54,18 @@ public class MultiSourceTrackingTokenTest {
 
     @Test
     public void covers() {
-        Map<String,TrackingToken> newTokens =
-                new HashMap<String,TrackingToken>(){{put("token1",new GlobalSequenceTrackingToken(0)); put("token2", new GlobalSequenceTrackingToken(0));}};
+        Map<String,TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1",new GlobalSequenceTrackingToken(0));
+        newTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
         assertTrue(testSubject.covers(new MultiSourceTrackingToken(newTokens)));
     }
 
     @Test
     public void doesNotCover() {
-        Map<String,TrackingToken> newTokens =
-                new HashMap<String,TrackingToken>(){{put("token1",new GlobalSequenceTrackingToken(1)); put("token2", new GlobalSequenceTrackingToken(0));}};
+        Map<String,TrackingToken> newTokens = new HashMap<String,TrackingToken>();
+        newTokens.put("token1",new GlobalSequenceTrackingToken(1));
+        newTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
         assertFalse(testSubject.covers(new MultiSourceTrackingToken(newTokens)));
     }
@@ -82,14 +89,36 @@ public class MultiSourceTrackingTokenTest {
         assertEquals(0L,testSubject.position().getAsLong());
     }
 
-//    @Test
-//    public void postitionIsEmpty(){
-//        Map<String,TrackingToken> trackingTokenMap = new HashMap<String, TrackingToken>(){{
-//            put("tokenA", new MergedTrackingToken(null,null));
-//            put("tokenB", new MergedTrackingToken(null,null));
-//        }};
-//
-//        MultiSourceTrackingToken tokenWithoutPosition = new MultiSourceTrackingToken(trackingTokenMap);
-//        assertFalse(tokenWithoutPosition.position().isPresent());
-//    }
+    @Test
+    public void equals(){
+        Map<String,TrackingToken> tokenMap = new HashMap<>();
+        tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
+        tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
+
+        MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(tokenMap);
+
+        assertTrue(newMultiToken.equals(testSubject));
+    }
+
+    @Test
+    public void notEquals(){
+        Map<String,TrackingToken> tokenMap = new HashMap<>();
+        tokenMap.put("token1", new GlobalSequenceTrackingToken(1));
+        tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
+
+        MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(tokenMap);
+
+        assertFalse(newMultiToken.equals(testSubject));
+    }
+
+    @Test
+    public void constituantTokenNotInitialized(){
+        Map<String,TrackingToken> tokenMap = new HashMap<>();
+        tokenMap.put("token1", null);
+        tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
+
+        MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(tokenMap);
+
+        assertFalse(newMultiToken.equals(testSubject));
+    }
 }

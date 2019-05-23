@@ -126,6 +126,9 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
         return trackingTokens.get(streamName);
     }
 
+    /**
+     * @return the map containing the constituent tokens.
+     */
     public Map<String,TrackingToken> getTrackingTokens(){
         return trackingTokens;
     }
