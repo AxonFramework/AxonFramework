@@ -98,9 +98,7 @@ public class TrackingTokenSerializationTest {
         T[] results = (T[]) Array.newInstance(token.getClass(), serializers.length);
         for (int i = 0; i < serializers.length; i++) {
             Serializer serializer = serializers[i];
-            SerializedObject<byte[]> serialized = serializer.serialize(token, byte[].class);
-            System.out.println(new String(serialized.getData()));
-            results[i] = serializer.deserialize(serialized);
+            results[i] = serializer.deserialize(serializer.serialize(token, byte[].class));
         }
         return results;
     }
