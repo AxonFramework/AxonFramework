@@ -12,8 +12,8 @@ public class MultiSourceTrackingTokenTest {
     MultiSourceTrackingToken testSubject;
 
     @Before
-    public void setUp(){
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
+    public void setUp() {
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
 
@@ -21,41 +21,44 @@ public class MultiSourceTrackingTokenTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testIncompatibleToken(){
+    public void testIncompatibleToken() {
         testSubject.covers(new GlobalSequenceTrackingToken(0));
     }
 
     @Test
     public void lowerBound() {
-        Map<String,TrackingToken> newTokens = new HashMap<>();
-        newTokens.put("token1",new GlobalSequenceTrackingToken(1));
+        Map<String, TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(1));
         newTokens.put("token2", new GlobalSequenceTrackingToken(2));
 
-        Map<String,TrackingToken> expectedTokens = new HashMap<>();
-        expectedTokens.put("token1",new GlobalSequenceTrackingToken(0));
-        expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));;
+        Map<String, TrackingToken> expectedTokens = new HashMap<>();
+        expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
+        ;
 
-        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject.lowerBound(new MultiSourceTrackingToken(newTokens));
+        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
+                .lowerBound(new MultiSourceTrackingToken(newTokens));
 
-        assertEquals(new MultiSourceTrackingToken(expectedTokens),newMultiToken);
+        assertEquals(new MultiSourceTrackingToken(expectedTokens), newMultiToken);
     }
 
     @Test
     public void upperBound() {
-        Map<String,TrackingToken> newTokens = new HashMap<>();
+        Map<String, TrackingToken> newTokens = new HashMap<>();
 
-        newTokens.put("token1",new GlobalSequenceTrackingToken(1));
+        newTokens.put("token1", new GlobalSequenceTrackingToken(1));
         newTokens.put("token2", new GlobalSequenceTrackingToken(2));
 
-        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject.upperBound(new MultiSourceTrackingToken(newTokens));
+        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
+                .upperBound(new MultiSourceTrackingToken(newTokens));
 
-        assertEquals(new MultiSourceTrackingToken(newTokens),newMultiToken);
+        assertEquals(new MultiSourceTrackingToken(newTokens), newMultiToken);
     }
 
     @Test
     public void covers() {
-        Map<String,TrackingToken> newTokens = new HashMap<>();
-        newTokens.put("token1",new GlobalSequenceTrackingToken(0));
+        Map<String, TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(0));
         newTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
         assertTrue(testSubject.covers(new MultiSourceTrackingToken(newTokens)));
@@ -63,8 +66,8 @@ public class MultiSourceTrackingTokenTest {
 
     @Test
     public void doesNotCover() {
-        Map<String,TrackingToken> newTokens = new HashMap<String,TrackingToken>();
-        newTokens.put("token1",new GlobalSequenceTrackingToken(1));
+        Map<String, TrackingToken> newTokens = new HashMap<String, TrackingToken>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(1));
         newTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
         assertFalse(testSubject.covers(new MultiSourceTrackingToken(newTokens)));
@@ -85,13 +88,13 @@ public class MultiSourceTrackingTokenTest {
     }
 
     @Test
-    public void hasPosition(){
-        assertEquals(0L,testSubject.position().getAsLong());
+    public void hasPosition() {
+        assertEquals(0L, testSubject.position().getAsLong());
     }
 
     @Test
-    public void equals(){
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
+    public void equals() {
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
 
@@ -101,8 +104,8 @@ public class MultiSourceTrackingTokenTest {
     }
 
     @Test
-    public void notEquals(){
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
+    public void notEquals() {
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(1));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
 
@@ -112,8 +115,8 @@ public class MultiSourceTrackingTokenTest {
     }
 
     @Test
-    public void constituantTokenNotInitialized(){
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
+    public void constituantTokenNotInitialized() {
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", null);
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
 

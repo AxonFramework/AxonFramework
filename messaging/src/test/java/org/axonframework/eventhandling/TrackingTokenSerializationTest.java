@@ -75,10 +75,10 @@ public class TrackingTokenSerializationTest {
     }
 
     @Test
-    public void testMultiSourceTrackingToken(){
+    public void testMultiSourceTrackingToken() {
         GlobalSequenceTrackingToken globalToken = new GlobalSequenceTrackingToken(35);
         GapAwareTrackingToken gapToken = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
-        Map<String,TrackingToken> trackingTokenMap = new HashMap<String,TrackingToken>();
+        Map<String, TrackingToken> trackingTokenMap = new HashMap<String, TrackingToken>();
         trackingTokenMap.put("global", globalToken);
         trackingTokenMap.put("gap", gapToken);
 
@@ -87,7 +87,9 @@ public class TrackingTokenSerializationTest {
 
         for (int i = 0; i < results.length; i++) {
             assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
-            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result", token, results[i]);
+            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result",
+                         token,
+                         results[i]);
         }
     }
 

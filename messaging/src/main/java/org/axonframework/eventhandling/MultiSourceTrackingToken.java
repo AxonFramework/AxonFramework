@@ -15,6 +15,7 @@ import java.util.OptionalLong;
 
 /**
  * Combined tracking token used when processing from multiple event sources
+ *
  * @author Greg Woods
  * @since 4.x
  */
@@ -23,20 +24,23 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
     private static final Logger logger = LoggerFactory.getLogger(MultiSourceTrackingToken.class);
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
-    private final Map<String,TrackingToken> trackingTokens;
+    private final Map<String, TrackingToken> trackingTokens;
 
     /**
      * Construct a new {@link MultiSourceTrackingToken} from a map of existing tokens.
+     *
      * @param trackingTokens the map of tokens which make up the {@link MultiSourceTrackingToken}
      */
     @JsonCreator
-    public MultiSourceTrackingToken(@JsonProperty("trackingTokens") Map<String,TrackingToken> trackingTokens){
-        this.trackingTokens=trackingTokens;
+    public MultiSourceTrackingToken(@JsonProperty("trackingTokens") Map<String, TrackingToken> trackingTokens) {
+        this.trackingTokens = trackingTokens;
     }
 
 
     /**
-     * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other} token
+     * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
+     * token
+     *
      * @param other The token to compare to this one
      * @return token representing the lower bound of of both tokens
      */
@@ -49,17 +53,19 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
         Assert.isTrue(otherMultiToken.trackingTokens.size() == this.trackingTokens.size(),
                       () -> "MultiSourceTrackingTokens contain different number of member tokens");
 
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens.forEach((key,otherToken) ->
-                                                       tokenMap.put(key,trackingTokens.get(key).lowerBound(otherToken))
+        otherMultiToken.trackingTokens.forEach((key, otherToken) ->
+                                                       tokenMap.put(key, trackingTokens.get(key).lowerBound(otherToken))
         );
 
         return new MultiSourceTrackingToken(tokenMap);
     }
 
     /**
-     * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other} token
+     * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
+     * token
+     *
      * @param other The token to compare this token to
      * @return a token that represents the furthest position of this or the other streams
      */
@@ -72,10 +78,10 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
         Assert.isTrue(otherMultiToken.trackingTokens.size() == this.trackingTokens.size(),
                       () -> "MultiSourceTrackingTokens contain different number of member tokens");
 
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens.forEach((key,otherToken) ->
-                                                       tokenMap.put(key,trackingTokens.get(key).upperBound(otherToken))
+        otherMultiToken.trackingTokens.forEach((key, otherToken) ->
+                                                       tokenMap.put(key, trackingTokens.get(key).upperBound(otherToken))
         );
 
         return new MultiSourceTrackingToken(tokenMap);
@@ -84,6 +90,7 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
     /**
      * Compares this token to {@code other} checking each member token with its counterpart to see if they are covered
      * in the {@code other} token
+     *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}
      */
@@ -97,8 +104,9 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
                       () -> "MultiSourceTrackingTokens contain different number of member tokens");
 
         //as soon as one delegated token doesn't cover return false
-        for(Map.Entry<String,TrackingToken> trackingTokenEntry : trackingTokens.entrySet()){
-            if(!trackingTokenEntry.getValue().covers(otherMultiToken.trackingTokens.get(trackingTokenEntry.getKey()))){
+        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
+            if (!trackingTokenEntry.getValue().covers(otherMultiToken.trackingTokens
+                                                              .get(trackingTokenEntry.getKey()))) {
                 return false;
             }
         }
@@ -108,28 +116,30 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
     /**
      * Advances a single token within the tokenMap
-     * @param streamName the stream/source which is being advanced
+     *
+     * @param streamName        the stream/source which is being advanced
      * @param newTokenForStream the token representing the new position of the stream
      * @return the token representing the current processing position of all streams.
      */
-    public MultiSourceTrackingToken advancedTo(String streamName, TrackingToken newTokenForStream){
-        trackingTokens.put(streamName,newTokenForStream);
+    public MultiSourceTrackingToken advancedTo(String streamName, TrackingToken newTokenForStream) {
+        trackingTokens.put(streamName, newTokenForStream);
         return new MultiSourceTrackingToken(trackingTokens);
     }
 
     /**
      * Return the tracking token for an individual stream
+     *
      * @param streamName the name of the stream for the tracking token
      * @return the tracking token for the stream
      */
-    public TrackingToken getTokenForStream(String streamName){
+    public TrackingToken getTokenForStream(String streamName) {
         return trackingTokens.get(streamName);
     }
 
     /**
      * @return the map containing the constituent tokens.
      */
-    public Map<String,TrackingToken> getTrackingTokens(){
+    public Map<String, TrackingToken> getTrackingTokens() {
         return trackingTokens;
     }
 
@@ -140,11 +150,12 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
     public OptionalLong position() {
 
         //If all delegated tokens are empty then return empty
-        if (trackingTokens.entrySet().stream().noneMatch(p -> p.getValue().position().isPresent())){
+        if (trackingTokens.entrySet().stream().noneMatch(p -> p.getValue().position().isPresent())) {
             return OptionalLong.empty();
         }
 
-        Long sumOfTokens = trackingTokens.entrySet().stream().map(c -> c.getValue().position().orElse(0L)).reduce(0L, Long::sum);
+        Long sumOfTokens = trackingTokens.entrySet().stream().map(c -> c.getValue().position().orElse(0L)).reduce(0L,
+                                                                                                                  Long::sum);
 
         return OptionalLong.of(sumOfTokens);
     }
@@ -159,13 +170,13 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
         }
         MultiSourceTrackingToken that = (MultiSourceTrackingToken) o;
 
-        if (this.trackingTokens.size()!=that.trackingTokens.size()){
+        if (this.trackingTokens.size() != that.trackingTokens.size()) {
             return false;
         }
 
-        for(Map.Entry<String,TrackingToken> trackingTokenEntry : trackingTokens.entrySet()){
+        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
             try {
-                if(!trackingTokenEntry.getValue().equals(that.trackingTokens.get(trackingTokenEntry.getKey()))) {
+                if (!trackingTokenEntry.getValue().equals(that.trackingTokens.get(trackingTokenEntry.getKey()))) {
                     return false;
                 }
             } catch (NullPointerException ex) {

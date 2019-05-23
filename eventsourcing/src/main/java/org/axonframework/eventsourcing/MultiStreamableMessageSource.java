@@ -40,7 +40,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
 
     private static final Logger logger = LoggerFactory.getLogger(MultiStreamableMessageSource.class);
 
-    private final Map<String,StreamableMessageSource<TrackedEventMessage<?>>> eventStreams;
+    private final Map<String, StreamableMessageSource<TrackedEventMessage<?>>> eventStreams;
     private MultiSourceTrackingToken trackingToken;
     private final Comparator<TrackedSourcedEventMessage<?>> comparator;
     private TrackedEventMessage<?> peekedMessage;
@@ -51,14 +51,15 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      * <p>
      *
      * @param builder the {@link MultiStreamableMessageSource.Builder} used to instantiate a
-     * {@link MultiStreamableMessageSource} instance.
+     *                {@link MultiStreamableMessageSource} instance.
      */
-    public MultiStreamableMessageSource(Builder builder){
+    public MultiStreamableMessageSource(Builder builder) {
         this.eventStreams = builder.messageSourceMap;
 
         //ensure longPollingSource is last item in the LinkedHashMap
-        if(! builder.longPollingSource.equals("")) {
-            StreamableMessageSource<TrackedEventMessage<?>> sourceToReAdd = this.eventStreams.remove(builder.longPollingSource);
+        if (!builder.longPollingSource.equals("")) {
+            StreamableMessageSource<TrackedEventMessage<?>> sourceToReAdd = this.eventStreams
+                    .remove(builder.longPollingSource);
             this.eventStreams.put(builder.longPollingSource, sourceToReAdd);
         }
 
@@ -72,19 +73,20 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      *
      * @return a Builder to be able to create a {@link MultiStreamableMessageSource}.
      */
-    public static Builder builder(){
+    public static Builder builder() {
         return new Builder();
     }
 
     /**
      * Opens a stream for each event source at the specified token position.
+     *
      * @param trackingToken object containing the position in the stream or {@code null} to open a stream containing all
      *                      messages.
      * @return an instance of {@link MultiSourceMessageStream} with open streams for each event source.
      */
     @Override
     public MultiSourceMessageStream openStream(TrackingToken trackingToken) {
-        if (trackingToken instanceof MultiSourceTrackingToken){
+        if (trackingToken instanceof MultiSourceTrackingToken) {
             this.trackingToken = (MultiSourceTrackingToken) trackingToken;
             return new MultiSourceMessageStream(eventStreams, (MultiSourceTrackingToken) trackingToken);
         }
@@ -93,50 +95,52 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
 
     @Override
     public MultiSourceTrackingToken createTailToken() {
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
-        eventStreams.forEach((k,v) -> tokenMap.put(k,v.createTailToken()));
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
+        eventStreams.forEach((k, v) -> tokenMap.put(k, v.createTailToken()));
 
         return new MultiSourceTrackingToken(tokenMap);
     }
 
     @Override
     public MultiSourceTrackingToken createHeadToken() {
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
-        eventStreams.forEach((k,v) -> tokenMap.put(k,v.createHeadToken()));
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
+        eventStreams.forEach((k, v) -> tokenMap.put(k, v.createHeadToken()));
 
         return new MultiSourceTrackingToken(tokenMap);
     }
 
     @Override
     public MultiSourceTrackingToken createTokenAt(Instant dateTime) {
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
-        eventStreams.forEach((k,v) -> tokenMap.put(k,v.createTokenAt(dateTime)));
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
+        eventStreams.forEach((k, v) -> tokenMap.put(k, v.createTokenAt(dateTime)));
 
         return new MultiSourceTrackingToken(tokenMap);
     }
 
     @Override
     public MultiSourceTrackingToken createTokenSince(Duration duration) {
-        Map<String,TrackingToken> tokenMap = new HashMap<>();
-        eventStreams.forEach((k,v) -> tokenMap.put(k,v.createTokenSince(duration)));
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
+        eventStreams.forEach((k, v) -> tokenMap.put(k, v.createTokenSince(duration)));
 
         return new MultiSourceTrackingToken(tokenMap);
     }
 
-    private class MultiSourceMessageStream implements BlockingStream<TrackedEventMessage<?>>{
+    private class MultiSourceMessageStream implements BlockingStream<TrackedEventMessage<?>> {
 
         private final Map<String, BlockingStream<TrackedEventMessage<?>>> messageSources;
 
         /**
          * Construct a new {@link MultiSourceMessageStream} from the message sources provided using the
          * {@link MultiSourceTrackingToken} and open each underlying stream with its respective token position.
+         *
          * @param messageSources that sources that make up this {@link MultiSourceMessageStream}.
-         * @param trackingToken the {@link MultiSourceTrackingToken} containing the positions to open the stream.
+         * @param trackingToken  the {@link MultiSourceTrackingToken} containing the positions to open the stream.
          */
         public MultiSourceMessageStream(Map<String, StreamableMessageSource<TrackedEventMessage<?>>> messageSources,
-                                        MultiSourceTrackingToken trackingToken){
+                                        MultiSourceTrackingToken trackingToken) {
             this.messageSources = new HashMap<>();
-            messageSources.forEach((k,v) -> this.messageSources.put(k,v.openStream(trackingToken.getTokenForStream(k))));
+            messageSources.forEach((k, v) -> this.messageSources
+                    .put(k, v.openStream(trackingToken.getTokenForStream(k))));
         }
 
         /**
@@ -144,8 +148,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         @Override
         public boolean hasNextAvailable() {
-            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources.entrySet()) {
-                if (singleMessageSource.getValue().hasNextAvailable()){
+            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources
+                    .entrySet()) {
+                if (singleMessageSource.getValue().hasNextAvailable()) {
                     return true;
                 }
             }
@@ -156,6 +161,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         /**
          * Peeks each stream to check if a message is available. If more than one stream has a message it returns the
          * message chosen using the comparator.
+         *
          * @return message chosen using the comparator.
          */
         @Override
@@ -174,14 +180,16 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
 
             //select message to return from candidates
             final Optional<Map.Entry<String, TrackedSourcedEventMessage>> chosenMessage =
-                    candidateMessagesToReturn.entrySet().stream().min((m1,m2) -> comparator.compare(m1.getValue(),m2.getValue()));
+                    candidateMessagesToReturn.entrySet().stream().min((m1, m2) -> comparator
+                            .compare(m1.getValue(), m2.getValue()));
 
             // Ensure the chosen message is actually consumed from the stream
             return chosenMessage.map(e -> {
                 String streamId = e.getKey();
                 TrackedEventMessage<?> message = e.getValue();
                 try {
-                    return new GenericTrackedEventMessage<>(trackingToken.advancedTo(streamId, message.trackingToken()), messageSources.get(streamId).nextAvailable());
+                    return new GenericTrackedEventMessage<>(trackingToken.advancedTo(streamId, message.trackingToken()),
+                                                            messageSources.get(streamId).nextAvailable());
                 } catch (InterruptedException ex) {
                     logger.warn("Thread Interrupted whilst consuming next message", ex);
                 }
@@ -192,29 +200,39 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         /**
          * @param timeout the maximum number of time units to wait for messages to become available. This time
          *                is spent polling on one particular stream (specified by {@link Builder#configureLongPollingSource(String)}
-         *                or by default to last stream provide to {@link Builder#addMessageSource(String, StreamableMessageSource)}.
-         *                This stream long polls for a fraction of the specified duration before looping through the sources
-         *                again repeating until the duration has been met. This ensure the highest chance of a consumable
+         *                or by default to last stream provide to {@link Builder#addMessageSource(String,
+         *                StreamableMessageSource)}.
+         *                This stream long polls for a fraction of the specified duration before looping through the
+         *                sources
+         *                again repeating until the duration has been met. This ensure the highest chance of a
+         *                consumable
          *                message being found.
          * @param unit    the time unit for the timeout.
          * @return true if any stream has an available message. Otherwise false.
+         *
          * @throws InterruptedException when the thread is interrupted before the indicated time is up.
          */
         @Override
         public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
             long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-            int longPollTime = timeout/10;
+            int longPollTime = timeout / 10;
 
             while (System.currentTimeMillis() < deadline) {
-                Iterator<Map.Entry<String, BlockingStream<TrackedEventMessage<?>>>> it = messageSources.entrySet().iterator();
+                Iterator<Map.Entry<String, BlockingStream<TrackedEventMessage<?>>>> it = messageSources.entrySet()
+                                                                                                       .iterator();
 
                 while (it.hasNext()) {
                     Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> current = it.next();
 
                     if (it.hasNext()) {
-                        if (current.getValue().hasNextAvailable()) return true;
+                        if (current.getValue().hasNextAvailable()) {
+                            return true;
+                        }
                     } else {
-                        if (current.getValue().hasNextAvailable((int) Math.min(longPollTime, deadline - System.currentTimeMillis()), unit)) return true;
+                        if (current.getValue().hasNextAvailable((int) Math
+                                .min(longPollTime, deadline - System.currentTimeMillis()), unit)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -225,7 +243,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         /**
          * Checks each stream to see if a message is available. If more than one stream has a message it decides which
          * message to return using the {@link #comparator}.
+         *
          * @return selected message using {@link #comparator}.
+         *
          * @throws InterruptedException thrown if polling is interrupted during polling a stream.
          */
         @Override
@@ -240,20 +260,22 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             HashMap<String, TrackedSourcedEventMessage> candidateMessagesToReturn = new HashMap<>();
 
             //block until there is a message to consume
-            while(candidateMessagesToReturn.size() == 0) {
+            while (candidateMessagesToReturn.size() == 0) {
                 peekForMessages(candidateMessagesToReturn);
             }
 
             //get streamId of message to return after running the comparator
             String streamIdOfMessage =
-                    candidateMessagesToReturn.entrySet().stream().min((m1,m2) -> comparator.compare(m1.getValue(),m2.getValue()))
+                    candidateMessagesToReturn.entrySet().stream().min((m1, m2) -> comparator
+                            .compare(m1.getValue(), m2.getValue()))
                                              .map(Map.Entry::getKey).orElse(null);
 
             // Actually consume the message from the stream
             TrackedEventMessage<?> messageToReturn = messageSources.get(streamIdOfMessage).nextAvailable();
 
             //update the composite token
-            final MultiSourceTrackingToken newTrackingToken = trackingToken.advancedTo(streamIdOfMessage,messageToReturn.trackingToken());
+            final MultiSourceTrackingToken newTrackingToken = trackingToken.advancedTo(streamIdOfMessage,
+                                                                                       messageToReturn.trackingToken());
             trackingToken = newTrackingToken;
 
             logger.debug("Message consumed from stream: {}", streamIdOfMessage);
@@ -261,10 +283,15 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
 
         private void peekForMessages(HashMap<String, TrackedSourcedEventMessage> candidateMessagesToReturn) {
-            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources.entrySet()) {
+            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources
+                    .entrySet()) {
                 Optional<TrackedEventMessage<?>> currentPeekedMessage = singleMessageSource.getValue().peek();
                 currentPeekedMessage.ifPresent(trackedEventMessage ->
-                                                       candidateMessagesToReturn.put(singleMessageSource.getKey(),new GenericTrackedSourcedEventMessage(singleMessageSource.getKey(), trackedEventMessage)));
+                                                       candidateMessagesToReturn.put(singleMessageSource.getKey(),
+                                                                                     new GenericTrackedSourcedEventMessage(
+                                                                                             singleMessageSource
+                                                                                                     .getKey(),
+                                                                                             trackedEventMessage)));
             }
         }
 
@@ -273,7 +300,8 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         @Override
         public void close() {
-            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources.entrySet()) {
+            for (Map.Entry<String, BlockingStream<TrackedEventMessage<?>>> singleMessageSource : messageSources
+                    .entrySet()) {
                 singleMessageSource.getValue().close();
             }
         }
@@ -286,20 +314,23 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      * message available (using the event's timestamp). The stream on which long polling is done for
      * {@link MultiSourceMessageStream#hasNextAvailable(int, TimeUnit)} is also configurable.
      */
-    public static class Builder{
+    public static class Builder {
 
         private Comparator<TrackedSourcedEventMessage<?>> comparator = Comparator.comparing(EventMessage::getTimestamp);
-        private Map<String,StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
+        private Map<String, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
         private String longPollingSource = "";
 
         /**
          * Adds a message source to the list of sources.
+         *
          * @param messageSourceName a unique name identifying the stream.
-         * @param messageSource the message source to be added.
+         * @param messageSource     the message source to be added.
          * @return the current Builder instance, for fluent interfacing.
          */
-        public Builder addMessageSource(String messageSourceName, StreamableMessageSource<TrackedEventMessage<?>> messageSource){
-            Assert.isFalse(messageSourceMap.containsKey(messageSourceName),() -> "the messageSource name must be unique");
+        public Builder addMessageSource(String messageSourceName,
+                                        StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+            Assert.isFalse(messageSourceMap.containsKey(messageSourceName),
+                           () -> "the messageSource name must be unique");
             Assert.isFalse(messageSourceMap.containsValue(messageSource), () -> "this message source is duplicated");
 
             messageSourceMap.put(messageSourceName, messageSource);
@@ -308,28 +339,34 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
 
         /**
          * Overrides the default comparator (which returns the oldest event available).
+         *
          * @param comparator the comparator to use when deciding on which message to return.
          * @return the current Builder instance, for fluent interfacing.
          */
-        public Builder withComparator(Comparator<TrackedSourcedEventMessage<?>> comparator){
+        public Builder withComparator(Comparator<TrackedSourcedEventMessage<?>> comparator) {
             this.comparator = comparator;
             return this;
         }
 
 
         /**
-         * Select the message source which is most suitable for long polling. To prevent excessive polling on all sources
+         * Select the message source which is most suitable for long polling. To prevent excessive polling on all
+         * sources
          * it is preferable to do the majority of polling on a single source. All other streams will be checked first
-         * using {@link BlockingStream#hasNextAvailable()} before {@link BlockingStream#hasNextAvailable(int, TimeUnit)} is
+         * using {@link BlockingStream#hasNextAvailable()} before {@link BlockingStream#hasNextAvailable(int, TimeUnit)}
+         * is
          * called on the source chosen for long polling. This is then repeated multiple times to increase the chance of
-         * successfully finding a message before the timeout. If no particular source is configured, long polling with be
-         * done on the last configured source whilst other streams will be polled using {@link BlockingStream#hasNextAvailable()}
+         * successfully finding a message before the timeout. If no particular source is configured, long polling with
+         * be
+         * done on the last configured source whilst other streams will be polled using {@link
+         * BlockingStream#hasNextAvailable()}
          *
          * @param longPollingSource the {@code messageSourceName} on which to do the long polling.
          * @return the current Builder instance, for fluent interfacing.
          */
-        public Builder configureLongPollingSource(String longPollingSource){
-            Assert.isTrue(messageSourceMap.containsKey(longPollingSource), () -> "Current configuration does not contain this message source");
+        public Builder configureLongPollingSource(String longPollingSource) {
+            Assert.isTrue(messageSourceMap.containsKey(longPollingSource),
+                          () -> "Current configuration does not contain this message source");
 
             this.longPollingSource = longPollingSource;
             return this;
@@ -340,7 +377,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          *
          * @return a {@link MultiStreamableMessageSource} as specified through this Builder.
          */
-        public MultiStreamableMessageSource build(){
+        public MultiStreamableMessageSource build() {
             return new MultiStreamableMessageSource(this);
         }
     }
