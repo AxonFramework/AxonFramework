@@ -21,9 +21,6 @@ public class GenericTrackedSourcedEventMessage<T> extends GenericTrackedEventMes
         this.source = source;
     }
 
-    /**
-     * @return the source of the event.
-     */
     @Override
     public String source() {
         return source;

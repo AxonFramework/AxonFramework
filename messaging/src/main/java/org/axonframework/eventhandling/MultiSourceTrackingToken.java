@@ -50,8 +50,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
         MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
 
-        Assert.isTrue(otherMultiToken.trackingTokens.size() == this.trackingTokens.size(),
-                      () -> "MultiSourceTrackingTokens contain different number of member tokens");
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
@@ -75,8 +75,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
         MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
 
-        Assert.isTrue(otherMultiToken.trackingTokens.size() == this.trackingTokens.size(),
-                      () -> "MultiSourceTrackingTokens contain different number of member tokens");
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
@@ -100,8 +100,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
         MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
 
-        Assert.isTrue(otherMultiToken.trackingTokens.size() == this.trackingTokens.size(),
-                      () -> "MultiSourceTrackingTokens contain different number of member tokens");
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
 
         //as soon as one delegated token doesn't cover return false
         for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
