@@ -17,16 +17,11 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.EventWithToken;
-import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.EventUtils;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.SerializedType;
@@ -121,13 +116,12 @@ public class EventBuffer implements TrackingEventStream {
      */
     @Override
     public void reportIgnored(TrackedEventMessage<?> trackedEventMessage) {
-        if( blacklistListener == null) return;
-        if(trackedEventMessage instanceof GenericEventMessage) {
-            GenericEventMessage genericTrackedEventMessage = (GenericEventMessage) trackedEventMessage;
-            if( genericTrackedEventMessage.getPayload() instanceof UnknownSerializedType) {
-                UnknownSerializedType unknownSerializedType = (UnknownSerializedType) genericTrackedEventMessage.getPayload();
-                blacklistListener.accept(unknownSerializedType.serializedType());
-            }
+        if (blacklistListener == null) {
+            return;
+        }
+        if (UnknownSerializedType.class.equals(trackedEventMessage.getPayloadType())) {
+            UnknownSerializedType unknownSerializedType = (UnknownSerializedType) trackedEventMessage.getPayload();
+            blacklistListener.accept(unknownSerializedType.serializedType());
         }
     }
 
@@ -141,7 +135,8 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     /**
-     * Registers the callback to invoke when a raw input message was consumed from the buffer.
+     * Registers the callback to invoke when a raw input message was consumed from the buffer. Note that there can only
+     * be one listener registered.
      *
      * @param consumeListener the callback to invoke when a raw input message was consumed from the buffer
      */
@@ -149,6 +144,12 @@ public class EventBuffer implements TrackingEventStream {
         this.consumeListener = consumeListener;
     }
 
+    /**
+     * Registers the callback to invoke when a the event processor determines that a type should be blacklisted.
+     * Note that there can only be one listener registered.
+     *
+     * @param blacklistListener the callback to invoke when a payload type is to be blacklisted.
+     */
     public void registerBlacklistListener(Consumer<SerializedType> blacklistListener) {
         this.blacklistListener = blacklistListener;
     }
