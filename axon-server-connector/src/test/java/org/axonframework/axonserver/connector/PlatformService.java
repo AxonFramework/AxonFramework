@@ -15,13 +15,13 @@
 
 package org.axonframework.axonserver.connector;
 
-import io.grpc.stub.StreamObserver;
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import io.axoniq.axonserver.grpc.control.PlatformInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
+import io.grpc.stub.StreamObserver;
 
 import java.util.Collections;
 import java.util.List;
@@ -65,7 +65,9 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
         return new StreamObserver<PlatformInboundInstruction>() {
             @Override
             public void onNext(PlatformInboundInstruction platformInboundInstruction) {
-
+                if (platformInboundInstruction.hasRegister()) {
+                    clientIdentificationRequests.add(platformInboundInstruction.getRegister());
+                }
             }
 
             @Override

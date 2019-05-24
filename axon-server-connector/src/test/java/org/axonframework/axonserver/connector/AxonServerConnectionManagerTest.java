@@ -25,7 +25,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
 
 /**
@@ -35,16 +37,19 @@ import static org.junit.Assert.*;
  */
 public class AxonServerConnectionManagerTest {
 
-    private StubServer stubServer = new StubServer(8124);
+    private StubServer stubServer = new StubServer(8124, 9657);
+    private StubServer secondNode = new StubServer(9657, 9657);
 
     @Before
     public void setUp() throws IOException {
         stubServer.start();
+        secondNode.start();
     }
 
     @After
     public void tearDown() throws InterruptedException {
         stubServer.shutdown();
+        secondNode.shutdown();
     }
 
     @Test
@@ -62,5 +67,15 @@ public class AxonServerConnectionManagerTest {
         assertNotNull(expectedTags);
         assertEquals(1, expectedTags.size());
         assertEquals("value", expectedTags.get("key"));
+
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            assertEquals(1, secondNode.getPlatformService().getClientIdentificationRequests().size());
+        });
+
+        List<ClientIdentification> clients = secondNode.getPlatformService().getClientIdentificationRequests();
+        Map<String, String> connectionExpectedTags = clients.get(0).getTagsMap();
+        assertNotNull(connectionExpectedTags);
+        assertEquals(1, connectionExpectedTags.size());
+        assertEquals("value", connectionExpectedTags.get("key"));
     }
 }
