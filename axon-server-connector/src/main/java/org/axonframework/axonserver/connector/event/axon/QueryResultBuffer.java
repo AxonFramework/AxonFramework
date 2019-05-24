@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -112,6 +113,10 @@ public class QueryResultBuffer implements QueryResultStream {
     }
 
     public void push(QueryEventsResponse eventWithToken) {
+        if( closed) {
+            logger.debug("Received date while closed");
+            return;
+        }
         switch(eventWithToken.getDataCase()) {
             case COLUMNS:
                 this.columns = eventWithToken.getColumns().getColumnList();
@@ -120,7 +125,8 @@ public class QueryResultBuffer implements QueryResultStream {
                 try {
                     queryResultQueue.put(eventWithToken.getRow());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    this.close();
+                    Thread.currentThread().interrupt();
                 }
                 break;
             case FILES_COMPLETED:
