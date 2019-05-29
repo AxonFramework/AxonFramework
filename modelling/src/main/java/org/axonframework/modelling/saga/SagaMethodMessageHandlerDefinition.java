@@ -82,8 +82,10 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
         try {
             return associationResolverClass.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            throw new AxonConfigurationException(format("`AssociationResolver` %s must define an accessible no-args constructor.",
-                                                        associationResolverClass.getName()), e);
+            throw new AxonConfigurationException(format(
+                    "`AssociationResolver` %s must define an accessible no-args constructor.",
+                    associationResolverClass.getName()), e
+            );
         }
     }
 }
