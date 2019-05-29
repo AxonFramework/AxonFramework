@@ -39,6 +39,7 @@ import org.axonframework.config.Configurer;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -93,6 +94,7 @@ public class AxonAutoConfigurationWithDisruptorTest {
         assertEquals(DisruptorCommandBus.class, applicationContext.getBean(CommandBus.class).getClass());
         assertNotNull(applicationContext.getBean(EventBus.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
+        assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
         assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());

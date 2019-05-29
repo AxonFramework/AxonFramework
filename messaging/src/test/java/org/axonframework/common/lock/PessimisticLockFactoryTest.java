@@ -63,7 +63,7 @@ public class PessimisticLockFactoryTest {
         assertEquals("Expected locks to be cleaned up", 0, locks.size());
     }
 
-    @Test(timeout = 8000)
+    @Test(timeout = 10000)
     public void testDeadlockDetected_TwoThreadsInVector() throws InterruptedException {
         final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(1);
@@ -82,7 +82,7 @@ public class PessimisticLockFactoryTest {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 10000)
     public void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
         final PessimisticLockFactory lock1 = PessimisticLockFactory.builder().build();
         final PessimisticLockFactory lock2 = PessimisticLockFactory.builder().build();
@@ -102,7 +102,7 @@ public class PessimisticLockFactoryTest {
         }
     }
 
-    @Test(timeout = 8000)
+    @Test(timeout = 10000)
     public void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
         final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(3);

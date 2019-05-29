@@ -213,6 +213,13 @@ public class GapAwareTrackingTokenTest {
         assertTrue(token1.withGapsTruncatedAt(10).covers(token1));
     }
 
+    @Test
+    public void testPosition() {
+        GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L));
+
+        assertEquals(15L, token.position().getAsLong());
+    }
+
     private TreeSet<Long> asTreeSet(Long... elements) {
         return new TreeSet<>(asList(elements));
     }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -80,6 +80,12 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
                                .setCaughtUp(e.getValue().isCaughtUp())
                                .setReplaying(e.getValue().isReplaying())
                                .setOnePartOf(e.getValue().getSegment().getMask() + 1)
+                               .setTokenPosition(e.getValue().getTrackingToken().position().orElse(0))
+                               .setErrorState(e.getValue().isErrorState() ? buildErrorMessage(e.getValue().getError()) : "")
                                .build();
+    }
+
+    private String buildErrorMessage(Throwable error) {
+        return error.getClass().getName() + ": " + error.getMessage();
     }
 }

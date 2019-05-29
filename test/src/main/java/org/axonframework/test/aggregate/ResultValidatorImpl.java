@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,27 +20,20 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
-import org.axonframework.test.matchers.EqualFieldsMatcher;
-import org.axonframework.test.matchers.FieldFilter;
-import org.axonframework.test.matchers.Matchers;
-import org.axonframework.test.matchers.MapEntryMatcher;
-import org.axonframework.test.matchers.PayloadMatcher;
+import org.axonframework.test.matchers.*;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -301,6 +294,24 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
+    public ResultValidator<T> expectMarkedDeleted() {
+        if (!state.get().isDeleted()) {
+            reporter.reportIncorrectDeletedState(true);
+        }
+
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectNotMarkedDeleted() {
+        if (state.get().isDeleted()) {
+            reporter.reportIncorrectDeletedState(false);
+        }
+
+        return this;
+    }
+
+    @Override
     public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
             actualException = commandResultMessage.exceptionResult();
@@ -322,14 +333,14 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     private boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
+        if (Objects.equals(expectedPayload, actualPayload)) {
+            return true;
+        }
         if (expectedPayload != null && actualPayload == null) {
             return false;
         }
-        if (expectedPayload == null && actualPayload != null) {
-            return false;
-        }
         if (expectedPayload == null) {
-            return true;
+            return false;
         }
         if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
             return false;

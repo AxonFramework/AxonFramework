@@ -212,12 +212,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely merge tokens"));
+            result.completeExceptionally(new UnsupportedOperationException(
+                    "TokenStore must require explicit initialization to safely merge tokens"));
             return result;
         }
 
         TrackerStatus segmentStatus = this.activeSegments.get(segmentId);
         if (segmentStatus == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (segmentId == segmentStatus.getSegment().mergeableSegmentId()) {
+            logger.info("A merge request can only be fulfilled if there is more than one segment");
             return CompletableFuture.completedFuture(false);
         }
 
@@ -257,6 +263,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         logger.warn("Error occurred. Starting retry mode.", e);
                     }
                     logger.warn("Releasing claim on token and preparing for retry in {}s", errorWaitTime);
+                    activeSegments.computeIfPresent(segment.getSegmentId(), (k, status) -> status.markError(e));
                     releaseToken(segment);
                     closeQuietly(eventStream);
                     eventStream = null;
@@ -723,31 +730,36 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         private final Segment segment;
         private final boolean caughtUp;
         private final TrackingToken trackingToken;
+        private final Throwable errorState;
 
         private TrackerStatus(Segment segment, TrackingToken trackingToken) {
-            this(segment, false, trackingToken);
+            this(segment, false, trackingToken, null);
         }
 
-        private TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken) {
+        private TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken, Throwable errorState) {
             this.segment = segment;
             this.caughtUp = caughtUp;
             this.trackingToken = trackingToken;
+            this.errorState = errorState;
         }
 
         private TrackerStatus caughtUp() {
             if (caughtUp) {
                 return this;
             }
-            return new TrackerStatus(segment, true, trackingToken);
+            return new TrackerStatus(segment, true, trackingToken, null);
         }
 
         private TrackerStatus advancedTo(TrackingToken trackingToken) {
             if (Objects.equals(this.trackingToken, trackingToken)) {
                 return this;
             }
-            return new TrackerStatus(segment, caughtUp, trackingToken);
+            return new TrackerStatus(segment, caughtUp, trackingToken, null);
         }
 
+        private TrackerStatus markError(Throwable error) {
+            return new TrackerStatus(segment, caughtUp, trackingToken, error);
+        }
 
         @Override
         public Segment getSegment() {
@@ -767,6 +779,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public TrackingToken getTrackingToken() {
             return WrappedToken.unwrapLowerBound(trackingToken);
+        }
+
+        @Override
+        public boolean isErrorState() {
+            return errorState != null;
+        }
+
+        @Override
+        public Throwable getError() {
+            return errorState;
         }
 
         private TrackingToken getInternalTrackingToken() {
@@ -980,6 +1002,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 state.set(State.PAUSED_ERROR);
             } finally {
                 activeSegments.remove(segment.getSegmentId());
+                logger.info("Worker for segment {} stopped.", segment);
                 if (availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
                     logger.info("No Worker Launcher active. Using current thread to assign segments.");
                     new WorkerLauncher().run();
@@ -1040,6 +1063,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                 TrackingToken token = tokenStore.fetchToken(processorName, segmentId);
                                 int[] segmentIds = tokenStore.fetchSegments(processorName);
                                 Segment segment = Segment.computeSegment(segmentId, segmentIds);
+                                logger.info("Worker assigned to segment {} for processing", segment);
                                 activeSegments.putIfAbsent(segmentId, new TrackerStatus(segment, token));
                             });
                         } catch (UnableToClaimTokenException ucte) {

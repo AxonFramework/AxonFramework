@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.*;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * Special Wrapped Token implementation that keeps track of two separate tokens, of which the streams have been merged
@@ -81,6 +82,14 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
             return newLowerSegmentToken;
         }
         return new MergedTrackingToken(newLowerSegmentToken, newUpperSegmentToken);
+    }
+
+    @Override
+    public OptionalLong position() {
+        if (lowerSegmentToken.position().isPresent() && upperSegmentToken.position().isPresent()) {
+            return OptionalLong.of(Math.min(lowerSegmentToken.position().getAsLong(), upperSegmentToken.position().getAsLong()));
+        }
+        return OptionalLong.empty();
     }
 
     @Override

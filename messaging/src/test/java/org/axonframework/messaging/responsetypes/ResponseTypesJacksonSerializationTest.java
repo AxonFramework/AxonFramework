@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,11 @@
 package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.*;
+import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for json serialization / deserialization of response types.
@@ -42,6 +39,18 @@ public class ResponseTypesJacksonSerializationTest {
 
         String serialized = objectMapper.writeValueAsString(stringResponseType);
         InstanceResponseType<String> deserialized = objectMapper.readerFor(InstanceResponseType.class)
+                                                                .readValue(serialized);
+
+        assertEquals(stringResponseType.getExpectedResponseType(), deserialized.getExpectedResponseType());
+    }
+
+    @Test
+    public void testSerDeserOfOptionalResponseType() throws IOException {
+        OptionalResponseType<String> stringResponseType = (OptionalResponseType<String>) ResponseTypes
+                .optionalInstanceOf(String.class);
+
+        String serialized = objectMapper.writeValueAsString(stringResponseType);
+        OptionalResponseType<String> deserialized = objectMapper.readerFor(OptionalResponseType.class)
                                                                 .readValue(serialized);
 
         assertEquals(stringResponseType.getExpectedResponseType(), deserialized.getExpectedResponseType());

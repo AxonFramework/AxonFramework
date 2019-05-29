@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,20 @@ package org.axonframework.axonserver.connector;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.control.*;
+import io.axoniq.axonserver.grpc.control.ClientIdentification;
+import io.axoniq.axonserver.grpc.control.NodeInfo;
+import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformInfo;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
-import io.grpc.*;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
+import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -31,17 +40,27 @@ import io.netty.handler.ssl.SslContext;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.config.TagsConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.net.ssl.SSLException;
 
 /**
  * @author Marc Gathier
@@ -65,10 +84,29 @@ public class AxonServerConnectionManager {
     private final List<Function<Runnable, Runnable>> reconnectInterceptors = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonServerConfiguration connectInformation;
+    private final TagsConfiguration tagsConfiguration;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
+    /**
+     * Initializes the Axon Server Connection Manager with the connect information. The empty tags configuration is used
+     * in this case.
+     *
+     * @param connectInformation Axon Server Configuration
+     */
     public AxonServerConnectionManager(AxonServerConfiguration connectInformation) {
+        this(connectInformation, new TagsConfiguration());
+    }
+
+    /**
+     * Initializes the Axon Server Connection Manager with connect information and tags configuration.
+     *
+     * @param connectInformation Axon Server Configuration
+     * @param tagsConfiguration Tags Configuration
+     */
+    public AxonServerConnectionManager(AxonServerConfiguration connectInformation,
+                                       TagsConfiguration tagsConfiguration) {
         this.connectInformation = connectInformation;
+        this.tagsConfiguration = tagsConfiguration;
     }
 
     public synchronized Channel getChannel() {
@@ -82,10 +120,14 @@ public class AxonServerConnectionManager {
                 PlatformServiceGrpc.PlatformServiceBlockingStub stub = PlatformServiceGrpc.newBlockingStub(candidate)
                         .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
                 try {
-                    PlatformInfo clusterInfo = stub.getPlatformServer(ClientIdentification.newBuilder()
-                            .setClientId(connectInformation.getClientId())
-                            .setComponentName(connectInformation.getComponentName())
-                            .build());
+                    ClientIdentification clientIdentification =
+                            ClientIdentification.newBuilder()
+                                                .setClientId(connectInformation.getClientId())
+                                                .setComponentName(connectInformation.getComponentName())
+                                                .putAllTags(tagsConfiguration.getTags())
+                                                .build();
+
+                    PlatformInfo clusterInfo = stub.getPlatformServer(clientIdentification);
                     if(isPrimary(nodeInfo, clusterInfo)) {
                         channel = candidate;
                     } else {
@@ -236,15 +278,17 @@ public class AxonServerConnectionManager {
 
                     @Override
                     public void onCompleted() {
-                        logger.warn("Closed instruction stream to {}", name);
+                        logger.info("Closed instruction stream to {}", name);
                         disconnectListeners.forEach(Runnable::run);
                         scheduleReconnect(true);
                     }
                 }));
-        inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
+        ClientIdentification client = ClientIdentification
+                .newBuilder()
                 .setClientId(connectInformation.getClientId())
                 .setComponentName(connectInformation.getComponentName())
-        ).build());
+                .putAllTags(tagsConfiguration.getTags()).build();
+        inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(client).build());
     }
 
     private synchronized void tryReconnect() {
@@ -300,14 +344,26 @@ public class AxonServerConnectionManager {
     }
 
     public void send(PlatformInboundInstruction instruction){
-        inputStream.onNext(instruction);
+        if (getChannel() != null) {
+            inputStream.onNext(instruction);
+        }
     }
 
+    /**
+     * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
+     */
     public void shutdown() {
+        shutdown = true;
+        disconnect();
+        scheduler.shutdown();
+    }
+
+    /**
+     * Disconnects any active connection, forcing a new connection to be established when one is requested.
+     */
+    public void disconnect() {
         if (channel != null) {
             shutdown(channel);
         }
-        shutdown = true;
-        scheduler.shutdown();
     }
 }

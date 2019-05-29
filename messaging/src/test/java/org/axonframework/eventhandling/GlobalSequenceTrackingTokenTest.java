@@ -52,4 +52,11 @@ public class GlobalSequenceTrackingTokenTest {
         assertTrue(token2.covers(token2));
         assertTrue(token2.covers(null));
     }
+
+    @Test
+    public void testPosition() {
+        GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(1L);
+
+        assertEquals(1L, token.position().getAsLong());
+    }
 }

@@ -119,7 +119,10 @@ public class TrackingEventProcessorTest {
         mockHandler = mock(EventMessageHandler.class);
         when(mockHandler.canHandle(any())).thenReturn(true);
         when(mockHandler.supportsReset()).thenReturn(true);
-        eventHandlerInvoker = Mockito.spy(SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build());
+        eventHandlerInvoker = Mockito.spy(SimpleEventHandlerInvoker.builder()
+                                                                   .eventHandlers(mockHandler)
+                                                                   .listenerInvocationErrorHandler(PropagatingErrorHandler.instance())
+                                                                   .build());
         mockTransaction = mock(Transaction.class);
         mockTransactionManager = mock(TransactionManager.class);
         when(mockTransactionManager.startTransaction()).thenReturn(mockTransaction);
@@ -179,6 +182,35 @@ public class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testProcessorExposesErrorStateOnHandlerException() throws Exception {
+        doReturn(Object.class).when(mockHandler).getTargetType();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            if (countDownLatch.getCount() == 0) {
+                return null;
+            }
+            countDownLatch.countDown();
+            throw new MockException("Simulating issues");
+        }).when(mockHandler).handle(any());
+        testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
+        eventBus.publish(createEvents(2));
+        assertTrue("Expected Handler to have received events", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            EventTrackerStatus status = testSubject.processingStatus().get(0);
+            assertTrue(status.isErrorState());
+            assertEquals(MockException.class, status.getError().getClass());
+        });
+
+        assertWithin(5, TimeUnit.SECONDS, () -> {
+            EventTrackerStatus status = testSubject.processingStatus().get(0);
+            assertFalse(status.isErrorState());
+            assertNull(status.getError());
+        });
     }
 
     @Test
@@ -1071,6 +1103,19 @@ public class TrackingEventProcessorTest {
         }
 
         CompletableFuture<Boolean> actual = testSubject.mergeSegment(1);
+
+        assertFalse("Expected merge to be rejected", actual.join());
+    }
+
+    @Test(timeout = 10000)
+    public void testMergeWithSingleSegmentRejected() throws InterruptedException {
+        int numberOfSegments = 1;
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(numberOfSegments));
+
+        testSubject.start();
+        waitForActiveThreads(1);
+
+        CompletableFuture<Boolean> actual = testSubject.mergeSegment(0);
 
         assertFalse("Expected merge to be rejected", actual.join());
     }

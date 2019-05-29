@@ -102,7 +102,7 @@ public class EventProcessorController {
     boolean mergeSegment(String processorName, int segmentId) {
         EventProcessor eventProcessor = getEventProcessor(processorName);
         if (!(eventProcessor instanceof TrackingEventProcessor)) {
-            logger.info("Merge segment requested for processor [{}] which is not a Tracking Event Processor");
+            logger.warn("Merge segment request received for processor [{}] which is not a Tracking Event Processor", processorName);
             return false;
         }
 

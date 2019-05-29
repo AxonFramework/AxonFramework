@@ -24,6 +24,7 @@ import org.axonframework.messaging.Message;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
@@ -241,5 +242,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 "currentToken=" + currentToken +
                 ", tokenAtReset=" + tokenAtReset +
                 '}';
+    }
+
+    @Override
+    public OptionalLong position() {
+        if(currentToken != null){
+            return currentToken.position();
+        }
+        return OptionalLong.empty();
     }
 }

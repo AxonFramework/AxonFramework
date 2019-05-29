@@ -265,6 +265,20 @@ public class Reporter {
         throw new AxonAssertionError(sb.toString());
     }
 
+    /**
+     * Report an error due to a difference in the expected state of the `isDeleted` marker on the Aggregate.
+     *
+     * @param expectedDeletedState <code>true</code> if the Aggregate should have been marked as deleted, but was not.
+     *                             <code>false</code> if the Aggregate should not have been marked as deleted, but was.
+     */
+    public void reportIncorrectDeletedState(boolean expectedDeletedState) {
+        if (expectedDeletedState) {
+            throw new AxonAssertionError("Aggregate should have been marked for deletion, but this did not happen");
+        } else {
+            throw new AxonAssertionError("Aggregate has been marked for deletion, but this was not expected");
+        }
+    }
+
     private void appendProbableCause(Throwable probableCause, StringBuilder sb) {
         if (probableCause != null) {
             sb.append(NEWLINE);
