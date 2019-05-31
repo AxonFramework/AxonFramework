@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
 
 public class MultiSourceTrackingTokenTest {
 
-    MultiSourceTrackingToken testSubject;
+    private MultiSourceTrackingToken testSubject;
 
     @Before
     public void setUp() {
@@ -34,7 +34,6 @@ public class MultiSourceTrackingTokenTest {
         Map<String, TrackingToken> expectedTokens = new HashMap<>();
         expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
         expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
-        ;
 
         MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
                 .lowerBound(new MultiSourceTrackingToken(newTokens));
@@ -51,7 +50,6 @@ public class MultiSourceTrackingTokenTest {
         Map<String, TrackingToken> expectedTokens = new HashMap<>();
         expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
         expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
-        ;
 
         MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
                 .lowerBound(new MultiSourceTrackingToken(newTokens));
@@ -65,7 +63,6 @@ public class MultiSourceTrackingTokenTest {
         Map<String, TrackingToken> expectedTokens = new HashMap<>();
         expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
         expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
-        ;
 
         MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
                 .lowerBound(new MultiSourceTrackingToken(newTokens));
@@ -84,6 +81,35 @@ public class MultiSourceTrackingTokenTest {
         assertEquals(new MultiSourceTrackingToken(newTokens), newMultiToken);
     }
 
+
+    @Test(expected = IllegalArgumentException.class)
+    public void upperBoundMismatchTokens() {
+        Map<String, TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(1));
+        newTokens.put("token3", new GlobalSequenceTrackingToken(2));
+
+        Map<String, TrackingToken> expectedTokens = new HashMap<>();
+        expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
+                .upperBound(new MultiSourceTrackingToken(newTokens));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void upperBoundDifferentNumberOfTokens() {
+        Map<String, TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(1));
+
+        Map<String, TrackingToken> expectedTokens = new HashMap<>();
+        expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
+                .upperBound(new MultiSourceTrackingToken(newTokens));
+    }
+
+
     @Test
     public void covers() {
         Map<String, TrackingToken> newTokens = new HashMap<>();
@@ -101,6 +127,33 @@ public class MultiSourceTrackingTokenTest {
 
         assertFalse(testSubject.covers(new MultiSourceTrackingToken(newTokens)));
     }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void coversMismatchTokens() {
+        Map<String, TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(1));
+        newTokens.put("token3", new GlobalSequenceTrackingToken(2));
+
+        Map<String, TrackingToken> expectedTokens = new HashMap<>();
+        expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        testSubject.covers(new MultiSourceTrackingToken(newTokens));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void coversDifferentNumberOfTokens() {
+        Map<String, TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(1));
+
+        Map<String, TrackingToken> expectedTokens = new HashMap<>();
+        expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        testSubject.covers(new MultiSourceTrackingToken(newTokens));
+    }
+
 
     @Test
     public void advancedTo() {

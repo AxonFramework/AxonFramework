@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.serialization.JavaSerializer;
-import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;

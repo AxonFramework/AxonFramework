@@ -34,7 +34,7 @@ public class MultiStreamableMessageSourceTest {
         testSubject = MultiStreamableMessageSource.builder()
                                                   .addMessageSource("eventStoreA", eventStoreA)
                                                   .addMessageSource("eventStoreB", eventStoreB)
-                                                  .configureLongPollingSource("eventStoreA")
+                                                  .longPollingSource("eventStoreA")
                                                   .build();
     }
 
@@ -229,8 +229,7 @@ public class MultiStreamableMessageSourceTest {
 
         Comparator<TrackedSourcedEventMessage<?>> eventStoreAPriority =
                 Comparator.<TrackedSourcedEventMessage<?>, Boolean>comparing(m -> !m.source().equals("eventStoreA")).
-                        <TrackedSourcedEventMessage<?>, Instant>thenComparing((m1, m2) -> m1.getTimestamp()
-                                                                                            .compareTo(m2.getTimestamp()));
+                        <TrackedSourcedEventMessage<?>, Instant>thenComparing((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()));
 
         EmbeddedEventStore eventStoreC = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
                                                            .build();
@@ -240,7 +239,7 @@ public class MultiStreamableMessageSourceTest {
                                             .addMessageSource("eventStoreA", eventStoreA)
                                             .addMessageSource("eventStoreB", eventStoreB)
                                             .addMessageSource("eventStoreC", eventStoreC)
-                                            .withComparator(eventStoreAPriority)
+                                            .trackedEventComparator(eventStoreAPriority)
                                             .build();
 
         EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");

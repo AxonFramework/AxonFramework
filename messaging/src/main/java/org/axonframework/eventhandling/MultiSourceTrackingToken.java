@@ -17,7 +17,7 @@ import java.util.OptionalLong;
  * Combined tracking token used when processing from multiple event sources
  *
  * @author Greg Woods
- * @since 4.x
+ * @since 4.2
  */
 public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
@@ -36,10 +36,11 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
         this.trackingTokens = trackingTokens;
     }
 
-
     /**
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
-     * token
+     * token. If the two tokens contain different number of constituent tokens, or have the same number but
+     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
+     * {@code MultiStreamableMessageSource}s.
      *
      * @param other The token to compare to this one
      * @return token representing the lower bound of of both tokens
@@ -55,8 +56,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens.forEach((key, otherToken) ->
-                                                       tokenMap.put(key, trackingTokens.get(key).lowerBound(otherToken))
+        otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) ->
+                                                       tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName).lowerBound(otherToken))
         );
 
         return new MultiSourceTrackingToken(tokenMap);
@@ -64,7 +65,9 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
     /**
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
-     * token
+     * token. If the two tokens contain different number of constituent tokens, or have the same number but
+     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
+     * {@code MultiStreamableMessageSource}s.
      *
      * @param other The token to compare this token to
      * @return a token that represents the furthest position of this or the other streams
@@ -80,8 +83,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens.forEach((key, otherToken) ->
-                                                       tokenMap.put(key, trackingTokens.get(key).upperBound(otherToken))
+        otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) ->
+                                                       tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName).upperBound(otherToken))
         );
 
         return new MultiSourceTrackingToken(tokenMap);
@@ -89,7 +92,9 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
 
     /**
      * Compares this token to {@code other} checking each member token with its counterpart to see if they are covered
-     * in the {@code other} token
+     * in the {@code other} token. If the two tokens contain different number of constituent tokens, or have the same number but
+     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
+     * {@code MultiStreamableMessageSource}s.
      *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}
@@ -137,6 +142,7 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
     }
 
     /**
+     * returns the map containing the constituent tokens.
      * @return the map containing the constituent tokens.
      */
     public Map<String, TrackingToken> getTrackingTokens() {
@@ -144,17 +150,18 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
     }
 
     /**
-     * @return Sum of all positions of the tracking token
+     * retuns the sum of all positions of the constituent tracking tokens.
+     * @return Sum of all positions of the constituent tracking tokens.
      */
     @Override
     public OptionalLong position() {
 
         //If all delegated tokens are empty then return empty
-        if (trackingTokens.entrySet().stream().noneMatch(p -> p.getValue().position().isPresent())) {
+        if (trackingTokens.entrySet().stream().noneMatch(token -> token.getValue().position().isPresent())) {
             return OptionalLong.empty();
         }
 
-        Long sumOfTokens = trackingTokens.entrySet().stream().map(c -> c.getValue().position().orElse(0L)).reduce(0L,
+        Long sumOfTokens = trackingTokens.entrySet().stream().map(token -> token.getValue().position().orElse(0L)).reduce(0L,
                                                                                                                   Long::sum);
 
         return OptionalLong.of(sumOfTokens);
