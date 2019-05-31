@@ -18,8 +18,6 @@ package org.axonframework.axonserver.connector.util;
 
 import io.grpc.*;
 
-import javax.annotation.Nullable;
-
 /**
  * Interceptor that immediately requests a number of messages from the server, to increase the flow of messages.
  * <p>
@@ -46,40 +44,19 @@ public class GrpcBufferingInterceptor implements ClientInterceptor {
 
     }
 
-    private static class AdditionalMessageRequestingCall<ReqT, RespT> extends ClientCall<ReqT, RespT> {
-        private final ClientCall<ReqT, RespT> call;
+    private static class AdditionalMessageRequestingCall<ReqT, RespT> extends ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT> {
+
         private final int additionalBuffer;
 
-        public AdditionalMessageRequestingCall(ClientCall<ReqT, RespT> call,
-                                               int additionalBuffer) {
-            this.call = call;
+        public AdditionalMessageRequestingCall(ClientCall<ReqT, RespT> call, int additionalBuffer) {
+            super(call);
             this.additionalBuffer = additionalBuffer;
         }
 
         @Override
         public void start(Listener<RespT> responseListener, Metadata headers) {
-            call.start(responseListener, headers);
-            call.request(additionalBuffer);
-        }
-
-        @Override
-        public void request(int numMessages) {
-            call.request(numMessages);
-        }
-
-        @Override
-        public void cancel(@Nullable String message, @Nullable Throwable cause) {
-            call.cancel(message, cause);
-        }
-
-        @Override
-        public void halfClose() {
-            call.halfClose();
-        }
-
-        @Override
-        public void sendMessage(ReqT message) {
-            call.sendMessage(message);
+            super.start(responseListener, headers);
+            request(additionalBuffer);
         }
     }
 }
