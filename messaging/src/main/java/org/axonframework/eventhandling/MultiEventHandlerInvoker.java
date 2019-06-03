@@ -73,6 +73,11 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
+    public boolean canHandleType(Class<?> payloadType) {
+        return delegates.stream().anyMatch(i -> i.canHandleType(payloadType));
+    }
+
+    @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
         for (EventHandlerInvoker i : delegates) {
             if (i.canHandle(message, segment)) {

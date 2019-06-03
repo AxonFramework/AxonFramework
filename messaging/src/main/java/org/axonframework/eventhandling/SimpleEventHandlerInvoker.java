@@ -118,6 +118,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
     }
 
+    @Override
+    public boolean canHandleType(Class<?> payloadType) {
+        return wrappedEventHandlers.stream().anyMatch(eh -> eh.canHandleType(payloadType));
+    }
+
     private boolean hasHandler(EventMessage<?> eventMessage) {
         for (EventMessageHandler eventHandler : wrappedEventHandlers) {
             if (eventHandler.canHandle(eventMessage)) {

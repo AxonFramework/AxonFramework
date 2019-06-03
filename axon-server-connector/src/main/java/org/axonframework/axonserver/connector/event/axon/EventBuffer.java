@@ -115,7 +115,7 @@ public class EventBuffer implements TrackingEventStream {
      * @param trackedEventMessage
      */
     @Override
-    public void reportIgnored(TrackedEventMessage<?> trackedEventMessage) {
+    public void blacklist(TrackedEventMessage<?> trackedEventMessage) {
         if (blacklistListener == null) {
             return;
         }

@@ -121,6 +121,14 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
     }
 
+    protected boolean canHandleType(Class<?> payloadType)  {
+        try {
+            return eventHandlerInvoker.canHandleType(payloadType);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /**
      * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
      * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor

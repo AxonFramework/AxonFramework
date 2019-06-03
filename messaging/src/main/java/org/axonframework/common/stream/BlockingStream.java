@@ -97,6 +97,6 @@ public interface BlockingStream<M> extends AutoCloseable {
      * for instance to blacklist similar messages.
      * @param ignoredMessage the ignored message
      */
-    default void reportIgnored(M ignoredMessage) {
+    default void blacklist(M ignoredMessage) {
     }
 }
