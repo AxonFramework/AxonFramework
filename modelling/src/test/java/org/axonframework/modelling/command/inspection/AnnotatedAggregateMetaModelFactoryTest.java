@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,15 +20,13 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.AggregateRoot;
 import org.junit.Test;
 
 import javax.persistence.Id;
@@ -37,6 +35,8 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -240,6 +240,28 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         assertEquals("id", inspector.getIdentifier(new SomeSubclass()));
     }
 
+    @Test
+    public void testEntityInitializationIsThreadSafe() {
+        for (int i = 0; i < 100; i++) {
+
+            AggregateModel<PolyMorphAggregate> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(PolyMorphAggregate.class);
+
+            PolyMorphAggregate instance1 = new PolyMorphAggregate();
+            PolyMorphAggregate instance2 = new PolyMorphAggregate();
+
+            AtomicLong counter = new AtomicLong();
+
+            ForkJoinTask<?> task1 = ForkJoinPool.commonPool().submit(() -> inspector.publish(asEventMessage(counter), instance1));
+            ForkJoinTask<?> task2 = ForkJoinPool.commonPool().submit(() -> inspector.publish(asEventMessage(counter), instance2));
+
+            task1.join();
+            task2.join();
+
+            assertEquals("Concurrency issue dectected after " + i + " attempts.", 2, counter.get());
+
+        }
+    }
+
     @Test(expected = AxonConfigurationException.class)
     public void testIllegalFactoryMethodThrowsExceptionClass() {
         AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class);
@@ -320,6 +342,14 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         public void handle(AtomicLong value) {
             value.incrementAndGet();
         }
+
+    }
+
+    @AggregateRoot
+    private static class PolyMorphAggregate {
+
+        @AggregateMember
+        private Object entity = new SomeOtherEntity();
 
     }
 
