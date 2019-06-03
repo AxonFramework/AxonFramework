@@ -158,7 +158,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
             if (method != null) {
                 return Objects.toString(method.invoke(command));
             } else if (field != null) {
-                return Objects.toString(ReflectionUtils.getFieldValue(field, command));
+                return Objects.toString(ReflectionUtils.getFieldValue(field, command), null);
             }
             return null;
         }
