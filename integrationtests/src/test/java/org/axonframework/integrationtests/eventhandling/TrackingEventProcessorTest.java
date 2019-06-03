@@ -20,7 +20,22 @@ import junit.framework.TestCase;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -29,19 +44,27 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.serialization.SerializationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import org.junit.*;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -50,12 +73,17 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -74,6 +102,10 @@ public class TrackingEventProcessorTest {
     private Transaction mockTransaction;
 
     static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
+        return trackingEventStreamOf(iterator, c -> {});
+    }
+
+    static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator, Consumer<Class<?>> blacklistListener) {
         return new TrackingEventStream() {
             private boolean hasPeeked;
             private TrackedEventMessage<?> peekEvent;
@@ -109,6 +141,11 @@ public class TrackingEventProcessorTest {
             @Override
             public void close() {
 
+            }
+
+            @Override
+            public void blacklist(TrackedEventMessage<?> ignoredMessage) {
+                blacklistListener.accept(ignoredMessage.getPayloadType());
             }
         };
     }
@@ -182,6 +219,30 @@ public class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testBlacklist() throws Exception {
+        when(mockHandler.canHandle(any())).thenReturn(false);
+        when(mockHandler.canHandleType(String.class)).thenReturn(false);
+        Set<Class<?>> blacklisted = new HashSet<>();
+
+        EmbeddedEventStore mockEventBus = mock(EmbeddedEventStore.class);
+        TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
+        List<TrackedEventMessage<?>> events =
+                createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
+        when(mockEventBus.openStream(null)).thenReturn(trackingEventStreamOf(events.iterator(), blacklisted::add));
+        testSubject = TrackingEventProcessor.builder()
+                                            .name("test")
+                                            .eventHandlerInvoker(eventHandlerInvoker)
+                                            .messageSource(mockEventBus)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .build();
+        testSubject.start();
+        Thread.sleep(200);
+        assertEquals(1, blacklisted.size());
+        assertTrue(blacklisted.contains(String.class));
     }
 
     @Test
