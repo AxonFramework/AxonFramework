@@ -139,20 +139,16 @@ public class AxonServerCommandBus implements CommandBus {
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        this.axonServerConnectionManager.addReconnectListener(this::resubscribe);
-        this.axonServerConnectionManager.addDisconnectListener(this::unsubscribe);
+        this.axonServerConnectionManager.addReconnectListener(configuration.getContext(), this::resubscribe);
+        this.axonServerConnectionManager.addDisconnectListener(configuration.getContext(), this::unsubscribe);
     }
 
-    private void resubscribe(String context) {
-        if (commandHandlerProvider != null && configuration.getContext().equals(context)) {
-            commandHandlerProvider.resubscribe();
-        }
+    private void resubscribe() {
+        commandHandlerProvider.resubscribe();
     }
 
-    private void unsubscribe(String context) {
-        if (commandHandlerProvider != null && configuration.getContext().equals(context)) {
-            commandHandlerProvider.unsubscribeAll();
-        }
+    private void unsubscribe() {
+        commandHandlerProvider.unsubscribeAll();
     }
 
     @Override

@@ -19,20 +19,11 @@ package org.axonframework.axonserver.connector;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.control.ClientIdentification;
-import io.axoniq.axonserver.grpc.control.NodeInfo;
-import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
-import io.axoniq.axonserver.grpc.control.PlatformInfo;
-import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
-import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
+import io.axoniq.axonserver.grpc.control.*;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
-import io.grpc.Channel;
-import io.grpc.ClientInterceptor;
-import io.grpc.ManagedChannel;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import io.grpc.*;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -45,23 +36,14 @@ import org.axonframework.config.TagsConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.net.ssl.SSLException;
 
 /**
  * @author Marc Gathier
@@ -109,10 +91,21 @@ public class AxonServerConnectionManager {
         this.tagsConfiguration = tagsConfiguration;
     }
 
+    /**
+     * Returns a Channel for the default context, opening one if necessary.
+     *
+     * @return a Channel for the default context
+     */
     public Channel getChannel() {
-        return getChannel(connectInformation.getContext());
+        return getChannel(getDefaultContext());
     }
 
+    /**
+     * Returns the connection for the given {@code context}, opening one if necessary
+     *
+     * @param context The context for which to open a connection
+     * @return a Channel for the given {@code context}
+     */
     public synchronized Channel getChannel(String context) {
         checkConnectionState(context);
         final ManagedChannel channel = channels.get(context);
@@ -191,7 +184,7 @@ public class AxonServerConnectionManager {
         try (InputStream in = getClass().getClassLoader().getResourceAsStream("axonserver_download.txt")) {
             byte[] buffer = new byte[1024];
             int read;
-            while ((read = in.read(buffer, 0, 1024)) >= 0) {
+            while (in != null && (read = in.read(buffer, 0, 1024)) >= 0) {
                 System.out.write(buffer, 0, read);
             }
         } catch (IOException e) {
@@ -322,6 +315,13 @@ public class AxonServerConnectionManager {
         }
     }
 
+    /**
+     * Registers a reconnect listener for the given {@code context}, to execute given {@code action} when a reconnection
+     * happens for that context.
+     *
+     * @param context The context to register the reconnect listener for
+     * @param action  The action to perform when a connection is re-established
+     */
     public void addReconnectListener(String context, Runnable action) {
         addReconnectListener(c -> {
             if (context.equals(c)) {
@@ -330,6 +330,13 @@ public class AxonServerConnectionManager {
         });
     }
 
+    /**
+     * Registers a listener to execute given {@code action} when the connection for given {@code context} is
+     * disconnected.
+     *
+     * @param context The context to register the disconnect listener for
+     * @param action  The action to execute when disconnected
+     */
     public void addDisconnectListener(String context, Runnable action) {
         addDisconnectListener(c -> {
             if (context.equals(c)) {
@@ -338,14 +345,34 @@ public class AxonServerConnectionManager {
         });
     }
 
+    /**
+     * Registers a reconnect listener that executes given {@code} action when a connection is re-established. The
+     * parameter of the invoked {@code action} is the name of the context for which the application was lost.
+     *
+     * @param action the action to perform
+     */
     public void addReconnectListener(Consumer<String> action) {
         reconnectListeners.add(action);
     }
 
+    /**
+     * Registers a disconnect listener that executes given {@code} action when a connection is disconnected. The
+     * parameter of the invoked {@code action} is the name of the context for which the application was lost.
+     *
+     * @param action the action to perform
+     */
     public void addDisconnectListener(Consumer<String> action) {
         disconnectListeners.add(action);
     }
 
+    /**
+     * Registers an interceptor that may alter the behavior on an incoming "reconnect request" from the server. This
+     * request occurs when AxonServer requests connections to be established on another node than the current one.
+     * <p>
+     * The registered interceptor may deny these requests by blocking the call to the input Consumer.
+     *
+     * @param interceptor A function altering the original reconnect request
+     */
     public void addReconnectInterceptor(Function<Consumer<String>, Consumer<String>> interceptor) {
         reconnectInterceptors.add(interceptor);
     }
@@ -366,11 +393,26 @@ public class AxonServerConnectionManager {
         }
     }
 
+    /**
+     * Opens a Stream for incoming commands from AxonServer in the given {@code context}
+     *
+     * @param context                   The context to open the stream for
+     * @param commandsFromRoutingServer The callback to invoke with incoming messages
+     * @return The stream to send command subscription instructions and execution results to AxonServer
+     */
     public StreamObserver<CommandProviderOutbound> getCommandStream(String context, StreamObserver<CommandProviderInbound> commandsFromRoutingServer) {
         return CommandServiceGrpc.newStub(getChannel(context))
                                  .openStream(commandsFromRoutingServer);
     }
 
+
+    /**
+     * Opens a Stream for incoming queries from AxonServer in the given {@code context}
+     *
+     * @param context                            The context to open the stream for
+     * @param queryProviderInboundStreamObserver The callback to invoke with incoming messages
+     * @return The stream to send query subscription instructions and responses to AxonServer
+     */
     public StreamObserver<QueryProviderOutbound> getQueryStream(String context, StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver) {
         return QueryServiceGrpc.newStub(getChannel(context))
                                .openStream(queryProviderInboundStreamObserver);
@@ -381,6 +423,13 @@ public class AxonServerConnectionManager {
         onOutboundInstruction(getDefaultContext(), requestCase, consumer);
     }
 
+    /**
+     * Registers a handler to handle instructions from AxonServer
+     *
+     * @param context     The context for which the instruction is intended
+     * @param requestCase The type of instruction to respond to
+     * @param consumer    The handler of the instruction
+     */
     public void onOutboundInstruction(String context, PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer) {
         this.handlers.computeIfAbsent(context, (rc) -> new LinkedList<>()).add(i -> {
             if (i.getRequestCase().equals(requestCase)) {
@@ -389,6 +438,12 @@ public class AxonServerConnectionManager {
         });
     }
 
+    /**
+     * Send the given {@code instruction} for given {@code context} to AxonServer.
+     *
+     * @param context     The context for which the instruction is intended
+     * @param instruction The message containing information for AxonServer to process
+     */
     public void send(String context, PlatformInboundInstruction instruction) {
         if (getChannel(context) != null) {
             instructionStreams.get(context).onNext(instruction);
@@ -405,7 +460,10 @@ public class AxonServerConnectionManager {
     }
 
     /**
-     * Disconnects any active connection, forcing a new connection to be established when one is requested.
+     * Disconnects any active connection for the given {@code context}, forcing a new connection to be established when
+     * one is requested.
+     *
+     * @param context The context for which the connection must be disconnected
      */
     public void disconnect(String context) {
         ManagedChannel channel = channels.get(context);
@@ -423,6 +481,7 @@ public class AxonServerConnectionManager {
 
     /**
      * Returns the name of the default context
+     *
      * @return the name of the default context
      */
     public String getDefaultContext() {
