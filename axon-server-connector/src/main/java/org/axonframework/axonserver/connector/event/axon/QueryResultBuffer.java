@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,9 +34,11 @@ import java.util.function.Consumer;
  * This class is intended for internal use. Be cautious.
  *
  * @author Marc Gathier
+ * @since 4.0
  */
 public class QueryResultBuffer implements QueryResultStream {
-    final Logger logger = LoggerFactory.getLogger(EventBuffer.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(EventBuffer.class);
 
     private final BlockingQueue<RowResponse> queryResultQueue;
 
@@ -43,7 +46,8 @@ public class QueryResultBuffer implements QueryResultStream {
     private RuntimeException exception;
 
     private Consumer<QueryResultBuffer> closeCallback;
-    private Consumer<Integer> consumeListener = i -> {};
+    private Consumer<Integer> consumeListener = i -> {
+    };
     private List<String> columns;
 
     public QueryResultBuffer() {
@@ -76,12 +80,14 @@ public class QueryResultBuffer implements QueryResultStream {
 
     private void waitForData(long deadline) throws InterruptedException {
         do {
-            RowResponse row = queryResultQueue.poll(Math.min(deadline - System.currentTimeMillis(), 200), TimeUnit.MILLISECONDS);
+            RowResponse row = queryResultQueue.poll(
+                    Math.min(deadline - System.currentTimeMillis(), 200), TimeUnit.MILLISECONDS
+            );
             if (row != null) {
                 peekEvent = new QueryResult(row, columns);
             }
             checkException();
-        } while( ! closed && peekEvent == null && System.currentTimeMillis() < deadline);
+        } while (!closed && peekEvent == null && System.currentTimeMillis() < deadline);
     }
 
     @Override
@@ -96,11 +102,13 @@ public class QueryResultBuffer implements QueryResultStream {
     }
 
     private volatile boolean closed;
+
     @Override
     public void close() {
         closed = true;
-        if (closeCallback != null) closeCallback.accept(this);
-
+        if (closeCallback != null) {
+            closeCallback.accept(this);
+        }
     }
 
     public void registerCloseListener(Consumer<QueryResultBuffer> closeCallback) {
@@ -112,7 +120,11 @@ public class QueryResultBuffer implements QueryResultStream {
     }
 
     public void push(QueryEventsResponse eventWithToken) {
-        switch(eventWithToken.getDataCase()) {
+        if (closed) {
+            logger.debug("Received date while closed");
+            return;
+        }
+        switch (eventWithToken.getDataCase()) {
             case COLUMNS:
                 this.columns = eventWithToken.getColumns().getColumnList();
                 break;
@@ -120,15 +132,14 @@ public class QueryResultBuffer implements QueryResultStream {
                 try {
                     queryResultQueue.put(eventWithToken.getRow());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    this.close();
+                    Thread.currentThread().interrupt();
                 }
                 break;
             case FILES_COMPLETED:
-                break;
             case DATA_NOT_SET:
                 break;
         }
-
     }
 
     public void fail(EventStoreException exception) {

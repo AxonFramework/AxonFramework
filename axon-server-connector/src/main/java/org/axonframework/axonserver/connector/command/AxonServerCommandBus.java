@@ -222,7 +222,7 @@ public class AxonServerCommandBus implements CommandBus {
                               }
                     );
         } catch (Exception e) {
-            logger.warn("There was a problem dispatching command [{}].", commandMessage, e);
+            logger.debug("There was a problem dispatching command [{}].", commandMessage, e);
             commandCallback.onResult(
                     commandMessage,
                     asCommandResultMessage(ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), e))
@@ -298,6 +298,7 @@ public class AxonServerCommandBus implements CommandBus {
                 return;
             }
 
+            logger.info("Resubscribing Command handlers with AxonServer");
             try {
                 StreamObserver<CommandProviderOutbound> outboundStreamObserver = getSubscriberObserver(context);
                 subscribedCommands.forEach(command -> outboundStreamObserver.onNext(
@@ -380,7 +381,7 @@ public class AxonServerCommandBus implements CommandBus {
                 @SuppressWarnings("Duplicates")
                 @Override
                 public void onError(Throwable ex) {
-                    logger.warn("Received error from server: {}", ex.getMessage());
+                    logger.warn("Command Inbound Stream closed with error", ex);
                     subscriberStreamObserver = null;
                     if (ex instanceof StatusRuntimeException
                             && ((StatusRuntimeException) ex).getStatus().getCode()

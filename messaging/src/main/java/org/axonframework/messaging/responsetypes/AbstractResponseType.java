@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,16 +62,11 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
      *
      * @param type to be unwrapped
      * @return unwrapped generic, or original if provided {@code type} is not of type {@link Future}
+     * @deprecated Use {@link ReflectionUtils#unwrapIfType(Type, Class[])} instead
      */
+    @Deprecated
     protected Type unwrapIfTypeFuture(Type type) {
-        Type futureType = TypeReflectionUtils.getExactSuperType(type, Future.class);
-        if (futureType instanceof ParameterizedType) {
-            Type[] actualTypeArguments = ((ParameterizedType) futureType).getActualTypeArguments();
-            if (actualTypeArguments.length == 1) {
-                return actualTypeArguments[0];
-            }
-        }
-        return type;
+        return ReflectionUtils.unwrapIfType(type, Future.class);
     }
 
     protected boolean isIterableOfExpectedType(Type responseType) {

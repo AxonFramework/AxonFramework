@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,18 @@ package org.axonframework.messaging.responsetypes;
 
 import org.junit.*;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 
+import static org.axonframework.common.ReflectionUtils.methodOf;
 import static org.junit.Assert.*;
 
+/**
+ * Test all possible permutations of Query Handler return types through the {@link InstanceResponseType}. To that end,
+ * leveraging the  {@link AbstractResponseTypeTest} to cover all usual suspects between the different
+ * {@link ResponseType} implementations.
+ */
 public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
 
     public InstanceResponseTypeTest() {
@@ -34,18 +42,25 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     }
 
     @Test
+    public void testOptionalMatchesExpectedType() throws NoSuchMethodException {
+        Method methodToTest = methodOf(getClass(), "someOptionalQueryResponse");
+        Type methodReturnType = methodToTest.getGenericReturnType();
+        assertEquals(Boolean.TRUE, ResponseTypes.instanceOf(QueryResponse.class).matches(methodReturnType));
+    }
+
+    @Test
     public void testMatchesReturnsTrueIfResponseTypeIsSubTypeOfProvidedType() throws NoSuchMethodException {
         testMatches("someSubTypedQuery", MATCHES);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsSuperTypeOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSuperTypedQuery", DOES_NOT_MATCHES);
+        testMatches("someSuperTypedQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGeneric() throws NoSuchMethodException {
-        testMatches("someUnboundedGenericQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -60,134 +75,134 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingBoundedGenericQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingBoundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsArrayOfProvidedType() throws NoSuchMethodException {
-        testMatches("someArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsArrayWithSubTypeOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSubTypedArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someSubTypedArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsArrayWithSuperTypeOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSuperTypedArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someSuperTypedArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericArray() throws NoSuchMethodException {
-        testMatches("someUnboundedGenericArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsBoundedGenericArrayOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someBoundedGenericArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someBoundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedGenericArrayOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiBoundedGenericArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someMultiBoundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericArrayOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingBoundedGenericArrayQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingBoundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someListQuery", DOES_NOT_MATCHES);
+        testMatches("someListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsSubListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSubListQuery", DOES_NOT_MATCHES);
+        testMatches("someSubListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsSuperListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSuperListQuery", DOES_NOT_MATCHES);
+        testMatches("someSuperListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsBoundedGenericListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someBoundedGenericListQuery", DOES_NOT_MATCHES);
+        testMatches("someBoundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericList() throws NoSuchMethodException {
-        testMatches("someUnboundedGenericListQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedGenericListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiBoundedGenericListQuery", DOES_NOT_MATCHES);
+        testMatches("someMultiBoundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericListOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingBoundedGenericListQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingBoundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedWildcardList() throws NoSuchMethodException {
-        testMatches("someUnboundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsLowerBoundedWildcardList() throws NoSuchMethodException {
-        testMatches("someLowerBoundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someLowerBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsWildcardListOfOtherType() throws NoSuchMethodException {
-        testMatches("someNonMatchingUpperBoundedWildcardQuery", DOES_NOT_MATCHES);
+        testMatches("someNonMatchingUpperBoundedWildcardQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMultiGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someMultiGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericUpperBoundedWildcardList()
             throws NoSuchMethodException {
-        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
+        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsSetOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSetQuery", DOES_NOT_MATCHES);
+        testMatches("someSetQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsStreamOfProvidedType() throws NoSuchMethodException {
-        testMatches("someStreamQuery", DOES_NOT_MATCHES);
+        testMatches("someStreamQuery", DOES_NOT_MATCH);
     }
 
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMapOfProvidedType() throws NoSuchMethodException {
-        testMatches("someMapQuery", DOES_NOT_MATCHES);
+        testMatches("someMapQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -216,7 +231,8 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForDifferentSingleInstanceResponse() {
-        QueryResponse result = testSubject.convert(new QueryResponseInterface() {});
+        QueryResponse result = testSubject.convert(new QueryResponseInterface() {
+        });
     }
 
     @SuppressWarnings("unused")

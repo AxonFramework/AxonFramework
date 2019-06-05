@@ -49,17 +49,32 @@ public class AnnotationRoutingStrategyTest {
         );
     }
 
+    @Test(expected = CommandDispatchException.class)
+    public void testNullRoutingKeyThrowsCommandDispatchException() {
+        testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullFieldAnnotatedCommand()));
+    }
+
     public static class SomeFieldAnnotatedCommand {
 
+        @SuppressWarnings("unused")
         @RoutingKey
         private final String target = "Target";
     }
 
     public static class SomeOtherFieldAnnotatedCommand {
 
+        @SuppressWarnings("unused")
         @RoutingKey
         private final SomeObject target = new SomeObject("Target");
     }
+
+    public static class SomeNullFieldAnnotatedCommand {
+
+        @SuppressWarnings("unused")
+        @RoutingKey
+        private final String target = null;
+    }
+
 
     public static class SomeMethodAnnotatedCommand {
 

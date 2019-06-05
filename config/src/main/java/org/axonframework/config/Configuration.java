@@ -178,6 +178,15 @@ public interface Configuration {
     }
 
     /**
+     * Returns the Tags Configuration defined in this Configuration.
+     *
+     * @return the Tags Configuration defined in this Configuration
+     */
+    default TagsConfiguration tags() {
+        return getComponent(TagsConfiguration.class);
+    }
+
+    /**
      * Returns the Repository configured for the given {@code aggregateType}.
      *
      * @param aggregateType The aggregate type to find the repository for

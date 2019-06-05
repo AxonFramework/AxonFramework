@@ -44,7 +44,7 @@ public class BufferingSpliterator<R> implements Spliterator<R> {
     private AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
-     * Instantiate a queue backed {@link Spliterator} implementation. The given {@code deadline} indicates the
+     * Instantiate a buffering {@link Spliterator} implementation. The given {@code deadline} indicates the
      * instant until which the {@link #tryAdvance(Consumer)} method can return a positive result. After the
      * deadline, {@code tryAdvance(Consumer)} will always return {@code false}.
      * <p>
@@ -57,7 +57,7 @@ public class BufferingSpliterator<R> implements Spliterator<R> {
     }
 
     /**
-     * Instantiate a queue backed {@link Spliterator} implementation with a queue capacity of
+     * Instantiate a buffering {@link Spliterator} implementation with a queue capacity of
      * {@code Integer.MAX_VALUE}.
      */
     public BufferingSpliterator() {
@@ -65,7 +65,7 @@ public class BufferingSpliterator<R> implements Spliterator<R> {
     }
 
     /**
-     * Instantiate a queue backed {@link Spliterator} implementation. The given {@code deadline} indicates the
+     * Instantiate a buffering {@link Spliterator} implementation. The given {@code deadline} indicates the
      * instant until which the {@link #tryAdvance(Consumer)} method can return a positive result. After the
      * deadline, {@code tryAdvance(Consumer)} will always return {@code false}.
      * <p>
@@ -80,7 +80,7 @@ public class BufferingSpliterator<R> implements Spliterator<R> {
     }
 
     /**
-     * Instantiate a queue backed {@link Spliterator} implementation with the given {@code bufferCapacity} for the
+     * Instantiate a buffering {@link Spliterator} implementation with the given {@code bufferCapacity} for the
      * underlying buffer. Offering operations will block until space is available on the buffer
      *
      * @param bufferCapacity The number of items allowed in this buffer before suppliers are blocked

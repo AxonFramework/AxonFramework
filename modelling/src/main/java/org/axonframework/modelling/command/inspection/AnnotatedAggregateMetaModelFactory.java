@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,6 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.modelling.command.AggregateRoot;
-import org.axonframework.modelling.command.AggregateVersion;
-import org.axonframework.modelling.command.EntityId;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
@@ -27,10 +24,14 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.*;
+import org.axonframework.modelling.command.AggregateRoot;
+import org.axonframework.modelling.command.AggregateVersion;
+import org.axonframework.modelling.command.EntityId;
 
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.String.format;
 
@@ -43,39 +44,6 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
     private final Map<Class<?>, AnnotatedAggregateModel> registry;
     private final ParameterResolverFactory parameterResolverFactory;
     private final HandlerDefinition handlerDefinition;
-
-    /**
-     * Initializes an instance which uses the default, classpath based, ParameterResolverFactory to detect parameters
-     * for annotated handlers.
-     */
-    public AnnotatedAggregateMetaModelFactory() {
-        this(ClasspathParameterResolverFactory.forClassLoader(Thread.currentThread().getContextClassLoader()));
-    }
-
-    /**
-     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
-     * annotated handlers.
-     *
-     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
-     */
-    public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
-        this(parameterResolverFactory,
-             ClasspathHandlerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
-    }
-
-    /**
-     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
-     * annotated handlers and {@code handlerDefinition} to create concrete handlers.
-     *
-     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     */
-    public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory,
-                                              HandlerDefinition handlerDefinition) {
-        this.parameterResolverFactory = parameterResolverFactory;
-        this.handlerDefinition = handlerDefinition;
-        registry = new ConcurrentHashMap<>();
-    }
 
     /**
      * Shorthand to create a factory instance and inspect the model for the given {@code aggregateType}.
@@ -119,8 +87,42 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 .createModel(aggregateType);
     }
 
+    /**
+     * Initializes an instance which uses the default, classpath based, ParameterResolverFactory to detect parameters
+     * for annotated handlers.
+     */
+    public AnnotatedAggregateMetaModelFactory() {
+        this(ClasspathParameterResolverFactory.forClassLoader(Thread.currentThread().getContextClassLoader()));
+    }
+
+    /**
+     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
+     * annotated handlers.
+     *
+     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
+     */
+    public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
+        this(parameterResolverFactory,
+             ClasspathHandlerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
+    }
+
+    /**
+     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
+     * annotated handlers and {@code handlerDefinition} to create concrete handlers.
+     *
+     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory,
+                                              HandlerDefinition handlerDefinition) {
+        this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinition = handlerDefinition;
+        registry = new ConcurrentHashMap<>();
+    }
+
     @Override
     public <T> AnnotatedAggregateModel<T> createModel(Class<? extends T> aggregateType) {
+
         if (!registry.containsKey(aggregateType)) {
             AnnotatedHandlerInspector<T> inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
                                                                                            parameterResolverFactory,
@@ -132,7 +134,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             model.initialize();
         }
         //noinspection unchecked
-        return registry.get(aggregateType);
+        return registry.get(aggregateType).whenReadSafe();
     }
 
     private class AnnotatedAggregateModel<T> implements AggregateModel<T> {
@@ -143,11 +145,14 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private final List<MessageHandlingMember<? super T>> commandHandlerInterceptors;
         private final List<MessageHandlingMember<? super T>> commandHandlers;
         private final List<MessageHandlingMember<? super T>> eventHandlers;
+        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
         private String aggregateType;
         private Field identifierField;
         private Field versionField;
         private String routingKey;
+        private final ThreadLocal<Boolean> initializing = new ThreadLocal<>();
+        private volatile boolean initialized;
 
         public AnnotatedAggregateModel(Class<? extends T> aggregateType, AnnotatedHandlerInspector<T> handlerInspector) {
             this.inspectedType = aggregateType;
@@ -159,9 +164,12 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         private void initialize() {
+            initializing.set(Boolean.TRUE);
             inspectAggregateType();
             inspectFields();
             prepareHandlers();
+            initialized = true;
+            initializing.remove();
         }
 
         @SuppressWarnings("unchecked")
@@ -179,7 +187,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         private void inspectAggregateType() {
             aggregateType = AnnotationUtils.findAnnotationAttributes(inspectedType, AggregateRoot.class)
-                    .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(inspectedType.getSimpleName());
+                                           .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(inspectedType.getSimpleName());
         }
 
         private void inspectFields() {
@@ -212,7 +220,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                     }
                 }
                 AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
-                        .ifPresent(attributes -> versionField = field);
+                               .ifPresent(attributes -> versionField = field);
             }
         }
 
@@ -299,5 +307,23 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
 
+        /**
+         * Returns this instance when it it safe to read from. This is either if the current thread is already
+         * initializing this instance, or when the instance is fully initialized.
+         *
+         * @return this instance, as soon as it is safe for reading
+         */
+        private AnnotatedAggregateModel<T> whenReadSafe() {
+            if (Boolean.TRUE.equals(initializing.get())) {
+                // This thread is initializing. To prevent deadlocks, we should return this instance immediately
+                return this;
+            }
+            while (!initialized) {
+                // another thread is initializing, it shouldn't take long...
+                Thread.yield();
+            }
+            // we're safe to go
+            return this;
+        }
     }
 }

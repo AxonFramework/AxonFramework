@@ -192,12 +192,7 @@ public class AxonServerQueryBus implements QueryBus {
                                @Override
                                public void onError(Throwable throwable) {
                                    if (logger.isDebugEnabled()) {
-                                       logger.warn("Received error while waiting for first response: {}",
-                                                   throwable.getMessage(),
-                                                   throwable);
-                                   } else {
-                                       logger.warn("Received error while waiting for first response: {}",
-                                                   throwable.getMessage());
+                                       logger.debug("Received error while waiting for first response", throwable);
                                    }
                                    completableFuture.completeExceptionally(
                                            ErrorCode.QUERY_DISPATCH_ERROR.convert(
@@ -221,7 +216,7 @@ public class AxonServerQueryBus implements QueryBus {
                                }
                            });
         } catch (Exception e) {
-            logger.warn("There was a problem issuing a query {}.", interceptedQuery, e);
+            logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             completableFuture.completeExceptionally(
                     ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e)
             );
@@ -262,8 +257,8 @@ public class AxonServerQueryBus implements QueryBus {
                            @Override
                            public void onError(Throwable throwable) {
                                if (!isDeadlineExceeded(throwable)) {
-                                   logger.warn("Received error while waiting for responses: {}",
-                                               throwable.getMessage(), throwable);
+                                   logger.info("Received error while waiting for responses",
+                                               throwable);
                                }
                                resultSpliterator.cancel(throwable);
                            }
@@ -398,7 +393,7 @@ public class AxonServerQueryBus implements QueryBus {
                                              .build()
                 ));
             } catch (Exception ex) {
-                logger.warn("Error while resubscribing - {}", ex.getMessage());
+                logger.warn("Error while resubscribing query handlers", ex);
             }
         }
 
@@ -426,7 +421,7 @@ public class AxonServerQueryBus implements QueryBus {
                                          .build()).build()
                 );
             } catch (Exception ex) {
-                logger.warn("Subscribe failed - {}", ex.getMessage());
+                logger.warn("Error subscribing query handler", ex);
             } finally {
                 subscribing = false;
             }
@@ -464,8 +459,7 @@ public class AxonServerQueryBus implements QueryBus {
                                              ).build()
                 );
             } catch (Exception e) {
-                logger.warn("Failed to dispatch query [{}] locally - Cause: {}",
-                            queryMessage.getQueryName(), e.getMessage(), e);
+                logger.warn("Failed to dispatch query [{}] locally", queryMessage.getQueryName(), e);
 
                 if (outboundStreamObserver == null) {
                     return;
@@ -510,7 +504,7 @@ public class AxonServerQueryBus implements QueryBus {
                 @SuppressWarnings("Duplicates")
                 @Override
                 public void onError(Throwable ex) {
-                    logger.warn("Received error from server: {}", ex.getMessage());
+                    logger.warn("Query Inbound Stream closed with error", ex);
                     outboundStreamObserver = null;
                     if (ex instanceof StatusRuntimeException
                             && ((StatusRuntimeException) ex).getStatus().getCode()
@@ -652,7 +646,7 @@ public class AxonServerQueryBus implements QueryBus {
                     logger.debug("Will process query [{}]", queryRequest.getQuery());
                     processQuery(queryRequest);
                 } catch (RuntimeException | OutOfDirectMemoryError e) {
-                    logger.warn("Query Processor had an exception when processing query [{}]", queryRequest, e);
+                    logger.warn("Query Processor had an exception when processing query [{}]", queryRequest.getQuery(), e);
                 }
             }
         }

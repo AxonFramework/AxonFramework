@@ -1,21 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,41 +24,33 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.config.TagsConfiguration;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.JavaSerializer;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.queryhandling.*;
+import org.axonframework.serialization.*;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
 import org.axonframework.springboot.DistributedCommandBusProperties;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.SerializerProperties;
+import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,22 +75,31 @@ import java.util.function.Function;
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
         DistributedCommandBusProperties.class,
-        SerializerProperties.class
+        SerializerProperties.class,
+        TagsConfigurationProperties.class
 })
 public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     private final EventProcessorProperties eventProcessorProperties;
     private final SerializerProperties serializerProperties;
+    private final TagsConfigurationProperties tagsConfigurationProperties;
     private final ApplicationContext applicationContext;
 
     private ClassLoader beanClassLoader;
 
     public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties,
                                  SerializerProperties serializerProperties,
+                                 TagsConfigurationProperties tagsConfigurationProperties,
                                  ApplicationContext applicationContext) {
         this.eventProcessorProperties = eventProcessorProperties;
         this.serializerProperties = serializerProperties;
+        this.tagsConfigurationProperties = tagsConfigurationProperties;
         this.applicationContext = applicationContext;
+    }
+
+    @Bean
+    public TagsConfiguration tagsConfiguration() {
+        return tagsConfigurationProperties.toTagsConfiguration();
     }
 
     @Bean
@@ -227,6 +212,23 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     public EventGateway eventGateway(EventBus eventBus) {
         return DefaultEventGateway.builder().eventBus(eventBus).build();
+    }
+
+    @ConditionalOnMissingBean(Snapshotter.class)
+    @ConditionalOnBean(EventStore.class)
+    @Bean
+    public SpringAggregateSnapshotter aggregateSnapshotter(Configuration configuration,
+                                                           HandlerDefinition handlerDefinition,
+                                                           ParameterResolverFactory parameterResolverFactory,
+                                                           EventStore eventStore,
+                                                           TransactionManager transactionManager) {
+        return SpringAggregateSnapshotter.builder()
+                                         .repositoryProvider(configuration::repository)
+                                         .transactionManager(transactionManager)
+                                         .eventStore(eventStore)
+                                         .parameterResolverFactory(parameterResolverFactory)
+                                         .handlerDefinition(handlerDefinition)
+                                         .build();
     }
 
     @SuppressWarnings("unchecked")

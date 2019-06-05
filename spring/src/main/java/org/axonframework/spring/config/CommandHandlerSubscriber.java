@@ -26,6 +26,8 @@ import org.springframework.context.SmartLifecycle;
 
 import java.util.Collection;
 
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
+
 /**
  * Registers Spring beans that implement both MessageHandler and SupportedCommandNamesAware with the command bus.
  *
@@ -81,7 +83,7 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
             commandBus = applicationContext.getBean(CommandBus.class);
         }
         if (commandHandlers == null) {
-            commandHandlers = applicationContext.getBeansOfType(MessageHandler.class).values();
+            commandHandlers = beansOfTypeIncludingAncestors(applicationContext, MessageHandler.class).values();
         }
         commandHandlers.stream().filter(commandHandler -> commandHandler instanceof CommandMessageHandler)
                 .forEach(commandHandler -> {

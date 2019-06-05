@@ -273,4 +273,18 @@ public interface ResultValidator<T> {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectDeadlinesMet(Object... expected);
+
+    /**
+     * Asserts that the Aggregate has been marked for deletion.
+     *
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectMarkedDeleted();
+
+    /**
+     * Asserts that the Aggregate has NOT been marked for deletion.
+     *
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectNotMarkedDeleted();
 }
