@@ -150,14 +150,16 @@ public class SimpleQueryBus implements QueryBus {
             boolean invocationSuccess = false;
             while (!invocationSuccess && handlerIterator.hasNext()) {
                 DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
+                final MessageHandler<? super QueryMessage<?, ?>> handler = handlerIterator.next();
                 ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
-                        interceptAndInvoke(uow, handlerIterator.next());
+                        interceptAndInvoke(uow, handler);
                 if (resultMessage.isExceptional()) {
                     if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
                         result.complete(new GenericQueryResponseMessage<>(
                                 interceptedQuery.getResponseType().responseMessagePayloadType(),
                                 resultMessage.exceptionResult()));
                         monitorCallback.reportFailure(resultMessage.exceptionResult());
+                        errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
                         return result;
                     }
                 } else {

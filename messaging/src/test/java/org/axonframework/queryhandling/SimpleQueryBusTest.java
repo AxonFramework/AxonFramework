@@ -289,6 +289,8 @@ public class SimpleQueryBusTest {
         QueryResponseMessage<String> queryResponseMessage = result.get();
         assertTrue(queryResponseMessage.isExceptional());
         assertEquals("Mock", queryResponseMessage.exceptionResult().getMessage());
+        verify(monitorCallback).reportFailure(queryResponseMessage.exceptionResult());
+        verify(errorHandler).onError(queryResponseMessage.exceptionResult(), testQueryMessage, failingHandler);
     }
 
     @Test
