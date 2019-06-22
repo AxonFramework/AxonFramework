@@ -55,8 +55,7 @@ public class MultiStreamableMessageSourceTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void openStreamWithWrongToken() throws InterruptedException {
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject
-                .openStream(new GlobalSequenceTrackingToken(0L));
+        testSubject.openStream(new GlobalSequenceTrackingToken(0L));
     }
 
     @Test
