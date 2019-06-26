@@ -61,8 +61,7 @@ public class MultiSourceTrackingTokenTest {
         expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
         expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
-        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
-                .lowerBound(new MultiSourceTrackingToken(newTokens));
+        testSubject.lowerBound(new MultiSourceTrackingToken(newTokens));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -74,8 +73,7 @@ public class MultiSourceTrackingTokenTest {
         expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
         expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
-        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
-                .lowerBound(new MultiSourceTrackingToken(newTokens));
+        testSubject.lowerBound(new MultiSourceTrackingToken(newTokens));
     }
 
     @Test
@@ -102,8 +100,7 @@ public class MultiSourceTrackingTokenTest {
         expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
         expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
-        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
-                .upperBound(new MultiSourceTrackingToken(newTokens));
+        testSubject.upperBound(new MultiSourceTrackingToken(newTokens));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -115,8 +112,7 @@ public class MultiSourceTrackingTokenTest {
         expectedTokens.put("token1", new GlobalSequenceTrackingToken(0));
         expectedTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
-        MultiSourceTrackingToken newMultiToken = (MultiSourceTrackingToken) testSubject
-                .upperBound(new MultiSourceTrackingToken(newTokens));
+        testSubject.upperBound(new MultiSourceTrackingToken(newTokens));
     }
 
 
