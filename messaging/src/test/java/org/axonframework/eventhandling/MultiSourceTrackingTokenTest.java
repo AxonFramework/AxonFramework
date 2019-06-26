@@ -26,6 +26,16 @@ public class MultiSourceTrackingTokenTest {
     }
 
     @Test
+    public void testTrackingTokenIsImmutable() {
+        MultiSourceTrackingToken newToken = testSubject.advancedTo("token1", new GlobalSequenceTrackingToken(1));
+
+        assertEquals(new GlobalSequenceTrackingToken(0), testSubject.getTokenForStream("token1"));
+        assertEquals(new GlobalSequenceTrackingToken(0), testSubject.getTokenForStream("token2"));
+        assertEquals(new GlobalSequenceTrackingToken(1), newToken.getTokenForStream("token1"));
+        assertEquals(new GlobalSequenceTrackingToken(0), newToken.getTokenForStream("token2"));
+    }
+
+    @Test
     public void lowerBound() {
         Map<String, TrackingToken> newTokens = new HashMap<>();
         newTokens.put("token1", new GlobalSequenceTrackingToken(1));
@@ -157,11 +167,11 @@ public class MultiSourceTrackingTokenTest {
 
     @Test
     public void advancedTo() {
-        testSubject.advancedTo("token1", new GlobalSequenceTrackingToken(4));
+        MultiSourceTrackingToken result = testSubject.advancedTo("token1", new GlobalSequenceTrackingToken(4));
 
-        assertEquals(new GlobalSequenceTrackingToken(4), testSubject.getTokenForStream("token1"));
+        assertEquals(new GlobalSequenceTrackingToken(4), result.getTokenForStream("token1"));
         //other token remains unchanged
-        assertEquals(new GlobalSequenceTrackingToken(0), testSubject.getTokenForStream("token2"));
+        assertEquals(new GlobalSequenceTrackingToken(0), result.getTokenForStream("token2"));
     }
 
     @Test
@@ -182,7 +192,7 @@ public class MultiSourceTrackingTokenTest {
 
         MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(tokenMap);
 
-        assertTrue(newMultiToken.equals(testSubject));
+        assertEquals(newMultiToken, testSubject);
     }
 
     @Test

@@ -19,9 +19,10 @@ import java.util.OptionalLong;
  * @author Greg Woods
  * @since 4.2
  */
-public class MultiSourceTrackingToken implements Serializable, TrackingToken {
+public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
     private static final Logger logger = LoggerFactory.getLogger(MultiSourceTrackingToken.class);
+    private static final long serialVersionUID = 4541799074835933645L;
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
     private final Map<String, TrackingToken> trackingTokens;
@@ -57,7 +58,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
         otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) ->
-                                                       tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName).lowerBound(otherToken))
+                                                       tokenMap.put(tokenSourceName,
+                                                                    trackingTokens.get(tokenSourceName).lowerBound(otherToken))
         );
 
         return new MultiSourceTrackingToken(tokenMap);
@@ -127,8 +129,9 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
      * @return the token representing the current processing position of all streams.
      */
     public MultiSourceTrackingToken advancedTo(String streamName, TrackingToken newTokenForStream) {
-        trackingTokens.put(streamName, newTokenForStream);
-        return new MultiSourceTrackingToken(trackingTokens);
+        HashMap<String, TrackingToken> newTrackingTokens = new HashMap<>(trackingTokens);
+        newTrackingTokens.put(streamName, newTokenForStream);
+        return new MultiSourceTrackingToken(newTrackingTokens);
     }
 
     /**
@@ -142,7 +145,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
     }
 
     /**
-     * returns the map containing the constituent tokens.
+     * Returns the map containing the constituent tokens.
+     *
      * @return the map containing the constituent tokens.
      */
     public Map<String, TrackingToken> getTrackingTokens() {
@@ -150,7 +154,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
     }
 
     /**
-     * retuns the sum of all positions of the constituent tracking tokens.
+     * Returns the sum of all positions of the constituent tracking tokens.
+     *
      * @return Sum of all positions of the constituent tracking tokens.
      */
     @Override
@@ -161,8 +166,8 @@ public class MultiSourceTrackingToken implements Serializable, TrackingToken {
             return OptionalLong.empty();
         }
 
-        Long sumOfTokens = trackingTokens.entrySet().stream().map(token -> token.getValue().position().orElse(0L)).reduce(0L,
-                                                                                                                  Long::sum);
+        Long sumOfTokens = trackingTokens.values().stream().map(trackingToken -> trackingToken.position().orElse(0L))
+                                         .reduce(0L, Long::sum);
 
         return OptionalLong.of(sumOfTokens);
     }

@@ -1,20 +1,17 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.MultiSourceTrackingToken;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackedSourcedEventMessage;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -226,10 +223,9 @@ public class MultiStreamableMessageSourceTest {
 
     @Test
     public void configuredDifferentComparator() throws InterruptedException {
-
-        Comparator<TrackedSourcedEventMessage<?>> eventStoreAPriority =
-                Comparator.<TrackedSourcedEventMessage<?>, Boolean>comparing(m -> !m.source().equals("eventStoreA")).
-                        <TrackedSourcedEventMessage<?>, Instant>thenComparing((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()));
+        Comparator<Map.Entry<String, TrackedEventMessage<?>>> eventStoreAPriority =
+                Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA")).
+                        thenComparing(e -> e.getValue().getTimestamp());
 
         EmbeddedEventStore eventStoreC = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
                                                            .build();
