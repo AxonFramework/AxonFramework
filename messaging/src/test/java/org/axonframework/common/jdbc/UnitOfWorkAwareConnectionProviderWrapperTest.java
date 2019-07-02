@@ -16,9 +16,11 @@
 
 package org.axonframework.common.jdbc;
 
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ExecutionResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -112,6 +114,27 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).rollback();
         inOrder.verify(mockConnection).close();
+    }
+
+    @Test
+    public void testOriginalExceptionThrewWhenRollbackFailed() throws SQLException {
+        DefaultUnitOfWork<Message<?>> uow = new DefaultUnitOfWork(null) {
+            @Override
+            public ExecutionResult getExecutionResult() {
+                return new ExecutionResult(
+                    GenericResultMessage.asResultMessage(new NullPointerException()));
+            }
+        };
+        doThrow(SQLException.class).when(mockConnection)
+            .rollback();
+
+        uow.start();
+        testSubject.getConnection();
+        try {
+            uow.rollback();
+        } catch (JdbcException e) {
+            assertEquals(NullPointerException.class, e.getCause().getClass());
+        }
     }
 
     @Test
