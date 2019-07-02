@@ -86,6 +86,9 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
                         cx.rollback();
                     }
                 } catch (SQLException ex) {
+                    if(u.root().getExecutionResult().isExceptionResult()){
+                        ex.addSuppressed(u.root().getExecutionResult().getExceptionResult());
+                    }
                     throw new JdbcException("Unable to rollback transaction", ex);
                 }
             });
