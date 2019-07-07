@@ -38,7 +38,6 @@ import org.junit.Test;
 public class TimestampParameterResolverFactoryTest {
 
     private TimestampParameterResolverFactory testSubject;
-    private Timestamp annotation;
     private Method instantMethod;
     private Method temporalMethod;
     private Method stringMethod;
