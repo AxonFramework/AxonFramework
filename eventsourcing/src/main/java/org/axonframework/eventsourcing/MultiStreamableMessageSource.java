@@ -1,6 +1,21 @@
+/*
+ * Copyright (c) 2010-2019. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventsourcing;
 
-import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.MultiSourceTrackingToken;
@@ -15,6 +30,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Implementation which allows for tracking processors to process messages from an arbitrary number of sources. The
@@ -55,7 +72,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      * @param builder the {@link MultiStreamableMessageSource.Builder} used to instantiate a
      *                {@link MultiStreamableMessageSource} instance.
      */
-    public MultiStreamableMessageSource(Builder builder) {
+    protected MultiStreamableMessageSource(Builder builder) {
         this.eventStreams = builder.messageSources();
         this.trackedEventComparator = builder.trackedEventComparator;
     }
@@ -132,8 +149,8 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         public Builder addMessageSource(String messageSourceId,
                                         StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
-            BuilderUtils.assertThat(messageSourceId, sourceName -> !messageSourceMap.containsKey(sourceName),
-                                    "the messageSource name must be unique");
+            assertThat(messageSourceId, sourceName -> !messageSourceMap.containsKey(sourceName),
+                       "the messageSource name must be unique");
 
             messageSourceMap.put(messageSourceId, messageSource);
             return this;
@@ -165,8 +182,8 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          * @return the current Builder instance, for fluent interfacing.
          */
         public Builder longPollingSource(String longPollingSource) {
-            BuilderUtils.assertThat(longPollingSource, sourceName -> messageSourceMap.containsKey(sourceName),
-                                    "Current configuration does not contain this message source");
+            assertThat(longPollingSource, sourceName -> messageSourceMap.containsKey(sourceName),
+                       "Current configuration does not contain this message source");
 
             this.longPollingSource = longPollingSource;
             return this;
@@ -196,6 +213,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
     }
 
+    /**
+     * Wrapper around a {@link StreamableMessageSource} that hold the name of the source.
+     */
     private static class IdentifiedStreamableMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
 
         private final StreamableMessageSource<TrackedEventMessage<?>> delegate;
@@ -236,6 +256,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
     }
 
+    /**
+     * Wrapper around a {@link BlockingStream} that keeps track of the name of the source in its container.
+     */
     private static class SourceIdAwareBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
 
         private final String sourceId;
@@ -277,6 +300,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
     }
 
+    /**
+     * A {@link BlockingStream} implementation that delegates requests to one or more underlying streams.
+     */
     private static class MultiSourceBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
 
         private final List<SourceIdAwareBlockingStream> messageStreams;
