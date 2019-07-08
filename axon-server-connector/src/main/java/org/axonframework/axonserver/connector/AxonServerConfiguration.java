@@ -156,6 +156,13 @@ public class AxonServerConfiguration {
     private int commitTimeout = 10000;
 
     /**
+     * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
+     * Setting this to 0 (or a negative value) will disable buffering, and requires each message sent by the server to
+     * be acknowledged before the next message may be sent. Defaults to 500.
+     */
+    private int maxGrpcBufferedMessages = 500;
+
+    /**
      * Instantiate a default {@link AxonServerConfiguration}.
      */
     public AxonServerConfiguration() {
@@ -367,6 +374,14 @@ public class AxonServerConfiguration {
 
     public void setCommitTimeout(int commitTimeout) {
         this.commitTimeout = commitTimeout;
+    }
+
+    public int getMaxGrpcBufferedMessages() {
+        return maxGrpcBufferedMessages;
+    }
+
+    public void setMaxGrpcBufferedMessages(int maxGrpcBufferedMessages) {
+        this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
     }
 
     @SuppressWarnings("unused")

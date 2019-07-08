@@ -29,6 +29,7 @@ import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import io.netty.handler.ssl.SslContext;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
+import org.axonframework.axonserver.connector.util.GrpcBufferingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.AxonThreadFactory;
@@ -238,6 +239,7 @@ public class AxonServerConnectionManager {
         } else {
             builder.usePlaintext();
         }
+        builder.intercept(new GrpcBufferingInterceptor(connectInformation.getMaxGrpcBufferedMessages()));
         return builder.build();
     }
 
