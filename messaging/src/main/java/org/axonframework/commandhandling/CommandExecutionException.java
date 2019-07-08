@@ -46,10 +46,9 @@ public class CommandExecutionException extends HandlerExecutionException {
      *
      * @param message The message describing the exception
      * @param cause   The cause of the exception
-     * @param details An object providing more error details (may be {@code null}
+     * @param details An object providing more error details (may be {@code null})
      */
     public CommandExecutionException(String message, Throwable cause, Object details) {
         super(message, cause, details);
     }
-
 }

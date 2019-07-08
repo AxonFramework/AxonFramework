@@ -25,6 +25,7 @@ import java.util.Optional;
  * cause), these exception may optionally carry an object with additional application-specific details about the
  * exception.
  *
+ * @author Allard Buize
  * @since 4.2
  */
 public abstract class HandlerExecutionException extends AxonException {
@@ -94,5 +95,4 @@ public abstract class HandlerExecutionException extends AxonException {
     public <R> Optional<R> getDetails() {
         return Optional.ofNullable((R) details);
     }
-
 }
