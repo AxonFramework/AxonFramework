@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,34 +16,25 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.axonframework.messaging.responsetypes.ResponseType;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Helper test implementation of {@link ResponseType} tests.
  *
- * @param <R> a generic for the expected response type of the
- *            {@link ResponseType} test subject
+ * @param <R> a generic for the expected response type of the {@link ResponseType} test subject
  */
 public abstract class AbstractResponseTypeTest<R> {
 
     protected static final Boolean MATCHES = Boolean.TRUE;
-    protected static final Boolean DOES_NOT_MATCHES = Boolean.FALSE;
+    protected static final Boolean DOES_NOT_MATCH = Boolean.FALSE;
 
     protected final ResponseType<R> testSubject;
 
@@ -255,6 +246,11 @@ public abstract class AbstractResponseTypeTest<R> {
     @SuppressWarnings("unused")
     public Future<List<QueryResponse>> someFutureListQuery() {
         return CompletableFuture.completedFuture(Collections.singletonList(new QueryResponse()));
+    }
+
+    @SuppressWarnings("unused")
+    public Optional<QueryResponse> someOptionalQueryResponse() {
+        return Optional.of(new QueryResponse());
     }
 
     static class QueryResponse {

@@ -90,18 +90,18 @@ public class AxonServerCommandBusTest {
         CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is the payload");
         CountDownLatch waiter = new CountDownLatch(1);
         AtomicReference<String> resultHolder = new AtomicReference<>();
-        AtomicBoolean failure = new AtomicBoolean(false);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             if (result.isExceptional()) {
-                failure.set(true);
+                failure.set(result.exceptionResult());
             } else {
                 resultHolder.set(result.getPayload());
             }
             waiter.countDown();
         });
         waiter.await();
-        assertEquals(resultHolder.get(), "this is the payload");
-        assertFalse(failure.get());
+        assertNull(failure.get());
+        assertEquals("this is the payload", resultHolder.get());
     }
 
     @Test

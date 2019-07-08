@@ -46,7 +46,7 @@ public class EventValidator implements EventMessageHandler {
     /**
      * Initializes the event validator to monitor the given {@code eventBus}.
      *
-     * @param eventBus the event bus to monitor
+     * @param eventBus    the event bus to monitor
      * @param fieldFilter the filter describing the Fields to include in a comparison
      */
     public EventValidator(EventBus eventBus, FieldFilter fieldFilter) {
@@ -103,8 +103,19 @@ public class EventValidator implements EventMessageHandler {
     private Matcher<Object>[] createEqualToMatchers(Object[] expected) {
         List<Matcher<?>> matchers = new ArrayList<>(expected.length);
         for (Object event : expected) {
-            matchers.add(equalTo(event, fieldFilter));
+            matchers.add(equalTo(unwrapEvent(event), fieldFilter));
         }
         return matchers.toArray(new Matcher[0]);
+    }
+
+    /**
+     * Unwrap the given {@code event} if it's an instance of {@link EventMessage}. Otherwise, return the given
+     * {@code event} as is.
+     *
+     * @param event either an {@link EventMessage} or the payload of an EventMessage
+     * @return the given {@code event} as is or the {@link EventMessage#getPayload()}
+     */
+    private Object unwrapEvent(Object event) {
+        return event instanceof EventMessage ? ((EventMessage) event).getPayload() : event;
     }
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,20 +24,21 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.Log4jLoggerAdapter;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.AdditionalMatchers.and;
+import static org.junit.Assert.*;
+import static org.mockito.AdditionalMatchers.*;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test cases to verify the logger of a {@link LoggingInterceptor} is called when expected.
+ *
  * @author Allard Buijze
  * @author Nakul Mishra
  */
@@ -50,20 +51,31 @@ public class LoggingInterceptorTest {
     private UnitOfWork<Message<?>> unitOfWork;
 
     @Before
-    @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
         testSubject = new LoggingInterceptor<>();
+
         Log4jLoggerAdapter logger = (Log4jLoggerAdapter) LoggerFactory.getLogger(LoggingInterceptor.class);
         Field loggerField = logger.getClass().getDeclaredField("logger");
         ReflectionUtils.makeAccessible(loggerField);
+
         mockLogger = mock(Logger.class);
         loggerField.set(logger, mockLogger);
+
         interceptorChain = mock(InterceptorChain.class);
         unitOfWork = new DefaultUnitOfWork<>(new GenericMessage<Object>(new StubMessage()));
     }
 
     @Test
-    public void testIncomingLogging_NullReturnValue() throws Exception {
+    public void testConstructorWithCustomLogger() throws Exception {
+        testSubject = new LoggingInterceptor<>("my.custom.logger");
+        Field field = testSubject.getClass().getDeclaredField("logger");
+        field.setAccessible(true);
+        Log4jLoggerAdapter logger = (Log4jLoggerAdapter) field.get(testSubject);
+        assertEquals("my.custom.logger", logger.getName());
+    }
+
+    @Test
+    public void testHandlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -78,7 +90,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testSuccessfulExecution_VoidReturnValue() throws Exception {
+    public void testHandlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -93,7 +105,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testSuccessfulExecution_CustomReturnValue() throws Exception {
+    public void testHandlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
         when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
@@ -107,7 +119,7 @@ public class LoggingInterceptorTest {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    public void testFailedExecution() throws Exception {
+    public void testHandlerInterceptorWithFailedExecution() throws Exception {
         RuntimeException exception = new RuntimeException();
         when(interceptorChain.proceed()).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);
@@ -124,12 +136,20 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testConstructorWithCustomLogger() throws Exception {
-        testSubject = new LoggingInterceptor<>("my.custom.logger");
-        Field field = testSubject.getClass().getDeclaredField("logger");
-        field.setAccessible(true);
-        Log4jLoggerAdapter logger = (Log4jLoggerAdapter) field.get(testSubject);
-        assertEquals("my.custom.logger", logger.getName());
+    public void testDispatchInterceptorLogging() {
+        when(mockLogger.isInfoEnabled()).thenReturn(true);
+
+        testSubject.handle(new GenericMessage<Object>(new StubMessage()));
+
+        verify(mockLogger, atLeast(1)).isInfoEnabled();
+        verify(mockLogger).log(
+                any(String.class),
+                eq(Level.INFO),
+                contains("[StubMessage]"),
+                any()
+        );
+
+        verifyNoMoreInteractions(mockLogger);
     }
 
     private static class StubMessage {

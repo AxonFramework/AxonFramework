@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,7 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
 
     /**
      * Singleton instance of a {@link PropagatingErrorHandler}.
+     *
      * @return the singleton instance of {@link PropagatingErrorHandler}
      */
     public static PropagatingErrorHandler instance() {
@@ -43,6 +44,14 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
 
     @Override
     public void handleError(ErrorContext errorContext) throws Exception {
-        throw (Exception) errorContext.error();
+        Throwable error = errorContext.error();
+        if (error instanceof Error) {
+            throw (Error) error;
+        } else if (error instanceof Exception) {
+            throw (Exception) error;
+        } else {
+            throw new EventProcessingException("An error occurred while handling an event", error);
+        }
+
     }
 }

@@ -13,57 +13,57 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.query;
+package org.axonframework.axonserver.connector.util;
 
-import org.axonframework.axonserver.connector.query.QueueBackedSpliterator;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Author: marc
  */
-public class QueueBackedSpliteratorTest {
+public class BufferingSpliteratorTest {
 
     @Test
     public void testTimeout() {
-        QueueBackedSpliterator<String> queueBackedSpliterator = new QueueBackedSpliterator<>(1000, TimeUnit.MILLISECONDS);
-        assertFalse(queueBackedSpliterator.tryAdvance(s -> System.out.println(s)));
+        BufferingSpliterator<String> bufferingSpliterator = new BufferingSpliterator<>(Instant.now().plusSeconds(1));
+        assertFalse(bufferingSpliterator.tryAdvance(s -> System.out.println(s)));
     }
 
     @Test
     public void testCompleteWithNull() {
-        QueueBackedSpliterator<String> queueBackedSpliterator = new QueueBackedSpliterator<>(1000, TimeUnit.MILLISECONDS);
+        BufferingSpliterator<String> bufferingSpliterator = new BufferingSpliterator<>(Instant.now().plusSeconds(1));
         Thread queueListener = new Thread(new Runnable() {
             @Override
             public void run() {
-                queueBackedSpliterator.tryAdvance(s -> System.out.println(s));
+                bufferingSpliterator.tryAdvance(s -> System.out.println(s));
 
             }
         });
         queueListener.start();
-        queueBackedSpliterator.cancel(null);
+        bufferingSpliterator.cancel(null);
     }
 
     @Test
     public void testCompleteWithValues() {
-        QueueBackedSpliterator<String> queueBackedSpliterator = new QueueBackedSpliterator<>(1000, TimeUnit.MILLISECONDS);
+        BufferingSpliterator<String> bufferingSpliterator = new BufferingSpliterator<>(Instant.now().plusSeconds(1));
         Thread queueListener = new Thread(new Runnable() {
             @Override
             public void run() {
-                List<String> items = StreamSupport.stream(queueBackedSpliterator, false).collect(Collectors.toList());
+                List<String> items = StreamSupport.stream(bufferingSpliterator, false).collect(Collectors.toList());
                 assertEquals(2, items.size());
             }
         });
         queueListener.start();
-        queueBackedSpliterator.put("One");
-        queueBackedSpliterator.put("Two");
-        queueBackedSpliterator.cancel(null);
+        bufferingSpliterator.put("One");
+        bufferingSpliterator.put("Two");
+        bufferingSpliterator.cancel(null);
     }
 
 }

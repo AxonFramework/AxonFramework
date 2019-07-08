@@ -392,6 +392,17 @@ public interface Configurer {
     }
 
     /**
+     * Configures the given Tags Configuration to use in this configuration. The builder receives the Configuration as
+     * input and is expected to return a fully initialized {@link TagsConfiguration} instance.
+     *
+     * @param tagsBuilder The builder function for the {@link TagsConfiguration}
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    default Configurer configureTags(Function<Configuration, TagsConfiguration> tagsBuilder) {
+        return registerComponent(TagsConfiguration.class, tagsBuilder);
+    }
+
+    /**
      * Configures an Aggregate in this configuration based on the given {@code aggregateConfiguration}. This method
      * allows for more fine-grained configuration compared to the {@link #configureAggregate(Class)} method.
      *

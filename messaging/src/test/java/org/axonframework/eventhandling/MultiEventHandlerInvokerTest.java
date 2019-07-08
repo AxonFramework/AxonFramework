@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
 
 import java.util.List;
 
@@ -32,15 +34,19 @@ public class MultiEventHandlerInvokerTest {
     private EventHandlerInvoker mockedEventHandlerInvokerTwo = mock(EventHandlerInvoker.class);
 
     private EventMessage<String> testEventMessage;
+    private EventMessage<String> replayMessage;
     private Segment testSegment;
 
     @Before
     public void setUp() {
         testEventMessage = GenericEventMessage.asEventMessage("some-event");
+        replayMessage = new GenericTrackedEventMessage<>(new ReplayToken(new GlobalSequenceTrackingToken(10),
+                                                                         new GlobalSequenceTrackingToken(0)),
+                                                         GenericEventMessage.asEventMessage("replay-event"));
         testSegment = new Segment(1, 1);
 
-        when(mockedEventHandlerInvokerOne.canHandle(testEventMessage, testSegment)).thenReturn(true);
-        when(mockedEventHandlerInvokerTwo.canHandle(testEventMessage, testSegment)).thenReturn(true);
+        when(mockedEventHandlerInvokerOne.canHandle(any(), eq(testSegment))).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.canHandle(any(), eq(testSegment))).thenReturn(true);
 
         testSubject = new MultiEventHandlerInvoker(mockedEventHandlerInvokerOne, mockedEventHandlerInvokerTwo);
     }
@@ -110,7 +116,24 @@ public class MultiEventHandlerInvokerTest {
         testSubject.performReset();
 
         verify(mockedEventHandlerInvokerOne, times(1)).performReset();
-        verify(mockedEventHandlerInvokerTwo, times(0)).performReset();
+        verify(mockedEventHandlerInvokerTwo, never()).performReset();
+    }
+
+    @Test
+    public void testInvokersNotSupportingResetDoNotReceiveRedeliveries() throws Exception {
+        when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
+
+        assertTrue(testSubject.canHandle(testEventMessage, testSegment));
+        testSubject.handle(testEventMessage, testSegment);
+        testSubject.handle(replayMessage, testSegment);
+
+        InOrder inOrder = inOrder(mockedEventHandlerInvokerOne, mockedEventHandlerInvokerTwo);
+        inOrder.verify(mockedEventHandlerInvokerOne).handle(testEventMessage, testSegment);
+        inOrder.verify(mockedEventHandlerInvokerTwo).handle(testEventMessage, testSegment);
+        inOrder.verify(mockedEventHandlerInvokerOne).handle(replayMessage, testSegment);
+
+        verify(mockedEventHandlerInvokerTwo, never()).handle(eq(replayMessage), any());
     }
 
     @Test(expected = Exception.class)

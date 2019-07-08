@@ -51,6 +51,7 @@ import static org.axonframework.common.ReflectionUtils.*;
 public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
     private static final RoutingKeyResolver NO_RESOLVE = new RoutingKeyResolver((Method) null);
+    private static final String NULL_DEFAULT = null;
 
     private final Class<? extends Annotation> annotationType;
     private final Map<Class<?>, RoutingKeyResolver> resolverMap = new ConcurrentHashMap<>();
@@ -156,9 +157,9 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
         public String identify(Object command) throws InvocationTargetException, IllegalAccessException {
             if (method != null) {
-                return Objects.toString(method.invoke(command));
+                return Objects.toString(method.invoke(command), NULL_DEFAULT);
             } else if (field != null) {
-                return Objects.toString(ReflectionUtils.getFieldValue(field, command));
+                return Objects.toString(ReflectionUtils.getFieldValue(field, command), NULL_DEFAULT);
             }
             return null;
         }

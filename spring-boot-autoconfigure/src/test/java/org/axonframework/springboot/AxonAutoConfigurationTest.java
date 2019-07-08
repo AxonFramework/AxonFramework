@@ -1,27 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,6 +24,7 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -48,11 +33,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -62,8 +43,8 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -87,7 +68,6 @@ import java.util.List;
 import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 @ContextConfiguration(classes = AxonAutoConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
@@ -108,16 +88,21 @@ public class AxonAutoConfigurationTest {
     @Autowired
     private Serializer serializer;
 
+    @Autowired
+    private Snapshotter snapshotter;
+
     @Test
     public void testContextInitialization() {
         assertNotNull(applicationContext);
         assertNotNull(configurer);
+        assertNotNull(snapshotter);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
         assertNotNull(applicationContext.getBean(EventBus.class));
         assertNotNull(applicationContext.getBean(QueryBus.class));
         assertNotNull(applicationContext.getBean(EventStore.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
+        assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertEquals(MultiParameterResolverFactory.class,
                      applicationContext.getBean(ParameterResolverFactory.class).getClass());
@@ -148,8 +133,8 @@ public class AxonAutoConfigurationTest {
         }
 
         @Bean
-        public SnapshotTriggerDefinition snapshotTriggerDefinition() {
-            return new EventCountSnapshotTriggerDefinition(mock(Snapshotter.class), 2);
+        public SnapshotTriggerDefinition snapshotTriggerDefinition(Snapshotter snapshotter) {
+            return new EventCountSnapshotTriggerDefinition(snapshotter, 2);
         }
 
         @Bean
