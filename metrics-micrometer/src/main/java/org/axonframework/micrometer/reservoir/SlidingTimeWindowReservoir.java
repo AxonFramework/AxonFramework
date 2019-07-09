@@ -60,7 +60,7 @@ public class SlidingTimeWindowReservoir {
         this.clock = clock;
         this.measurements = new ConcurrentSkipListMap<>();
         this.window = windowUnit.toNanos(window) * COLLISION_BUFFER;
-        this.lastTick = new AtomicLong(clock.wallTime() * COLLISION_BUFFER);
+        this.lastTick = new AtomicLong(clock.monotonicTime() * COLLISION_BUFFER);
         this.count = new AtomicLong();
     }
 
@@ -89,7 +89,7 @@ public class SlidingTimeWindowReservoir {
     private long getTick() {
         for (; ; ) {
             final long oldTick = lastTick.get();
-            final long tick = clock.wallTime() * COLLISION_BUFFER;
+            final long tick = clock.monotonicTime() * COLLISION_BUFFER;
             // ensure the tick is strictly incrementing even if there are duplicate ticks
             final long newTick = tick - oldTick > 0 ? tick : oldTick + 1;
             if (lastTick.compareAndSet(oldTick, newTick)) {
