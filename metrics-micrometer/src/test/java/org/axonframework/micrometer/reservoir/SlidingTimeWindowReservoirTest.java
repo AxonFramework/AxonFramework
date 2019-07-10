@@ -34,7 +34,7 @@ public class SlidingTimeWindowReservoirTest {
 
     @Test
     public void storesMeasurementsWithDuplicateTicks() {
-        when(clock.wallTime()).thenReturn(20L);
+        when(clock.monotonicTime()).thenReturn(20L);
 
         reservoir.update(1L);
         reservoir.update(2L);
@@ -44,19 +44,19 @@ public class SlidingTimeWindowReservoirTest {
 
     @Test
     public void boundsMeasurementsToATimeWindow() {
-        when(clock.wallTime()).thenReturn(0L);
+        when(clock.monotonicTime()).thenReturn(0L);
         reservoir.update(1L);
 
-        when(clock.wallTime()).thenReturn(5L);
+        when(clock.monotonicTime()).thenReturn(5L);
         reservoir.update(2L);
 
-        when(clock.wallTime()).thenReturn(10L);
+        when(clock.monotonicTime()).thenReturn(10L);
         reservoir.update(3L);
 
-        when(clock.wallTime()).thenReturn(15L);
+        when(clock.monotonicTime()).thenReturn(15L);
         reservoir.update(4L);
 
-        when(clock.wallTime()).thenReturn(20L);
+        when(clock.monotonicTime()).thenReturn(20L);
         reservoir.update(5L);
 
         assertEquals(Arrays.asList(4L, 5L), reservoir.getMeasurements());
