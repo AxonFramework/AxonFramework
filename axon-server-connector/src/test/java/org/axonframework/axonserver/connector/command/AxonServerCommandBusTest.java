@@ -168,7 +168,8 @@ public class AxonServerCommandBusTest {
         });
         waiter.await();
         assertTrue(resultHolder.get().isExceptional());
-        assertTrue(resultHolder.get().exceptionResult() instanceof CommandExecutionException);
+        assertEquals(CommandExecutionException.class, resultHolder.get().exceptionResult().getClass());
+        assertEquals("give me an exception", ((CommandExecutionException)resultHolder.get().exceptionResult()).getDetails().orElse(null));
     }
 
     @Test
