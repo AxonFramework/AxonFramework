@@ -20,6 +20,7 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 
 import java.util.HashMap;
@@ -77,15 +78,30 @@ public class GrpcMetaDataConverter {
             builder.setBooleanValue((Boolean) value);
         } else {
             SerializedObject<byte[]> serializedObject = serializer.serialize(value, byte[].class);
-            builder.setBytesValue(io.axoniq.axonserver.grpc.SerializedObject
-                                          .newBuilder()
-                                          .setType(serializedObject.getType().getName())
-                                          .setData(ByteString.copyFrom(serializedObject.getData()))
-                                          .setRevision(getOrDefault(serializedObject.getType().getRevision(), ""))
-                                          .build());
+            SerializedType serializedType = serializedObject.getType();
+
+            if (isNonEmptyType(serializedType)) {
+                builder.setBytesValue(io.axoniq.axonserver.grpc.SerializedObject
+                                              .newBuilder()
+                                              .setType(serializedType.getName())
+                                              .setData(ByteString.copyFrom(serializedObject.getData()))
+                                              .setRevision(getOrDefault(serializedType.getRevision(), ""))
+                                              .build());
+            }
         }
 
         return builder.build();
+    }
+
+    /**
+     * Check whether the {@code serializedType} equals {@link SerializedType#emptyType()}.
+     *
+     * @param serializedType the type to check whether it equals {@link SerializedType#emptyType()}
+     * @return {@code true} if the {@code serializedType} does not equal the {@link SerializedType#emptyType()} and
+     * {@code false} if it does
+     */
+    private boolean isNonEmptyType(SerializedType serializedType) {
+        return !serializedType.getName().equals(SerializedType.emptyType().getName());
     }
 
     /**
