@@ -80,7 +80,7 @@ public class GrpcMetaDataConverter {
             SerializedObject<byte[]> serializedObject = serializer.serialize(value, byte[].class);
             SerializedType serializedType = serializedObject.getType();
 
-            if (isNonEmptyType(serializedType)) {
+            if (!SerializedType.isEmptyType(serializedType)) {
                 builder.setBytesValue(io.axoniq.axonserver.grpc.SerializedObject
                                               .newBuilder()
                                               .setType(serializedType.getName())
@@ -91,17 +91,6 @@ public class GrpcMetaDataConverter {
         }
 
         return builder.build();
-    }
-
-    /**
-     * Check whether the {@code serializedType} equals {@link SerializedType#emptyType()}.
-     *
-     * @param serializedType the type to check whether it equals {@link SerializedType#emptyType()}
-     * @return {@code true} if the {@code serializedType} does not equal the {@link SerializedType#emptyType()} and
-     * {@code false} if it does
-     */
-    private boolean isNonEmptyType(SerializedType serializedType) {
-        return !serializedType.getName().equals(SerializedType.emptyType().getName());
     }
 
     /**
