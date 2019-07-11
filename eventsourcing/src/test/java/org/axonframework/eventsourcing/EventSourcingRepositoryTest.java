@@ -29,6 +29,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.junit.*;
 import org.mockito.*;
@@ -83,7 +84,9 @@ public class EventSourcingRepositoryTest {
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
         DomainEventMessage event2 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
-        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
+        DomainEventMessage event3 =
+                new GenericDomainEventMessage<>("otherType", identifier, (long) 1, "Other contents", emptyInstance());
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2, event3));
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
 
@@ -94,15 +97,15 @@ public class EventSourcingRepositoryTest {
         assertEquals(0, aggregate.invoke(TestAggregate::getLiveEvents).size());
 
         // now the aggregate is loaded (and hopefully correctly locked)
-        StubDomainEvent event3 = new StubDomainEvent();
+        StubDomainEvent event4 = new StubDomainEvent();
 
-        aggregate.execute(r -> r.apply(event3));
+        aggregate.execute(r -> r.apply(event4));
 
         CurrentUnitOfWork.commit();
 
         verify(mockEventStore, times(1)).publish((EventMessage) anyVararg());
         assertEquals(1, aggregate.invoke(TestAggregate::getLiveEvents).size());
-        assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
+        assertSame(event4, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
     }
 
     @Test
@@ -189,6 +192,7 @@ public class EventSourcingRepositoryTest {
         }
     }
 
+    @AggregateRoot(type = "type")
     private static class TestAggregate {
 
         private List<EventMessage<?>> handledEvents = new ArrayList<>();

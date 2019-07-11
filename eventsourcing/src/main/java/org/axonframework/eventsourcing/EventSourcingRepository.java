@@ -136,10 +136,12 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * add pre or postprocessing to the loading of an event stream
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @return the domain event stream for the given aggregateIdentifier
+     * @return the domain event stream for the given aggregateIdentifier and this repository's aggregate type
      */
     protected DomainEventStream readEvents(String aggregateIdentifier) {
-        return eventStore.readEvents(aggregateIdentifier);
+        return eventStore
+                .readEvents(aggregateIdentifier)
+                .filter(message -> aggregateModel().type().equals(message.getType()));
     }
 
     @Override
