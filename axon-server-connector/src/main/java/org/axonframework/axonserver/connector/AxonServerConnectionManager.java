@@ -116,7 +116,7 @@ public class AxonServerConnectionManager {
                     startInstructionStream(clusterInfo.getPrimary().getNodeName());
                     unavailable = false;
                     logger.info("Re-subscribing commands and queries");
-                    scheduler.schedule(() -> reconnectListeners.forEach(Runnable::run), 100, TimeUnit.MILLISECONDS);
+                    reconnectListeners.forEach(action -> scheduler.schedule(action::run, 100, TimeUnit.MILLISECONDS));
                     break;
                 } catch( StatusRuntimeException sre) {
                     shutdown(candidate);
