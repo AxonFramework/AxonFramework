@@ -30,6 +30,7 @@ import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptor;
+import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -51,10 +52,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -170,7 +173,7 @@ public class AxonServerConnectionManager {
                     unavailable = false;
                     logger.info("Re-subscribing commands and queries");
                     reconnectListeners.forEach(
-                            action -> scheduler.schedule(rl -> rl.accept(context), 100, TimeUnit.MILLISECONDS)
+                            action -> scheduler.schedule(() -> action.accept(context), 100, TimeUnit.MILLISECONDS)
                     );
                     break;
                 } catch (StatusRuntimeException sre) {
@@ -330,7 +333,7 @@ public class AxonServerConnectionManager {
                                                    return;
                                                }
                                            }
-                                           scheduleReconnect(contect, true);
+                                           scheduleReconnect(context, true);
                                        }
 
                                        @Override
