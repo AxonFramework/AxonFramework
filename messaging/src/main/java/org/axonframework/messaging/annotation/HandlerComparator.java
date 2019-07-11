@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.axonframework.messaging.annotation;
 
 import java.lang.reflect.Executable;
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -49,11 +48,9 @@ public final class HandlerComparator {
     }
 
     private static int compareHierarchy(Class<?> o1, Class<?> o2) {
-        if (Objects.equals(o1, o2)) {
-            return 0;
-        } else if (o1.isAssignableFrom(o2)) {
+        if (o1.isInterface() && !o2.isInterface()){
             return 1;
-        } else if (o2.isAssignableFrom(o1)) {
+        } else if (!o1.isInterface() && o2.isInterface()) {
             return -1;
         }
         return Integer.compare(depthOf(o2), depthOf(o1));
@@ -62,9 +59,16 @@ public final class HandlerComparator {
     private static int depthOf(Class<?> o1) {
         int depth = 0;
         Class<?> type = o1;
-        while (type != null && !Object.class.equals(type)) {
-            depth++;
-            type = type.getSuperclass();
+        if (o1.isInterface()) {
+            while (type.getInterfaces().length > 0) {
+                depth++;
+                type = type.getInterfaces()[0];
+            }
+        } else {
+            while (type != null) {
+                depth++;
+                type = type.getSuperclass();
+            }
         }
         if (o1.isAnnotation()) {
             depth += 1000;

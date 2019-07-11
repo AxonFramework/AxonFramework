@@ -1,27 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,13 +16,14 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
+import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,8 +43,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -87,6 +71,8 @@ public class JdbcAutoConfigurationTest {
         assertTrue(applicationContext.getBean(EventStorageEngine.class) instanceof JdbcEventStorageEngine);
         assertTrue(applicationContext.getBean(TokenStore.class) instanceof JdbcTokenStore);
         assertTrue(applicationContext.getBean(SagaStore.class) instanceof JdbcSagaStore);
+        assertEquals(applicationContext.getBean(TokenStore.class),
+                     applicationContext.getBean(EventProcessingConfiguration.class).tokenStore("test"));
     }
 
     @Configuration

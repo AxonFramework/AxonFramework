@@ -34,6 +34,11 @@ import org.axonframework.axonserver.connector.query.subscription.AxonServerSubsc
 import org.axonframework.axonserver.connector.query.subscription.DeserializedResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionQueryRequestTarget;
+import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
+import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
+import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
+import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.axonserver.connector.util.*;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
@@ -235,7 +240,7 @@ public class AxonServerQueryBus implements QueryBus {
                                logger.debug("Received query response [{}]", queryResponse);
                                if (queryResponse.hasErrorMessage()) {
                                    logger.debug("The received query response has error message [{}]",
-                                               queryResponse.getErrorMessage());
+                                                queryResponse.getErrorMessage());
                                } else {
                                    if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse))) {
                                        getRequestStream().cancel("Cancellation requested by client", null);
@@ -496,23 +501,21 @@ public class AxonServerQueryBus implements QueryBus {
                 public void onError(Throwable ex) {
                     logger.warn("Query Inbound Stream closed with error", ex);
                     outboundStreamObserver = null;
-                    if (ex instanceof StatusRuntimeException
-                            && ((StatusRuntimeException) ex).getStatus().getCode()
-                                                            .equals(Status.UNAVAILABLE.getCode())) {
-                        return;
-                    }
-                    resubscribe();
                 }
 
                 @Override
                 public void onCompleted() {
-                    logger.debug("Received completed from server");
+                    logger.info("Received completed from server.");
                     outboundStreamObserver = null;
                 }
             };
 
+            ResubscribableStreamObserver<QueryProviderInbound> resubscribableStreamObserver = new ResubscribableStreamObserver<>(
+                    queryProviderInboundStreamObserver,
+                    t -> resubscribe());
+
             StreamObserver<QueryProviderOutbound> streamObserver =
-                    axonServerConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
+                    axonServerConnectionManager.getQueryStream(resubscribableStreamObserver, interceptors);
 
             logger.info("Creating new query stream subscriber");
 
@@ -636,7 +639,9 @@ public class AxonServerQueryBus implements QueryBus {
                     logger.debug("Will process query [{}]", queryRequest);
                     processQuery(queryRequest);
                 } catch (RuntimeException | OutOfDirectMemoryError e) {
-                    logger.warn("Query Processor had an exception when processing query [{}]", queryRequest.getQuery(), e);
+                    logger.warn("Query Processor had an exception when processing query [{}]",
+                                queryRequest.getQuery(),
+                                e);
                 }
             }
         }
