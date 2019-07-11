@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -143,8 +144,8 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         private AxonServerConfiguration configuration;
         private AxonServerConnectionManager axonServerConnectionManager;
-        private Serializer snapshotSerializer = XStreamSerializer.builder().build();
-        private Serializer eventSerializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> snapshotSerializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
         private EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private Predicate<? super DomainEventData<?>> snapshotFilter;
 
@@ -208,7 +209,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         public Builder snapshotSerializer(Serializer snapshotSerializer) {
             assertNonNull(snapshotSerializer, "The Snapshot Serializer may not be null");
-            this.snapshotSerializer = snapshotSerializer;
+            this.snapshotSerializer = () -> snapshotSerializer;
             return this;
         }
 
@@ -225,7 +226,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         public Builder eventSerializer(Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The Event Serializer may not be null");
-            this.eventSerializer = eventSerializer;
+            this.eventSerializer = () -> eventSerializer;
             return this;
         }
 
@@ -281,13 +282,13 @@ public class AxonServerEventStore extends AbstractEventStore {
             AxonServerEventStoreClient eventStoreClient = new AxonServerEventStoreClient(configuration,
                                                                                          axonServerConnectionManager);
             super.storageEngine(AxonIQEventStorageEngine.builder()
-                                                        .snapshotSerializer(snapshotSerializer)
+                                                        .snapshotSerializer(snapshotSerializer.get())
                                                         .upcasterChain(upcasterChain)
                                                         .snapshotFilter(snapshotFilter)
-                                                        .eventSerializer(eventSerializer)
+                                                        .eventSerializer(eventSerializer.get())
                                                         .configuration(configuration)
                                                         .eventStoreClient(eventStoreClient)
-                                                        .converter(new GrpcMetaDataConverter(eventSerializer))
+                                                        .converter(new GrpcMetaDataConverter(eventSerializer.get()))
                                                         .build());
         }
 

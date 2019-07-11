@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -45,6 +46,8 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
     private final Consumer<PlatformInboundInstruction> platformInstructionSender;
     private final Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper;
     private final Map<String, PlatformInboundInstruction> lastProcessorsInfo;
+
+    private final AtomicBoolean logError = new AtomicBoolean(true);
 
     /**
      * Instantiate a {@link EventProcessorInfoSource} which can send {@link EventProcessor} status info to Axon Server.
@@ -85,8 +88,12 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
                 }
                 lastProcessorsInfo.put(processor.getName(), instruction);
             });
+            logError.set(true);
         } catch (Exception | OutOfDirectMemoryError e) {
-            logger.warn("Sending processor status failed: {}", e.getMessage());
+            if (logError.get()) {
+                logger.warn("Sending processor status failed: {}", e.getMessage());
+                logError.set(false);
+            }
         }
     }
 }

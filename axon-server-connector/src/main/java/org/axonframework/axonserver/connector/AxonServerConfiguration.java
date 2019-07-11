@@ -130,9 +130,9 @@ public class AxonServerConfiguration {
     private long keepAliveTimeout = 5000;
 
     /**
-     * Interval (in ms) for keep alive requests, 0 is keep-alive disabled
+     * Interval (in ms) for keep alive requests, 0 is keep-alive disabled. Defaults to {@code 1000}.
      */
-    private long keepAliveTime = 0;
+    private long keepAliveTime = 1_000;
 
     /**
      * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to

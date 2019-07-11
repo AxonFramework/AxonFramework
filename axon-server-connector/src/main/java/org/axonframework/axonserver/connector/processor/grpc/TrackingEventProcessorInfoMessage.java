@@ -21,6 +21,7 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo.EventTrackerInfo;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingToken;
 
 import java.util.List;
 import java.util.Map;
@@ -80,9 +81,17 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
                                .setCaughtUp(e.getValue().isCaughtUp())
                                .setReplaying(e.getValue().isReplaying())
                                .setOnePartOf(e.getValue().getSegment().getMask() + 1)
-                               .setTokenPosition(e.getValue().getTrackingToken().position().orElse(0))
+                               .setTokenPosition(getPosition(e.getValue().getTrackingToken()))
                                .setErrorState(e.getValue().isErrorState() ? buildErrorMessage(e.getValue().getError()) : "")
                                .build();
+    }
+
+    private long getPosition(TrackingToken trackingToken) {
+        long position = 0;
+        if (trackingToken != null) {
+            position = trackingToken.position().orElse(0);
+        }
+        return position;
     }
 
     private String buildErrorMessage(Throwable error) {

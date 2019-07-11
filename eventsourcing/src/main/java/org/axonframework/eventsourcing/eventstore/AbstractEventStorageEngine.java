@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,10 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.eventhandling.DomainEventData;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
@@ -33,6 +28,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -61,10 +57,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     protected AbstractEventStorageEngine(Builder builder) {
         builder.validate();
-        this.snapshotSerializer = builder.snapshotSerializer;
+        this.snapshotSerializer = builder.snapshotSerializer.get();
         this.upcasterChain = builder.upcasterChain;
         this.persistenceExceptionResolver = builder.persistenceExceptionResolver;
-        this.eventSerializer = builder.eventSerializer;
+        this.eventSerializer = builder.eventSerializer.get();
         this.snapshotFilter = builder.snapshotFilter;
     }
 
@@ -212,10 +208,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     public abstract static class Builder {
 
-        private Serializer snapshotSerializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> snapshotSerializer = XStreamSerializer::defaultSerializer;
         protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private PersistenceExceptionResolver persistenceExceptionResolver;
-        private Serializer eventSerializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
         private Predicate<? super DomainEventData<?>> snapshotFilter = i -> true;
 
         /**
@@ -227,7 +223,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          */
         public Builder snapshotSerializer(Serializer snapshotSerializer) {
             assertNonNull(snapshotSerializer, "The Snapshot Serializer may not be null");
-            this.snapshotSerializer = snapshotSerializer;
+            this.snapshotSerializer = () -> snapshotSerializer;
             return this;
         }
 
@@ -267,7 +263,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          */
         public Builder eventSerializer(Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The Event Serializer may not be null");
-            this.eventSerializer = eventSerializer;
+            this.eventSerializer = () -> eventSerializer;
             return this;
         }
 

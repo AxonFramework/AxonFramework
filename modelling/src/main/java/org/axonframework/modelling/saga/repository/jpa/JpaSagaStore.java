@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,15 +27,16 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityNotFoundException;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -108,7 +109,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     protected JpaSagaStore(Builder builder) {
         builder.validate();
         this.entityManagerProvider = builder.entityManagerProvider;
-        this.serializer = builder.serializer;
+        this.serializer = builder.serializer.get();
         addNamedQueriesTo(this.entityManagerProvider.getEntityManager());
     }
 
@@ -357,7 +358,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     public static class Builder {
 
         private EntityManagerProvider entityManagerProvider;
-        private Serializer serializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
 
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the
@@ -381,7 +382,7 @@ public class JpaSagaStore implements SagaStore<Object> {
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
-            this.serializer = serializer;
+            this.serializer = () -> serializer;
             return this;
         }
 

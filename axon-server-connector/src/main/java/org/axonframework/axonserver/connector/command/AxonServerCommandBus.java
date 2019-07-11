@@ -25,6 +25,8 @@ import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.*;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
+import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
+import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -379,23 +381,21 @@ public class AxonServerCommandBus implements CommandBus {
                 public void onError(Throwable ex) {
                     logger.warn("Command Inbound Stream closed with error", ex);
                     subscriberStreamObserver = null;
-                    if (ex instanceof StatusRuntimeException
-                            && ((StatusRuntimeException) ex).getStatus().getCode()
-                                                            .equals(Status.UNAVAILABLE.getCode())) {
-                        return;
-                    }
-                    resubscribe();
                 }
 
                 @Override
                 public void onCompleted() {
-                    logger.debug("Received completed from server");
+                    logger.info("Received completed from server.");
                     subscriberStreamObserver = null;
                 }
             };
 
+            ResubscribableStreamObserver<CommandProviderInbound> resubscribableStreamObserver = new ResubscribableStreamObserver<>(
+                    commandsFromRoutingServer,
+                    t -> resubscribe());
+
             StreamObserver<CommandProviderOutbound> streamObserver =
-                    axonServerConnectionManager.getCommandStream(context, commandsFromRoutingServer);
+                    axonServerConnectionManager.getCommandStream(context, resubscribableStreamObserver);
 
             logger.info("Creating new command stream subscriber");
 

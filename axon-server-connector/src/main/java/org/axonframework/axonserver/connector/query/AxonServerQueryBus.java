@@ -34,6 +34,12 @@ import org.axonframework.axonserver.connector.util.BufferingSpliterator;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
+import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
+import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
+import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
+import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
+import org.axonframework.axonserver.connector.util.*;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -109,8 +115,14 @@ public class AxonServerQueryBus implements QueryBus {
                               Serializer messageSerializer,
                               Serializer genericSerializer,
                               QueryPriorityCalculator priorityCalculator) {
-        this(axonServerConnectionManager, configuration, updateEmitter, localSegment, messageSerializer, genericSerializer,
-             priorityCalculator, q -> configuration.getContext());
+        this(axonServerConnectionManager,
+             configuration,
+             updateEmitter,
+             localSegment,
+             messageSerializer,
+             genericSerializer,
+             priorityCalculator,
+             q -> configuration.getContext());
     }
 
     public AxonServerQueryBus(AxonServerConnectionManager axonServerConnectionManager,
@@ -313,7 +325,9 @@ public class AxonServerQueryBus implements QueryBus {
 
         Set<String> contextSubscriptions = subscriptions.computeIfAbsent(context, k -> new ConcurrentSkipListSet<>());
         if (!contextSubscriptions.add(subscriptionId)) {
-            String errorMessage = "There already is a subscription query with subscription Id [" + subscriptionId + "] for context [" + context + "]";
+            String errorMessage =
+                    "There already is a subscription query with subscription Id [" + subscriptionId + "] for context ["
+                            + context + "]";
             logger.warn(errorMessage);
             throw new IllegalArgumentException(errorMessage);
         }
@@ -506,23 +520,21 @@ public class AxonServerQueryBus implements QueryBus {
                 public void onError(Throwable ex) {
                     logger.warn("Query Inbound Stream closed with error", ex);
                     outboundStreamObserver = null;
-                    if (ex instanceof StatusRuntimeException
-                            && ((StatusRuntimeException) ex).getStatus().getCode()
-                                                            .equals(Status.UNAVAILABLE.getCode())) {
-                        return;
-                    }
-                    resubscribe();
                 }
 
                 @Override
                 public void onCompleted() {
-                    logger.debug("Received completed from server");
+                    logger.info("Received completed from server.");
                     outboundStreamObserver = null;
                 }
             };
 
+            ResubscribableStreamObserver<QueryProviderInbound> resubscribableStreamObserver = new ResubscribableStreamObserver<>(
+                    queryProviderInboundStreamObserver,
+                    t -> resubscribe());
+
             StreamObserver<QueryProviderOutbound> streamObserver =
-                    axonServerConnectionManager.getQueryStream(configuration.getContext(), queryProviderInboundStreamObserver);
+                    axonServerConnectionManager.getQueryStream(configuration.getContext(), resubscribableStreamObserver);
 
             logger.info("Creating new query stream subscriber");
 
@@ -646,7 +658,9 @@ public class AxonServerQueryBus implements QueryBus {
                     logger.debug("Will process query [{}]", queryRequest.getQuery());
                     processQuery(queryRequest);
                 } catch (RuntimeException | OutOfDirectMemoryError e) {
-                    logger.warn("Query Processor had an exception when processing query [{}]", queryRequest.getQuery(), e);
+                    logger.warn("Query Processor had an exception when processing query [{}]",
+                                queryRequest.getQuery(),
+                                e);
                 }
             }
         }

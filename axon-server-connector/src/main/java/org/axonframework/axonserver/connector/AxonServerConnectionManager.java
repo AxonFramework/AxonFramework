@@ -19,11 +19,20 @@ package org.axonframework.axonserver.connector;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.control.*;
+import io.axoniq.axonserver.grpc.control.ClientIdentification;
+import io.axoniq.axonserver.grpc.control.NodeInfo;
+import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformInfo;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
-import io.grpc.*;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
+import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -37,28 +46,42 @@ import org.axonframework.config.TagsConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.net.ssl.SSLException;
 
 /**
  * @author Marc Gathier
  */
 public class AxonServerConnectionManager {
+
     private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new AxonThreadFactory("AxonServerConnector") {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = super.newThread(r);
-            thread.setDaemon(true);
-            return thread;
-        }
-    });
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1,
+                                                                                        new AxonThreadFactory(
+                                                                                                "AxonServerConnector") {
+                                                                                            @Override
+                                                                                            public Thread newThread(
+                                                                                                    Runnable r) {
+                                                                                                Thread thread = super
+                                                                                                        .newThread(r);
+                                                                                                thread.setDaemon(true);
+                                                                                                return thread;
+                                                                                            }
+                                                                                        });
     private final Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> reconnectTasks = new ConcurrentHashMap<>();
     private final List<Consumer<String>> disconnectListeners = new CopyOnWriteArrayList<>();
@@ -117,7 +140,12 @@ public class AxonServerConnectionManager {
             for (NodeInfo nodeInfo : connectInformation.routingServers()) {
                 ManagedChannel candidate = createChannel(nodeInfo.getHostName(), nodeInfo.getGrpcPort());
                 PlatformServiceGrpc.PlatformServiceBlockingStub stub = PlatformServiceGrpc.newBlockingStub(candidate)
-                                                                                          .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
+                                                                                          .withInterceptors(new ContextAddingInterceptor(
+                                                                                                                    connectInformation
+                                                                                                                            .getContext()),
+                                                                                                            new TokenAddingInterceptor(
+                                                                                                                    connectInformation
+                                                                                                                            .getToken()));
                 try {
                     ClientIdentification clientIdentification =
                             ClientIdentification.newBuilder()
@@ -134,16 +162,23 @@ public class AxonServerConnectionManager {
                         logger.info("Connecting to {} ({}:{})", clusterInfo.getPrimary().getNodeName(),
                                     clusterInfo.getPrimary().getHostName(),
                                     clusterInfo.getPrimary().getGrpcPort());
-                        channels.put(context, createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort()));
+                        channels.put(context,
+                                     createChannel(clusterInfo.getPrimary().getHostName(),
+                                                   clusterInfo.getPrimary().getGrpcPort()));
                     }
                     startInstructionStream(context, clusterInfo.getPrimary().getNodeName());
                     unavailable = false;
                     logger.info("Re-subscribing commands and queries");
-                    reconnectListeners.forEach(rl -> rl.accept(context));
+                    reconnectListeners.forEach(
+                            action -> scheduler.schedule(rl -> rl.accept(context), 100, TimeUnit.MILLISECONDS)
+                    );
                     break;
                 } catch (StatusRuntimeException sre) {
                     shutdown(candidate);
-                    logger.warn("Connecting to AxonServer node {}:{} failed: {}", nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage());
+                    logger.warn("Connecting to AxonServer node {}:{} failed: {}",
+                                nodeInfo.getHostName(),
+                                nodeInfo.getGrpcPort(),
+                                sre.getMessage());
                     if (sre.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
                         unavailable = true;
                     }
@@ -155,7 +190,8 @@ public class AxonServerConnectionManager {
                     writeDownloadMessage();
                 }
                 scheduleReconnect(context, false);
-                throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(), "No connection to AxonServer available");
+                throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(),
+                                              "No connection to AxonServer available");
             } else if (!connectInformation.getSuppressDownloadMessage()) {
                 connectInformation.setSuppressDownloadMessage(true);
             }
@@ -206,7 +242,9 @@ public class AxonServerConnectionManager {
         if (clusterInfo.getSameConnection()) {
             return true;
         }
-        return clusterInfo.getPrimary().getGrpcPort() == nodeInfo.getGrpcPort() && clusterInfo.getPrimary().getHostName().equals(nodeInfo.getHostName());
+        return clusterInfo.getPrimary().getGrpcPort() == nodeInfo.getGrpcPort() && clusterInfo.getPrimary()
+                                                                                              .getHostName().equals(
+                        nodeInfo.getHostName());
     }
 
     private ManagedChannel createChannel(String hostName, int port) {
@@ -226,7 +264,8 @@ public class AxonServerConnectionManager {
                 if (connectInformation.getCertFile() != null) {
                     File certFile = new File(connectInformation.getCertFile());
                     if (!certFile.exists()) {
-                        throw new RuntimeException("Certificate file " + connectInformation.getCertFile() + " does not exist");
+                        throw new RuntimeException(
+                                "Certificate file " + connectInformation.getCertFile() + " does not exist");
                     }
                     SslContext sslContext = GrpcSslContexts.forClient()
                                                            .trustManager(new File(connectInformation.getCertFile()))
@@ -250,13 +289,17 @@ public class AxonServerConnectionManager {
                         context, channels.get(context)))
                                    .openStream(new UpstreamAwareStreamObserver<PlatformOutboundInstruction>() {
                                        @Override
-                                       public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
+                                       public void onNext(
+                                               PlatformOutboundInstruction messagePlatformOutboundInstruction) {
                                            handlers.getOrDefault(context, Collections.emptyList())
-                                                   .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
+                                                   .forEach(consumer -> consumer
+                                                           .accept(messagePlatformOutboundInstruction));
 
                                            switch (messagePlatformOutboundInstruction.getRequestCase()) {
                                                case NODE_NOTIFICATION:
-                                                   logger.debug("Received: {}", messagePlatformOutboundInstruction.getNodeNotification());
+                                                   logger.debug("Received: {}",
+                                                                messagePlatformOutboundInstruction
+                                                                        .getNodeNotification());
                                                    break;
                                                case REQUEST_RECONNECT:
                                                    Consumer<String> reconnect = (c) -> {
@@ -277,7 +320,9 @@ public class AxonServerConnectionManager {
 
                                        @Override
                                        public void onError(Throwable throwable) {
-                                           logger.debug("Lost instruction stream from {} - {}", name, throwable.getMessage());
+                                           logger.warn("Lost instruction stream from {} - {}",
+                                                       name,
+                                                       throwable.getMessage());
                                            disconnectListeners.forEach(rl -> rl.accept(context));
                                            if (throwable instanceof StatusRuntimeException) {
                                                StatusRuntimeException sre = (StatusRuntimeException) throwable;
@@ -285,7 +330,7 @@ public class AxonServerConnectionManager {
                                                    return;
                                                }
                                            }
-                                           scheduleReconnect(context, true);
+                                           scheduleReconnect(contect, true);
                                        }
 
                                        @Override
@@ -391,7 +436,10 @@ public class AxonServerConnectionManager {
                 }
             }
             channels.remove(context);
-            reconnectTasks.put(context, scheduler.schedule(() -> tryReconnect(context), immediate ? 100 : 5000, TimeUnit.MILLISECONDS));
+            reconnectTasks.put(context,
+                               scheduler.schedule(() -> tryReconnect(context),
+                                                  immediate ? 100 : 5000,
+                                                  TimeUnit.MILLISECONDS));
         }
     }
 
@@ -402,7 +450,8 @@ public class AxonServerConnectionManager {
      * @param commandsFromRoutingServer The callback to invoke with incoming messages
      * @return The stream to send command subscription instructions and execution results to AxonServer
      */
-    public StreamObserver<CommandProviderOutbound> getCommandStream(String context, StreamObserver<CommandProviderInbound> commandsFromRoutingServer) {
+    public StreamObserver<CommandProviderOutbound> getCommandStream(String context,
+                                                                    StreamObserver<CommandProviderInbound> commandsFromRoutingServer) {
         return CommandServiceGrpc.newStub(getChannel(context))
                                  .openStream(commandsFromRoutingServer);
     }
@@ -415,13 +464,15 @@ public class AxonServerConnectionManager {
      * @param queryProviderInboundStreamObserver The callback to invoke with incoming messages
      * @return The stream to send query subscription instructions and responses to AxonServer
      */
-    public StreamObserver<QueryProviderOutbound> getQueryStream(String context, StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver) {
+    public StreamObserver<QueryProviderOutbound> getQueryStream(String context,
+                                                                StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver) {
         return QueryServiceGrpc.newStub(getChannel(context))
                                .openStream(queryProviderInboundStreamObserver);
     }
 
     @Deprecated
-    public void onOutboundInstruction(PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer) {
+    public void onOutboundInstruction(PlatformOutboundInstruction.RequestCase requestCase,
+                                      Consumer<PlatformOutboundInstruction> consumer) {
         onOutboundInstruction(getDefaultContext(), requestCase, consumer);
     }
 
@@ -432,7 +483,8 @@ public class AxonServerConnectionManager {
      * @param requestCase The type of instruction to respond to
      * @param consumer    The handler of the instruction
      */
-    public void onOutboundInstruction(String context, PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer) {
+    public void onOutboundInstruction(String context, PlatformOutboundInstruction.RequestCase requestCase,
+                                      Consumer<PlatformOutboundInstruction> consumer) {
         this.handlers.computeIfAbsent(context, (rc) -> new LinkedList<>()).add(i -> {
             if (i.getRequestCase().equals(requestCase)) {
                 consumer.accept(i);
