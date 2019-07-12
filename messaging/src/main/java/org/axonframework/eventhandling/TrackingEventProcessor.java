@@ -53,13 +53,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static java.util.Collections.singleton;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ProcessUtils.executeWithRetry;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
@@ -988,36 +988,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         public void run() {
             try {
                 executeWithRetry(() -> transactionManager.executeInTransaction(() -> result.complete(runSafe())),
-                                 re -> ExceptionUtils.findException(re, UnableToClaimTokenException.class).isPresent());
+                                 re -> ExceptionUtils.findException(re, UnableToClaimTokenException.class).isPresent(),
+                                 tokenClaimInterval, MILLISECONDS, 10);
             } catch (Exception e) {
                 result.completeExceptionally(e);
             }
-        }
-
-        private void executeWithRetry(Runnable runnable, Predicate<RuntimeException> retryPredicate) {
-            long completeBefore = System.currentTimeMillis() + tokenClaimInterval;
-            RuntimeException lastException = new RuntimeException();
-            while (completeBefore > System.currentTimeMillis()) {
-                try {
-                    runnable.run();
-                    return;
-                } catch (RuntimeException re) {
-                    if (!retryPredicate.test(re)) {
-                        throw re;
-                    }
-
-                    logger.debug("{} failed, retrying:  {}", getClass().getSimpleName(), re.getMessage());
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw re;
-                    }
-                    lastException = re;
-                }
-            }
-
-            throw lastException;
         }
 
         protected abstract boolean runSafe();
