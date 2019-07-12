@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolution;
 import org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
@@ -34,6 +35,7 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 
 import java.util.concurrent.Callable;
+import java.util.function.Predicate;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -53,6 +55,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
     private final AggregateFactory<T> aggregateFactory;
     private final RepositoryProvider repositoryProvider;
+    private final Predicate<? super DomainEventMessage<?>> filter;
 
     /**
      * Instantiate a {@link EventSourcingRepository} based on the fields contained in the {@link Builder}.
@@ -78,6 +81,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.aggregateFactory = builder.buildAggregateFactory();
         this.snapshotTriggerDefinition = builder.snapshotTriggerDefinition;
         this.repositoryProvider = builder.repositoryProvider;
+        this.filter = builder.filter;
     }
 
     /**
@@ -136,12 +140,15 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * add pre or postprocessing to the loading of an event stream
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @return the domain event stream for the given aggregateIdentifier and this repository's aggregate type
+     * @return the domain event stream for the given aggregateIdentifier, with filter applied if one was configured
      */
     protected DomainEventStream readEvents(String aggregateIdentifier) {
-        return eventStore
-                .readEvents(aggregateIdentifier)
-                .filter(message -> aggregateModel().type().equals(message.getType()));
+        DomainEventStream fullStream = eventStore.readEvents(aggregateIdentifier);
+        if (filter != null) {
+            return fullStream.filter(filter);
+        } else {
+            return fullStream;
+        }
     }
 
     @Override
@@ -213,6 +220,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         private AggregateFactory<T> aggregateFactory;
         protected RepositoryProvider repositoryProvider;
         protected Cache cache;
+        protected Predicate<? super DomainEventMessage<?>> filter;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -314,6 +322,31 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
             return this;
         }
 
+        /**
+         * Sets the {@link Predicate} used to filter events when reading from the EventStore. By default, all
+         * events with the Aggregate identifier passed to {@link EventSourcingRepository#readEvents(String)} are
+         * returned. Calls to {@link #filterByAggregateType()} will overwrite this configuration and vice versa.
+         *
+         * @param filter a {@link Predicate} that may return false to discard events.
+         */
+        public Builder<T> filter(Predicate<? super DomainEventMessage<?>> filter) {
+            this.filter = filter;
+            return this;
+        }
+
+        /**
+         * Configures a filter that rejects events with a different Aggregate type than the one specified by this
+         * Repository's {@link AggregateModel}. This may be used to enable multiple Aggregate types to share
+         * overlapping Aggregate identifiers. Calls to {@link #filter(Predicate)} will overwrite this configuration
+         * and vice versa.
+         *
+         * <p>If the caller supplies an explicit {@link AggregateModel} to this Builder, that must be done before
+         * calling this method.
+         */
+        public Builder<T> filterByAggregateType() {
+            final String aggregateType = buildAggregateModel().type();
+            return filter(event -> aggregateType.equals(event.getType()));
+        }
 
         /**
          * Initializes a {@link EventSourcingRepository} or {@link CachingEventSourcingRepository} as specified through

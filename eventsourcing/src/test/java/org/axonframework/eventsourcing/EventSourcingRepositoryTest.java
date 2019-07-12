@@ -65,6 +65,7 @@ public class EventSourcingRepositoryTest {
                                              .aggregateFactory(stubAggregateFactory)
                                              .eventStore(mockEventStore)
                                              .snapshotTriggerDefinition(triggerDefinition)
+                                             .filterByAggregateType()
                                              .build();
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }

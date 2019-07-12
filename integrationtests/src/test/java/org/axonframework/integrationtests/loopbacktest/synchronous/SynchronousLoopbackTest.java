@@ -28,7 +28,6 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.Repository;
 import org.junit.Before;
 import org.junit.Test;
@@ -233,7 +232,6 @@ public class SynchronousLoopbackTest {
         }
     }
 
-    @AggregateRoot(type = "test")
     private static class CountingAggregate {
 
         private static final long serialVersionUID = -2927751585905120260L;
