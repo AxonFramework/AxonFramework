@@ -101,14 +101,14 @@ public class TimestampParameterResolverFactoryTest {
         assertNull(resolver);
     }
 
-	@Test
-	public void testResolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
-		Parameter[] parameters = metaAnnotatedMethod.getParameters();
-		ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
-		final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-		assertTrue("Resolver should be a match for message " + message, resolver.matches(message));
-		assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
-	}
+    @Test
+    public void testResolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
+        Parameter[] parameters = metaAnnotatedMethod.getParameters();
+        ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
+        final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
+        assertTrue("Resolver should be a match for message " + message, resolver.matches(message));
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
+    }
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target({ ElementType.PARAMETER, ElementType.ANNOTATION_TYPE })
