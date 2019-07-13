@@ -123,7 +123,7 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
             @Override
             public ExecutionResult getExecutionResult() {
                 return new ExecutionResult(
-                    GenericResultMessage.asResultMessage(new NullPointerException()));
+                    GenericResultMessage.asResultMessage(new IllegalArgumentException()));
             }
         };
         doThrow(SQLException.class).when(mockConnection)
@@ -134,7 +134,7 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
         try {
             uow.rollback();
         } catch (ExecutionException e) {
-            assertEquals(NullPointerException.class, e.getCause().getClass());
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
             assertEquals(SQLException.class, e.getSuppressed()[0].getClass());
         }
     }
