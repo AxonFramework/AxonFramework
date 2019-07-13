@@ -16,6 +16,7 @@
 
 package org.axonframework.common.jdbc;
 
+import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -132,8 +133,9 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
         testSubject.getConnection();
         try {
             uow.rollback();
-        } catch (JdbcException e) {
+        } catch (ExecutionException e) {
             assertEquals(NullPointerException.class, e.getCause().getClass());
+            assertEquals(SQLException.class, e.getSuppressed()[0].getClass());
         }
     }
 
