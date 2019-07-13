@@ -57,7 +57,7 @@ public class TimestampParameterResolverFactoryTest {
     }
 
     public void someMetaAnnotatedInstantMethod(@CustomTimestamp Instant timestamp) {
-		// empty
+        // empty
     }
 
     public void someNonAnnotatedInstantMethod(Instant timestamp) {
