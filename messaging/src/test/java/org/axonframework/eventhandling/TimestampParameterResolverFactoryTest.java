@@ -16,21 +16,20 @@
 
 package org.axonframework.eventhandling;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.time.Instant;
+import java.time.temporal.Temporal;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
-import java.time.Instant;
-import java.time.temporal.Temporal;
 
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -104,9 +103,10 @@ public class TimestampParameterResolverFactoryTest {
 
 	@Test
 	public void testResolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
-        ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, metaAnnotatedMethod.getParameters(), 0);
+		Parameter[] parameters = metaAnnotatedMethod.getParameters();
+		ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
 		final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-		assertTrue(resolver.matches(message));
+		assertTrue("Resolver should be a match for message " + message, resolver.matches(message));
 		assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
 	}
 
