@@ -16,6 +16,7 @@
 
 package org.axonframework.common.jdbc;
 
+import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -86,6 +87,12 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
                         cx.rollback();
                     }
                 } catch (SQLException ex) {
+                    if (u.getExecutionResult().isExceptionResult()) {
+                        ExecutionException executeException =
+                            new ExecutionException("Unable to rollback transaction", u.getExecutionResult().getExceptionResult());
+                        executeException.addSuppressed(ex);
+                        throw executeException;
+                    }
                     throw new JdbcException("Unable to rollback transaction", ex);
                 }
             });
