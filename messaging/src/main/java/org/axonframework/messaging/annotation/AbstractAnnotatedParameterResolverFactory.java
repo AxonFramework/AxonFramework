@@ -61,7 +61,7 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A extends Annota
     protected abstract ParameterResolver<P> getResolver();
 
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<P> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         if (AnnotationUtils.isAnnotationPresent(parameters[parameterIndex], annotationType)) {
             Class<?> parameterType = parameters[parameterIndex].getType();
             if (parameterType.isAssignableFrom(declaredParameterType)) {

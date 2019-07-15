@@ -17,17 +17,16 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.time.Instant;
-import java.time.temporal.Temporal;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.time.Instant;
+import java.time.temporal.Temporal;
 
 import static org.junit.Assert.*;
 
@@ -37,11 +36,12 @@ import static org.junit.Assert.*;
 public class TimestampParameterResolverFactoryTest {
 
     private TimestampParameterResolverFactory testSubject;
+
     private Method instantMethod;
     private Method temporalMethod;
     private Method stringMethod;
     private Method nonAnnotatedInstantMethod;
-	private Method metaAnnotatedMethod;
+    private Method metaAnnotatedMethod;
 
     @Before
     public void setUp() throws Exception {
@@ -53,25 +53,36 @@ public class TimestampParameterResolverFactoryTest {
         stringMethod = getClass().getMethod("someStringMethod", String.class);
     }
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public void someInstantMethod(@Timestamp Instant timestamp) {
+        //Used in setUp()
     }
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public void someMetaAnnotatedInstantMethod(@CustomTimestamp Instant timestamp) {
-        // empty
+        //Used in setUp()
     }
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public void someNonAnnotatedInstantMethod(Instant timestamp) {
+        //Used in setUp()
     }
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public void someTemporalMethod(@Timestamp Temporal timestamp) {
+        //Used in setUp()
     }
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public void someStringMethod(@Timestamp String timestamp) {
+        //Used in setUp()
     }
 
     @Test
     public void testResolvesToDateTimeWhenAnnotated() {
-        ParameterResolver resolver = testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
+        ParameterResolver<Instant> resolver =
+                testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
+
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
@@ -79,9 +90,9 @@ public class TimestampParameterResolverFactoryTest {
 
     @Test
     public void testResolvesToReadableInstantWhenAnnotated() {
-        ParameterResolver resolver = testSubject.createInstance(temporalMethod,
-                                                                temporalMethod.getParameters(),
-                                                                0);
+        ParameterResolver<Instant> resolver =
+                testSubject.createInstance(temporalMethod, temporalMethod.getParameters(), 0);
+
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
@@ -89,9 +100,8 @@ public class TimestampParameterResolverFactoryTest {
 
     @Test
     public void testIgnoredWhenNotAnnotated() {
-        ParameterResolver resolver = testSubject.createInstance(nonAnnotatedInstantMethod,
-                                                                nonAnnotatedInstantMethod.getParameters(),
-                                                                0);
+        ParameterResolver resolver =
+                testSubject.createInstance(nonAnnotatedInstantMethod, nonAnnotatedInstantMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
@@ -110,10 +120,10 @@ public class TimestampParameterResolverFactoryTest {
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
     }
 
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target({ ElementType.PARAMETER, ElementType.ANNOTATION_TYPE })
-	@Timestamp
-	private static @interface CustomTimestamp {
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
+    @Timestamp
+    private @interface CustomTimestamp {
 
-	}
+    }
 }
