@@ -74,7 +74,8 @@ public @interface Aggregate {
 
     /**
      * Sets whether or not to filter events by Aggregate type. This is used to support installations where multiple
-     * Aggregate types can have overlapping Aggregate identifiers.
+     * Aggregate types can have overlapping Aggregate identifiers. This is only meaningful for event-sourced
+     * Aggregates.
      */
-    boolean filterByAggregateType() default false;
+    boolean filterEventsByType() default false;
 }

@@ -85,9 +85,7 @@ public class EventSourcingRepositoryTest {
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
         DomainEventMessage event2 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
-        DomainEventMessage event3 =
-                new GenericDomainEventMessage<>("otherType", identifier, (long) 1, "Other contents", emptyInstance());
-        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2, event3));
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
 
@@ -98,15 +96,32 @@ public class EventSourcingRepositoryTest {
         assertEquals(0, aggregate.invoke(TestAggregate::getLiveEvents).size());
 
         // now the aggregate is loaded (and hopefully correctly locked)
-        StubDomainEvent event4 = new StubDomainEvent();
+        StubDomainEvent event3 = new StubDomainEvent();
 
-        aggregate.execute(r -> r.apply(event4));
+        aggregate.execute(r -> r.apply(event3));
 
         CurrentUnitOfWork.commit();
 
         verify(mockEventStore, times(1)).publish((EventMessage) anyVararg());
         assertEquals(1, aggregate.invoke(TestAggregate::getLiveEvents).size());
-        assertSame(event4, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
+        assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
+    }
+
+    @Test
+    public void testFilterEventsByType() {
+        String identifier = UUID.randomUUID().toString();
+        DomainEventMessage event1 =
+                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
+        DomainEventMessage event2 =
+                new GenericDomainEventMessage<>("otherType", identifier, (long) 1, "Other contents", emptyInstance());
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
+
+        Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
+
+        assertEquals(1, aggregate.invoke(TestAggregate::getHandledEvents).size());
+        assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
+
+        assertEquals(0, aggregate.invoke(TestAggregate::getLiveEvents).size());
     }
 
     @Test

@@ -55,7 +55,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
     private final AggregateFactory<T> aggregateFactory;
     private final RepositoryProvider repositoryProvider;
-    private final Predicate<? super DomainEventMessage<?>> filter;
+    private final Predicate<? super DomainEventMessage<?>> eventStreamFilter;
 
     /**
      * Instantiate a {@link EventSourcingRepository} based on the fields contained in the {@link Builder}.
@@ -81,7 +81,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.aggregateFactory = builder.buildAggregateFactory();
         this.snapshotTriggerDefinition = builder.snapshotTriggerDefinition;
         this.repositoryProvider = builder.repositoryProvider;
-        this.filter = builder.filter;
+        this.eventStreamFilter = builder.eventStreamFilter;
     }
 
     /**
@@ -140,15 +140,12 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * add pre or postprocessing to the loading of an event stream
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
-     * @return the domain event stream for the given aggregateIdentifier, with filter applied if one was configured
+     * @return the domain event stream for the given aggregateIdentifier, with {@link #eventStreamFilter} applied if
+     *         one was configured
      */
     protected DomainEventStream readEvents(String aggregateIdentifier) {
         DomainEventStream fullStream = eventStore.readEvents(aggregateIdentifier);
-        if (filter != null) {
-            return fullStream.filter(filter);
-        } else {
-            return fullStream;
-        }
+        return eventStreamFilter != null ? fullStream.filter(eventStreamFilter) : fullStream;
     }
 
     @Override
@@ -220,7 +217,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         private AggregateFactory<T> aggregateFactory;
         protected RepositoryProvider repositoryProvider;
         protected Cache cache;
-        protected Predicate<? super DomainEventMessage<?>> filter;
+        protected Predicate<? super DomainEventMessage<?>> eventStreamFilter;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -329,15 +326,15 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          *
          * @param filter a {@link Predicate} that may return false to discard events.
          */
-        public Builder<T> filter(Predicate<? super DomainEventMessage<?>> filter) {
-            this.filter = filter;
+        public Builder<T> eventStreamFilter(Predicate<? super DomainEventMessage<?>> filter) {
+            this.eventStreamFilter = filter;
             return this;
         }
 
         /**
          * Configures a filter that rejects events with a different Aggregate type than the one specified by this
          * Repository's {@link AggregateModel}. This may be used to enable multiple Aggregate types to share
-         * overlapping Aggregate identifiers. Calls to {@link #filter(Predicate)} will overwrite this configuration
+         * overlapping Aggregate identifiers. Calls to {@link #eventStreamFilter(Predicate)} will overwrite this configuration
          * and vice versa.
          *
          * <p>If the caller supplies an explicit {@link AggregateModel} to this Builder, that must be done before
@@ -345,7 +342,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          */
         public Builder<T> filterByAggregateType() {
             final String aggregateType = buildAggregateModel().type();
-            return filter(event -> aggregateType.equals(event.getType()));
+            return eventStreamFilter(event -> aggregateType.equals(event.getType()));
         }
 
         /**

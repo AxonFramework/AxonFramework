@@ -60,8 +60,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private final Component<CommandTargetResolver> commandTargetResolver;
     private final Component<AggregateModel<A>> metaModel;
-    private final Component<Predicate<? super DomainEventMessage<?>>> filter;
-    private final Component<Boolean> filterByAggregateType;
+    private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
+    private final Component<Boolean> filterEventsByType;
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
 
@@ -88,8 +88,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         aggregateFactory =
                 new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
-        filter = new Component<>(() -> parent, "filter<" + aggregate.getSimpleName() + ">", c -> null);
-        filterByAggregateType =
+        eventStreamFilter =
+                new Component<>(() -> parent, "eventStreamFilter<" + aggregate.getSimpleName() + ">", c -> null);
+        filterEventsByType =
                 new Component<>(() -> parent, "filterByAggregateType<" + aggregate.getSimpleName() + ">", c -> false);
         repository = new Component<>(
                 () -> parent,
@@ -115,9 +116,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                             .eventStore(c.eventStore())
                             .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
                             .repositoryProvider(c::repository);
-                    if (filter.get() != null) {
-                        builder = builder.filter(filter.get());
-                    } else if (filterByAggregateType.get()) {
+                    if (eventStreamFilter.get() != null) {
+                        builder = builder.eventStreamFilter(eventStreamFilter.get());
+                    } else if (filterEventsByType.get()) {
                         builder = builder.filterByAggregateType();
                     }
                     return builder.build();
@@ -271,18 +272,18 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Configures an event filter for the EventSourcingRepository for the Aggregate type under configuration.
+     * Configures an event stream filter for the EventSourcingRepository for the Aggregate type under configuration.
      * By default, no filter is applied to the event stream.
      * <p>
      * Note that this configuration is ignored if a custom repository instance is configured.
      *
-     * @see EventSourcingRepository.Builder#filter(Predicate)
+     * @see EventSourcingRepository.Builder#eventStreamFilter(Predicate)
      * @param filterBuilder The function creating the filter.
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureEventFilter(
+    public AggregateConfigurer<A> configureEventStreamFilter(
             Function<Configuration, Predicate<? super DomainEventMessage<?>>> filterBuilder) {
-        this.filter.update(filterBuilder);
+        this.eventStreamFilter.update(filterBuilder);
         return this;
     }
 
@@ -292,15 +293,15 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * where multiple Aggregate types share overlapping Aggregate IDs.
      * <p>
      * Note that this configuration is ignored if a custom repository instance is configured, and that
-     * {@link #configureEventFilter(Function)} overrides this.
+     * {@link #configureEventStreamFilter(Function)} overrides this.
      *
      * @see EventSourcingRepository.Builder#filterByAggregateType()
      * @param filterConfigurationPredicate The function determining whether or not to filter events by Aggregate type.
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureFilterEventsByAggregateType(
+    public AggregateConfigurer<A> configureFilterEventsByType(
             Function<Configuration, Boolean> filterConfigurationPredicate) {
-        this.filterByAggregateType.update(filterConfigurationPredicate);
+        this.filterEventsByType.update(filterConfigurationPredicate);
         return this;
     }
 

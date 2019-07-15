@@ -373,7 +373,7 @@ public class SpringAxonAutoConfigurerTest {
             return mock(CommandTargetResolver.class);
         }
 
-        @Aggregate(type = "MyCustomAggregateType", filterByAggregateType = true)
+        @Aggregate(type = "MyCustomAggregateType", filterEventsByType = true)
         public static class MyAggregate {
 
             @AggregateIdentifier

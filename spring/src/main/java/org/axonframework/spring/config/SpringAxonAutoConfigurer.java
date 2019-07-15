@@ -371,7 +371,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                         c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class));
             }
 
-            aggregateConf.configureFilterEventsByAggregateType(c -> aggregateAnnotation.filterByAggregateType());
+            aggregateConf.configureFilterEventsByType(c -> aggregateAnnotation.filterEventsByType());
 
             if (!"".equals(aggregateAnnotation.commandTargetResolver())) {
                 aggregateConf.configureCommandTargetResolver(c -> getBean(aggregateAnnotation.commandTargetResolver(),
