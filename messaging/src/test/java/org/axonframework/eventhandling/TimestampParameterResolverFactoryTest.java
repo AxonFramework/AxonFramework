@@ -21,8 +21,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.time.Instant;
 import java.time.temporal.Temporal;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import static org.junit.Assert.*;
 
@@ -32,22 +37,27 @@ import static org.junit.Assert.*;
 public class TimestampParameterResolverFactoryTest {
 
     private TimestampParameterResolverFactory testSubject;
-    private Timestamp annotation;
     private Method instantMethod;
     private Method temporalMethod;
     private Method stringMethod;
     private Method nonAnnotatedInstantMethod;
+	private Method metaAnnotatedMethod;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new TimestampParameterResolverFactory();
         instantMethod = getClass().getMethod("someInstantMethod", Instant.class);
+        metaAnnotatedMethod = getClass().getMethod("someMetaAnnotatedInstantMethod", Instant.class);
         nonAnnotatedInstantMethod = getClass().getMethod("someNonAnnotatedInstantMethod", Instant.class);
         temporalMethod = getClass().getMethod("someTemporalMethod", Temporal.class);
         stringMethod = getClass().getMethod("someStringMethod", String.class);
     }
 
     public void someInstantMethod(@Timestamp Instant timestamp) {
+    }
+
+    public void someMetaAnnotatedInstantMethod(@CustomTimestamp Instant timestamp) {
+        // empty
     }
 
     public void someNonAnnotatedInstantMethod(Instant timestamp) {
@@ -90,4 +100,20 @@ public class TimestampParameterResolverFactoryTest {
         ParameterResolver resolver = testSubject.createInstance(stringMethod, stringMethod.getParameters(), 0);
         assertNull(resolver);
     }
+
+    @Test
+    public void testResolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
+        Parameter[] parameters = metaAnnotatedMethod.getParameters();
+        ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
+        final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
+        assertTrue("Resolver should be a match for message " + message, resolver.matches(message));
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
+    }
+
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ ElementType.PARAMETER, ElementType.ANNOTATION_TYPE })
+	@Timestamp
+	private static @interface CustomTimestamp {
+
+	}
 }
