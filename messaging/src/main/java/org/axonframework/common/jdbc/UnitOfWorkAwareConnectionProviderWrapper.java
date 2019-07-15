@@ -48,7 +48,8 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
 
     @Override
     public Connection getConnection() throws SQLException {
-        if (!CurrentUnitOfWork.isStarted() || CurrentUnitOfWork.get().phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT)) {
+        if (!CurrentUnitOfWork.isStarted() || CurrentUnitOfWork.get().phase()
+                                                               .isAfter(UnitOfWork.Phase.PREPARE_COMMIT)) {
             return delegate.getConnection();
         }
 
@@ -88,8 +89,9 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
                     }
                 } catch (SQLException ex) {
                     if (u.getExecutionResult().isExceptionResult()) {
-                        ExecutionException executeException =
-                            new ExecutionException("Unable to rollback transaction", u.getExecutionResult().getExceptionResult());
+                        ExecutionException executeException = new ExecutionException(
+                                "Unable to rollback transaction", u.getExecutionResult().getExceptionResult()
+                        );
                         executeException.addSuppressed(ex);
                         throw executeException;
                     }
@@ -124,7 +126,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
         public void forceCommit() throws SQLException {
             if (!delegateConnection.isClosed() && !delegateConnection.getAutoCommit()) {
                 delegateConnection.commit();
-            };
+            }
         }
     }
 }

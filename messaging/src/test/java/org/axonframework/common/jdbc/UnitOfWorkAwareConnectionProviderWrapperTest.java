@@ -22,10 +22,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ExecutionResult;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -119,15 +117,15 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     public void testOriginalExceptionThrewWhenRollbackFailed() throws SQLException {
-        DefaultUnitOfWork<Message<?>> uow = new DefaultUnitOfWork(null) {
+        DefaultUnitOfWork<Message<?>> uow = new DefaultUnitOfWork<Message<?>>(null) {
             @Override
             public ExecutionResult getExecutionResult() {
                 return new ExecutionResult(
-                    GenericResultMessage.asResultMessage(new IllegalArgumentException()));
+                        GenericResultMessage.asResultMessage(new IllegalArgumentException()));
             }
         };
         doThrow(SQLException.class).when(mockConnection)
-            .rollback();
+                                   .rollback();
 
         uow.start();
         testSubject.getConnection();
