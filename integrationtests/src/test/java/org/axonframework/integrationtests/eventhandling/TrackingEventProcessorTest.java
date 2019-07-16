@@ -92,6 +92,10 @@ public class TrackingEventProcessorTest {
 
             @Override
             public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+                if (timeout > 0) {
+                    // to keep tests speedy, we don't wait, but we do give other threads a chance
+                    Thread.yield();
+                }
                 return hasPeeked || iterator.hasNext();
             }
 
@@ -155,6 +159,7 @@ public class TrackingEventProcessorTest {
             protected void doSleepFor(long millisToSleep) {
                 if (isRunning()) {
                     sleepInstructions.add(millisToSleep);
+                    Thread.yield();
                 }
             }
         };
@@ -787,8 +792,8 @@ public class TrackingEventProcessorTest {
     public void testReleaseSegment() {
         testSubject.start();
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
-        testSubject.releaseSegment(0, 1, TimeUnit.SECONDS);
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        testSubject.releaseSegment(0, 2, TimeUnit.SECONDS);
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
     }
 
