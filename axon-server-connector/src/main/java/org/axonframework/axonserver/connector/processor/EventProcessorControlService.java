@@ -16,7 +16,13 @@
 
 package org.axonframework.axonserver.connector.processor;
 
-import io.axoniq.axonserver.grpc.control.*;
+import io.axoniq.axonserver.grpc.control.MergeEventProcessorSegment;
+import io.axoniq.axonserver.grpc.control.PauseEventProcessor;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import io.axoniq.axonserver.grpc.control.ReleaseEventProcessorSegment;
+import io.axoniq.axonserver.grpc.control.RequestEventProcessorInfo;
+import io.axoniq.axonserver.grpc.control.SplitEventProcessorSegment;
+import io.axoniq.axonserver.grpc.control.StartEventProcessor;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
 import org.axonframework.axonserver.connector.processor.grpc.PlatformInboundMessage;
@@ -49,7 +55,8 @@ public class EventProcessorControlService {
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
      * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. These Consumers typically leverage
      * the {@link EventProcessorController} to issue operations to the {@link EventProcessor}s contained in this
-     * application.
+     * application. Uses the {@link AxonServerConnectionManager#getDefaultContext()} specified in the given
+     * {@code axonServerConnectionManager} as the context to dispatch operations in
      *
      * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
      *                                    {@link PlatformOutboundInstruction} have been received
@@ -61,6 +68,20 @@ public class EventProcessorControlService {
         this(axonServerConnectionManager, eventProcessorController, axonServerConnectionManager.getDefaultContext());
     }
 
+    /**
+     * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
+     * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. These Consumers typically leverage
+     * the {@link EventProcessorController} to issue operations to the {@link EventProcessor}s contained in this
+     * application. Uses the {@link AxonServerConnectionManager#getDefaultContext()} specified in the given
+     * {@code axonServerConnectionManager} as the context to dispatch operations in
+     *
+     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
+     *                                    {@link PlatformOutboundInstruction} have been received
+     * @param eventProcessorController    the {@link EventProcessorController} used to perform operations on the
+     *                                    {@link EventProcessor}s
+     * @param context                     the context of this application instance within which outbound instruction
+     *                                    handlers should be specified on the given {@code axonServerConnectionManager}
+     */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
                                         EventProcessorController eventProcessorController,
                                         String context) {
@@ -79,11 +100,15 @@ public class EventProcessorControlService {
         this.axonServerConnectionManager.onOutboundInstruction(context, PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
         this.axonServerConnectionManager.onOutboundInstruction(context, START_EVENT_PROCESSOR, this::startProcessor);
         this.axonServerConnectionManager.onOutboundInstruction(context, RELEASE_SEGMENT, this::releaseSegment);
-        this.axonServerConnectionManager.onOutboundInstruction(context,
-                REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo
+        this.axonServerConnectionManager.onOutboundInstruction(
+                context, REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo
         );
-        this.axonServerConnectionManager.onOutboundInstruction(context, SPLIT_EVENT_PROCESSOR_SEGMENT, this::splitSegment);
-        this.axonServerConnectionManager.onOutboundInstruction(context, MERGE_EVENT_PROCESSOR_SEGMENT, this::mergeSegment);
+        this.axonServerConnectionManager.onOutboundInstruction(
+                context, SPLIT_EVENT_PROCESSOR_SEGMENT, this::splitSegment
+        );
+        this.axonServerConnectionManager.onOutboundInstruction(
+                context, MERGE_EVENT_PROCESSOR_SEGMENT, this::mergeSegment
+        );
     }
 
     private void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
@@ -110,7 +135,6 @@ public class EventProcessorControlService {
         String processorName = requestInfo.getProcessorName();
         try {
             EventProcessor processor = eventProcessorController.getEventProcessor(processorName);
-            String context = axonServerConnectionManager.getDefaultContext();
             axonServerConnectionManager.send(context, platformInboundMessageMapper.apply(processor).instruction());
         } catch (Exception e) {
             logger.debug("Problem getting the information about Event Processor [{}]", processorName, e);

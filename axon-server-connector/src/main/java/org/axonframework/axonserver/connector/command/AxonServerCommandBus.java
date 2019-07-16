@@ -17,16 +17,22 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.command.*;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
-import org.axonframework.axonserver.connector.*;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.DispatchInterceptors;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
-import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -45,7 +51,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -76,7 +86,9 @@ public class AxonServerCommandBus implements CommandBus {
 
     /**
      * Instantiate an Axon Server {@link CommandBus} client. Will connect to an Axon Server instance to submit and
-     * receive commands and command responses.
+     * receive commands and command responses. The {@link CommandPriorityCalculator} is defaulted to the
+     * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()} and the {@link TargetContextResolver}
+     * defaults to a lambda returning the output from {@link AxonServerConfiguration#getContext()}.
      *
      * @param axonServerConnectionManager a {@link AxonServerConnectionManager} which creates the connection to an Axon
      *                                    Server platform
@@ -99,7 +111,8 @@ public class AxonServerCommandBus implements CommandBus {
     /**
      * Instantiate an Axon Server Command Bus client. Will connect to an Axon Server instance to submit and receive
      * commands. Allows specifying a {@link CommandPriorityCalculator} to define the priority of command message among
-     * one another.
+     * one another. The {@link TargetContextResolver} defaults to a lambda returning the
+     * output from {@link AxonServerConfiguration#getContext()}.
      *
      * @param axonServerConnectionManager a {@link AxonServerConnectionManager} which creates the connection to an Axon
      *                                    Server platform
@@ -122,6 +135,22 @@ public class AxonServerCommandBus implements CommandBus {
              c -> configuration.getContext());
     }
 
+    /**
+     * Instantiate an Axon Server Command Bus client. Will connect to an Axon Server instance to submit and receive
+     * commands.
+     *
+     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} which creates the connection to an Axon
+     *                                    Server platform
+     * @param configuration               the {@link AxonServerConfiguration} containing client and component names used
+     *                                    to identify the application in Axon Server
+     * @param localSegment                a {@link CommandBus} handling the incoming commands for the local application
+     * @param serializer                  a {@link Serializer} used for de/serialization command requests and responses
+     * @param routingStrategy             a {@link RoutingStrategy} defining where a given {@link CommandMessage} should
+     *                                    be routed to
+     * @param priorityCalculator          a {@link CommandPriorityCalculator} calculating the request priority based on
+     *                                    the content, and adds this priority to the request
+     * @param targetContextResolver       resolves the context a given command should be dispatched in
+     */
     public AxonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
                                 AxonServerConfiguration configuration,
                                 CommandBus localSegment,
@@ -135,14 +164,15 @@ public class AxonServerCommandBus implements CommandBus {
         this.serializer = new CommandSerializer(serializer, configuration);
         this.routingStrategy = routingStrategy;
         this.priorityCalculator = priorityCalculator;
-        this.targetContextResolver = targetContextResolver.orElse(m -> configuration.getContext());
+        String context = configuration.getContext();
+        this.targetContextResolver = targetContextResolver.orElse(m -> context);
 
-        this.commandHandlerProvider = new CommandHandlerProvider(configuration.getContext());
+        this.commandHandlerProvider = new CommandHandlerProvider(context);
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        this.axonServerConnectionManager.addReconnectListener(configuration.getContext(), this::resubscribe);
-        this.axonServerConnectionManager.addDisconnectListener(configuration.getContext(), this::unsubscribe);
+        this.axonServerConnectionManager.addReconnectListener(context, this::resubscribe);
+        this.axonServerConnectionManager.addDisconnectListener(context, this::unsubscribe);
     }
 
     private void resubscribe() {
@@ -265,9 +295,9 @@ public class AxonServerCommandBus implements CommandBus {
         private static final int DEFAULT_PRIORITY = 0;
         private static final long THREAD_KEEP_ALIVE_TIME = 100L;
 
+        private final String context;
         private final CopyOnWriteArraySet<String> subscribedCommands;
         private final ExecutorService commandExecutor;
-        private final String context;
 
         private volatile boolean subscribing;
         private volatile boolean running = true;
@@ -390,9 +420,8 @@ public class AxonServerCommandBus implements CommandBus {
                 }
             };
 
-            ResubscribableStreamObserver<CommandProviderInbound> resubscribableStreamObserver = new ResubscribableStreamObserver<>(
-                    commandsFromRoutingServer,
-                    t -> resubscribe());
+            ResubscribableStreamObserver<CommandProviderInbound> resubscribableStreamObserver =
+                    new ResubscribableStreamObserver<>(commandsFromRoutingServer, t -> resubscribe());
 
             StreamObserver<CommandProviderOutbound> streamObserver =
                     axonServerConnectionManager.getCommandStream(context, resubscribableStreamObserver);
@@ -409,7 +438,6 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         public void unsubscribe(String command) {
-            String context = configuration.getContext();
             subscribedCommands.remove(command);
             try {
                 getSubscriberObserver(context).onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
@@ -425,7 +453,6 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         private void unsubscribeAll() {
-            String context = configuration.getContext();
             for (String subscribedCommand : subscribedCommands) {
                 try {
                     getSubscriberObserver(context).onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(

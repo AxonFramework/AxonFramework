@@ -51,7 +51,12 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.TagsConfigurationProperties;
@@ -69,7 +74,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
- * Configures AxonServer as implementation for the CommandBus and QueryBus
+ * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
  *
  * @author Marc Gathier
  * @since 4.0
@@ -155,7 +160,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator,
                                        QueryInvocationErrorHandler queryInvocationErrorHandler,
-                                       TargetContextResolver<? super QueryMessage<?,?>> targetContextResolver) {
+                                       TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
                               .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
@@ -180,7 +185,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @ConditionalOnMissingBean
     @Bean
     public TargetContextResolver<Message<?>> defaultTargetResolver() {
-        return m -> null;
+        return TargetContextResolver.noOp();
     }
 
     @Override

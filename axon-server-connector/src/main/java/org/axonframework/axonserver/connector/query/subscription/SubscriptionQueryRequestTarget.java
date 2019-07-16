@@ -22,7 +22,12 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
 import org.axonframework.axonserver.connector.Publisher;
 import org.axonframework.common.Registration;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Disposable;
@@ -74,6 +79,8 @@ public class SubscriptionQueryRequestTarget {
      * {@link QueryProviderInbound}, what operation to perform. Can switch between subscribing in general, retrieving
      * the initial result and unsubscribing from future results.
      *
+     * @param context              defines the (Bounded) Context within which the given subscription query request
+     *                             should be performed in
      * @param queryProviderInbound a {@link QueryProviderInbound} from which the {@link SubscriptionQueryRequest} will
      *                             be retrieved to perform a follow up operation with
      */
@@ -112,15 +119,19 @@ public class SubscriptionQueryRequestTarget {
             return true;
         };
 
-        subscriptions.computeIfAbsent(context, k -> new ConcurrentHashMap<>()).computeIfAbsent(subscriptionId, id -> new DisposableResult<>(result, registration));
+        subscriptions.computeIfAbsent(context, k -> new ConcurrentHashMap<>())
+                     .computeIfAbsent(subscriptionId, id -> new DisposableResult<>(result, registration));
     }
 
     private void getInitialResult(String context, SubscriptionQuery query) {
         String subscriptionId = query.getSubscriptionIdentifier();
-        subscriptions.get(context).get(subscriptionId).initialResult().subscribe(
-                i -> publisher.publish(serializer.serialize(i, subscriptionId)),
-                e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId)
-        );
+        subscriptions.get(context)
+                     .get(subscriptionId)
+                     .initialResult()
+                     .subscribe(
+                             i -> publisher.publish(serializer.serialize(i, subscriptionId)),
+                             e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId)
+                     );
     }
 
     private void unsubscribe(String context, SubscriptionQuery unsubscribe) {
@@ -132,6 +143,9 @@ public class SubscriptionQueryRequestTarget {
     /**
      * Cancels all the subscription query {@link Registration}s for the given {@code context} which are contained by
      * this {@link SubscriptionQueryRequestTarget}.
+     *
+     * @param context defines the (Bounded) Context for which the subscription query {@link Registration}s should be
+     *                canceled
      */
     public void onApplicationDisconnected(String context) {
         subscriptions.getOrDefault(context, Collections.emptyMap()).values().forEach(Registration::cancel);

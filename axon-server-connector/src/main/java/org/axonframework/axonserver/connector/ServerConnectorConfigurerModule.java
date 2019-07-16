@@ -63,7 +63,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 "persistent implementation, based on the activity of the handler.");
             return new InMemoryTokenStore();
         });
-        configurer.registerComponent(TargetContextResolver.class, c -> m -> null);
+        configurer.registerComponent(TargetContextResolver.class, configuration -> TargetContextResolver.noOp());
     }
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
@@ -84,6 +84,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     }
 
     private AxonServerCommandBus buildCommandBus(Configuration c) {
+        //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         AxonServerCommandBus commandBus = new AxonServerCommandBus(
                 c.getComponent(AxonServerConnectionManager.class),
                 c.getComponent(AxonServerConfiguration.class),
@@ -112,6 +113,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                               .queryUpdateEmitter(c.queryUpdateEmitter())
                               .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                               .build();
+        //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         AxonServerQueryBus queryBus = new AxonServerQueryBus(
                 c.getComponent(AxonServerConnectionManager.class),
                 c.getComponent(AxonServerConfiguration.class),

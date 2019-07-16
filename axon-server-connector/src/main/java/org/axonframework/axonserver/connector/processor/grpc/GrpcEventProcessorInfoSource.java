@@ -57,6 +57,8 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
      * @param eventProcessingConfiguration the {@link EventProcessingConfiguration} from which the existing
      *                                     {@link EventProcessor} instances are retrieved
      * @param axonServerConnectionManager  the {@link AxonServerConnectionManager} used to send message to Axon Server
+     * @param context                      the context of this application instance in which {@link EventProcessor}
+     *                                     status' should be send
      */
     public GrpcEventProcessorInfoSource(EventProcessingConfiguration eventProcessingConfiguration,
                                         AxonServerConnectionManager axonServerConnectionManager,

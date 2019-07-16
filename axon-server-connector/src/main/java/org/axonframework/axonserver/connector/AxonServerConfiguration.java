@@ -37,7 +37,7 @@ public class AxonServerConfiguration {
 
     private static final int DEFAULT_GRPC_PORT = 8124;
     private static final String DEFAULT_SERVERS = "localhost";
-    public static final String DEFAULT_CONTEXT = "default";
+    private static final String DEFAULT_CONTEXT = "default";
 
     /**
      * Comma separated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
@@ -63,7 +63,7 @@ public class AxonServerConfiguration {
     private String token;
 
     /**
-     * Bounded context that this application operates in
+     * Bounded context that this application operates in. Defaults to {@code "default"}.
      */
     private String context = DEFAULT_CONTEXT;
 
