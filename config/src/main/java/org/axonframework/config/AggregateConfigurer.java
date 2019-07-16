@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
@@ -38,6 +39,7 @@ import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaMode
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.lang.String.format;
 import static org.axonframework.common.Assert.state;
@@ -58,6 +60,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private final Component<CommandTargetResolver> commandTargetResolver;
     private final Component<AggregateModel<A>> metaModel;
+    private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
+    private final Component<Boolean> filterEventsByType;
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
 
@@ -84,6 +88,10 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         aggregateFactory =
                 new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
+        eventStreamFilter =
+                new Component<>(() -> parent, "eventStreamFilter<" + aggregate.getSimpleName() + ">", c -> null);
+        filterEventsByType =
+                new Component<>(() -> parent, "filterByAggregateType<" + aggregate.getSimpleName() + ">", c -> false);
         repository = new Component<>(
                 () -> parent,
                 "Repository<" + aggregate.getSimpleName() + ">",
@@ -101,13 +109,19 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                                        c.handlerDefinition(aggregate),
                                                                                        c::repository);
                     }
-                    return EventSourcingRepository.builder(aggregate)
+
+                    EventSourcingRepository.Builder<A> builder = EventSourcingRepository.builder(aggregate)
                             .aggregateModel(metaModel.get())
                             .aggregateFactory(aggregateFactory.get())
                             .eventStore(c.eventStore())
                             .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
-                            .repositoryProvider(c::repository)
-                            .build();
+                            .repositoryProvider(c::repository);
+                    if (eventStreamFilter.get() != null) {
+                        builder = builder.eventStreamFilter(eventStreamFilter.get());
+                    } else if (filterEventsByType.get()) {
+                        builder = builder.filterByAggregateType();
+                    }
+                    return builder.build();
                 });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
                                          c -> AggregateAnnotationCommandHandler.<A>builder()
@@ -254,6 +268,40 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> configureSnapshotTrigger(
             Function<Configuration, SnapshotTriggerDefinition> snapshotTriggerDefinition) {
         this.snapshotTriggerDefinition.update(snapshotTriggerDefinition);
+        return this;
+    }
+
+    /**
+     * Configures an event stream filter for the EventSourcingRepository for the Aggregate type under configuration.
+     * By default, no filter is applied to the event stream.
+     * <p>
+     * Note that this configuration is ignored if a custom repository instance is configured.
+     *
+     * @see EventSourcingRepository.Builder#eventStreamFilter(Predicate)
+     * @param filterBuilder The function creating the filter.
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureEventStreamFilter(
+            Function<Configuration, Predicate<? super DomainEventMessage<?>>> filterBuilder) {
+        this.eventStreamFilter.update(filterBuilder);
+        return this;
+    }
+
+    /**
+     * Configures a function that determines whether or not the EventSourcingRepository for the Aggregate type
+     * under configuration should filter out events with non-matching types. This may be used to support installations
+     * where multiple Aggregate types share overlapping Aggregate IDs.
+     * <p>
+     * Note that this configuration is ignored if a custom repository instance is configured, and that
+     * {@link #configureEventStreamFilter(Function)} overrides this.
+     *
+     * @see EventSourcingRepository.Builder#filterByAggregateType()
+     * @param filterConfigurationPredicate The function determining whether or not to filter events by Aggregate type.
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureFilterEventsByType(
+            Function<Configuration, Boolean> filterConfigurationPredicate) {
+        this.filterEventsByType.update(filterConfigurationPredicate);
         return this;
     }
 
