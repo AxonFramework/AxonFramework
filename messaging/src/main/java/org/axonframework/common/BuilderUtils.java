@@ -95,4 +95,15 @@ public abstract class BuilderUtils {
     public static void assertStrictPositive(int integer, String exceptionMessage) {
         assertThat(integer, number -> number > 0, exceptionMessage);
     }
+
+    /**
+     * Assert that the given {@code value} is strictly positive, meaning greater than zero. If not, an
+     * {@link AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
+     *
+     * @param integer the value to assert
+     * @param exceptionMessage the message for the exception.
+     */
+    public static void assertStrictPositive(long integer, String exceptionMessage) {
+        assertThat(integer, number -> number > 0L, exceptionMessage);
+    }
 }

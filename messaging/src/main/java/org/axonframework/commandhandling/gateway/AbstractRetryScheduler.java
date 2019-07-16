@@ -34,6 +34,9 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 /**
  * An abstract base class for {@link RetryScheduler}s. This class provides methods to do the actual rescheduling and
  * decide if a given {@link Throwable} is explicitly transient.
+ *
+ * @author Bert Laverman
+ * @since 4.2
  */
 public abstract class AbstractRetryScheduler implements RetryScheduler {
 
@@ -133,7 +136,9 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     }
 
     /**
-     * A builder class for RetrySchedulers.
+     * A builder class for {@link RetryScheduler}s. Values for the {@link Builder#retryExecutor} and
+     * {@link Builder#maxRetryCount} fields are both required, with the latter having a default value of
+     * {@link #DEFAULT_MAX_RETRIES}.
      */
     public static class Builder<B extends Builder> {
 
@@ -142,7 +147,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
 
         protected void validate() throws AxonConfigurationException {
             assertNonNull(retryExecutor, "The ScheduledExecutorService is a hard requirement and should be provided");
-            assertStrictPositive(maxRetryCount, "The maxRetryCount is a hard requirement and should be provided");
+            assertStrictPositive(maxRetryCount, "The maxRetryCount is a hard requirement and must be at least 1");
         }
 
         /**

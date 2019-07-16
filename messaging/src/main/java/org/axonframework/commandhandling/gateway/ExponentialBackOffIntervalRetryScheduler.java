@@ -22,13 +22,14 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.axonframework.common.BuilderUtils.assertPositive;
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
  * A RetryScheduler that uses a backoff strategy, retrying commands at increasing intervals when they fail because of
  * an exception that is not explicitly non-transient. Checked exceptions are considered non-transient and will not
  * result in a retry.
  *
- * @author Bert Laverman &lt;bert.laverman@axoniq.io&gt;
+ * @author Bert Laverman
  * @since 4.2
  */
 public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetryScheduler {
@@ -43,7 +44,7 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
      *
      * @param builder
      */
-    private ExponentialBackOffIntervalRetryScheduler(Builder builder) {
+    protected ExponentialBackOffIntervalRetryScheduler(Builder builder) {
         super(builder);
         builder.validate();
 
@@ -53,9 +54,7 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
     /**
      * Instantiate a Builder to be able to create a {@link ExponentialBackOffIntervalRetryScheduler}.
      * <p>
-     * The default for {@code initialBackoff} is set to 100ms, while {@code maxRetryCount} gets a single retry.
-     * The {@code initialBackoff}, {@code exponentialBackoffFactor}, {@code maxRetryCount} and
-     * {@link ScheduledExecutorService} are <b>hard requirements</b> and as such should be provided.
+     * The default for {@link Builder#backoffFactor} is set to 100ms, and must be at least 1.
      *
      * @return a Builder to be able to create a {@link ExponentialBackOffIntervalRetryScheduler}
      */
@@ -73,17 +72,18 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
 
     /**
      * A builder class for an exponential backoff retry scheduler.
+     * <p>
+     * The default for {@link Builder#backoffFactor} is set to 100ms, and must be at least 1.
      */
     public static class Builder extends AbstractRetryScheduler.Builder<Builder> {
 
         private long backoffFactor = DEFAULT_BACKOFF_FACTOR;
 
         /**
-         * Sets the initial backoff interval in milliseconds at which to schedule a retry, defaulted to 100ms.
+         * Sets the backoff factor in milliseconds at which to schedule a retry, defaulted to 100ms.
          *
-         * @param backoffFactor an {@code int} specifying the retry interval in milliseconds at which to schedule a
-         *                       retry
-         * @return the current Builder instance, for fluent interfacing
+         * @param backoffFactor an {@code int} specifying the interval in milliseconds at which to schedule a retry.
+         * @return the current Builder instance, for fluent interfacing.
          */
         public Builder backoffFactor(long backoffFactor) {
             this.backoffFactor = backoffFactor;
@@ -91,16 +91,21 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
         }
 
         /**
-         * Validate the input, in this case asserting that the backoff factor is positive (>= 0).
+         * Initializes a {@link ExponentialBackOffIntervalRetryScheduler} as specified through this Builder.
+         *
+         * @return a {@link ExponentialBackOffIntervalRetryScheduler} as specified through this Builder
+         */
+        public ExponentialBackOffIntervalRetryScheduler build() {
+            return new ExponentialBackOffIntervalRetryScheduler(this);
+        }
+
+        /**
+         * Validate the input, in this case asserting that the backoff factor is strictly positive (>= 1).
          */
         protected void validate() {
             super.validate();
 
-            assertPositive(backoffFactor, "The backoff factor is a hard requirement and must be positive.");
-        }
-
-        public ExponentialBackOffIntervalRetryScheduler build() {
-            return new ExponentialBackOffIntervalRetryScheduler(this);
+            assertStrictPositive(backoffFactor, "The backoff factor is a hard requirement and must be at least 1.");
         }
 
     }
