@@ -34,22 +34,8 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -499,8 +485,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private boolean canClaimSegment(int segmentId) {
-        return !segmentReleaseDeadlines.containsKey(segmentId) ||
-                segmentReleaseDeadlines.get(segmentId) < System.currentTimeMillis();
+        return segmentReleaseDeadlines.getOrDefault(segmentId, Long.MIN_VALUE) < System.currentTimeMillis();
     }
 
     /**
