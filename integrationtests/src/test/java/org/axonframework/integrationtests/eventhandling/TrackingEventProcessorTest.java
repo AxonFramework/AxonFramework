@@ -205,7 +205,7 @@ public class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected Handler to have received events", countDownLatch.await(5, TimeUnit.SECONDS));
-        assertWithin(1, TimeUnit.SECONDS, () -> {
+        assertWithin(2, TimeUnit.SECONDS, () -> {
             EventTrackerStatus status = testSubject.processingStatus().get(0);
             assertTrue(status.isErrorState());
             assertEquals(MockException.class, status.getError().getClass());
@@ -793,7 +793,7 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
         testSubject.releaseSegment(0, 2, TimeUnit.SECONDS);
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
     }
 
