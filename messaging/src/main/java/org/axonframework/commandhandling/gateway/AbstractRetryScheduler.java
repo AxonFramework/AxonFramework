@@ -33,7 +33,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
  * An abstract base class for {@link RetryScheduler}s. This class provides methods to do the actual rescheduling and
- * decide if a given {@link Throwable} is explicitly transient.
+ * decides if a given {@link Throwable} is explicitly transient.
  *
  * @author Bert Laverman
  * @since 4.2
