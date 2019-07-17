@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.processor;
 
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.function.Consumer;
 
@@ -34,16 +34,30 @@ public class EventProcessorControlServiceTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testStartAddOutboundInstructionToTheAxonServerConnectionManager() {
-        when(axonServerConnectionManager.getDefaultContext()).thenReturn("test");
+        String testContext = "test";
+        when(axonServerConnectionManager.getDefaultContext()).thenReturn(testContext);
+
         testSubject = new EventProcessorControlService(axonServerConnectionManager, eventProcessorController);
         testSubject.start();
 
-        verify(axonServerConnectionManager).onOutboundInstruction(eq("test"), eq(PAUSE_EVENT_PROCESSOR), any(Consumer.class));
-        verify(axonServerConnectionManager).onOutboundInstruction(eq("test"), eq(START_EVENT_PROCESSOR), any(Consumer.class));
-        verify(axonServerConnectionManager).onOutboundInstruction(eq("test"), eq(RELEASE_SEGMENT), any(Consumer.class));
-        verify(axonServerConnectionManager).onOutboundInstruction(eq("test"), eq(REQUEST_EVENT_PROCESSOR_INFO), any(Consumer.class));
-        verify(axonServerConnectionManager).onOutboundInstruction(eq("test"), eq(SPLIT_EVENT_PROCESSOR_SEGMENT), any(Consumer.class));
-        verify(axonServerConnectionManager).onOutboundInstruction(eq("test"), eq(MERGE_EVENT_PROCESSOR_SEGMENT), any(Consumer.class));
+        verify(axonServerConnectionManager).onOutboundInstruction(
+                eq(testContext), eq(PAUSE_EVENT_PROCESSOR), any(Consumer.class)
+        );
+        verify(axonServerConnectionManager).onOutboundInstruction(
+                eq(testContext), eq(START_EVENT_PROCESSOR), any(Consumer.class)
+        );
+        verify(axonServerConnectionManager).onOutboundInstruction(
+                eq(testContext), eq(RELEASE_SEGMENT), any(Consumer.class)
+        );
+        verify(axonServerConnectionManager).onOutboundInstruction(
+                eq(testContext), eq(REQUEST_EVENT_PROCESSOR_INFO), any(Consumer.class)
+        );
+        verify(axonServerConnectionManager).onOutboundInstruction(
+                eq(testContext), eq(SPLIT_EVENT_PROCESSOR_SEGMENT), any(Consumer.class)
+        );
+        verify(axonServerConnectionManager).onOutboundInstruction(
+                eq(testContext), eq(MERGE_EVENT_PROCESSOR_SEGMENT), any(Consumer.class)
+        );
         verify(axonServerConnectionManager, atLeastOnce()).getDefaultContext();
         verifyNoMoreInteractions(axonServerConnectionManager);
     }
