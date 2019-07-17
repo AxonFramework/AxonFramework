@@ -72,7 +72,7 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
             return null;
         }
         Object associationValue = associationResolver.resolve(associationPropertyName, eventMessage, this);
-        return associationValue == null ? null : new AssociationValue(associationKey, associationValue.toString());
+        return new AssociationValue(associationKey, associationValue == null ? null : associationValue.toString());
     }
 
     @Override
