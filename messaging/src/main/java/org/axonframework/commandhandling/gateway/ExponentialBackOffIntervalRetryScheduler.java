@@ -19,9 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandMessage;
 
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 
-import static org.axonframework.common.BuilderUtils.assertPositive;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
@@ -64,10 +62,10 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
 
     @Override
     protected long computeRetryInterval(CommandMessage commandMessage,
-                                       RuntimeException lastFailure,
-                                       List<Class<? extends Throwable>[]> failures) {
+                                        RuntimeException lastFailure,
+                                        List<Class<? extends Throwable>[]> failures) {
         final int retryCount = failures.size();
-        return backoffFactor * (1L << (retryCount-1));
+        return backoffFactor * (1L << (retryCount - 1));
     }
 
     /**
@@ -107,7 +105,5 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
 
             assertStrictPositive(backoffFactor, "The backoff factor is a hard requirement and must be at least 1.");
         }
-
     }
-
 }

@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.common.BuilderUtils.assertPositive;
 
 /**
  * RetryScheduler implementation that retries commands at regular intervals when they fail because of an exception that
@@ -59,8 +59,8 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
 
     @Override
     protected long computeRetryInterval(CommandMessage commandMessage,
-                                       RuntimeException lastFailure,
-                                       List<Class<? extends Throwable>[]> failures) {
+                                        RuntimeException lastFailure,
+                                        List<Class<? extends Throwable>[]> failures) {
         return retryInterval;
     }
 
@@ -121,6 +121,5 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
 
             assertPositive(retryInterval, "The retryInterval is a hard requirement and should be provided");
         }
-
     }
 }

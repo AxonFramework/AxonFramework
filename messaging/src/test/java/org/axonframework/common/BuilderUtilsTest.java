@@ -4,6 +4,7 @@ import org.junit.*;
 
 import java.util.Random;
 
+import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.BuilderUtils.*;
 import static org.junit.Assert.*;
 
@@ -15,8 +16,7 @@ public class BuilderUtilsTest {
         try {
             r.run();
             fail(failureMsg);
-        }
-        catch (AxonConfigurationException e) {
+        } catch (AxonConfigurationException e) {
             //Good!
         }
     }
@@ -51,8 +51,7 @@ public class BuilderUtilsTest {
             int value = random.nextInt();
             if (value >= 0) {
                 assertPositive(value, "Value " + value + " is positive.");
-            }
-            else {
+            } else {
                 testAssertFails(() -> assertPositive(value, "fail"), "Value " + value + " is negative.");
             }
         }
@@ -72,8 +71,7 @@ public class BuilderUtilsTest {
             long value = random.nextLong();
             if (value >= 0L) {
                 assertPositive(value, "Value " + value + " is positive.");
-            }
-            else {
+            } else {
                 testAssertFails(() -> assertPositive(value, "fail"), "Value " + value + " is negative.");
             }
         }
@@ -94,8 +92,7 @@ public class BuilderUtilsTest {
             int value = random.nextInt();
             if (value > 0) {
                 assertStrictPositive(value, "Value " + value + " is positive.");
-            }
-            else {
+            } else {
                 testAssertFails(() -> assertStrictPositive(value, "fail"), "Value " + value + " is negative.");
             }
         }
@@ -116,8 +113,7 @@ public class BuilderUtilsTest {
             long value = random.nextLong();
             if (value > 0L) {
                 assertStrictPositive(value, "Value " + value + " is positive.");
-            }
-            else {
+            } else {
                 testAssertFails(() -> assertStrictPositive(value, "fail"), "Value " + value + " is negative.");
             }
         }

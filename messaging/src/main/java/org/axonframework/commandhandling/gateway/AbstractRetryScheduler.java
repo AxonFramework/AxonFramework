@@ -99,11 +99,11 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * This is the entrypoint of the {@link RetryScheduler}. This default implementation checks if the last failure was
      * transient, and if so reschedules a command dispatch.
      *
-     * @param commandMessage  The Command Message being dispatched
-     * @param lastFailure     The last failure recorded for this command
-     * @param failures        A condensed view of all known failures of this command. Each element in the array
-     *                        represents the cause of the element preceding it.
-     * @param dispatchTask    the task that performs the actual dispatching.
+     * @param commandMessage The Command Message being dispatched
+     * @param lastFailure    The last failure recorded for this command
+     * @param failures       A condensed view of all known failures of this command. Each element in the array
+     *                       represents the cause of the element preceding it.
+     * @param dispatchTask   the task that performs the actual dispatching.
      * @return {@code true} if rescheduling succeeded, {@code false} if otherwise.
      */
     @Override
@@ -175,6 +175,5 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
             // noinspection unchecked
             return (B) this;
         }
-
     }
 }
