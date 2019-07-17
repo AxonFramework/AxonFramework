@@ -673,7 +673,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                             .setMaxResults(configuration.getSnapshotPrefetch())
                                                             .setMaxSequence(sequenceNumber)
                                                             .build();
-                        eventStoreClient.listAggregateSnapshots(context, request).map(GrpcBackedDomainEventData::new)
+                        eventStoreClient.listAggregateSnapshots(context, request)
+                                        .map(GrpcBackedDomainEventData::new)
                                         .forEach(e -> prefetched.add(e));
                     }
 
