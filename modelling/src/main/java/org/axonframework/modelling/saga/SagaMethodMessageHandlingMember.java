@@ -66,7 +66,6 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
      * @param eventMessage The event message containing the value of the association
      * @return the AssociationValue to find the saga instance with, or {@code null} if none found
      */
-    @SuppressWarnings("unchecked")
     public AssociationValue getAssociationValue(EventMessage<?> eventMessage) {
         if (associationResolver == null) {
             return null;
