@@ -25,8 +25,8 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
@@ -91,7 +91,9 @@ public class AxonServerQueryBusTest {
         configuration.setNewPermitsThreshold(10);
         configuration.setNrOfNewPermits(1000);
         configuration.setContext(BOUNDED_CONTEXT);
-        axonServerConnectionManager = spy(new AxonServerConnectionManager(configuration));
+        axonServerConnectionManager = spy(AxonServerConnectionManager.builder()
+                                                                     .axonServerConfiguration(configuration)
+                                                                     .build());
 
         testSubject = new AxonServerQueryBus(
                 axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(), localSegment, serializer,
@@ -139,8 +141,12 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void queryWhenQueryServiceStubFails() {
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(configuration)
+                                           .build();
         AxonServerQueryBus testSubject = spy(new AxonServerQueryBus(
-                new AxonServerConnectionManager(configuration), configuration, localSegment.queryUpdateEmitter(),
+                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(),
                 localSegment, serializer, serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(),
                 targetContextResolver
         ));

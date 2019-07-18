@@ -41,6 +41,7 @@ import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.GrpcBufferingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.TagsConfiguration;
 import org.slf4j.Logger;
@@ -64,6 +65,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.net.ssl.SSLException;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * The component which manages all the connections which an Axon client can establish with an Axon Server instance.
  * Does so by creating {@link Channel}s per context and providing them as the means to dispatch/receive messages.
@@ -75,35 +78,29 @@ public class AxonServerConnectionManager {
 
     private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
-            1,
-            new AxonThreadFactory("AxonServerConnector") {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = super.newThread(r);
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            }
-    );
     private final Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
+    private final Map<String, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new ConcurrentHashMap<>();
+    private Map<String, StreamObserver<PlatformInboundInstruction>> instructionStreams = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> reconnectTasks = new ConcurrentHashMap<>();
+    private final List<Consumer<String>> reconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<String>> disconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Function<Consumer<String>, Consumer<String>>> reconnectInterceptors =
             new CopyOnWriteArrayList<>();
-    private final List<Consumer<String>> reconnectListeners = new CopyOnWriteArrayList<>();
+    private volatile boolean shutdown;
+
     private final AxonServerConfiguration axonServerConfiguration;
     private final TagsConfiguration tagsConfiguration;
-    private final Map<String, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new ConcurrentHashMap<>();
-    private volatile boolean shutdown;
-    private Map<String, StreamObserver<PlatformInboundInstruction>> instructionStreams = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler;
 
     /**
      * Initializes the Axon Server Connection Manager with the connect information. An empty {@link TagsConfiguration}
      * is used in this case.
      *
      * @param axonServerConfiguration the configuration of Axon Server used to correctly establish connections
+     * @deprecated in favor of using the {@link Builder} (with the convenience {@link #builder()} method)to instantiate
+     * an Axon Server Connection Manager
      */
+    @Deprecated
     public AxonServerConnectionManager(AxonServerConfiguration axonServerConfiguration) {
         this(axonServerConfiguration, new TagsConfiguration());
     }
@@ -113,11 +110,50 @@ public class AxonServerConnectionManager {
      *
      * @param axonServerConfiguration the configuration of Axon Server used to correctly establish connections
      * @param tagsConfiguration       the TagsConfiguration used to add the tags of this instance as client information
+     * @deprecated in favor of using the {@link Builder} (with the convenience {@link #builder()} method)to instantiate
+     * an Axon Server Connection Manager
      */
+    @Deprecated
     public AxonServerConnectionManager(AxonServerConfiguration axonServerConfiguration,
                                        TagsConfiguration tagsConfiguration) {
         this.axonServerConfiguration = axonServerConfiguration;
         this.tagsConfiguration = tagsConfiguration;
+        this.scheduler = Executors.newScheduledThreadPool(
+                1,
+                new AxonThreadFactory("AxonServerConnector") {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = super.newThread(r);
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+                }
+        );
+    }
+
+    /**
+     * Instantiate a {@link AxonServerConnectionManager} based on the fields contained in the {@link Builder}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link AxonServerConnectionManager} instance
+     */
+    protected AxonServerConnectionManager(Builder builder) {
+        builder.validate();
+        this.axonServerConfiguration = builder.axonServerConfiguration;
+        this.tagsConfiguration = builder.tagsConfiguration;
+        this.scheduler = builder.scheduler;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create an {@link AxonServerConnectionManager}.
+     * <p>
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the
+     * {@link ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory}
+     * tied to it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link AxonServerConnectionManager}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -565,5 +601,97 @@ public class AxonServerConnectionManager {
      */
     public String getDefaultContext() {
         return axonServerConfiguration.getContext();
+    }
+
+    /**
+     * Builder class to instantiate an {@link AxonServerConnectionManager}.
+     * <p>
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the
+     * {@link ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory}
+     * tied to it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private static final int DEFAULT_POOL_SIZE = 1;
+
+        private AxonServerConfiguration axonServerConfiguration;
+        private TagsConfiguration tagsConfiguration = new TagsConfiguration();
+        private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
+                DEFAULT_POOL_SIZE,
+                new AxonThreadFactory(AxonServerConnectionManager.class.getSimpleName()) {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = super.newThread(r);
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+                }
+        );
+
+        /**
+         * Sets the {@link AxonServerConfiguration} used to correctly configure connections between Axon clients and
+         * Axon Server.
+         *
+         * @param axonServerConfiguration an {@link AxonServerConfiguration} used to correctly configure the connections
+         *                                created by an {@link AxonServerConnectionManager} instance
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder axonServerConfiguration(AxonServerConfiguration axonServerConfiguration) {
+            assertNonNull(axonServerConfiguration, "AxonServerConfiguration may not be null");
+            this.axonServerConfiguration = axonServerConfiguration;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TagsConfiguration} used to add the tags of this Axon instance as client information when
+         * setting up a channel. Can for example be used to introduce labelling of your client applications for correct
+         * distribution in an Axon Server cluster. Defaults to {@link TagsConfiguration#TagsConfiguration()}, thus an
+         * empty set of tags.
+         *
+         * @param tagsConfiguration a {@link TagsConfiguration} to add the tags of this Axon instance as client
+         *                          information when setting up a channel
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder tagsConfiguration(TagsConfiguration tagsConfiguration) {
+            assertNonNull(tagsConfiguration, "TagsConfiguration may not be null");
+            this.tagsConfiguration = tagsConfiguration;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ScheduledExecutorService} used to schedule connection attempts given certain success and/or
+         * failure scenarios of a channel. Defaults to a ScheduledExecutorService with a single thread, using the
+         * {@link AxonThreadFactory} to instantiate the threads.
+         *
+         * @param scheduler a {@link ScheduledExecutorService} used to schedule connection attempts given certain
+         *                  success and/or failure scenarios of a channel
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder scheduler(ScheduledExecutorService scheduler) {
+            assertNonNull(scheduler, "ScheduledExecutorService may not be null");
+            this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link AxonServerConnectionManager} as specified through this Builder.
+         *
+         * @return a {@link AxonServerConnectionManager} as specified through this Builder
+         */
+        public AxonServerConnectionManager build() {
+            return new AxonServerConnectionManager(this);
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(
+                    axonServerConfiguration, "The AxonServerConfiguration is a hard requirement and should be provided"
+            );
+        }
     }
 }

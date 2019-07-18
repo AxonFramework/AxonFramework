@@ -25,8 +25,8 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
@@ -84,7 +84,9 @@ public class AxonServerCommandBusTest {
         configuration.setNewPermitsThreshold(10);
         configuration.setNrOfNewPermits(1000);
         configuration.setContext(BOUNDED_CONTEXT);
-        axonServerConnectionManager = spy(new AxonServerConnectionManager(configuration));
+        axonServerConnectionManager = spy(AxonServerConnectionManager.builder()
+                                                                     .axonServerConfiguration(configuration)
+                                                                     .build());
         testSubject = new AxonServerCommandBus(
                 axonServerConnectionManager, configuration, localSegment, serializer, command -> "RoutingKey",
                 CommandPriorityCalculator.defaultCommandPriorityCalculator(), targetContextResolver

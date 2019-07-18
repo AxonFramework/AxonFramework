@@ -68,7 +68,9 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
         AxonServerConnectionManager axonServerConnectionManager =
-                new AxonServerConnectionManager(c.getComponent(AxonServerConfiguration.class));
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(c.getComponent(AxonServerConfiguration.class))
+                                           .build();
         c.onShutdown(axonServerConnectionManager::shutdown);
         return axonServerConnectionManager;
     }

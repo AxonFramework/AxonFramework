@@ -56,7 +56,11 @@ public class AxonServerConnectionManagerTest {
     public void checkWhetherConnectionPreferenceIsSent() {
         TagsConfiguration tags = new TagsConfiguration(Collections.singletonMap("key", "value"));
         AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
-        AxonServerConnectionManager axonServerConnectionManager = new AxonServerConnectionManager(configuration, tags);
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(configuration)
+                                           .tagsConfiguration(tags)
+                                           .build();
 
         assertNotNull(axonServerConnectionManager.getChannel());
 
@@ -68,9 +72,9 @@ public class AxonServerConnectionManagerTest {
         assertEquals(1, expectedTags.size());
         assertEquals("value", expectedTags.get("key"));
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(1, secondNode.getPlatformService().getClientIdentificationRequests().size());
-        });
+        assertWithin(1,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(1, secondNode.getPlatformService().getClientIdentificationRequests().size()));
 
         List<ClientIdentification> clients = secondNode.getPlatformService().getClientIdentificationRequests();
         Map<String, String> connectionExpectedTags = clients.get(0).getTagsMap();

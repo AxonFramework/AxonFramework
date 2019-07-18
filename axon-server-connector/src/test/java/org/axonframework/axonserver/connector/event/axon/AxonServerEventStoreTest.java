@@ -48,10 +48,13 @@ public class AxonServerEventStoreTest {
                                                                 .componentName("JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
         testSubject = AxonServerEventStore.builder()
                                           .configuration(config)
-                                          .platformConnectionManager(new AxonServerConnectionManager(config))
-
+                                          .platformConnectionManager(axonServerConnectionManager)
                                           .build();
     }
 

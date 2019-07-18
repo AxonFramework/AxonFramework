@@ -102,9 +102,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean(destroyMethod = "shutdown")
-    public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration routingConfiguration,
+    public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration axonServerConfiguration,
                                                                  TagsConfigurationProperties tagsConfigurationProperties) {
-        return new AxonServerConnectionManager(routingConfiguration, tagsConfigurationProperties.toTagsConfiguration());
+        return AxonServerConnectionManager.builder()
+                                          .axonServerConfiguration(axonServerConfiguration)
+                                          .tagsConfiguration(tagsConfigurationProperties.toTagsConfiguration())
+                                          .build();
     }
 
     @Bean(destroyMethod = "disconnect")
