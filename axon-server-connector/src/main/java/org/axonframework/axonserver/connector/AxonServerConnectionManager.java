@@ -420,8 +420,8 @@ public class AxonServerConnectionManager {
     }
 
     /**
-     * Registers a disconnect listener that execute given {@code action} when the connection is disconnected for given
-     * the {@code context}.
+     * Registers a disconnect listener which executes a given {@code action} when the connection is disconnected for
+     * given the {@code context}.
      *
      * @param context the context to register the disconnect listener for
      * @param action  the action to perform when the connection for the given {@code context} is disconnected
@@ -435,7 +435,7 @@ public class AxonServerConnectionManager {
     }
 
     /**
-     * Registers a disconnect listener that executes given {@code} action when a connection is disconnected. The
+     * Registers a disconnect listener which executes a given {@code action} when a connection is disconnected. The
      * parameter of the invoked {@code action} is the name of the context for which the connection was lost.
      *
      * @param action the action to perform when a connection is disconnected
