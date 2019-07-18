@@ -53,7 +53,6 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
     protected IntervalRetryScheduler(Builder builder) {
         super(builder);
 
-        builder.validate();
         this.retryInterval = builder.retryInterval;
     }
 
@@ -95,7 +94,7 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
          *                      retry
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder retryInterval(long retryInterval) {
+        public Builder retryInterval(int retryInterval) {
             assertPositive(retryInterval, "The retryInterval must be a positive number");
             this.retryInterval = retryInterval;
             return this;
@@ -117,8 +116,6 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            super.validate();
-
             assertPositive(retryInterval, "The retryInterval is a hard requirement and should be provided");
         }
     }

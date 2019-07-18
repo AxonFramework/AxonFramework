@@ -44,7 +44,6 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
      */
     protected ExponentialBackOffIntervalRetryScheduler(Builder builder) {
         super(builder);
-        builder.validate();
 
         this.backoffFactor = builder.backoffFactor;
     }
@@ -101,8 +100,6 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
          * Validate the input, in this case asserting that the backoff factor is strictly positive (>= 1).
          */
         protected void validate() {
-            super.validate();
-
             assertStrictPositive(backoffFactor, "The backoff factor is a hard requirement and must be at least 1.");
         }
     }

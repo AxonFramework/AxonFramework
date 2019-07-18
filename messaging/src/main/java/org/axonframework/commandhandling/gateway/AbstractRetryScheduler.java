@@ -47,7 +47,14 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     private final ScheduledExecutorService retryExecutor;
     private final int maxRetryCount;
 
+    /**
+     * Construct the {@link AbstractRetryScheduler} from its builder.
+     *
+     * @param builder the {@link Builder}
+     */
     protected AbstractRetryScheduler(Builder builder) {
+        builder.validate();
+
         this.retryExecutor = builder.retryExecutor;
         this.maxRetryCount = builder.maxRetryCount;
     }
@@ -55,8 +62,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     /**
      * Indicates whether the given {@code failure} is clearly non-transient. That means, whether the
      * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
-     * occur
-     * again.
+     * occur again.
      *
      * @param failure the exception that occurred while processing a command
      * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
@@ -140,11 +146,16 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * {@link Builder#maxRetryCount} fields are both required, with the latter having a default value of
      * {@link #DEFAULT_MAX_RETRIES}.
      */
-    public static class Builder<B extends Builder> {
+    public abstract static class Builder<B extends Builder> {
 
         private ScheduledExecutorService retryExecutor;
         private int maxRetryCount = DEFAULT_MAX_RETRIES;
 
+        /**
+         * Validate the fields. This method is called in the {@link AbstractRetryScheduler}'s constructor.
+         *
+         * @throws AxonConfigurationException if validation fails.
+         */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(retryExecutor, "The ScheduledExecutorService is a hard requirement and should be provided");
             assertStrictPositive(maxRetryCount, "The maxRetryCount is a hard requirement and must be at least 1");
