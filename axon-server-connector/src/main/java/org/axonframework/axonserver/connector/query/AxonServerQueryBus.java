@@ -112,7 +112,7 @@ public class AxonServerQueryBus implements QueryBus {
     private final SubscriptionMessageSerializer subscriptionSerializer;
     private final QueryPriorityCalculator priorityCalculator;
 
-    private final QueryHandlerProvider queryProvider;
+    private final QueryProcessor queryProcessor;
     private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors;
     private final Map<String, Set<String>> subscriptions = new ConcurrentHashMap<>();
     private final Map<RequestCase, Collection<Consumer<QueryProviderInbound>>> queryHandlers;
@@ -193,14 +193,14 @@ public class AxonServerQueryBus implements QueryBus {
         String context = configuration.getContext();
         this.targetContextResolver = targetContextResolver.orElse(m -> context);
 
-        this.queryProvider = new QueryHandlerProvider(context);
+        this.queryProcessor = new QueryProcessor(context);
         dispatchInterceptors = new DispatchInterceptors<>();
         queryHandlers = new EnumMap<>(RequestCase.class);
 
-        this.axonServerConnectionManager.addReconnectListener(context, queryProvider::resubscribe);
+        this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::resubscribe);
         this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
 
-        this.axonServerConnectionManager.addDisconnectListener(context, queryProvider::unsubscribeAll);
+        this.axonServerConnectionManager.addDisconnectListener(context, queryProcessor::unsubscribeAll);
         this.axonServerConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
         SubscriptionQueryRequestTarget target =
                 new SubscriptionQueryRequestTarget(localSegment, qpo -> publish(context, qpo), subscriptionSerializer);
@@ -225,8 +225,8 @@ public class AxonServerQueryBus implements QueryBus {
                                       Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         return new AxonServerRegistration(
-                queryProvider.subscribe(queryName, responseType, configuration.getComponentName(), handler),
-                () -> queryProvider.unsubscribe(queryName, responseType, configuration.getComponentName())
+                queryProcessor.subscribe(queryName, responseType, configuration.getComponentName(), handler),
+                () -> queryProcessor.unsubscribe(queryName, responseType, configuration.getComponentName())
         );
     }
 
@@ -339,7 +339,7 @@ public class AxonServerQueryBus implements QueryBus {
     }
 
     public void disconnect() {
-        queryProvider.disconnect();
+        queryProcessor.disconnect();
     }
 
     /**
@@ -353,7 +353,7 @@ public class AxonServerQueryBus implements QueryBus {
     }
 
     private void publish(String context, QueryProviderOutbound providerOutbound) {
-        this.queryProvider.getSubscriberObserver(context).onNext(providerOutbound);
+        this.queryProcessor.getSubscriberObserver(context).onNext(providerOutbound);
     }
 
     private void on(RequestCase requestCase, BiConsumer<String, QueryProviderInbound> consumer) {
@@ -412,7 +412,7 @@ public class AxonServerQueryBus implements QueryBus {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 
-    private class QueryHandlerProvider {
+    private class QueryProcessor {
 
         private static final int QUERY_QUEUE_CAPACITY = 1000;
         private static final int DEFAULT_PRIORITY = 0;
@@ -426,12 +426,12 @@ public class AxonServerQueryBus implements QueryBus {
         private volatile boolean running = true;
         private volatile StreamObserver<QueryProviderOutbound> outboundStreamObserver;
 
-        QueryHandlerProvider(String context) {
+        QueryProcessor(String context) {
             this.context = context;
             subscribedQueries = new ConcurrentHashMap<>();
             PriorityBlockingQueue<Runnable> queryProcessQueue =
                     new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY, Comparator.comparingLong(
-                            r -> r instanceof QueryProcessor ? ((QueryProcessor) r).getPriority() : DEFAULT_PRIORITY
+                            r -> r instanceof QueryProcessingTask ? ((QueryProcessingTask) r).getPriority() : DEFAULT_PRIORITY
                     ));
             int queryThreads = configuration.getQueryThreads();
             queryExecutor = new ThreadPoolExecutor(
@@ -559,7 +559,7 @@ public class AxonServerQueryBus implements QueryBus {
                         case CONFIRMATION:
                             break;
                         case QUERY:
-                            queryExecutor.execute(new QueryProcessor(inboundRequest.getQuery()));
+                            queryExecutor.execute(new QueryProcessingTask(inboundRequest.getQuery()));
                             break;
                     }
                 }
@@ -679,14 +679,14 @@ public class AxonServerQueryBus implements QueryBus {
         /**
          * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the
          * query {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided
-         * {@link QueryRequest} and used to priorities this {@link QueryProcessor} among others of it's kind.
+         * {@link QueryRequest} and used to priorities this {@link QueryProcessingTask} among others of it's kind.
          */
-        private class QueryProcessor implements Runnable {
+        private class QueryProcessingTask implements Runnable {
 
             private final long priority;
             private final QueryRequest queryRequest;
 
-            private QueryProcessor(QueryRequest queryRequest) {
+            private QueryProcessingTask(QueryRequest queryRequest) {
                 this.priority = -priority(queryRequest.getProcessingInstructionsList());
                 this.queryRequest = queryRequest;
             }
@@ -698,7 +698,7 @@ public class AxonServerQueryBus implements QueryBus {
             @Override
             public void run() {
                 if (!running) {
-                    logger.debug("Query Handler Provider has stopped running, "
+                    logger.debug("Query Processor has stopped running, "
                                          + "hence query [{}] will no longer be processed", queryRequest.getQuery());
                     return;
                 }

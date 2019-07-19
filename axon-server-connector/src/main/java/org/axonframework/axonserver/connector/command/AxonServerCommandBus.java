@@ -80,7 +80,7 @@ public class AxonServerCommandBus implements CommandBus {
     private final RoutingStrategy routingStrategy;
     private final CommandPriorityCalculator priorityCalculator;
 
-    private final CommandHandlerProvider commandHandlerProvider;
+    private final CommandProcessor commandProcessor;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors;
     private final TargetContextResolver<? super CommandMessage<?>> targetContextResolver;
 
@@ -167,7 +167,7 @@ public class AxonServerCommandBus implements CommandBus {
         String context = configuration.getContext();
         this.targetContextResolver = targetContextResolver.orElse(m -> context);
 
-        this.commandHandlerProvider = new CommandHandlerProvider(context);
+        this.commandProcessor = new CommandProcessor(context);
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
@@ -176,11 +176,11 @@ public class AxonServerCommandBus implements CommandBus {
     }
 
     private void resubscribe() {
-        commandHandlerProvider.resubscribe();
+        commandProcessor.resubscribe();
     }
 
     private void unsubscribe() {
-        commandHandlerProvider.unsubscribeAll();
+        commandProcessor.unsubscribeAll();
     }
 
     @Override
@@ -261,10 +261,10 @@ public class AxonServerCommandBus implements CommandBus {
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> messageHandler) {
         logger.debug("Subscribing command with name [{}]", commandName);
-        commandHandlerProvider.subscribe(commandName);
+        commandProcessor.subscribe(commandName);
         return new AxonServerRegistration(
                 localSegment.subscribe(commandName, messageHandler),
-                () -> commandHandlerProvider.unsubscribe(commandName)
+                () -> commandProcessor.unsubscribe(commandName)
         );
     }
 
@@ -278,8 +278,8 @@ public class AxonServerCommandBus implements CommandBus {
      * Disconnect the command bus from the Axon Server.
      */
     public void disconnect() {
-        if (commandHandlerProvider != null) {
-            commandHandlerProvider.disconnect();
+        if (commandProcessor != null) {
+            commandProcessor.disconnect();
         }
     }
 
@@ -289,7 +289,7 @@ public class AxonServerCommandBus implements CommandBus {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 
-    private class CommandHandlerProvider {
+    private class CommandProcessor {
 
         private static final int COMMAND_QUEUE_CAPACITY = 1000;
         private static final int DEFAULT_PRIORITY = 0;
@@ -303,12 +303,12 @@ public class AxonServerCommandBus implements CommandBus {
         private volatile boolean running = true;
         private volatile StreamObserver<CommandProviderOutbound> subscriberStreamObserver;
 
-        CommandHandlerProvider(String context) {
+        CommandProcessor(String context) {
             this.context = context;
             subscribedCommands = new CopyOnWriteArraySet<>();
             PriorityBlockingQueue<Runnable> commandProcessQueue =
                     new PriorityBlockingQueue<>(COMMAND_QUEUE_CAPACITY, Comparator.comparingLong(
-                            r -> r instanceof CommandProcessor ? ((CommandProcessor) r).getPriority() : DEFAULT_PRIORITY
+                            r -> r instanceof CommandProcessingTask ? ((CommandProcessingTask) r).getPriority() : DEFAULT_PRIORITY
                     ));
             Integer commandThreads = configuration.getCommandThreads();
             commandExecutor = new ThreadPoolExecutor(
@@ -402,7 +402,7 @@ public class AxonServerCommandBus implements CommandBus {
                 public void onNext(CommandProviderInbound commandToSubscriber) {
                     logger.debug("Received command from server: {}", commandToSubscriber);
                     if (commandToSubscriber.getRequestCase() == CommandProviderInbound.RequestCase.COMMAND) {
-                        commandExecutor.execute(new CommandProcessor(commandToSubscriber.getCommand()));
+                        commandExecutor.execute(new CommandProcessingTask(commandToSubscriber.getCommand()));
                     }
                 }
 
@@ -509,14 +509,14 @@ public class AxonServerCommandBus implements CommandBus {
         /**
          * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the
          * command {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided
-         * {@link Command} and used to priorities this {@link CommandProcessor} among others of it's kind.
+         * {@link Command} and used to priorities this {@link CommandProcessingTask} among others of it's kind.
          */
-        private class CommandProcessor implements Runnable {
+        private class CommandProcessingTask implements Runnable {
 
             private final long priority;
             private final Command command;
 
-            private CommandProcessor(Command command) {
+            private CommandProcessingTask(Command command) {
                 this.priority = -priority(command.getProcessingInstructionsList());
                 this.command = command;
             }
@@ -528,7 +528,7 @@ public class AxonServerCommandBus implements CommandBus {
             @Override
             public void run() {
                 if (!running) {
-                    logger.debug("Command Handler Provider has stopped running, "
+                    logger.debug("Command Processor has stopped running, "
                                          + "hence command [{}] will no longer be processed", command.getName());
                     return;
                 }
