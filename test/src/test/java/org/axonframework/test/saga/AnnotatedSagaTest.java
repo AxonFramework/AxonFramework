@@ -398,9 +398,6 @@ public class AnnotatedSagaTest {
                 .expectActiveSagas(1)
                 .expectAssociationWith("identifier", identifier)
                 .expectPublishedEventsMatching(
-                        Matchers.payloadsMatching(
-                                Matchers.exactSequenceOf(
-                                        CoreMatchers.isA(SagaWasTriggeredEvent.class),
-                                        Matchers.andNoMore())));
+                        payloadsMatching(exactSequenceOf(any(SagaWasTriggeredEvent.class), andNoMore())));
     }
 }
