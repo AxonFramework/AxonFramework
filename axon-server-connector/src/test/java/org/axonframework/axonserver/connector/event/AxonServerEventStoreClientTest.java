@@ -45,7 +45,9 @@ public class AxonServerEventStoreClientTest {
         configuration.setNewPermitsThreshold(10);
         configuration.setNrOfNewPermits(1000);
         configuration.setContext(BOUNDED_CONTEXT);
-        axonServerConnectionManager = spy(new AxonServerConnectionManager(configuration));
+        axonServerConnectionManager = spy(AxonServerConnectionManager.builder()
+                                                                     .axonServerConfiguration(configuration)
+                                                                     .build());
 
         testSubject = new AxonServerEventStoreClient(configuration, axonServerConnectionManager);
     }
