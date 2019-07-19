@@ -18,7 +18,6 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
@@ -26,16 +25,14 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class AxonServerEventStoreTest {
 
@@ -51,9 +48,13 @@ public class AxonServerEventStoreTest {
                                                                 .componentName("JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
         testSubject = AxonServerEventStore.builder()
                                           .configuration(config)
-                                          .platformConnectionManager(new AxonServerConnectionManager(config))
+                                          .platformConnectionManager(axonServerConnectionManager)
                                           .build();
     }
 
@@ -84,5 +85,10 @@ public class AxonServerEventStoreTest {
     @Test(expected = EventStoreException.class)
     public void testLastSequenceNumberFor() {
         testSubject.lastSequenceNumberFor("Agg1");
+    }
+
+    @Test
+    public void testCreateStreamableMessageSourceForContext() {
+        assertNotNull(testSubject.createStreamableMessageSourceForContext("some-context"));
     }
 }

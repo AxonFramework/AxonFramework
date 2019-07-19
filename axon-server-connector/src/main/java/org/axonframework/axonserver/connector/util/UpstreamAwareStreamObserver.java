@@ -7,16 +7,15 @@ import io.grpc.stub.ClientResponseObserver;
  * Convenience implementation of a StreamObserver that provides access to the request stream, which allows
  * cancellation of the call, flow control, etc.
  *
- * @param <ReqT> The type of requests sent by the client
  * @param <ResT> The type of response sent by the server
  * @see ClientCallStreamObserver
  */
-public abstract class UpstreamAwareStreamObserver<ReqT, ResT> implements ClientResponseObserver<ReqT, ResT> {
+public abstract class UpstreamAwareStreamObserver<ResT> implements ClientResponseObserver<Object, ResT> {
 
-    private ClientCallStreamObserver<ReqT> requestStream;
+    private ClientCallStreamObserver<?> requestStream;
 
     @Override
-    public void beforeStart(ClientCallStreamObserver<ReqT> requestStream) {
+    public void beforeStart(ClientCallStreamObserver<Object> requestStream) {
         this.requestStream = requestStream;
     }
 
@@ -25,7 +24,7 @@ public abstract class UpstreamAwareStreamObserver<ReqT, ResT> implements ClientR
      *
      * @return the request stream observer which allows interaction with the client stream
      */
-    public ClientCallStreamObserver<ReqT> getRequestStream() {
+    public ClientCallStreamObserver<?> getRequestStream() {
         return requestStream;
     }
 }

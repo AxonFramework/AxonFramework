@@ -57,20 +57,23 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
      * @param eventProcessingConfiguration the {@link EventProcessingConfiguration} from which the existing
      *                                     {@link EventProcessor} instances are retrieved
      * @param axonServerConnectionManager  the {@link AxonServerConnectionManager} used to send message to Axon Server
+     * @param context                      the context of this application instance in which {@link EventProcessor}
+     *                                     status' should be send
      */
     public GrpcEventProcessorInfoSource(EventProcessingConfiguration eventProcessingConfiguration,
-                                        AxonServerConnectionManager axonServerConnectionManager) {
+                                        AxonServerConnectionManager axonServerConnectionManager,
+                                        String context) {
         this(
                 new EventProcessors(eventProcessingConfiguration),
-                axonServerConnectionManager::send,
+                instruction -> axonServerConnectionManager.send(context, instruction),
                 new GrpcEventProcessorMapping()
         );
-        axonServerConnectionManager.addReconnectListener(lastProcessorsInfo::clear);
+        axonServerConnectionManager.addReconnectListener(context, lastProcessorsInfo::clear);
     }
 
-    GrpcEventProcessorInfoSource(EventProcessors eventProcessors,
-                                 Consumer<PlatformInboundInstruction> platformInstructionSender,
-                                 Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper) {
+    private GrpcEventProcessorInfoSource(EventProcessors eventProcessors,
+                                         Consumer<PlatformInboundInstruction> platformInstructionSender,
+                                         Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper) {
         this.eventProcessors = eventProcessors;
         this.platformInstructionSender = platformInstructionSender;
         this.platformInboundMessageMapper = platformInboundMessageMapper;

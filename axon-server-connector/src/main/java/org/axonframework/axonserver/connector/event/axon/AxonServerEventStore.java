@@ -17,7 +17,14 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonserver.grpc.event.*;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.event.EventWithToken;
+import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
+import io.axoniq.axonserver.grpc.event.GetAggregateSnapshotsRequest;
+import io.axoniq.axonserver.grpc.event.GetEventsRequest;
+import io.axoniq.axonserver.grpc.event.QueryEventsRequest;
+import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
+import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -28,10 +35,23 @@ import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.common.stream.BlockingStream;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.EventStreamUtils;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.SerializedObject;
@@ -43,7 +63,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Spliterators;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -112,6 +136,17 @@ public class AxonServerEventStore extends AbstractEventStore {
     @Override
     protected AxonIQEventStorageEngine storageEngine() {
         return (AxonIQEventStorageEngine) super.storageEngine();
+    }
+
+    /**
+     * Creates a {@link StreamableMessageSource} that streams events from the given {@code context}, rather than the
+     * default context the application was configured to connect to.
+     *
+     * @param context the name of the context to create a message source for
+     * @return a {@link StreamableMessageSource} of {@link TrackedEventMessage}s tied to the given {@code context}
+     */
+    public StreamableMessageSource<TrackedEventMessage<?>> createStreamableMessageSourceForContext(String context) {
+        return new AxonServerMessageSource(storageEngine().createInstanceForContext(context));
     }
 
     /**
@@ -301,16 +336,38 @@ public class AxonServerEventStore extends AbstractEventStore {
         private final GrpcMetaDataConverter converter;
         private final boolean snapshotFilterSet;
 
+        private final Builder builder;
+        private final String context;
+
         private AxonIQEventStorageEngine(Builder builder) {
+            this(builder, builder.configuration.getContext());
+        }
+
+        private AxonIQEventStorageEngine(Builder builder, String context) {
             super(builder);
             this.snapshotFilterSet = builder.snapshotFilterSet;
             this.configuration = builder.configuration;
             this.eventStoreClient = builder.eventStoreClient;
             this.converter = builder.converter;
+
+            this.builder = builder;
+            this.context = context;
         }
 
         private static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * Creates a new AxonIQEventStorageEngine instance specifically for the given {@code context}. Can be used to
+         * create multiple message sources per context if an application is required to handle events from several
+         * Bounded Contexts.
+         *
+         * @param context a {@link String} defining the context to create an AxonIQEventStorageEngine instance
+         * @return an AxonIQEventStorageEngine within the given {@code context}
+         */
+        private AxonIQEventStorageEngine createInstanceForContext(String context) {
+            return new AxonIQEventStorageEngine(this.builder, context);
         }
 
         @Override
@@ -318,7 +375,8 @@ public class AxonServerEventStore extends AbstractEventStore {
             AppendEventTransaction sender;
             if (CurrentUnitOfWork.isStarted()) {
                 sender = CurrentUnitOfWork.get().root().getOrComputeResource(APPEND_EVENT_TRANSACTION, k -> {
-                    AppendEventTransaction appendEventTransaction = eventStoreClient.createAppendEventConnection();
+                    AppendEventTransaction appendEventTransaction =
+                            eventStoreClient.createAppendEventConnection(context);
                     CurrentUnitOfWork.get().root().onRollback(
                             u -> appendEventTransaction.rollback(u.getExecutionResult().getExceptionResult())
                     );
@@ -326,7 +384,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                     return appendEventTransaction;
                 });
             } else {
-                sender = eventStoreClient.createAppendEventConnection();
+                sender = eventStoreClient.createAppendEventConnection(context);
             }
             for (EventMessage<?> eventMessage : events) {
                 sender.append(map(eventMessage, serializer));
@@ -376,7 +434,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-            eventStoreClient.appendSnapshot(map(snapshot, serializer)).whenComplete((c, e) -> {
+            eventStoreClient.appendSnapshot(context, map(snapshot, serializer)).whenComplete((c, e) -> {
                 if (e != null) {
                     logger.warn("Error occurred while creating a snapshot", e);
                 } else if (c != null) {
@@ -400,7 +458,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && !snapshotFilterSet) {
                 request.setAllowSnapshots(true);
             }
-            return eventStoreClient.listAggregateEvents(request.build()).map(GrpcBackedDomainEventData::new);
+            return eventStoreClient.listAggregateEvents(context, request.build()).map(GrpcBackedDomainEventData::new);
         }
 
         public TrackingEventStream openStream(TrackingToken trackingToken) {
@@ -414,7 +472,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             logger.info("open stream: {}", nextToken);
 
             StreamObserver<GetEventsRequest> requestStream = eventStoreClient
-                    .listEvents(new StreamObserver<EventWithToken>() {
+                    .listEvents(context, new StreamObserver<EventWithToken>() {
                         @Override
                         public void onNext(EventWithToken eventWithToken) {
                             logger.debug("Received event with token: {}", eventWithToken.getToken());
@@ -459,7 +517,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             logger.debug("query: {}", query);
             StreamObserver<QueryEventsRequest> requestStream = eventStoreClient
-                    .query(new StreamObserver<QueryEventsResponse>() {
+                    .query(context, new StreamObserver<QueryEventsResponse>() {
                         @Override
                         public void onNext(QueryEventsResponse eventWithToken) {
                             consumer.push(eventWithToken);
@@ -527,7 +585,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
             try {
                 ReadHighestSequenceNrResponse lastSequenceNumber = eventStoreClient
-                        .lastSequenceNumberFor(aggregateIdentifier).get();
+                        .lastSequenceNumberFor(context, aggregateIdentifier).get();
                 return lastSequenceNumber.getToSequenceNr() < 0
                         ? Optional.empty()
                         : Optional.of(lastSequenceNumber.getToSequenceNr());
@@ -542,7 +600,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createTailToken() {
             try {
-                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getFirstToken().get();
+                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getFirstToken(context).get();
                 if (token.getToken() < 0) {
                     return null;
                 }
@@ -558,7 +616,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createHeadToken() {
             try {
-                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getLastToken().get();
+                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getLastToken(context).get();
                 return new GlobalSequenceTrackingToken(token.getToken());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -571,7 +629,8 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createTokenAt(Instant instant) {
             try {
-                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getTokenAt(instant).get();
+                io.axoniq.axonserver.grpc.event.TrackingToken token =
+                        eventStoreClient.getTokenAt(context, instant).get();
                 if (token.getToken() < 0) {
                     return null;
                 }
@@ -608,15 +667,14 @@ public class AxonServerEventStore extends AbstractEventStore {
                 @Override
                 public boolean tryAdvance(Consumer<? super DomainEventData<?>> action) {
                     if (prefetched.isEmpty() && sequenceNumber >= 0) {
-                        GetAggregateSnapshotsRequest request = GetAggregateSnapshotsRequest.newBuilder()
-                                                                                           .setAggregateId(
-                                                                                                   aggregateIdentifier)
-                                                                                           .setMaxResults(configuration
-                                                                                                                  .getSnapshotPrefetch())
-                                                                                           .setMaxSequence(
-                                                                                                   sequenceNumber)
-                                                                                           .build();
-                        eventStoreClient.listAggregateSnapshots(request).map(GrpcBackedDomainEventData::new)
+                        GetAggregateSnapshotsRequest request =
+                                GetAggregateSnapshotsRequest.newBuilder()
+                                                            .setAggregateId(aggregateIdentifier)
+                                                            .setMaxResults(configuration.getSnapshotPrefetch())
+                                                            .setMaxSequence(sequenceNumber)
+                                                            .build();
+                        eventStoreClient.listAggregateSnapshots(context, request)
+                                        .map(GrpcBackedDomainEventData::new)
                                         .forEach(e -> prefetched.add(e));
                     }
 
@@ -708,6 +766,40 @@ public class AxonServerEventStore extends AbstractEventStore {
                               "The AxonServerEventStoreClient is a hard requirement and should be provided");
                 assertNonNull(converter, "The GrpcMetaDataConverter is a hard requirement and should be provided");
             }
+        }
+    }
+
+    /**
+     * Wrapper around an {@link AxonIQEventStorageEngine} serving as a {@link StreamableMessageSource} of type
+     * {@link TrackedEventMessage}, delegating the calls towards the provided storage engine. Can be leveraged to create
+     * new StreamableMessageSources, each delegating towards a storage engine within a different Bounded Context.
+     */
+    private class AxonServerMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
+
+        private final AxonIQEventStorageEngine eventStorageEngine;
+
+        AxonServerMessageSource(AxonIQEventStorageEngine eventStorageEngine) {
+            this.eventStorageEngine = eventStorageEngine;
+        }
+
+        @Override
+        public BlockingStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
+            return eventStorageEngine.openStream(trackingToken);
+        }
+
+        @Override
+        public TrackingToken createTailToken() {
+            return eventStorageEngine.createTailToken();
+        }
+
+        @Override
+        public TrackingToken createHeadToken() {
+            return eventStorageEngine.createHeadToken();
+        }
+
+        @Override
+        public TrackingToken createTokenAt(Instant dateTime) {
+            return eventStorageEngine.createTokenAt(dateTime);
         }
     }
 }

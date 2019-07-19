@@ -63,11 +63,14 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 "persistent implementation, based on the activity of the handler.");
             return new InMemoryTokenStore();
         });
+        configurer.registerComponent(TargetContextResolver.class, configuration -> TargetContextResolver.noOp());
     }
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
         AxonServerConnectionManager axonServerConnectionManager =
-                new AxonServerConnectionManager(c.getComponent(AxonServerConfiguration.class));
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(c.getComponent(AxonServerConfiguration.class))
+                                           .build();
         c.onShutdown(axonServerConnectionManager::shutdown);
         return axonServerConnectionManager;
     }
@@ -83,6 +86,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     }
 
     private AxonServerCommandBus buildCommandBus(Configuration c) {
+        //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         AxonServerCommandBus commandBus = new AxonServerCommandBus(
                 c.getComponent(AxonServerConnectionManager.class),
                 c.getComponent(AxonServerConfiguration.class),
@@ -91,7 +95,8 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                 c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new),
                 c.getComponent(
                         CommandPriorityCalculator.class, CommandPriorityCalculator::defaultCommandPriorityCalculator
-                )
+                ),
+                c.getComponent(TargetContextResolver.class)
         );
         c.onShutdown(commandBus::disconnect);
         return commandBus;
@@ -110,6 +115,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                               .queryUpdateEmitter(c.queryUpdateEmitter())
                               .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                               .build();
+        //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         AxonServerQueryBus queryBus = new AxonServerQueryBus(
                 c.getComponent(AxonServerConnectionManager.class),
                 c.getComponent(AxonServerConfiguration.class),
@@ -117,7 +123,8 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                 localSegment,
                 c.messageSerializer(),
                 c.serializer(),
-                c.getComponent(QueryPriorityCalculator.class, QueryPriorityCalculator::defaultQueryPriorityCalculator)
+                c.getComponent(QueryPriorityCalculator.class, QueryPriorityCalculator::defaultQueryPriorityCalculator),
+                c.getComponent(TargetContextResolver.class)
         );
         c.onShutdown(queryBus::disconnect);
         return queryBus;

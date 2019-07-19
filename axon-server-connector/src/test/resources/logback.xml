@@ -22,7 +22,7 @@
 
     <logger name="io.axoniq.axonserver" level="INFO"/>
     <logger name="org.axonframework.commandhandling" level="INFO"/>
-
+    <logger name="org.axonframework.serialization" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
