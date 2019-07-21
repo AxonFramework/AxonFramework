@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.axonframework.queryhandling.config.DistributedQueryBusAutoConfiguration,\
+org.axonframework.queryhandling.config.DistributedQueryBusJpaAutoConfiguration,\
+org.axonframework.queryhandling.config.DistributedQueryBusRedisAutoConfiguration

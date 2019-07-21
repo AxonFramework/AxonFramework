@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:hsqldb:file:testdb
+    username: sa
+    password: sa
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate.dialect: org.hibernate.dialect.HSQLDialect
+
+logging:
+  level:
+    org.axonframework.queryhandling.updatestore.DistributedQueryUpdateStore: off

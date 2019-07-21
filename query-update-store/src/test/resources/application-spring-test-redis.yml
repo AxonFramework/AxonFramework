@@ -1,0 +1,9 @@
+spring:
+  redis:
+    host: localhost
+    port: 6379
+
+axon:
+  queryhandling:
+    updatestore:
+      backend: redis
