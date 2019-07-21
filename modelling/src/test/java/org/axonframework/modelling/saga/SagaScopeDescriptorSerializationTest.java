@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.modelling.OnlyAcceptConstructorPropertiesAnnotation;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;

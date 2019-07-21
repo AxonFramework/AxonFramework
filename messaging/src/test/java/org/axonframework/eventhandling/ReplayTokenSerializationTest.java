@@ -3,7 +3,6 @@ package org.axonframework.eventhandling;
 import static junit.framework.TestCase.assertEquals;
 
 import org.axonframework.serialization.TestSerializer;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
