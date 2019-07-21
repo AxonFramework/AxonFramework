@@ -102,7 +102,7 @@ public class PessimisticLockFactoryTest {
         }
     }
 
-    @Test(timeout = 8000)
+    @Test(timeout = 9000)
     public void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
         final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(3);

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.messaging.Message;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -114,6 +115,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @param newRedeliveryToken The current token
      */
     @JsonCreator
+    @ConstructorProperties({"tokenAtReset", "currentToken"})
     public ReplayToken(@JsonProperty("tokenAtReset") TrackingToken tokenAtReset,
                        @JsonProperty("currentToken") TrackingToken newRedeliveryToken) {
         this.tokenAtReset = tokenAtReset;
