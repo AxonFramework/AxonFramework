@@ -26,12 +26,12 @@ public interface ExecutorServiceBuilder extends
     long THREAD_KEEP_ALIVE_TIME = 100L;
 
     /**
-     * Create a default ExecutorServiceBuilder uses to create a {@link ThreadPoolExecutor} for processing incoming
+     * Create a default ExecutorServiceBuilder used to create a {@link ThreadPoolExecutor} for processing incoming
      * commands. Uses the {@link AxonServerConfiguration#getCommandThreads()} as the core and maximum pool size, a
      * keep-alive time of {@code 100ms}, the given {@link BlockingQueue} as the {@code workQueue} and an
      * {@link AxonThreadFactory}.
      *
-     * @return a default ExecutorServiceBuilder for processing commands
+     * @return a default ExecutorServiceBuilder to create an executor for processing commands
      */
     static ExecutorServiceBuilder defaultCommandExecutorServiceBuilder() {
         return (configuration, commandProcessQueue) -> new ThreadPoolExecutor(
@@ -41,6 +41,25 @@ public interface ExecutorServiceBuilder extends
                 TimeUnit.MILLISECONDS,
                 commandProcessQueue,
                 new AxonThreadFactory("CommandProcessor")
+        );
+    }
+
+    /**
+     * Create a default ExecutorServiceBuilder used to create a {@link ThreadPoolExecutor} for processing incoming
+     * queries. Uses the {@link AxonServerConfiguration#getQueryThreads()} as the core and maximum pool size, a
+     * keep-alive time of {@code 100ms}, the given {@link BlockingQueue} as the {@code workQueue} and an
+     * {@link AxonThreadFactory}.
+     *
+     * @return a default ExecutorServiceBuilder to create an executor for processing queries
+     */
+    static ExecutorServiceBuilder defaultQueryExecutorServiceBuilder() {
+        return (configuration, queryProcessQueue) -> new ThreadPoolExecutor(
+                configuration.getQueryThreads(),
+                configuration.getQueryThreads(),
+                THREAD_KEEP_ALIVE_TIME,
+                TimeUnit.MILLISECONDS,
+                queryProcessQueue,
+                new AxonThreadFactory("QueryProcessor")
         );
     }
 }
