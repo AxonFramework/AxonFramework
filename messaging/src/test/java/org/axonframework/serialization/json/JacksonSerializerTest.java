@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.messaging.MetaData;
@@ -27,8 +28,10 @@ import org.junit.Test;
 
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -40,10 +43,12 @@ public class JacksonSerializerTest {
 
     private JacksonSerializer testSubject;
     private Instant time;
+    private ObjectMapper objectMapper;
 
     @Before
     public void setUp() {
-        testSubject = JacksonSerializer.builder().build();
+        objectMapper = new ObjectMapper();
+        testSubject = JacksonSerializer.builder().objectMapper(objectMapper).build();
         time = Instant.now();
     }
 
@@ -64,6 +69,34 @@ public class JacksonSerializerTest {
         SimpleSerializableType actual = testSubject.deserialize(serialized);
         assertEquals(toSerialize.getValue(), actual.getValue());
         assertEquals(toSerialize.getNested().getValue(), actual.getNested().getValue());
+    }
+
+    @Test
+    public void testSerializeAndDeserializeArray() {
+        SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
+                                                                        new SimpleSerializableType("nested"));
+
+        SerializedObject<String> serialized = testSubject.serialize(new SimpleSerializableType[]{toSerialize}, String.class);
+
+        SimpleSerializableType[] actual = testSubject.deserialize(serialized);
+        assertEquals(1, actual.length);
+        assertEquals(toSerialize.getValue(), actual[0].getValue());
+        assertEquals(toSerialize.getNested().getValue(), actual[0].getNested().getValue());
+    }
+
+    @Test
+    public void testSerializeAndDeserializeList() {
+        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, JsonTypeInfo.As.PROPERTY);
+
+        SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
+                                                                        new SimpleSerializableType("nested"));
+
+        SerializedObject<String> serialized = testSubject.serialize(singletonList(toSerialize), String.class);
+
+        List<SimpleSerializableType> actual = testSubject.deserialize(serialized);
+        assertEquals(1, actual.size());
+        assertEquals(toSerialize.getValue(), actual.get(0).getValue());
+        assertEquals(toSerialize.getNested().getValue(), actual.get(0).getNested().getValue());
     }
 
     @Test

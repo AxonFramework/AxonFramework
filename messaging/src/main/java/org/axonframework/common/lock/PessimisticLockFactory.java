@@ -219,7 +219,7 @@ public class PessimisticLockFactory implements LockFactory {
         /**
          * Builds the PessimisticLockFactory instance using the properties defined in this builder
          *
-         * @return a fully configured PessimisticLockfactory instance
+         * @return a fully configured PessimisticLockFactory instance
          */
         public PessimisticLockFactory build() {
             return new PessimisticLockFactory(this);
@@ -263,7 +263,7 @@ public class PessimisticLockFactory implements LockFactory {
                         checkForDeadlock();
                         if (attempts < 1) {
                             throw new LockAcquisitionFailedException(
-                                    "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + maximumQueued + ")"
+                                    "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + acquireAttempts + ")"
                             );
                         }
                     } while (!lock.tryLock(lockAttemptTimeout, TimeUnit.MILLISECONDS));

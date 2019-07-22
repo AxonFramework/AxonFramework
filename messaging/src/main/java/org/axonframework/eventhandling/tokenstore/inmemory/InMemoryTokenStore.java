@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,10 +16,11 @@
 
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.Map;
@@ -66,9 +67,10 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Override
     public TrackingToken fetchToken(String processorName, int segment) {
-        TrackingToken trackingToken = tokens.computeIfAbsent(new ProcessAndSegment(processorName, segment),
-                                                             k -> NULL_TOKEN);
-        if (NULL_TOKEN == trackingToken) {
+        TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
+        if (trackingToken == null) {
+            throw new UnableToClaimTokenException("No token was initialized for segment " + segment + " for processor " + processorName);
+        } else if (NULL_TOKEN == trackingToken) {
             return null;
         }
         return trackingToken;
@@ -80,11 +82,31 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
+    public void deleteToken(String processorName, int segment) throws UnableToClaimTokenException {
+        tokens.remove(new ProcessAndSegment(processorName, segment));
+    }
+
+    @Override
+    public void initializeSegment(TrackingToken token, String processorName, int segment) throws UnableToInitializeTokenException {
+        TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment), token == null ? NULL_TOKEN : token);
+        if (previous != null) {
+            throw new UnableToInitializeTokenException("Token was already present");
+        }
+    }
+
+    @Override
+    public boolean requiresExplicitSegmentInitialization() {
+        return true;
+    }
+
+    @Override
     public int[] fetchSegments(String processorName) {
         return tokens.keySet().stream()
                      .filter(ps -> ps.processorName.equals(processorName))
                      .map(ProcessAndSegment::getSegment)
-                     .distinct().mapToInt(Number::intValue).toArray();
+                     .distinct()
+                     .mapToInt(Number::intValue)
+                     .sorted().toArray();
     }
 
     private static class ProcessAndSegment {

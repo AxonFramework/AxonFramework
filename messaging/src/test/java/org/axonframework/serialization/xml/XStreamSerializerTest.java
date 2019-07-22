@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,23 @@
 
 package org.axonframework.serialization.xml;
 
+import org.axonframework.serialization.Revision;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.utils.StubDomainEvent;
-import org.axonframework.serialization.*;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.List;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 
 /**
@@ -67,6 +74,32 @@ public class XStreamSerializerTest {
         Object actualResult = testSubject.deserialize(serializedEvent);
         assertEquals(testEvent, actualResult);
     }
+    
+    @Test
+    public void testSerializeAndDeserializeArray() {
+        TestEvent toSerialize = new TestEvent("first");
+
+        SerializedObject<String> serialized = testSubject.serialize(new TestEvent[]{toSerialize}, String.class);
+
+        Class actualType = testSubject.classForType(serialized.getType());
+        assertTrue(actualType.isArray());
+        assertEquals(TestEvent.class, actualType.getComponentType());
+        TestEvent[] actual = testSubject.deserialize(serialized);
+        assertEquals(1, actual.length);
+        assertEquals(toSerialize.getName(), actual[0].getName());
+    }
+
+    @Test
+    public void testSerializeAndDeserializeList() {
+
+        TestEvent toSerialize = new TestEvent("first");
+
+        SerializedObject<String> serialized = testSubject.serialize(singletonList(toSerialize), String.class);
+
+        List<TestEvent> actual = testSubject.deserialize(serialized);
+        assertEquals(1, actual.size());
+        assertEquals(toSerialize.getName(), actual.get(0).getName());
+    }
 
     @Test
     public void testDeserializeEmptyBytes() {
@@ -80,7 +113,7 @@ public class XStreamSerializerTest {
         testSubject.addPackageAlias("axon", "org.axonframework");
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
-        String asString = new String(serialized.getData(), "UTF-8");
+        String asString = new String(serialized.getData(), StandardCharsets.UTF_8);
         assertFalse("Package name found in:" + asString, asString.contains("org.axonframework.domain"));
         StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
@@ -103,7 +136,7 @@ public class XStreamSerializerTest {
         testSubject.addAlias("stub", StubDomainEvent.class);
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
-        String asString = new String(serialized.getData(), "UTF-8");
+        String asString = new String(serialized.getData(), StandardCharsets.UTF_8);
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("<stub"));
         StubDomainEvent deserialized = testSubject.deserialize(serialized);
@@ -115,7 +148,7 @@ public class XStreamSerializerTest {
         testSubject.addFieldAlias("relevantPeriod", TestEvent.class, "period");
 
         SerializedObject<byte[]> serialized = testSubject.serialize(testEvent, byte[].class);
-        String asString = new String(serialized.getData(), "UTF-8");
+        String asString = new String(serialized.getData(), StandardCharsets.UTF_8);
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("<relevantPeriod"));
         TestEvent deserialized = testSubject.deserialize(serialized);

@@ -20,8 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.lang.reflect.Method;
 
@@ -44,31 +43,34 @@ public class MessageIdentifierParameterResolverFactoryTest {
         integerMethod = getClass().getMethod("someIntegerMethod", Integer.class);
     }
 
-    @SuppressWarnings("unused") //Used in setUp()
+    @SuppressWarnings("unused")
     public void someMessageIdentifierMethod(@MessageIdentifier String messageIdentifier) {
+        //Used in setUp()
     }
 
-    @SuppressWarnings("unused") //Used in setUp()
+    @SuppressWarnings("unused")
     public void someNonAnnotatedMethod(String messageIdentifier) {
+        //Used in setUp()
     }
 
-    @SuppressWarnings("unused") //Used in setUp()
+    @SuppressWarnings("unused")
     public void someIntegerMethod(@MessageIdentifier Integer messageIdentifier) {
+        //Used in setUp()
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testResolvesToMessageIdentifierWhenAnnotatedForEventMessage() {
-        ParameterResolver resolver = testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(eventMessage));
         assertEquals(eventMessage.getIdentifier(), resolver.resolveParameterValue(eventMessage));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testResolvesToMessageIdentifierWhenAnnotatedForCommandMessage() {
-        ParameterResolver resolver = testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
         assertTrue(resolver.matches(commandMessage));
         assertEquals(commandMessage.getIdentifier(), resolver.resolveParameterValue(commandMessage));
@@ -76,14 +78,15 @@ public class MessageIdentifierParameterResolverFactoryTest {
 
     @Test
     public void testIgnoredWhenNotAnnotated() {
-        ParameterResolver resolver = testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
     public void testIgnoredWhenWrongType() {
-        ParameterResolver resolver = testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
         assertNull(resolver);
     }
-
 }

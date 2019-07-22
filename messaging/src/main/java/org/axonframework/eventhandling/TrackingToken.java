@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.eventhandling;
+
+import java.util.OptionalLong;
 
 /**
  * Tag interface identifying a token that is used to identify the position of an event in an event stream. Event
@@ -47,10 +49,23 @@ public interface TrackingToken {
      * Indicates whether this token covers the {@code other} token completely. That means that this token represents a
      * position in a stream that has received all of the messages that a stream represented by the {@code other} token
      * has received.
+     * <p>
+     * Note that this operation is only safe when comparing tokens obtained from messages from the same
+     * {@link org.axonframework.messaging.StreamableMessageSource}.
      *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}
      */
     boolean covers(TrackingToken other);
+
+    /**
+     * Return the estimated relative position this token represents.
+     * In case no estimation can be given an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return the estimated relative position of this token
+     */
+    default OptionalLong position() {
+        return OptionalLong.empty();
+    }
 
 }

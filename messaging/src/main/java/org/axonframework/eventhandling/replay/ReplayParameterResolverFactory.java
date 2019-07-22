@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.replay;
 
 import org.axonframework.eventhandling.ReplayStatus;
 import org.axonframework.eventhandling.ReplayToken;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -50,10 +49,7 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
 
         @Override
         public Object resolveParameterValue(Message message) {
-            return message instanceof TrackedEventMessage
-                    && ((TrackedEventMessage) message).trackingToken() instanceof ReplayToken
-                    ? ReplayStatus.REPLAY
-                    : ReplayStatus.REGULAR;
+            return ReplayToken.isReplay(message) ? ReplayStatus.REPLAY : ReplayStatus.REGULAR;
         }
 
         @Override

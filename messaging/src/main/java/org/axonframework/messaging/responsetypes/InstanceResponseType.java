@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
+import java.util.Optional;
+import java.util.concurrent.Future;
+
+import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
  * A {@link ResponseType} implementation that will match with query
@@ -57,7 +61,7 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      */
     @Override
     public boolean matches(Type responseType) {
-        Type unwrapped = unwrapIfTypeFuture(responseType);
+        Type unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
         return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
     }
 

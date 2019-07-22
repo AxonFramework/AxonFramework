@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 
 package org.axonframework.queryhandling.annotation;
 
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -28,7 +27,13 @@ import org.axonframework.queryhandling.QueryMessage;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Future;
+
+import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive;
+import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
  * Definition of handlers that can handle QueryMessages. These handlers are wrapped with a QueryHandlingMember that
@@ -73,14 +78,37 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             }
         }
 
+        @Override
+        public Object handle(Message<?> message, T target) throws Exception {
+            Object result = super.handle(message, target);
+            if (result instanceof Optional) {
+                return ((Optional<?>) result).orElse(null);
+            }
+            return result;
+        }
+
         private Type queryResultType(Method method) {
             if (Void.class.equals(method.getReturnType())) {
                 throw new UnsupportedHandlerException(
                         "@QueryHandler annotated methods must not declare void return type", method
                 );
             }
+            return unwrapType(method.getGenericReturnType());
+        }
 
-            return ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive(method.getGenericReturnType());
+        private Type unwrapType(Type genericReturnType) {
+            return upperBound(resolvePrimitiveWrapperTypeIfPrimitive(
+                    unwrapIfType(genericReturnType, Future.class, Optional.class)));
+        }
+
+        private Type upperBound(Type type) {
+            if (type instanceof WildcardType) {
+                if (((WildcardType) type).getUpperBounds().length == 1) {
+                    return ((WildcardType) type).getUpperBounds()[0];
+                }
+                return Object.class;
+            }
+            return type;
         }
 
         @SuppressWarnings("unchecked")

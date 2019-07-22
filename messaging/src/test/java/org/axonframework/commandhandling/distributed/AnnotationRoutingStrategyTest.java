@@ -49,16 +49,35 @@ public class AnnotationRoutingStrategyTest {
         );
     }
 
+    @Test(expected = CommandDispatchException.class)
+    public void testNullRoutingKeyOnFieldThrowsCommandDispatchException() {
+        testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullFieldAnnotatedCommand()));
+    }
+
+    @Test(expected = CommandDispatchException.class)
+    public void testNullRoutingKeyOnMethodThrowsCommandDispatchException() {
+        testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand()));
+    }
+
     public static class SomeFieldAnnotatedCommand {
 
+        @SuppressWarnings("unused")
         @RoutingKey
         private final String target = "Target";
     }
 
     public static class SomeOtherFieldAnnotatedCommand {
 
+        @SuppressWarnings("unused")
         @RoutingKey
         private final SomeObject target = new SomeObject("Target");
+    }
+
+    public static class SomeNullFieldAnnotatedCommand {
+
+        @SuppressWarnings("unused")
+        @RoutingKey
+        private final String target = null;
     }
 
     public static class SomeMethodAnnotatedCommand {
@@ -81,7 +100,6 @@ public class AnnotationRoutingStrategyTest {
         }
     }
 
-
     private static class SomeObject {
 
         private final String target;
@@ -92,6 +110,16 @@ public class AnnotationRoutingStrategyTest {
 
         @Override
         public String toString() {
+            return target;
+        }
+    }
+
+    public static class SomeNullMethodAnnotatedCommand {
+
+        private final String target = null;
+
+        @RoutingKey
+        public String getTarget() {
             return target;
         }
     }
