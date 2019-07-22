@@ -87,10 +87,14 @@ public class AxonServerCommandBusTest {
         axonServerConnectionManager = spy(AxonServerConnectionManager.builder()
                                                                      .axonServerConfiguration(configuration)
                                                                      .build());
-        testSubject = new AxonServerCommandBus(
-                axonServerConnectionManager, configuration, localSegment, serializer, command -> "RoutingKey",
-                CommandPriorityCalculator.defaultCommandPriorityCalculator(), targetContextResolver
-        );
+        testSubject = AxonServerCommandBus.builder()
+                                          .axonServerConnectionManager(axonServerConnectionManager)
+                                          .configuration(configuration)
+                                          .localSegment(localSegment)
+                                          .serializer(serializer)
+                                          .routingStrategy(command -> "RoutingKey")
+                                          .targetContextResolver(targetContextResolver)
+                                          .build();
     }
 
     @After
@@ -233,10 +237,14 @@ public class AxonServerCommandBusTest {
             inboundStreamObserverRef.set(invocationOnMock.getArgument(1));
             return new TestStreamObserver<CommandProviderInbound>();
         }).when(mockAxonServerConnectionManager).getCommandStream(any(), any());
-        AxonServerCommandBus testSubject2 = new AxonServerCommandBus(
-                mockAxonServerConnectionManager, configuration, localSegment, serializer,
-                command -> "RoutingKey", CommandPriorityCalculator.defaultCommandPriorityCalculator()
-        );
+        AxonServerCommandBus testSubject2 =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(mockAxonServerConnectionManager)
+                                    .configuration(configuration)
+                                    .localSegment(localSegment)
+                                    .serializer(serializer)
+                                    .routingStrategy(command -> "RoutingKey")
+                                    .build();
         testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
 
         SerializedObject commandPayload =

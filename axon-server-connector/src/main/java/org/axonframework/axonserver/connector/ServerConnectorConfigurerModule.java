@@ -87,17 +87,21 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
 
     private AxonServerCommandBus buildCommandBus(Configuration c) {
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
-        AxonServerCommandBus commandBus = new AxonServerCommandBus(
-                c.getComponent(AxonServerConnectionManager.class),
-                c.getComponent(AxonServerConfiguration.class),
-                SimpleCommandBus.builder().build(),
-                c.messageSerializer(),
-                c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new),
-                c.getComponent(
-                        CommandPriorityCalculator.class, CommandPriorityCalculator::defaultCommandPriorityCalculator
-                ),
-                c.getComponent(TargetContextResolver.class)
-        );
+        AxonServerCommandBus commandBus =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(c.getComponent(AxonServerConnectionManager.class))
+                                    .configuration(c.getComponent(AxonServerConfiguration.class))
+                                    .localSegment(SimpleCommandBus.builder().build())
+                                    .serializer(c.messageSerializer())
+                                    .routingStrategy(
+                                            c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new)
+                                    )
+                                    .priorityCalculator(c.getComponent(
+                                            CommandPriorityCalculator.class,
+                                            CommandPriorityCalculator::defaultCommandPriorityCalculator
+                                    ))
+                                    .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                    .build();
         c.onShutdown(commandBus::disconnect);
         return commandBus;
     }

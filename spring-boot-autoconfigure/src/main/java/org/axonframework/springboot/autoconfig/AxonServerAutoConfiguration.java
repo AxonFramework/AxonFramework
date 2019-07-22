@@ -113,20 +113,22 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean(destroyMethod = "disconnect")
     @Primary
     @ConditionalOnMissingQualifiedBean(qualifier = "!localSegment", beanClass = CommandBus.class)
-    public AxonServerCommandBus axonServerCommandBus(AxonServerConfiguration axonServerConfiguration,
-                                                     Serializer serializer,
-                                                     AxonServerConnectionManager axonServerConnectionManager,
+    public AxonServerCommandBus axonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
+                                                     AxonServerConfiguration axonServerConfiguration,
+                                                     @Qualifier("localSegment") CommandBus localSegment,
+                                                     @Qualifier("messageSerializer") Serializer messageSerializer,
                                                      RoutingStrategy routingStrategy,
                                                      CommandPriorityCalculator priorityCalculator,
-                                                     @Qualifier("localSegment") CommandBus localSegment,
                                                      TargetContextResolver<? super CommandMessage<?>> targetContextResolver) {
-        return new AxonServerCommandBus(axonServerConnectionManager,
-                                        axonServerConfiguration,
-                                        localSegment,
-                                        serializer,
-                                        routingStrategy,
-                                        priorityCalculator,
-                                        targetContextResolver);
+        return AxonServerCommandBus.builder()
+                                   .axonServerConnectionManager(axonServerConnectionManager)
+                                   .configuration(axonServerConfiguration)
+                                   .localSegment(localSegment)
+                                   .serializer(messageSerializer)
+                                   .routingStrategy(routingStrategy)
+                                   .priorityCalculator(priorityCalculator)
+                                   .targetContextResolver(targetContextResolver)
+                                   .build();
     }
 
     @Bean
