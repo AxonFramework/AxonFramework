@@ -603,7 +603,7 @@ public class AxonServerCommandBus implements CommandBus {
      * defaults to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
      * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
      * The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local {@link CommandBus},
-     * {@link Serializer} and the {@link RoutingStrategy} are a <b>hard requirements</b> and as such should be provided.
+     * {@link Serializer} and the {@link RoutingStrategy} are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -663,7 +663,7 @@ public class AxonServerCommandBus implements CommandBus {
          * Sets the {@link Serializer} used to de-/serialize incoming and outgoing commands and command results.
          *
          * @param serializer a {@link Serializer} used to de-/serialize incoming and outgoing commands and command
-         *                   results.
+         *                   results
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
@@ -687,7 +687,7 @@ public class AxonServerCommandBus implements CommandBus {
 
         /**
          * Sets the {@link CommandPriorityCalculator} used to deduce the priority of an incoming command among other
-         * commands, to give precedence over high valued commands. Defaults to a
+         * commands, to give precedence over high(er) valued queries for example. Defaults to a
          * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()}.
          *
          * @param priorityCalculator a {@link CommandPriorityCalculator} used to deduce the priority of an incoming
@@ -726,8 +726,8 @@ public class AxonServerCommandBus implements CommandBus {
          * {@code executorServiceBuilder}, as it ensure the command's priority is taken into consideration.
          * Defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
          *
-         * @param executorServiceBuilder an {@link AxonServerConfiguration} used to correctly configure the connections
-         *                               created by an {@link AxonServerConnectionManager} instance
+         * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
+         *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder executorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
