@@ -1,19 +1,19 @@
 package org.axonframework.test.saga;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.MyOtherEvent;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 public class EventValidatorTest {
 
     private EventValidator testSubject;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         testSubject = new EventValidator(null, AllFieldsFilter.instance());
     }
 
@@ -41,6 +41,11 @@ public class EventValidatorTest {
         testSubject.assertPublishedEvents();
     }
 
+    @Test
+    public void testAssertPublishedEventsForEventMessages() {
+        EventMessage<MyOtherEvent> testEventMessage = GenericEventMessage.asEventMessage(new MyOtherEvent());
+        testSubject.handle(testEventMessage);
 
-
+        testSubject.assertPublishedEvents(testEventMessage);
+    }
 }

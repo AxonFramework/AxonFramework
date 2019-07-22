@@ -20,7 +20,14 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
-import io.axoniq.axonserver.grpc.query.*;
+import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
+import io.axoniq.axonserver.grpc.query.QuerySubscription;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -33,7 +40,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Author: marc
+ * Minimal dummy implementation of gRPC connection to spoof a connection with for example Axon Server when testing Axon
+ * Server connector components.
+ *
+ * @author Marc Gathier
  */
 public class DummyMessagePlatformServer {
 
@@ -122,7 +132,9 @@ public class DummyMessagePlatformServer {
                 responseObserver.onNext(QueryResponse.newBuilder()
                                                      .setMessageIdentifier(request.getMessageIdentifier())
                                                      .setErrorCode(errorCode)
-                                                     .setErrorMessage(ErrorMessage.newBuilder().addDetails("You wanted trouble").build())
+                                                     .setErrorMessage(ErrorMessage.newBuilder()
+                                                                                  .addDetails("You wanted trouble")
+                                                                                  .build())
                                                      .build());
             } else {
                 for (long r = 0; r < repeat; r++) {
@@ -144,6 +156,27 @@ public class DummyMessagePlatformServer {
                 }
             }
             responseObserver.onCompleted();
+        }
+
+        @Override
+        public StreamObserver<SubscriptionQueryRequest> subscription(
+                StreamObserver<SubscriptionQueryResponse> responseObserver) {
+            return new StreamObserver<SubscriptionQueryRequest>() {
+                @Override
+                public void onNext(SubscriptionQueryRequest subscriptionQueryRequest) {
+                    // Not implemented, as for #1013 this wasn't mandatory during tests
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    // Not implemented, as for #1013 this wasn't mandatory during tests
+                }
+
+                @Override
+                public void onCompleted() {
+                    // Not implemented, as for #1013 this wasn't mandatory during tests
+                }
+            };
         }
     }
 

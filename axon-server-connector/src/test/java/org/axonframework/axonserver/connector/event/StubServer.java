@@ -15,9 +15,9 @@
 
 package org.axonframework.axonserver.connector.event;
 
-import org.axonframework.axonserver.connector.PlatformService;
 import io.grpc.Server;
 import io.grpc.netty.NettyServerBuilder;
+import org.axonframework.axonserver.connector.PlatformService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -25,11 +25,17 @@ import java.util.concurrent.TimeUnit;
 public class StubServer {
 
     private final Server server;
+    private final PlatformService platformService;
 
     public StubServer(int port) {
+        this(port, port);
+    }
+
+    public StubServer(int port, int redirectPort) {
+        platformService = new PlatformService(redirectPort);
         server = NettyServerBuilder.forPort(port)
                                    .addService(new EventStoreImpl())
-                                   .addService(new PlatformService(port))
+                                   .addService(platformService)
                                    .build();
     }
 
@@ -40,5 +46,9 @@ public class StubServer {
     public void shutdown() throws InterruptedException {
         server.shutdown();
         server.awaitTermination(1, TimeUnit.SECONDS);
+    }
+
+    public PlatformService getPlatformService() {
+        return platformService;
     }
 }

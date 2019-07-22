@@ -16,10 +16,10 @@
 
 package org.axonframework.test.aggregate;
 
-import java.time.Duration;
-import java.time.Instant;
 import org.axonframework.messaging.Message;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -119,20 +119,56 @@ public interface TestExecutor<T> {
     Instant currentTime();
 
     /**
-     * Simulates time shifts in the current given state. This can be useful when the time between given events is of
-     * importance.
+     * Simulates the time elapsing in the current given state using a {@link Duration} as the unit of time. This can be
+     * useful when the time between given events is of importance, for example when leveraging the
+     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
      *
-     * @param elapsedTime The amount of time that will elapse
-     * @return a ResultValidator that can be used to validate the resulting actions of the command execution
+     * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
+     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
+     *
+     * @deprecated in favor of {@link #whenThenTimeElapses(Duration)}. This function incorrectly suggests you can
+     * proceed with other operations after calling it, which is made impossible due to the {@link ResultValidator}
+     * return type
      */
-    ResultValidator andThenTimeElapses(Duration elapsedTime);
+    @Deprecated
+    default ResultValidator andThenTimeElapses(Duration elapsedTime) {
+        return whenThenTimeElapses(elapsedTime);
+    }
 
     /**
-     * Simulates time shifts in the current given state. This can be useful when the time between given events is of
-     * importance.
+     * Simulates the time elapsing in the current given state using a {@link Duration} as the unit of time. This can be
+     * useful when the time between given events is of importance, for example when leveraging the
+     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
      *
-     * @param newDateTime The time to advance the clock to
-     * @return a ResultValidator that can be used to validate the resulting actions of the command execution
+     * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
+     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      */
-    ResultValidator andThenTimeAdvancesTo(Instant newDateTime);
+    ResultValidator whenThenTimeElapses(Duration elapsedTime);
+
+    /**
+     * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
+     * useful when the time between given events is of importance, for example when leveraging the
+     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
+     *
+     * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
+     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
+     *
+     * @deprecated in favor of {@link #whenThenTimeAdvancesTo(Instant)}. This function incorrectly suggests you can
+     * proceed with other operations after calling it, which is made impossible due to the {@link ResultValidator}
+     * return type
+     */
+    @Deprecated
+    default ResultValidator andThenTimeAdvancesTo(Instant newPointInTime) {
+        return whenThenTimeAdvancesTo(newPointInTime);
+    }
+
+    /**
+     * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
+     * useful when the time between given events is of importance, for example when leveraging the
+     * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
+     *
+     * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
+     * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
+     */
+    ResultValidator whenThenTimeAdvancesTo(Instant newPointInTime);
 }

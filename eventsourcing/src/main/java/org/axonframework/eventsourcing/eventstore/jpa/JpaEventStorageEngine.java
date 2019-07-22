@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -185,7 +185,10 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                 : Collections.emptySortedSet()
                 );
             } else {
-                token = token.advanceTo(globalSequence, maxGapOffset, allowGaps);
+                token = token.advanceTo(globalSequence, maxGapOffset);
+                if (!allowGaps) {
+                    token = token.withGapsTruncatedAt(globalSequence);
+                }
             }
             result.add(new TrackedDomainEventData<>(token, domainEvent));
         }
@@ -214,7 +217,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                         break;
                     }
                     if (previousToken.getGaps().contains(sequenceNumber - 1)) {
-                        previousToken = previousToken.advanceTo(sequenceNumber - 1, maxGapOffset, false);
+                        previousToken = previousToken.withGapsTruncatedAt(sequenceNumber);
                     }
                 } catch (DateTimeParseException e) {
                     logger.info("Unable to parse timestamp to clean old gaps", e);
@@ -272,14 +275,17 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         if (events.isEmpty()) {
             return;
         }
-        try {
-            events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
-            if (explicitFlush) {
-                entityManager().flush();
+
+        transactionManager.executeInTransaction(() -> {
+            try {
+                events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
+                if (explicitFlush) {
+                    entityManager().flush();
+                }
+            } catch (Exception e) {
+                handlePersistenceException(e, events.get(0));
             }
-        } catch (Exception e) {
-            handlePersistenceException(e, events.get(0));
-        }
+        });
     }
 
     @Override

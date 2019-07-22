@@ -16,6 +16,9 @@
 
 package org.axonframework.integrationtests.eventhandling;
 
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
@@ -37,16 +40,19 @@ public class SubscribingEventProcessorTest {
     private EmbeddedEventStore eventBus;
     private EventHandlerInvoker eventHandlerInvoker;
     private EventMessageHandler mockHandler;
+    private TestingTransactionManager transactionManager;
 
     @Before
     public void setUp() {
         mockHandler = mock(EventMessageHandler.class);
         eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build();
         eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        transactionManager = new TestingTransactionManager();
         testSubject = SubscribingEventProcessor.builder()
                                                .name("test")
                                                .eventHandlerInvoker(eventHandlerInvoker)
                                                .messageSource(eventBus)
+                                               .transactionManager(transactionManager)
                                                .build();
     }
 
@@ -71,4 +77,23 @@ public class SubscribingEventProcessorTest {
         eventBus.publish(EventTestUtils.createEvents(2));
         assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
+
+    @Test
+    public void testStartTransactionManager() throws Exception {
+        testSubject.start();
+        eventBus.publish(EventTestUtils.createEvents(1));
+
+        assertTrue("Expected Transaction to be started", transactionManager.started);
+    }
+
+    static class TestingTransactionManager implements TransactionManager {
+        private boolean started;
+
+        @Override
+        public Transaction startTransaction() {
+            started  = true;
+            return NoTransactionManager.INSTANCE.startTransaction();
+        }
+    }
+
 }

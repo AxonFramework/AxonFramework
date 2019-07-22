@@ -19,11 +19,11 @@ package org.axonframework.metrics;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.Timer;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 
 public class MessageTimerMonitorTest {
 

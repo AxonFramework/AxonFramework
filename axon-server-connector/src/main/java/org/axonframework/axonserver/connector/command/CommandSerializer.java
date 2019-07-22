@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,17 +24,16 @@ import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
-import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
-import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
-import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
-import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
+import org.axonframework.axonserver.connector.util.*;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonException;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
 
 import java.util.UUID;
@@ -41,22 +41,29 @@ import java.util.UUID;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Converter between Axon CommandMessage and AxonServer GRPC message.
+ * Converter between Axon Framework {@link CommandMessage}s and Axon Server gRPC {@link Command} messages.
  *
  * @author Marc Gathier
+ * @since 4.0
  */
 public class CommandSerializer {
 
     private final AxonServerConfiguration configuration;
-
     private final Serializer messageSerializer;
-
     private final GrpcMetadataSerializer metadataSerializer;
-
     private final GrpcPayloadSerializer payloadSerializer;
-
     private final GrpcObjectSerializer<Object> objectSerializer;
 
+    /**
+     * Instantiate a serializer used to convert Axon {@link CommandMessage}s and {@link CommandResultMessage}s into Axon
+     * Server gRPC messages and vice versa.
+     * The provided {@code serializer} is used for both from and to framework-server conversions.
+     *
+     * @param serializer    a {@link Serializer} used to de-/serialize an Axon Server gRPC message into a {@link
+     *                      CommandMessage} or {@link CommandResultMessage} and vice versa
+     * @param configuration an {@link AxonServerConfiguration} used to set the configurable component id and name in the
+     *                      messages
+     */
     public CommandSerializer(Serializer serializer, AxonServerConfiguration configuration) {
         this.configuration = configuration;
         this.messageSerializer = serializer;
@@ -65,41 +72,43 @@ public class CommandSerializer {
         this.objectSerializer = new GrpcObjectSerializer<>(messageSerializer);
     }
 
+    /**
+     * Convert a {@link CommandMessage} into a {@link Command}. The {@code routingKey} and {@code priority}
+     * respectively define which service to route the command to and what the command's priority among others is.
+     *
+     * @param commandMessage the {@link CommandMessage} to convert into a {@link Command}
+     * @param routingKey     a {@link String} defining the routing key of the given {@link CommandMessage}
+     * @param priority       a {@code int} defining the priority of the given {@link CommandMessage}
+     * @return a {@link Command} based on the provided {@code commandMessage}
+     */
     public Command serialize(CommandMessage<?> commandMessage, String routingKey, int priority) {
         return Command.newBuilder().setName(commandMessage.getCommandName())
-                .setMessageIdentifier(commandMessage.getIdentifier())
-                .setTimestamp(System.currentTimeMillis())
-                .setPayload(payloadSerializer.apply(commandMessage))
-                .putAllMetaData(metadataSerializer.apply(commandMessage.getMetaData()))
-                .addProcessingInstructions(ProcessingInstruction.newBuilder()
-                                .setKey(ProcessingKey.ROUTING_KEY)
-                                .setValue(MetaDataValue.newBuilder().setTextValue(routingKey)))
-                .addProcessingInstructions(ProcessingInstruction.newBuilder()
-                        .setKey(ProcessingKey.PRIORITY)
-                        .setValue(MetaDataValue.newBuilder().setNumberValue(priority)))
-                .setClientId(configuration.getComponentName())
-                .setComponentName(configuration.getComponentName())
-                .build();
+                      .setMessageIdentifier(commandMessage.getIdentifier())
+                      .setTimestamp(System.currentTimeMillis())
+                      .setPayload(payloadSerializer.apply(commandMessage))
+                      .putAllMetaData(metadataSerializer.apply(commandMessage.getMetaData()))
+                      .addProcessingInstructions(
+                              ProcessingInstruction.newBuilder()
+                                                   .setKey(ProcessingKey.ROUTING_KEY)
+                                                   .setValue(MetaDataValue.newBuilder().setTextValue(routingKey))
+                      )
+                      .addProcessingInstructions(
+                              ProcessingInstruction.newBuilder()
+                                                   .setKey(ProcessingKey.PRIORITY)
+                                                   .setValue(MetaDataValue.newBuilder().setNumberValue(priority))
+                      )
+                      .setClientId(configuration.getClientId())
+                      .setComponentName(configuration.getComponentName())
+                      .build();
     }
 
-    public CommandMessage<?> deserialize(Command request) {
-        return new GrpcBackedCommandMessage(request, messageSerializer);
-    }
-
-    public <R> GenericCommandResultMessage<R> deserialize(CommandResponse response) {
-        MetaData metaData = new GrpcMetaDataConverter(messageSerializer).convert(response.getMetaDataMap());
-
-        if (response.hasErrorMessage()) {
-            AxonException exception = ErrorCode.getFromCode(response.getErrorCode()).convert(response.getErrorMessage());
-            return new GenericCommandResultMessage<>(exception, metaData);
-        }
-
-        R payload = response.hasPayload()
-                ? messageSerializer.deserialize(new GrpcSerializedObject(response.getPayload()))
-                : null;
-        return new GenericCommandResultMessage<>(payload, metaData);
-    }
-
+    /**
+     * Convert a {@link CommandResultMessage} into a {@link CommandProviderOutbound}.
+     *
+     * @param commandResultMessage the {@link CommandResultMessage} to convert into a {@link CommandProviderOutbound}
+     * @param requestIdentifier    a {@link String} identifying where the original request came from
+     * @return a {@link CommandProviderOutbound} based on the provided {@code commandResultMessage}
+     */
     public CommandProviderOutbound serialize(CommandResultMessage<?> commandResultMessage, String requestIdentifier) {
         CommandResponse.Builder responseBuilder =
                 CommandResponse.newBuilder()
@@ -108,13 +117,55 @@ public class CommandSerializer {
                                )
                                .putAllMetaData(metadataSerializer.apply(commandResultMessage.getMetaData()))
                                .setRequestIdentifier(requestIdentifier);
+
         if (commandResultMessage.isExceptional()) {
             Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
+            HandlerExecutionException.resolveDetails(throwable).ifPresent(details -> {
+                responseBuilder.setPayload(objectSerializer.apply(details));
+            });
         } else if (commandResultMessage.getPayload() != null) {
             responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
         }
+
         return CommandProviderOutbound.newBuilder().setCommandResponse(responseBuilder).build();
     }
+
+    /**
+     * Convert a {@link Command} into a {@link CommandMessage}.
+     *
+     * @param command the {@link Command} to convert into a {@link CommandMessage}
+     * @return a {@link CommandMessage} based on the provided {@code command}
+     */
+    public CommandMessage<?> deserialize(Command command) {
+        return new GrpcBackedCommandMessage(command, messageSerializer);
+    }
+
+    /**
+     * Convert a {@link CommandResponse} into a {@link CommandResultMessage}.
+     *
+     * @param commandResponse the {@link CommandResponse} to convert into a {@link CommandResultMessage}
+     * @param <R>             a generic specifying the response payload type
+     * @return a {@link CommandResultMessage} of generic {@code R} based on the provided {@code commandResponse}
+     */
+    public <R> CommandResultMessage<R> deserialize(CommandResponse commandResponse) {
+        MetaData metaData = new GrpcMetaDataConverter(messageSerializer).convert(commandResponse.getMetaDataMap());
+
+        if (commandResponse.hasErrorMessage()) {
+            AxonException exception = ErrorCode.getFromCode(commandResponse.getErrorCode())
+                                               .convert(commandResponse.getErrorMessage(),
+                                                        () -> commandResponse.hasPayload()
+                                                                ? messageSerializer.deserialize(new GrpcSerializedObject(commandResponse.getPayload()))
+                                                                : null);
+
+            return new GenericCommandResultMessage<>(new GenericMessage<>(commandResponse.getMessageIdentifier(), null, metaData), exception);
+        }
+
+        SerializedMessage<R> response = new SerializedMessage<>(commandResponse.getMessageIdentifier(),
+                                                                new LazyDeserializingObject<>(new GrpcSerializedObject(commandResponse.getPayload()), messageSerializer),
+                                                                new LazyDeserializingObject<>(metaData));
+        return new GenericCommandResultMessage<>(response);
+    }
+
 }

@@ -53,8 +53,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     @Override
     public void configureModule(Configurer configurer) {
         configurer.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration());
-
-        configurer.registerComponent(AxonServerConnectionManager.class, c -> buildAxonServerConnectionManager(c));
+        configurer.registerComponent(AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         configurer.configureEventStore(this::buildEventStore);
         configurer.configureCommandBus(this::buildCommandBus);
         configurer.configureQueryBus(this::buildQueryBus);
@@ -64,11 +63,14 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 "persistent implementation, based on the activity of the handler.");
             return new InMemoryTokenStore();
         });
+        configurer.registerComponent(TargetContextResolver.class, configuration -> TargetContextResolver.noOp());
     }
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
-        AxonServerConnectionManager axonServerConnectionManager = new AxonServerConnectionManager(c.getComponent(
-                AxonServerConfiguration.class));
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(c.getComponent(AxonServerConfiguration.class))
+                                           .build();
         c.onShutdown(axonServerConnectionManager::shutdown);
         return axonServerConnectionManager;
     }
@@ -84,28 +86,46 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     }
 
     private AxonServerCommandBus buildCommandBus(Configuration c) {
-        AxonServerCommandBus commandBus = new AxonServerCommandBus(c.getComponent(AxonServerConnectionManager.class),
-                                                                   c.getComponent(AxonServerConfiguration.class),
-                                                                   SimpleCommandBus.builder().build(),
-                                                                   c.messageSerializer(),
-                                                                   c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new),
-                                                                   c.getComponent(CommandPriorityCalculator.class,
-                                                                                  () -> new CommandPriorityCalculator() {}));
+        //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
+        AxonServerCommandBus commandBus = new AxonServerCommandBus(
+                c.getComponent(AxonServerConnectionManager.class),
+                c.getComponent(AxonServerConfiguration.class),
+                SimpleCommandBus.builder().build(),
+                c.messageSerializer(),
+                c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new),
+                c.getComponent(
+                        CommandPriorityCalculator.class, CommandPriorityCalculator::defaultCommandPriorityCalculator
+                ),
+                c.getComponent(TargetContextResolver.class)
+        );
         c.onShutdown(commandBus::disconnect);
         return commandBus;
     }
 
     private QueryBus buildQueryBus(Configuration c) {
-        SimpleQueryBus localSegment = SimpleQueryBus.builder()
-                                                    .transactionManager(c.getComponent(TransactionManager.class, NoTransactionManager::instance))
-                                                    .errorHandler(c.getComponent(QueryInvocationErrorHandler.class, () -> LoggingQueryInvocationErrorHandler.builder().build()))
-                                                    .queryUpdateEmitter(c.queryUpdateEmitter())
-                                                    .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
-                                                    .build();
-        AxonServerQueryBus queryBus = new AxonServerQueryBus(c.getComponent(AxonServerConnectionManager.class),
-                                                             c.getComponent(AxonServerConfiguration.class),
-                                                             c.queryUpdateEmitter(),
-                                                             localSegment, c.messageSerializer(), c.serializer(), c.getComponent(QueryPriorityCalculator.class, () -> new QueryPriorityCalculator() {}));
+        SimpleQueryBus localSegment =
+                SimpleQueryBus.builder()
+                              .transactionManager(
+                                      c.getComponent(TransactionManager.class, NoTransactionManager::instance)
+                              )
+                              .errorHandler(c.getComponent(
+                                      QueryInvocationErrorHandler.class,
+                                      () -> LoggingQueryInvocationErrorHandler.builder().build()
+                              ))
+                              .queryUpdateEmitter(c.queryUpdateEmitter())
+                              .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
+                              .build();
+        //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
+        AxonServerQueryBus queryBus = new AxonServerQueryBus(
+                c.getComponent(AxonServerConnectionManager.class),
+                c.getComponent(AxonServerConfiguration.class),
+                c.queryUpdateEmitter(),
+                localSegment,
+                c.messageSerializer(),
+                c.serializer(),
+                c.getComponent(QueryPriorityCalculator.class, QueryPriorityCalculator::defaultQueryPriorityCalculator),
+                c.getComponent(TargetContextResolver.class)
+        );
         c.onShutdown(queryBus::disconnect);
         return queryBus;
     }

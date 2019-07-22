@@ -17,7 +17,12 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.FlowControl;
-import io.axoniq.axonserver.grpc.query.*;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
@@ -41,53 +46,70 @@ import static io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest.newBuilde
 import static java.util.Optional.ofNullable;
 
 /**
- * SubscriptionQueryResult that emits initial response and update when subscription query response message is received.
+ * A {@link SubscriptionQueryResult} that emits initial response and update when subscription query response message is
+ * received.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class AxonServerSubscriptionQueryResult implements
-        Supplier<SubscriptionQueryResult<QueryResponse, QueryUpdate>>,
+public class AxonServerSubscriptionQueryResult implements Supplier<SubscriptionQueryResult<QueryResponse, QueryUpdate>>,
         StreamObserver<SubscriptionQueryResponse> {
 
     private final Logger logger = LoggerFactory.getLogger(AxonServerSubscriptionQueryResult.class);
 
-    private final FlowControllingStreamObserver<SubscriptionQueryRequest> requestObserver;
-
-    private final SubscriptionQueryResult<QueryResponse, QueryUpdate> result;
-
     private final SubscriptionQuery subscriptionQuery;
-
+    private final FlowControllingStreamObserver<SubscriptionQueryRequest> requestObserver;
+    private final SubscriptionQueryResult<QueryResponse, QueryUpdate> result;
     private final FluxSink<QueryUpdate> updateMessageFluxSink;
-
     private final Runnable onDispose;
 
     private MonoSink<QueryResponse> initialResultSink;
 
-    public AxonServerSubscriptionQueryResult(
-            SubscriptionQuery query,
-            Function<StreamObserver<SubscriptionQueryResponse>, StreamObserver<SubscriptionQueryRequest>> openStreamFn,
-            AxonServerConfiguration configuration,
-            SubscriptionQueryBackpressure backPressure,
-            int bufferSize, Runnable onDispose) {
-        this.onDispose = onDispose;
-        this.subscriptionQuery = query;
-        EmitterProcessor<QueryUpdate> processor = EmitterProcessor.create(bufferSize);
-        this.updateMessageFluxSink = processor.sink(backPressure.getOverflowStrategy());
-        StreamObserver<SubscriptionQueryRequest> subscription = openStreamFn.apply(this);
-        Function<FlowControl, SubscriptionQueryRequest> requestMapping = flowControl ->
-                newBuilder().setFlowControl(SubscriptionQuery.newBuilder(subscriptionQuery)
-                                                             .setNumberOfPermits(flowControl.getPermits())).build();
-        requestObserver = new FlowControllingStreamObserver<>(subscription, configuration, requestMapping, t -> false);
+    /**
+     * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
+     * the subscription query.
+     *
+     * @param subscriptionQuery the {@link SubscriptionQuery} which is sent
+     * @param openStreamFn      a {@link Function} used to open the stream results
+     * @param configuration     a {@link AxonServerConfiguration} providing the specified flow control settings
+     * @param backPressure      the used {@link SubscriptionQueryBackpressure} for the subsequent updates of the
+     *                          subscription query
+     * @param bufferSize        an {@code int} specifying the buffer size of the updates
+     * @param onDispose         a {@link Runnable} which will be {@link Runnable#run()} this subscription query has
+     *                          completed (exceptionally)
+     */
+    public AxonServerSubscriptionQueryResult(SubscriptionQuery subscriptionQuery,
+                                             Function<StreamObserver<SubscriptionQueryResponse>, StreamObserver<SubscriptionQueryRequest>> openStreamFn,
+                                             AxonServerConfiguration configuration,
+                                             SubscriptionQueryBackpressure backPressure,
+                                             int bufferSize,
+                                             Runnable onDispose) {
+        this.subscriptionQuery = subscriptionQuery;
+
+        StreamObserver<SubscriptionQueryRequest> subscriptionStreamObserver = openStreamFn.apply(this);
+        Function<FlowControl, SubscriptionQueryRequest> requestMapping =
+                flowControl -> newBuilder().setFlowControl(
+                        SubscriptionQuery.newBuilder(this.subscriptionQuery)
+                                         .setNumberOfPermits(flowControl.getPermits())
+                ).build();
+        requestObserver = new FlowControllingStreamObserver<>(
+                subscriptionStreamObserver, configuration, requestMapping, t -> false
+        );
         requestObserver.sendInitialPermits();
-        requestObserver.onNext(newBuilder().setSubscribe(subscriptionQuery).build());
+        requestObserver.onNext(newBuilder().setSubscribe(this.subscriptionQuery).build());
+
+        EmitterProcessor<QueryUpdate> processor = EmitterProcessor.create(bufferSize);
+        updateMessageFluxSink = processor.sink(backPressure.getOverflowStrategy());
         updateMessageFluxSink.onDispose(requestObserver::onCompleted);
         Registration registration = () -> {
             updateMessageFluxSink.complete();
             return true;
         };
+
         Mono<QueryResponse> mono = Mono.create(sink -> initialResult(sink, requestObserver::onNext));
-        this.result = new DefaultSubscriptionQueryResult<>(mono, processor.replay().autoConnect(), registration);
+        result = new DefaultSubscriptionQueryResult<>(mono, processor.replay().autoConnect(), registration);
+
+        this.onDispose = onDispose;
     }
 
     private void initialResult(MonoSink<QueryResponse> sink, Publisher<SubscriptionQueryRequest> publisher) {
@@ -113,7 +135,9 @@ public class AxonServerSubscriptionQueryResult implements
             case COMPLETE_EXCEPTIONALLY:
                 requestObserver.onCompleted();
                 QueryUpdateCompleteExceptionally exceptionally = response.getCompleteExceptionally();
-                completeExceptionally(ErrorCode.getFromCode(exceptionally.getErrorCode()).convert(exceptionally.getErrorMessage()));
+                completeExceptionally(
+                        ErrorCode.getFromCode(exceptionally.getErrorCode()).convert(exceptionally.getErrorMessage())
+                );
                 break;
         }
     }
@@ -123,30 +147,13 @@ public class AxonServerSubscriptionQueryResult implements
         completeExceptionally(t);
     }
 
-    @Override
-    public void onCompleted() {
-        complete();
-    }
-
-    @Override
-    public SubscriptionQueryResult<QueryResponse, QueryUpdate> get() {
-        return this.result;
-    }
-
-
-    private void complete() {
-        onDispose.run();
-        updateMessageFluxSink.complete();
-        initialResultError(new IllegalStateException("Subscription Completed"));
-    }
-
     private void completeExceptionally(Throwable t) {
         onDispose.run();
         updateError(t);
         initialResultError(t);
     }
 
-    private void updateError(Throwable t){
+    private void updateError(Throwable t) {
         try {
             updateMessageFluxSink.error(t);
         } catch (Exception e) {
@@ -155,7 +162,18 @@ public class AxonServerSubscriptionQueryResult implements
         }
     }
 
-    private void initialResultError(Throwable t){
+    @Override
+    public void onCompleted() {
+        complete();
+    }
+
+    private void complete() {
+        onDispose.run();
+        updateMessageFluxSink.complete();
+        initialResultError(new IllegalStateException("Subscription Completed"));
+    }
+
+    private void initialResultError(Throwable t) {
         try {
             ofNullable(initialResultSink).ifPresent(sink -> sink.error(t));
         } catch (Exception e) {
@@ -163,4 +181,8 @@ public class AxonServerSubscriptionQueryResult implements
         }
     }
 
+    @Override
+    public SubscriptionQueryResult<QueryResponse, QueryUpdate> get() {
+        return this.result;
+    }
 }

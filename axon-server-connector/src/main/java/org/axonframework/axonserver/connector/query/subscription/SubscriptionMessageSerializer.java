@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
@@ -30,7 +32,7 @@ import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
 import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
 import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
-import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -39,119 +41,152 @@ import org.axonframework.serialization.Serializer;
 import static io.axoniq.axonserver.grpc.query.QueryProviderOutbound.newBuilder;
 
 /**
- * Serializer for Subscription Query Messages.
+ * Converter between Axon Framework {@link SubscriptionQueryMessage}, the initial {@link QueryResponseMessage} and the
+ * subsequent {@link SubscriptionQueryUpdateMessage}'s and Axon Server gRPC {@link SubscriptionQuery} and {@link
+ * SubscriptionQueryResponse}. The latter is serviced by providing a {@link QueryProviderOutbound} wrapping the
+ * SubscriptionQueryResponse.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-
 public class SubscriptionMessageSerializer {
 
-    private final AxonServerConfiguration conf;
-
+    private final AxonServerConfiguration configuration;
     private final Serializer messageSerializer;
-
-    private final Serializer genericSerializer;
-
-    private final GrpcMetadataSerializer metadataSerializer;
+    private final Serializer serializer;
 
     private final GrpcPayloadSerializer payloadSerializer;
-
+    private final GrpcMetadataSerializer metadataSerializer;
     private final GrpcObjectSerializer<Object> responseTypeSerializer;
 
-    public SubscriptionMessageSerializer(AxonServerConfiguration conf,
-                                         Serializer messageSerializer,
-                                         Serializer genericSerializer) {
-        this.conf = conf;
+    /**
+     * Instantiate a serializer used to convert Axon {@link SubscriptionQueryMessage}s, the initial
+     * {@link QueryResponseMessage} and the subsequent {@link SubscriptionQueryUpdateMessage}s into Axon Server gRPC
+     * messages and vice versa.
+     *
+     * @param messageSerializer a {@link Serializer} used to de-/serialize an Axon Server gRPC message into
+     *                          {@link SubscriptionQueryMessage}s, {@link QueryResponseMessage}s and
+     *                          {@link SubscriptionQueryUpdateMessage}s, and vice versa
+     * @param serializer        a {@link Serializer} used to create a dedicated converter for a {@link QueryMessage}
+     *                          {@link org.axonframework.messaging.responsetypes.ResponseType}
+     * @param configuration     an {@link AxonServerConfiguration} used to set the configurable component id and name in
+     *                          the messages
+     */
+    public SubscriptionMessageSerializer(Serializer messageSerializer,
+                                         Serializer serializer,
+                                         AxonServerConfiguration configuration) {
+        this.configuration = configuration;
         this.messageSerializer = messageSerializer;
-        this.genericSerializer = genericSerializer;
+        this.serializer = serializer;
+
+        this.payloadSerializer = new GrpcPayloadSerializer(messageSerializer);
         this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(messageSerializer));
-        this.payloadSerializer  = new GrpcPayloadSerializer(messageSerializer);
-        this.responseTypeSerializer = new GrpcObjectSerializer<>(genericSerializer);
+        this.responseTypeSerializer = new GrpcObjectSerializer<>(serializer);
     }
 
+    /**
+     * Convert a {@link SubscriptionQueryMessage} into a {@link SubscriptionQuery}.
+     *
+     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} to convert into a {@link SubscriptionQuery}
+     * @return a {@link SubscriptionQuery} based on the provided {@code subscriptionQueryMessage}
+     */
+    public SubscriptionQuery serialize(SubscriptionQueryMessage subscriptionQueryMessage) {
+        QueryRequest queryRequest =
+                QueryRequest.newBuilder()
+                            .setTimestamp(System.currentTimeMillis())
+                            .setMessageIdentifier(subscriptionQueryMessage.getIdentifier())
+                            .setQuery(subscriptionQueryMessage.getQueryName())
+                            .setClientId(configuration.getClientId())
+                            .setComponentName(configuration.getComponentName())
+                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))
+                            .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.getResponseType()))
+                            .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.getMetaData()))
+                            .build();
+
+        return SubscriptionQuery.newBuilder()
+                                .setSubscriptionIdentifier(subscriptionQueryMessage.getIdentifier())
+                                .setNumberOfPermits(configuration.getInitialNrOfPermits())
+                                .setUpdateResponseType(
+                                        responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType())
+                                )
+                                .setQueryRequest(queryRequest).build();
+    }
+
+    <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery subscriptionQuery) {
+        return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery, messageSerializer, serializer);
+    }
 
     QueryProviderOutbound serialize(QueryResponseMessage initialResult, String subscriptionId) {
-        QueryResponse response = QueryResponse.newBuilder()
-                                              .setPayload(payloadSerializer.apply(initialResult))
-                                              .putAllMetaData(metadataSerializer.apply(initialResult.getMetaData()))
-                                              .setMessageIdentifier(initialResult.getIdentifier())
-                                              .setRequestIdentifier(subscriptionId)
-                                              .build();
+        QueryResponse queryResponse =
+                QueryResponse.newBuilder()
+                             .setPayload(payloadSerializer.apply(initialResult))
+                             .putAllMetaData(metadataSerializer.apply(initialResult.getMetaData()))
+                             .setMessageIdentifier(initialResult.getIdentifier())
+                             .setRequestIdentifier(subscriptionId)
+                             .build();
+
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()
                                          .setSubscriptionIdentifier(subscriptionId)
-                                         .setInitialResult(response)).build();
+                                         .setInitialResult(queryResponse)
+        ).build();
     }
 
-    <I> QueryResponseMessage<I> deserialize(QueryResponse queryResponse){
+    <I> QueryResponseMessage<I> deserialize(QueryResponse queryResponse) {
         return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
     }
 
-    QueryProviderOutbound serialize(SubscriptionQueryUpdateMessage<?> update, String subscriptionId) {
-        QueryUpdate.Builder builder = QueryUpdate.newBuilder()
-                                                 .setPayload(payloadSerializer.apply(update))
-                                                 .putAllMetaData(metadataSerializer.apply(update.getMetaData()))
-                                                 .setMessageIdentifier(update.getIdentifier())
-                                                 .setClientId(conf.getClientId())
-                                                 .setComponentName(conf.getComponentName());
+    QueryProviderOutbound serialize(SubscriptionQueryUpdateMessage<?> subscriptionQueryUpdateMessage,
+                                    String subscriptionId) {
+        QueryUpdate queryUpdate =
+                QueryUpdate.newBuilder()
+                           .setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage))
+                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData()))
+                           .setMessageIdentifier(subscriptionQueryUpdateMessage.getIdentifier())
+                           .setClientId(configuration.getClientId())
+                           .setComponentName(configuration.getComponentName())
+                           .build();
 
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()
                                          .setSubscriptionIdentifier(subscriptionId)
-                                         .setUpdate(builder.build())).build();
+                                         .setUpdate(queryUpdate)
+        ).build();
     }
 
-    <U> SubscriptionQueryUpdateMessage<U> deserialize(QueryUpdate queryUpdate){
+    <U> SubscriptionQueryUpdateMessage<U> deserialize(QueryUpdate queryUpdate) {
         return new GrpcBackedQueryUpdateMessage<>(queryUpdate, messageSerializer);
     }
 
-    QueryProviderOutbound serializeCompleteExceptionally(String subscriptionId, Throwable cause) {
-        QueryUpdateCompleteExceptionally.Builder builder = QueryUpdateCompleteExceptionally
-                .newBuilder()
-                .setErrorMessage(ExceptionSerializer.serialize(conf.getClientId(), cause))
-                .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                .setClientId(conf.getClientId())
-                .setComponentName(conf.getComponentName());
-        return newBuilder().setSubscriptionQueryResponse(
-                SubscriptionQueryResponse.newBuilder()
-                                         .setSubscriptionIdentifier(subscriptionId)
-                                         .setCompleteExceptionally(builder.build())).build();
-    }
-
-
-    public SubscriptionQuery serialize(SubscriptionQueryMessage message) {
-        QueryRequest queryRequest = QueryRequest.newBuilder().setTimestamp(System.currentTimeMillis())
-                                                .setMessageIdentifier(message.getIdentifier())
-                                                .setQuery(message.getQueryName())
-                                                .setClientId(conf.getClientId())
-                                                .setComponentName(conf.getComponentName())
-                                                .setPayload(payloadSerializer.apply(message))
-                                                .setResponseType(responseTypeSerializer.apply(message.getResponseType()))
-                                                .putAllMetaData(metadataSerializer.apply(message.getMetaData())).build();
-
-        SubscriptionQuery.Builder builder = SubscriptionQuery.newBuilder()
-                                                             .setSubscriptionIdentifier(message.getIdentifier())
-                                                             .setNumberOfPermits(conf.getInitialNrOfPermits())
-                                                             .setUpdateResponseType(responseTypeSerializer.apply(message.getUpdateResponseType()))
-                                                             .setQueryRequest(queryRequest);
-        return builder.build();
-    }
-
-    <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery query) {
-        return new GrpcBackedSubscriptionQueryMessage<>(query, messageSerializer, genericSerializer);
-    }
-
-
     QueryProviderOutbound serializeComplete(String subscriptionId) {
-        QueryUpdateComplete.Builder builder = QueryUpdateComplete.newBuilder()
-                                                                 .setClientId(conf.getClientId())
-                                                                 .setComponentName(conf.getComponentName());
+        QueryUpdateComplete completedQueryUpdate =
+                QueryUpdateComplete.newBuilder()
+                                   .setClientId(configuration.getClientId())
+                                   .setComponentName(configuration.getComponentName())
+                                   .build();
+
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()
                                          .setSubscriptionIdentifier(subscriptionId)
-                                         .setComplete(builder.build())).build();
+                                         .setComplete(completedQueryUpdate)
+        ).build();
     }
 
+    QueryProviderOutbound serializeCompleteExceptionally(String subscriptionId, Throwable cause) {
+        QueryUpdateCompleteExceptionally exceptionallyCompletedQueryUpdate =
+                QueryUpdateCompleteExceptionally.newBuilder()
+                                                .setErrorMessage(ExceptionSerializer.serialize(
+                                                        configuration.getClientId(), cause
+                                                ))
+                                                .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                .setClientId(configuration.getClientId())
+                                                .setComponentName(configuration.getComponentName())
+                                                .build();
 
+        return newBuilder().setSubscriptionQueryResponse(
+                SubscriptionQueryResponse.newBuilder()
+                                         .setSubscriptionIdentifier(subscriptionId)
+                                         .setCompleteExceptionally(exceptionallyCompletedQueryUpdate)
+        ).build();
+    }
 }

@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.TagsConfiguration;
 import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
@@ -158,6 +159,9 @@ public class SpringAxonAutoConfigurerTest {
     @Qualifier("primaryCommandTargetResolver")
     private CommandTargetResolver primaryCommandTargetResolver;
 
+    @Autowired
+    private TagsConfiguration tagsConfiguration;
+
     @Test
     public void contextWiresMainComponents() {
         assertNotNull(axonConfig);
@@ -173,6 +177,8 @@ public class SpringAxonAutoConfigurerTest {
         assertTrue("Expected provided commandbus implementation", commandBus instanceof AsynchronousCommandBus);
 
         assertNotNull(axonConfig.repository(Context.MyAggregate.class));
+        assertNotNull(tagsConfiguration);
+        assertEquals(tagsConfiguration, axonConfig.tags());
     }
 
     @Test
@@ -318,6 +324,11 @@ public class SpringAxonAutoConfigurerTest {
             return eventProcessingModule;
         }
 
+        @Bean
+        public TagsConfiguration tagsConfiguration() {
+            return new TagsConfiguration();
+        }
+
         @Primary
         @Bean(destroyMethod = "shutdown")
         public CommandBus commandBus() {
@@ -362,7 +373,7 @@ public class SpringAxonAutoConfigurerTest {
             return mock(CommandTargetResolver.class);
         }
 
-        @Aggregate
+        @Aggregate(type = "MyCustomAggregateType", filterEventsByType = true)
         public static class MyAggregate {
 
             @AggregateIdentifier

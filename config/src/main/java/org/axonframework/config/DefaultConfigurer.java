@@ -21,6 +21,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -227,6 +229,8 @@ public class DefaultConfigurer implements Configurer {
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
         components.put(EventUpcaster.class, upcasterChain);
+        components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
+        components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
     }
 
     /**
@@ -354,6 +358,17 @@ public class DefaultConfigurer implements Configurer {
         return SimpleEventBus.builder()
                              .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
                              .build();
+    }
+
+    /**
+     * Returns a {@link DefaultEventGateway} that will use the configuration's {@link EventBus} to publish
+     * events.
+     *
+     * @param config The configuration that supplies the event bus.
+     * @return The default event gateway.
+     */
+    protected EventGateway defaultEventGateway(Configuration config) {
+        return DefaultEventGateway.builder().eventBus(config.eventBus()).build();
     }
 
     /**

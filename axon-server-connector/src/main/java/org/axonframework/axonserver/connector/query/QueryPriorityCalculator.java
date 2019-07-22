@@ -18,11 +18,28 @@ package org.axonframework.axonserver.connector.query;
 import org.axonframework.queryhandling.QueryMessage;
 
 /**
- * Calculate priority of message based on it content. Higher value means higher priority.
+ * Calculate the priority of {@link QueryMessage} based on its content. Higher value means higher priority.
+ *
  * @author Marc Gathier
+ * @since 4.0
  */
+@FunctionalInterface
 public interface QueryPriorityCalculator {
-    default int determinePriority(QueryMessage<?, ?> queryMessage) {
-        return 0;
+
+    /**
+     * Determines the priority of the given {@code query}. The higher the returned value, the higher the priority is.
+     *
+     * @param query a {@link QueryMessage} to prioritize
+     * @return an {@code int} defining the priority of the given {@code query}
+     */
+    int determinePriority(QueryMessage<?, ?> query);
+
+    /**
+     * Returns a default implementation of the {@link QueryPriorityCalculator}, always returning priority {@code 0}.
+     *
+     * @return a lambda taking in a {@link QueryMessage} to prioritize to the default of priority {@code 0}
+     */
+    static QueryPriorityCalculator defaultQueryPriorityCalculator() {
+        return query -> 0;
     }
 }

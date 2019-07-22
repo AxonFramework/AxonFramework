@@ -16,7 +16,13 @@
 
 package org.axonframework.metrics;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Clock;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.SlidingTimeWindowReservoir;
+import com.codahale.metrics.Snapshot;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 

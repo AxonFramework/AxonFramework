@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,21 +28,29 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
  */
 public class SubscribingEventProcessorInfoMessage implements PlatformInboundMessage {
 
-    private final SubscribingEventProcessor processor;
+    private static final String EVENT_PROCESSOR_MODE = "Subscribing";
 
-    public SubscribingEventProcessorInfoMessage(SubscribingEventProcessor processor) {
-        this.processor = processor;
+    private final SubscribingEventProcessor eventProcessor;
+
+    /**
+     * Instantiate a {@link PlatformInboundInstruction} representing the status of the given
+     * {@link SubscribingEventProcessor}
+     *
+     * @param eventProcessor a {@link SubscribingEventProcessor} for which the status will be mapped to a
+     *                       {@link PlatformInboundInstruction}
+     */
+    SubscribingEventProcessorInfoMessage(SubscribingEventProcessor eventProcessor) {
+        this.eventProcessor = eventProcessor;
     }
 
     @Override
     public PlatformInboundInstruction instruction() {
-        EventProcessorInfo msg = EventProcessorInfo.newBuilder()
-                                                   .setProcessorName(processor.getName())
-                                                   .setMode("Subscribing")
-                                                   .build();
-        return PlatformInboundInstruction
-                .newBuilder()
-                .setEventProcessorInfo(msg)
-                .build();
+        EventProcessorInfo eventProcessorInfo = EventProcessorInfo.newBuilder()
+                                                                  .setProcessorName(eventProcessor.getName())
+                                                                  .setMode(EVENT_PROCESSOR_MODE)
+                                                                  .build();
+        return PlatformInboundInstruction.newBuilder()
+                                         .setEventProcessorInfo(eventProcessorInfo)
+                                         .build();
     }
 }

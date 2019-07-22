@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.LongStream;
@@ -48,6 +49,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
 
     private final long index;
     private final SortedSet<Long> gaps;
+    private final transient long gapTruncationIndex;
 
     /**
      * Returns a new {@link GapAwareTrackingToken} instance based on the given {@code index} and collection of {@code
@@ -76,8 +78,13 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     @JsonCreator
     @ConstructorProperties({ "index", "gaps" })
     public GapAwareTrackingToken(@JsonProperty("index") long index, @JsonProperty("gaps") Collection<Long> gaps) {
+        this(index, createSortedSetOf(gaps, index), 0);
+    }
+
+    private GapAwareTrackingToken(long index, SortedSet<Long> gaps, long gapTruncationIndex) {
         this.index = index;
-        this.gaps = createSortedSetOf(gaps, index);
+        this.gaps = gaps;
+        this.gapTruncationIndex = gapTruncationIndex;
     }
 
     private static SortedSet<Long> createSortedSetOf(Collection<Long> gaps, long index) {
@@ -103,10 +110,9 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      *
      * @param index        the global sequence number of the next event
      * @param maxGapOffset the maximum distance between a gap and the token's index
-     * @param allowGaps    whether advancing to the given index should take into account that gaps may have appeared
      * @return the new token that has advanced from the current token
      */
-    public GapAwareTrackingToken advanceTo(long index, int maxGapOffset, boolean allowGaps) {
+    public GapAwareTrackingToken advanceTo(long index, int maxGapOffset) {
         long newIndex;
         SortedSet<Long> gaps = new ConcurrentSkipListSet<>(this.gaps);
         if (gaps.remove(index)) {
@@ -119,9 +125,27 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
                     "The given index [%d] should be larger than the token index [%d] or be one of the token's gaps [%s]",
                     index, this.index, gaps));
         }
-        long smalledAllowedGap = allowGaps ? (newIndex - maxGapOffset) : Math.max(index, newIndex - maxGapOffset);
+        long smalledAllowedGap = Math.max(gapTruncationIndex, newIndex - maxGapOffset);
         gaps.removeAll(gaps.headSet(smalledAllowedGap));
-        return new GapAwareTrackingToken(newIndex, gaps);
+        return new GapAwareTrackingToken(newIndex, gaps, smalledAllowedGap);
+    }
+
+    /**
+     * Returns a copy of the current token, with gaps truncated at the given {@code truncationPoint}. This removes any
+     * gaps with index strictly smaller than the {@code truncationPoint} and disregards these when comparing this token
+     * to any other tokens.
+     * <p>
+     * Note that truncation information is not serialized as part of the token.
+     *
+     * @param truncationPoint The index up to (and including) which gaps are to be disregarded.
+     * @return a Token without any gaps strictly smaller than given {@code truncationPoint}
+     */
+    public GapAwareTrackingToken withGapsTruncatedAt(long truncationPoint) {
+        if (gaps.isEmpty() || gaps.first() > truncationPoint) {
+            return this;
+        }
+        SortedSet<Long> truncatedGaps = new ConcurrentSkipListSet<>(this.gaps.tailSet(truncationPoint));
+        return new GapAwareTrackingToken(this.index, truncatedGaps, truncationPoint);
     }
 
     /**
@@ -151,7 +175,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         mergedGaps.addAll(otherToken.gaps);
         long mergedIndex = calculateIndex(otherToken, mergedGaps);
         mergedGaps.removeIf(i -> i >= mergedIndex);
-        return new GapAwareTrackingToken(mergedIndex, mergedGaps);
+        return new GapAwareTrackingToken(mergedIndex, mergedGaps, Math.min(gapTruncationIndex,
+                                                                           otherToken.gapTruncationIndex));
     }
 
     @Override
@@ -163,7 +188,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         SortedSet<Long> mergedGaps = CollectionUtils.merge(this.gaps.tailSet(min), other.gaps.tailSet(min), ConcurrentSkipListSet::new);
         newGaps.addAll(mergedGaps);
 
-        return new GapAwareTrackingToken(Math.max(this.index, other.index), newGaps);
+        return new GapAwareTrackingToken(Math.max(this.index, other.index), newGaps,
+                                         Math.min(gapTruncationIndex, other.gapTruncationIndex));
     }
 
     private long calculateIndex(GapAwareTrackingToken otherToken, SortedSet<Long> mergedGaps) {
@@ -178,6 +204,13 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     public boolean covers(TrackingToken other) {
         Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
         GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        // if the token we compare to has a higher gap truncation index, we need to truncate this instance to compare
+        if (!this.gaps.isEmpty()
+                && !this.gaps.headSet(otherToken.gapTruncationIndex).isEmpty()
+                && this.gapTruncationIndex < otherToken.gapTruncationIndex) {
+            return this.withGapsTruncatedAt(otherToken.gapTruncationIndex).covers(other);
+        }
 
         return otherToken.index <= this.index
                 && !this.gaps.contains(otherToken.index)
@@ -202,16 +235,22 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
             return false;
         }
         GapAwareTrackingToken that = (GapAwareTrackingToken) o;
-        return index == that.index && Objects.equals(gaps, that.gaps);
+        long truncationIndex = Math.max(this.gapTruncationIndex, that.gapTruncationIndex) + 1;
+        return index == that.index && Objects.equals(gaps.tailSet(truncationIndex), that.gaps.tailSet(truncationIndex));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(index, gaps);
+        return Objects.hash(index);
     }
 
     @Override
     public String toString() {
         return "GapAwareTrackingToken{" + "index=" + index + ", gaps=" + gaps + '}';
+    }
+
+    @Override
+    public OptionalLong position() {
+        return OptionalLong.of(index);
     }
 }
