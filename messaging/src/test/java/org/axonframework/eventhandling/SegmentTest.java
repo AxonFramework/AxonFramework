@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -68,6 +68,7 @@ public class SegmentTest {
 
         // Split segment 0
         final Segment[] splitSegment0 = Segment.ROOT_SEGMENT.split();
+        assertThat(Segment.ROOT_SEGMENT.splitSegmentId(), is(1));
 
         assertThat(splitSegment0[0].getSegmentId(), is(0));
         assertThat(splitSegment0[0].getMask(), is(0x01));
@@ -77,6 +78,7 @@ public class SegmentTest {
 
         // Split segment 0 again
         final Segment[] splitSegment0_1 = splitSegment0[0].split();
+        assertThat(splitSegment0[0].splitSegmentId(), is(2));
 
         assertThat(splitSegment0_1[0].getSegmentId(), is(0));
         assertThat(splitSegment0_1[0].getMask(), is(0x3));
@@ -86,6 +88,7 @@ public class SegmentTest {
 
         // Split segment 0 again
         final Segment[] splitSegment0_2 = splitSegment0_1[0].split();
+        assertThat(splitSegment0_1[0].splitSegmentId(), is(4));
 
         assertThat(splitSegment0_2[0].getSegmentId(), is(0));
         assertThat(splitSegment0_2[0].getMask(), is(0x7));
@@ -96,6 +99,7 @@ public class SegmentTest {
 
         // Split segment 0 again
         final Segment[] splitSegment0_3 = splitSegment0_2[0].split();
+        assertThat(splitSegment0_2[0].splitSegmentId(), is(8));
 
         assertThat(splitSegment0_3[0].getSegmentId(), is(0));
         assertThat(splitSegment0_3[0].getMask(), is(0xF));
@@ -107,6 +111,7 @@ public class SegmentTest {
 
         // Split segment 1
         final Segment[] splitSegment1 = splitSegment0[1].split();
+        assertThat(splitSegment0[1].splitSegmentId(), is(3));
 
         assertThat(splitSegment1[0].getSegmentId(), is(1));
         assertThat(splitSegment1[0].getMask(), is(0x3));
@@ -116,6 +121,7 @@ public class SegmentTest {
 
         // Split segment 3
         final Segment[] splitSegment3 = splitSegment1[1].split();
+        assertThat(splitSegment1[1].splitSegmentId(), is(7));
 
         assertThat(splitSegment3[0].getSegmentId(), is(3));
         assertThat(splitSegment3[0].getMask(), is(0x7));
@@ -279,6 +285,42 @@ public class SegmentTest {
             assertThat(segmentMasks[3], equalTo(new Segment(3, 0x3)));
             assertThat(segmentMasks[4], equalTo(new Segment(4, 0x7)));
             assertThat(segmentMasks[5], equalTo(new Segment(5, 0x7)));
+        }
+    }
+
+    @Test
+    public void testComputeSegment() {
+        for (int segmentCount = 0; segmentCount < 256; segmentCount++) {
+            List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount);
+            int[] segmentIds = new int[segments.size()];
+            for (int i = 0; i < segmentIds.length; i++) {
+                segmentIds[i] = segments.get(i).getSegmentId();
+            }
+
+            for (Segment segment : segments) {
+                assertEquals("Got wrong segment for " + segmentCount + " number of segments", segment, Segment.computeSegment(segment.getSegmentId(), segmentIds));
+            }
+        }
+    }
+
+    @Test
+    public void testComputeSegment_Imbalanced() {
+        List<Segment> segments = new ArrayList<>();
+        Segment initialSegment = Segment.ROOT_SEGMENT;
+        for (int i = 0; i < 8; i++) {
+            Segment[] split = initialSegment.split();
+            initialSegment = split[0];
+            segments.add(split[1]);
+        }
+        segments.add(initialSegment);
+
+        int[] segmentIds = new int[segments.size()];
+        for (int i = 0; i < segmentIds.length; i++) {
+            segmentIds[i] = segments.get(i).getSegmentId();
+        }
+
+        for (Segment segment : segments) {
+            assertEquals(segment, Segment.computeSegment(segment.getSegmentId(), segmentIds));
         }
     }
 

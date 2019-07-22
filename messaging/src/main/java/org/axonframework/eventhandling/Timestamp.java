@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
  * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
+@Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
 public @interface Timestamp {
 
 }

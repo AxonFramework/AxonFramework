@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
-import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,6 +82,8 @@ public class InMemoryTokenStoreTest {
 
     @Test
     public void testQuerySegments() {
+        testSubject.initializeTokenSegments("test", 1);
+
         assertNull(testSubject.fetchToken("test", 0));
 
         testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);

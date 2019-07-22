@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.1-SNAPSHOT</version>
+        <version>4.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>axon-messaging</artifactId>
@@ -38,14 +38,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
 
         <!-- Validation -->
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
-            <version>1.1.0.Final</version>
             <optional>true</optional>
         </dependency>
 
@@ -53,7 +51,6 @@
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
-            <version>2.2.1</version>
             <optional>true</optional>
         </dependency>
 
@@ -72,44 +69,38 @@
 
         <!-- Persistence -->
         <dependency>
-            <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>hibernate-jpa-2.1-api</artifactId>
-            <version>1.0.0.Final</version>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-            <version>5.1.0.Final</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>5.2.4.Final</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>2.3.4</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>javax.el</groupId>
             <artifactId>javax.el-api</artifactId>
-            <version>2.2.4</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.glassfish.web</groupId>
             <artifactId>el-impl</artifactId>
-            <version>2.2</version>
             <scope>test</scope>
         </dependency>
 
@@ -117,14 +108,12 @@
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
-            <version>1.0.0</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache</artifactId>
-            <version>2.8.1</version>
             <optional>true</optional>
         </dependency>
 
@@ -181,50 +170,61 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-parameter-names</artifactId>
-            <version>${jackson.version}</version>
             <scope>test</scope>
         </dependency>
 
         <!-- Spring - used for testing only! -->
         <dependency>
             <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
-            <version>${spring.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
-            <version>${spring.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-orm</artifactId>
-            <version>${spring.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
-            <version>${spring.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

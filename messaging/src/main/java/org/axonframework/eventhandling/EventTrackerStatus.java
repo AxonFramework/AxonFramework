@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,9 +50,28 @@ public interface EventTrackerStatus {
     boolean isReplaying();
 
     /**
-     * The tracking token of the last event that has been seen by this Segment
+     * The tracking token of the last event that has been seen by this Segment.
+     * <p>
+     * The returned tracking token represents the position of this segment in the event stream. In case of a recent
+     * merge of segments, the token represents the lowest position of the two merged segments.
      *
      * @return tracking token of the last event that has been seen by this Segment
      */
     TrackingToken getTrackingToken();
+
+    /**
+     * Indicates whether this status represents an error. When this method return {@code true}, the {@link #getError()}
+     * will return the exception that caused the failure.
+     *
+     * @return {@code true} if an error was reported, otherwise {@code false}
+     */
+    boolean isErrorState();
+
+    /**
+     * Returns the exception that caused processing to fail, if present. If the segment is being processed normally,
+     * this method returns {@code null}.
+     *
+     * @return the exception that caused processing to fail, or {@code null} when processing normally
+     */
+    Throwable getError();
 }

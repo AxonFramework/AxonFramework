@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,8 @@ import org.axonframework.messaging.Message;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
@@ -38,6 +40,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     private final TrackingToken tokenAtReset;
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     private final TrackingToken currentToken;
+    private final transient boolean lastMessageWasReplay;
 
     /**
      * Creates a new TrackingToken that represents the given {@code startPosition} of a stream, in reset state,
@@ -54,7 +57,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition);
         }
-        if (startPosition != null && startPosition.covers(tokenAtReset)) {
+        if (startPosition != null && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
             return startPosition;
         }
         return new ReplayToken(tokenAtReset, startPosition);
@@ -89,8 +92,9 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @return {@code true} if the token indicates a replay
      */
     public static boolean isReplay(TrackingToken trackingToken) {
-        return trackingToken instanceof ReplayToken
-                && ((ReplayToken) trackingToken).isReplay();
+        return WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                .map(rt -> rt.isReplay())
+                .orElse(false);
 
     }
 
@@ -116,8 +120,15 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     @JsonCreator
     public ReplayToken(@JsonProperty("tokenAtReset") TrackingToken tokenAtReset,
                        @JsonProperty("currentToken") TrackingToken newRedeliveryToken) {
+        this(tokenAtReset, newRedeliveryToken, true);
+    }
+
+    private ReplayToken(TrackingToken tokenAtReset,
+                       TrackingToken newRedeliveryToken,
+                       boolean lastMessageWasReplay) {
         this.tokenAtReset = tokenAtReset;
         this.currentToken = newRedeliveryToken;
+        this.lastMessageWasReplay = lastMessageWasReplay;
     }
 
     /**
@@ -138,23 +149,26 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return currentToken;
     }
 
-    /**
-     * Advance this token to the given {@code newToken}.
-     *
-     * @param newToken The token representing the position to advance to
-     * @return a token representing the new position
-     */
+    @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
         if (this.tokenAtReset == null
-                || (newToken.covers(this.tokenAtReset) && !tokenAtReset.covers(newToken))) {
+                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
+                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
             // we're done replaying
+            // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
+            if (tokenAtReset instanceof WrappedToken) {
+                return ((WrappedToken) tokenAtReset).advancedTo(newToken);
+            }
             return newToken;
-        } else if (tokenAtReset.covers(newToken)) {
+        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
             // we're still well behind
-            return new ReplayToken(tokenAtReset, newToken);
+            return new ReplayToken(tokenAtReset, newToken, true);
         } else {
             // we're getting an event that we didn't have before, but we haven't finished replaying either
-            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken);
+            if (tokenAtReset instanceof WrappedToken) {
+                return new ReplayToken(tokenAtReset.upperBound(newToken), ((WrappedToken) tokenAtReset).advancedTo(newToken), false);
+            }
+            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, false);
         }
     }
 
@@ -180,12 +194,26 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     private boolean isReplay() {
-        return currentToken == null || tokenAtReset.covers(currentToken);
+        return lastMessageWasReplay;
     }
 
     @Override
-    public TrackingToken unwrap() {
-        return currentToken;
+    public TrackingToken lowerBound() {
+        return WrappedToken.unwrapLowerBound(currentToken);
+    }
+
+    @Override
+    public TrackingToken upperBound() {
+        return WrappedToken.unwrapUpperBound(currentToken);
+    }
+
+    @Override
+    public <R extends TrackingToken> Optional<R> unwrap(Class<R> tokenType) {
+        if (tokenType.isInstance(this)) {
+            return Optional.of(tokenType.cast(this));
+        } else {
+            return WrappedToken.unwrap(currentToken, tokenType);
+        }
     }
 
     @Override
@@ -214,5 +242,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 "currentToken=" + currentToken +
                 ", tokenAtReset=" + tokenAtReset +
                 '}';
+    }
+
+    @Override
+    public OptionalLong position() {
+        if(currentToken != null){
+            return currentToken.position();
+        }
+        return OptionalLong.empty();
     }
 }

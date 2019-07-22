@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,23 +15,25 @@
  */
 package org.axonframework.queryhandling.annotation;
 
-import org.axonframework.utils.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.runners.*;
+import org.axonframework.utils.MockException;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -85,6 +87,18 @@ public class AnnotationQueryHandlerAdapterTest {
         testSubject.handle(new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class)));
     }
 
+    @Test
+    public void testRunQueryWithEmptyOptional() throws Exception {
+        Object actual = testSubject.handle(new GenericQueryMessage<>("hello", "noEcho", ResponseTypes.instanceOf(String.class)));
+        assertNull(actual);
+    }
+
+    @Test
+    public void testRunQueryWithProvidedOptional() throws Exception {
+        Object actual = testSubject.handle(new GenericQueryMessage<>("hello", "Hello", ResponseTypes.instanceOf(String.class)));
+        assertEquals("hello", actual);
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testRunQueryForCollection() throws Exception {
@@ -106,13 +120,18 @@ public class AnnotationQueryHandlerAdapterTest {
         }
 
         @QueryHandler(queryName = "Hello")
-        public String echo2(String echo) {
-            return echo;
+        public Optional<String> echo2(String echo) {
+            return Optional.ofNullable(echo);
         }
 
         @QueryHandler
         public Integer echo3(String echo) {
             throw new MockException("Mock");
+        }
+
+        @QueryHandler(queryName = "noEcho")
+        public Optional<String> echo4(String echo) {
+            return Optional.empty();
         }
 
         @QueryHandler
