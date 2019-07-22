@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +27,10 @@ import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 @FunctionalInterface
 public interface PlatformInboundMessage {
 
+    /**
+     * Supply a {@link PlatformInboundInstruction}.
+     *
+     * @return a {@link PlatformInboundInstruction}
+     */
     PlatformInboundInstruction instruction();
-
 }

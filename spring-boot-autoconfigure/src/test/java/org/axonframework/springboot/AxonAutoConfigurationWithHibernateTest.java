@@ -1,21 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,15 +23,17 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -61,13 +47,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -89,13 +76,18 @@ public class AxonAutoConfigurationWithHibernateTest {
     @Autowired
     private Upcaster upcaster;
 
+    @Autowired
+    private Snapshotter snapshotter;
+
     @Test
     public void testContextInitialization() {
         assertNotNull(applicationContext);
+        assertNotNull(snapshotter);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
         assertNotNull(applicationContext.getBean(EventBus.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
+        assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertNotNull(applicationContext.getBean(TokenStore.class));
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));

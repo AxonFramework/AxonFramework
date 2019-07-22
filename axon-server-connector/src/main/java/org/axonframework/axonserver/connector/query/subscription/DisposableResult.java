@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,16 +22,25 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * SubscriptionQueryResult decorator to add cancel operations.
+ * A decorator of the {@link SubscriptionQueryResult} which adds the {@link #cancel()} operation.
  *
+ * @param <I> a generic specifying the type of the initial result of the {@link SubscriptionQueryResult}
+ * @param <U> a generic specifying the type of the subsequent updates of the {@link SubscriptionQueryResult}
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class DisposableResult<I,U> implements SubscriptionQueryResult<I,U> {
+public class DisposableResult<I, U> implements SubscriptionQueryResult<I, U> {
 
-    private final SubscriptionQueryResult<I,U> delegate;
+    private final SubscriptionQueryResult<I, U> delegate;
     private final Registration registration;
 
+    /**
+     * Instantiate a {@link DisposableResult} wrapping the {@code delegate}, opening up the capability to
+     * {@link #cancel()} it.
+     *
+     * @param delegate     a {@link SubscriptionQueryResult} which will be wrapped
+     * @param registration a {@link Registration} paired with the {@code delegate}
+     */
     public DisposableResult(SubscriptionQueryResult<I, U> delegate, Registration registration) {
         this.delegate = delegate;
         this.registration = registration;

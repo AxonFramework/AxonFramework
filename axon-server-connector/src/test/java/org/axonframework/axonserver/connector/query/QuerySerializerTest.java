@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -59,6 +56,7 @@ public class QuerySerializerTest {
         QueryMessage<String, Integer> message = new GenericQueryMessage<>("Test", "MyQueryName", instanceOf(int.class));
         QueryRequest queryRequest = testSubject.serializeRequest(message, 5, 10, 1);
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
+
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
         assertEquals(message.getQueryName(), deserialized.getQueryName());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
@@ -76,6 +74,7 @@ public class QuerySerializerTest {
         QueryResponseMessage message = new GenericQueryResponseMessage<>(BigDecimal.class, BigDecimal.ONE, metadata);
         QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
         QueryResponseMessage<Object> deserialized = testSubject.deserializeResponse(grpcMessage);
+
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
@@ -93,10 +92,32 @@ public class QuerySerializerTest {
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
         QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound);
 
+        assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+    }
+
+    @Test
+    public void testSerializeExceptionalResponseWithDetails() {
+        Exception exception = new QueryExecutionException("oops", null, "Details");
+        GenericQueryResponseMessage responseMessage = new GenericQueryResponseMessage<>(
+                String.class,
+                exception,
+                MetaData.with("test", "testValue"));
+
+        QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
+        QueryResponseMessage<?> deserialize = testSubject.deserializeResponse(outbound);
+
+        assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
+        assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
+        assertTrue(deserialize.isExceptional());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+        Throwable actual = deserialize.optionalExceptionResult().get();
+        assertTrue(actual instanceof QueryExecutionException);
+        assertEquals("Details", ((QueryExecutionException)actual).getDetails().orElse("None"));
     }
 
 }

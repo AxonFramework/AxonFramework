@@ -29,6 +29,9 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation that informs Axon's auto configurer for Spring that a given {@link Component} is an aggregate instance.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
@@ -47,8 +50,11 @@ public @interface Aggregate {
      * Sets the name of the bean providing the snapshot trigger definition. If none is provided, no snapshots are
      * created, unless explicitly configured on the referenced repository.
      * <p>
-     * Note that the use of {@link #repository()} overrides this setting, as a repository explicitly defines the
-     * snapshot trigger definition.
+     * Note that the use of {@link #repository()}, or provisioning a
+     * {@link org.axonframework.modelling.command.Repository} to the Spring context using the default naming scheme
+     * overrides this setting, as a Repository explicitly defines the snapshot trigger definition. The default name
+     * corresponds to {@code "[aggregate-name]Repository"}, thus a {@code Trade} Aggregate would by default create/look
+     * for a bean named {@code "tradeRepository"}.
      */
     String snapshotTriggerDefinition() default "";
 
@@ -65,4 +71,11 @@ public @interface Aggregate {
      * will be used.
      */
     String commandTargetResolver() default "";
+
+    /**
+     * Sets whether or not to filter events by Aggregate type. This is used to support installations where multiple
+     * Aggregate types can have overlapping Aggregate identifiers. This is only meaningful for event-sourced
+     * Aggregates.
+     */
+    boolean filterEventsByType() default false;
 }

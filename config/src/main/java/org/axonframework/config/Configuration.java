@@ -18,6 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.deadline.DeadlineManager;
@@ -165,6 +166,24 @@ public interface Configuration {
      */
     default QueryGateway queryGateway() {
         return getComponent(QueryGateway.class);
+    }
+
+    /**
+     * Returns the Event Gateway defined in this Configuration.
+     *
+     * @return the EventGateway defined in this configuration
+     */
+    default EventGateway eventGateway() {
+        return getComponent(EventGateway.class);
+    }
+
+    /**
+     * Returns the Tags Configuration defined in this Configuration.
+     *
+     * @return the Tags Configuration defined in this Configuration
+     */
+    default TagsConfiguration tags() {
+        return getComponent(TagsConfiguration.class);
     }
 
     /**

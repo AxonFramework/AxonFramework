@@ -15,15 +15,23 @@
 
 package org.axonframework.axonserver.connector.util;
 
-import io.grpc.*;
+import io.grpc.CallOptions;
+import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
+import io.grpc.ForwardingClientCall;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 
 /**
- * Interceptor around a GRPC request to add a Context element to the metadata.
+ * Interceptor around a gRPC request to add a Context element to the metadata.
  *
  * @author Marc Gathier
+ * @since 4.0
  */
 public class ContextAddingInterceptor implements ClientInterceptor {
-    static final Metadata.Key<String> CONTEXT_TOKEN_KEY =
+
+    private static final Metadata.Key<String> CONTEXT_TOKEN_KEY =
             Metadata.Key.of("AxonIQ-Context", Metadata.ASCII_STRING_MARSHALLER);
 
     private final String token;
@@ -33,12 +41,17 @@ public class ContextAddingInterceptor implements ClientInterceptor {
     }
 
     @Override
-    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> methodDescriptor, CallOptions callOptions, Channel channel) {
-
-        return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(channel.newCall(methodDescriptor, callOptions)) {
+    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> methodDescriptor,
+                                                               CallOptions callOptions,
+                                                               Channel channel) {
+        return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(
+                channel.newCall(methodDescriptor, callOptions)
+        ) {
             @Override
             public void start(Listener<RespT> responseListener, Metadata headers) {
-                if( token != null) headers.put(CONTEXT_TOKEN_KEY, token);
+                if (token != null) {
+                    headers.put(CONTEXT_TOKEN_KEY, token);
+                }
                 super.start(responseListener, headers);
             }
         };

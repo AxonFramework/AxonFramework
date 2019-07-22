@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Author: marc
+ * Configuration class provided configurable fields and defaults for anything Axon Server related.
+ *
+ * @author Marc Gathier
+ * @since 4.0
  */
 @ConfigurationProperties(prefix = "axon.axonserver")
 public class AxonServerConfiguration {
+
     private static final int DEFAULT_GRPC_PORT = 8124;
     private static final String DEFAULT_SERVERS = "localhost";
+    private static final String DEFAULT_CONTEXT = "default";
 
     /**
      * Comma separated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
@@ -44,6 +49,7 @@ public class AxonServerConfiguration {
      * clientId as it registers itself to AxonServer, must be unique
      */
     private String clientId = ManagementFactory.getRuntimeMXBean().getName();
+
     /**
      * application name, defaults to spring.application.name
      * multiple instances of the same application share the same application name, but each must have
@@ -57,13 +63,15 @@ public class AxonServerConfiguration {
     private String token;
 
     /**
-     * Bounded context that this application operates in
+     * Bounded context that this application operates in. Defaults to {@code "default"}.
      */
-    private String context;
+    private String context = DEFAULT_CONTEXT;
+
     /**
      * Certificate file for SSL
      */
     private String certFile;
+
     /**
      * Use TLS for connection to AxonServer
      */
@@ -73,6 +81,7 @@ public class AxonServerConfiguration {
      * Initial number of permits send for message streams (events, commands, queries)
      */
     private Integer initialNrOfPermits = 5000;
+
     /**
      * Additional number of permits send for message streams (events, commands, queries) when application
      * is ready for more messages.
@@ -81,9 +90,10 @@ public class AxonServerConfiguration {
      * required to get from the "new-permits-threshold" to "initial-nr-of-permits".
      */
     private Integer nrOfNewPermits = null;
+
     /**
      * Threshold at which application sends new permits to server
-     *
+     * <p>
      * A value of {@code null}, 0, and negative values will have the threshold set to 50% of "initial-nr-of-permits".
      */
     private Integer newPermitsThreshold = null;
@@ -92,6 +102,7 @@ public class AxonServerConfiguration {
      * Number of threads executing commands
      */
     private int commandThreads = 10;
+
     /**
      * Number of threads executing queries
      */
@@ -107,6 +118,10 @@ public class AxonServerConfiguration {
      */
     private int processorsNotificationInitialDelay = 5000;
 
+    /**
+     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to
+     * {@link EventCipher#EventCipher()}.
+     */
     private EventCipher eventCipher = new EventCipher();
 
     /**
@@ -115,9 +130,14 @@ public class AxonServerConfiguration {
     private long keepAliveTimeout = 5000;
 
     /**
-     * Interval (in ms) for keep alive requests, 0 is keep-alive disabled
+     * Interval (in ms) for keep alive requests, 0 is keep-alive disabled. Defaults to {@code 1000}.
      */
-    private long keepAliveTime = 0;
+    private long keepAliveTime = 1_000;
+
+    /**
+     * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to
+     * {@code 1}.
+     */
     private int snapshotPrefetch = 1;
 
     /**
@@ -130,10 +150,29 @@ public class AxonServerConfiguration {
      * GRPC max inbound message size, 0 keeps default value
      */
     private int maxMessageSize = 0;
+    /**
+     * Timeout (in milliseconds) to wait for response on commit
+     */
+    private int commitTimeout = 10000;
 
+    /**
+     * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
+     * Setting this to 0 (or a negative value) will disable buffering, and requires each message sent by the server to
+     * be acknowledged before the next message may be sent. Defaults to 500.
+     */
+    private int maxGrpcBufferedMessages = 500;
+
+    /**
+     * Instantiate a default {@link AxonServerConfiguration}.
+     */
     public AxonServerConfiguration() {
     }
 
+    /**
+     * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
+     *
+     * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
+     */
     public static Builder builder() {
         Builder builder = new Builder();
         if (Boolean.getBoolean("axon.axonserver.suppressDownloadMessage")) {
@@ -161,7 +200,9 @@ public class AxonServerConfiguration {
     }
 
     public String getComponentName() {
-        return componentName == null ? System.getProperty("axon.application.name", "Unnamed-" + clientId) : componentName;
+        return componentName == null
+                ? System.getProperty("axon.application.name", "Unnamed-" + clientId)
+                : componentName;
     }
 
     public void setComponentName(String componentName) {
@@ -327,8 +368,25 @@ public class AxonServerConfiguration {
         this.snapshotPrefetch = snapshotPrefetch;
     }
 
+    public int getCommitTimeout() {
+        return commitTimeout;
+    }
+
+    public void setCommitTimeout(int commitTimeout) {
+        this.commitTimeout = commitTimeout;
+    }
+
+    public int getMaxGrpcBufferedMessages() {
+        return maxGrpcBufferedMessages;
+    }
+
+    public void setMaxGrpcBufferedMessages(int maxGrpcBufferedMessages) {
+        this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
+
         private AxonServerConfiguration instance;
 
         public Builder() {
@@ -381,6 +439,11 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        /**
+         * Initializes a {@link AxonServerConfiguration} as specified through this Builder.
+         *
+         * @return a {@link AxonServerConfiguration} as specified through this Builder
+         */
         public AxonServerConfiguration build() {
             return instance;
         }

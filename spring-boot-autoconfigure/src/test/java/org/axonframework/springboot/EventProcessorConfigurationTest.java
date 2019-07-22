@@ -45,6 +45,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 import static org.junit.Assert.*;
@@ -69,17 +70,33 @@ public class EventProcessorConfigurationTest {
     @Test
     public void testPublishSomeEvents() throws Exception {
         Map<String, EventProcessor> processors = eventProcessingConfiguration.eventProcessors();
-        assertEquals(2, processors.size());
-        assertEquals(TrackingEventProcessor.class, processors.get("first").getClass());
+        assertEquals(3, processors.size());
+        EventProcessor eventProcessor = processors.get("first");
+        assertNotNull(eventProcessor);
+        assertEquals(TrackingEventProcessor.class, eventProcessor.getClass());
+        long tokenClaimInterval = ReflectionUtils.getFieldValue(TrackingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor);
+        assertEquals("Must be 5000 ms by default", tokenClaimInterval, 5000L);
         MultiEventHandlerInvoker invoker = (MultiEventHandlerInvoker) ensureAccessible(
                 AbstractEventProcessor.class.getDeclaredMethod("eventHandlerInvoker")
-        ).invoke(processors.get("first"));
+        ).invoke(eventProcessor);
         SimpleEventHandlerInvoker simpleEventHandlerInvoker = (SimpleEventHandlerInvoker) invoker.delegates().get(0);
         SequencingPolicy policy = ReflectionUtils.getFieldValue(
                 SimpleEventHandlerInvoker.class.getDeclaredField("sequencingPolicy"), simpleEventHandlerInvoker
         );
 
         assertEquals(expectedPolicy, policy);
+    }
+
+    @Test
+    public void verifyTokenClaimIntervalCanBeSetViaSpringConfiguration() throws Exception {
+        Map<String, EventProcessor> processors = eventProcessingConfiguration.eventProcessors();
+        assertEquals(3, processors.size());
+        EventProcessor eventProcessor = processors.get("non_default_token_claim_interval");
+        assertNotNull(eventProcessor);
+        assertEquals(TrackingEventProcessor.class, eventProcessor.getClass());
+        long tokenClaimInterval = ReflectionUtils.getFieldValue(TrackingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor);
+        assertEquals("It must be possible to override token claim interval via Spring Configuration",
+                tokenClaimInterval, 60000000L);
     }
 
     @Configuration
@@ -126,6 +143,18 @@ public class EventProcessorConfigurationTest {
             public void handle(String event) {
                 countDownLatch2.countDown();
             }
+        }
+
+        @SuppressWarnings("unused")
+        @Component
+        @ProcessingGroup("non_default_token_claim_interval")
+        public static class NonDefaultTokenClaimIntervalHandler {
+
+            @EventHandler
+            public void handle(String event) {
+
+            }
+
         }
     }
 }
