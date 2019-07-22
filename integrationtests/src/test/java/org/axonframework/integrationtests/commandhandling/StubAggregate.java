@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 

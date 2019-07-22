@@ -48,7 +48,6 @@ public class AssociationValue implements Serializable {
      */
     public AssociationValue(String key, String value) {
         Assert.notNull(key, () -> "Cannot associate a Saga with a null key");
-        Assert.notNull(value, () -> "Cannot associate a Saga with a null value");
         this.propertyKey = key;
         this.propertyValue = value;
     }

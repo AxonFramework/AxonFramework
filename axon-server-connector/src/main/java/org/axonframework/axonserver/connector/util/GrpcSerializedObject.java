@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +20,8 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 
 /**
- * Wrapper that allows clients to access a GRPC {@link io.axoniq.axonserver.grpc.SerializedObject} Message as a {@link SerializedObject}.
+ * Wrapper that allows clients to access a gRPC {@link io.axoniq.axonserver.grpc.SerializedObject} message as a
+ * {@link SerializedObject}.
  *
  * @author Sara Pellegrini
  * @since 4.0
@@ -28,10 +30,16 @@ public class GrpcSerializedObject implements SerializedObject<byte[]> {
 
     private final io.axoniq.axonserver.grpc.SerializedObject payload;
 
-    public GrpcSerializedObject(io.axoniq.axonserver.grpc.SerializedObject payload) {
-        this.payload = payload;
+    /**
+     * Initialize a {@link GrpcSerializedObject}, wrapping a {@link io.axoniq.axonserver.grpc.SerializedObject} as a
+     * {@link SerializedObject}.
+     *
+     * @param serializedObject a {@link io.axoniq.axonserver.grpc.SerializedObject} which will be wrapped as a
+     *                         {@link SerializedObject}
+     */
+    public GrpcSerializedObject(io.axoniq.axonserver.grpc.SerializedObject serializedObject) {
+        this.payload = serializedObject;
     }
-
 
     @Override
     public Class<byte[]> getContentType() {
@@ -40,7 +48,6 @@ public class GrpcSerializedObject implements SerializedObject<byte[]> {
 
     @Override
     public SerializedType getType() {
-
         return new SerializedType() {
             @Override
             public String getName() {

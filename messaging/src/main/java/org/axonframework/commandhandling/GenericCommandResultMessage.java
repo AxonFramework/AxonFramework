@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 
@@ -46,19 +45,11 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      */
     @SuppressWarnings("unchecked")
     public static <T> CommandResultMessage<T> asCommandResultMessage(Object commandResult) {
-        if (CommandResultMessage.class.isInstance(commandResult)) {
+        if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<T>) commandResult;
-        } else if (ResultMessage.class.isInstance(commandResult)) {
-            ResultMessage<T> resultMessage = (ResultMessage<T>) commandResult;
-            if (resultMessage.isExceptional()) {
-                Throwable cause = resultMessage.exceptionResult();
-                return new GenericCommandResultMessage<>(cause, resultMessage.getMetaData());
-            }
-            return new GenericCommandResultMessage<>(resultMessage.getPayload(), resultMessage.getMetaData());
-        } else if (Message.class.isInstance(commandResult)) {
+        } else if (commandResult instanceof Message) {
             Message<T> commandResultMessage = (Message<T>) commandResult;
-            return new GenericCommandResultMessage<>(commandResultMessage.getPayload(),
-                                                     commandResultMessage.getMetaData());
+            return new GenericCommandResultMessage<>(commandResultMessage);
         }
         return new GenericCommandResultMessage<>((T) commandResult);
     }

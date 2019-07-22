@@ -16,13 +16,14 @@
 
 package org.axonframework.common.jdbc;
 
+import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.axonframework.messaging.unitofwork.ExecutionResult;
+import org.junit.*;
+import org.mockito.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -112,6 +113,28 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).rollback();
         inOrder.verify(mockConnection).close();
+    }
+
+    @Test
+    public void testOriginalExceptionThrewWhenRollbackFailed() throws SQLException {
+        DefaultUnitOfWork<Message<?>> uow = new DefaultUnitOfWork<Message<?>>(null) {
+            @Override
+            public ExecutionResult getExecutionResult() {
+                return new ExecutionResult(
+                        GenericResultMessage.asResultMessage(new IllegalArgumentException()));
+            }
+        };
+        doThrow(SQLException.class).when(mockConnection)
+                                   .rollback();
+
+        uow.start();
+        testSubject.getConnection();
+        try {
+            uow.rollback();
+        } catch (ExecutionException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertEquals(SQLException.class, e.getSuppressed()[0].getClass());
+        }
     }
 
     @Test

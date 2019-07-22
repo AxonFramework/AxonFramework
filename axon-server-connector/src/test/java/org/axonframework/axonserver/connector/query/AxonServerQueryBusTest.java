@@ -25,14 +25,23 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TestStreamObserver;
+import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -40,230 +49,291 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Author: marc
+ * Unit test suite to verify the {@link AxonServerQueryBus}.
+ *
+ * @author Marc Gathier
  */
 public class AxonServerQueryBusTest {
 
-    private AxonServerQueryBus queryBus;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
-    private AxonServerConfiguration conf;
-    private SimpleQueryBus localSegment;
+
     private AxonServerConnectionManager axonServerConnectionManager;
-    private AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserverRef;
-    private XStreamSerializer ser;
+    private AxonServerConfiguration configuration;
+    private QueryBus localSegment = SimpleQueryBus.builder().build();
+    private Serializer serializer = XStreamSerializer.defaultSerializer();
+    private TargetContextResolver<QueryMessage<?, ?>> targetContextResolver = spy(new TestTargetContextResolver<>());
+
+    private AxonServerQueryBus testSubject;
 
     @Before
     public void setup() throws Exception {
-        conf = new AxonServerConfiguration();
-        conf.setServers("localhost:4343");
-        conf.setClientId("JUnit");
-        conf.setComponentName("JUnit");
-        conf.setInitialNrOfPermits(100);
-        conf.setNewPermitsThreshold(10);
-        conf.setNrOfNewPermits(1000);
-        localSegment = SimpleQueryBus.builder().build();
-        ser = XStreamSerializer.builder().build();
-        queryBus = new AxonServerQueryBus(new AxonServerConnectionManager(conf),
-                                          conf,
-                                          localSegment.queryUpdateEmitter(),
-                                          localSegment,
-                                          ser,
-                                          ser,
-                                          new QueryPriorityCalculator() {
-                                          });
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
-        axonServerConnectionManager = mock(AxonServerConnectionManager.class);
-        inboundStreamObserverRef = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            inboundStreamObserverRef.set(invocationOnMock.getArgument(0));
-            return new StreamObserver<QueryProviderOutbound>() {
-                @Override
-                public void onNext(QueryProviderOutbound commandProviderOutbound) {
-                    System.out.println(commandProviderOutbound);
-                }
 
-                @Override
-                public void onError(Throwable throwable) {
-                    System.out.println("Error:" + throwable);
-                }
+        configuration = new AxonServerConfiguration();
+        configuration.setServers("localhost:4343");
+        configuration.setClientId("JUnit");
+        configuration.setComponentName("JUnit");
+        configuration.setInitialNrOfPermits(100);
+        configuration.setNewPermitsThreshold(10);
+        configuration.setNrOfNewPermits(1000);
+        configuration.setContext(BOUNDED_CONTEXT);
+        axonServerConnectionManager = spy(AxonServerConnectionManager.builder()
+                                                                     .axonServerConfiguration(configuration)
+                                                                     .build());
 
-                @Override
-                public void onCompleted() {
-                    System.out.println("Completed");
-                }
-            };
-        }).when(axonServerConnectionManager).getQueryStream(any(), any());
+        testSubject = new AxonServerQueryBus(
+                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(), localSegment, serializer,
+                serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(), targetContextResolver
+        );
     }
 
     @After
     public void tearDown() {
         dummyMessagePlatformServer.stop();
+        axonServerConnectionManager.shutdown();
+        testSubject.disconnect();
     }
 
     @Test
     public void subscribe() throws Exception {
-        Registration response = queryBus.subscribe("testQuery", String.class, q -> "test");
-        Thread.sleep(1000);
-        assertWithin(1000,
-                     TimeUnit.MILLISECONDS,
-                     () -> assertNotNull(dummyMessagePlatformServer
-                                                 .subscriptions("testQuery", String.class.getName())));
+        Registration result = testSubject.subscribe("testQuery", String.class, q -> "test");
 
-        response.cancel();
-        assertWithin(2000,
-                     TimeUnit.MILLISECONDS,
-                     () -> assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
+        Thread.sleep(1000);
+        assertWithin(
+                1000,
+                TimeUnit.MILLISECONDS,
+                () -> assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()))
+        );
+
+        result.cancel();
+        assertWithin(
+                2000,
+                TimeUnit.MILLISECONDS,
+                () -> assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()))
+        );
+
+        //noinspection unchecked
+        verify(axonServerConnectionManager).getQueryStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 
     @Test
     public void query() throws Exception {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World",
-                                                                              instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
 
-        assertEquals("test", queryBus.query(queryMessage).get().getPayload());
+        assertEquals("test", testSubject.query(testQuery).get().getPayload());
+
+        verify(targetContextResolver).resolveContext(testQuery);
     }
 
     @Test
     public void queryWhenQueryServiceStubFails() {
-        RuntimeException expected = new RuntimeException("oops");
-        queryBus = spy(queryBus);
-        when(queryBus.queryServiceStub()).thenThrow(expected);
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(configuration)
+                                           .build();
+        AxonServerQueryBus testSubject = spy(new AxonServerQueryBus(
+                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(),
+                localSegment, serializer, serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(),
+                targetContextResolver
+        ));
+        RuntimeException expectedException = new RuntimeException("oops");
+        when(testSubject.queryService(anyString())).thenThrow(expectedException);
 
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
-        CompletableFuture<QueryResponseMessage<String>> result = queryBus.query(queryMessage);
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
+
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
+        verify(targetContextResolver).resolveContext(testQuery);
 
         try {
             result.get();
             fail("Expected an exception here");
         } catch (Exception actual) {
             assertTrue(actual.getCause() instanceof AxonServerQueryDispatchException);
-            AxonServerQueryDispatchException queryDispatchException = (AxonServerQueryDispatchException) actual.getCause();
+            AxonServerQueryDispatchException queryDispatchException = (AxonServerQueryDispatchException) actual
+                    .getCause();
             assertEquals(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), queryDispatchException.code());
         }
     }
 
     @Test
     public void testQueryReportsCorrectException() throws ExecutionException, InterruptedException {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", instanceOf(String.class))
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class))
                 .andMetaData(Collections.singletonMap("errorCode", ErrorCode.QUERY_EXECUTION_ERROR.errorCode()));
-        CompletableFuture<QueryResponseMessage<String>> result = queryBus.query(queryMessage);
+
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
+
         assertNotNull(result.get());
         assertFalse(result.isCompletedExceptionally());
 
         assertTrue(result.get().isExceptional());
         Throwable actual = result.get().exceptionResult();
-            assertTrue(actual instanceof QueryExecutionException);
-        AxonServerRemoteQueryHandlingException queryDispatchException = (AxonServerRemoteQueryHandlingException) actual.getCause();
+        assertTrue(actual instanceof QueryExecutionException);
+        AxonServerRemoteQueryHandlingException queryDispatchException =
+                (AxonServerRemoteQueryHandlingException) actual.getCause();
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), queryDispatchException.getErrorCode());
+
+        verify(targetContextResolver).resolveContext(testQuery);
     }
 
     @Test
     public void processQuery() {
+        AxonServerQueryBus testSubject = new AxonServerQueryBus(
+                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(), localSegment,
+                serializer, serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(), targetContextResolver
+        );
 
-        AxonServerQueryBus queryBus2 = new AxonServerQueryBus(axonServerConnectionManager,
-                                                              conf,
-                                                              localSegment.queryUpdateEmitter(),
-                                                              localSegment,
-                                                              ser,
-                                                              ser,
-                                                              new QueryPriorityCalculator() {
-                                                              });
-        Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
+        AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
+                buildInboundQueryStreamObserverReference();
+
+        Registration result = testSubject.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
 
         QueryProviderInbound inboundMessage = testQueryMessage();
-        inboundStreamObserverRef.get().onNext(inboundMessage);
+        inboundStreamObserver.get().onNext(inboundMessage);
 
-        response.close();
+        result.close();
     }
 
     @Test
     public void scatterGather() {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World",
-                                                                              instanceOf(String.class))
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class))
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 10));
 
-        assertEquals(10, queryBus.scatterGather(queryMessage, 12, TimeUnit.SECONDS).count());
+        assertEquals(10, testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS).count());
+
+        verify(targetContextResolver).resolveContext(testQuery);
     }
 
     @Test
     public void scatterGatherTimeout() {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World",
-                                                                              instanceOf(String.class))
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class))
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 100));
 
-        assertTrue(8 > queryBus.scatterGather(queryMessage, 550, TimeUnit.MILLISECONDS).count());
+        assertTrue(8 > testSubject.scatterGather(testQuery, 550, TimeUnit.MILLISECONDS).count());
+
+        verify(targetContextResolver).resolveContext(testQuery);
+    }
+
+    @Test
+    public void testSubscriptionQueryIsHandledByDispatchInterceptors() {
+        AtomicInteger counter = new AtomicInteger(0);
+
+        // Add a dispatch interceptor which increase the counter, to check whether it was called during a sub.query
+        testSubject.registerDispatchInterceptor(messages -> {
+            counter.incrementAndGet();
+            return (i, m) -> m;
+        });
+
+        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                "query-payload", instanceOf(String.class), instanceOf(String.class)
+        );
+
+        testSubject.subscriptionQuery(testQuery);
+
+        assertEquals(1, counter.get());
+
+        verify(targetContextResolver).resolveContext(testQuery);
     }
 
     @Test
     public void dispatchInterceptor() {
         List<Object> results = new LinkedList<>();
-        queryBus.registerDispatchInterceptor(messages -> (a, b) -> {
+        testSubject.registerDispatchInterceptor(messages -> (a, b) -> {
             results.add(b.getPayload());
             return b;
         });
-        queryBus.query(new GenericQueryMessage<>("payload", new InstanceResponseType<>(String.class)));
+
+        testSubject.query(new GenericQueryMessage<>("payload", new InstanceResponseType<>(String.class)));
         assertEquals("payload", results.get(0));
         assertEquals(1, results.size());
     }
 
     @Test
     public void handlerInterceptor() {
-        SimpleQueryBus localSegment = SimpleQueryBus.builder().build();
-        AxonServerQueryBus bus = new AxonServerQueryBus(axonServerConnectionManager, conf,
-                                                        localSegment.queryUpdateEmitter(),
-                                                        localSegment,
-                                                        ser,
-                                                        ser,
-                                                        new QueryPriorityCalculator() {
-                                                        });
-        bus.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
+        AxonServerQueryBus testSubject = new AxonServerQueryBus(
+                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(), localSegment, serializer,
+                serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(), targetContextResolver
+        );
+        AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
+                buildInboundQueryStreamObserverReference();
+
+        testSubject.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
+
         List<Object> results = new LinkedList<>();
-        bus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             results.add("Interceptor executed");
             return interceptorChain.proceed();
         });
+
         QueryProviderInbound inboundMessage = testQueryMessage();
-        inboundStreamObserverRef.get().onNext(inboundMessage);
+        inboundStreamObserver.get().onNext(inboundMessage);
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, results.size()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals("Interceptor executed", results.get(0)));
     }
 
     @Test
     public void reconnectAfterConnectionLost() throws InterruptedException {
-        queryBus.subscribe("testQuery", String.class, q -> "test");
+        testSubject.subscribe("testQuery", String.class, q -> "test");
+
         Thread.sleep(50);
         assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
+
         dummyMessagePlatformServer.onError("testQuery", String.class.getName());
         Thread.sleep(200);
         assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
+
+        //noinspection unchecked
+        verify(axonServerConnectionManager, times(2)).getQueryStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 
     private QueryProviderInbound testQueryMessage() {
-        org.axonframework.serialization.SerializedObject<byte[]> response =
-                ser.serialize(instanceOf(String.class), byte[].class);
-        return QueryProviderInbound.newBuilder().setQuery(
-                QueryRequest.newBuilder().setQuery("testQuery")
-                            .setResponseType(SerializedObject.newBuilder().setData(
-                                    ByteString.copyFrom(response.getData()))
-                                                             .setType(response.getType().getName())
-                                                             .setRevision(getOrDefault(response.getType().getRevision(),
-                                                                                       "")))
-                            .setPayload(SerializedObject.newBuilder()
-                                                        .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
-                                                        .setType(String.class.getName()))
-        ).build();
+        org.axonframework.serialization.SerializedObject<byte[]> serializedResponseType =
+                serializer.serialize(instanceOf(String.class), byte[].class);
+
+        SerializedObject testResponseType =
+                SerializedObject.newBuilder()
+                                .setData(ByteString.copyFrom(serializedResponseType.getData()))
+                                .setType(serializedResponseType.getType().getName())
+                                .setRevision(getOrDefault(serializedResponseType.getType().getRevision(), ""))
+                                .build();
+        SerializedObject testQueryPayload = SerializedObject.newBuilder()
+                                                            .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
+                                                            .setType(String.class.getName())
+                                                            .build();
+        return QueryProviderInbound.newBuilder()
+                                   .setQuery(QueryRequest.newBuilder()
+                                                         .setQuery("testQuery")
+                                                         .setResponseType(testResponseType)
+                                                         .setPayload(testQueryPayload)
+                                   ).build();
+    }
+
+
+    private AtomicReference<StreamObserver<QueryProviderInbound>> buildInboundQueryStreamObserverReference() {
+        AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver = new AtomicReference<>();
+
+        doAnswer(invocationOnMock -> {
+            inboundStreamObserver.set(invocationOnMock.getArgument(1));
+            return new TestStreamObserver<QueryProviderOutbound>();
+        }).when(axonServerConnectionManager)
+          .getQueryStream(any(), any());
+
+        return inboundStreamObserver;
     }
 }

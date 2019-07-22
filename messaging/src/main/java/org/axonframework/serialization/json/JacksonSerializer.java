@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,17 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.UnknownSerializedType;
 
 import java.io.IOException;
 
@@ -45,33 +55,6 @@ public class JacksonSerializer implements Serializer {
     private final RevisionResolver revisionResolver;
     private final Converter converter;
     private final ObjectMapper objectMapper;
-    private final ClassLoader classLoader;
-
-    /**
-     * Instantiate a {@link JacksonSerializer} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
-     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
-     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
-     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link JacksonSerializer} instance
-     */
-    protected JacksonSerializer(Builder builder) {
-        builder.validate();
-        this.revisionResolver = builder.revisionResolver;
-        this.converter = builder.converter;
-        this.objectMapper = builder.objectMapper;
-        this.classLoader = builder.classLoader;
-
-        this.objectMapper.registerModule(
-                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
-        );
-        this.objectMapper.registerModule(new JavaTimeModule());
-        if (converter instanceof ChainingConverter) {
-            registerConverters((ChainingConverter) converter);
-        }
-    }
 
     /**
      * Instantiate a Builder to be able to create a {@link JacksonSerializer}.
@@ -89,6 +72,49 @@ public class JacksonSerializer implements Serializer {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Instantiate a default {@link JacksonSerializer}.
+     * <p>
+     * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
+     * {@link ChainingConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()} result and
+     * the {@link ClassLoader} to the ClassLoader of {@code this} class.
+     * <p>
+     * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
+     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
+     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
+     *
+     * @return a {@link JacksonSerializer}
+     */
+    public static JacksonSerializer defaultSerializer() {
+        return builder().build();
+    }
+
+    /**
+     * Instantiate a {@link JacksonSerializer} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
+     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * ChainingConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add the
+     * {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link JacksonSerializer} instance
+     */
+    protected JacksonSerializer(Builder builder) {
+        builder.validate();
+        this.revisionResolver = builder.revisionResolver;
+        this.converter = builder.converter;
+        this.objectMapper = builder.objectMapper;
+
+        this.objectMapper.registerModule(
+                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
+        );
+        this.objectMapper.registerModule(new JavaTimeModule());
+        if (converter instanceof ChainingConverter) {
+            registerConverters((ChainingConverter) converter);
+        }
     }
 
     /**
@@ -183,7 +209,7 @@ public class JacksonSerializer implements Serializer {
             return Void.class;
         }
         try {
-            return classLoader.loadClass(resolveClassName(type));
+            return objectMapper.getTypeFactory().findClass(resolveClassName(type));
         } catch (ClassNotFoundException e) {
             return UnknownSerializedType.class;
         }
@@ -239,7 +265,6 @@ public class JacksonSerializer implements Serializer {
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
-        private ClassLoader classLoader = getClass().getClassLoader();
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
@@ -284,14 +309,19 @@ public class JacksonSerializer implements Serializer {
         }
 
         /**
-         * Sets the {@link ClassLoader} used to load classes with when deserializing. Defaults to the ClassLoader of {@code this} class.
+         * This method is a no-op, as the classloader is no longer used by the serializer.
+         * <p>
+         * Instead, ensure the ObjectMapper is configured with the correct class loader.
          *
          * @param classLoader the {@link ClassLoader} used to load classes with when deserializing
          * @return the current Builder instance, for fluent interfacing
+         *
+         * @see #objectMapper(ObjectMapper)
+         * @see com.fasterxml.jackson.databind.type.TypeFactory#withClassLoader(ClassLoader)
+         * @deprecated Ensure the ObjectMapper is configured with the correct class loader instead
          */
+        @Deprecated
         public Builder classLoader(ClassLoader classLoader) {
-            assertNonNull(classLoader, "ClassLoader may not be null");
-            this.classLoader = classLoader;
             return this;
         }
 

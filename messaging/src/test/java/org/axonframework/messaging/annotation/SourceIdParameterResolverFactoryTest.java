@@ -3,8 +3,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.lang.reflect.Method;
 import java.util.UUID;
@@ -12,6 +11,7 @@ import java.util.UUID;
 import static org.junit.Assert.*;
 
 public class SourceIdParameterResolverFactoryTest {
+
     private SourceIdParameterResolverFactory testSubject;
 
     private Method sourceIdMethod;
@@ -42,32 +42,35 @@ public class SourceIdParameterResolverFactoryTest {
         //Used in setUp()
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testResolvesToAggregateIdentifierWhenAnnotatedForDomainEventMessage() {
-        ParameterResolver resolver = testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
-        final GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage("test", UUID.randomUUID().toString(), 0L, null);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
+        final GenericDomainEventMessage<Object> eventMessage =
+                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0L, null);
         assertTrue(resolver.matches(eventMessage));
         assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(eventMessage));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testDoesNotMatchWhenAnnotatedForCommandMessage() {
-        ParameterResolver resolver = testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
         assertFalse(resolver.matches(commandMessage));
     }
 
     @Test
     public void testIgnoredWhenNotAnnotated() {
-        ParameterResolver resolver = testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
     public void testIgnoredWhenWrongType() {
-        ParameterResolver resolver = testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
+        ParameterResolver<String> resolver =
+                testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
         assertNull(resolver);
     }
 }

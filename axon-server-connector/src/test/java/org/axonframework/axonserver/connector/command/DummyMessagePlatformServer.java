@@ -117,6 +117,10 @@ public class DummyMessagePlatformServer {
                                                        .setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode())
                                                        .setMessageIdentifier(request.getMessageIdentifier())
                                                        .setErrorMessage(ErrorMessage.newBuilder().setMessage(data))
+                                                       .setPayload(SerializedObject.newBuilder()
+                                                                                   .setData(request.getPayload().getData())
+                                                                                   .setType(String.class.getName())
+                                                                                   .build())
                                                        .build());
             } else {
                 responseObserver.onNext(CommandResponse.newBuilder()

@@ -24,6 +24,8 @@ import org.junit.*;
 
 import java.lang.reflect.Array;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -68,6 +70,25 @@ public class TrackingTokenSerializationTest {
             assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
             assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result",
                          token, results[i]);
+        }
+    }
+
+    @Test
+    public void testMultiSourceTrackingToken() {
+        GlobalSequenceTrackingToken globalToken = new GlobalSequenceTrackingToken(35);
+        GapAwareTrackingToken gapToken = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
+        Map<String, TrackingToken> trackingTokenMap = new HashMap<String, TrackingToken>();
+        trackingTokenMap.put("global", globalToken);
+        trackingTokenMap.put("gap", gapToken);
+
+        MultiSourceTrackingToken token = new MultiSourceTrackingToken(trackingTokenMap);
+        MultiSourceTrackingToken[] results = serializeToken(token);
+
+        for (int i = 0; i < results.length; i++) {
+            assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
+            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result",
+                         token,
+                         results[i]);
         }
     }
 

@@ -33,6 +33,7 @@ import org.junit.runner.*;
 import org.junit.runners.*;
 import org.quartz.JobDataMap;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -128,7 +129,7 @@ public class DeadlineJobDataBinderTest {
 
         assertEquals(testDeadlineMessage.getDeadlineName(), result.getDeadlineName());
         assertEquals(testDeadlineMessage.getIdentifier(), result.getIdentifier());
-        assertEquals(testDeadlineMessage.getTimestamp(), result.getTimestamp());
+        assertEquals(testDeadlineMessage.getTimestamp().truncatedTo(ChronoUnit.MILLIS), result.getTimestamp());
         assertEquals(testDeadlineMessage.getPayload(), result.getPayload());
         assertEquals(testDeadlineMessage.getPayloadType(), result.getPayloadType());
         assertEquals(testDeadlineMessage.getMetaData(), result.getMetaData());

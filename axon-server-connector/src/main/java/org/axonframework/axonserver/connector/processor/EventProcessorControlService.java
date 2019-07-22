@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,13 @@
 
 package org.axonframework.axonserver.connector.processor;
 
-import io.axoniq.axonserver.grpc.control.*;
+import io.axoniq.axonserver.grpc.control.MergeEventProcessorSegment;
+import io.axoniq.axonserver.grpc.control.PauseEventProcessor;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import io.axoniq.axonserver.grpc.control.ReleaseEventProcessorSegment;
+import io.axoniq.axonserver.grpc.control.RequestEventProcessorInfo;
+import io.axoniq.axonserver.grpc.control.SplitEventProcessorSegment;
+import io.axoniq.axonserver.grpc.control.StartEventProcessor;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
 import org.axonframework.axonserver.connector.processor.grpc.PlatformInboundMessage;
@@ -28,64 +34,132 @@ import java.util.function.Function;
 
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
 
-
 /**
- * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when requested by AxonServer.
+ * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when for example
+ * requested by Axon Server. Will delegate the calls to the {@link AxonServerConnectionManager} and/or {@link
+ * EventProcessorController} for further processing.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
 public class EventProcessorControlService {
 
-    private final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
+    private static final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
 
     private final AxonServerConnectionManager axonServerConnectionManager;
-
     private final EventProcessorController eventProcessorController;
+    private final String context;
+    private final Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper;
 
-    private final Function<EventProcessor, PlatformInboundMessage> mapping;
-
+    /**
+     * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
+     * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. These Consumers typically leverage
+     * the {@link EventProcessorController} to issue operations to the {@link EventProcessor}s contained in this
+     * application. Uses the {@link AxonServerConnectionManager#getDefaultContext()} specified in the given
+     * {@code axonServerConnectionManager} as the context to dispatch operations in
+     *
+     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
+     *                                    {@link PlatformOutboundInstruction} have been received
+     * @param eventProcessorController    the {@link EventProcessorController} used to perform operations on the
+     *                                    {@link EventProcessor}s
+     */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
                                         EventProcessorController eventProcessorController) {
+        this(axonServerConnectionManager, eventProcessorController, axonServerConnectionManager.getDefaultContext());
+    }
+
+    /**
+     * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
+     * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. These Consumers typically leverage
+     * the {@link EventProcessorController} to issue operations to the {@link EventProcessor}s contained in this
+     * application. Uses the {@link AxonServerConnectionManager#getDefaultContext()} specified in the given
+     * {@code axonServerConnectionManager} as the context to dispatch operations in
+     *
+     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
+     *                                    {@link PlatformOutboundInstruction} have been received
+     * @param eventProcessorController    the {@link EventProcessorController} used to perform operations on the
+     *                                    {@link EventProcessor}s
+     * @param context                     the context of this application instance within which outbound instruction
+     *                                    handlers should be specified on the given {@code axonServerConnectionManager}
+     */
+    public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
+                                        EventProcessorController eventProcessorController,
+                                        String context) {
         this.axonServerConnectionManager = axonServerConnectionManager;
         this.eventProcessorController = eventProcessorController;
-        this.mapping = new GrpcEventProcessorMapping();
+        this.context = context;
+        this.platformInboundMessageMapper = new GrpcEventProcessorMapping();
     }
 
-    public void start(){
-        this.axonServerConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
-        this.axonServerConnectionManager.onOutboundInstruction(START_EVENT_PROCESSOR, this::startProcessor);
-        this.axonServerConnectionManager.onOutboundInstruction(RELEASE_SEGMENT, this::releaseSegment);
-        this.axonServerConnectionManager.onOutboundInstruction(REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo);
+    /**
+     * Add {@link java.util.function.Consumer}s to the {@link AxonServerConnectionManager} for several
+     * {@link PlatformOutboundInstruction}s.
+     */
+    @SuppressWarnings("Duplicates")
+    public void start() {
+        this.axonServerConnectionManager.onOutboundInstruction(context, PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
+        this.axonServerConnectionManager.onOutboundInstruction(context, START_EVENT_PROCESSOR, this::startProcessor);
+        this.axonServerConnectionManager.onOutboundInstruction(context, RELEASE_SEGMENT, this::releaseSegment);
+        this.axonServerConnectionManager.onOutboundInstruction(
+                context, REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo
+        );
+        this.axonServerConnectionManager.onOutboundInstruction(
+                context, SPLIT_EVENT_PROCESSOR_SEGMENT, this::splitSegment
+        );
+        this.axonServerConnectionManager.onOutboundInstruction(
+                context, MERGE_EVENT_PROCESSOR_SEGMENT, this::mergeSegment
+        );
     }
 
-    public void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
+    private void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
         PauseEventProcessor pauseEventProcessor = platformOutboundInstruction.getPauseEventProcessor();
         String processorName = pauseEventProcessor.getProcessorName();
         eventProcessorController.pauseProcessor(processorName);
     }
 
-    public void startProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
+    private void startProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
         StartEventProcessor startEventProcessor = platformOutboundInstruction.getStartEventProcessor();
         String processorName = startEventProcessor.getProcessorName();
         eventProcessorController.startProcessor(processorName);
     }
 
-    public void releaseSegment(PlatformOutboundInstruction platformOutboundInstruction) {
+    private void releaseSegment(PlatformOutboundInstruction platformOutboundInstruction) {
         ReleaseEventProcessorSegment releaseSegment = platformOutboundInstruction.getReleaseSegment();
         String processorName = releaseSegment.getProcessorName();
         int segmentIdentifier = releaseSegment.getSegmentIdentifier();
         eventProcessorController.releaseSegment(processorName, segmentIdentifier);
     }
 
-    public void getEventProcessorInfo(PlatformOutboundInstruction platformOutboundInstruction){
+    private void getEventProcessorInfo(PlatformOutboundInstruction platformOutboundInstruction) {
+        RequestEventProcessorInfo requestInfo = platformOutboundInstruction.getRequestEventProcessorInfo();
+        String processorName = requestInfo.getProcessorName();
         try {
-            RequestEventProcessorInfo request = platformOutboundInstruction.getRequestEventProcessorInfo();
-            EventProcessor processor = eventProcessorController.getEventProcessor(request.getProcessorName());
-            axonServerConnectionManager.send(mapping.apply(processor).instruction());
+            EventProcessor processor = eventProcessorController.getEventProcessor(processorName);
+            axonServerConnectionManager.send(context, platformInboundMessageMapper.apply(processor).instruction());
         } catch (Exception e) {
-            logger.debug("Problem getting the information about Event Processor",e);
+            logger.debug("Problem getting the information about Event Processor [{}]", processorName, e);
         }
     }
 
+    private void splitSegment(PlatformOutboundInstruction platformOutboundInstruction) {
+        SplitEventProcessorSegment splitSegment = platformOutboundInstruction.getSplitEventProcessorSegment();
+        int segmentId = splitSegment.getSegmentIdentifier();
+        String processorName = splitSegment.getProcessorName();
+        try {
+            eventProcessorController.splitSegment(processorName, segmentId);
+        } catch (Exception e) {
+            logger.error("Failed to split segment [{}] for processor [{}]", segmentId, processorName, e);
+        }
+    }
+
+    private void mergeSegment(PlatformOutboundInstruction platformOutboundInstruction) {
+        MergeEventProcessorSegment mergeSegment = platformOutboundInstruction.getMergeEventProcessorSegment();
+        String processorName = mergeSegment.getProcessorName();
+        int segmentId = mergeSegment.getSegmentIdentifier();
+        try {
+            eventProcessorController.mergeSegment(processorName, segmentId);
+        } catch (Exception e) {
+            logger.error("Failed to merge segment [{}] for processor [{}]", segmentId, processorName, e);
+        }
+    }
 }

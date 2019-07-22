@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,12 +24,16 @@ import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -38,13 +42,13 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.sql.DataSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -91,6 +95,8 @@ public class JdbcTokenStoreTest {
 
     @Test
     public void testClaimAndUpdateToken() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+
         transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("test", 0)));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         transactionManager.executeInTransaction(() -> tokenStore.storeToken(token, "test", 0));
@@ -133,6 +139,11 @@ public class JdbcTokenStoreTest {
     @Transactional
     @Test
     public void testQuerySegments() {
+        transactionManager.executeInTransaction(() -> {
+            tokenStore.initializeTokenSegments("test", 1);
+            tokenStore.initializeTokenSegments("proc1", 2);
+            tokenStore.initializeTokenSegments("proc2", 2);
+        });
         transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("test", 0)));
 
         transactionManager.executeInTransaction(
@@ -151,7 +162,7 @@ public class JdbcTokenStoreTest {
         });
         transactionManager.executeInTransaction(() -> {
             final int[] segments = tokenStore.fetchSegments("proc2");
-            Assert.assertThat(segments.length, is(1));
+            Assert.assertThat(segments.length, is(2));
         });
         transactionManager.executeInTransaction(() -> {
             final int[] segments = tokenStore.fetchSegments("proc3");
@@ -162,6 +173,8 @@ public class JdbcTokenStoreTest {
 
     @Test
     public void testClaimAndUpdateTokenWithoutTransaction() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+
         assertNull(tokenStore.fetchToken("test", 0));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         tokenStore.storeToken(token, "test", 0);
@@ -170,6 +183,8 @@ public class JdbcTokenStoreTest {
 
     @Test
     public void testClaimTokenConcurrently() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("concurrent", 1));
+
         transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("concurrent", 0)));
         try {
             transactionManager.executeInTransaction(() -> concurrentTokenStore.fetchToken("concurrent", 0));
@@ -181,6 +196,8 @@ public class JdbcTokenStoreTest {
 
     @Test
     public void testClaimTokenConcurrentlyAfterRelease() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("concurrent", 1));
+
         transactionManager.executeInTransaction(() -> tokenStore.fetchToken("concurrent", 0));
         transactionManager.executeInTransaction(() -> tokenStore.releaseClaim("concurrent", 0));
         transactionManager.executeInTransaction(() -> assertNull(concurrentTokenStore.fetchToken("concurrent", 0)));
@@ -188,6 +205,8 @@ public class JdbcTokenStoreTest {
 
     @Test
     public void testClaimTokenConcurrentlyAfterTimeLimit() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("concurrent", 1));
+
         transactionManager.executeInTransaction(() -> tokenStore.fetchToken("concurrent", 0));
         AbstractTokenEntry.clock = Clock.offset(Clock.systemUTC(), Duration.ofHours(1));
         transactionManager.executeInTransaction(() -> assertNull(concurrentTokenStore.fetchToken("concurrent", 0)));
@@ -195,6 +214,8 @@ public class JdbcTokenStoreTest {
 
     @Test
     public void testStealToken() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("stealing", 1));
+
         transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("stealing", 0)));
         transactionManager.executeInTransaction(() -> assertNull(stealingTokenStore.fetchToken("stealing", 0)));
 
@@ -213,6 +234,8 @@ public class JdbcTokenStoreTest {
 
     @Test
     public void testStoreAndLoadAcrossTransactions() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("multi", 1));
+
         transactionManager.executeInTransaction(() -> {
             tokenStore.fetchToken("multi", 0);
             tokenStore.storeToken(new GlobalSequenceTrackingToken(1), "multi", 0);
@@ -230,6 +253,34 @@ public class JdbcTokenStoreTest {
         });
     }
 
+    @Test
+    public void testClaimAndDeleteToken() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test1", 2));
+
+        tokenStore.fetchToken("test1", 0);
+        tokenStore.fetchToken("test1", 1);
+
+        tokenStore.deleteToken("test1", 1);
+
+        assertArrayEquals(new int[]{0}, tokenStore.fetchSegments("test1"));
+    }
+
+    @Test(expected = UnableToClaimTokenException.class)
+    public void testDeleteUnclaimedTokenFails() {
+        tokenStore.fetchToken("test1", 1);
+        tokenStore.releaseClaim("test1", 1);
+
+        tokenStore.deleteToken("test1", 1);
+    }
+
+    @Transactional
+    @Test(expected = UnableToClaimTokenException.class)
+    public void testDeleteTokenFailsWhenClaimedByOtherNode() {
+        concurrentTokenStore.fetchToken("test1", 1);
+
+        tokenStore.deleteToken("test1", 1);
+    }
+
     @Configuration
     public static class Context {
 
@@ -240,7 +291,7 @@ public class JdbcTokenStoreTest {
             dataSource.setUrl("jdbc:hsqldb:mem:testdb");
             dataSource.setUser("sa");
             dataSource.setPassword("");
-            return dataSource;
+            return new TransactionAwareDataSourceProxy(dataSource);
         }
 
         @Bean
