@@ -177,14 +177,16 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
         );
 
-        return new AxonServerQueryBus(axonServerConnectionManager,
-                                      axonServerConfiguration,
-                                      simpleQueryBus.queryUpdateEmitter(),
-                                      simpleQueryBus,
-                                      messageSerializer,
-                                      genericSerializer,
-                                      priorityCalculator,
-                                      targetContextResolver);
+        return AxonServerQueryBus.builder()
+                                 .axonServerConnectionManager(axonServerConnectionManager)
+                                 .configuration(axonServerConfiguration)
+                                 .localSegment(simpleQueryBus)
+                                 .updateEmitter(simpleQueryBus.queryUpdateEmitter())
+                                 .messageSerializer(messageSerializer)
+                                 .genericSerializer(genericSerializer)
+                                 .priorityCalculator(priorityCalculator)
+                                 .targetContextResolver(targetContextResolver)
+                                 .build();
     }
 
     @ConditionalOnMissingBean

@@ -120,16 +120,20 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                               .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                               .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
-        AxonServerQueryBus queryBus = new AxonServerQueryBus(
-                c.getComponent(AxonServerConnectionManager.class),
-                c.getComponent(AxonServerConfiguration.class),
-                c.queryUpdateEmitter(),
-                localSegment,
-                c.messageSerializer(),
-                c.serializer(),
-                c.getComponent(QueryPriorityCalculator.class, QueryPriorityCalculator::defaultQueryPriorityCalculator),
-                c.getComponent(TargetContextResolver.class)
-        );
+        AxonServerQueryBus queryBus =
+                AxonServerQueryBus.builder()
+                                  .axonServerConnectionManager(c.getComponent(AxonServerConnectionManager.class))
+                                  .configuration(c.getComponent(AxonServerConfiguration.class))
+                                  .localSegment(localSegment)
+                                  .updateEmitter(c.queryUpdateEmitter())
+                                  .messageSerializer(c.messageSerializer())
+                                  .genericSerializer(c.serializer())
+                                  .priorityCalculator(c.getComponent(
+                                          QueryPriorityCalculator.class,
+                                          QueryPriorityCalculator::defaultQueryPriorityCalculator
+                                  ))
+                                  .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                  .build();
         c.onShutdown(queryBus::disconnect);
         return queryBus;
     }
