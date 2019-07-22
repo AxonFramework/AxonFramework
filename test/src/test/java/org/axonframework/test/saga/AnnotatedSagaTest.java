@@ -385,4 +385,19 @@ public class AnnotatedSagaTest {
                .expectDispatchedCommands("Say hi!");
         verify(mock).send(anyString());
     }
+
+    @Test
+    public void testPublishEventFromSecondFixtureCall() {
+        String identifier = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.whenAggregate(identifier).publishes(new TriggerSagaStartEvent(identifier))
+                .expectActiveSagas(1)
+                .expectAssociationWith("identifier", identifier)
+                .expectPublishedEvents();
+        fixture.whenAggregate(identifier).publishes(new TriggerExistingSagaEvent(identifier))
+                .expectActiveSagas(1)
+                .expectAssociationWith("identifier", identifier)
+                .expectPublishedEventsMatching(
+                        payloadsMatching(exactSequenceOf(any(SagaWasTriggeredEvent.class), andNoMore())));
+    }
 }

@@ -42,6 +42,7 @@ public class EventValidator implements EventMessageHandler {
     private final List<EventMessage> publishedEvents = new ArrayList<>();
     private final EventBus eventBus;
     private final FieldFilter fieldFilter;
+    private boolean recording = false;
 
     /**
      * Initializes the event validator to monitor the given {@code eventBus}.
@@ -96,7 +97,10 @@ public class EventValidator implements EventMessageHandler {
      * Starts recording event published by the event bus.
      */
     public void startRecording() {
-        eventBus.subscribe(eventMessages -> eventMessages.forEach(this::handle));
+        if (!recording) {
+            eventBus.subscribe(eventMessages -> eventMessages.forEach(this::handle));
+            recording = true;
+        }
     }
 
     @SuppressWarnings({"unchecked"})

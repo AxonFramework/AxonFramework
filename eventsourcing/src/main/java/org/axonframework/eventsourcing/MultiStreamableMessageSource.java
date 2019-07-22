@@ -414,7 +414,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         @Override
         public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
             long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-            int longPollTime = timeout / 10;
+            long longPollTime = unit.toMillis(timeout) / 10;
 
             while (System.currentTimeMillis() < deadline) {
                 Iterator<SourceIdAwareBlockingStream> it = messageStreams.iterator();
@@ -431,7 +431,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
                     } else {
                         //for the last stream (the long polling stream) poll the message source for a fraction of the timeout
                         if (current.hasNextAvailable((int) Math
-                                .min(longPollTime, deadline - System.currentTimeMillis()), unit)) {
+                                .min(longPollTime, deadline - System.currentTimeMillis()), TimeUnit.MILLISECONDS)) {
                             return true;
                         }
                     }
