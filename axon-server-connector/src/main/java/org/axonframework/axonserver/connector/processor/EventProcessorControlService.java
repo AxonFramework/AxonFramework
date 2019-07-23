@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,9 @@
 
 package org.axonframework.axonserver.connector.processor;
 
-import io.axoniq.axonserver.grpc.control.MergeEventProcessorSegment;
-import io.axoniq.axonserver.grpc.control.PauseEventProcessor;
+import io.axoniq.axonserver.grpc.control.EventProcessorReference;
+import io.axoniq.axonserver.grpc.control.EventProcessorSegmentReference;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
-import io.axoniq.axonserver.grpc.control.ReleaseEventProcessorSegment;
-import io.axoniq.axonserver.grpc.control.RequestEventProcessorInfo;
-import io.axoniq.axonserver.grpc.control.SplitEventProcessorSegment;
-import io.axoniq.axonserver.grpc.control.StartEventProcessor;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
 import org.axonframework.axonserver.connector.processor.grpc.PlatformInboundMessage;
@@ -85,26 +81,26 @@ public class EventProcessorControlService {
     }
 
     private void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
-        PauseEventProcessor pauseEventProcessor = platformOutboundInstruction.getPauseEventProcessor();
+        EventProcessorReference pauseEventProcessor = platformOutboundInstruction.getPauseEventProcessor();
         String processorName = pauseEventProcessor.getProcessorName();
         eventProcessorController.pauseProcessor(processorName);
     }
 
     private void startProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
-        StartEventProcessor startEventProcessor = platformOutboundInstruction.getStartEventProcessor();
+        EventProcessorReference startEventProcessor = platformOutboundInstruction.getStartEventProcessor();
         String processorName = startEventProcessor.getProcessorName();
         eventProcessorController.startProcessor(processorName);
     }
 
     private void releaseSegment(PlatformOutboundInstruction platformOutboundInstruction) {
-        ReleaseEventProcessorSegment releaseSegment = platformOutboundInstruction.getReleaseSegment();
+        EventProcessorSegmentReference releaseSegment = platformOutboundInstruction.getReleaseSegment();
         String processorName = releaseSegment.getProcessorName();
         int segmentIdentifier = releaseSegment.getSegmentIdentifier();
         eventProcessorController.releaseSegment(processorName, segmentIdentifier);
     }
 
     private void getEventProcessorInfo(PlatformOutboundInstruction platformOutboundInstruction) {
-        RequestEventProcessorInfo requestInfo = platformOutboundInstruction.getRequestEventProcessorInfo();
+        EventProcessorReference requestInfo = platformOutboundInstruction.getRequestEventProcessorInfo();
         String processorName = requestInfo.getProcessorName();
         try {
             EventProcessor processor = eventProcessorController.getEventProcessor(processorName);
@@ -115,7 +111,7 @@ public class EventProcessorControlService {
     }
 
     private void splitSegment(PlatformOutboundInstruction platformOutboundInstruction) {
-        SplitEventProcessorSegment splitSegment = platformOutboundInstruction.getSplitEventProcessorSegment();
+        EventProcessorSegmentReference splitSegment = platformOutboundInstruction.getSplitEventProcessorSegment();
         int segmentId = splitSegment.getSegmentIdentifier();
         String processorName = splitSegment.getProcessorName();
         try {
@@ -126,7 +122,7 @@ public class EventProcessorControlService {
     }
 
     private void mergeSegment(PlatformOutboundInstruction platformOutboundInstruction) {
-        MergeEventProcessorSegment mergeSegment = platformOutboundInstruction.getMergeEventProcessorSegment();
+        EventProcessorSegmentReference mergeSegment = platformOutboundInstruction.getMergeEventProcessorSegment();
         String processorName = mergeSegment.getProcessorName();
         int segmentId = mergeSegment.getSegmentIdentifier();
         try {
