@@ -321,6 +321,30 @@ public class SimpleCommandBusTest {
         });
     }
 
+    @Test
+    public void testDuplicateCommandHandlerResolverSetsTheExpectedHandler() {
+        DuplicateCommandHandlerResolver testDuplicateCommandHandlerResolver =
+                (initialHandler, duplicateHandler) -> initialHandler;
+        SimpleCommandBus testSubject =
+                SimpleCommandBus.builder()
+                                .duplicateCommandHandlerResolver(testDuplicateCommandHandlerResolver)
+                                .build();
+
+        MyStringCommandHandler initialHandler = spy(new MyStringCommandHandler());
+        MyStringCommandHandler duplicateHandler = new MyStringCommandHandler();
+        CommandMessage<Object> testMessage = asCommandMessage("Say hi!");
+
+        // Subscribe the initial handler
+        testSubject.subscribe(String.class.getName(), initialHandler);
+        // Then, subscribe a duplicate
+        testSubject.subscribe(String.class.getName(), duplicateHandler);
+
+        // And after dispatching a test command, it should be handled by the initial handler
+        testSubject.dispatch(testMessage);
+
+        verify(initialHandler).handle(testMessage);
+    }
+
     private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         @Override

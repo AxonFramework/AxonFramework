@@ -60,6 +60,7 @@ public class SimpleCommandBus implements CommandBus {
     private final TransactionManager transactionManager;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
     private RollbackConfiguration rollbackConfiguration;
+    private final DuplicateCommandHandlerResolver duplicateCommandHandlerResolver;
 
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
@@ -88,14 +89,16 @@ public class SimpleCommandBus implements CommandBus {
         this.transactionManager = builder.transactionManager;
         this.messageMonitor = builder.messageMonitor;
         this.rollbackConfiguration = builder.rollbackConfiguration;
+        this.duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor} and the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
+     * to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.
      * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
      * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
      *
@@ -179,11 +182,19 @@ public class SimpleCommandBus implements CommandBus {
 
     /**
      * Subscribe the given {@code handler} to commands with given {@code commandName}. If a subscription already
-     * exists for the given name, then the new handler takes over the subscription.
+     * exists for the given name, the configured {@link DuplicateCommandHandlerResolver} will resolve the command
+     * handler which should be subscribed.
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        subscriptions.put(commandName, handler);
+        if (subscriptions.containsKey(commandName)) {
+            subscriptions.computeIfPresent(
+                    commandName,
+                    (cmdName, initialHandler) -> duplicateCommandHandlerResolver.resolve(initialHandler, handler)
+            );
+        } else {
+            subscriptions.put(commandName, handler);
+        }
         return () -> subscriptions.remove(commandName, handler);
     }
 
@@ -231,8 +242,9 @@ public class SimpleCommandBus implements CommandBus {
      * Builder class to instantiate a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor} and the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
+     * to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.
      * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
      * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
      */
@@ -241,6 +253,8 @@ public class SimpleCommandBus implements CommandBus {
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
+        private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
+                DuplicateCommandHandlerResolution.LOG_AND_RETURN_DUPLICATE.getResolver();
 
         /**
          * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
@@ -279,6 +293,21 @@ public class SimpleCommandBus implements CommandBus {
         public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
             assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
             this.rollbackConfiguration = rollbackConfiguration;
+            return this;
+        }
+
+        /**
+         * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
+         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.
+         *
+         * @param duplicateCommandHandlerResolver a {@link DuplicateCommandHandlerResolver} used to resolves the road to
+         *                                        take when a duplicate command handler is subscribed
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder duplicateCommandHandlerResolver(
+                DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+            assertNonNull(duplicateCommandHandlerResolver, "DuplicateCommandHandlerResolver may not be null");
+            this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
             return this;
         }
 

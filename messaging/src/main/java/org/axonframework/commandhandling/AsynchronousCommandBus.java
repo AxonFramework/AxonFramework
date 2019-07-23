@@ -70,7 +70,8 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor}, {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link Executor} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
+     * {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE} and the {@link Executor} defaults to a
      * {@link Executors#newCachedThreadPool}. The default{@code executor} uses an {@link AxonThreadFactory} to create
      * threads with a sensible naming scheme. The TransactionManager, MessageMonitor, RollbackConfiguration and Executor
      * are <b>hard requirements</b>. Thus setting them to {@code null} will result in an
@@ -108,12 +109,14 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     /**
      * Builder class to instantiate a {@link AsynchronousCommandBus}.
      * <p>
-     * The {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration} and {@link Executor} are
-     * respectively defaulted to a {@link NoTransactionManager}, a {@link NoOpMessageMonitor}, a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and a {@link Executors#newCachedThreadPool}. The default
-     * {@code executor} uses an {@link AxonThreadFactory} to create threads with a sensible naming scheme. The
-     * TransactionManager, MessageMonitor, RollbackConfiguration and Executor are <b>hard requirements</b>. Thus setting
-     * them to {@code null} will result in an {@link AxonConfigurationException}.
+     * The {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration},
+     * {@link DuplicateCommandHandlerResolver} and {@link Executor} are respectively defaulted to a
+     * {@link NoTransactionManager}, a {@link NoOpMessageMonitor}, a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, a
+     * {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}and a {@link Executors#newCachedThreadPool}.
+     * The default {@code executor} uses an {@link AxonThreadFactory} to create threads with a sensible naming scheme.
+     * The TransactionManager, MessageMonitor, RollbackConfiguration and Executor are <b>hard requirements</b>. Thus
+     * setting them to {@code null} will result in an {@link AxonConfigurationException}.
      */
     public static class Builder extends SimpleCommandBus.Builder {
 
@@ -136,6 +139,13 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         @Override
         public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
             super.rollbackConfiguration(rollbackConfiguration);
+            return this;
+        }
+
+        @Override
+        public Builder duplicateCommandHandlerResolver(
+                DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+            super.duplicateCommandHandlerResolver(duplicateCommandHandlerResolver);
             return this;
         }
 
