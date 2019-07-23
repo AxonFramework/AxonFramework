@@ -21,32 +21,27 @@ import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.disruptor.commandhandling.utils.MockException;
-import org.axonframework.disruptor.commandhandling.utils.SomethingDoneEvent;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateScopeDescriptor;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.modelling.saga.SagaScopeDescriptor;
+import org.axonframework.disruptor.commandhandling.utils.MockException;
+import org.axonframework.disruptor.commandhandling.utils.SomethingDoneEvent;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.SnapshotTrigger;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -57,6 +52,12 @@ import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.*;
 import org.mockito.*;
@@ -538,6 +539,29 @@ public class DisruptorCommandBusTest {
         testRepository.send(testMsg, testDescriptor);
 
         assertEquals(0, messageHandlingCounter.get());
+    }
+
+    @Test
+    public void testDuplicateCommandHandlerResolverSetsTheExpectedHandler() throws Exception {
+        DuplicateCommandHandlerResolver testDuplicateCommandHandlerResolver =
+                (initialHandler, duplicateHandler) -> initialHandler;
+        testSubject = DisruptorCommandBus.builder()
+                                         .duplicateCommandHandlerResolver(testDuplicateCommandHandlerResolver)
+                                         .build();
+
+        StubHandler initialHandler = spy(new StubHandler());
+        StubHandler duplicateHandler = new StubHandler();
+        CommandMessage<Object> testMessage = asCommandMessage("Say hi!");
+
+        // Subscribe the initial handler
+        testSubject.subscribe(String.class.getName(), initialHandler);
+        // Then, subscribe a duplicate
+        testSubject.subscribe(String.class.getName(), duplicateHandler);
+
+        // And after dispatching a test command, it should be handled by the initial handler
+        testSubject.dispatch(testMessage);
+
+        verify(initialHandler).handle(testMessage);
     }
 
     private static class DeadlinePayload {
