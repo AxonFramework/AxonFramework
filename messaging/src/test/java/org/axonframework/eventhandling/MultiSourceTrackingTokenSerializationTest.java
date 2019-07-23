@@ -36,8 +36,6 @@ import org.axonframework.serialization.TestSerializer;
 @RunWith(Parameterized.class)
 public class MultiSourceTrackingTokenSerializationTest {
 
-    private MultiSourceTrackingToken testSubject;
-    
     private final TestSerializer serializer;
 
     public MultiSourceTrackingTokenSerializationTest(TestSerializer serializer) {
@@ -54,7 +52,7 @@ public class MultiSourceTrackingTokenSerializationTest {
         Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
-        testSubject = new MultiSourceTrackingToken(tokenMap);
+        MultiSourceTrackingToken testSubject = new MultiSourceTrackingToken(tokenMap);
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }
