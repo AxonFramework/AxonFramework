@@ -16,26 +16,31 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.serialization.TestSerializer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
+import org.axonframework.serialization.TestSerializer;
+
 /**
- * Tests serialization capabilities of {@link MergedTrackingToken}.
+ * Tests serialization capabilities of {@link MultiSourceTrackingToken}.
  * 
  * @author JohT
  */
 @RunWith(Parameterized.class)
-public class MergedTrackingTokenSerializationTest {
+public class MultiSourceTrackingTokenSerializationTest {
 
+    private MultiSourceTrackingToken testSubject;
+    
     private final TestSerializer serializer;
 
-    public MergedTrackingTokenSerializationTest(TestSerializer serializer) {
+    public MultiSourceTrackingTokenSerializationTest(TestSerializer serializer) {
         this.serializer = serializer;
     }
 
@@ -46,11 +51,10 @@ public class MergedTrackingTokenSerializationTest {
 
     @Test
     public void testTokenShouldBeSerializable() {
-        MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(5)), token(3));
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
+        tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
+        tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
+        testSubject = new MultiSourceTrackingToken(tokenMap);
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
-    }
-
-    private GlobalSequenceTrackingToken token(int sequence) {
-        return new GlobalSequenceTrackingToken(sequence);
     }
 }

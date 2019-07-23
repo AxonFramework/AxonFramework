@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.messaging.responsetypes;
 
-import org.axonframework.serialization.TestSerializer;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
+import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static junit.framework.TestCase.assertEquals;
+
+import org.axonframework.serialization.TestSerializer;
 
 /**
- * Tests serialization capabilities of {@link MergedTrackingToken}.
+ * Tests serialization capabilities of {@link OptionalResponseType}.
  * 
  * @author JohT
  */
 @RunWith(Parameterized.class)
-public class MergedTrackingTokenSerializationTest {
+public class OptionalResponseTypeSerializationTest
+        extends AbstractResponseTypeTest<Optional<AbstractResponseTypeTest.QueryResponse>> {
 
     private final TestSerializer serializer;
 
-    public MergedTrackingTokenSerializationTest(TestSerializer serializer) {
+    public OptionalResponseTypeSerializationTest(TestSerializer serializer) {
+        super(new OptionalResponseType<>(QueryResponse.class));
         this.serializer = serializer;
     }
 
@@ -45,12 +49,7 @@ public class MergedTrackingTokenSerializationTest {
     }
 
     @Test
-    public void testTokenShouldBeSerializable() {
-        MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(5)), token(3));
-        assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
-    }
-
-    private GlobalSequenceTrackingToken token(int sequence) {
-        return new GlobalSequenceTrackingToken(sequence);
+    public void testResponseTypeShouldBeSerializable() {
+        assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());
     }
 }
