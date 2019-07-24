@@ -23,6 +23,7 @@ import org.axonframework.common.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      * @param trackingTokens the map of tokens which make up the {@link MultiSourceTrackingToken}
      */
     @JsonCreator
+    @ConstructorProperties({"trackingTokens"})
     public MultiSourceTrackingToken(@JsonProperty("trackingTokens") Map<String, TrackingToken> trackingTokens) {
         this.trackingTokens = trackingTokens;
     }

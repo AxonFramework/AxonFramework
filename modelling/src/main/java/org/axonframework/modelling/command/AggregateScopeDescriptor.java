@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.ScopeDescriptor;
 
+import java.beans.ConstructorProperties;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -67,6 +68,7 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
      * @param identifier An {@link Object} denoting the identifier of the Aggregate
      */
     @JsonCreator
+    @ConstructorProperties({ "type", "identifier" })
     public AggregateScopeDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
         this.type = type;
         this.identifier = identifier;
