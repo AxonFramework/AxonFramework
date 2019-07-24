@@ -29,6 +29,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.junit.*;
 import org.mockito.*;
@@ -64,6 +65,7 @@ public class EventSourcingRepositoryTest {
                                              .aggregateFactory(stubAggregateFactory)
                                              .eventStore(mockEventStore)
                                              .snapshotTriggerDefinition(triggerDefinition)
+                                             .filterByAggregateType()
                                              .build();
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
@@ -103,6 +105,23 @@ public class EventSourcingRepositoryTest {
         verify(mockEventStore, times(1)).publish((EventMessage) anyVararg());
         assertEquals(1, aggregate.invoke(TestAggregate::getLiveEvents).size());
         assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
+    }
+
+    @Test
+    public void testFilterEventsByType() {
+        String identifier = UUID.randomUUID().toString();
+        DomainEventMessage event1 =
+                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
+        DomainEventMessage event2 =
+                new GenericDomainEventMessage<>("otherType", identifier, (long) 1, "Other contents", emptyInstance());
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
+
+        Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
+
+        assertEquals(1, aggregate.invoke(TestAggregate::getHandledEvents).size());
+        assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
+
+        assertEquals(0, aggregate.invoke(TestAggregate::getLiveEvents).size());
     }
 
     @Test
@@ -189,6 +208,7 @@ public class EventSourcingRepositoryTest {
         }
     }
 
+    @AggregateRoot(type = "type")
     private static class TestAggregate {
 
         private List<EventMessage<?>> handledEvents = new ArrayList<>();

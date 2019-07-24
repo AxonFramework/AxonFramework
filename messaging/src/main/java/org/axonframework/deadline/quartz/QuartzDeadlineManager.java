@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,6 +37,7 @@ import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ExceptionUtils.findException;
@@ -91,7 +92,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         this.scheduler = builder.scheduler;
         this.scopeAwareProvider = builder.scopeAwareProvider;
         this.transactionManager = builder.transactionManager;
-        this.serializer = builder.serializer;
+        this.serializer = builder.serializer.get();
         this.refireImmediatelyPolicy = builder.refireImmediatelyPolicy;
 
         try {
@@ -195,7 +196,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         private Scheduler scheduler;
         private ScopeAwareProvider scopeAwareProvider;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private Serializer serializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
         private Predicate<Throwable> refireImmediatelyPolicy =
                 throwable -> !findException(throwable, t -> t instanceof AxonNonTransientException).isPresent();
 
@@ -249,7 +250,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
-            this.serializer = serializer;
+            this.serializer = () -> serializer;
             return this;
         }
 

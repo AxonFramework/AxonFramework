@@ -124,6 +124,10 @@ public class TrackingEventProcessorTest {
 
             @Override
             public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+                if (timeout > 0) {
+                    // to keep tests speedy, we don't wait, but we do give other threads a chance
+                    Thread.yield();
+                }
                 return hasPeeked || iterator.hasNext();
             }
 
@@ -192,6 +196,7 @@ public class TrackingEventProcessorTest {
             protected void doSleepFor(long millisToSleep) {
                 if (isRunning()) {
                     sleepInstructions.add(millisToSleep);
+                    Thread.yield();
                 }
             }
         };
@@ -261,7 +266,7 @@ public class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected Handler to have received events", countDownLatch.await(5, TimeUnit.SECONDS));
-        assertWithin(1, TimeUnit.SECONDS, () -> {
+        assertWithin(2, TimeUnit.SECONDS, () -> {
             EventTrackerStatus status = testSubject.processingStatus().get(0);
             assertTrue(status.isErrorState());
             assertEquals(MockException.class, status.getError().getClass());
@@ -707,8 +712,6 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockHandler).handle(any());
 
-        testSubject.start();
-        testSubject.shutDown();
         testSubject.resetTokens();
         testSubject.start();
         eventBus.publish(createEvents(4));
@@ -850,8 +853,8 @@ public class TrackingEventProcessorTest {
     public void testReleaseSegment() {
         testSubject.start();
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
-        testSubject.releaseSegment(0, 1, TimeUnit.SECONDS);
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        testSubject.releaseSegment(0, 2, TimeUnit.SECONDS);
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
     }
 
@@ -883,8 +886,8 @@ public class TrackingEventProcessorTest {
         }
 
         assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join());
-        assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForSegmentStart(0);
+        assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
     }
 
     @Test(timeout = 10000)
@@ -939,7 +942,9 @@ public class TrackingEventProcessorTest {
             Thread.sleep(10);
         }
 
-        assertEquals(10, handledEvents.size());
+        assertWithin(1, TimeUnit.SECONDS, () ->
+                assertEquals(10, handledEvents.size())
+        );
     }
 
     @Test(timeout = 10000)
@@ -1120,6 +1125,8 @@ public class TrackingEventProcessorTest {
 
         CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(0);
         assertTrue("Expected split to succeed", mergeResult.join());
+
+        waitForActiveThreads(1);
 
         testSubject.shutDown();
         testSubject.resetTokens();

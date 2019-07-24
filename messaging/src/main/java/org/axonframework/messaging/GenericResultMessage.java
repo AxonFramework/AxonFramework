@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,11 +44,11 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      */
     @SuppressWarnings("unchecked")
     public static <T> ResultMessage<T> asResultMessage(Object result) {
-        if (ResultMessage.class.isInstance(result)) {
+        if (result instanceof ResultMessage) {
             return (ResultMessage<T>) result;
-        } else if (Message.class.isInstance(result)) {
+        } else if (result instanceof Message) {
             Message<?> resultMessage = (Message<?>) result;
-            return new GenericResultMessage<>((T) resultMessage.getPayload(), resultMessage.getMetaData());
+            return (ResultMessage<T>) new GenericResultMessage<>(resultMessage);
         }
         return new GenericResultMessage<>((T) result);
     }
@@ -62,6 +62,13 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      */
     public static <T> ResultMessage<T> asResultMessage(Throwable exception) {
         return new GenericResultMessage<>(exception);
+    }
+
+    private static <R> Throwable findExceptionResult(Message<R> delegate) {
+        if (delegate instanceof ResultMessage && ((ResultMessage<R>) delegate).isExceptional()) {
+            return ((ResultMessage<R>) delegate).exceptionResult();
+        }
+        return null;
     }
 
     /**
@@ -108,7 +115,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * @param delegate the message delegate
      */
     public GenericResultMessage(Message<R> delegate) {
-        this(delegate, null);
+        this(delegate, GenericResultMessage.findExceptionResult(delegate));
     }
 
     /**

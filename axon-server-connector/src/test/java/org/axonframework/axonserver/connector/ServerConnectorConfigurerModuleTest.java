@@ -18,10 +18,13 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
+import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
-import org.junit.Test;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.Message;
+import org.junit.*;
 
 import static org.junit.Assert.*;
 
@@ -29,18 +32,31 @@ public class ServerConnectorConfigurerModuleTest {
 
     @Test
     public void testAxonServerConfiguredInDefaultConfiguration() {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .buildConfiguration();
+        Configuration testSubject = DefaultConfigurer.defaultConfiguration()
+                                                     .buildConfiguration();
 
-        assertTrue(configuration.eventStore() instanceof AxonServerEventStore);
-        assertTrue(configuration.commandBus() instanceof AxonServerCommandBus);
-        assertTrue(configuration.queryBus() instanceof AxonServerQueryBus);
-        AxonServerConfiguration axonServerConfiguration = configuration.getComponent(AxonServerConfiguration.class);
+        AxonServerConfiguration resultAxonServerConfig = testSubject.getComponent(AxonServerConfiguration.class);
 
-        assertEquals("localhost", axonServerConfiguration.getServers());
-        assertNotNull(axonServerConfiguration.getClientId());
-        assertNotNull(axonServerConfiguration.getComponentName());
-        assertTrue(axonServerConfiguration.getComponentName().contains(axonServerConfiguration.getClientId()));
+        assertEquals("localhost", resultAxonServerConfig.getServers());
+        assertNotNull(resultAxonServerConfig.getClientId());
+        assertNotNull(resultAxonServerConfig.getComponentName());
+        assertTrue(resultAxonServerConfig.getComponentName().contains(resultAxonServerConfig.getClientId()));
+
+        assertNotNull(testSubject.getComponent(AxonServerConnectionManager.class));
+        assertTrue(
+                testSubject.getModules().stream()
+                           .anyMatch(moduleConfig -> moduleConfig.isType(EventProcessorInfoConfiguration.class))
+        );
+        assertTrue(testSubject.eventStore() instanceof AxonServerEventStore);
+        assertTrue(testSubject.commandBus() instanceof AxonServerCommandBus);
+        assertTrue(testSubject.queryBus() instanceof AxonServerQueryBus);
+
+        //noinspection unchecked
+        TargetContextResolver<Message<?>> resultTargetContextResolver =
+                testSubject.getComponent(TargetContextResolver.class);
+        assertNotNull(resultTargetContextResolver);
+        // The default TargetContextResolver is a no-op which returns null
+        assertNull(resultTargetContextResolver.resolveContext(GenericEventMessage.asEventMessage("some-event")));
     }
 
     @Test
@@ -50,8 +66,7 @@ public class ServerConnectorConfigurerModuleTest {
 
         assertTrue(configuration.queryBus() instanceof AxonServerQueryBus);
         assertSame(configuration.queryBus().queryUpdateEmitter(), configuration.queryUpdateEmitter());
-        assertSame(((AxonServerQueryBus)configuration.queryBus()).localSegment().queryUpdateEmitter(),
+        assertSame(((AxonServerQueryBus) configuration.queryBus()).localSegment().queryUpdateEmitter(),
                    configuration.queryUpdateEmitter());
-
     }
 }

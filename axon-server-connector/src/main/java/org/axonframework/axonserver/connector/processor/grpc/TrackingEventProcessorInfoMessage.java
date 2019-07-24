@@ -17,13 +17,13 @@
 package org.axonframework.axonserver.connector.processor.grpc;
 
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
-import io.axoniq.axonserver.grpc.control.EventProcessorInfo.EventTrackerInfo;
+import io.axoniq.axonserver.grpc.control.EventProcessorInfo.SegmentStatus;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingToken;
 
 import java.util.List;
-import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
 
@@ -52,11 +52,11 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
 
     @Override
     public PlatformInboundInstruction instruction() {
-        List<EventTrackerInfo> trackerInfo = eventProcessor.processingStatus()
-                                                           .entrySet()
-                                                           .stream()
-                                                           .map(this::buildTrackerInfo)
-                                                           .collect(toList());
+        List<SegmentStatus> trackerInfo = eventProcessor.processingStatus()
+                                                        .values()
+                                                        .stream()
+                                                        .map(this::buildTrackerInfo)
+                                                        .collect(toList());
 
         EventProcessorInfo eventProcessorInfo =
                 EventProcessorInfo.newBuilder()
@@ -66,7 +66,7 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
                                   .setAvailableThreads(eventProcessor.availableProcessorThreads())
                                   .setRunning(eventProcessor.isRunning())
                                   .setError(eventProcessor.isError())
-                                  .addAllEventTrackersInfo(trackerInfo)
+                                  .addAllSegmentStatus(trackerInfo)
                                   .build();
 
         return PlatformInboundInstruction.newBuilder()
@@ -74,15 +74,23 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
                                          .build();
     }
 
-    private EventTrackerInfo buildTrackerInfo(Map.Entry<Integer, EventTrackerStatus> e) {
-        return EventTrackerInfo.newBuilder()
-                               .setSegmentId(e.getKey())
-                               .setCaughtUp(e.getValue().isCaughtUp())
-                               .setReplaying(e.getValue().isReplaying())
-                               .setOnePartOf(e.getValue().getSegment().getMask() + 1)
-                               .setTokenPosition(e.getValue().getTrackingToken().position().orElse(0))
-                               .setErrorState(e.getValue().isErrorState() ? buildErrorMessage(e.getValue().getError()) : "")
-                               .build();
+    private SegmentStatus buildTrackerInfo(EventTrackerStatus status) {
+        return SegmentStatus.newBuilder()
+                            .setSegmentId(status.getSegment().getSegmentId())
+                            .setCaughtUp(status.isCaughtUp())
+                            .setReplaying(status.isReplaying())
+                            .setOnePartOf(status.getSegment().getMask() + 1)
+                            .setTokenPosition(getPosition(status.getTrackingToken()))
+                            .setErrorState(status.isErrorState() ? buildErrorMessage(status.getError()) : "")
+                            .build();
+    }
+
+    private long getPosition(TrackingToken trackingToken) {
+        long position = 0;
+        if (trackingToken != null) {
+            position = trackingToken.position().orElse(0);
+        }
+        return position;
     }
 
     private String buildErrorMessage(Throwable error) {

@@ -24,17 +24,16 @@ import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
-import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
-import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
-import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
-import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
+import org.axonframework.axonserver.connector.util.*;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonException;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
 
 import java.util.UUID;
@@ -123,6 +122,9 @@ public class CommandSerializer {
             Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
+            HandlerExecutionException.resolveDetails(throwable).ifPresent(details -> {
+                responseBuilder.setPayload(objectSerializer.apply(details));
+            });
         } else if (commandResultMessage.getPayload() != null) {
             responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
         }
@@ -152,14 +154,18 @@ public class CommandSerializer {
 
         if (commandResponse.hasErrorMessage()) {
             AxonException exception = ErrorCode.getFromCode(commandResponse.getErrorCode())
-                                               .convert(commandResponse.getErrorMessage());
+                                               .convert(commandResponse.getErrorMessage(),
+                                                        () -> commandResponse.hasPayload()
+                                                                ? messageSerializer.deserialize(new GrpcSerializedObject(commandResponse.getPayload()))
+                                                                : null);
 
-            return new GenericCommandResultMessage<>(exception, metaData);
+            return new GenericCommandResultMessage<>(new GenericMessage<>(commandResponse.getMessageIdentifier(), null, metaData), exception);
         }
 
-        R payload = commandResponse.hasPayload()
-                ? messageSerializer.deserialize(new GrpcSerializedObject(commandResponse.getPayload()))
-                : null;
-        return new GenericCommandResultMessage<>(payload, metaData);
+        SerializedMessage<R> response = new SerializedMessage<>(commandResponse.getMessageIdentifier(),
+                                                                new LazyDeserializingObject<>(new GrpcSerializedObject(commandResponse.getPayload()), messageSerializer),
+                                                                new LazyDeserializingObject<>(metaData));
+        return new GenericCommandResultMessage<>(response);
     }
+
 }

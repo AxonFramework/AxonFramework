@@ -146,7 +146,7 @@ public class PessimisticLockFactoryTest {
     }
 
     @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
-    public void testAquireBackoff() {
+    public void testAcquireBackoff() {
         final PessimisticLockFactory lockFactory = PessimisticLockFactory.builder()
                                                                          .acquireAttempts(10)
                                                                          .queueLengthThreshold(Integer.MAX_VALUE)

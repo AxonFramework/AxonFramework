@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Disposable;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -52,7 +53,7 @@ public class SubscriptionQueryRequestTarget {
     private final QueryBus localSegment;
     private final Publisher<QueryProviderOutbound> publisher;
     private final SubscriptionMessageSerializer serializer;
-    private final Map<String, SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>>> subscriptions;
+    private final Map<String, Map<String, SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>>>> subscriptions;
 
     /**
      * Instantiate a {@link SubscriptionQueryRequestTarget} used to receive Subscription Query requests and response.
@@ -78,21 +79,23 @@ public class SubscriptionQueryRequestTarget {
      * {@link QueryProviderInbound}, what operation to perform. Can switch between subscribing in general, retrieving
      * the initial result and unsubscribing from future results.
      *
+     * @param context              defines the (Bounded) Context within which the given subscription query request
+     *                             should be performed in
      * @param queryProviderInbound a {@link QueryProviderInbound} from which the {@link SubscriptionQueryRequest} will
      *                             be retrieved to perform a follow up operation with
      */
-    public void onSubscriptionQueryRequest(QueryProviderInbound queryProviderInbound) {
+    public void onSubscriptionQueryRequest(String context, QueryProviderInbound queryProviderInbound) {
         SubscriptionQueryRequest subscriptionQuery = queryProviderInbound.getSubscriptionQueryRequest();
         try {
             switch (subscriptionQuery.getRequestCase()) {
                 case SUBSCRIBE:
-                    subscribe(subscriptionQuery.getSubscribe());
+                    subscribe(context, subscriptionQuery.getSubscribe());
                     break;
                 case GET_INITIAL_RESULT:
-                    getInitialResult(subscriptionQuery.getGetInitialResult());
+                    getInitialResult(context, subscriptionQuery.getGetInitialResult());
                     break;
                 case UNSUBSCRIBE:
-                    unsubscribe(subscriptionQuery.getUnsubscribe());
+                    unsubscribe(context, subscriptionQuery.getUnsubscribe());
                     break;
             }
         } catch (Exception e) {
@@ -100,7 +103,7 @@ public class SubscriptionQueryRequestTarget {
         }
     }
 
-    private void subscribe(SubscriptionQuery subscriptionQuery) {
+    private void subscribe(String context, SubscriptionQuery subscriptionQuery) {
         String subscriptionId = subscriptionQuery.getSubscriptionIdentifier();
         SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>> result =
                 localSegment.subscriptionQuery(serializer.deserialize(subscriptionQuery));
@@ -116,29 +119,36 @@ public class SubscriptionQueryRequestTarget {
             return true;
         };
 
-        subscriptions.computeIfAbsent(subscriptionId, id -> new DisposableResult<>(result, registration));
+        subscriptions.computeIfAbsent(context, k -> new ConcurrentHashMap<>())
+                     .computeIfAbsent(subscriptionId, id -> new DisposableResult<>(result, registration));
     }
 
-    private void getInitialResult(SubscriptionQuery query) {
+    private void getInitialResult(String context, SubscriptionQuery query) {
         String subscriptionId = query.getSubscriptionIdentifier();
-        subscriptions.get(subscriptionId).initialResult().subscribe(
-                i -> publisher.publish(serializer.serialize(i, subscriptionId)),
-                e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId)
-        );
+        subscriptions.get(context)
+                     .get(subscriptionId)
+                     .initialResult()
+                     .subscribe(
+                             i -> publisher.publish(serializer.serialize(i, subscriptionId)),
+                             e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId)
+                     );
     }
 
-    private void unsubscribe(SubscriptionQuery unsubscribe) {
+    private void unsubscribe(String context, SubscriptionQuery unsubscribe) {
         String subscriptionId = unsubscribe.getSubscriptionIdentifier();
         logger.debug("unsubscribe locally subscriptionId {}", subscriptionId);
-        subscriptions.remove(subscriptionId).cancel();
+        subscriptions.get(context).remove(subscriptionId).cancel();
     }
 
     /**
-     * Cancels all the subscription query {@link Registration}s which are contained by this
-     * {@link SubscriptionQueryRequestTarget}.
+     * Cancels all the subscription query {@link Registration}s for the given {@code context} which are contained by
+     * this {@link SubscriptionQueryRequestTarget}.
+     *
+     * @param context defines the (Bounded) Context for which the subscription query {@link Registration}s should be
+     *                canceled
      */
-    public void onApplicationDisconnected() {
-        subscriptions.values().forEach(Registration::cancel);
+    public void onApplicationDisconnected(String context) {
+        subscriptions.getOrDefault(context, Collections.emptyMap()).values().forEach(Registration::cancel);
         subscriptions.clear();
     }
 }

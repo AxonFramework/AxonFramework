@@ -31,50 +31,71 @@ import org.axonframework.eventhandling.EventProcessor;
 import java.util.function.Function;
 
 /**
- * Module Configuration implementation that defines the components needed to
- * control and monitor the {@link EventProcessor}s with AxonServer.
+ * Module Configuration implementation that defines the components needed to control and monitor the
+ * {@link EventProcessor}s with AxonServer.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
 public class EventProcessorInfoConfiguration implements ModuleConfiguration {
 
+    private Configuration config;
+
     private final Component<EventProcessingConfiguration> eventProcessingConfiguration;
     private final Component<AxonServerConnectionManager> connectionManager;
-
     private final Component<AxonServerConfiguration> axonServerConfiguration;
-
     private final Component<EventProcessorControlService> eventProcessorControlService;
     private final Component<ScheduledEventProcessorInfoSource> processorInfoSource;
 
-    private Configuration config;
-
+    /**
+     * Create an default EventProcessorInfoConfiguration, which uses the {@link Configuration} as a means to retrieve
+     * the {@link EventProcessingConfiguration}, {@link AxonServerConnectionManager} and
+     * {@link AxonServerConfiguration}.
+     */
     public EventProcessorInfoConfiguration() {
         this(Configuration::eventProcessingConfiguration,
              c -> c.getComponent(AxonServerConnectionManager.class),
              c -> c.getComponent(AxonServerConfiguration.class));
     }
 
+    /**
+     * Creates an EventProcessorInfoConfiguration using the provided functions to retrieve the
+     * {@link EventProcessingConfiguration}, {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}.
+     *
+     * @param eventProcessingConfiguration a Function taking in the {@link Configuration} and providing a
+     *                                     {@link EventProcessingConfiguration}
+     * @param connectionManager            a Function taking in the {@link Configuration} and providing a
+     *                                     {@link AxonServerConnectionManager}
+     * @param axonServerConfiguration      a Function taking in the {@link Configuration} and providing a
+     *                                     {@link AxonServerConfiguration}
+     */
     public EventProcessorInfoConfiguration(
             Function<Configuration, EventProcessingConfiguration> eventProcessingConfiguration,
             Function<Configuration, AxonServerConnectionManager> connectionManager,
             Function<Configuration, AxonServerConfiguration> axonServerConfiguration) {
-        this.eventProcessingConfiguration = new Component<>(() -> config, "eventProcessingConfiguration", eventProcessingConfiguration);
+        this.eventProcessingConfiguration = new Component<>(
+                () -> config, "eventProcessingConfiguration", eventProcessingConfiguration
+        );
         this.connectionManager = new Component<>(() -> config, "connectionManager", connectionManager);
         this.axonServerConfiguration = new Component<>(() -> config, "connectionManager", axonServerConfiguration);
 
-        this.eventProcessorControlService = new Component<>(() -> config, "eventProcessorControlService",
-                                                            c -> new EventProcessorControlService(
-                                                                    this.connectionManager.get(),
-                                                                    new EventProcessorController(
-                                                                            this.eventProcessingConfiguration.get())));
+        this.eventProcessorControlService = new Component<>(
+                () -> config, "eventProcessorControlService",
+                c -> new EventProcessorControlService(
+                        this.connectionManager.get(),
+                        new EventProcessorController(this.eventProcessingConfiguration.get())
+                )
+        );
         this.processorInfoSource = new Component<>(() -> config, "eventProcessorInfoSource", c -> {
-            GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(this.eventProcessingConfiguration.get(), this.connectionManager.get());
+            GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(
+                    this.eventProcessingConfiguration.get(),
+                    this.connectionManager.get(),
+                    this.axonServerConfiguration.get().getContext()
+            );
             return new ScheduledEventProcessorInfoSource(
                     this.axonServerConfiguration.get().getProcessorsNotificationInitialDelay(),
                     this.axonServerConfiguration.get().getProcessorsNotificationRate(),
                     infoSource);
-
         });
     }
 

@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.ExceptionUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -44,6 +45,7 @@ import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ProcessUtils.executeWithRetry;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
@@ -282,7 +284,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         boolean instructionsPresent = !toExecute.isEmpty();
         for (Instruction instruction : toExecute) {
             toExecute.remove(instruction);
-            transactionManager.executeInTransaction(instruction);
+
+            instruction.run();
         }
 
         return instructionsPresent;
@@ -291,7 +294,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private void releaseToken(Segment segment) {
         try {
             transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
+            logger.info("Released claim");
         } catch (Exception e) {
+            logger.info("Release claim failed", e);
             // Ignore exception
         }
     }
@@ -493,8 +498,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private boolean canClaimSegment(int segmentId) {
-        return !segmentReleaseDeadlines.containsKey(segmentId) ||
-                segmentReleaseDeadlines.get(segmentId) < System.currentTimeMillis();
+        return segmentReleaseDeadlines.getOrDefault(segmentId, Long.MIN_VALUE) < System.currentTimeMillis();
     }
 
     /**
@@ -972,23 +976,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private abstract static class Instruction implements Runnable {
+    private abstract class Instruction implements Runnable {
 
         private final CompletableFuture<Boolean> result;
-
         public Instruction(CompletableFuture<Boolean> result) {
             this.result = result;
         }
 
         public void run() {
             try {
-                result.complete(runSafe());
+                executeWithRetry(() -> transactionManager.executeInTransaction(() -> result.complete(runSafe())),
+                                 re -> ExceptionUtils.findException(re, UnableToClaimTokenException.class).isPresent(),
+                                 tokenClaimInterval, MILLISECONDS, 10);
             } catch (Exception e) {
                 result.completeExceptionally(e);
             }
         }
 
-        protected abstract boolean runSafe() throws Exception;
+        protected abstract boolean runSafe();
     }
 
     private class TrackingSegmentWorker implements Runnable {

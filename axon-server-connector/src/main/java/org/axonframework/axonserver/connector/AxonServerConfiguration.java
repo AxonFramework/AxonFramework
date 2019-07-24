@@ -37,6 +37,7 @@ public class AxonServerConfiguration {
 
     private static final int DEFAULT_GRPC_PORT = 8124;
     private static final String DEFAULT_SERVERS = "localhost";
+    private static final String DEFAULT_CONTEXT = "default";
 
     /**
      * Comma separated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
@@ -62,9 +63,9 @@ public class AxonServerConfiguration {
     private String token;
 
     /**
-     * Bounded context that this application operates in
+     * Bounded context that this application operates in. Defaults to {@code "default"}.
      */
-    private String context;
+    private String context = DEFAULT_CONTEXT;
 
     /**
      * Certificate file for SSL
@@ -129,9 +130,9 @@ public class AxonServerConfiguration {
     private long keepAliveTimeout = 5000;
 
     /**
-     * Interval (in ms) for keep alive requests, 0 is keep-alive disabled
+     * Interval (in ms) for keep alive requests, 0 is keep-alive disabled. Defaults to {@code 1000}.
      */
-    private long keepAliveTime = 0;
+    private long keepAliveTime = 1_000;
 
     /**
      * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to
@@ -158,6 +159,13 @@ public class AxonServerConfiguration {
      * Blacklist events with unknown payload types.
      */
     private boolean blacklistingEnabled = true;
+
+    /**
+     * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
+     * Setting this to 0 (or a negative value) will disable buffering, and requires each message sent by the server to
+     * be acknowledged before the next message may be sent. Defaults to 500.
+     */
+    private int maxGrpcBufferedMessages = 500;
 
     /**
      * Instantiate a default {@link AxonServerConfiguration}.
@@ -379,6 +387,14 @@ public class AxonServerConfiguration {
 
     public void setCommitTimeout(int commitTimeout) {
         this.commitTimeout = commitTimeout;
+    }
+
+    public int getMaxGrpcBufferedMessages() {
+        return maxGrpcBufferedMessages;
+    }
+
+    public void setMaxGrpcBufferedMessages(int maxGrpcBufferedMessages) {
+        this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
     }
 
     @SuppressWarnings("unused")

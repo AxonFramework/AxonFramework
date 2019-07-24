@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -46,6 +47,8 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
     private final Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper;
     private final Map<String, PlatformInboundInstruction> lastProcessorsInfo;
 
+    private final AtomicBoolean logError = new AtomicBoolean(true);
+
     /**
      * Instantiate a {@link EventProcessorInfoSource} which can send {@link EventProcessor} status info to Axon Server.
      * It uses the given {@link EventProcessingConfiguration} to retrieve all the EventProcessor instances and the
@@ -54,20 +57,23 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
      * @param eventProcessingConfiguration the {@link EventProcessingConfiguration} from which the existing
      *                                     {@link EventProcessor} instances are retrieved
      * @param axonServerConnectionManager  the {@link AxonServerConnectionManager} used to send message to Axon Server
+     * @param context                      the context of this application instance in which {@link EventProcessor}
+     *                                     status' should be send
      */
     public GrpcEventProcessorInfoSource(EventProcessingConfiguration eventProcessingConfiguration,
-                                        AxonServerConnectionManager axonServerConnectionManager) {
+                                        AxonServerConnectionManager axonServerConnectionManager,
+                                        String context) {
         this(
                 new EventProcessors(eventProcessingConfiguration),
-                axonServerConnectionManager::send,
+                instruction -> axonServerConnectionManager.send(context, instruction),
                 new GrpcEventProcessorMapping()
         );
-        axonServerConnectionManager.addReconnectListener(lastProcessorsInfo::clear);
+        axonServerConnectionManager.addReconnectListener(context, lastProcessorsInfo::clear);
     }
 
-    GrpcEventProcessorInfoSource(EventProcessors eventProcessors,
-                                 Consumer<PlatformInboundInstruction> platformInstructionSender,
-                                 Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper) {
+    private GrpcEventProcessorInfoSource(EventProcessors eventProcessors,
+                                         Consumer<PlatformInboundInstruction> platformInstructionSender,
+                                         Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper) {
         this.eventProcessors = eventProcessors;
         this.platformInstructionSender = platformInstructionSender;
         this.platformInboundMessageMapper = platformInboundMessageMapper;
@@ -84,8 +90,12 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
                 }
                 lastProcessorsInfo.put(processor.getName(), instruction);
             });
+            logError.set(true);
         } catch (Exception | OutOfDirectMemoryError e) {
-            logger.warn("Sending processor status failed: {}", e.getMessage());
+            if (logError.get()) {
+                logger.warn("Sending processor status failed: {}", e.getMessage());
+                logError.set(false);
+            }
         }
     }
 }
