@@ -156,9 +156,13 @@ public class AxonServerConfiguration {
     private int commitTimeout = 10000;
 
     /**
-     * Blacklist events with unknown payload types.
+     * Flag that allows blacklisting of Event types to be disabled. Disabling this may have serious performance impact,
+     * as it requires all messages from AxonServer to be sent to clients, even if a Client is unable to process the
+     * message.
+     * <p>
+     * Default is to have blacklisting enabled
      */
-    private boolean blacklistingEnabled = true;
+    private boolean disableEventBlacklisting = false;
 
     /**
      * The number of messages that may be in-transit on the network/grpc level when streaming data from the server.
@@ -166,12 +170,6 @@ public class AxonServerConfiguration {
      * be acknowledged before the next message may be sent. Defaults to 500.
      */
     private int maxGrpcBufferedMessages = 500;
-
-    /**
-     * Instantiate a default {@link AxonServerConfiguration}.
-     */
-    public AxonServerConfiguration() {
-    }
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -185,6 +183,12 @@ public class AxonServerConfiguration {
         }
 
         return builder;
+    }
+
+    /**
+     * Instantiate a default {@link AxonServerConfiguration}.
+     */
+    public AxonServerConfiguration() {
     }
 
     public String getServers() {
@@ -373,12 +377,12 @@ public class AxonServerConfiguration {
         this.snapshotPrefetch = snapshotPrefetch;
     }
 
-    public boolean isBlacklistingEnabled() {
-        return blacklistingEnabled;
+    public boolean isDisableEventBlacklisting() {
+        return disableEventBlacklisting;
     }
 
-    public void setBlacklistingEnabled(boolean blacklistingEnabled) {
-        this.blacklistingEnabled = blacklistingEnabled;
+    public void setDisableEventBlacklisting(boolean disableEventBlacklisting) {
+        this.disableEventBlacklisting = disableEventBlacklisting;
     }
 
     public int getCommitTimeout() {

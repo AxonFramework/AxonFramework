@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,13 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.EventWithToken;
-import org.axonframework.eventhandling.EventUtils;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedDomainEventData;
-import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
@@ -59,6 +53,7 @@ public class EventBuffer implements TrackingEventStream {
     private final BlockingQueue<TrackedEventData<byte[]>> events;
 
     private final Iterator<TrackedEventMessage<?>> eventStream;
+    private final Serializer serializer;
 
     private TrackedEventData<byte[]> peekData;
     private TrackedEventMessage<?> peekEvent;
@@ -67,7 +62,7 @@ public class EventBuffer implements TrackingEventStream {
     private volatile boolean closed;
     private Consumer<Integer> consumeListener = i -> {
     };
-    private Consumer<SerializedType> blacklistListener = type -> {};
+    private volatile Consumer<SerializedType> blacklistListener;
 
     /**
      * Initializes an Event Buffer, passing messages through given {@code upcasterChain} and deserializing events using
@@ -77,6 +72,7 @@ public class EventBuffer implements TrackingEventStream {
      * @param serializer    The serializer capable of deserializing incoming messages
      */
     public EventBuffer(EventUpcaster upcasterChain, Serializer serializer) {
+        this.serializer = serializer;
         this.events = new LinkedBlockingQueue<>();
         eventStream = EventUtils.upcastAndDeserializeTrackedEvents(StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
                                                                    new GrpcMetaDataAwareSerializer(serializer),
@@ -110,18 +106,23 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     /**
-     * Calls the blacklist listener if the message contains an UnknownSerializedType as payload. The listener reports the
-     * type and revision to AxonServer, so it will not send events with this payload type and revision anymore.
-     * @param trackedEventMessage
+     * {@inheritDoc}
+     *
+     * ----
+     *
+     * This implementation blacklists based on the payload type of the given message.
      */
     @Override
     public void blacklist(TrackedEventMessage<?> trackedEventMessage) {
-        if (blacklistListener == null) {
+        Consumer<SerializedType> bl = blacklistListener;
+        if (bl == null) {
             return;
         }
         if (UnknownSerializedType.class.equals(trackedEventMessage.getPayloadType())) {
             UnknownSerializedType unknownSerializedType = (UnknownSerializedType) trackedEventMessage.getPayload();
-            blacklistListener.accept(unknownSerializedType.serializedType());
+            bl.accept(unknownSerializedType.serializedType());
+        } else {
+            bl.accept(serializer.typeForClass(trackedEventMessage.getPayloadType()));
         }
     }
 

@@ -488,17 +488,17 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             consumer.registerCloseListener((eventConsumer) -> observer.onCompleted());
             consumer.registerConsumeListener(observer::markConsumed);
-            if (configuration.isBlacklistingEnabled()) {
+            if (!configuration.isDisableEventBlacklisting()) {
                 Set<PayloadDescription> blacklisted = new CopyOnWriteArraySet<>();
                 consumer.registerBlacklistListener(type -> {
                     PayloadDescription payloadType = PayloadDescription.newBuilder()
-                                                                       .setRevision(getOrDefault(type.getRevision(),
-                                                                                                 ""))
+                                                                       .setRevision(getOrDefault(type.getRevision(), ""))
                                                                        .setType(type.getName())
                                                                        .build();
                     if (blacklisted.add(payloadType)) {
                         observer.onNext(GetEventsRequest.newBuilder()
-                                                        .addBlacklist(payloadType).build());
+                                                        .addBlacklist(payloadType)
+                                                        .build());
                     }
                 });
             }
