@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -30,6 +31,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -70,6 +72,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(c.getComponent(AxonServerConfiguration.class))
+                                           .tagsConfiguration(c.getComponent(TagsConfiguration.class, TagsConfiguration::new))
                                            .build();
         c.onShutdown(axonServerConnectionManager::shutdown);
         return axonServerConnectionManager;
@@ -79,6 +82,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         return AxonServerEventStore.builder()
                                    .configuration(c.getComponent(AxonServerConfiguration.class))
                                    .platformConnectionManager(c.getComponent(AxonServerConnectionManager.class))
+                                   .messageMonitor(c.messageMonitor(AxonServerEventStore.class, "eventStore"))
                                    .snapshotSerializer(c.serializer())
                                    .eventSerializer(c.eventSerializer())
                                    .upcasterChain(c.upcasterChain())
@@ -91,7 +95,10 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                 AxonServerCommandBus.builder()
                                     .axonServerConnectionManager(c.getComponent(AxonServerConnectionManager.class))
                                     .configuration(c.getComponent(AxonServerConfiguration.class))
-                                    .localSegment(SimpleCommandBus.builder().build())
+                                    .localSegment(SimpleCommandBus.builder()
+                                                                  .messageMonitor(c.messageMonitor(CommandBus.class, "localCommandBus"))
+                                                                  .transactionManager(c.getComponent(TransactionManager.class, NoTransactionManager::instance))
+                                                                  .build())
                                     .serializer(c.messageSerializer())
                                     .routingStrategy(
                                             c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new)
