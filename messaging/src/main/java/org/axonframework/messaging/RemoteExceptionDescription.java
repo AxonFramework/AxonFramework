@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,7 @@ public class RemoteExceptionDescription implements Serializable {
      * @param descriptions a {@link List} of {@link String}s, each describing a single "cause" on the remote end
      */
     @JsonCreator
+    @ConstructorProperties({"descriptions"})
     public RemoteExceptionDescription(@JsonProperty("descriptions") List<String> descriptions) {
         this.descriptions = new ArrayList<>(descriptions);
     }

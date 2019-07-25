@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,22 +61,40 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      *              events get committed to the store or may never be filled in if those events never get committed.
      * @return a new tracking token from given index and gaps
      */
+    public static GapAwareTrackingToken newInstance(long index, Collection<Long> gaps) {
+        return new GapAwareTrackingToken(index, gaps);
+    }
+
+    /**
+     * This constructor is mean't to be used for deserialization. <br>
+     * Please use {@link #newInstance(long, Collection)} to create new instances.
+     * 
+     * @param index the highest global sequence number of events up until (and including) this tracking token
+     * @param gaps  global sequence numbers of events that have not been seen yet even though these sequence numbers are
+     *              smaller than the current index. These missing sequence numbers may be filled in later when those
+     *              events get committed to the store or may never be filled in if those events never get committed.
+     * @param gaps
+     */
     @JsonCreator
-    public static GapAwareTrackingToken newInstance(@JsonProperty("index") long index,
-                                                    @JsonProperty("gaps") Collection<Long> gaps) {
-        if (gaps.isEmpty()) {
-            return new GapAwareTrackingToken(index, Collections.emptySortedSet(), -1);
-        }
-        SortedSet<Long> gapSet = new ConcurrentSkipListSet<>(gaps);
-        Assert.isTrue(gapSet.last() < index,
-                      () -> String.format("Gap indices [%s] should all be smaller than head index [%d]", gaps, index));
-        return new GapAwareTrackingToken(index, gapSet, 0);
+    @ConstructorProperties({ "index", "gaps" })
+    public GapAwareTrackingToken(@JsonProperty("index") long index, @JsonProperty("gaps") Collection<Long> gaps) {
+        this(index, createSortedSetOf(gaps, index), 0);
     }
 
     private GapAwareTrackingToken(long index, SortedSet<Long> gaps, long gapTruncationIndex) {
         this.index = index;
         this.gaps = gaps;
         this.gapTruncationIndex = gapTruncationIndex;
+    }
+
+    private static SortedSet<Long> createSortedSetOf(Collection<Long> gaps, long index) {
+        if (gaps.isEmpty()) {
+            return Collections.emptySortedSet();
+        }
+        SortedSet<Long> gapSet = new ConcurrentSkipListSet<>(gaps);
+        Assert.isTrue(gapSet.last() < index,
+                      () -> String.format("Gap indices [%s] should all be smaller than head index [%d]", gaps, index));
+        return gapSet;
     }
 
     /**

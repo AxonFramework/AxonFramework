@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.ScopeDescriptor;
 
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 
 /**
@@ -42,6 +43,7 @@ public class SagaScopeDescriptor implements ScopeDescriptor {
      * @param identifier An {@link Object} denoting the identifier of the Saga
      */
     @JsonCreator
+    @ConstructorProperties({ "type", "identifier" })
     public SagaScopeDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
         this.type = type;
         this.identifier = identifier;

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 
 /**
@@ -39,6 +40,7 @@ public class SimpleScheduleToken implements ScheduleToken {
      * @param tokenId The identifier referencing the scheduled task.
      */
     @JsonCreator
+    @ConstructorProperties({"tokenId"})
     public SimpleScheduleToken(@JsonProperty("tokenId") String tokenId) {
         this.tokenId = tokenId;
     }

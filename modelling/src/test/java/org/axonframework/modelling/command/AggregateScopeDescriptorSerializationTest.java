@@ -16,7 +16,9 @@
 
 package org.axonframework.modelling.command;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.OnlyAcceptConstructorPropertiesAnnotation;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -80,6 +82,18 @@ public class AggregateScopeDescriptorSerializationTest {
     public void testJacksonSerializationWorksAsExpected() {
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
 
+
+        SerializedObject<String> serializedObject = jacksonSerializer.serialize(testSubject, String.class);
+        AggregateScopeDescriptor result = jacksonSerializer.deserialize(serializedObject);
+
+        assertEquals(expectedType, result.getType());
+        assertEquals(expectedIdentifier, result.getIdentifier());
+    }
+
+    @Test
+    public void testResponseTypeShouldBeSerializableWithJacksonUsingConstructorProperties() throws IOException {
+        ObjectMapper objectMapper = OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper());
+        JacksonSerializer jacksonSerializer = JacksonSerializer.builder().objectMapper(objectMapper).build();
 
         SerializedObject<String> serializedObject = jacksonSerializer.serialize(testSubject, String.class);
         AggregateScopeDescriptor result = jacksonSerializer.deserialize(serializedObject);

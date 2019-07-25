@@ -17,17 +17,13 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.serialization.JavaSerializer;
-import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.serialization.TestSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.junit.runners.*;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -41,59 +37,40 @@ import static org.junit.Assert.assertEquals;
 @RunWith(Parameterized.class)
 public class ReplyMessageSerializationTest {
 
-    private final Serializer serializer;
+    private final TestSerializer serializer;
 
-    @SuppressWarnings("unused") // Test name used to give sensible name to parameterized test
-    public ReplyMessageSerializationTest(String testName, Serializer serializer) {
+    public ReplyMessageSerializationTest(TestSerializer serializer) {
         this.serializer = serializer;
     }
-
-    @Parameterized.Parameters(name = "Using {0}")
-    public static Collection serializerImplementations() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "JavaSerializer",
-                        JavaSerializer.builder().build()
-                },
-                {
-                        "XStreamSerializer",
-                        XStreamSerializer.builder().build()
-                },
-                {
-                        "JacksonSerializer",
-                        JacksonSerializer.builder().build()
-                }
-        });
+    
+    @Parameterized.Parameters(name = "{index} {0}")
+    public static Collection<TestSerializer> serializers() {
+       return TestSerializer.all();
     }
-
+       
     @Test
     public void testSerializationDeserializationOfSuccessfulMessage() {
         String commandId = "commandId";
         CommandResultMessage<String> success = asCommandResultMessage("success");
-        DummyReplyMessage message = new DummyReplyMessage(commandId, success, serializer);
-
-        SerializedObject<byte[]> serialized = serializer.serialize(message, byte[].class);
-        DummyReplyMessage deserialized = serializer.deserialize(serialized);
-
-        assertEquals(message, deserialized);
+        DummyReplyMessage message = new DummyReplyMessage(commandId, success, serializer.getSerializer());
+        
+        assertEquals(message, serializer.serializeDeserialize(message));
     }
 
     @Test
     public void testSerializationDeserializationOfUnsuccessfulMessage() {
         String commandId = "commandId";
         CommandResultMessage<String> failure = asCommandResultMessage(new RuntimeException("oops"));
-        DummyReplyMessage message = new DummyReplyMessage(commandId, failure, serializer);
+        DummyReplyMessage message = new DummyReplyMessage(commandId, failure, serializer.getSerializer());
 
-        SerializedObject<byte[]> serialized = serializer.serialize(message, byte[].class);
-        DummyReplyMessage deserialized = serializer.deserialize(serialized);
-
-        assertEquals(message, deserialized);
+        assertEquals(message, serializer.serializeDeserialize(message));
     }
 
     private static class DummyReplyMessage extends ReplyMessage implements Serializable {
 
         private static final long serialVersionUID = -6583822511843818492L;
 
+        @SuppressWarnings("unused") //used for deserialization with jackson
         public DummyReplyMessage() {
             super();
         }
