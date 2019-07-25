@@ -95,10 +95,15 @@ public class AxonServerQueryBusTest {
                                                                      .axonServerConfiguration(configuration)
                                                                      .build());
 
-        testSubject = new AxonServerQueryBus(
-                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(), localSegment, serializer,
-                serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(), targetContextResolver
-        );
+        testSubject = AxonServerQueryBus.builder()
+                                        .axonServerConnectionManager(axonServerConnectionManager)
+                                        .configuration(configuration)
+                                        .localSegment(localSegment)
+                                        .updateEmitter(localSegment.queryUpdateEmitter())
+                                        .messageSerializer(serializer)
+                                        .genericSerializer(serializer)
+                                        .targetContextResolver(targetContextResolver)
+                                        .build();
     }
 
     @After
@@ -145,11 +150,15 @@ public class AxonServerQueryBusTest {
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(configuration)
                                            .build();
-        AxonServerQueryBus testSubject = spy(new AxonServerQueryBus(
-                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(),
-                localSegment, serializer, serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(),
-                targetContextResolver
-        ));
+        AxonServerQueryBus testSubject = spy(AxonServerQueryBus.builder()
+                                                               .axonServerConnectionManager(axonServerConnectionManager)
+                                                               .configuration(configuration)
+                                                               .localSegment(localSegment)
+                                                               .updateEmitter(localSegment.queryUpdateEmitter())
+                                                               .messageSerializer(serializer)
+                                                               .genericSerializer(serializer)
+                                                               .targetContextResolver(targetContextResolver)
+                                                               .build());
         RuntimeException expectedException = new RuntimeException("oops");
         when(testSubject.queryService(anyString())).thenThrow(expectedException);
 
@@ -194,10 +203,15 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void processQuery() {
-        AxonServerQueryBus testSubject = new AxonServerQueryBus(
-                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(), localSegment,
-                serializer, serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(), targetContextResolver
-        );
+        AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
+                                                           .axonServerConnectionManager(axonServerConnectionManager)
+                                                           .configuration(configuration)
+                                                           .localSegment(localSegment)
+                                                           .updateEmitter(localSegment.queryUpdateEmitter())
+                                                           .messageSerializer(serializer)
+                                                           .genericSerializer(serializer)
+                                                           .targetContextResolver(targetContextResolver)
+                                                           .build();
 
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
                 buildInboundQueryStreamObserverReference();
@@ -266,10 +280,15 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void handlerInterceptor() {
-        AxonServerQueryBus testSubject = new AxonServerQueryBus(
-                axonServerConnectionManager, configuration, localSegment.queryUpdateEmitter(), localSegment, serializer,
-                serializer, QueryPriorityCalculator.defaultQueryPriorityCalculator(), targetContextResolver
-        );
+        AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
+                                                           .axonServerConnectionManager(axonServerConnectionManager)
+                                                           .configuration(configuration)
+                                                           .localSegment(localSegment)
+                                                           .updateEmitter(localSegment.queryUpdateEmitter())
+                                                           .messageSerializer(serializer)
+                                                           .genericSerializer(serializer)
+                                                           .targetContextResolver(targetContextResolver)
+                                                           .build();
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
                 buildInboundQueryStreamObserverReference();
 
