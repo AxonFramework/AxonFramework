@@ -22,23 +22,15 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.grpc.stub.StreamObserver;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.TestStreamObserver;
-import org.axonframework.axonserver.connector.TestTargetContextResolver;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.axonserver.connector.*;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -50,8 +42,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -299,7 +291,8 @@ public class AxonServerCommandBusTest {
                 () -> assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()))
         );
 
-        dummyMessagePlatformServer.onError(String.class.getName());
+        reset(axonServerConnectionManager);
+        dummyMessagePlatformServer.simulateError(String.class.getName());
         assertWithin(
                 2,
                 TimeUnit.SECONDS,
