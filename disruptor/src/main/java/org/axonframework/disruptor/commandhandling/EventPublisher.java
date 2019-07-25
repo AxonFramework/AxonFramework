@@ -118,10 +118,14 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         } else {
             phaseExceptionResult = performCommit(unitOfWork, exceptionResult, aggregateIdentifier);
         }
-        if (phaseExceptionResult != null || entry.getCallback().hasDelegate()) {
-            executor.execute(new ReportResultTask(
-                    entry.getMessage(), entry.getCallback(), asCommandResultMessage(phaseExceptionResult)
-            ));
+        if (entry.getCallback().hasDelegate()) {
+            if (phaseExceptionResult == null) {
+                executor.execute(new ReportResultTask(
+                        entry.getMessage(), entry.getCallback(), asCommandResultMessage(entry.getResult())));
+            } else {
+                executor.execute(new ReportResultTask(
+                        entry.getMessage(), entry.getCallback(), asCommandResultMessage(phaseExceptionResult)));
+            }
         }
     }
 
