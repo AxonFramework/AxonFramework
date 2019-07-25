@@ -256,6 +256,7 @@ public class AxonServerCommandBusTest {
                 () -> assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName()))
         );
 
+        reset(axonServerConnectionManager);
         dummyMessagePlatformServer.stop();
         assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
 
@@ -267,7 +268,7 @@ public class AxonServerCommandBusTest {
         );
 
         //noinspection unchecked
-        verify(axonServerConnectionManager, times(4)).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+        verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 
     @Test
@@ -300,6 +301,6 @@ public class AxonServerCommandBusTest {
         );
 
         //noinspection unchecked
-        verify(axonServerConnectionManager).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+        verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 }
