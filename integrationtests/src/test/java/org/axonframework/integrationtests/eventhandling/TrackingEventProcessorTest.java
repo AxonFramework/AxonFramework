@@ -844,11 +844,7 @@ public class TrackingEventProcessorTest {
         assertWithin(50, TimeUnit.MILLISECONDS, () ->
                 assertTrue("Expected merge to succeed", testSubject.mergeSegment(0).join()));
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(0);
-
-        while (!testSubject.processingStatus().get(0).isCaughtUp()) {
-            Thread.sleep(10);
-        }
+        waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
 
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals("Expected all 10 messages to be handled", 10, handledEvents.stream().map(EventMessage::getIdentifier).distinct().count()));
         Thread.sleep(100);
