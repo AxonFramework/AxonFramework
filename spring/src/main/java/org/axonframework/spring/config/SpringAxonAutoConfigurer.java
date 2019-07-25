@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,6 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -32,8 +29,6 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.modelling.saga.ResourceInjector;
-import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -42,6 +37,11 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.saga.ResourceInjector;
+import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
@@ -84,6 +84,7 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 import static org.axonframework.spring.SpringUtils.isQualifierMatch;
 import static org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
+
 /**
  * ImportBeanDefinitionRegistrar implementation that sets up an infrastructure Configuration based on beans available
  * in the application context.
@@ -200,7 +201,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                     .getBeanDefinition());
         }
 
-        registerModules(configurer);
+        registerModuleConfigurations(configurer);
         registerCorrelationDataProviders(configurer);
         registerEventUpcasters(configurer);
         registerAggregateBeanDefinitions(configurer, registry);
@@ -208,7 +209,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         String eventProcessingConfigurationName = findComponent(EventProcessingConfiguration.class)
                 .orElseThrow(() -> new AxonConfigurationException("Missing EventProcessingConfiguration bean"));
 
-        beanFactory.registerSingleton(AXON_CONFIGURER_BEAN, configurer);
+        registry.registerBeanDefinition(AXON_CONFIGURER_BEAN,
+                                        genericBeanDefinition(ConfigurerFactoryBean.class)
+                                                .addConstructorArgValue(configurer).getBeanDefinition());
         registry.registerBeanDefinition(AXON_CONFIGURATION_BEAN, genericBeanDefinition(AxonConfiguration.class)
                 .addConstructorArgReference(AXON_CONFIGURER_BEAN).getBeanDefinition());
         try {
@@ -270,19 +273,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .addConstructorArgReference(epConfigurationBeanName)
                 .addConstructorArgReference(epConfigurerBeanName)
                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
-    }
-
-    private void registerModules(Configurer configurer) {
-        registerConfigurerModules(configurer);
-        registerModuleConfigurations(configurer);
-    }
-
-    private void registerConfigurerModules(Configurer configurer) {
-        String[] configurerModules = beanFactory.getBeanNamesForType(ConfigurerModule.class);
-        for (String configurerModuleBeanName : configurerModules) {
-            ConfigurerModule configurerModule = beanFactory.getBean(configurerModuleBeanName, ConfigurerModule.class);
-            configurerModule.configureModule(configurer);
-        }
     }
 
     private void registerModuleConfigurations(Configurer configurer) {
