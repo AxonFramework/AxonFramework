@@ -28,14 +28,38 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * FactoryBean that creates an instance of a {@link Configurer} for use in a Spring Application Context.
+ * <p>
+ * This bean has a dependency on all {@link ConfigurerModule ConfigurerModules} in the Application Context, which
+ * are initialized <em>before</em> the Configurer is made available in the application context. This ensures that
+ * any customizations made by autowiring the Configurer will override any defaults set by a ConfigurerModule.
+ * <p>
+ * The ConfigurerFactoryBean is wired by the {@link SpringAxonAutoConfigurer} as part of Spring Boot Auto-Configuration
+ * and should not be wired "manually" in an Application Context.
+ *
+ * @author Allard Buijze
+ * @since 4.2
+ */
 public class ConfigurerFactoryBean implements FactoryBean<Configurer>, ApplicationContextAware {
 
     private final Configurer configurer;
 
+    /**
+     * Initialize the factory bean, using the given {@code configurer} to make available in the Application Context,
+     * once configured by the ConfigurerModules in that context.
+     *
+     * @param configurer The Configurer to make available in the Application Context
+     */
     public ConfigurerFactoryBean(Configurer configurer) {
         this.configurer = configurer;
     }
 
+    /**
+     * Registers the {@code configurerModules} that provide context-sensitive default settings for the Configurer.
+     *
+     * @param configurerModules the modules that provide defaults for the Configurer
+     */
     @Autowired(required = false)
     public void setConfigurerModules(List<ConfigurerModule> configurerModules) {
         ArrayList<ConfigurerModule> modules = new ArrayList<>(configurerModules);
@@ -44,7 +68,7 @@ public class ConfigurerFactoryBean implements FactoryBean<Configurer>, Applicati
     }
 
     @Override
-    public Configurer getObject() throws Exception {
+    public Configurer getObject() {
         return configurer;
     }
 
