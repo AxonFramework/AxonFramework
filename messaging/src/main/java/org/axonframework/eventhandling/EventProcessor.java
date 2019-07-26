@@ -65,5 +65,7 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
      * method will block until the shutdown is complete. Can be a no-op for event processors that don't support
      * asynchronous shutdown.
      */
-    default void initiateShutdown() {}
+    default void initiateShutdown() {
+        // Default is synchronous shutdown.
+    }
 }
