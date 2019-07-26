@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.junit.After;
 import org.junit.Before;
@@ -142,7 +143,7 @@ public class TrackingEventProcessorTest {
         eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         sleepInstructions = new ArrayList<>();
 
-        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing());
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing().andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS));
     }
 
     private void initProcessor(TrackingEventProcessorConfiguration config, UnaryOperator<TrackingEventProcessor.Builder> customization) {
@@ -290,20 +291,97 @@ public class TrackingEventProcessorTest {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
-        testSubject.start();
-        // give it a bit of time to start
-        Thread.sleep(200);
         eventBus.publish(createEvent());
+        testSubject.start();
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
-        verify(tokenStore).extendClaim(eq(testSubject.getName()), anyInt());
-        verify(tokenStore).storeToken(any(), any(), anyInt());
+        verify(tokenStore).storeToken(any(), eq(testSubject.getName()), eq(0));
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
     @Test
-    public void testTokenIsStoredOncePerEventBatch() throws Exception {
+    public void testTokenIsExtendedAtStartAndStoredAtEndOfEventBatch_WithStoringTokensAfterProcessingSetting() throws Exception {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
+                                            .eventHandlerInvoker(eventHandlerInvoker)
+                                            .messageSource(eventBus)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .storingTokensAfterProcessing()
+                                            .trackingEventProcessorConfiguration(
+                                                    TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                                                       .andBatchSize(100)
+                                            )
+                                            .build();
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        AtomicInteger invocationsInUnitOfWork = new AtomicInteger();
+        doAnswer(i -> {
+            if (CurrentUnitOfWork.isStarted()) {
+                invocationsInUnitOfWork.incrementAndGet();
+            }
+            return i.callRealMethod();
+        }).when(tokenStore).extendClaim(anyString(), anyInt());
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        testSubject.start();
+        eventBus.publish(createEvents(2));
+        assertTrue("Expected Unit of Work to have reached clean up phase for 2 messages",
+                   countDownLatch.await(5, TimeUnit.SECONDS));
+        InOrder inOrder = inOrder(tokenStore);
+        inOrder.verify(tokenStore, times(1)).extendClaim(eq(testSubject.getName()), anyInt());
+        inOrder.verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
+
+        assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
+        assertEquals("Unexpected number of invocations of token extension in unit of work", 1, invocationsInUnitOfWork.get());
+    }
+
+    @Test
+    public void testTokenStoredAtEndOfEventBatchAndNotExtended() throws Exception {
+        testSubject = TrackingEventProcessor.builder()
+                                            .name("test")
+                                            .eventHandlerInvoker(eventHandlerInvoker)
+                                            .trackingEventProcessorConfiguration(
+                                                    TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                                                       .andBatchSize(100)
+                                            )
+                                            .messageSource(eventBus)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .build();
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        AtomicInteger invocationsInUnitOfWork = new AtomicInteger();
+        doAnswer(i -> {
+            if (CurrentUnitOfWork.isStarted()) {
+                invocationsInUnitOfWork.incrementAndGet();
+                fail("Did not expect an invocation in a Unit of Work");
+            }
+            return i.callRealMethod();
+        }).when(tokenStore).extendClaim(anyString(), anyInt());
+
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        testSubject.start();
+        eventBus.publish(createEvents(2));
+        assertTrue("Expected Unit of Work to have reached clean up phase for 2 messages",
+                   countDownLatch.await(5, TimeUnit.SECONDS));
+
+        verify(tokenStore, times(1)).storeToken(any(), any(), anyInt());
+        assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
+
+        assertEquals("Unexpected number of invocations of token extension in unit of work", 0, invocationsInUnitOfWork.get());
+    }
+
+    @Test
+    public void testTokenStoredAtEndOfEventBatchAndExtendedWhenTokenClaimIntervalExceeded() throws Exception {
+        testSubject = TrackingEventProcessor.builder()
+                                            .name("test")
+                                            .trackingEventProcessorConfiguration(
+                                                    TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                                                       .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS)
+                                            )
                                             .eventHandlerInvoker(eventHandlerInvoker)
                                             .messageSource(eventBus)
                                             .tokenStore(tokenStore)
@@ -312,6 +390,7 @@ public class TrackingEventProcessorTest {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            Thread.sleep(50);
             return interceptorChain.proceed();
         }));
         testSubject.start();
@@ -320,9 +399,10 @@ public class TrackingEventProcessorTest {
         eventBus.publish(createEvents(2));
         assertTrue("Expected Unit of Work to have reached clean up phase for 2 messages",
                    countDownLatch.await(5, TimeUnit.SECONDS));
+
         InOrder inOrder = inOrder(tokenStore);
-        inOrder.verify(tokenStore, times(1)).extendClaim(eq(testSubject.getName()), anyInt());
         inOrder.verify(tokenStore, times(1)).storeToken(any(), any(), anyInt());
+        inOrder.verify(tokenStore, times(1)).extendClaim(eq(testSubject.getName()), anyInt());
 
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
