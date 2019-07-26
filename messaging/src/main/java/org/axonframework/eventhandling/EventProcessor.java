@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An Event Processor processes event messages from an event queue or event bus.
@@ -61,11 +62,12 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
     void shutDown();
 
     /**
-     * Begins shutting down. Does not block until shutdown is complete. Calling {@link #shutDown()} after this
-     * method will block until the shutdown is complete. Can be a no-op for event processors that don't support
-     * asynchronous shutdown.
+     * Initiates a shutdown, providing a {@link CompletableFuture} that completes when the shutdown process is
+     * finished.
+     *
+     * @return a CompletableFuture that completes when the shutdown process is finished.
      */
-    default void initiateShutdown() {
-        // Default is synchronous shutdown.
+    default CompletableFuture<Void> shutdownAsync() {
+        return CompletableFuture.runAsync(this::shutDown);
     }
 }

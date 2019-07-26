@@ -590,7 +590,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     @Override
     public void shutDown() {
-        initiateShutdown();
+        setShutdownState();
+        awaitTermination();
+    }
+
+    private void setShutdownState() {
+        if (state.getAndSet(State.SHUT_DOWN).isRunning()) {
+            logger.info("Shutdown state set for Processor '{}'.", getName());
+        }
+    }
+
+    private void awaitTermination() {
         if (activeProcessorThreads() > 0) {
             logger.info("Processor '{}' awaiting termination...", getName());
             try {
@@ -609,10 +619,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * method will block until the shutdown is complete.
      */
     @Override
-    public void initiateShutdown() {
-        if (state.getAndSet(State.SHUT_DOWN).isRunning()) {
-            logger.info("Shutdown state set for Processor '{}'.", getName());
-        }
+    public CompletableFuture<Void> shutdownAsync() {
+        setShutdownState();
+        return CompletableFuture.runAsync(this::awaitTermination);
     }
 
     /**
