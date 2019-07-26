@@ -34,6 +34,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -89,6 +90,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final long tokenClaimInterval;
 
     private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
+    private final boolean storeTokenBeforeProcessing;
+    private final int eventAvailabilityTimeout;
 
     /**
      * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
@@ -119,6 +122,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         super(builder);
         TrackingEventProcessorConfiguration config = builder.trackingEventProcessorConfiguration;
         this.tokenClaimInterval = config.getTokenClaimInterval();
+        this.eventAvailabilityTimeout = config.getEventAvailabilityTimeout();
+        this.storeTokenBeforeProcessing = builder.storeTokenBeforeProcessing;
         this.batchSize = config.getBatchSize();
 
         this.messageSource = builder.messageSource;
@@ -135,18 +140,31 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
-                tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
-            }
-            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isLastMessage()) {
-                unitOfWork.onPrepareCommit(uow -> {
-                    TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey);
+                Instant startTime = now();
+                TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey);
+                if (storeTokenBeforeProcessing) {
                     tokenStore.storeToken(lastToken,
                                           builder.name,
                                           unitOfWork.getResource(segmentIdResourceKey));
+                } else {
+                    tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
+                }
+                unitOfWork.onPrepareCommit(uow -> {
+                    if (!storeTokenBeforeProcessing) {
+                        tokenStore.storeToken(lastToken,
+                                              builder.name,
+                                              unitOfWork.getResource(segmentIdResourceKey));
+                    } else if (now().isAfter(startTime.plusMillis(eventAvailabilityTimeout))) {
+                        tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
+                    }
                 });
             }
             return interceptorChain.proceed();
         });
+    }
+
+    private Instant now() {
+        return GenericEventMessage.clock.instant();
     }
 
     /**
@@ -333,7 +351,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             checkSegmentCaughtUp(segment, eventStream);
             TrackingToken lastToken;
             Collection<Segment> processingSegments;
-            if (eventStream.hasNextAvailable(1, SECONDS)) {
+            if (eventStream.hasNextAvailable(eventAvailabilityTimeout, MILLISECONDS)) {
                 final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
                 lastToken = firstMessage.trackingToken();
                 processingSegments = processingSegments(lastToken, segment);
@@ -865,6 +883,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         private TransactionManager transactionManager;
         private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
+        private boolean storeTokenBeforeProcessing = true;
 
         public Builder() {
             super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
@@ -961,6 +980,26 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
 
         /**
+         * Set this processor to store Tracking Tokens only at the end of processing. This has an impact on performance,
+         * as the processor will need to extend the claim at the start of the process, and then update the token at the
+         * end. This causes 2 round-trips to the Token Store per batch of events.
+         * <p>
+         * Enable this when a Token Store cannot participate in a transaction, or when at-most-once-delivery semantics
+         * are desired.
+         * <p>
+         * The default behavior is to store the last token of the Batch to the Token Store before processing of events
+         * begins. A Token Claim extension is only sent when processing of the batch took longer than the
+         * {@link TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit)
+         * tokenClaimUpdateInterval}.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder storingTokensAfterProcessing() {
+            this.storeTokenBeforeProcessing = false;
+            return this;
+        }
+
+        /**
          * Initializes a {@link TrackingEventProcessor} as specified through this Builder.
          *
          * @return a {@link TrackingEventProcessor} as specified through this Builder
@@ -987,6 +1026,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private abstract class Instruction implements Runnable {
 
         private final CompletableFuture<Boolean> result;
+
         public Instruction(CompletableFuture<Boolean> result) {
             this.result = result;
         }
