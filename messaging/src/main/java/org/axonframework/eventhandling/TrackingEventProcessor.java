@@ -586,12 +586,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Shut down the processor.
+     * Shuts down the processor. Blocks until shutdown is complete.
      */
     @Override
     public void shutDown() {
-        if (state.getAndSet(State.SHUT_DOWN).isRunning()) {
-            logger.info("Shutdown state set for Processor '{}'. Awaiting termination...", getName());
+        initiateShutdown();
+        if (activeProcessorThreads() > 0) {
+            logger.info("Processor '{}' awaiting termination...", getName());
             try {
                 while (activeProcessorThreads() > 0) {
                     Thread.sleep(1);
@@ -600,6 +601,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 logger.info("Thread was interrupted while waiting for TrackingProcessor '{}' shutdown.", getName());
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    /**
+     * Begins shutting down. Does not block until shutdown is complete. Calling {@link #shutDown()} after this
+     * method will block until the shutdown is complete.
+     */
+    @Override
+    public void initiateShutdown() {
+        if (state.getAndSet(State.SHUT_DOWN).isRunning()) {
+            logger.info("Shutdown state set for Processor '{}'.", getName());
         }
     }
 

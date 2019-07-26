@@ -56,7 +56,14 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
     void start();
 
     /**
-     * Stop processing events.
+     * Stops processing events. Blocks until the shutdown is complete.
      */
     void shutDown();
+
+    /**
+     * Begins shutting down. Does not block until shutdown is complete. Calling {@link #shutDown()} after this
+     * method will block until the shutdown is complete. Can be a no-op for event processors that don't support
+     * asynchronous shutdown.
+     */
+    default void initiateShutdown() {}
 }
