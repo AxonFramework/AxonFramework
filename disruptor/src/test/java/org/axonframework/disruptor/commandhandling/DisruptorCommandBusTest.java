@@ -23,6 +23,14 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.disruptor.commandhandling.utils.MockException;
+import org.axonframework.disruptor.commandhandling.utils.SomethingDoneEvent;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -91,14 +99,14 @@ import static org.mockito.Mockito.*;
 public class DisruptorCommandBusTest {
 
     private static final int COMMAND_COUNT = 100 * 1000;
-
+    private static final String COMMAND_RETURN_VALUE = "dummyVal";
+    private static AtomicInteger messageHandlingCounter;
     private StubHandler stubHandler;
     private InMemoryEventStore eventStore;
     private DisruptorCommandBus testSubject;
     private String aggregateIdentifier;
     private TransactionManager mockTransactionManager;
     private ParameterResolverFactory parameterResolverFactory;
-    private static AtomicInteger messageHandlingCounter;
 
     @Before
     public void setUp() {
@@ -367,6 +375,30 @@ public class DisruptorCommandBusTest {
         // we expect 2 events, 1 from aggregate constructor, one from doSomething method invocation
         assertEquals(1, lastEvent.getSequenceNumber());
         assertEquals(aggregateIdentifier, lastEvent.getAggregateIdentifier());
+    }
+
+    @Test
+    public void testCommandReturnsAValue() {
+        eventStore.storedEvents.clear();
+        testSubject = DisruptorCommandBus.builder()
+                                         .bufferSize(8)
+                                         .producerType(ProducerType.SINGLE)
+                                         .waitStrategy(new SleepingWaitStrategy())
+                                         .invokerThreadCount(2)
+                                         .publisherThreadCount(3)
+                                         .build();
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        stubHandler.setRepository(testSubject.createRepository(eventStore,
+                                                               new GenericAggregateFactory<>(StubAggregate.class)));
+
+        FutureCallback futureCallback = new FutureCallback();
+
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)), futureCallback);
+        testSubject.stop();
+
+        DomainEventMessage lastEvent = eventStore.storedEvents.get(aggregateIdentifier);
+
+        assertEquals(COMMAND_RETURN_VALUE, futureCallback.getResult().getPayload());
     }
 
     @SuppressWarnings("unchecked")
@@ -733,7 +765,7 @@ public class DisruptorCommandBusTest {
                 }
             }
 
-            return null;
+            return COMMAND_RETURN_VALUE;
         }
 
         public void setRepository(Repository<StubAggregate> repository) {

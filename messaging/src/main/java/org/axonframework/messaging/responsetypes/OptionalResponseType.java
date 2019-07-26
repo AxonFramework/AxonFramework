@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.ReflectionUtils;
 
+import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.concurrent.Future;
@@ -49,6 +50,7 @@ public class OptionalResponseType<R> extends AbstractResponseType<Optional<R>> {
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
     @JsonCreator
+    @ConstructorProperties({"expectedResponseType"})
     public OptionalResponseType(@JsonProperty("expectedResponseType") Class<R> expectedResponseType) {
         super(expectedResponseType);
     }

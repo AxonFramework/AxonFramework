@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.annotation.*;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
@@ -49,6 +50,7 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
      * @param upperSegmentToken the token of the half with the higher segment ID
      */
     @JsonCreator
+    @ConstructorProperties({"lowerSegmentToken", "upperSegmentToken"})
     public MergedTrackingToken(
             @JsonProperty("lowerSegmentToken") TrackingToken lowerSegmentToken,
             @JsonProperty("upperSegmentToken") TrackingToken upperSegmentToken) {

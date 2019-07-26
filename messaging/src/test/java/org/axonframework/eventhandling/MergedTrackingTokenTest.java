@@ -16,11 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.serialization.JavaSerializer;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -75,22 +70,6 @@ public class MergedTrackingTokenTest {
         assertEquals(new MergedTrackingToken(new MergedTrackingToken(token(1), token(3)), token(3)), testSubject.lowerBound(token(3)));
         assertEquals(new MergedTrackingToken(new MergedTrackingToken(token(1), token(2)), token(2)), testSubject.lowerBound(token(2)));
         assertEquals(token(1), testSubject.lowerBound(token(1)));
-    }
-
-    @Test
-    public void testSerializeTokens() {
-        MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(5)), token(3));
-        Serializer[] serializers = new Serializer[]{
-                XStreamSerializer.builder().build(),
-                JacksonSerializer.builder().build(),
-                JavaSerializer.builder().build()
-        };
-
-        for (Serializer serializer : serializers) {
-            SerializedObject<byte[]> serialized = serializer.serialize(testSubject, byte[].class);
-            MergedTrackingToken deserialized = serializer.deserialize(serialized);
-            assertEquals("Objects not equal with " + serializer.getClass().getSimpleName(), testSubject, deserialized);
-        }
     }
 
     @Test

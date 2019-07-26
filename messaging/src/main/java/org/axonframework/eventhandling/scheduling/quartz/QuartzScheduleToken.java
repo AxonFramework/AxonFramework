@@ -24,6 +24,8 @@ import java.util.Objects;
 
 import static java.lang.String.format;
 
+import java.beans.ConstructorProperties;
+
 /**
  * ScheduleToken implementation representing a scheduled Quartz Job.
  *
@@ -44,6 +46,7 @@ public class QuartzScheduleToken implements ScheduleToken {
      * @param groupIdentifier The identifier of the group the job is part of.
      */
     @JsonCreator
+    @ConstructorProperties({"jobIdentifier", "groupIdentifier"})
     public QuartzScheduleToken(@JsonProperty("jobIdentifier") String jobIdentifier,
                                @JsonProperty("groupIdentifier") String groupIdentifier) {
         this.jobIdentifier = jobIdentifier;

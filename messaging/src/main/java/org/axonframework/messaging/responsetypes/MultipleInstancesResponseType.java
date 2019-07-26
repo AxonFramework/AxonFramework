@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +53,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      * @param expectedCollectionGenericType the response type which is expected to be matched against and returned
      */
     @JsonCreator
+    @ConstructorProperties({"expectedResponseType"})
     public MultipleInstancesResponseType(@JsonProperty("expectedResponseType") Class<R> expectedCollectionGenericType) {
         super(expectedCollectionGenericType);
     }

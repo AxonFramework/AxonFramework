@@ -19,6 +19,7 @@ package org.axonframework.messaging.responsetypes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.concurrent.Future;
@@ -45,6 +46,7 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
     @JsonCreator
+    @ConstructorProperties({"expectedResponseType"})
     public InstanceResponseType(@JsonProperty("expectedResponseType") Class<R> expectedResponseType) {
         super(expectedResponseType);
     }

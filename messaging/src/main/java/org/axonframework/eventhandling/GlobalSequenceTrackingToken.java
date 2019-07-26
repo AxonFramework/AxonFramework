@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
 
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.OptionalLong;
@@ -43,6 +44,7 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
      * @param globalIndex the global sequence number of the event
      */
     @JsonCreator
+    @ConstructorProperties({"globalIndex"})
     public GlobalSequenceTrackingToken(@JsonProperty("globalIndex") long globalIndex) {
         this.globalIndex = globalIndex;
     }
