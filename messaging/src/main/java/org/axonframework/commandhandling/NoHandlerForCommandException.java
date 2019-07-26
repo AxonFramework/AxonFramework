@@ -16,19 +16,22 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.AxonTransientException;
 
 import static java.lang.String.format;
 
 /**
- * Exception indicating that no suitable handler could be found for the given command.
+ * Exception indicating that no suitable handler could be found for the given command. As of 4.2, this exception has
+ * been moved to {@link AxonTransientException}, since (especially in a MicroServices Architecture context) the
+ * handler may return. {@link org.axonframework.commandhandling.gateway.RetryScheduler}s will now see this exception
+ * as retryable.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class NoHandlerForCommandException extends AxonNonTransientException {
+public class NoHandlerForCommandException extends AxonTransientException {
 
-    private static final long serialVersionUID = -7242262641697288852L;
+    private static final long serialVersionUID = -7202076465339197011L;
 
     /**
      * Initialize a NoHandlerForCommandException with the given {@code message}.
