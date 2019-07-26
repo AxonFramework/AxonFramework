@@ -184,6 +184,7 @@ public class EventProcessingModule
 
     @Override
     public void shutdown() {
+        eventProcessors.forEach((name, component) -> component.get().initiateShutdown());
         eventProcessors.forEach((name, component) -> component.get().shutDown());
     }
     //</editor-fold>
