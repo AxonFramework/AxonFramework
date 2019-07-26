@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2019. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.AxonNonTransientException;
@@ -11,19 +27,24 @@ import org.axonframework.messaging.MessageHandler;
  */
 public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransientException {
 
+    private static final long serialVersionUID = 7168111526309151296L;
+
     /**
      * Initialize a duplicate command handler subscription exception using the given {@code initialHandler} and {@code
      * duplicateHandler} to form a specific message.
      *
+     * @param commandName      The name of the command for which the duplicate was detected
      * @param initialHandler   the initial {@link MessageHandler} for which a duplicate was encountered
      * @param duplicateHandler the duplicated {@link MessageHandler}
      */
-    public DuplicateCommandHandlerSubscriptionException(MessageHandler<? super CommandMessage<?>> initialHandler,
+    public DuplicateCommandHandlerSubscriptionException(String commandName,
+                                                        MessageHandler<? super CommandMessage<?>> initialHandler,
                                                         MessageHandler<? super CommandMessage<?>> duplicateHandler) {
-        this(String.format(
-                "A duplicate Command Handler has been subscribed residing in class [%s]"
-                        + " that would override an identical handler in class [%s].",
-                duplicateHandler.getTargetType(), initialHandler.getTargetType()
+        this(String.format("A duplicate Command Handler for command [%s] has been subscribed residing in class [%s]"
+                                   + " that would override an identical handler in class [%s].",
+                           commandName,
+                           duplicateHandler.getTargetType().getName(),
+                           initialHandler.getTargetType().getName()
         ));
     }
 
@@ -36,13 +57,4 @@ public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransie
         super(message);
     }
 
-    /**
-     * Initializes a duplicate command handler subscription exception using the given {@code message} and {@code cause}.
-     *
-     * @param message the message describing the exception
-     * @param cause   the underlying cause of the exception
-     */
-    public DuplicateCommandHandlerSubscriptionException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,11 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -70,13 +66,6 @@ public class SimpleCommandBus implements CommandBus {
             new CopyOnWriteArrayList<>();
 
     /**
-     * Private default constructor to support 'spying' in test cases.
-     */
-    private SimpleCommandBus() {
-        this(new Builder());
-    }
-
-    /**
      * Instantiate a {@link SimpleCommandBus} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are not
@@ -98,7 +87,7 @@ public class SimpleCommandBus implements CommandBus {
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
      * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
-     * to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.
+     * to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
      * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
      * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
      *
@@ -187,14 +176,14 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        if (subscriptions.containsKey(commandName)) {
-            subscriptions.computeIfPresent(
-                    commandName,
-                    (cmdName, initialHandler) -> duplicateCommandHandlerResolver.resolve(initialHandler, handler)
-            );
-        } else {
-            subscriptions.put(commandName, handler);
-        }
+        assertNonNull(handler, "handler may not be null");
+        subscriptions.compute(commandName, (k, existingHandler) -> {
+            if (existingHandler == null || existingHandler == handler) {
+                return handler;
+            } else {
+                return duplicateCommandHandlerResolver.resolve(commandName, existingHandler, handler);
+            }
+        });
         return () -> subscriptions.remove(commandName, handler);
     }
 
@@ -244,7 +233,7 @@ public class SimpleCommandBus implements CommandBus {
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
      * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
-     * to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.
+     * to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
      * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
      * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
      */
@@ -254,7 +243,7 @@ public class SimpleCommandBus implements CommandBus {
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
         private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
-                DuplicateCommandHandlerResolution.LOG_AND_RETURN_DUPLICATE.getResolver();
+                DuplicateCommandHandlerResolution.logAndOverride();
 
         /**
          * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
@@ -298,7 +287,7 @@ public class SimpleCommandBus implements CommandBus {
 
         /**
          * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
-         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.
+         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
          *
          * @param duplicateCommandHandlerResolver a {@link DuplicateCommandHandlerResolver} used to resolves the road to
          *                                        take when a duplicate command handler is subscribed

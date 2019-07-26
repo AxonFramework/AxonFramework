@@ -1,33 +1,45 @@
+/*
+ * Copyright (c) 2010-2019. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling;
 
 import org.axonframework.messaging.MessageHandler;
 
-import java.util.function.BiFunction;
-
 /**
  * Functional interface towards resolving the occurrence of a duplicate command handler being resolved.
  * As such it ingests two {@link MessageHandler} instances and returns another one as the resolution.
- * Several default implementations towards this interface have been provided in the {@link
- * DuplicateCommandHandlerResolution}.
  *
  * @author Steven van Beelen
- * @see DuplicateCommandHandlerResolution
  * @since 4.2
  */
 @FunctionalInterface
-public interface DuplicateCommandHandlerResolver extends
-        BiFunction<MessageHandler<? super CommandMessage<?>>, MessageHandler<? super CommandMessage<?>>, MessageHandler<? super CommandMessage<?>>> {
+public interface DuplicateCommandHandlerResolver {
 
     /**
-     * Short hand towards {@link BiFunction#apply(Object, Object)}, mainly renamed for a nicer API.
+     * Chooses what to do when a duplicate handler is registered, returning the handler that should be selected for
+     * command handling, or otherwise throwing an exception to reject registration altogether.
      *
-     * @param initialHandler   the initial {@link MessageHandler} for which a duplicate was encountered
-     * @param duplicateHandler the duplicated {@link MessageHandler}
-     * @return the resolved {@link MessageHandler}. Could be the {@code initialHandler}, the {@code duplicateHandler} or
+     * @param commandName       The name of the Command for which the duplicate was detected
+     * @param registeredHandler the {@link MessageHandler} previously registered with the Command Bus
+     * @param candidateHandler  the {@link MessageHandler} that is newly registered and conflicts with the existing registration
+     * @return the resolved {@link MessageHandler}. Could be the {@code registeredHandler}, the {@code candidateHandler} or
      * another handler entirely
+     * @throws RuntimeException when registration should fail
      */
-    default MessageHandler<? super CommandMessage<?>> resolve(MessageHandler<? super CommandMessage<?>> initialHandler,
-                                                              MessageHandler<? super CommandMessage<?>> duplicateHandler) {
-        return apply(initialHandler, duplicateHandler);
-    }
+    MessageHandler<? super CommandMessage<?>> resolve(String commandName,
+                                                      MessageHandler<? super CommandMessage<?>> registeredHandler,
+                                                      MessageHandler<? super CommandMessage<?>> candidateHandler);
 }

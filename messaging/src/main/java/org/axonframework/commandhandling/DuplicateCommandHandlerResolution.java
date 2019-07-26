@@ -1,9 +1,20 @@
+/*
+ * Copyright (c) 2010-2019. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.invoke.MethodHandles;
 
 /**
  * Enumeration describing a set of reasonable {@link DuplicateCommandHandlerResolver} implementations. Can be used to
@@ -13,69 +24,35 @@ import java.lang.invoke.MethodHandles;
  * @author Steven van Beelen
  * @since 4.2
  */
-public enum DuplicateCommandHandlerResolution {
+public abstract class DuplicateCommandHandlerResolution {
 
     /**
      * A {@link DuplicateCommandHandlerResolver} implementation which logs a warning message and resolve to returning
      * the duplicate handler.
+     *
+     * @return an instance that logs duplicates
      */
-    LOG_AND_RETURN_DUPLICATE((initialHandler, duplicateHandler) -> {
-        String warningMessage = String.format(
-                "A duplicate command handler was found. "
-                        + "The initial and the duplicate handlers respectively reside in [%s] and [%s]."
-                        + "The duplicate handler will be maintained according to the used resolver.",
-                initialHandler.getTargetType(), duplicateHandler.getTargetType()
-        );
-        logWarning(warningMessage);
-        return duplicateHandler;
-    }),
-
-    /**
-     * A {@link DuplicateCommandHandlerResolver} implementation which logs a warning message and resolve to returning
-     * the initial handler.
-     */
-    LOG_AND_RETURN_INITIAL((initialHandler, duplicateHandler) -> {
-        String warningMessage = String.format(
-                "A duplicate command handler was found. "
-                        + "The initial and the duplicate handlers respectively reside in [%s] and [%s]."
-                        + "The initial handler will be maintained according to the used resolver.",
-                initialHandler.getTargetType(), duplicateHandler.getTargetType()
-        );
-        logWarning(warningMessage);
-        return initialHandler;
-    }),
+    public static DuplicateCommandHandlerResolver logAndOverride() {
+        return LoggingDuplicateCommandHandlerResolver.instance();
+    }
 
     /**
      * A {@link DuplicateCommandHandlerResolver} implementation which throws a
      * {@link DuplicateCommandHandlerSubscriptionException}.
+     *
+     * @return an instance that fails on duplicate registrations
      */
-    THROW_EXCEPTION((initialHandler, duplicateHandler) -> {
-        throw new DuplicateCommandHandlerSubscriptionException(initialHandler, duplicateHandler);
-    });
-
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    private final DuplicateCommandHandlerResolver resolver;
-
-    DuplicateCommandHandlerResolution(DuplicateCommandHandlerResolver resolver) {
-        this.resolver = resolver;
+    public static DuplicateCommandHandlerResolver rejectDuplicates() {
+        return FailingDuplicateCommandHandlerResolver.instance();
     }
 
     /**
-     * Return the {@link DuplicateCommandHandlerResolver} implementation specified.
+     * A {@link DuplicateCommandHandlerResolver} implementation that allows handlers to silently override previous
+     * registered handlers for the same command.
      *
-     * @return the {@link DuplicateCommandHandlerResolver} implementation specified
+     * @return an instance that silently accepts duplicates
      */
-    public DuplicateCommandHandlerResolver getResolver() {
-        return resolver;
-    }
-
-    /**
-     * Private static method used to allow using the set {@code logger} within the provided enums to log a warning.
-     *
-     * @param message the message to log on warning level
-     */
-    private static void logWarning(String message) {
-        logger.warn(message);
+    public static DuplicateCommandHandlerResolver silentOverride() {
+        return (cmd, first, second) -> second;
     }
 }

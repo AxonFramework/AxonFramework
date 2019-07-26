@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,19 +21,8 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.DuplicateCommandHandlerResolution;
-import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
-import org.axonframework.commandhandling.MonitorAwareCallback;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.Registration;
+import org.axonframework.commandhandling.*;
+import org.axonframework.common.*;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.transaction.TransactionManager;
@@ -41,11 +30,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -53,13 +38,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateNotFoundException;
-import org.axonframework.modelling.command.AggregateScopeDescriptor;
-import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
-import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.*;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -69,15 +48,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -178,7 +150,7 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@link WaitStrategy} defaults to a {@link BlockingWaitStrategy}.</li>
      * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
-     * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.</li>
+     * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.</li>
      * </ul>
      * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
      * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can
@@ -521,14 +493,13 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        if (commandHandlers.containsKey(commandName)) {
-            commandHandlers.computeIfPresent(
-                    commandName,
-                    (cmdName, initialHandler) -> duplicateCommandHandlerResolver.resolve(initialHandler, handler)
-            );
-        } else {
-            commandHandlers.put(commandName, handler);
-        }
+        commandHandlers.compute(commandName, (cn, existingHandler) -> {
+            if (existingHandler == null || existingHandler == handler) {
+                return handler;
+            } else {
+                return duplicateCommandHandlerResolver.resolve(cn, existingHandler, handler);
+            }
+        });
         return () -> commandHandlers.remove(commandName, handler);
     }
 
@@ -604,7 +575,7 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@link WaitStrategy} defaults to a {@link BlockingWaitStrategy}.</li>
      * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
-     * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.</li>
+     * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.</li>
      * </ul>
      * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
      * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can
@@ -640,8 +611,7 @@ public class DisruptorCommandBus implements CommandBus {
         private WaitStrategy waitStrategy = new BlockingWaitStrategy();
         private int invokerThreadCount = 1;
         private Cache cache = NoCache.INSTANCE;
-        private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
-                DuplicateCommandHandlerResolution.LOG_AND_RETURN_DUPLICATE.getResolver();
+        private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver = DuplicateCommandHandlerResolution.logAndOverride();
 
         /**
          * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the
@@ -906,7 +876,7 @@ public class DisruptorCommandBus implements CommandBus {
 
         /**
          * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
-         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#LOG_AND_RETURN_DUPLICATE}.
+         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride() Log and Override}.
          *
          * @param duplicateCommandHandlerResolver a {@link DuplicateCommandHandlerResolver} used to resolves the road to
          *                                        take when a duplicate command handler is subscribed
