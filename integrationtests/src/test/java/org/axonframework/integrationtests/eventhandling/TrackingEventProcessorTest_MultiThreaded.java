@@ -228,7 +228,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
     @Test
     public void testMultiThreadSegmentsExceedsWorkerCount() throws Exception {
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
-                                                              .andInitialSegmentsCount(3));
+                                                              .andInitialSegmentsCount(4));
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
@@ -240,11 +240,11 @@ public class TrackingEventProcessorTest_MultiThreaded {
         }).when(mockHandler).handle(any());
 
         testSubject.start();
-        eventBus.publish(createEvents(3));
+        eventBus.publish(createEvents(4));
 
-        assertTrue("Expected Handler to have received (only) 2 out of 3 published events",
+        assertTrue("Expected Handler to have received 2 out of 4 published events. Got " + acknowledgeByThread.eventCount(),
                    countDownLatch.await(5, SECONDS));
-        acknowledgeByThread.assertEventsAddUpTo(2);
+        assertThat((long) 2, is(acknowledgeByThread.eventCount()));
     }
 
     @Test
@@ -260,7 +260,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
         eventBus.publish(createEvents(2));
         assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, SECONDS));
         acknowledgeByThread.assertEventsAckedByMultipleThreads();
-        acknowledgeByThread.assertEventsAddUpTo(2);
+        assertThat((long) 2, is(acknowledgeByThread.eventCount()));
     }
 
     @Test
@@ -304,7 +304,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
                    countDownLatch.await(60, SECONDS));
 
         acknowledgeByThread.assertEventsAckedByMultipleThreads();
-        acknowledgeByThread.assertEventsAddUpTo(9);
+        assertThat((long) 9, is(acknowledgeByThread.eventCount()));
     }
 
     @Test(timeout = 10000)
@@ -325,7 +325,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
         eventBus.publish(events.subList(0, 2));
 
         assertTrue("Expected 2 invocations on Event Handler by now", countDownLatch.await(5, SECONDS));
-        acknowledgeByThread.assertEventsAddUpTo(2);
+        assertThat((long) 2, is(acknowledgeByThread.eventCount()));
 
         assertWithin(
                 1, SECONDS,
@@ -356,7 +356,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
 
         testSubject.start();
         assertTrue("Expected 4 invocations on Event Handler by now", countDownLatch2.await(5, SECONDS));
-        acknowledgeByThread.assertEventsAddUpTo(4);
+        assertThat((long) 4, is(acknowledgeByThread.eventCount()));
 
         assertWithin(
                 1, SECONDS,
@@ -393,7 +393,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
                                             .build();
         testSubject.start();
         assertTrue("Expected 5 invocations on Event Handler by now", countDownLatch.await(10, SECONDS));
-        acknowledgeByThread.assertEventsAddUpTo(5);
+        assertThat((long) 5, is(acknowledgeByThread.eventCount()));
         verify(eventBus, times(2)).openStream(any());
     }
 
@@ -435,9 +435,8 @@ public class TrackingEventProcessorTest_MultiThreaded {
             ackedEventsByThreadMap.values().forEach(l -> assertThat(l.isEmpty(), is(false)));
         }
 
-        void assertEventsAddUpTo(int eventCount) {
-            assertThat(ackedEventsByThreadMap.values().stream().mapToLong(Collection::size).sum(),
-                       is(Integer.valueOf(eventCount).longValue()));
+        long eventCount() {
+            return ackedEventsByThreadMap.values().stream().mapToLong(Collection::size).sum();
         }
     }
 }
