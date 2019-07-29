@@ -18,6 +18,8 @@ package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -285,6 +287,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return sequencingPolicy;
     }
 
+    @Bean
+    @ConditionalOnMissingBean
+    public DuplicateCommandHandlerResolver duplicateCommandHandlerResolver() {
+        return LoggingDuplicateCommandHandlerResolver.instance();
+    }
+
     @ConditionalOnMissingBean(
             ignoredType = {
                     "org.axonframework.commandhandling.distributed.DistributedCommandBus",
@@ -294,10 +302,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     )
     @Qualifier("localSegment")
     @Bean
-    public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
+    public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration,
+                                       DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
         SimpleCommandBus commandBus =
                 SimpleCommandBus.builder()
                                 .transactionManager(txManager)
+                                .duplicateCommandHandlerResolver(duplicateCommandHandlerResolver)
                                 .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(

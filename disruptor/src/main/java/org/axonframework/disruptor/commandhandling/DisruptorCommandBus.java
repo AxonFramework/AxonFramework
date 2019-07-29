@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -129,6 +129,7 @@ public class DisruptorCommandBus implements CommandBus {
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
     private final Disruptor<CommandHandlingEntry> disruptor;
     private final CommandHandlerInvoker[] commandHandlerInvokers;
+    private final DuplicateCommandHandlerResolver duplicateCommandHandlerResolver;
 
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
@@ -149,10 +150,11 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@link WaitStrategy} defaults to a {@link BlockingWaitStrategy}.</li>
      * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
+     * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.</li>
      * </ul>
      * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
-     * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can be
-     * specified by providing an {@link Executor}.
+     * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can
+     * be specified by providing an {@link Executor}.
      * <p>
      * The {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link ProducerType},
      * {@link WaitStrategy} and {@link Cache} are a <b>hard requirements</b>. Thus setting them to {@code null} will
@@ -206,6 +208,7 @@ public class DisruptorCommandBus implements CommandBus {
                                                                  builder.rollbackConfiguration);
         publisherCount = publishers.length;
         messageMonitor = builder.messageMonitor;
+        duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
 
         disruptor = new Disruptor<>(CommandHandlingEntry::new,
                                     builder.bufferSize,
@@ -490,7 +493,13 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        commandHandlers.put(commandName, handler);
+        commandHandlers.compute(commandName, (cn, existingHandler) -> {
+            if (existingHandler == null || existingHandler == handler) {
+                return handler;
+            } else {
+                return duplicateCommandHandlerResolver.resolve(cn, existingHandler, handler);
+            }
+        });
         return () -> commandHandlers.remove(commandName, handler);
     }
 
@@ -566,10 +575,11 @@ public class DisruptorCommandBus implements CommandBus {
      * <li>The {@link WaitStrategy} defaults to a {@link BlockingWaitStrategy}.</li>
      * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
      * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
+     * <li>The {@link DuplicateCommandHandlerResolver} defaults to {@link DuplicateCommandHandlerResolution#logAndOverride()}.</li>
      * </ul>
      * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
-     * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can be
-     * specified by providing an {@link Executor}.
+     * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can
+     * be specified by providing an {@link Executor}.
      * <p>
      * The {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link ProducerType},
      * {@link WaitStrategy} and {@link Cache} are a <b>hard requirements</b>. Thus setting them to {@code null} will
@@ -601,6 +611,7 @@ public class DisruptorCommandBus implements CommandBus {
         private WaitStrategy waitStrategy = new BlockingWaitStrategy();
         private int invokerThreadCount = 1;
         private Cache cache = NoCache.INSTANCE;
+        private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver = DuplicateCommandHandlerResolution.logAndOverride();
 
         /**
          * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the
@@ -860,6 +871,21 @@ public class DisruptorCommandBus implements CommandBus {
         public Builder cache(Cache cache) {
             assertNonNull(cache, "Cache may not be null");
             this.cache = cache;
+            return this;
+        }
+
+        /**
+         * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
+         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride() Log and Override}.
+         *
+         * @param duplicateCommandHandlerResolver a {@link DuplicateCommandHandlerResolver} used to resolves the road to
+         *                                        take when a duplicate command handler is subscribed
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder duplicateCommandHandlerResolver(
+                DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+            assertNonNull(duplicateCommandHandlerResolver, "DuplicateCommandHandlerResolver may not be null");
+            this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
             return this;
         }
 

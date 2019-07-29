@@ -23,6 +23,8 @@ import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfi
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -96,6 +98,8 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                     .axonServerConnectionManager(c.getComponent(AxonServerConnectionManager.class))
                                     .configuration(c.getComponent(AxonServerConfiguration.class))
                                     .localSegment(SimpleCommandBus.builder()
+                                                                  .duplicateCommandHandlerResolver(c.getComponent(DuplicateCommandHandlerResolver.class,
+                                                                                                                  LoggingDuplicateCommandHandlerResolver::instance))
                                                                   .messageMonitor(c.messageMonitor(CommandBus.class, "localCommandBus"))
                                                                   .transactionManager(c.getComponent(TransactionManager.class, NoTransactionManager::instance))
                                                                   .build())

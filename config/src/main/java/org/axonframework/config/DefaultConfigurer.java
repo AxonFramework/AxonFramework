@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,9 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.eventhandling.gateway.DefaultEventGateway;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
@@ -36,9 +31,8 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.modelling.saga.ResourceInjector;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
+import org.axonframework.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -50,6 +44,10 @@ import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.saga.ResourceInjector;
+import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.*;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
@@ -320,6 +318,8 @@ public class DefaultConfigurer implements Configurer {
                 SimpleCommandBus.builder()
                                 .transactionManager(config.getComponent(TransactionManager.class,
                                                                         () -> NoTransactionManager.INSTANCE))
+                                .duplicateCommandHandlerResolver(config.getComponent(DuplicateCommandHandlerResolver.class,
+                                                                                     LoggingDuplicateCommandHandlerResolver::instance))
                                 .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));

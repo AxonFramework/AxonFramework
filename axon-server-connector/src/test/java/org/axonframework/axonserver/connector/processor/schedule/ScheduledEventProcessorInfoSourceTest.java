@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,11 +17,14 @@
 package org.axonframework.axonserver.connector.processor.schedule;
 
 import org.axonframework.axonserver.connector.processor.FakeEventProcessorInfoSource;
-import org.junit.*;
+import org.axonframework.axonserver.connector.utils.AssertUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by Sara Pellegrini on 23/03/2018.
@@ -28,13 +32,25 @@ import static org.junit.Assert.*;
  */
 public class ScheduledEventProcessorInfoSourceTest {
 
+    private ScheduledEventProcessorInfoSource scheduled;
+    private FakeEventProcessorInfoSource delegate;
+
+    @Before
+    public void setUp() throws Exception {
+        delegate = new FakeEventProcessorInfoSource();
+        scheduled = new ScheduledEventProcessorInfoSource(50, 30, delegate);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        scheduled.shutdown();
+    }
+
     @Test
     public void notifyInformation() throws InterruptedException {
-        FakeEventProcessorInfoSource delegate = new FakeEventProcessorInfoSource();
-        ScheduledEventProcessorInfoSource scheduled = new ScheduledEventProcessorInfoSource(50, 30, delegate);
         scheduled.start();
-        TimeUnit.MILLISECONDS.sleep(105);
-        assertEquals(2, delegate.notifyCalls());
+        TimeUnit.MILLISECONDS.sleep(50);
+        AssertUtils.assertWithin(100, TimeUnit.MILLISECONDS, () -> assertEquals(2, delegate.notifyCalls()));
     }
 
 

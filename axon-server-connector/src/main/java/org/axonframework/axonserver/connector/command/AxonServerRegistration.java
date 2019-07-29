@@ -43,12 +43,6 @@ public class AxonServerRegistration implements Registration {
     }
 
     @Override
-    public void close() {
-        wrappedRegistration.close();
-        closeCallback.run();
-    }
-
-    @Override
     public boolean cancel() {
         boolean result = wrappedRegistration.cancel();
         if (result) {
