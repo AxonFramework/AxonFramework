@@ -92,6 +92,11 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
                 parametersMatch(message);
     }
 
+    @Override
+    public boolean canHandleType(Class<?> payloadType) {
+        return this.payloadType.isAssignableFrom(payloadType);
+    }
+
     /**
      * Checks if this member can handle the type of the given {@code message}. This method does not check if the
      * parameter resolvers of this member are compatible with the given message. Use {@link #parametersMatch(Message)}

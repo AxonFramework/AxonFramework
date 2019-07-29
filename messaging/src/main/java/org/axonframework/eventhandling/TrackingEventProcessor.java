@@ -357,6 +357,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 processingSegments = processingSegments(lastToken, segment);
                 if (canHandle(firstMessage, processingSegments)) {
                     batch.add(firstMessage);
+                } else {
+                    canBlacklist(eventStream, firstMessage);
+                    reportIgnored(firstMessage);
                 }
                 // besides checking batch sizes, we must also ensure that both the current message in the batch
                 // and the next (if present) allow for processing with a batch
@@ -368,6 +371,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
                     } else {
+                        canBlacklist(eventStream,trackedEventMessage);
                         reportIgnored(trackedEventMessage);
                     }
                 }
@@ -395,6 +399,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                 if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
+                } else {
+                    canBlacklist(eventStream, trackedEventMessage);
+                    reportIgnored(trackedEventMessage);
                 }
             }
 
@@ -409,6 +416,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void canBlacklist(BlockingStream<TrackedEventMessage<?>> eventStream, TrackedEventMessage<?> trackedEventMessage) {
+        if( ! canHandleType(trackedEventMessage.getPayloadType())) {
+            eventStream.blacklist(trackedEventMessage);
         }
     }
 

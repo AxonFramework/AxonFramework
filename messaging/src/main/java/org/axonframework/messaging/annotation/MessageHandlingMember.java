@@ -58,6 +58,16 @@ public interface MessageHandlingMember<T> {
     boolean canHandle(Message<?> message);
 
     /**
+     * Checks if this handler is capable of handling messages with the given {@code payloadType}.
+     *
+     * @param payloadType The payloadType of a message that is to be handled
+     * @return {@code true} if the handler is capable of handling the message with given type, {@code false} otherwise
+     */
+    default boolean canHandleType(Class<?> payloadType) {
+        return true;
+    }
+
+    /**
      * Handles the given {@code message} by invoking the appropriate method on given {@code target}. This may result in
      * an exception if the given target is not capable of handling the message or if an exception is thrown during
      * invocation of the method.
@@ -100,4 +110,5 @@ public interface MessageHandlingMember<T> {
      * is missing on the method
      */
     Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType);
+
 }

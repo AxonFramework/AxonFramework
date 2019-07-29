@@ -35,6 +35,17 @@ public interface EventHandlerInvoker {
     boolean canHandle(EventMessage<?> eventMessage, Segment segment);
 
     /**
+     * Check whether or not this invoker has handlers that can handle the given {@code payloadType}.
+     *
+     * @param payloadType The payloadType of the message to be processed
+     * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
+     * otherwise
+     */
+    default boolean canHandleType(Class<?> payloadType) {
+        return true;
+    }
+
+    /**
      * Handle the given {@code message} for the given {@code segment}.
      * <p>
      * Callers are recommended to invoke {@link #canHandle(EventMessage, Segment)} prior to invocation, but aren't

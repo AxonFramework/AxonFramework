@@ -95,6 +95,11 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
+    public boolean canHandleType(Class<?> payloadType) {
+        return inspector.getHandlers().stream().anyMatch(handler -> handler.canHandleType(payloadType));
+    }
+
+    @Override
     public Class<?> getTargetType() {
         return listenerType;
     }

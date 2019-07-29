@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,10 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.EventWithToken;
-import org.axonframework.eventhandling.EventUtils;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedDomainEventData;
-import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.slf4j.Logger;
@@ -57,6 +53,7 @@ public class EventBuffer implements TrackingEventStream {
     private final BlockingQueue<TrackedEventData<byte[]>> events;
 
     private final Iterator<TrackedEventMessage<?>> eventStream;
+    private final Serializer serializer;
 
     private TrackedEventData<byte[]> peekData;
     private TrackedEventMessage<?> peekEvent;
@@ -65,6 +62,7 @@ public class EventBuffer implements TrackingEventStream {
     private volatile boolean closed;
     private Consumer<Integer> consumeListener = i -> {
     };
+    private volatile Consumer<SerializedType> blacklistListener;
 
     /**
      * Initializes an Event Buffer, passing messages through given {@code upcasterChain} and deserializing events using
@@ -74,6 +72,7 @@ public class EventBuffer implements TrackingEventStream {
      * @param serializer    The serializer capable of deserializing incoming messages
      */
     public EventBuffer(EventUpcaster upcasterChain, Serializer serializer) {
+        this.serializer = serializer;
         this.events = new LinkedBlockingQueue<>();
         eventStream = EventUtils.upcastAndDeserializeTrackedEvents(StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
                                                                    new GrpcMetaDataAwareSerializer(serializer),
@@ -107,6 +106,27 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * ----
+     *
+     * This implementation blacklists based on the payload type of the given message.
+     */
+    @Override
+    public void blacklist(TrackedEventMessage<?> trackedEventMessage) {
+        Consumer<SerializedType> bl = blacklistListener;
+        if (bl == null) {
+            return;
+        }
+        if (UnknownSerializedType.class.equals(trackedEventMessage.getPayloadType())) {
+            UnknownSerializedType unknownSerializedType = (UnknownSerializedType) trackedEventMessage.getPayload();
+            bl.accept(unknownSerializedType.serializedType());
+        } else {
+            bl.accept(serializer.typeForClass(trackedEventMessage.getPayloadType()));
+        }
+    }
+
+    /**
      * Registers the callback to invoke when the reader wishes to close the stream.
      *
      * @param closeCallback The callback to invoke when the reader wishes to close the stream
@@ -116,12 +136,23 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     /**
-     * Registers the callback to invoke when a raw input message was consumed from the buffer.
+     * Registers the callback to invoke when a raw input message was consumed from the buffer. Note that there can only
+     * be one listener registered.
      *
      * @param consumeListener the callback to invoke when a raw input message was consumed from the buffer
      */
     public void registerConsumeListener(Consumer<Integer> consumeListener) {
         this.consumeListener = consumeListener;
+    }
+
+    /**
+     * Registers the callback to invoke when a the event processor determines that a type should be blacklisted.
+     * Note that there can only be one listener registered.
+     *
+     * @param blacklistListener the callback to invoke when a payload type is to be blacklisted.
+     */
+    public void registerBlacklistListener(Consumer<SerializedType> blacklistListener) {
+        this.blacklistListener = blacklistListener;
     }
 
     @Override

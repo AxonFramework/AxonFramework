@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -90,5 +90,14 @@ public interface BlockingStream<M> extends AutoCloseable {
      */
     default Stream<M> asStream() {
         return StreamUtils.asStream(this);
+    }
+
+    /**
+     * Report the stream that a specific message was ignored by the consumer. Stream implementation can use this
+     * information for instance to blacklist similar messages.
+     *
+     * @param ignoredMessage the message containing the payload to blacklist
+     */
+    default void blacklist(M ignoredMessage) {
     }
 }
