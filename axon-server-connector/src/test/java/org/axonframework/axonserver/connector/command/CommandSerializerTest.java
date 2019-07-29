@@ -16,37 +16,45 @@
 
 package org.axonframework.axonserver.connector.command;
 
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.*;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
 /**
  * Author: marc
  */
+@RunWith(Parameterized.class)
 public class CommandSerializerTest {
 
-    private final Serializer jacksonSerializer = JacksonSerializer.builder().build();
+    private final CommandSerializer testSubject;
 
-    private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
-        this.setClientId("client");
-        this.setComponentName("component");
-    }};
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<?> data() {
+        return Arrays.asList(new Object[]{"JacksonSerializer", JacksonSerializer.defaultSerializer()},
+                             new Object[]{"XStreamSerializer", XStreamSerializer.defaultSerializer()});
+    }
 
-    private final CommandSerializer testSubject = new CommandSerializer(jacksonSerializer, configuration);
+    public CommandSerializerTest(@SuppressWarnings("unused") String name, Serializer serializer) {
+        AxonServerConfiguration configuration = new AxonServerConfiguration() {{
+            this.setClientId("client");
+            this.setComponentName("component");
+        }};
+        testSubject = new CommandSerializer(serializer, configuration);
+    }
 
     @Test
     public void testSerializeRequest() {
@@ -111,5 +119,18 @@ public class CommandSerializerTest {
         Throwable actual = deserialize.optionalExceptionResult().get();
         assertTrue(actual instanceof CommandExecutionException);
         assertEquals("Details", ((CommandExecutionException) actual).getDetails().orElse("None"));
+    }
+
+    @Test
+    public void testDeserializeResponseWithoutPayload() {
+        CommandResponse response = CommandResponse.newBuilder()
+                                                  .setRequestIdentifier("requestId")
+                                                  .putAllMetaData(Collections.singletonMap("meta-key", MetaDataValue.newBuilder().setTextValue("meta-value").build()))
+                                                  .build();
+
+        CommandResultMessage<Object> actual = testSubject.deserialize(response);
+        assertEquals(Void.class, actual.getPayloadType());
+        assertNull(actual.getPayload());
+        assertEquals("meta-value", actual.getMetaData().get("meta-key"));
     }
 }

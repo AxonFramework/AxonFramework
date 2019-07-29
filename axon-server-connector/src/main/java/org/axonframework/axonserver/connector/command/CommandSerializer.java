@@ -31,6 +31,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.HandlerExecutionException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
@@ -162,9 +163,12 @@ public class CommandSerializer {
             return new GenericCommandResultMessage<>(new GenericMessage<>(commandResponse.getMessageIdentifier(), null, metaData), exception);
         }
 
-        SerializedMessage<R> response = new SerializedMessage<>(commandResponse.getMessageIdentifier(),
-                                                                new LazyDeserializingObject<>(new GrpcSerializedObject(commandResponse.getPayload()), messageSerializer),
-                                                                new LazyDeserializingObject<>(metaData));
+        //noinspection unchecked
+        Message<R> response = commandResponse.hasPayload()
+                ? new SerializedMessage<>(commandResponse.getMessageIdentifier(),
+                                          new LazyDeserializingObject<>(new GrpcSerializedObject(commandResponse.getPayload()), messageSerializer),
+                                          new LazyDeserializingObject<>(metaData))
+                : (GenericMessage<R>) new GenericMessage<>(commandResponse.getMessageIdentifier(), Void.class, null, metaData);
         return new GenericCommandResultMessage<>(response);
     }
 
