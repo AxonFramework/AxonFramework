@@ -28,7 +28,7 @@ public abstract class DuplicateCommandHandlerResolution {
 
     /**
      * A {@link DuplicateCommandHandlerResolver} implementation which logs a warning message and resolve to returning
-     * the duplicate handler.
+     * the duplicate handler and overriding the existing command handler.
      *
      * @return an instance that logs duplicates
      */

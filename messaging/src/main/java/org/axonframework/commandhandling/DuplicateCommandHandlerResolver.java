@@ -19,7 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.messaging.MessageHandler;
 
 /**
- * Functional interface towards resolving the occurrence of a duplicate command handler being resolved.
+ * Functional interface towards resolving the occurrence of a duplicate command handler being subscribed.
  * As such it ingests two {@link MessageHandler} instances and returns another one as the resolution.
  *
  * @author Steven van Beelen
