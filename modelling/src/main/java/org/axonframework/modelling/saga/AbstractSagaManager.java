@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -74,14 +75,18 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     @Override
     public void handle(EventMessage<?> event, Segment segment) throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event);
-        Set<Saga<T>> sagas =
+        List<String> sagaIds =
                 associationValues.stream()
                                  .flatMap(associationValue -> sagaRepository.find(associationValue).stream())
-                                 .filter(sagaId -> matchesSegment(segment, sagaId))
-                                 .map(sagaRepository::load)
-                                 .filter(Objects::nonNull)
-                                 .filter(Saga::isActive)
-                                 .collect(Collectors.toCollection(HashSet::new));
+                                 .collect(Collectors.toList());
+        Set<Saga<T>> sagas =
+                sagaIds.stream()
+                       .filter(sagaId -> matchesSegment(segment, sagaId))
+                       .map(sagaRepository::load)
+                       .filter(Objects::nonNull)
+                       .filter(Saga::isActive)
+                       .collect(Collectors.toCollection(HashSet::new));
+        boolean sagaMatchesOtherSegment = sagaIds.stream().anyMatch(sagaId -> !matchesSegment(segment, sagaId));
         boolean sagaOfTypeInvoked = false;
         for (Saga<T> saga : sagas) {
             if (doInvokeSaga(event, saga)) {
@@ -89,7 +94,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             }
         }
         SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event);
-        if (shouldCreateSaga(segment, sagaOfTypeInvoked, initializationPolicy)) {
+        if (shouldCreateSaga(segment, sagaOfTypeInvoked || sagaMatchesOtherSegment, initializationPolicy)) {
             startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
         }
     }
