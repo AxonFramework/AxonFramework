@@ -186,7 +186,7 @@ public class SagaManagerTest {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
 
         String sagaId = mockSaga1.getSagaIdentifier();
-        when(mockSagaRepository.find(any())).thenReturn(Collections.singleton(sagaId));
+        when(mockSagaRepository.find(any())).thenReturn(singleton(sagaId));
         when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga2);
 
         Segment matchesIdSegment = Segment.ROOT_SEGMENT;
@@ -195,7 +195,7 @@ public class SagaManagerTest {
             Segment[] segments = matchesIdSegment.split();
             matchesIdSegment = segments[0].matches(sagaId) ? segments[0] : segments[1];
             matchesValueSegment = segments[0].matches(associationValue) ? segments[0] : segments[1];
-        } while (matchesIdSegment == matchesValueSegment);
+        } while (matchesIdSegment.equals(matchesValueSegment));
 
         testSubject.handle(event, matchesIdSegment);
         testSubject.handle(event, matchesValueSegment);
