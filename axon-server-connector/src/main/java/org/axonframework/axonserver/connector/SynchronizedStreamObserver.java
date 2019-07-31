@@ -29,6 +29,10 @@ public class SynchronizedStreamObserver<T>
 
     @Override
     public void onCompleted() {
-        delegate.onCompleted();
+        try {
+            delegate.onCompleted();
+        } catch (Exception ex) {
+            // Ignore exceptions on completing the stream.
+        }
     }
 }
