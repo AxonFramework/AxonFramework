@@ -170,6 +170,40 @@ public class SagaManagerTest {
     }
 
     @Test
+    public void testSagaIsNotCreatedIfAssociationValueAndSagaIdMatchDifferentSegments() throws Exception {
+        AssociationValue associationValue = new AssociationValue("someKey", "someValue");
+        testSubject = TestableAbstractSagaManager.builder()
+                .sagaRepository(mockSagaRepository)
+                .listenerInvocationErrorHandler(mockErrorHandler)
+                .sagaCreationPolicy(SagaCreationPolicy.IF_NONE_FOUND)
+                .associationValue(associationValue)
+                .build();
+
+        // Test won't work if the saga ID and association value map to the same minimum-sized segment.
+        Assume.assumeTrue((associationValue.hashCode() & Integer.MAX_VALUE) !=
+                (mockSaga1.getSagaIdentifier().hashCode() & Integer.MAX_VALUE));
+
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+
+        String sagaId = mockSaga1.getSagaIdentifier();
+        when(mockSagaRepository.find(any())).thenReturn(singleton(sagaId));
+        when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga2);
+
+        Segment matchesIdSegment = Segment.ROOT_SEGMENT;
+        Segment matchesValueSegment;
+        do {
+            Segment[] segments = matchesIdSegment.split();
+            matchesIdSegment = segments[0].matches(sagaId) ? segments[0] : segments[1];
+            matchesValueSegment = segments[0].matches(associationValue) ? segments[0] : segments[1];
+        } while (matchesIdSegment.equals(matchesValueSegment));
+
+        testSubject.handle(event, matchesIdSegment);
+        testSubject.handle(event, matchesValueSegment);
+        verify(mockSagaRepository, never()).createInstance(any(), any());
+        verify(mockSaga1).handle(event);
+    }
+
+    @Test
     public void testExceptionSuppressed() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
