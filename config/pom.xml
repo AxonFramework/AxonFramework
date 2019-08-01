@@ -112,10 +112,6 @@
                         <Export-Package>
                             org.axonframework.config.*
                         </Export-Package>
-                        <Import-Package>
-                            org.slf4j.*,
-                            *;resolution:=optional
-                        </Import-Package>
                     </instructions>
                 </configuration>
                 <executions>
@@ -130,7 +126,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4.1</version>
                 <executions>
                     <execution>
                         <id>enforce-banned-dependencies</id>

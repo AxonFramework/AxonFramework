@@ -128,7 +128,7 @@
         <spring.version>5.1.5.RELEASE</spring.version>
         <spring-security.version>5.1.4.RELEASE</spring-security.version>
         <spring.boot.version>2.1.3.RELEASE</spring.boot.version>
-        <mockito.version>2.25.0</mockito.version>
+        <mockito.version>3.0.0</mockito.version>
         <projectreactor.version>3.2.6.RELEASE</projectreactor.version>
         <micrometer.version>1.1.3</micrometer.version>
         <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
@@ -156,12 +156,13 @@
         <hsqldb.version>2.3.4</hsqldb.version>
         <hibernate-validator.version>5.2.4.Final</hibernate-validator.version>
         <hibernate-entitymanager.version>5.4.1.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.9.7</byte-buddy.version>
+        <byte-buddy.version>1.9.16</byte-buddy.version>
         <findbugs-jsr305.version>3.0.1</findbugs-jsr305.version>
         <commons-io.version>2.6</commons-io.version>
         <javassist.version>3.24.1-GA</javassist.version>
         <el-impl.version>2.2</el-impl.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
+        <dom4j.version>2.1.1</dom4j.version>
         <postgresql.version>42.2.5</postgresql.version>
         <junit4.version>4.12</junit4.version>
         <axonserver.api.version>4.2-SNAPSHOT</axonserver.api.version>
@@ -387,6 +388,11 @@
                 <version>${eaio-uuid.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.dom4j</groupId>
+                <artifactId>dom4j</artifactId>
+                <version>${dom4j.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish.web</groupId>
                 <artifactId>el-impl</artifactId>
                 <version>${el-impl.version}</version>
@@ -439,6 +445,11 @@
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
                     <version>2.5.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>1.4.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -494,10 +505,6 @@
                         <include>**/*Test_*.java</include>
                         <include>**/*Tests_*.java</include>
                     </includes>
-                    <systemPropertyVariables>
-                        <slf4j.version>${slf4j.version}</slf4j.version>
-                        <log4j.version>${log4j.version}</log4j.version>
-                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
@@ -561,8 +568,8 @@
             </plugin>
             <plugin>
                 <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4.1</version>
                 <executions>
                     <execution>
                         <id>enforce-java</id>
