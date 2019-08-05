@@ -265,6 +265,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     protected void processingLoop(Segment segment) {
         BlockingStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
+        TrackingToken lastToken = null;
         try {
             // only execute the loop when in running state, no processing instructions have been executed, and the
             // segment is not blacklisted for release
@@ -272,7 +273,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     && canClaimSegment(segment.getSegmentId())) {
                 try {
                     eventStream = ensureEventStreamOpened(eventStream, segment);
-                    processBatch(segment, eventStream);
+                    lastToken = processBatch(segment, eventStream);
                     errorWaitTime = 1;
                 } catch (UnableToClaimTokenException e) {
                     logger.info("Segment is owned by another node. Releasing thread to process another segment...");
@@ -290,6 +291,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     doSleepFor(SECONDS.toMillis(errorWaitTime));
                     errorWaitTime = Math.min(errorWaitTime * 2, 60);
                 }
+            }
+
+            // In storeTokenBeforeProcessing mode, the most recently stored token will potentially be behind the
+            // most recently processed event.
+            if (storeTokenBeforeProcessing && canClaimSegment(segment.getSegmentId()) && lastToken != null) {
+                tokenStore.storeToken(lastToken, getName(), segment.getSegmentId());
             }
         } finally {
             closeQuietly(eventStream);
@@ -345,7 +352,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         return singleton(segment);
     }
 
-    private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
+    private TrackingToken processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream)
+            throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             checkSegmentCaughtUp(segment, eventStream);
@@ -381,14 +389,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                             () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
                     );
                     activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
-                    return;
+                    return finalLastToken;
                 }
             } else {
                 // Refresh claim on token
                 transactionManager.executeInTransaction(
                         () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
                 );
-                return;
+                return null;
             }
 
             TrackingToken finalLastToken = lastToken;
@@ -412,11 +420,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             processInUnitOfWork(batch, unitOfWork, processingSegments);
 
             activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
+            return finalLastToken;
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();
             Thread.currentThread().interrupt();
         }
+        return null;
     }
 
     private void canBlacklist(BlockingStream<TrackedEventMessage<?>> eventStream, TrackedEventMessage<?> trackedEventMessage) {

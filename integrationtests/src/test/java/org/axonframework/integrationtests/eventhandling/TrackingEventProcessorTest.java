@@ -364,6 +364,30 @@ public class TrackingEventProcessorTest {
     }
 
     @Test
+    public void testTokenIsStoredAtShutdown() throws Exception {
+        CountDownLatch shuttingDownLatch = new CountDownLatch(1);
+        CountDownLatch eventHandlerCalledLatch = new CountDownLatch(1);
+        AtomicInteger tokenStoredCount = new AtomicInteger();
+        doAnswer(i -> {
+            eventHandlerCalledLatch.countDown();
+            shuttingDownLatch.await(5, TimeUnit.SECONDS);
+            return null;
+        }).when(mockHandler).handle(any());
+        doAnswer(i -> {
+            tokenStoredCount.incrementAndGet();
+            return i.callRealMethod();
+        }).when(tokenStore).storeToken(any(), anyString(), anyInt());
+        testSubject.start();
+        eventBus.publish(createEvents(1));
+        eventHandlerCalledLatch.await(5, TimeUnit.SECONDS);
+        assertEquals("Expected token to be stored at start of batch", 1, tokenStoredCount.get());
+        CompletableFuture<Void> shutdownFuture = testSubject.shutdownAsync();
+        shuttingDownLatch.countDown();
+        shutdownFuture.get(5, TimeUnit.SECONDS);
+        assertEquals("Expected token to be stored after shutdown", 2, tokenStoredCount.get());
+    }
+
+    @Test
     public void testTokenStoredAtEndOfEventBatchAndNotExtended() throws Exception {
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
