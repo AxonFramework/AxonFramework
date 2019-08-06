@@ -159,6 +159,7 @@ public class MultiStreamableMessageSourceTest {
 
         assertTrue(singleEventStream.peek().isPresent());
         TrackedEventMessage peekedMessageA = singleEventStream.peek().get();
+        MultiSourceTrackingToken tokenA = (MultiSourceTrackingToken) peekedMessageA.trackingToken();
         assertEquals(pubToStreamA.getPayload(), peekedMessageA.getPayload());
 
         //message is still consumable and consumed message equal to peeked
@@ -167,9 +168,13 @@ public class MultiStreamableMessageSourceTest {
         //peek and consume another
         assertTrue(singleEventStream.peek().isPresent());
         TrackedEventMessage peekedMessageB = singleEventStream.peek().get();
+        MultiSourceTrackingToken tokenB = (MultiSourceTrackingToken) peekedMessageB.trackingToken();
         assertEquals(pubToStreamB.getPayload(), peekedMessageB.getPayload());
 
         assertEquals(peekedMessageB.getPayload(), singleEventStream.nextAvailable().getPayload());
+
+        //consuming from second stream doesn't alter token from first stream
+        assertEquals(tokenA.getTokenForStream("eventStoreA"), tokenB.getTokenForStream("eventStoreA"));
 
         singleEventStream.close();
     }

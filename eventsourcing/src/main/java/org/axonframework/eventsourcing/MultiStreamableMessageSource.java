@@ -454,6 +454,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             if (peekedMessage != null) {
                 TrackedEventMessage next = peekedMessage;
                 peekedMessage = null;
+                trackingToken = (MultiSourceTrackingToken) next.trackingToken();
                 return next;
             }
 
