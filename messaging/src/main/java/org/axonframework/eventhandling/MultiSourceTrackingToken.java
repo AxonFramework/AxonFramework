@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.StringJoiner;
 
 /**
  * Combined tracking token used when processing from multiple event sources
@@ -221,5 +222,12 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(trackingTokens);
+    }
+
+    @Override
+    public String toString() {
+        StringJoiner joiner = new StringJoiner(",", "MultiSourceTrackingToken{", "}");
+        trackingTokens.forEach((name, token) -> joiner.add(String.format("%s=%s", name, token)));
+        return joiner.toString();
     }
 }
