@@ -75,7 +75,7 @@ public class EventProcessingModule
     private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
-    private final Map<String, Component<TrackingEventProcessorConfiguration>> trackingEventProcessorConfigurations = new HashMap<>();
+
     // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
     // if no annotation is present, the package name is used
     private Function<Class<?>, String> typeFallback = c -> c.getSimpleName() + "Processor";
@@ -130,6 +130,19 @@ public class EventProcessingModule
             "transactionManager",
             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
     );
+    @SuppressWarnings("unchecked")
+    private Component<StreamableMessageSource<TrackedEventMessage<?>>> defaultStreamableSource =
+            new Component<>(
+                    () -> configuration,
+                    "defaultStreamableMessageSource",
+                    c -> (StreamableMessageSource<TrackedEventMessage<?>>) c.eventBus()
+            );
+    private Component<SubscribableMessageSource<? extends EventMessage<?>>> defaultSubscribableSource =
+            new Component<>(
+                    () -> configuration,
+                    "defaultSubscribableMessageSource",
+                    Configuration::eventBus
+            );
     private final Component<TrackingEventProcessorConfiguration> defaultTrackingEventProcessorConfiguration =
             new Component<>(
                     () -> configuration,
@@ -412,6 +425,18 @@ public class EventProcessingModule
     }
 
     @Override
+    public EventProcessingConfigurer configureDefaultStreamableMessageSource(Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource) {
+        this.defaultStreamableSource.update(defaultSource);
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer configureDefaultSubscribableMessageSource(Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource) {
+        this.defaultSubscribableSource.update(defaultSource);
+        return this;
+    }
+
+    @Override
     public EventProcessingConfigurer registerTrackingEventProcessor(String name,
                                                                     Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
         return registerTrackingEventProcessor(name, source, c -> defaultTrackingEventProcessorConfiguration.get());
@@ -463,14 +488,22 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer usingSubscribingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
-                subscribingEventProcessor(name, conf, eventHandlerInvoker, Configuration::eventBus);
+                subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer usingTrackingEventProcessors() {
+        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
+                trackingEventProcessor(name, eventHandlerInvoker, defaultTrackingEventProcessorConfiguration.get(),
+                                       defaultStreamableSource.get());
         return this;
     }
 
     @Override
     public EventProcessingConfigurer registerSubscribingEventProcessor(String name,
                                                                        Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
-        registerEventProcessor(name, (n, c, ehi) -> subscribingEventProcessor(n, c, ehi, messageSource));
+        registerEventProcessor(name, (n, c, ehi) -> subscribingEventProcessor(n, ehi, messageSource.apply(c)));
         return this;
     }
 
@@ -595,7 +628,6 @@ public class EventProcessingModule
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     private EventProcessor defaultEventProcessor(String name,
                                                  Configuration conf,
                                                  EventHandlerInvoker eventHandlerInvoker) {
@@ -604,24 +636,23 @@ public class EventProcessingModule
                     name,
                     eventHandlerInvoker,
                     defaultTrackingEventProcessorConfiguration.get(),
-                    (StreamableMessageSource) conf.eventBus()
+                    defaultStreamableSource.get()
             );
         } else {
-            return subscribingEventProcessor(name, conf, eventHandlerInvoker, Configuration::eventBus);
+            return subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
         }
     }
 
     private SubscribingEventProcessor subscribingEventProcessor(String name,
-                                                                Configuration conf,
                                                                 EventHandlerInvoker eventHandlerInvoker,
-                                                                Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
+                                                                SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         return SubscribingEventProcessor.builder()
                                         .name(name)
                                         .eventHandlerInvoker(eventHandlerInvoker)
                                         .rollbackConfiguration(rollbackConfiguration(name))
                                         .errorHandler(errorHandler(name))
                                         .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                                        .messageSource(messageSource.apply(conf))
+                                        .messageSource(messageSource)
                                         .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
                                         .transactionManager(transactionManager(name))
                                         .build();

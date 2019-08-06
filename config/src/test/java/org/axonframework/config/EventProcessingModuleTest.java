@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,14 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -43,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class EventProcessingModuleTest {
 
@@ -337,6 +337,63 @@ public class EventProcessingModuleTest {
             config.shutdown();
         }
     }
+
+    @Test
+    public void testTrackingProcessorsUsesConfiguredDefaultStreamableMessageSource() {
+        StreamableMessageSource<TrackedEventMessage<?>> mock = mock(StreamableMessageSource.class);
+        configurer.eventProcessing().configureDefaultStreamableMessageSource(c -> mock);
+        configurer.eventProcessing().usingTrackingEventProcessors();
+        configurer.registerEventHandler(c -> new TrackingEventHandler());
+
+        Configuration config = configurer.start();
+        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
+        assertTrue(processor.isPresent());
+        assertEquals(mock, processor.get().getMessageSource());
+    }
+
+    @Test
+    public void testTrackingProcessorsUsesSpecificSource() {
+        StreamableMessageSource<TrackedEventMessage<?>> mock = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage<?>> mock2 = mock(StreamableMessageSource.class);
+        configurer.eventProcessing()
+                  .configureDefaultStreamableMessageSource(c -> mock)
+                  .registerTrackingEventProcessor("tracking", c -> mock2)
+                  .registerEventHandler(c -> new TrackingEventHandler());
+
+        Configuration config = configurer.start();
+        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
+        assertTrue(processor.isPresent());
+        assertEquals(mock2, processor.get().getMessageSource());
+    }
+
+    @Test
+    public void testSubscribingProcessorsUsesConfiguredDefaultStreamableMessageSource() {
+        SubscribableMessageSource<EventMessage<?>> mock = mock(SubscribableMessageSource.class);
+        configurer.eventProcessing().configureDefaultSubscribableMessageSource(c -> mock);
+        configurer.eventProcessing().usingSubscribingEventProcessors();
+        configurer.registerEventHandler(c -> new SubscribingEventHandler());
+
+        Configuration config = configurer.start();
+        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("subscribing");
+        assertTrue(processor.isPresent());
+        assertEquals(mock, processor.get().getMessageSource());
+    }
+
+    @Test
+    public void testSubscribingProcessorsUsesSpecificSource() {
+        SubscribableMessageSource<EventMessage<?>> mock = mock(SubscribableMessageSource.class);
+        SubscribableMessageSource<EventMessage<?>> mock2 = mock(SubscribableMessageSource.class);
+        configurer.eventProcessing()
+                  .configureDefaultSubscribableMessageSource(c -> mock)
+                  .registerSubscribingEventProcessor("subscribing", c -> mock2)
+                  .registerEventHandler(c -> new SubscribingEventHandler());
+
+        Configuration config = configurer.start();
+        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("subscribing");
+        assertTrue(processor.isPresent());
+        assertEquals(mock2, processor.get().getMessageSource());
+    }
+
 
     @Test
     public void testConfigureErrorHandlerPerEventProcessor() throws Exception {
