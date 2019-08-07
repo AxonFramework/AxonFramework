@@ -822,7 +822,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         @Override
         public boolean isReplaying() {
-            return trackingToken instanceof ReplayToken;
+            return ReplayToken.isReplay(trackingToken);
         }
 
         @Override
