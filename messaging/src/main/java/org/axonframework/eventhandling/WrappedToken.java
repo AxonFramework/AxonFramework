@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
 import java.util.Optional;
 
 /**
- * Interface making a token that wraps another token. As certain implementations may depend on specific token types,
+ * Interface marking a token that wraps another token. As certain implementations may depend on specific token types,
  * Tokens that wrap another must provide a means to retrieve the original token.
  *
  * @author Allard Buijze
