@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -50,24 +42,6 @@ import java.util.function.Predicate;
  * @since 4.0
  */
 public interface EventProcessingConfigurer {
-
-    /**
-     * Contract which defines how to build an event processor.
-     */
-    @FunctionalInterface interface EventProcessorBuilder {
-
-        /**
-         * Builds an {@link EventProcessor} with the given {@code name}, {@link Configuration} and
-         * {@link EventHandlerInvoker}.
-         *
-         * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
-         * @param configuration       the global {@link Configuration} the implementation may use to obtain dependencies
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
-         *                            created, used to invoke event handlers
-         * @return an {@link EventProcessor}
-         */
-        EventProcessor build(String name, Configuration configuration, EventHandlerInvoker eventHandlerInvoker);
-    }
 
     /**
      * Registers a Saga with default configuration within this Configurer.
@@ -152,6 +126,36 @@ public interface EventProcessingConfigurer {
     }
 
     /**
+     * Configures which {@link StreamableMessageSource} to use for Tracking Event Processors if none was explicitly
+     * provided. Defaults to the Event Bus (or Store) available in the Configuration.
+     * <p>
+     * Note that the configuration of a default source does <em>not</em> change how the decision is made to select the
+     * type of processor. Unless explicitly specified using {@link #usingSubscribingEventProcessors()} or
+     * {@link #usingTrackingEventProcessors()}, the default is dependent on the type of Message Source the Event Bus
+     * provides. If the Event Bus supports Tracking Processors, that is the default, otherwise Subscribing Event
+     * Processors are the default.
+     *
+     * @param defaultSource a Function that defines the Message source to use
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer configureDefaultStreamableMessageSource(Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource);
+
+    /**
+     * Configures which {@link SubscribableMessageSource} to use for Subscribing Event Processors if none was explicitly
+     * provided. Defaults to the Event Bus (or Store) available in the Configuration.
+     * <p>
+     * Note that the configuration of a default source does <em>not</em> change how the decision is made to select the
+     * type of processor. Unless explicitly specified using {@link #usingSubscribingEventProcessors()} or
+     * {@link #usingTrackingEventProcessors()}, the default is dependent on the type of Message Source the Event Bus
+     * provides. If the Event Bus supports Tracking Processors, that is the default, otherwise Subscribing Event
+     * Processors are the default.
+     *
+     * @param defaultSource a Function that defines the Message source to use
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer configureDefaultSubscribableMessageSource(Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource);
+
+    /**
      * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} and {@code
      * source} within this Configurer.
      *
@@ -216,10 +220,25 @@ public interface EventProcessingConfigurer {
 
     /**
      * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.SubscribingEventProcessor}.
+     * <p>
+     * The default behavior depends on the EventBus available in the Configuration. If the Event Bus is a
+     * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use
+     * of Subscribing Processors, unless specifically overridden for individual processors.
      *
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer usingSubscribingEventProcessors();
+
+    /**
+     * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.TrackingEventProcessor}.
+     * <p>
+     * The default behavior depends on the EventBus available in the Configuration. If the Event Bus is a
+     * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use
+     * of Tracking Processors, unless specifically overridden for individual processors.
+     *
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer usingTrackingEventProcessors();
 
     /**
      * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this
@@ -379,7 +398,6 @@ public interface EventProcessingConfigurer {
      *
      * @param assignmentRule a {@link Function} which takes a processing group and returns a processor name
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     *
      * @see #assignProcessingGroup(String, String)
      */
     EventProcessingConfigurer assignProcessingGroup(Function<String, String> assignmentRule);
@@ -495,4 +513,23 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
             Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
     );
+
+    /**
+     * Contract which defines how to build an event processor.
+     */
+    @FunctionalInterface
+    interface EventProcessorBuilder {
+
+        /**
+         * Builds an {@link EventProcessor} with the given {@code name}, {@link Configuration} and
+         * {@link EventHandlerInvoker}.
+         *
+         * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
+         * @param configuration       the global {@link Configuration} the implementation may use to obtain dependencies
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
+         *                            created, used to invoke event handlers
+         * @return an {@link EventProcessor}
+         */
+        EventProcessor build(String name, Configuration configuration, EventHandlerInvoker eventHandlerInvoker);
+    }
 }

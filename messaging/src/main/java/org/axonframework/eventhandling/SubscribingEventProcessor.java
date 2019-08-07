@@ -52,22 +52,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     private volatile Registration eventBusRegistration;
 
     /**
-     * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and
-     * {@link SubscribableMessageSource} are not {@code null}, and will throw an {@link AxonConfigurationException} if
-     * any of them is {@code null}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SubscribingEventProcessor} instance
-     */
-    protected SubscribingEventProcessor(Builder builder) {
-        super(builder);
-        this.messageSource = builder.messageSource;
-        this.processingStrategy = builder.processingStrategy;
-        this.transactionManager = builder.transactionManager;
-    }
-
-    /**
      * Instantiate a Builder to be able to create a {@link SubscribingEventProcessor}.
      * <p>
      * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
@@ -81,6 +65,22 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and
+     * {@link SubscribableMessageSource} are not {@code null}, and will throw an {@link AxonConfigurationException} if
+     * any of them is {@code null}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link SubscribingEventProcessor} instance
+     */
+    protected SubscribingEventProcessor(Builder builder) {
+        super(builder);
+        this.messageSource = builder.messageSource;
+        this.processingStrategy = builder.processingStrategy;
+        this.transactionManager = builder.transactionManager;
     }
 
     /**
@@ -123,6 +123,15 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     public void shutDown() {
         IOUtils.closeQuietly(eventBusRegistration);
         eventBusRegistration = null;
+    }
+
+    /**
+     * Returns the message source from which this processor receives its events
+     *
+     * @return the MessageSource from which the processor receives its events
+     */
+    public SubscribableMessageSource<? extends EventMessage<?>> getMessageSource() {
+        return messageSource;
     }
 
     /**
