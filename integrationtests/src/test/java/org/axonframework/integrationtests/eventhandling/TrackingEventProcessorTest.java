@@ -245,6 +245,7 @@ public class TrackingEventProcessorTest {
 
         assertWithin(2, TimeUnit.SECONDS, () -> {
             EventTrackerStatus status = testSubject.processingStatus().get(0);
+            assertNotNull(status);
             assertTrue(status.isErrorState());
             assertEquals(MockException.class, status.getError().getClass());
         });
@@ -253,6 +254,7 @@ public class TrackingEventProcessorTest {
 
         assertWithin(5, TimeUnit.SECONDS, () -> {
             EventTrackerStatus status = testSubject.processingStatus().get(0);
+            assertNotNull(status);
             assertFalse(status.isErrorState());
             assertNull(status.getError());
         });
