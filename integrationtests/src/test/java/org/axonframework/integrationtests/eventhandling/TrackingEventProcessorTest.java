@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -231,24 +232,24 @@ public class TrackingEventProcessorTest {
     @Test
     public void testProcessorExposesErrorStateOnHandlerException() throws Exception {
         doReturn(Object.class).when(mockHandler).getTargetType();
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+        AtomicBoolean errorFlag = new AtomicBoolean(true);
         doAnswer(invocation -> {
-            if (countDownLatch.getCount() == 0) {
-                return null;
+            if (errorFlag.get()) {
+                throw new MockException("Simulating issues");
             }
-            countDownLatch.countDown();
-            throw new MockException("Simulating issues");
+            return null;
         }).when(mockHandler).handle(any());
         testSubject.start();
 
         eventBus.publish(createEvents(2));
-        assertTrue("Expected Handler to have received events", countDownLatch.await(5, TimeUnit.SECONDS));
 
         assertWithin(2, TimeUnit.SECONDS, () -> {
             EventTrackerStatus status = testSubject.processingStatus().get(0);
             assertTrue(status.isErrorState());
             assertEquals(MockException.class, status.getError().getClass());
         });
+
+        errorFlag.set(false);
 
         assertWithin(5, TimeUnit.SECONDS, () -> {
             EventTrackerStatus status = testSubject.processingStatus().get(0);
