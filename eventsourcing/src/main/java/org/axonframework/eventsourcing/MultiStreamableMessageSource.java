@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.MultiSourceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -374,8 +373,8 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
                 String streamId = e.getKey();
                 TrackedEventMessage<?> message = e.getValue();
                 try {
-                    return new GenericTrackedEventMessage<>(trackingToken.advancedTo(streamId, message.trackingToken()),
-                                                            messageSource(streamId).nextAvailable());
+                    MultiSourceTrackingToken advancedToken = this.trackingToken.advancedTo(streamId, message.trackingToken());
+                    return messageSource(streamId).nextAvailable().withTrackingToken(advancedToken);
                 } catch (InterruptedException ex) {
                     logger.warn("Thread Interrupted whilst consuming next message", ex);
                     Thread.currentThread().interrupt();
@@ -480,7 +479,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             trackingToken = newTrackingToken;
 
             logger.debug("Message consumed from stream: {}", streamIdOfMessage);
-            return new GenericTrackedEventMessage<>(newTrackingToken, messageToReturn);
+            return messageToReturn.withTrackingToken(newTrackingToken);
         }
 
         private void peekForMessages(Map<String, TrackedEventMessage<?>> candidateMessagesToReturn) {

@@ -57,11 +57,26 @@ public class MultiStreamableMessageSourceTest {
 
         eventStoreA.publish(publishedEvent);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTokenAt(Instant.now()));
+        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject.createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
         assertEquals(publishedEvent.getPayload(), singleEventStream.nextAvailable().getPayload());
+
+        singleEventStream.close();
+    }
+
+    @Test
+    public void simplePublishAndConsumeDomainEventMessage() throws InterruptedException {
+        EventMessage<?> publishedEvent = new GenericDomainEventMessage<>("Aggregate", "id", 0, "Event1");
+
+        eventStoreA.publish(publishedEvent);
+        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject.createTailToken());
+
+        assertTrue(singleEventStream.hasNextAvailable());
+        TrackedEventMessage<?> actual = singleEventStream.nextAvailable();
+
+        assertEquals(publishedEvent.getPayload(), actual.getPayload());
+        assertTrue(actual instanceof DomainEventMessage);
 
         singleEventStream.close();
     }

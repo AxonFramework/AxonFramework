@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,10 +34,6 @@ import java.util.stream.Stream;
  */
 public abstract class EventUtils {
 
-    private EventUtils() {
-        // Utility class
-    }
-
     /**
      * Convert an {@link EventMessage} to a {@link TrackedEventMessage} using the given {@code trackingToken}. If the
      * event is a {@link DomainEventMessage} the message will be converted to a {@link
@@ -50,6 +46,9 @@ public abstract class EventUtils {
      */
     public static <T> TrackedEventMessage<T> asTrackedEventMessage(EventMessage<T> eventMessage,
                                                                    TrackingToken trackingToken) {
+        if (eventMessage instanceof TrackedEventMessage) {
+            return ((TrackedEventMessage<T>) eventMessage).withTrackingToken(trackingToken);
+        }
         if (eventMessage instanceof DomainEventMessage<?>) {
             return new GenericTrackedDomainEventMessage<>(trackingToken, (DomainEventMessage<T>) eventMessage);
         }
@@ -116,5 +115,9 @@ public abstract class EventUtils {
             Stream<? extends EventData<?>> eventEntryStream, EventUpcaster upcasterChain,
             Function<EventData<?>, IntermediateEventRepresentation> entryConverter) {
         return upcasterChain.upcast(eventEntryStream.map(entryConverter));
+    }
+
+    private EventUtils() {
+        // Utility class
     }
 }

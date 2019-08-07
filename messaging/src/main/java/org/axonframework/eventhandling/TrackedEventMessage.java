@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,5 +31,16 @@ public interface TrackedEventMessage<T> extends EventMessage<T> {
      * @return the tracking token of the event
      */
     TrackingToken trackingToken();
+
+    /**
+     * Creates a copy of this message with the given {@code trackingToken} to replace the one in this message.
+     * <p>
+     * This method is useful in case streams are modified (combined, split), and the tokens of the combined stream are
+     * different than the originating stream.
+     *
+     * @param trackingToken The tracking token to replace
+     * @return a new instance of a message with a different tracking token
+     */
+    TrackedEventMessage<T> withTrackingToken(TrackingToken trackingToken);
 
 }

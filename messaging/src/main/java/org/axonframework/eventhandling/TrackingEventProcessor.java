@@ -371,7 +371,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
                     } else {
-                        canBlacklist(eventStream,trackedEventMessage);
+                        canBlacklist(eventStream, trackedEventMessage);
                         reportIgnored(trackedEventMessage);
                     }
                 }
@@ -420,7 +420,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private void canBlacklist(BlockingStream<TrackedEventMessage<?>> eventStream, TrackedEventMessage<?> trackedEventMessage) {
-        if( ! canHandleType(trackedEventMessage.getPayloadType())) {
+        if (!canHandleType(trackedEventMessage.getPayloadType())) {
             eventStream.blacklist(trackedEventMessage);
         }
     }
@@ -1232,12 +1232,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             if (lastToken == null) {
                 return message;
             }
-            if (message instanceof DomainEventMessage) {
-                return new GenericTrackedDomainEventMessage<>(lastToken.advancedTo(message.trackingToken()),
-                                                              (DomainEventMessage<T>) message);
-            } else {
-                return new GenericTrackedEventMessage<>(lastToken.advancedTo(message.trackingToken()), message);
-            }
+            return message.withTrackingToken(lastToken.advancedTo(message.trackingToken()));
         }
     }
 
