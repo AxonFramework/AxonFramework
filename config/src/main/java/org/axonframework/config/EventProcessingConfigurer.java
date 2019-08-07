@@ -128,7 +128,6 @@ public interface EventProcessingConfigurer {
     /**
      * Configures which {@link StreamableMessageSource} to use for Tracking Event Processors if none was explicitly
      * provided. Defaults to the Event Bus (or Store) available in the Configuration.
-     *
      * <p>
      * Note that the configuration of a default source does <em>not</em> change how the decision is made to select the
      * type of processor. Unless explicitly specified using {@link #usingSubscribingEventProcessors()} or
