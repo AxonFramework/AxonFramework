@@ -367,7 +367,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testSubscribingProcessorsUsesConfiguredDefaultStreamableMessageSource() {
+    public void testSubscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource() {
         SubscribableMessageSource<EventMessage<?>> mock = mock(SubscribableMessageSource.class);
         configurer.eventProcessing().configureDefaultSubscribableMessageSource(c -> mock);
         configurer.eventProcessing().usingSubscribingEventProcessors();
