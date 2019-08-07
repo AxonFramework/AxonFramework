@@ -85,7 +85,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      */
     @Override
     public MultiSourceBlockingStream openStream(TrackingToken trackingToken) {
-        if (trackingToken instanceof MultiSourceTrackingToken) {
+        if (trackingToken == null) {
+            return openStream(createTailToken());
+        } else if (trackingToken instanceof MultiSourceTrackingToken) {
             return new MultiSourceBlockingStream(eventStreams, (MultiSourceTrackingToken) trackingToken, trackedEventComparator);
         }
         throw new IllegalArgumentException("Incompatible token type provided.");

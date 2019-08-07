@@ -82,8 +82,20 @@ public class MultiStreamableMessageSourceTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void openStreamWithWrongToken() throws InterruptedException {
+    public void openStreamWithWrongToken() {
         testSubject.openStream(new GlobalSequenceTrackingToken(0L));
+    }
+
+    @Test
+    public void openStreamWithNullTokenReturnsFirstEvent() throws InterruptedException {
+        EventMessage<Object> message = GenericEventMessage.asEventMessage("Event1");
+        eventStoreA.publish(message);
+
+        BlockingStream<TrackedEventMessage<?>> actual = testSubject.openStream(null);
+        assertNotNull(actual);
+        TrackedEventMessage<?> trackedEventMessage = actual.nextAvailable();
+        assertEquals(message.getIdentifier(), trackedEventMessage.getIdentifier());
+        assertEquals(message.getPayload(), trackedEventMessage.getPayload());
     }
 
     @Test
