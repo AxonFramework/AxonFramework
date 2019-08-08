@@ -112,6 +112,9 @@
                         <Export-Package>
                             org.axonframework.config.*
                         </Export-Package>
+                        <Import-Package>
+                            *;resolution:=optional
+                        </Import-Package>
                     </instructions>
                 </configuration>
                 <executions>
