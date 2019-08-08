@@ -1,27 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,10 +17,15 @@
 package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.MessageMonitorFactory;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.metrics.GlobalMetricRegistry;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -44,6 +33,8 @@ import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
@@ -51,6 +42,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
@@ -84,5 +77,31 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
         assertEquals(GlobalMetricRegistry.class, globalMetricRegistry.getClass());
 
         assertFalse(applicationContext.containsBean("metricsConfigurerModule"));
+    }
+
+    @Test
+    public void testAxonServerEventStoreRequestedMonitor() {
+        assertNotNull(applicationContext.getBean(AxonServerEventStore.class));
+
+        MessageMonitorFactory monitor = applicationContext.getBean("mockMessageMonitorFactory", MessageMonitorFactory.class);
+
+        verify(monitor, description("expected MessageMonitorFactory to be retrieved for AxonServerEventStore"))
+                .create(any(), eq(AxonServerEventStore.class), anyString());
+    }
+
+    @Configuration
+    public static class Context {
+
+        @Autowired
+        public void configure(Configurer configurer) {
+            configurer.configureMessageMonitor(EventBus.class, mockMessageMonitorFactory());
+        }
+
+        @Bean
+        public MessageMonitorFactory mockMessageMonitorFactory() {
+            MessageMonitorFactory mock = mock(MessageMonitorFactory.class);
+            when(mock.create(any(), any(), any())).thenReturn(NoOpMessageMonitor.instance());
+            return mock;
+        }
     }
 }
