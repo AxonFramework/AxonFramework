@@ -37,7 +37,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -514,27 +513,8 @@ public class AxonServerCommandBus implements CommandBus {
             logger.debug("Dispatch command [{}] locally", command.getCommandName());
 
             localSegment.dispatch(command, (commandMessage, commandResultMessage) -> {
-                if (commandResultMessage.isExceptional()) {
-                    Throwable throwable = commandResultMessage.exceptionResult();
-                    CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
-                            CommandResponse.newBuilder()
-                                           .setMessageIdentifier(UUID.randomUUID().toString())
-                                           .setRequestIdentifier(command.getIdentifier())
-                                           .setErrorCode(throwable instanceof ConcurrencyException
-                                                                 ? ErrorCode.CONCURRENCY_EXCEPTION.errorCode()
-                                                                 : ErrorCode.COMMAND_EXECUTION_ERROR.errorCode())
-                                           .setErrorMessage(
-                                                   ExceptionSerializer.serialize(configuration.getClientId(), throwable)
-                                           )
-                    ).build();
-
-                    responseObserver.onNext(response);
-                    logger.info("Failed to dispatch command [{}] locally - Cause: {}",
-                                command.getCommandName(), throwable.getMessage(), throwable);
-                } else {
-                    logger.debug("Succeeded in dispatching command [{}] locally", command.getCommandName());
-                    responseObserver.onNext(serializer.serialize(commandResultMessage, command.getIdentifier()));
-                }
+                logger.debug("Dispatched command [{}] locally", command.getCommandName());
+                responseObserver.onNext(serializer.serialize(commandResultMessage, command.getIdentifier()));
             });
         }
 
