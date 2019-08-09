@@ -24,7 +24,7 @@ import org.junit.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static junit.framework.TestCase.*;
+import static org.junit.Assert.*;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 

@@ -601,7 +601,7 @@ public class DisruptorCommandBus implements CommandBus {
         private Executor executor;
         private boolean rescheduleCommandsOnCorruptState = true;
         private long coolingDownPeriod = 1000;
-        private CommandTargetResolver commandTargetResolver = new AnnotationCommandTargetResolver();
+        private CommandTargetResolver commandTargetResolver = AnnotationCommandTargetResolver.builder().build();
         private int publisherThreadCount = 1;
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private TransactionManager transactionManager;

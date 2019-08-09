@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.eventhandling;
 
-import junit.framework.TestCase;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -54,7 +53,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
-import static junit.framework.TestCase.*;
+import static org.junit.Assert.*;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
@@ -802,7 +801,7 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, replayRun.size()));
 
-        TestCase.assertEquals(GapAwareTrackingToken.newInstance(5, asList(3L, 4L)), firstRun.get(3));
+        assertEquals(GapAwareTrackingToken.newInstance(5, asList(3L, 4L)), firstRun.get(3));
         assertTrue(replayRun.get(0) instanceof ReplayToken);
         assertTrue(replayRun.get(5) instanceof ReplayToken);
         assertEquals(GapAwareTrackingToken.newInstance(6, emptySortedSet()), replayRun.get(6));

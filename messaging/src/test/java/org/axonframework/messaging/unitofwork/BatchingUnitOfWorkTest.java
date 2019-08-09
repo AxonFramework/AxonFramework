@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static junit.framework.TestCase.*;
+import static org.junit.Assert.*;
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 

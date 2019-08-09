@@ -1,6 +1,6 @@
 package org.axonframework.eventhandling;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import org.axonframework.serialization.TestSerializer;
 import org.junit.Test;

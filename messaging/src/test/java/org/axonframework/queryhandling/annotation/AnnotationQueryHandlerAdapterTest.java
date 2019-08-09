@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,15 +49,15 @@ public class AnnotationQueryHandlerAdapterTest {
     @Before
     public void setUp() {
         testSubject = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler());
-        when(queryBus.subscribe(anyObject(), anyObject(), anyObject())).thenReturn(() -> true);
+        when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
     }
 
     @Test
     public void subscribe() {
         Registration registration = testSubject.subscribe(queryBus);
 
-        verify(queryBus, times(1)).subscribe(eq(String.class.getName()), eq(String.class), anyObject());
-        verify(queryBus, times(1)).subscribe(eq("Hello"), eq(String.class), anyObject());
+        verify(queryBus, times(1)).subscribe(eq(String.class.getName()), eq(String.class), any());
+        verify(queryBus, times(1)).subscribe(eq("Hello"), eq(String.class), any());
 
         assertTrue(registration.cancel());
     }

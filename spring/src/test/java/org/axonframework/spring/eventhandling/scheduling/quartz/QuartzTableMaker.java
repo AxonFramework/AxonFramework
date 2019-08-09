@@ -33,6 +33,7 @@ import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class QuartzTableMaker implements ApplicationContextAware {
 
     private void executeCreateSQL() {
         try {
-            String script = IOUtils.toString(sqlResource.getInputStream());
+            String script = IOUtils.toString(sqlResource.getInputStream(), Charset.defaultCharset());
             List<String> statements = Arrays.asList(script.split(";"));
             for (String statement : statements) {
                 while (statement.trim().startsWith("#")) {

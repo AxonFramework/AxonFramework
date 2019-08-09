@@ -83,7 +83,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                     ).createModel(aggregate));
         commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
                                                 c -> c.getComponent(CommandTargetResolver.class,
-                                                                    AnnotationCommandTargetResolver::new));
+                                                        () -> AnnotationCommandTargetResolver.builder().build()));
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         aggregateFactory =

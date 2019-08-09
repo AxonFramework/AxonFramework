@@ -31,7 +31,7 @@ import org.junit.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 public class SubscribingEventProcessorTest {

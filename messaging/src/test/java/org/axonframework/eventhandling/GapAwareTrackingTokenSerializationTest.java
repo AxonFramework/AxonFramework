@@ -2,7 +2,7 @@ package org.axonframework.eventhandling;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import org.axonframework.serialization.TestSerializer;
 import org.junit.Test;

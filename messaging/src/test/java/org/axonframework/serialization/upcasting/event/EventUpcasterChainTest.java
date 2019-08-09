@@ -20,7 +20,7 @@ import org.junit.Test;
 
 import java.util.stream.Stream;
 
-import static junit.framework.TestCase.assertSame;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
 public class EventUpcasterChainTest {
