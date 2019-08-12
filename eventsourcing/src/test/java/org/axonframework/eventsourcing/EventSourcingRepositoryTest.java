@@ -102,7 +102,7 @@ public class EventSourcingRepositoryTest {
 
         CurrentUnitOfWork.commit();
 
-        verify(mockEventStore, times(1)).publish((EventMessage) anyVararg());
+        verify(mockEventStore, times(1)).publish((EventMessage) any());
         assertEquals(1, aggregate.invoke(TestAggregate::getLiveEvents).size());
         assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
     }

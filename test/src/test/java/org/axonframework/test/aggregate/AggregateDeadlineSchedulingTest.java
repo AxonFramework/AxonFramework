@@ -58,7 +58,7 @@ public class AggregateDeadlineSchedulingTest {
     public void testDeadlineMet() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(new CreateMyAggregateCommand("id"))
-               .andThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMet("deadlineDetails");
     }
 
@@ -85,7 +85,7 @@ public class AggregateDeadlineSchedulingTest {
                         .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails"))
                .givenNoPriorActivity()
                .andGivenCommands(new CreateMyAggregateCommand("id"))
-               .andThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMet("fakeDeadlineDetails");
     }
 
@@ -98,7 +98,7 @@ public class AggregateDeadlineSchedulingTest {
                 })
                .givenNoPriorActivity()
                .andGivenCommands(new CreateMyAggregateCommand("id"))
-               .andThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMet("fakeDeadlineDetails");
     }
 

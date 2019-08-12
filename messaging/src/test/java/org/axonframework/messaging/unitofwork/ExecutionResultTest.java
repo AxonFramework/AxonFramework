@@ -19,7 +19,7 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.messaging.ResultMessage;
 import org.junit.Test;
 
-import static junit.framework.TestCase.*;
+import static org.junit.Assert.*;
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
 /**

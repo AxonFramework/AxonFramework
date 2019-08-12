@@ -243,8 +243,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
         private static <T> T newInstance(Class<T> type) {
             try {
-                return type.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                return type.getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException e) {
                 throw new SagaInstantiationException("Exception while trying to instantiate a new Saga", e);
             }
         }

@@ -61,7 +61,6 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 import static java.util.stream.Collectors.toList;
-import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;

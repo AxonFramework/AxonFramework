@@ -35,7 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.fail;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -81,7 +81,7 @@ public class AnnotatedSagaManagerTest {
     @Test
     public void testHandleUnrelatedEvent() throws Exception {
         handle(new GenericEventMessage<>("Unrelated"));
-        verify(sagaRepository, never()).find(isNull(AssociationValue.class));
+        verify(sagaRepository, never()).find(isNull());
     }
 
     @Test

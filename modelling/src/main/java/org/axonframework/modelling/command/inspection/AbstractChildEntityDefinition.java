@@ -95,9 +95,9 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
                                                      Class<? extends ForwardingMode> forwardingModeClass) {
         ForwardingMode forwardingMode;
         try {
-            forwardingMode = forwardingModeClass.newInstance();
+            forwardingMode = forwardingModeClass.getDeclaredConstructor().newInstance();
             forwardingMode.initialize(field, childEntityModel);
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (ReflectiveOperationException e) {
             throw new AxonConfigurationException(
                     String.format("Failed to instantiate ForwardingMode of type [%s].", forwardingModeClass)
             );

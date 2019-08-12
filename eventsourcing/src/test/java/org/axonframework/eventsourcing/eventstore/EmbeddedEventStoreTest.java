@@ -43,8 +43,6 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.fail;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;

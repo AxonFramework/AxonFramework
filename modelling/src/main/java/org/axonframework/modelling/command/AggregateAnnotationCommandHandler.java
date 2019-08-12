@@ -164,7 +164,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     public static class Builder<T> {
 
         private Repository<T> repository;
-        private CommandTargetResolver commandTargetResolver = new AnnotationCommandTargetResolver();
+        private CommandTargetResolver commandTargetResolver = AnnotationCommandTargetResolver.builder().build();
         private Class<T> aggregateType;
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;

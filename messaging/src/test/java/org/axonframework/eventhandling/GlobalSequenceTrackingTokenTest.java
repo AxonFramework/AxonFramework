@@ -18,7 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.junit.Test;
 
-import static junit.framework.TestCase.*;
+import static org.junit.Assert.*;
 
 public class GlobalSequenceTrackingTokenTest {
 
