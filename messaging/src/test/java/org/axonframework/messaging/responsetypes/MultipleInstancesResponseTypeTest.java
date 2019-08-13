@@ -167,6 +167,12 @@ public class MultipleInstancesResponseTypeTest
     }
 
     @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericUpperBoundedWildcardList()
+            throws NoSuchMethodException {
+        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
+    }
+
+    @Test
     public void testMatchesReturnsTrueIfResponseTypeIsGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
         testMatches("someGenericUpperBoundedWildcardListQuery", MATCHES);
@@ -176,12 +182,6 @@ public class MultipleInstancesResponseTypeTest
     public void testMatchesReturnsTrueIfResponseTypeIsMultiGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
         testMatches("someMultiGenericUpperBoundedWildcardListQuery", MATCHES);
-    }
-
-    @Test
-    public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericUpperBoundedWildcardList()
-            throws NoSuchMethodException {
-        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -199,6 +199,7 @@ public class MultipleInstancesResponseTypeTest
      (whilst in fact it is). This is however such a slim scenario, that I decided to put the dummy class and test
      function in the actual test class itself instead of in the abstract test class.
      */
+
     @SuppressWarnings("unused")
     public static QueryResponseList someListImplementationQuery() {
         return new QueryResponseList();
@@ -249,8 +250,18 @@ public class MultipleInstancesResponseTypeTest
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsFutureOfProvidedType() throws NoSuchMethodException {
+    public void testMatchesReturnsFalseIfResponseTypeIsFutureOfProvidedType() throws NoSuchMethodException {
+        testMatches("someFutureQuery", DOES_NOT_MATCH);
+    }
+
+    @Test
+    public void testMatchesReturnsTrueIfResponseTypeIsListOfFutureOfProvidedType() throws NoSuchMethodException {
         testMatches("someFutureListQuery", MATCHES);
+    }
+
+    @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsOptionalOfProvidedType() throws NoSuchMethodException {
+        testMatches("someOptionalQueryResponse", DOES_NOT_MATCH);
     }
 
     @SuppressWarnings("unused")

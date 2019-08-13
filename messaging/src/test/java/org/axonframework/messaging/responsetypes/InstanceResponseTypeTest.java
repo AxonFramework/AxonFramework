@@ -18,11 +18,8 @@ package org.axonframework.messaging.responsetypes;
 
 import org.junit.*;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 
-import static org.axonframework.common.ReflectionUtils.methodOf;
 import static org.junit.Assert.*;
 
 /**
@@ -39,13 +36,6 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     @Test
     public void testMatchesReturnsTrueIfResponseTypeIsTheSame() throws NoSuchMethodException {
         testMatches("someQuery", MATCHES);
-    }
-
-    @Test
-    public void testOptionalMatchesExpectedType() throws NoSuchMethodException {
-        Method methodToTest = methodOf(getClass(), "someOptionalQueryResponse");
-        Type methodReturnType = methodToTest.getGenericReturnType();
-        assertEquals(Boolean.TRUE, ResponseTypes.instanceOf(QueryResponse.class).matches(methodReturnType));
     }
 
     @Test
@@ -173,6 +163,12 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     }
 
     @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericUpperBoundedWildcardList()
+            throws NoSuchMethodException {
+        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
+    }
+
+    @Test
     public void testMatchesReturnsFalseIfResponseTypeIsGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
         testMatches("someGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
@@ -185,9 +181,27 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     }
 
     @Test
-    public void testMatchesReturnsFalseIfResponseTypeIsUnboundedGenericUpperBoundedWildcardList()
+    public void testMatchesReturnsFalseIfResponseTypeIsUnboundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
+        testMatches("someUnboundedListImplementationQuery", DOES_NOT_MATCH);
+    }
+
+    @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsBoundedListImplementationOfProvidedType()
+            throws NoSuchMethodException {
+        testMatches("someBoundedListImplementationQuery", DOES_NOT_MATCH);
+    }
+
+    @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsMultiUnboundedListImplementationOfProvidedType()
+            throws NoSuchMethodException {
+        testMatches("someMultiUnboundedListImplementationQuery", DOES_NOT_MATCH);
+    }
+
+    @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedListImplementationOfProvidedType()
+            throws NoSuchMethodException {
+        testMatches("someMultiBoundedListImplementationQuery", DOES_NOT_MATCH);
     }
 
     @Test
@@ -208,6 +222,16 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     @Test
     public void testMatchesReturnsTrueIfResponseTypeIsFutureOfProvidedType() throws NoSuchMethodException {
         testMatches("someFutureQuery", MATCHES);
+    }
+
+    @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsListOfFutureOfProvidedType() throws NoSuchMethodException {
+        testMatches("someFutureListQuery", DOES_NOT_MATCH);
+    }
+
+    @Test
+    public void testMatchesReturnsTrueIfResponseTypeIsOptionalOfProvidedType() throws NoSuchMethodException {
+        testMatches("someOptionalQueryResponse", MATCHES);
     }
 
     @Test
