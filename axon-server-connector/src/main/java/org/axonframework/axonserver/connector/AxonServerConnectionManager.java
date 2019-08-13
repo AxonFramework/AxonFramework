@@ -581,7 +581,7 @@ public class AxonServerConnectionManager {
      * @param context the context for which the connection must be disconnected
      */
     public void disconnect(String context) {
-        ManagedChannel channel = channels.get(context);
+        ManagedChannel channel = channels.remove(context);
         if (channel != null) {
             shutdown(channel);
         }
@@ -592,6 +592,7 @@ public class AxonServerConnectionManager {
      */
     public void disconnect() {
         channels.forEach((k, v) -> shutdown(v));
+        channels.clear();
     }
 
     /**
