@@ -34,22 +34,6 @@ public abstract class HandlerExecutionException extends AxonException {
     private final Object details;
 
     /**
-     * Resolve details from the given {@code throwable}, taking into account that the details may be available in any
-     * of the {@code HandlerExecutionException}s is the "cause" chain.
-     *
-     * @param throwable The exception to resolve the details from
-     * @return an Optional containing details, if present in the given {@code throwable}
-     */
-    public static Optional<Object> resolveDetails(Throwable throwable) {
-        if (throwable instanceof HandlerExecutionException) {
-            return ((HandlerExecutionException) throwable).getDetails();
-        } else if (throwable != null && throwable.getCause() != null) {
-            return resolveDetails(throwable.getCause());
-        }
-        return Optional.empty();
-    }
-
-    /**
      * Initializes an execution exception with given {@code message}. The cause and application-specific details are
      * set to {@code null}.
      *
@@ -81,6 +65,23 @@ public abstract class HandlerExecutionException extends AxonException {
     public HandlerExecutionException(String message, Throwable cause, Object details) {
         super(message, cause);
         this.details = details;
+    }
+
+    /**
+     * Resolve details from the given {@code throwable}, taking into account that the details may be available in any
+     * of the {@code HandlerExecutionException}s is the "cause" chain.
+     *
+     * @param throwable The exception to resolve the details from
+     * @param <R>       The type of details expected
+     * @return an Optional containing details, if present in the given {@code throwable}
+     */
+    public static <R> Optional<R> resolveDetails(Throwable throwable) {
+        if (throwable instanceof HandlerExecutionException) {
+            return ((HandlerExecutionException) throwable).getDetails();
+        } else if (throwable != null && throwable.getCause() != null) {
+            return resolveDetails(throwable.getCause());
+        }
+        return Optional.empty();
     }
 
     /**

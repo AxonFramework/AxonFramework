@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -219,7 +220,13 @@ public class DefaultCommandGatewayTest {
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
-        assertNull(testSubject.sendAndWait("Hello", 60, TimeUnit.SECONDS));
+        try {
+            testSubject.sendAndWait("Hello", 60, TimeUnit.SECONDS);
+            testSubject.sendAndWait("Hello", 60, TimeUnit.SECONDS);
+            fail("Expected interrupted exception");
+        } catch (CommandExecutionException e) {
+            assertTrue(e.getCause() instanceof InterruptedException);
+        }
         assertTrue("Interrupt flag should be set on thread", Thread.interrupted());
         verify(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
     }
@@ -227,7 +234,12 @@ public class DefaultCommandGatewayTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSendAndWaitWithTimeoutNullOnTimeout() {
-        assertNull(testSubject.sendAndWait("Hello", 10, TimeUnit.MILLISECONDS));
+        try {
+            assertNull(testSubject.sendAndWait("Hello", 10, TimeUnit.MILLISECONDS));
+            fail("Expected interrupted exception");
+        } catch (CommandExecutionException e) {
+            assertTrue(e.getCause() instanceof TimeoutException);
+        }
         verify(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
     }
 

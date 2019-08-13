@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MetaData;
@@ -90,7 +91,10 @@ public abstract class ReplyMessage implements Serializable {
         MetaData metaData = serializer.deserialize(serializedMetaData);
 
         if (exceptionDescription != null) {
-            return new GenericCommandResultMessage<>(new RemoteHandlingException(exceptionDescription), metaData);
+            return new GenericCommandResultMessage<>(new CommandExecutionException("The remote handler threw an exception",
+                                                                                   new RemoteHandlingException(exceptionDescription),
+                                                                                   payload),
+                                                     metaData);
         }
         return new GenericCommandResultMessage<>(payload, metaData);
     }
