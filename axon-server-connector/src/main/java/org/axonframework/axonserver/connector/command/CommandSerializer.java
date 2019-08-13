@@ -30,7 +30,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonException;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -123,7 +122,7 @@ public class CommandSerializer {
             Throwable throwable = commandResultMessage.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
-            HandlerExecutionException.resolveDetails(throwable).ifPresent(details -> {
+            commandResultMessage.exceptionDetails().ifPresent(details -> {
                 responseBuilder.setPayload(objectSerializer.apply(details));
             });
         } else if (commandResultMessage.getPayload() != null) {

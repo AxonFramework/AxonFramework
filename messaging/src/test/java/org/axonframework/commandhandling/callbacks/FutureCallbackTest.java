@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.callbacks;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.utils.MockException;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,9 +39,9 @@ public class FutureCallbackTest {
     private static final CommandMessage<Object> COMMAND_MESSAGE = GenericCommandMessage.asCommandMessage("Test");
     private static final CommandResultMessage<String> COMMAND_RESPONSE_MESSAGE =
             asCommandResultMessage("Hello world");
+    private static final int THREAD_JOIN_TIMEOUT = 1000;
     private volatile FutureCallback<Object, Object> testSubject;
     private volatile Object resultFromParallelThread;
-    private static final int THREAD_JOIN_TIMEOUT = 1000;
 
     @Before
     public void setUp() {
@@ -78,8 +79,8 @@ public class FutureCallbackTest {
         RuntimeException exception = new MockException();
         testSubject.onResult(COMMAND_MESSAGE, asCommandResultMessage(exception));
         t.join(THREAD_JOIN_TIMEOUT);
-        assertTrue(resultFromParallelThread instanceof ExecutionException);
-        assertEquals(exception, ((Exception) resultFromParallelThread).getCause());
+        assertTrue(resultFromParallelThread instanceof CommandResultMessage);
+        assertEquals(exception, ((CommandResultMessage) resultFromParallelThread).exceptionResult());
     }
 
     @Test
@@ -95,6 +96,45 @@ public class FutureCallbackTest {
         t.join(1000);
         testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         assertTrue(resultFromParallelThread instanceof TimeoutException);
+    }
+
+    @Test
+    public void testOnResultReturnsMessageWithTimeoutExceptionOnTimeout() throws InterruptedException {
+        Thread t = new Thread(() -> {
+            resultFromParallelThread = testSubject.getResult(1, TimeUnit.NANOSECONDS);
+        });
+        t.start();
+        t.join(1000);
+        testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
+        assertTrue(resultFromParallelThread instanceof ResultMessage);
+        assertTrue(((ResultMessage) resultFromParallelThread).exceptionResult() instanceof TimeoutException);
+    }
+
+    @Test
+    public void testOnResultUnwrapsExecutionResult() throws InterruptedException {
+        Thread t = new Thread(() -> {
+            resultFromParallelThread = testSubject.getResult();
+        });
+        t.start();
+        testSubject.completeExceptionally(new MockException("Mocking an exception"));
+        t.join();
+        assertTrue(resultFromParallelThread instanceof ResultMessage);
+        assertTrue(((ResultMessage) resultFromParallelThread).exceptionResult() instanceof MockException);
+    }
+
+    @Test
+    public void testGetThrowsExecutionException() throws InterruptedException {
+        Thread t = new Thread(() -> {
+            try {
+                testSubject.get();
+            } catch (Exception e) {
+                resultFromParallelThread = e;
+            }
+        });
+        t.start();
+        testSubject.completeExceptionally(new MockException("Mocking an exception"));
+        t.join();
+        assertTrue(resultFromParallelThread instanceof ExecutionException);
     }
 
     @Test

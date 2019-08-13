@@ -16,14 +16,9 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -31,20 +26,6 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
@@ -195,12 +176,6 @@ public class CommandGatewayFactory {
                     }
                 }
                 Class<?>[] declaredExceptions = gatewayMethod.getExceptionTypes();
-                if (!contains(declaredExceptions, TimeoutException.class)) {
-                    dispatcher = wrapToReturnNullOnTimeout(dispatcher);
-                }
-                if (!contains(declaredExceptions, InterruptedException.class)) {
-                    dispatcher = wrapToReturnNullOnInterrupted(dispatcher);
-                }
                 dispatcher = wrapUndeclaredExceptions(dispatcher, declaredExceptions);
             }
             dispatchers.put(gatewayMethod, dispatcher);
@@ -220,7 +195,7 @@ public class CommandGatewayFactory {
 
     private boolean hasCallbackParameters(Method gatewayMethod) {
         return Stream.of(gatewayMethod.getParameterTypes())
-                .anyMatch(CommandCallback.class::isAssignableFrom);
+                     .anyMatch(CommandCallback.class::isAssignableFrom);
     }
 
     /**
@@ -235,31 +210,6 @@ public class CommandGatewayFactory {
     protected <R> InvocationHandler<R> wrapUndeclaredExceptions(final InvocationHandler<R> delegate,
                                                                 final Class<?>[] declaredExceptions) {
         return new WrapNonDeclaredCheckedExceptions<>(delegate, declaredExceptions);
-    }
-
-    /**
-     * Wrap the given {@code delegate} in an InvocationHandler that returns null when the
-     * {@code delegate}
-     * throws an InterruptedException.
-     *
-     * @param delegate The delegate to invoke, potentially throwing an InterruptedException when invoked
-     * @param <R>      The response type of the command handler
-     * @return an InvocationHandler that wraps returns null when an InterruptedException is thrown
-     */
-    protected <R> InvocationHandler<R> wrapToReturnNullOnInterrupted(final InvocationHandler<R> delegate) {
-        return new NullOnInterrupted<>(delegate);
-    }
-
-    /**
-     * Wrap the given {@code delegate} in an InvocationHandler that returns null when the
-     * {@code delegate} throws a TimeoutException.
-     *
-     * @param delegate The delegate to invoke, potentially throwing a TimeoutException when invoked
-     * @param <R>      The response type of the command handler
-     * @return an InvocationHandler that wraps returns null when a TimeoutException is thrown
-     */
-    protected <R> InvocationHandler<R> wrapToReturnNullOnTimeout(final InvocationHandler<R> delegate) {
-        return new NullOnTimeout<>(delegate);
     }
 
     /**
@@ -318,7 +268,7 @@ public class CommandGatewayFactory {
 
     private boolean contains(Class<?>[] declaredExceptions, Class<?> exceptionClass) {
         return Stream.of(declaredExceptions)
-                .anyMatch(declaredException -> declaredException.isAssignableFrom(exceptionClass));
+                     .anyMatch(declaredException -> declaredException.isAssignableFrom(exceptionClass));
     }
 
     /**
@@ -385,7 +335,6 @@ public class CommandGatewayFactory {
          * @param invokedMethod The method being invoked
          * @param args          The arguments of the invocation
          * @return the return value of the invocation
-         *
          * @throws Exception any exceptions that occurred while processing the invocation
          */
         R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
@@ -527,7 +476,14 @@ public class CommandGatewayFactory {
                 }
                 callbacks.addAll(commandCallbacks);
                 send(command, new CompositeCallback(callbacks));
-                return future.thenApply(Message::getPayload);
+                return future.thenCompose(reply -> {
+                    if (reply.isExceptional()) {
+                        CompletableFuture<R> r = new CompletableFuture<>();
+                        r.completeExceptionally(reply.exceptionResult());
+                        return r;
+                    }
+                    return CompletableFuture.completedFuture(reply.getPayload());
+                });
             } else {
                 sendAndForget(command);
                 return null;
@@ -645,19 +601,24 @@ public class CommandGatewayFactory {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (ExecutionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException) {
-                    throw (RuntimeException) cause;
-                }
-                for (Class<?> exception : declaredExceptions) {
-                    if (exception.isInstance(cause)) {
-                        throw cause instanceof Exception ? (Exception) cause : e;
-                    }
-                }
-                throw new CommandExecutionException(
-                        "Command execution resulted in a checked exception that was " + "not declared on the gateway",
-                        cause);
+                throw (e.getCause() instanceof Exception ? asRuntimeIfNotDeclared((Exception) e.getCause()) : asRuntimeIfNotDeclared(e));
+            } catch (Exception e) {
+                throw asRuntimeIfNotDeclared(e) ;
             }
+        }
+
+        private Exception asRuntimeIfNotDeclared(Exception e) throws Exception {
+            if (e instanceof RuntimeException) {
+                return e;
+            }
+            for (Class<?> exception : declaredExceptions) {
+                if (exception.isInstance(e)) {
+                    throw e;
+                }
+            }
+            return new CommandExecutionException(
+                    "Command execution resulted in a checked exception that was " + "not declared on the gateway",
+                    e);
         }
     }
 

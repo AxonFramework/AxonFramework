@@ -50,11 +50,30 @@ public interface ResultMessage<R> extends Message<R> {
      * Returns the exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.
      *
      * @return a {@link Throwable} defining the exception result
-     *
      * @throws IllegalStateException if this ResultMessage is not exceptional
      */
     default Throwable exceptionResult() throws IllegalStateException {
         return optionalExceptionResult().orElseThrow(IllegalStateException::new);
+    }
+
+    /**
+     * If the this message contains an exception result, returns the details provided in the exception, if available.
+     * If this message does not carry an exception result, or the exception result doesn't provide any
+     * application-specific details, an empty optional is returned.
+     *
+     * @param <D> The type of application-specific details expected
+     * @return an optional containing application-specific error details, if present
+     */
+    default <D> Optional<D> exceptionDetails() {
+        return optionalExceptionResult().flatMap(HandlerExecutionException::resolveDetails);
+    }
+
+    @Override
+    default <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
+        if (isExceptional()) {
+            return serializer.serialize(exceptionDetails().orElse(null), expectedRepresentation);
+        }
+        return serializer.serialize(getPayload(), expectedRepresentation);
     }
 
     /**

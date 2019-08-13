@@ -148,13 +148,12 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     private RuntimeException asRuntime(Throwable e) {
-        Throwable failure = e.getCause();
-        if (failure instanceof Error) {
-            throw (Error) failure;
-        } else if (failure instanceof RuntimeException) {
-            return (RuntimeException) failure;
+        if (e instanceof Error) {
+            throw (Error) e;
+        } else if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
         } else {
-            return new CommandExecutionException("An exception occurred while executing a command", failure);
+            return new CommandExecutionException("An exception occurred while executing a command", e);
         }
     }
 

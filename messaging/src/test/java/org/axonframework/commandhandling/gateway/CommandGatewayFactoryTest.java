@@ -16,28 +16,20 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.lock.DeadlockException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singletonMap;
@@ -176,7 +168,8 @@ public class CommandGatewayFactoryTest {
         t.interrupt();
         t.join();
         assertNull("Did not expect ReturnValue", result.get());
-        assertNull(error.get());
+        assertTrue("Expected CommandExecutionException", error.get() instanceof CommandExecutionException);
+        assertTrue("Expected wrapped InterruptedException", error.get().getCause() instanceof InterruptedException);
     }
 
     @Test
@@ -218,6 +211,24 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
+    public void testGatewayWaitForUndeclaredInterruptedException() throws InterruptedException {
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                gateway.waitForReturnValue("Command");
+            } catch (Throwable e) {
+                error.set(e);
+            }
+        });
+        t.start();
+        t.interrupt();
+        t.join();
+        assertNull("Did not expect ReturnValue", result.get());
+        assertTrue(error.get() instanceof CommandExecutionException);
+    }
+
+    @Test(timeout = 2000)
     public void testFireAndWaitWithTimeoutParameterReturns() throws InterruptedException {
         CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new Success(cdl, asCommandResultMessage("OK!")))
@@ -254,7 +265,8 @@ public class CommandGatewayFactoryTest {
         t.start();
         t.join();
         assertNull("Did not expect ReturnValue", result.get());
-        assertNull("Did not expect exception", error.get());
+        assertTrue("Expected CommandExecutionException", error.get() instanceof CommandExecutionException);
+        assertTrue("Expected wrapped InterruptedException", error.get().getCause() instanceof TimeoutException);
     }
 
     @Test(timeout = 2000)
@@ -289,7 +301,8 @@ public class CommandGatewayFactoryTest {
         t.interrupt();
         t.join();
         assertNull("Did not expect ReturnValue", result.get());
-        assertNull("Did not expect exception", error.get());
+        assertTrue("Expected CommandExecutionException", error.get() instanceof CommandExecutionException);
+        assertTrue("Expected wrapped InterruptedException", error.get().getCause() instanceof InterruptedException);
     }
 
     @Test(timeout = 2000)
