@@ -15,9 +15,9 @@
 
 package org.axonframework.axonserver.connector.util;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.grpc.FlowControl;
 import io.grpc.stub.StreamObserver;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +26,16 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * Wrapper around the standard StreamObserver that guarantees that the onNext calls are executed in a thread-safe manner.
- * Also maintains flow control sending a new message with permits to AxonServer when it is ready to handle more messages
+ * Wrapper around the standard StreamObserver that guarantees that the onNext calls are executed in a thread-safe
+ * manner.
+ * Also maintains flow control sending a new message with permits to AxonServer when it is ready to handle more
+ * messages
  *
  * @author Marc Gathier
+ * @since 4.0
  */
 public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
+
     private final StreamObserver<T> wrappedStreamObserver;
 
     private static final Logger logger = LoggerFactory.getLogger(FlowControllingStreamObserver.class);
@@ -44,15 +48,17 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
 
     /**
      * @param wrappedStreamObserver stream observer to send messages to AxonServer
-     * @param configuration AxonServer configuration for flow control
-     * @param requestWrapper Function to create a new permits request
+     * @param configuration         AxonServer configuration for flow control
+     * @param requestWrapper        Function to create a new permits request
      * @param isConfirmationMessage predicate to test if the message sent to AxonServer is a confirmation message
      */
     public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, AxonServerConfiguration configuration,
                                          Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
         this.wrappedStreamObserver = wrappedStreamObserver;
         this.configuration = configuration;
-        this.remainingPermits = new AtomicLong(configuration.getInitialNrOfPermits()-configuration.getNewPermitsThreshold());
+        this.remainingPermits = new AtomicLong(
+                configuration.getInitialNrOfPermits().longValue() - configuration.getNewPermitsThreshold().longValue()
+        );
         this.newPermits = configuration.getNrOfNewPermits();
         this.newPermitsRequest = requestWrapper.apply(createRequest(newPermits));
         this.isConfirmationMessage = isConfirmationMessage;
@@ -66,9 +72,9 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
 
     private FlowControl createRequest(long initialNrOfPermits) {
         return FlowControl.newBuilder()
-                .setClientId(configuration.getClientId())
-                .setPermits(initialNrOfPermits)
-                .build();
+                          .setClientId(configuration.getClientId())
+                          .setPermits(initialNrOfPermits)
+                          .build();
     }
 
     @Override
@@ -78,7 +84,7 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
         }
         logger.debug("Sending response to AxonServer platform, remaining permits: {}", remainingPermits.get());
 
-        if( isConfirmationMessage.test(t) ) {
+        if (isConfirmationMessage.test(t)) {
             markConsumed(1);
         }
     }
@@ -93,7 +99,7 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
         logger.info("Observer stopped");
         try {
             wrappedStreamObserver.onCompleted();
-        } catch(Exception ignore) {
+        } catch (Exception ignore) {
 
         }
     }
@@ -101,10 +107,11 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
     /**
      * notifies the stream observer that [@code consumed} messages are processed by the client.
      * Triggers a new permits request when remaining permits is 0
+     *
      * @param consumed nr of messages consumed
      */
     public void markConsumed(Integer consumed) {
-        if( remainingPermits.updateAndGet(old -> old - consumed) == 0) {
+        if (remainingPermits.updateAndGet(old -> old - consumed) == 0) {
             remainingPermits.addAndGet(newPermits);
             synchronized (wrappedStreamObserver) {
                 wrappedStreamObserver.onNext(newPermitsRequest);

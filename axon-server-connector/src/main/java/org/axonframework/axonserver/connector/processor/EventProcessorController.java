@@ -72,7 +72,8 @@ public class EventProcessorController {
     void releaseSegment(String processorName, int segmentId) {
         EventProcessor eventProcessor = getEventProcessor(processorName);
         if (!(eventProcessor instanceof TrackingEventProcessor)) {
-            logger.info("Release segment requested for processor [{}] which is not a Tracking Event Processor");
+            logger.info("Release segment requested for processor [{}] which is not a Tracking Event Processor",
+                        processorName);
             return;
         }
         ((TrackingEventProcessor) eventProcessor).releaseSegment(segmentId);
@@ -81,7 +82,8 @@ public class EventProcessorController {
     boolean splitSegment(String processorName, int segmentId) {
         EventProcessor eventProcessor = getEventProcessor(processorName);
         if (!(eventProcessor instanceof TrackingEventProcessor)) {
-            logger.info("Split segment requested for processor [{}] which is not a Tracking Event Processor");
+            logger.info("Split segment requested for processor [{}] which is not a Tracking Event Processor",
+                        processorName);
             return false;
         }
 
