@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -96,7 +97,7 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
 
     @Override
     public void onCompleted() {
-        logger.info("Observer stopped");
+        logger.debug("Observer stopped");
         try {
             wrappedStreamObserver.onCompleted();
         } catch (Exception ignore) {
