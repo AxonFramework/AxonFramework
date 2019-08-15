@@ -22,18 +22,14 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
 import org.axonframework.axonserver.connector.Publisher;
 import org.axonframework.common.Registration;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Disposable;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -137,7 +133,8 @@ public class SubscriptionQueryRequestTarget {
     private void unsubscribe(String context, SubscriptionQuery unsubscribe) {
         String subscriptionId = unsubscribe.getSubscriptionIdentifier();
         logger.debug("unsubscribe locally subscriptionId {}", subscriptionId);
-        subscriptions.get(context).remove(subscriptionId).cancel();
+        Optional.ofNullable(subscriptions.get(context).remove(subscriptionId))
+                .ifPresent(Registration::cancel);
     }
 
     /**
