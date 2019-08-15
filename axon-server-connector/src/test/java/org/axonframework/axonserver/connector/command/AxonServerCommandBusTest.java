@@ -121,6 +121,33 @@ public class AxonServerCommandBusTest {
     }
 
     @Test
+    public void fireAndForgetUsesDefaultCallback() throws InterruptedException {
+        testSubject.disconnect();
+        CommandCallback<Object, Object> mockDefaultCommandCallback = mock(CommandCallback.class);
+        testSubject = AxonServerCommandBus.builder()
+                                          .axonServerConnectionManager(axonServerConnectionManager)
+                                          .configuration(configuration)
+                                          .localSegment(localSegment)
+                                          .serializer(serializer)
+                                          .routingStrategy(command -> "RoutingKey")
+                                          .targetContextResolver(targetContextResolver)
+                                          .defaultCommandCallback(mockDefaultCommandCallback)
+                                          .build();
+
+        CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is the payload");
+        CountDownLatch cdl = new CountDownLatch(1);
+        doAnswer(i -> {
+            cdl.countDown();
+            return null;
+        }).when(mockDefaultCommandCallback).onResult(any(), any());
+
+        testSubject.dispatch(commandMessage);
+
+        assertTrue("Expected default callback to have been invoked", cdl.await(1, TimeUnit.SECONDS));
+        verify(mockDefaultCommandCallback).onResult(eq(commandMessage), any());
+    }
+
+    @Test
     public void dispatchWhenChannelThrowsAnException() throws InterruptedException {
         CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is the payload");
         CountDownLatch waiter = new CountDownLatch(1);

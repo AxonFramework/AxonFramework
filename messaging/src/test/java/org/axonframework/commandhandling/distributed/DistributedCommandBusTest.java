@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,19 +16,17 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Optional;
@@ -75,6 +73,22 @@ public class DistributedCommandBusTest {
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
+    }
+
+    @Test
+    public void testDefaultCallbackIsUsedWhenFireAndForget() {
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
+        testSubject = DistributedCommandBus.builder()
+                                           .commandRouter(mockCommandRouter)
+                                           .connector(mockConnector)
+                                           .messageMonitor(mockMessageMonitor)
+                                           .defaultCommandCallback(mockCallback)
+                                           .build();
+
+        CommandMessage<Object> message = GenericCommandMessage.asCommandMessage("test");
+        testSubject.dispatch(message);
+
+        verify(mockCallback).onResult(eq(message), any());
     }
 
     @Test

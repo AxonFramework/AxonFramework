@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
@@ -43,9 +42,9 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}'s name.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    default <C> void dispatch(CommandMessage<C> command) {
-        dispatch(command, LoggingCallback.INSTANCE);
-    }
+    /*default*/ <C> void dispatch(CommandMessage<C> command);// {
+    //dispatch(command, LoggingCallback.INSTANCE);
+    //}
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.

@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.callbacks.LoggingCallback;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -39,6 +41,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
@@ -55,31 +58,15 @@ public class SimpleCommandBus implements CommandBus {
 
     private final TransactionManager transactionManager;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
-    private RollbackConfiguration rollbackConfiguration;
     private final DuplicateCommandHandlerResolver duplicateCommandHandlerResolver;
-
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
     private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors =
             new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
-
-    /**
-     * Instantiate a {@link SimpleCommandBus} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleCommandBus} instance
-     */
-    protected SimpleCommandBus(Builder builder) {
-        builder.validate();
-        this.transactionManager = builder.transactionManager;
-        this.messageMonitor = builder.messageMonitor;
-        this.rollbackConfiguration = builder.rollbackConfiguration;
-        this.duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
-    }
+    private final CommandCallback<Object, Object> defaultCommandCallback;
+    private RollbackConfiguration rollbackConfiguration;
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
@@ -97,6 +84,28 @@ public class SimpleCommandBus implements CommandBus {
         return new Builder();
     }
 
+    /**
+     * Instantiate a {@link SimpleCommandBus} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleCommandBus} instance
+     */
+    protected SimpleCommandBus(Builder builder) {
+        builder.validate();
+        this.transactionManager = builder.transactionManager;
+        this.messageMonitor = builder.messageMonitor;
+        this.rollbackConfiguration = builder.rollbackConfiguration;
+        this.duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
+        this.defaultCommandCallback = builder.defaultCommandCallback;
+    }
+
+    @Override
+    public <C> void dispatch(CommandMessage<C> command) {
+        dispatch(command, defaultCommandCallback);
+    }
+
     @Override
     public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, ? super R> callback) {
         doDispatch(intercept(command), callback);
@@ -107,6 +116,7 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param command The original command being dispatched
      * @return The command to actually dispatch
+     * @param <C> The type of payload contained in the CommandMessage
      */
     @SuppressWarnings("unchecked")
     protected <C> CommandMessage<C> intercept(CommandMessage<C> command) {
@@ -152,7 +162,6 @@ public class SimpleCommandBus implements CommandBus {
      * @param <C>      The type of payload of the command
      * @param <R>      The type of result expected from the command handler
      */
-    @SuppressWarnings({"unchecked"})
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
@@ -244,6 +253,7 @@ public class SimpleCommandBus implements CommandBus {
         private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
         private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
                 DuplicateCommandHandlerResolution.logAndOverride();
+        private CommandCallback<Object, Object> defaultCommandCallback = LoggingCallback.INSTANCE;
 
         /**
          * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
@@ -297,6 +307,19 @@ public class SimpleCommandBus implements CommandBus {
                 DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
             assertNonNull(duplicateCommandHandlerResolver, "DuplicateCommandHandlerResolver may not be null");
             this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
+            return this;
+        }
+
+        /**
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
+         * {@link #dispatch(CommandMessage)}. Defaults to a {@link LoggingCallback}. Passing {@code null} will result
+         * in a {@link NoOpCallback} being used.
+         *
+         * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
+            this.defaultCommandCallback = getOrDefault(defaultCommandCallback, NoOpCallback.INSTANCE);
             return this;
         }
 

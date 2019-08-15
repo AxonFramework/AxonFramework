@@ -22,6 +22,7 @@ import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.*;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.NoCache;
@@ -55,6 +56,7 @@ import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
@@ -130,6 +132,7 @@ public class DisruptorCommandBus implements CommandBus {
     private final Disruptor<CommandHandlingEntry> disruptor;
     private final CommandHandlerInvoker[] commandHandlerInvokers;
     private final DuplicateCommandHandlerResolver duplicateCommandHandlerResolver;
+    private final CommandCallback<Object, Object> defaultCommandCallback;
 
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
@@ -200,6 +203,7 @@ public class DisruptorCommandBus implements CommandBus {
         rescheduleOnCorruptState = builder.rescheduleCommandsOnCorruptState;
         coolingDownPeriod = builder.coolingDownPeriod;
         commandTargetResolver = builder.commandTargetResolver;
+        defaultCommandCallback = builder.defaultCommandCallback;
 
         // Configure publisher Threads
         EventPublisher[] publishers = initializePublisherThreads(builder.publisherThreadCount,
@@ -240,7 +244,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public <C> void dispatch(CommandMessage<C> command) {
-        dispatch(command, FailureLoggingCommandCallback.INSTANCE);
+        dispatch(command, defaultCommandCallback);
     }
 
     @Override
@@ -612,6 +616,7 @@ public class DisruptorCommandBus implements CommandBus {
         private int invokerThreadCount = 1;
         private Cache cache = NoCache.INSTANCE;
         private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver = DuplicateCommandHandlerResolution.logAndOverride();
+        private CommandCallback<Object, Object> defaultCommandCallback = FailureLoggingCommandCallback.INSTANCE;
 
         /**
          * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the
@@ -888,6 +893,20 @@ public class DisruptorCommandBus implements CommandBus {
             this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
             return this;
         }
+
+        /**
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
+         * {@link #dispatch(CommandMessage)}. Defaults to a {@link FailureLoggingCommandCallback}, which logs failed
+         * commands to a logger. Passing {@code null} will result in a {@link NoOpCallback} being used.
+         *
+         * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
+            this.defaultCommandCallback = getOrDefault(defaultCommandCallback, NoOpCallback.INSTANCE);
+            return this;
+        }
+
 
         /**
          * Initializes a {@link DisruptorCommandBus} as specified through this Builder.
