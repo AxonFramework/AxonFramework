@@ -42,9 +42,7 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}'s name.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    /*default*/ <C> void dispatch(CommandMessage<C> command);// {
-    //dispatch(command, LoggingCallback.INSTANCE);
-    //}
+    <C> void dispatch(CommandMessage<C> command);
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
