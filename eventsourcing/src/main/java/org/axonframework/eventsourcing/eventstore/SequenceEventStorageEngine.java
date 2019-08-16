@@ -47,6 +47,7 @@ import java.util.stream.StreamSupport;
  *
  * @author Rene de Waele
  * @author Allard Buijze
+ * @since 3.0
  */
 public class SequenceEventStorageEngine implements EventStorageEngine {
 
@@ -78,10 +79,13 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
-        Spliterator<? extends TrackedEventMessage<?>> historicSpliterator = historicStorage.readEvents(trackingToken, mayBlock).spliterator();
+        Spliterator<? extends TrackedEventMessage<?>> historicSpliterator =
+                historicStorage.readEvents(trackingToken, mayBlock).spliterator();
         Spliterator<? extends TrackedEventMessage<?>> merged = new ConcatenatingSpliterator(
-                historicSpliterator, mayBlock,
-                token -> activeStorage.readEvents(token, mayBlock).spliterator());
+                historicSpliterator,
+                mayBlock,
+                token -> activeStorage.readEvents(token, mayBlock).spliterator()
+        );
         return StreamSupport.stream(merged, false);
     }
 
@@ -94,8 +98,10 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return Optional.ofNullable(activeStorage.readSnapshot(aggregateIdentifier).orElseGet(
-                () -> historicStorage.readSnapshot(aggregateIdentifier).orElse(null)));
+        Optional<DomainEventMessage<?>> optionalDomainEventMessage = activeStorage.readSnapshot(aggregateIdentifier);
+        return optionalDomainEventMessage.isPresent()
+                ? optionalDomainEventMessage
+                : historicStorage.readSnapshot(aggregateIdentifier);
     }
 
     @Override
@@ -134,7 +140,8 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         private TrackingToken lastToken;
         private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
 
-        public ConcatenatingSpliterator(Spliterator<? extends TrackedEventMessage<?>> historicSpliterator, boolean mayBlock,
+        public ConcatenatingSpliterator(Spliterator<? extends TrackedEventMessage<?>> historicSpliterator,
+                                        boolean mayBlock,
                                         Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider) {
             super(Long.MAX_VALUE, Spliterator.ORDERED);
             this.historicSpliterator = historicSpliterator;
@@ -163,7 +170,9 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         private DomainEventStream actual;
         private final BiFunction<String, Long, DomainEventStream> domainEventStream;
 
-        public ConcatenatingDomainEventStream(DomainEventStream historic, String aggregateIdentifier, BiFunction<String, Long, DomainEventStream> domainEventStream) {
+        public ConcatenatingDomainEventStream(DomainEventStream historic,
+                                              String aggregateIdentifier,
+                                              BiFunction<String, Long, DomainEventStream> domainEventStream) {
             this.historic = historic;
             this.aggregateIdentifier = aggregateIdentifier;
             this.domainEventStream = domainEventStream;
