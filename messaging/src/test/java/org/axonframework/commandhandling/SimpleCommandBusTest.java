@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
@@ -95,6 +96,20 @@ public class SimpleCommandBusTest {
         assertFalse(CurrentUnitOfWork.isStarted());
         assertFalse(unitOfWork.get().isRolledBack());
         assertFalse(unitOfWork.get().isActive());
+    }
+
+    @Test
+    public void testFireAndForgetUsesDefaultCallback() {
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
+        testSubject = SimpleCommandBus.builder()
+                                      .defaultCommandCallback(mockCallback).build();
+
+        CommandMessage<Object> command = asCommandMessage("test");
+        testSubject.dispatch(command, NoOpCallback.INSTANCE);
+        verify(mockCallback, never()).onResult(any(), any());
+
+        testSubject.dispatch(command);
+        verify(mockCallback).onResult(eq(command), any());
     }
 
     @Test

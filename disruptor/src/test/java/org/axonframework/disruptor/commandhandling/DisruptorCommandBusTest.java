@@ -62,11 +62,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -156,6 +154,7 @@ public class DisruptorCommandBusTest {
     @Test
     public void testPublishUnsupportedCommand() {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
+        CommandCallback callback = mock(CommandCallback.class);
         testSubject = DisruptorCommandBus.builder()
                                          .bufferSize(8)
                                          .producerType(ProducerType.SINGLE)
@@ -163,9 +162,9 @@ public class DisruptorCommandBusTest {
                                          .executor(customExecutor)
                                          .invokerThreadCount(2)
                                          .publisherThreadCount(3)
+                                         .defaultCommandCallback(callback)
                                          .build();
-        CommandCallback callback = mock(CommandCallback.class);
-        testSubject.dispatch(asCommandMessage("Test"), callback);
+        testSubject.dispatch(asCommandMessage("Test"));
         customExecutor.shutdownNow();
         ArgumentCaptor<CommandResultMessage<?>> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);

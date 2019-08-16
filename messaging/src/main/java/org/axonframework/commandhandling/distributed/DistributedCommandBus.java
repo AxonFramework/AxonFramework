@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.MonitorAwareCallback;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
@@ -68,23 +64,9 @@ public class DistributedCommandBus implements CommandBus {
 
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final AtomicReference<CommandMessageFilter> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
+    private final CommandCallback<Object, Object> defaultCommandCallback;
 
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
-
-    /**
-     * Instantiate a {@link DistributedCommandBus} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link CommandRouter}, {@link CommandBusConnector} and {@link MessageMonitor} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link DistributedCommandBus} instance
-     */
-    protected DistributedCommandBus(Builder builder) {
-        builder.validate();
-        this.commandRouter = builder.commandRouter;
-        this.connector = builder.connector;
-        this.messageMonitor = builder.messageMonitor;
-    }
 
     /**
      * Instantiate a Builder to be able to create a {@link DistributedCommandBus}.
@@ -99,8 +81,29 @@ public class DistributedCommandBus implements CommandBus {
         return new Builder();
     }
 
+    /**
+     * Instantiate a {@link DistributedCommandBus} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link CommandRouter}, {@link CommandBusConnector} and {@link MessageMonitor} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link DistributedCommandBus} instance
+     */
+    protected DistributedCommandBus(Builder builder) {
+        builder.validate();
+        this.commandRouter = builder.commandRouter;
+        this.connector = builder.connector;
+        this.messageMonitor = builder.messageMonitor;
+        this.defaultCommandCallback = builder.defaultCommandCallback;
+    }
+
     @Override
     public <C> void dispatch(CommandMessage<C> command) {
+        if (defaultCommandCallback != null) {
+            dispatch(command, defaultCommandCallback);
+            return;
+        }
+
         LoggingCallback loggingCallback = LoggingCallback.INSTANCE;
         if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
@@ -235,6 +238,7 @@ public class DistributedCommandBus implements CommandBus {
      */
     public static class Builder {
 
+        private CommandCallback<Object, Object> defaultCommandCallback = null;
         private CommandRouter commandRouter;
         private CommandBusConnector connector;
         private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
@@ -275,6 +279,19 @@ public class DistributedCommandBus implements CommandBus {
         public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
+         * {@link #dispatch(CommandMessage)}. Defaults to using no callback, which requests the connectors to use a
+         * fire-and-forget strategy for dispatching event.
+         *
+         * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
+            this.defaultCommandCallback = defaultCommandCallback;
             return this;
         }
 
