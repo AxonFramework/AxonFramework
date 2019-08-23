@@ -20,7 +20,10 @@ package org.axonframework.eventhandling;
  * Event Payload used to trigger reset handlers. This class doesn't contain any information and is merely used to
  * trigger a suitable handler method.
  *
+ * @author Allard Buijze
  * @see ResetHandler @ResetHandler
+ * @since 3.2
  */
 public class ResetTriggeredEvent {
+
 }
