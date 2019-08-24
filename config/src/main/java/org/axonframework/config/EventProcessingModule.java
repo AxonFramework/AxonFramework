@@ -677,7 +677,7 @@ public class EventProcessingModule
      *            {@link Object}
      * @return {@link String}
      */
-    static String packageOfObject(Object object) {
+    protected static String packageOfObject(Object object) {
         return object.getClass().getName().replace("." + object.getClass().getSimpleName(), "");
     }
 
