@@ -24,9 +24,13 @@ import java.lang.annotation.Target;
 /**
  * Annotation that can be placed on a method that is to be invoked when a reset is being prepared. Handlers may throw
  * an exception to veto against a reset.
+ *
+ * @author Allard Buijze
+ * @since 3.2
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @EventHandler(payloadType = ResetTriggeredEvent.class)
 public @interface ResetHandler {
+
 }
