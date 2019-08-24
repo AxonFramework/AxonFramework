@@ -426,6 +426,12 @@ public class EventProcessingModuleTest {
         }
     }
 
+    @Test
+    public void testPackageOfObject() {
+        String expectedPackageName = EventProcessingModule.class.getPackage().getName();
+        assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
+    }
+
     private void buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {
         // Use InMemoryEventStorageEngine so tracking processors don't miss events
         configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
