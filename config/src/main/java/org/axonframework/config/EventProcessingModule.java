@@ -79,22 +79,13 @@ public class EventProcessingModule
     // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
     // if no annotation is present, the package name is used
     private Function<Class<?>, String> typeFallback = c -> c.getSimpleName() + "Processor";
-    private final TypeProcessingGroupSelector defaultTypeSelector = new TypeProcessingGroupSelector(
-            Integer.MIN_VALUE,
-            type -> {
-                Optional<Map<String, Object>> annAttr = findAnnotationAttributes(type, ProcessingGroup.class);
-                return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
-                                          .orElseGet(() -> typeFallback.apply(type)));
-            });
-    private Function<Object, String> instanceFallback = o -> o.getClass().getPackage().getName();
-    private final InstanceProcessingGroupSelector defaultInstanceSelector = new InstanceProcessingGroupSelector(
-            Integer.MIN_VALUE,
-            o -> {
-                Class<?> handlerType = o.getClass();
-                Optional<Map<String, Object>> annAttr = findAnnotationAttributes(handlerType, ProcessingGroup.class);
-                return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
-                                          .orElseGet(() -> instanceFallback.apply(o)));
-            });
+    private final TypeProcessingGroupSelector defaultTypeSelector = TypeProcessingGroupSelector
+            .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElseGet(() -> typeFallback.apply(type)));
+
+    private Function<Object, String> instanceFallback = EventProcessingModule::packageOfObject;
+    private final InstanceProcessingGroupSelector defaultInstanceSelector = InstanceProcessingGroupSelector
+            .defaultSelector(o -> annotatedProcessingGroupOfType(o.getClass()).orElseGet(() -> instanceFallback.apply(o)));
+
     private Configuration configuration;
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
@@ -675,11 +666,34 @@ public class EventProcessingModule
                                      .build();
     }
 
+    /**
+     * Gets the package name from the class of the given object.
+     * <p>
+     * Since class.getPackage() can be null e.g. for generated classes, the
+     * package name is determined the old fashioned way based on the full
+     * qualified class name.
+     * 
+     * @param object
+     *            {@link Object}
+     * @return {@link String}
+     */
+    protected static String packageOfObject(Object object) {
+        return object.getClass().getName().replace("." + object.getClass().getSimpleName(), "");
+    }
+
+    private static Optional<String> annotatedProcessingGroupOfType(Class<?> type) {
+        Optional<Map<String, Object>> annAttr = findAnnotationAttributes(type, ProcessingGroup.class);
+        return annAttr.map(attr -> (String) attr.get("processingGroup"));
+    }
+
     //<editor-fold desc="configuration state">
     private static class InstanceProcessingGroupSelector extends ProcessingGroupSelector<Object> {
 
-        private InstanceProcessingGroupSelector(int priority,
-                                                Function<Object, Optional<String>> selectorFunction) {
+        private static InstanceProcessingGroupSelector defaultSelector(Function<Object, String> selectorFunction) {
+            return new InstanceProcessingGroupSelector(Integer.MIN_VALUE, selectorFunction.andThen(Optional::of));
+        }
+
+        private InstanceProcessingGroupSelector(int priority, Function<Object, Optional<String>> selectorFunction) {
             super(priority, selectorFunction);
         }
 
@@ -690,8 +704,11 @@ public class EventProcessingModule
 
     private static class TypeProcessingGroupSelector extends ProcessingGroupSelector<Class<?>> {
 
-        private TypeProcessingGroupSelector(int priority,
-                                            Function<Class<?>, Optional<String>> selectorFunction) {
+        private static TypeProcessingGroupSelector defaultSelector(Function<Class<?>, String> selectorFunction) {
+            return new TypeProcessingGroupSelector(Integer.MIN_VALUE, selectorFunction.andThen(Optional::of));
+        }
+
+        private TypeProcessingGroupSelector(int priority, Function<Class<?>, Optional<String>> selectorFunction) {
             super(priority, selectorFunction);
         }
 
