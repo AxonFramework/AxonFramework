@@ -86,12 +86,10 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    default String schedule(Instant triggerDateTime,
-                            String deadlineName,
-                            Object messageOrPayload,
-                            ScopeDescriptor deadlineScope) {
-        return schedule(triggerDateTime, deadlineName, messageOrPayload, deadlineScope);
-    }
+    String schedule(Instant triggerDateTime,
+                    String deadlineName,
+                    Object messageOrPayload,
+                    ScopeDescriptor deadlineScope);
 
     /**
      * Schedules a deadline after the given {@code triggerDuration} with given {@code deadlineName}. The payload of this
@@ -146,10 +144,15 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    String schedule(Duration triggerDuration,
-                    String deadlineName,
-                    Object messageOrPayload,
-                    ScopeDescriptor deadlineScope);
+    default String schedule(Duration triggerDuration,
+                            String deadlineName,
+                            Object messageOrPayload,
+                            ScopeDescriptor deadlineScope) {
+        return schedule(Instant.now().plus(triggerDuration),
+                        deadlineName,
+                        messageOrPayload,
+                        deadlineScope);
+    }
 
     /**
      * Cancels the deadline corresponding to the given {@code deadlineName} / {@code scheduleId} combination.
