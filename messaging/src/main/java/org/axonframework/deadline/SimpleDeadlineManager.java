@@ -21,8 +21,12 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -32,7 +36,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -92,13 +101,13 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(Duration triggerDuration,
+    public String schedule(Instant triggerDateTime,
                            String deadlineName,
                            Object messageOrPayload,
                            ScopeDescriptor deadlineScope) {
         DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
         String deadlineId = deadlineMessage.getIdentifier();
-
+        Duration triggerDuration = Duration.between(Instant.now(), triggerDateTime);
         runOnPrepareCommitOrNow(() -> {
             DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineName,
