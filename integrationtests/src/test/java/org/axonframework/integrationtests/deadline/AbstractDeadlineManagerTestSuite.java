@@ -35,9 +35,7 @@ import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
@@ -51,9 +49,8 @@ import static java.util.Arrays.asList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.spy;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests whether a {@link DeadlineManager} implementations functions as expected.
@@ -587,9 +584,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
             apply(new MyAggregateCreatedEvent(command.id));
 
             String deadlineName = "deadlineName";
-            String deadlineId = deadlineManager.schedule(
-                    Duration.ofMillis(DEADLINE_TIMEOUT), deadlineName, new DeadlinePayload(command.id)
-            );
+            Instant trigger = Instant.now().plus(Duration.ofMillis(DEADLINE_TIMEOUT));
+            String deadlineId = deadlineManager.schedule(trigger, deadlineName, new DeadlinePayload(command.id));
 
             if (command.cancelBeforeDeadline) {
                 deadlineManager.cancelSchedule(deadlineName, deadlineId);
