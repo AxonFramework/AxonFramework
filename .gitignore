@@ -1,13 +1,22 @@
-*.iml
+# Maven build artifacts can be ignored
+target/
+# ...but keep the wrapper jar
+!.mvn/wrapper/maven-wrapper.jar
+
 axon.ipr
 axon.iws
-target/
+
+# IntelliJ project files
+*.iml
 .idea/
-**/*.iml
+
+# Eclipse project files
 .classpath
 .project
 .settings/
+.factorypath
+
 events/
+
+# MacOS makes this one
 .DS_Store
-# keep the wrapper jar
-!.mvn/wrapper/maven-wrapper.jar
