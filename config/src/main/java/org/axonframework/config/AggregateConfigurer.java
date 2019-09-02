@@ -18,6 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.common.caching.Cache;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -62,6 +63,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<AggregateModel<A>> metaModel;
     private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
+	private final Component<Cache> cache;
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
 
@@ -86,6 +88,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                         () -> AnnotationCommandTargetResolver.builder().build()));
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
+        cache = new Component<>(() -> parent, name("cache"), c -> c.getComponent(Cache.class, () -> null));
         aggregateFactory =
                 new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
         eventStreamFilter =
@@ -115,7 +118,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                             .aggregateFactory(aggregateFactory.get())
                             .eventStore(c.eventStore())
                             .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
-                            .repositoryProvider(c::repository);
+                            .repositoryProvider(c::repository)
+                            .cache(cache.get());
                     if (eventStreamFilter.get() != null) {
                         builder = builder.eventStreamFilter(eventStreamFilter.get());
                     } else if (filterEventsByType.get()) {
@@ -302,6 +306,19 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> configureFilterEventsByType(
             Function<Configuration, Boolean> filterConfigurationPredicate) {
         this.filterEventsByType.update(filterConfigurationPredicate);
+        return this;
+    }
+	
+	/**
+     * Configures caching for the Aggregate type under configuration.
+     * <p>
+     * Note that this configuration is ignored if a custom repository instance is configured.
+     *
+     * @param cache The function creating the Cache
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureCache(Function<Configuration, Cache> cache) {
+        this.cache.update(cache);
         return this;
     }
 
