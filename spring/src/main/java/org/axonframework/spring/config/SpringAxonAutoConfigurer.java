@@ -340,8 +340,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                         aggregateConf.configureSnapshotTrigger(
                                 c -> beanFactory.getBean(triggerDefinition, SnapshotTriggerDefinition.class));
                     }
-					String cache = aggregateAnnotation.cache();
-					if (!"".equals(cache)) {
+                    String cache = aggregateAnnotation.cache();
+                    if (!"".equals(cache)) {
                         aggregateConf.configureCache(c -> beanFactory.getBean(cache, Cache.class));
                     }
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {

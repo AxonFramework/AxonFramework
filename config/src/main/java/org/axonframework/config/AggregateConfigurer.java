@@ -63,7 +63,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<AggregateModel<A>> metaModel;
     private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
-	private final Component<Cache> cache;
+    private final Component<Cache> cache;
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
 
@@ -308,8 +308,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         this.filterEventsByType.update(filterConfigurationPredicate);
         return this;
     }
-	
-	/**
+
+    /**
      * Configures caching for the Aggregate type under configuration.
      * <p>
      * Note that this configuration is ignored if a custom repository instance is configured.
