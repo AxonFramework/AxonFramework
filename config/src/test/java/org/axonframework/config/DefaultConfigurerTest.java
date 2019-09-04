@@ -18,6 +18,9 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.common.caching.WeakReferenceCache;
+import org.axonframework.eventsourcing.CachingEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.common.AxonConfigurationException;
@@ -89,6 +92,7 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
+        assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
         assertEquals(1, config.getModules().size());
         assertExpectedModules(config,
                               AggregateConfiguration.class);
@@ -378,6 +382,24 @@ public class DefaultConfigurerTest {
                                                        .buildConfiguration();
         assertEquals(queryUpdateEmitter, configuration.queryBus().queryUpdateEmitter());
         assertEquals(queryUpdateEmitter, configuration.queryUpdateEmitter());
+    }
+
+    @Test
+    public void defaultConfigurationWithCache() throws Exception {
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+            .configureCommandBus(c -> AsynchronousCommandBus.builder().build())
+            .configureAggregate(
+                defaultConfiguration(StubAggregate.class).configureCache(c-> new WeakReferenceCache())
+             )
+            .buildConfiguration();
+        config.start();
+
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
+        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        assertEquals("test", callback.get().getPayload());
+        assertNotNull(config.repository(StubAggregate.class));
+        assertEquals(CachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
     }
 
     @Entity(name = "StubAggregate")
