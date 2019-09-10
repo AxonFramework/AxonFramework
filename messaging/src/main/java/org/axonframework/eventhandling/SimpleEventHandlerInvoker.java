@@ -106,10 +106,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        logger.trace("Received event {}. Segment Id {}. Thread {}.",
-                     message.getIdentifier(),
-                     segment.getSegmentId(),
-                     Thread.currentThread().getName());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Received event {}. Segment Id {}. Thread {}.",
+                         message.getIdentifier(),
+                         segment.getSegmentId(),
+                         Thread.currentThread().getName());
+        }
         if (sequencingPolicyMatchesSegment(message, segment)) {
             for (EventMessageHandler handler : wrappedEventHandlers) {
                 try {

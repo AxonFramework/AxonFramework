@@ -157,10 +157,12 @@ public class EventBuffer implements TrackingEventStream {
         try {
             hasNextAvailable(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
             TrackedEventMessage<?> next = peekEvent == null ? eventStream.next() : peekEvent;
-            logger.trace("Polling next available event {} in an Event Buffer {}. Tracking Token {}.",
-                         next.getIdentifier(),
-                         this,
-                         next.trackingToken());
+            if (logger.isTraceEnabled()) {
+                logger.trace("Polled next available event {} in an Event Buffer {}. Tracking Token {}.",
+                             next.getIdentifier(),
+                             this,
+                             next.trackingToken());
+            }
             return next;
         } catch (InterruptedException e) {
             logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
@@ -187,11 +189,13 @@ public class EventBuffer implements TrackingEventStream {
             TrackingToken trackingToken = new GlobalSequenceTrackingToken(event.getToken());
             TrackedDomainEventData<byte[]> trackedDomainEventData =
                     new TrackedDomainEventData<>(trackingToken, new GrpcBackedDomainEventData(event.getEvent()));
-            logger.trace("Pushing event {} in an Event Buffer {}. Tracking Token {}.",
-                         trackedDomainEventData.getEventIdentifier(),
-                         this,
-                         trackingToken);
             events.put(trackedDomainEventData);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Pushed event {} in an Event Buffer {}. Tracking Token {}.",
+                             trackedDomainEventData.getEventIdentifier(),
+                             this,
+                             trackingToken);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             closeCallback.accept(this);

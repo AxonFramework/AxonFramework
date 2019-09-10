@@ -396,11 +396,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
-            logger.trace("Processor {} processing batch {}. Segment id {}. Thread {}.",
-                         getName(),
-                         batch.stream().map(EventMessage::getIdentifier).collect(Collectors.joining(",")),
-                         segment.getSegmentId(),
-                         Thread.currentThread().getName());
+            if (logger.isTraceEnabled()) {
+                logger.trace("Processor {} processing batch {}. Segment id {}. Thread {}.",
+                             getName(),
+                             batch.stream().map(EventMessage::getIdentifier).collect(Collectors.joining(",")),
+                             segment.getSegmentId(),
+                             Thread.currentThread().getName());
+            }
             processInUnitOfWork(batch, unitOfWork, processingSegments);
 
             activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
@@ -412,14 +414,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private void logReceivedEvent(Segment segment, TrackedEventMessage<?> message, BlockingStream<?> eventStream) {
-        logger.trace("Processor {} receiving event {}. Tracking token {}. Segment id {}. Thread {}. Processor instance {}. Event Stream {}.",
-                     getName(),
-                     message.getIdentifier(),
-                     message.trackingToken(),
-                     segment.getSegmentId(),
-                     Thread.currentThread().getName(),
-                     this,
-                     eventStream);
+        if (logger.isTraceEnabled()) {
+            logger.trace(
+                    "Processor {} receiving event {}. Tracking token {}. Segment id {}. Thread {}. Processor instance {}. Event Stream {}.",
+                    getName(),
+                    message.getIdentifier(),
+                    message.trackingToken(),
+                    segment.getSegmentId(),
+                    Thread.currentThread().getName(),
+                    this,
+                    eventStream);
+        }
     }
 
     /**
