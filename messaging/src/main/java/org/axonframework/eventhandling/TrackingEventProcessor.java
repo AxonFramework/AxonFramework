@@ -343,6 +343,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             Collection<Segment> processingSegments;
             if (eventStream.hasNextAvailable(1, SECONDS)) {
                 final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
+                logReceivedEvent(segment, firstMessage);
                 lastToken = firstMessage.trackingToken();
                 processingSegments = processingSegments(lastToken, segment);
                 if (canHandle(firstMessage, processingSegments)) {
@@ -354,6 +355,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         && i < batchSize * 10 && batch.size() < batchSize
                         && eventStream.peek().map(m -> isRegularProcessing(segment, m)).orElse(false); i++) {
                     final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                    logReceivedEvent(segment, trackedEventMessage);
                     lastToken = trackedEventMessage.trackingToken();
                     if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
@@ -383,6 +385,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             while (lastToken != null
                     && eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                logReceivedEvent(segment, trackedEventMessage);
                 if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
                 }
@@ -400,6 +403,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             this.shutDown();
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void logReceivedEvent(Segment segment, TrackedEventMessage<?> message) {
+        logger.trace("Processor {} receiving event {}. Tracking token {}. Segment id {}. Thread {}.",
+                     getName(),
+                     message.getIdentifier(),
+                     message.trackingToken(),
+                     segment.getSegmentId(),
+                     Thread.currentThread().getName());
     }
 
     /**
