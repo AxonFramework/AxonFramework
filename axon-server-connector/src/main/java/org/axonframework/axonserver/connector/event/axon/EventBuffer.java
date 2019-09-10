@@ -156,7 +156,12 @@ public class EventBuffer implements TrackingEventStream {
     public TrackedEventMessage<?> nextAvailable() {
         try {
             hasNextAvailable(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
-            return peekEvent == null ? eventStream.next() : peekEvent;
+            TrackedEventMessage<?> next = peekEvent == null ? eventStream.next() : peekEvent;
+            logger.trace("Polling next available event {} in an Event Buffer {}. Tracking Token {}.",
+                         next.getIdentifier(),
+                         this,
+                         next.trackingToken());
+            return next;
         } catch (InterruptedException e) {
             logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
             Thread.currentThread().interrupt();
@@ -180,7 +185,13 @@ public class EventBuffer implements TrackingEventStream {
         }
         try {
             TrackingToken trackingToken = new GlobalSequenceTrackingToken(event.getToken());
-            events.put(new TrackedDomainEventData<>(trackingToken, new GrpcBackedDomainEventData(event.getEvent())));
+            TrackedDomainEventData<byte[]> trackedDomainEventData =
+                    new TrackedDomainEventData<>(trackingToken, new GrpcBackedDomainEventData(event.getEvent()));
+            logger.trace("Pushing event {} in an Event Buffer {}. Tracking Token {}.",
+                         trackedDomainEventData.getEventIdentifier(),
+                         this,
+                         trackingToken);
+            events.put(trackedDomainEventData);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             closeCallback.accept(this);
