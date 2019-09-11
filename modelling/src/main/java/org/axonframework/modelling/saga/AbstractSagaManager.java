@@ -73,6 +73,12 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
     @Override
     public void handle(EventMessage<?> event, Segment segment) throws Exception {
+        if (logger.isTraceEnabled()) {
+            logger.trace("Received event {}. Segment Id {}. Thread {}.",
+                         event.getIdentifier(),
+                         segment.getSegmentId(),
+                         Thread.currentThread().getName());
+        }
         Set<AssociationValue> associationValues = extractAssociationValues(event);
         Set<Saga<T>> sagas =
                 associationValues.stream()

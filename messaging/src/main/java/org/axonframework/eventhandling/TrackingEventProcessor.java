@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static java.util.Objects.nonNull;
@@ -343,6 +344,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             Collection<Segment> processingSegments;
             if (eventStream.hasNextAvailable(1, SECONDS)) {
                 final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
+                logReceivedEvent(segment, firstMessage, eventStream);
                 lastToken = firstMessage.trackingToken();
                 processingSegments = processingSegments(lastToken, segment);
                 if (canHandle(firstMessage, processingSegments)) {
@@ -354,6 +356,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         && i < batchSize * 10 && batch.size() < batchSize
                         && eventStream.peek().map(m -> isRegularProcessing(segment, m)).orElse(false); i++) {
                     final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                    logReceivedEvent(segment, trackedEventMessage, eventStream);
                     lastToken = trackedEventMessage.trackingToken();
                     if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
@@ -383,6 +386,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             while (lastToken != null
                     && eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                logReceivedEvent(segment, trackedEventMessage, eventStream);
                 if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
                 }
@@ -392,6 +396,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Processor {} processing batch {}. Segment id {}. Thread {}.",
+                             getName(),
+                             batch.stream().map(EventMessage::getIdentifier).collect(Collectors.joining(",")),
+                             segment.getSegmentId(),
+                             Thread.currentThread().getName());
+            }
             processInUnitOfWork(batch, unitOfWork, processingSegments);
 
             activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
@@ -399,6 +410,20 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void logReceivedEvent(Segment segment, TrackedEventMessage<?> message, BlockingStream<?> eventStream) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(
+                    "Processor {} receiving event {}. Tracking token {}. Segment id {}. Thread {}. Processor instance {}. Event Stream {}.",
+                    getName(),
+                    message.getIdentifier(),
+                    message.trackingToken(),
+                    segment.getSegmentId(),
+                    Thread.currentThread().getName(),
+                    this,
+                    eventStream);
         }
     }
 
