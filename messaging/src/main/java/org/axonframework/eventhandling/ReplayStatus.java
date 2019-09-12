@@ -31,7 +31,7 @@ package org.axonframework.eventhandling;
 public enum ReplayStatus {
 
     /**
-     * Indicats the message is delivered as part of a replay (and may have been delivered before)
+     * Indicates the message is delivered as part of a replay (and may have been delivered before)
      */
     REPLAY(true),
     /**

@@ -2,6 +2,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.JdbcException;
 import org.junit.*;
 import org.slf4j.Logger;
@@ -59,6 +60,7 @@ public class IntervalRetrySchedulerTest {
             Class<?>[] arr = new Class[2];
             arr[0] = JdbcException.class;
             arr[1] = NullPointerException.class;
+            //noinspection unchecked
             failures.add((Class<? extends Throwable>[]) arr);
         }
         if (retryScheduler.scheduleRetry(msg, exc, failures, after)) {
@@ -87,5 +89,10 @@ public class IntervalRetrySchedulerTest {
 
         assertEquals("Scheduling a retry when past maxRetryCount should have failed.",
                      0, doScheduleRetry(retryScheduler, MAX_RETRIES + 1));
+    }
+
+    @Test(expected = AxonConfigurationException.class)
+    public void testBuildingWhilstMissingScheduledExecutorServiceThrowsConfigurationException() {
+        IntervalRetryScheduler.builder().build();
     }
 }
