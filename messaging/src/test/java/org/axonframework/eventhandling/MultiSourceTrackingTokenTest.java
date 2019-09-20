@@ -136,12 +136,6 @@ public class MultiSourceTrackingTokenTest {
         newTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
         assertTrue(testSubject.covers(new MultiSourceTrackingToken(newTokens)));
-
-        newTokens.put("token2", null);
-        MultiSourceTrackingToken tokenWithNullConstituent = new MultiSourceTrackingToken(newTokens);
-        assertTrue(testSubject.covers(tokenWithNullConstituent));
-
-        assertTrue(tokenWithNullConstituent.covers(tokenWithNullConstituent));
     }
 
     @Test
@@ -151,9 +145,17 @@ public class MultiSourceTrackingTokenTest {
         newTokens.put("token2", new GlobalSequenceTrackingToken(0));
 
         assertFalse(testSubject.covers(new MultiSourceTrackingToken(newTokens)));
+    }
 
+    @Test
+    public void coversNullConstituents() {
+        Map<String, TrackingToken> newTokens = new HashMap<>();
+        newTokens.put("token1", new GlobalSequenceTrackingToken(0));
         newTokens.put("token2", null);
         MultiSourceTrackingToken tokenWithNullConstituent = new MultiSourceTrackingToken(newTokens);
+
+        assertTrue(tokenWithNullConstituent.covers(tokenWithNullConstituent));
+        assertTrue(testSubject.covers(tokenWithNullConstituent));
         assertFalse(tokenWithNullConstituent.covers(testSubject));
     }
 
