@@ -131,8 +131,13 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
         //as soon as one delegated token doesn't cover return false
         for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
-            if (!trackingTokenEntry.getValue().covers(otherMultiToken.trackingTokens
-                                                              .get(trackingTokenEntry.getKey()))) {
+            TrackingToken constituent = trackingTokenEntry.getValue();
+            TrackingToken otherConstituent = otherMultiToken.trackingTokens.get(trackingTokenEntry.getKey());
+            if (constituent == null) {
+                if (otherConstituent != null) {
+                    return false;
+                }
+            } else if (otherConstituent != null && !constituent.covers(otherConstituent)) {
                 return false;
             }
         }
