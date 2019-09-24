@@ -679,7 +679,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * the SegmentID processed by this instance. The values of the returned Map represent the last known status of that
      * Segment.
      * <p>
-     * Note that the returned Map in unmodifiable, but does reflect any changes made to the status as the processor
+     * Note that the returned Map is unmodifiable, but does reflect any changes made to the status as the processor
      * is processing Events.
      *
      * @return the status for each of the Segments processed by the current processor
