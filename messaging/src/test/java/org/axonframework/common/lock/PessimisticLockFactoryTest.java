@@ -222,6 +222,13 @@ class PessimisticLockFactoryTest {
         assertThrows(IllegalArgumentException.class, () -> manager.obtainLock(identifier));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testShouldThrowIllegalArgumentExceptionWhenIdentifierIsNull() {
+        this.identifier = null;
+        PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
+        manager.obtainLock(identifier);
+    }
+
     private void createThreadObtainLockAndWaitForState(PessimisticLockFactory lockFactory, Thread.State state, CountDownLatch rendezvous, AtomicReference<Exception> exceptionInThread, String id) {
         Thread thread = new Thread(() -> {
             try (Lock ignored = lockFactory.obtainLock(id)) {
