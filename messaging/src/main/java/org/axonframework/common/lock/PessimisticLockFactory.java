@@ -18,16 +18,14 @@ package org.axonframework.common.lock;
 
 import org.axonframework.common.Assert;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.synchronizedMap;
+import static org.axonframework.common.Assert.assertThat;
 
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
