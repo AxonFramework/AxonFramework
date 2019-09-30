@@ -54,7 +54,6 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      */
     protected AbstractRetryScheduler(Builder builder) {
         builder.validate();
-
         this.retryExecutor = builder.retryExecutor;
         this.maxRetryCount = builder.maxRetryCount;
     }
@@ -142,24 +141,15 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     }
 
     /**
-     * A builder class for {@link RetryScheduler}s. Values for the {@link Builder#retryExecutor} and
-     * {@link Builder#maxRetryCount} fields are both required, with the latter having a default value of
-     * {@link #DEFAULT_MAX_RETRIES}.
+     * A builder class for the {@link RetryScheduler} implementations.
+     * <p>
+     * The default for {@code maxRetryCount} is set to a single retry.
+     * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder<B extends Builder> {
 
         private ScheduledExecutorService retryExecutor;
         private int maxRetryCount = DEFAULT_MAX_RETRIES;
-
-        /**
-         * Validate the fields. This method is called in the {@link AbstractRetryScheduler}'s constructor.
-         *
-         * @throws AxonConfigurationException if validation fails.
-         */
-        protected void validate() throws AxonConfigurationException {
-            assertNonNull(retryExecutor, "The ScheduledExecutorService is a hard requirement and should be provided");
-            assertStrictPositive(maxRetryCount, "The maxRetryCount is a hard requirement and must be at least 1");
-        }
 
         /**
          * Sets the {@link ScheduledExecutorService} used to schedule a command retry.
@@ -175,7 +165,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
         }
 
         /**
-         * Sets the maximum number of retries allowed for a single command, defaulted to 1.
+         * Sets the maximum number of retries allowed for a single command. Defaults to 1.
          *
          * @param maxRetryCount an {@code int} specifying the maximum number of retries allowed for a single command
          * @return the current Builder instance, for fluent interfacing
@@ -185,6 +175,15 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
             this.maxRetryCount = maxRetryCount;
             // noinspection unchecked
             return (B) this;
+        }
+
+        /**
+         * Validate the fields. This method is called in the {@link AbstractRetryScheduler}'s constructor.
+         *
+         * @throws AxonConfigurationException if validation fails.
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(retryExecutor, "The ScheduledExecutorService is a hard requirement and should be provided");
         }
     }
 }

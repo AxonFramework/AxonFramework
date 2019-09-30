@@ -43,7 +43,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @ConditionalOnClass(PlatformTransactionManager.class)
-@AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration")
+@AutoConfigureAfter(name = {
+        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+        "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
+})
 public class TransactionAutoConfiguration {
 
     @Bean
