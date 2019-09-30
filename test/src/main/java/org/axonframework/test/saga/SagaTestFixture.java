@@ -25,12 +25,10 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.modelling.saga.AnnotatedSagaManager;
-import org.axonframework.modelling.saga.SagaRepository;
-import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
@@ -41,6 +39,10 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.modelling.saga.AnnotatedSagaManager;
+import org.axonframework.modelling.saga.SagaRepository;
+import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
@@ -78,19 +80,22 @@ import static org.axonframework.messaging.annotation.MultiParameterResolverFacto
  */
 public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
 
+    private final RecordingCommandBus commandBus;
+    private EventBus eventBus;
     private final StubEventScheduler eventScheduler;
     private final StubDeadlineManager deadlineManager;
-    private final LinkedList<Object> registeredResources = new LinkedList<>();
-    private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
-    private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
-    private final RecordingCommandBus commandBus;
-    private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
     private HandlerDefinition handlerDefinition;
+    private ListenerInvocationErrorHandler listenerInvocationErrorHandler;
+
     private final Class<T> sagaType;
     private final InMemorySagaStore sagaStore;
     private AnnotatedSagaManager<T> sagaManager;
-    private SagaRepository<T> sagaRepository;
-    private EventBus eventBus;
+    private final LinkedList<Object> registeredResources = new LinkedList<>();
+
+    private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
+    private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
+    private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
+
     private boolean transienceCheckEnabled = true;
     private boolean resourcesInitialized = false;
 
@@ -101,25 +106,25 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     @SuppressWarnings({"unchecked"})
     public SagaTestFixture(Class<T> sagaType) {
-        this.sagaType = sagaType;
+        commandBus = new RecordingCommandBus();
+        eventBus = SimpleEventBus.builder().build();
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        eventBus = SimpleEventBus.builder().build();
+        handlerDefinition = ClasspathHandlerDefinition.forClass(sagaType);
+        listenerInvocationErrorHandler = new LoggingErrorHandler();
+
+        this.sagaType = sagaType;
         sagaStore = new InMemorySagaStore();
+
         registeredResources.add(eventBus);
-        commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(deadlineManager);
         registeredResources.add(DefaultCommandGateway.builder().commandBus(commandBus).build());
-        fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore,
-                                                                  eventScheduler,
-                                                                  deadlineManager,
-                                                                  eventBus,
-                                                                  commandBus,
-                                                                  sagaType,
-                                                                  fieldFilters);
-        handlerDefinition = ClasspathHandlerDefinition.forClass(sagaType);
+
+        fixtureExecutionResult = new FixtureExecutionResultImpl<>(
+                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, sagaType, fieldFilters
+        );
     }
 
     /**
@@ -167,7 +172,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                     ClasspathParameterResolverFactory.forClass(sagaType)
             );
 
-            sagaRepository = AnnotatedSagaRepository.<T>builder()
+            SagaRepository<T> sagaRepository = AnnotatedSagaRepository.<T>builder()
                     .sagaType(sagaType)
                     .parameterResolverFactory(parameterResolverFactory)
                     .handlerDefinition(handlerDefinition)
@@ -179,6 +184,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                     .sagaType(sagaType)
                     .parameterResolverFactory(parameterResolverFactory)
                     .handlerDefinition(handlerDefinition)
+                    .listenerInvocationErrorHandler(listenerInvocationErrorHandler)
                     .build();
             resourcesInitialized = true;
         }
@@ -365,6 +371,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback) {
         this.fixtureExecutionResult.registerStartRecordingCallback(onStartRecordingCallback);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerListenerInvocationErrorHandler(
+            ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
         return this;
     }
 
