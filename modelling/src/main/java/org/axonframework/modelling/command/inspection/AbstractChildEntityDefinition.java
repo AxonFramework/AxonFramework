@@ -18,11 +18,11 @@ package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.ForwardingMode;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -37,12 +37,15 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
- * Abstract implementation of the {@link ChildEntityDefinition} to
- * provide reusable functionality for collections of ChildEntityDefinitions.
+ * Abstract implementation of the {@link ChildEntityDefinition} to provide reusable functionality for collections of
+ * ChildEntityDefinitions.
+ *
+ * @author Steven van Beelen
+ * @since 3.1
  */
 public abstract class AbstractChildEntityDefinition implements ChildEntityDefinition {
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")  // Suppresses cast to Class of ForwardingMode
     @Override
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
         Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
@@ -67,24 +70,21 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     /**
      * Check whether the given {@link java.lang.reflect.Field} is of a type supported by this definition.
      *
-     * @param field A {@link java.lang.reflect.Field} containing a Child Entity.
-     * @return true if the type is as required by the implementation and false if it is not.
+     * @param field a {@link java.lang.reflect.Field} containing a Child Entity
+     * @return true if the type is as required by the implementation and false if it is not
      */
     protected abstract boolean isFieldTypeSupported(Field field);
 
     /**
-     * Extracts the Child Entity contained in the given {@code declaringEntity} as an
-     * {@link EntityModel}. The type of the Child Entity is defined
-     * through a key in the provided {@code attributes} or based on given {@link java.lang.reflect.Field}.
+     * Extracts the Child Entity contained in the given {@code declaringEntity} as an {@link EntityModel}.
+     * The type of the Child Entity is defined through a key in the provided {@code attributes} or based on given
+     * {@link java.lang.reflect.Field}.
      *
-     * @param declaringEntity The {@link EntityModel} declaring the
-     *                        given {@code field}.
-     * @param attributes      A {@link java.util.Map} containing the
-     *                        {@link AggregateMember} attributes.
-     * @param field           The {@link java.lang.reflect.Field} containing the Child Entity.
-     * @param <T>             The type {@code T} of the given {@code declaringEntity}
-     *                        {@link EntityModel}.
-     * @return the Child Entity contained in the {@code declaringEntity}.
+     * @param declaringEntity the {@link EntityModel} declaring the given {@code field}
+     * @param attributes      a {@link java.util.Map} containing the {@link AggregateMember} attributes
+     * @param field           the {@link java.lang.reflect.Field} containing the Child Entity.
+     * @param <T>             the type {@code T} of the given {@code declaringEntity} {@link EntityModel}
+     * @return the Child Entity contained in the {@code declaringEntity}
      */
     protected abstract <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
                                                                        Map<String, Object> attributes,
@@ -110,14 +110,13 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * Resolve the target of an incoming {@link org.axonframework.commandhandling.CommandMessage} to the right Child
      * Entity. Returns the Child Entity the {@code msg} needs to be routed to.
      *
-     * @param msg              The {@link org.axonframework.commandhandling.CommandMessage} which is being resolved to a
-     *                         target entity.
-     * @param parent           The {@code parent} Entity of type {@code T} of this Child Entity.
-     * @param field            The {@link java.lang.reflect.Field} containing the Child Entity.
-     * @param childEntityModel The {@link EntityModel} for the Child
-     *                         Entity.
-     * @param <T>              The type {@code T} of the given {@code parent} Entity.
-     * @return The Child Entity which is the target of the incoming {@link org.axonframework.commandhandling.CommandMessage}.
+     * @param msg              the {@link org.axonframework.commandhandling.CommandMessage} which is being resolved to a
+     *                         target entity
+     * @param parent           the {@code parent} Entity of type {@code T} of this Child Entity
+     * @param field            the {@link java.lang.reflect.Field} containing the Child Entity.
+     * @param childEntityModel the {@link EntityModel} for the Child Entity
+     * @param <T>              the type {@code T} of the given {@code parent} Entity
+     * @return the Child Entity which is the target of the incoming {@link org.axonframework.commandhandling.CommandMessage}.
      */
     protected abstract <T> Object resolveCommandTarget(CommandMessage<?> msg,
                                                        T parent,
@@ -128,12 +127,11 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * Retrieves the routing keys of every command handler on the given {@code childEntityModel} to be able to correctly
      * route commands to Entities.
      *
-     * @param field            a {@link java.lang.reflect.Field} denoting the Child Entity upon which the {@code
-     *                         childEntityModel} is based.
-     * @param childEntityModel a {@link EntityModel} to retrieve the
-     *                         routing key properties from.
-     * @return a {@link java.util.Map} of key/value types {@link java.lang.String}/
-     * {@link org.axonframework.common.property.Property} from Command Message name to routing key.
+     * @param field            a {@link java.lang.reflect.Field} denoting the Child Entity upon which the
+     *                         {@code childEntityModel} is based
+     * @param childEntityModel a {@link EntityModel} to retrieve the routing key properties from
+     * @return a {@link java.util.Map} of key/value types {@link java.lang.String}
+     * {@link org.axonframework.common.property.Property} from Command Message name to routing key
      */
     @SuppressWarnings("WeakerAccess")
     protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
@@ -152,22 +150,33 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
                                ));
     }
 
-    @SuppressWarnings("unchecked")
+
     private Property<Object> extractCommandHandlerRoutingKey(EntityModel<Object> childEntityModel,
-                                                             CommandMessageHandlingMember commandHandler,
+                                                             CommandMessageHandlingMember<?> commandHandler,
                                                              Field field) {
+        Class<?> commandPayloadType = commandHandler.payloadType();
+
         String routingKey = getOrDefault(commandHandler.routingKey(), childEntityModel.routingKey());
+        if (routingKey == null) {
+            throw new AxonConfigurationException(format(
+                    "Unable to route command of type [%s] since no routing key was defined. "
+                            + "Either specify an entity id on the Aggregate Member [%s] "
+                            + "or define a routing key on the command handler annotation",
+                    commandPayloadType,
+                    childEntityModel.entityClass()
+            ));
+        }
 
-        Property<Object> property = getProperty(commandHandler.payloadType(), routingKey);
-
+        Property<Object> property = getProperty(commandPayloadType, routingKey);
         if (property == null) {
             throw new AxonConfigurationException(format(
                     "Command of type [%s] doesn't have a property matching the routing key [%s] necessary to route through field [%s]",
-                    commandHandler.payloadType(),
+                    commandPayloadType,
                     routingKey,
                     field.toGenericString())
             );
         }
+
         return property;
     }
 
@@ -176,14 +185,14 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * Entities. Returns a {@link java.util.stream.Stream} of all the Child Entities the Event Message should be
      * routed to.
      *
-     * @param message             The {@link org.axonframework.eventhandling.EventMessage} to route.
-     * @param parentEntity        The {@code parent} Entity of type {@code T} of this Child Entity.
-     * @param field               The {@link java.lang.reflect.Field} containing the Child Entity.
-     * @param eventForwardingMode The {@link ForwardingMode} used to filter the
-     *                            {@code message} to route based on the ForwardingMode implementation.
-     * @param <T>                 The type {@code T} of the given {@code parent} Entity.
-     * @return A filtered {@link java.util.stream.Stream} of Child Entity targets for the incoming
-     * {@link org.axonframework.eventhandling.EventMessage}.
+     * @param message             the {@link org.axonframework.eventhandling.EventMessage} to route
+     * @param parentEntity        the {@code parent} Entity of type {@code T} of this Child Entity
+     * @param field               the {@link java.lang.reflect.Field} containing the Child Entity
+     * @param eventForwardingMode the {@link ForwardingMode} used to filter the {@code message} to route based on the
+     *                            ForwardingMode implementation
+     * @param <T>                 the type {@code T} of the given {@code parent} Entity
+     * @return a filtered {@link java.util.stream.Stream} of Child Entity targets for the incoming
+     * {@link org.axonframework.eventhandling.EventMessage}
      */
     protected abstract <T> Stream<Object> resolveEventTargets(EventMessage message,
                                                               T parentEntity,
