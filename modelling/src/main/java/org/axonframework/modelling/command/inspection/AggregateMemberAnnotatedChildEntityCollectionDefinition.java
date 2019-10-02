@@ -17,12 +17,12 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.ForwardingMode;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -37,6 +37,9 @@ import static org.axonframework.common.ReflectionUtils.resolveGenericType;
  * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Collections of entities
  * (field type assignable to {@link Iterable}) annotated with {@link AggregateMember}. If such a field is found a {@link
  * ChildEntity} is created that delegates to the entities in the annotated collection.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends AbstractChildEntityDefinition {
 
