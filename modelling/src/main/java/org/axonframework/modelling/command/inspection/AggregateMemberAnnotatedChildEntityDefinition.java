@@ -17,10 +17,10 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.ForwardingMode;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.ForwardingMode;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -29,6 +29,9 @@ import java.util.stream.Stream;
 /**
  * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
  * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entity.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChildEntityDefinition {
 
