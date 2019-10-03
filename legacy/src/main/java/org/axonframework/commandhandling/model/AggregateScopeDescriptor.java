@@ -30,7 +30,6 @@ public class AggregateScopeDescriptor extends org.axonframework.modelling.comman
      * @param type       A {@link String} describing the type of the Saga
      * @param identifier An {@link Object} denoting the identifier of the Saga
      */
-
     @JsonCreator
     public AggregateScopeDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
         super(type, identifier);
