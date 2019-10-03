@@ -16,29 +16,41 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 
 
 /**
- * Class copied from Axon 3 to be able to restore Axon 3 Tokens from Axon 4 applications.
+ * Implementation of the {@link org.axonframework.eventhandling.GlobalSequenceTrackingToken} used to bridge serialized
+ * versions of this descriptor when migrating from Axon 3.x to Axon 4.x.
  *
- * @deprecated this class is available for backward compatibility with instances that were serialized with Axon 3. Use
- * {@link org.axonframework.eventhandling.GlobalSequenceTrackingToken} instead.
+ * @author Steven van Beelen
+ * @since 4.0.1
+ * @deprecated in favor of the {@link org.axonframework.eventhandling.GlobalSequenceTrackingToken}
  */
 @Deprecated
-public class GlobalSequenceTrackingToken implements Serializable {
+public class GlobalSequenceTrackingToken
+        extends org.axonframework.eventhandling.GlobalSequenceTrackingToken
+        implements Serializable {
 
     private static final long serialVersionUID = 6161638247685258537L;
 
+    // Field {@code globalIndex} is used during Java and XStream de-/serialization through method {@link #readResolve()}
+    @SuppressWarnings("unused")
     private long globalIndex;
 
     /**
-     * Get the global sequence number of the event
+     * Initializes a {@link GlobalSequenceTrackingToken} from the given {@code globalIndex} of the event.
      *
-     * @return the global sequence number of the event
+     * @param globalIndex the global sequence number of the event
      */
-    public long getGlobalIndex() {
-        return globalIndex;
+    @JsonCreator
+    @ConstructorProperties({"globalIndex"})
+    public GlobalSequenceTrackingToken(@JsonProperty("globalIndex") long globalIndex) {
+        super(globalIndex);
     }
 
     private Object readResolve() {
