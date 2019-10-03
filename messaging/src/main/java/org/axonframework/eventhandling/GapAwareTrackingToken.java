@@ -73,7 +73,6 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      * @param gaps  global sequence numbers of events that have not been seen yet even though these sequence numbers are
      *              smaller than the current index. These missing sequence numbers may be filled in later when those
      *              events get committed to the store or may never be filled in if those events never get committed.
-     * @param gaps
      */
     @JsonCreator
     @ConstructorProperties({ "index", "gaps" })
@@ -87,7 +86,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         this.gapTruncationIndex = gapTruncationIndex;
     }
 
-    private static SortedSet<Long> createSortedSetOf(Collection<Long> gaps, long index) {
+    protected static SortedSet<Long> createSortedSetOf(Collection<Long> gaps, long index) {
         if (gaps.isEmpty()) {
             return Collections.emptySortedSet();
         }
