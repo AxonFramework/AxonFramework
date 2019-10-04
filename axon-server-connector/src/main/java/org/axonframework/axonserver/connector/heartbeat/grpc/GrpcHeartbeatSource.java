@@ -4,6 +4,8 @@ import io.axoniq.axonserver.grpc.control.Heartbeat;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.heartbeat.HeartbeatSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 
@@ -13,23 +15,24 @@ import java.util.function.Consumer;
  */
 public class GrpcHeartbeatSource implements HeartbeatSource {
 
+    private final Logger log = LoggerFactory.getLogger(GrpcHeartbeatSource.class);
+
     private final Consumer<PlatformInboundInstruction> platformInstructionSender;
 
     public GrpcHeartbeatSource(AxonServerConnectionManager connectionManager, String context) {
-        this(instruction -> connectionManager.send(context, instruction));
-    }
-
-    public GrpcHeartbeatSource(
-            Consumer<PlatformInboundInstruction> platformInstructionSender) {
-        this.platformInstructionSender = platformInstructionSender;
+        this.platformInstructionSender = instruction -> connectionManager.send(context, instruction);
     }
 
     @Override
     public void send() {
-        PlatformInboundInstruction instruction = PlatformInboundInstruction
-                .newBuilder()
-                .setHeartbeat(Heartbeat.newBuilder())
-                .build();
-        platformInstructionSender.accept(instruction);
+        try {
+            PlatformInboundInstruction instruction = PlatformInboundInstruction
+                    .newBuilder()
+                    .setHeartbeat(Heartbeat.newBuilder())
+                    .build();
+            platformInstructionSender.accept(instruction);
+        } catch (Exception e) {
+            log.warn("Problem sending heartbeat to AxonServer.", e);
+        }
     }
 }
