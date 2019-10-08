@@ -11,7 +11,6 @@ import static org.junit.Assert.*;
  * Unit tests for {@link Scheduler}
  *
  * @author Sara Pellegrini
- * @since 4.2
  */
 public class SchedulerTest {
 

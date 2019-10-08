@@ -13,14 +13,21 @@ import java.util.function.Consumer;
  * gRPC implementation of {@link HeartbeatSource}, which send to AxonServer a {@link Heartbeat} message.
  *
  * @author Sara Pellegrini
- * @since 4.2
+ * @since 4.2.1
  */
 public class GrpcHeartbeatSource implements HeartbeatSource {
 
-    private final Logger log = LoggerFactory.getLogger(GrpcHeartbeatSource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcHeartbeatSource.class);
 
     private final Consumer<PlatformInboundInstruction> platformInstructionSender;
 
+    /**
+     * Creates a {@link GrpcHeartbeatSource} which uses an {@link AxonServerConnectionManager} to send heartbeats
+     * messages to AxonServer.
+     *
+     * @param connectionManager the {@link AxonServerConnectionManager}
+     * @param context           defines the (Bounded) Context for which heartbeats are sent
+     */
     public GrpcHeartbeatSource(AxonServerConnectionManager connectionManager, String context) {
         this.platformInstructionSender = instruction -> connectionManager.send(context, instruction);
     }
@@ -28,7 +35,7 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
     /**
      * {@inheritDoc}
      * <p>
-     * Send to AxonServer a {@link PlatformInboundInstruction} that contains an {@link Heartbeat}.
+     * Sends a {@link PlatformInboundInstruction} to AxonServer that contains a {@link Heartbeat} message.
      */
     @Override
     public void send() {
@@ -39,7 +46,7 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
                     .build();
             platformInstructionSender.accept(instruction);
         } catch (Exception e) {
-            log.warn("Problem sending heartbeat to AxonServer.", e);
+            LOGGER.warn("Problem sending heartbeat to AxonServer.", e);
         }
     }
 }

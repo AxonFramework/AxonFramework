@@ -9,6 +9,7 @@ import org.axonframework.config.ModuleConfiguration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.HEARTBEAT;
 
@@ -17,7 +18,7 @@ import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.Requ
  * availability of the connection with AxonServer.
  *
  * @author Sara Pellegrini
- * @since 4.2
+ * @since 4.2.1
  */
 public class HeartbeatConfiguration implements ModuleConfiguration {
 
@@ -27,11 +28,23 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
 
     private final AtomicReference<Scheduler> heartbeatScheduler = new AtomicReference<>();
 
+    /**
+     * Default constructor for {@link HeartbeatConfiguration}, that uses {@link Configuration} in order to
+     * retrieve the registered {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}
+     */
     public HeartbeatConfiguration() {
         this(c -> c.getComponent(AxonServerConnectionManager.class),
              c -> c.getComponent(AxonServerConfiguration.class));
     }
 
+    /**
+     * Primary constructor for {@link HeartbeatConfiguration}.
+     *
+     * @param connectionManagerSupplier       function to retrieve the {@link AxonServerConnectionManager}
+     *                                        from {@link Configuration}
+     * @param axonServerConfigurationSupplier function to retrieve the {@link AxonServerConfiguration}
+     *                                        from {@link Configuration}
+     */
     public HeartbeatConfiguration(
             Function<Configuration, AxonServerConnectionManager> connectionManagerSupplier,
             Function<Configuration, AxonServerConfiguration> axonServerConfigurationSupplier) {
@@ -40,7 +53,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Initializes the {@link GrpcHeartbeatSource} component, needed to send heartbeat to AxonServer,
+     * Initializes the {@link GrpcHeartbeatSource} component, needed to send heartbeats to AxonServer,
      * any time the client will receive an heartbeat from the server.
      * <p>
      * Initializes the {@link HeartbeatMonitor} component, needed to force a disconnection if the
@@ -68,7 +81,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
      */
     @Override
     public void start() {
-        Optional.ofNullable(heartbeatScheduler.get()).ifPresent(Scheduler::start);
+        scheduler().start();
     }
 
     /**
@@ -76,6 +89,12 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
      */
     @Override
     public void shutdown() {
-        Optional.ofNullable(heartbeatScheduler.get()).ifPresent(Scheduler::stop);
+        scheduler().start();
+    }
+
+    private Scheduler scheduler() {
+        Supplier<RuntimeException> exceptionSupplier = () -> new RuntimeException(
+                "HeartbeatConfiguration not initialized.");
+        return Optional.ofNullable(heartbeatScheduler.get()).orElseThrow(exceptionSupplier);
     }
 }

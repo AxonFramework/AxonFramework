@@ -15,11 +15,15 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * The scheduling can be started an stopped at any time.
  *
  * @author Sara Pellegrini
- * @since 4.2
+ * @since 4.2.1
  */
 public class Scheduler {
 
-    private final Logger log = LoggerFactory.getLogger(Scheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+
+    private static final long DEFAULT_INITIAL_DELAY = 10_000;
+
+    private static final long DEFAULT_RATE = 1_000;
 
     private final ScheduledExecutorService scheduler;
 
@@ -48,15 +52,15 @@ public class Scheduler {
      * @param scheduler the {@link ScheduledExecutorService} to use for scheduling the task
      */
     public Scheduler(Runnable runnable, ScheduledExecutorService scheduler) {
-        this(runnable, scheduler, 10_000, 1000);
+        this(runnable, scheduler, DEFAULT_INITIAL_DELAY, DEFAULT_RATE);
     }
 
     /**
      * Primary constructor for {@link Scheduler}
      * @param runnable the task to be scheduled
      * @param scheduler the {@link ScheduledExecutorService} to use for scheduling the task
-     * @param initialDelay the initial delay
-     * @param rate the scheduling period
+     * @param initialDelay the initial delay, in milliseconds
+     * @param rate the scheduling period, in milliseconds
      */
     public Scheduler(Runnable runnable,
                      ScheduledExecutorService scheduler,
@@ -78,7 +82,7 @@ public class Scheduler {
                                                                 MILLISECONDS);
         if (!scheduledTask.compareAndSet(null, task)) {
             task.cancel(true);
-            log.warn("{} already scheduled.", runnable.getClass().getSimpleName());
+            LOGGER.warn("{} already scheduled.", runnable.getClass().getSimpleName());
         }
     }
 
@@ -90,7 +94,7 @@ public class Scheduler {
         if (task != null && scheduledTask.compareAndSet(task, null)) {
             task.cancel(true);
         } else {
-            log.warn("{} already stopped.", runnable.getClass().getSimpleName());
+            LOGGER.warn("{} already stopped.", runnable.getClass().getSimpleName());
         }
     }
 }

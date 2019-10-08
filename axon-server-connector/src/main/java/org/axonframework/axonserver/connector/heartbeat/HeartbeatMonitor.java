@@ -8,18 +8,18 @@ import org.slf4j.LoggerFactory;
  * Verifies if the connection is still alive, and react if it is not.
  *
  * @author Sara Pellegrini
- * @since 4.2
+ * @since 4.2.1
  */
 public class HeartbeatMonitor {
 
-    private final Logger log = LoggerFactory.getLogger(HeartbeatMonitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HeartbeatMonitor.class);
 
     private final Runnable onInvalidConnection;
 
     private final ConnectionSanityCheck connectionSanityCheck;
 
     /**
-     * Constructs an instance of {@link HeartbeatMonitor} that force a disconnection
+     * Constructs an instance of {@link HeartbeatMonitor} that forces a disconnection
      * when the AxonServer connection is no more alive.
      *
      * @param connectionManager connectionManager to AxonServer
@@ -34,7 +34,7 @@ public class HeartbeatMonitor {
     /**
      * Primary constructor of {@link HeartbeatMonitor}.
      *
-     * @param onInvalidConnection callback to be call when the connection is no more alive
+     * @param onInvalidConnection callback to be call when the connection is no longer alive
      * @param connectionSanityCheck sanity check which allows to verify if the connection is alive
      */
     public HeartbeatMonitor(Runnable onInvalidConnection, ConnectionSanityCheck connectionSanityCheck) {
@@ -53,7 +53,7 @@ public class HeartbeatMonitor {
                 onInvalidConnection.run();
             }
         } catch (Exception e) {
-            log.warn("Impossible to correctly monitor the Axon Server connection state.");
+            LOGGER.warn("Impossible to correctly monitor the Axon Server connection state.");
         }
     }
 }

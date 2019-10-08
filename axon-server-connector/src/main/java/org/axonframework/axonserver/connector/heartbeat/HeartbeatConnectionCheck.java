@@ -11,12 +11,14 @@ import java.util.function.Consumer;
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.HEARTBEAT;
 
 /**
- * Implementation of {@link ConnectionSanityCheck} which verifies that heartbeat is properly received.
+ * Implementation of {@link ConnectionSanityCheck} which verifies that heartbeats are properly received.
  *
  * @author Sara Pellegrini
- * @since 4.2
+ * @since 4.2.1
  */
 public class HeartbeatConnectionCheck implements ConnectionSanityCheck {
+
+    private static final long DEFAULT_HEARTBEAT_TIMEOUT_MILLIS = 5_000;
 
     private final ConnectionSanityCheck delegate;
 
@@ -44,13 +46,14 @@ public class HeartbeatConnectionCheck implements ConnectionSanityCheck {
      */
     public HeartbeatConnectionCheck(Consumer<Runnable> registration,
                                     ConnectionSanityCheck delegate) {
-        this(5_000, registration, delegate, Clock.systemUTC());
+        this(DEFAULT_HEARTBEAT_TIMEOUT_MILLIS, registration, delegate, Clock.systemUTC());
     }
 
     /**
      * Primary constructor of {@link HeartbeatConnectionCheck}.
      *
-     * @param heartbeatTimeout the time without any heartbeat after which the connection is considered no more valid
+     * @param heartbeatTimeout the time without any heartbeat after which the connection is considered no more valid;
+     *                         it is expressed in milliseconds
      * @param registerOnHeartbeat function which allows to register a callback for the reception of an heartbeat
      * @param delegate another implementation of {@link ConnectionSanityCheck} that performs others kind of verifications
      * @param clock clock used to verify the timeout

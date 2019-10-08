@@ -10,13 +10,14 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.*;
 
 /**
+ * Unit tests for {@link HeartbeatConnectionCheck}.
+ *
  * @author Sara Pellegrini
- * @since 4.2
  */
 public class HeartbeatConnectionCheckTest {
 
     @Test
-    public void testHeartbeatNeverReceive() {
+    public void testHeartbeatNeverReceived() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         HeartbeatConnectionCheck check = new HeartbeatConnectionCheck(1_000,
                                                                       r -> {

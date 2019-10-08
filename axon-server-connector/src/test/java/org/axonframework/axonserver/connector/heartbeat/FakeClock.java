@@ -6,8 +6,10 @@ import java.time.ZoneId;
 import java.util.function.Supplier;
 
 /**
+ * Fake implementation of {@link Clock} used for testing purpose.
+ * It provides the desired {@link Instant} invoking the specified supplier.
+ *
  * @author Sara Pellegrini
- * @since 4.2
  */
 public class FakeClock extends Clock {
 

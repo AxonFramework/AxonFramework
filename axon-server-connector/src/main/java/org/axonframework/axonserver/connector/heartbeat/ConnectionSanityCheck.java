@@ -4,7 +4,7 @@ package org.axonframework.axonserver.connector.heartbeat;
  * Sanity check that verify the state of the connection with AxonServer.
  *
  * @author Sara Pellegrini
- * @since 4.2
+ * @since 4.2.1
  */
 public interface ConnectionSanityCheck {
 
