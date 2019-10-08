@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Single result row from a Query to the AxonDB.
+ * Single result row from a Query to the AxonServer.
  *
  * When applying aggregation functions in the query (min/max/groupby/count/avg) you will get values for the identifier.
  * Same identifier may occur more than once as the results get updated.
