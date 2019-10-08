@@ -17,7 +17,13 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.EventWithToken;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackedDomainEventData;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
@@ -48,12 +54,15 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Allard Buijze
  */
 public class EventBuffer implements TrackingEventStream {
-    final Logger logger = LoggerFactory.getLogger(EventBuffer.class);
 
-    private final BlockingQueue<TrackedEventData<byte[]>> events;
+    private static final Logger logger = LoggerFactory.getLogger(EventBuffer.class);
 
-    private final Iterator<TrackedEventMessage<?>> eventStream;
+    private static final int DEFAULT_POLLING_TIME_MILLIS = 500;
+
     private final Serializer serializer;
+    private final BlockingQueue<TrackedEventData<byte[]>> events;
+    private final Iterator<TrackedEventMessage<?>> eventStream;
+    private final long pollingTimeMillis;
 
     private TrackedEventData<byte[]> peekData;
     private TrackedEventMessage<?> peekEvent;
@@ -68,17 +77,32 @@ public class EventBuffer implements TrackingEventStream {
      * Initializes an Event Buffer, passing messages through given {@code upcasterChain} and deserializing events using
      * given {@code serializer}.
      *
-     * @param upcasterChain The upcasterChain to translate serialized representations before deserializing
-     * @param serializer    The serializer capable of deserializing incoming messages
+     * @param upcasterChain the upcasterChain to translate serialized representations before deserializing
+     * @param serializer    the serializer capable of deserializing incoming messages
      */
     public EventBuffer(EventUpcaster upcasterChain, Serializer serializer) {
+        this(upcasterChain, serializer, DEFAULT_POLLING_TIME_MILLIS);
+    }
+
+    /**
+     * Initializes an Event Buffer, passing messages through given {@code upcasterChain} and deserializing events using
+     * given {@code serializer}.
+     *
+     * @param upcasterChain     the upcasterChain to translate serialized representations before deserializing
+     * @param serializer        the serializer capable of deserializing incoming messages
+     * @param pollingTimeMillis a {@code long} defining the polling periods used to split the up the timeout used in
+     *                          {@link #hasNextAvailable(int, TimeUnit)}, ensuring nobody accidentally blocks for an
+     *                          extended period of time. Defaults to 500 milliseconds
+     */
+    public EventBuffer(EventUpcaster upcasterChain, Serializer serializer, long pollingTimeMillis) {
         this.serializer = serializer;
         this.events = new LinkedBlockingQueue<>();
-        eventStream = EventUtils.upcastAndDeserializeTrackedEvents(StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
-                                                                   new GrpcMetaDataAwareSerializer(serializer),
-                                                                   getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE)
-        )
-                                .iterator();
+        this.eventStream = EventUtils.upcastAndDeserializeTrackedEvents(
+                StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
+                new GrpcMetaDataAwareSerializer(serializer),
+                getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE)
+        ).iterator();
+        this.pollingTimeMillis = pollingTimeMillis;
     }
 
     private TrackedEventData<byte[]> poll() {
@@ -98,7 +122,7 @@ public class EventBuffer implements TrackingEventStream {
     private void waitForData(long deadline) throws InterruptedException {
         long now = System.currentTimeMillis();
         if (peekData == null && now < deadline) {
-            peekData = events.poll(deadline - now, TimeUnit.MILLISECONDS);
+            peekData = events.poll(Math.min(deadline - now, pollingTimeMillis), TimeUnit.MILLISECONDS);
             if (peekData != null) {
                 consumeListener.accept(1);
             }
@@ -107,9 +131,8 @@ public class EventBuffer implements TrackingEventStream {
 
     /**
      * {@inheritDoc}
-     *
      * ----
-     *
+     * <p>
      * This implementation blacklists based on the payload type of the given message.
      */
     @Override
@@ -200,12 +223,22 @@ public class EventBuffer implements TrackingEventStream {
     @Override
     public void close() {
         closed = true;
-        if (closeCallback != null) closeCallback.accept(this);
+        if (closeCallback != null) {
+            closeCallback.accept(this);
+        }
         events.clear();
     }
 
+    /**
+     * Push a new {@code event} on to this EventBuffer instance. Will return {@code false} if the given {@code event}
+     * could not be added because the buffer is already closed or if the operation was interrupted. If pushing the
+     * {@code event} was successful, {@code true} will be returned.
+     *
+     * @param event the {@link EventWithToken} to be pushed on to this EventBuffer
+     * @return {@code true} if adding the {@code event} to the buffer was successful and {@link false} if it wasn't
+     */
     public boolean push(EventWithToken event) {
-        if( closed) {
+        if (closed) {
             logger.debug("Received event while closed: {}", event.getToken());
             return false;
         }
@@ -220,6 +253,11 @@ public class EventBuffer implements TrackingEventStream {
         return true;
     }
 
+    /**
+     * Fail {@code this} EventBuffer with the given {@link RuntimeException}.
+     *
+     * @param e a {@link RuntimeException} with which {@code this} EventBuffer failed
+     */
     public void fail(RuntimeException e) {
         this.exception = e;
     }
