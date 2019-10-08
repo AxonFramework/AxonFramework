@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Consumer;
 
 /**
+ * gRPC implementation of {@link HeartbeatSource}, which send to AxonServer a {@link Heartbeat} message.
+ *
  * @author Sara Pellegrini
  * @since 4.2
  */
@@ -23,6 +25,11 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
         this.platformInstructionSender = instruction -> connectionManager.send(context, instruction);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Send to AxonServer a {@link PlatformInboundInstruction} that contains an {@link Heartbeat}.
+     */
     @Override
     public void send() {
         try {

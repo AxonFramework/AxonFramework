@@ -16,6 +16,13 @@ public class ActiveGrpcChannelCheck implements ConnectionSanityCheck {
         this.context = context;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Detects if exists a gRPC channel between the client an Axon Server.
+     *
+     * @return true if the gRPC channel is opened, false otherwise
+     */
     @Override
     public boolean isValid() {
         return connectionManager.isConnected(context);
