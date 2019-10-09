@@ -584,7 +584,7 @@ public class AxonServerConnectionManager {
      * @param context the (Bounded) Context for which the disconnection is required
      * @param cause   the cause of the disconnection
      */
-    public void forceDisconnection(String context, Throwable cause) {
+    public void disconnectExceptionally(String context, Throwable cause) {
         if (isConnected(context)) {
             instructionStreams.get(context).onError(cause);
         }
