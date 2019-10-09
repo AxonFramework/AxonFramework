@@ -591,12 +591,12 @@ public class AxonServerConnectionManager {
     }
 
     /**
-     * Returns true if a gRPC channel for the specific context is opened between client and AxonServer.
+     * Returns {@code true} if a gRPC channel for the specific context is opened between client and AxonServer.
      * @param context the (Bounded) Context for for which is verified the AxonServer connection through the gRPC channel
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
-        return (getChannel(context) != null);
+        return getChannel(context) != null;
     }
 
     /**

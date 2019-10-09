@@ -30,7 +30,7 @@ public class ActiveGrpcChannelCheck implements ConnectionSanityCheck {
      * <p>
      * Detects if exists a gRPC channel between the client an Axon Server.
      *
-     * @return true if the gRPC channel is opened, false otherwise
+     * @return {@code true} if the gRPC channel is opened, false otherwise
      */
     @Override
     public boolean isValid() {
