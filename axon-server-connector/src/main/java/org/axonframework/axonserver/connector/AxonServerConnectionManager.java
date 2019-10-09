@@ -581,7 +581,7 @@ public class AxonServerConnectionManager {
     /**
      * Forces a disconnection from AxonServer for the specified context.
      *
-     * @param context the context
+     * @param context the (Bounded) Context for which the disconnection is required
      * @param cause   the cause of the disconnection
      */
     public void forceDisconnection(String context, Throwable cause) {
@@ -592,7 +592,7 @@ public class AxonServerConnectionManager {
 
     /**
      * Returns true if a gRPC channel for the specific context is opened between client and AxonServer.
-     * @param context the context
+     * @param context the (Bounded) Context for for which is verified the AxonServer connection through the gRPC channel
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
