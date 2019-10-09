@@ -20,7 +20,7 @@ public class HeartbeatMonitor {
 
     /**
      * Constructs an instance of {@link HeartbeatMonitor} that forces a disconnection
-     * when the AxonServer connection is no more alive.
+     * when the AxonServer connection is no longer alive.
      *
      * @param connectionManager connectionManager to AxonServer
      * @param context           the context
