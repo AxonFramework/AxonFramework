@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Responsible to scheduler at fixed rate a generic task.
+ * Responsible to schedule generic tasks at a fixed rate.
  * The scheduling can be started an stopped at any time.
  *
  * @author Sara Pellegrini
