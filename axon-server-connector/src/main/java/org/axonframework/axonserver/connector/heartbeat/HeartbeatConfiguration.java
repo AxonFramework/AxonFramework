@@ -30,7 +30,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
 
     /**
      * Default constructor for {@link HeartbeatConfiguration}, that uses {@link Configuration} in order to
-     * retrieve the registered {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}
+     * retrieve the registered {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}.
      */
     public HeartbeatConfiguration() {
         this(c -> c.getComponent(AxonServerConnectionManager.class),
@@ -38,7 +38,8 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Primary constructor for {@link HeartbeatConfiguration}.
+     * Creates a {@link HeartbeatConfiguration} using the provided functions to retrieve the
+     * {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}.
      *
      * @param connectionManagerSupplier       function to retrieve the {@link AxonServerConnectionManager}
      *                                        from {@link Configuration}
