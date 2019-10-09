@@ -75,10 +75,10 @@ public class HeartbeatConnectionCheck implements ConnectionSanityCheck {
      * {@inheritDoc}
      *
      * Detects if the connection is still available according with the heartbeat timeout.
-     * If no heartbeat at all is received since the startup of the connection, this implementation returns true
+     * If no heartbeat at all is received since the startup of the connection, this implementation returns {@code true}
      * as we suppose that Axon Server version doesn't support the heartbeat feature.
      *
-     * @return true if the connection is valid, false otherwise
+     * @return {@code true} if the connection is valid, {@code false} otherwise
      */
     @Override
     public boolean isValid() {
@@ -87,6 +87,8 @@ public class HeartbeatConnectionCheck implements ConnectionSanityCheck {
         }
         Instant timeout = Instant.now(clock).minus(heartbeatTimeout, ChronoUnit.MILLIS);
         Instant instant = lastReceivedHeartbeat.get();
+        // instant is null when no heartbeat at all is received since the startup of the application: in this case
+        // we suppose that Axon Server version doesn't support the heartbeat feature, and method returns true.
         return instant == null || !instant.isBefore(timeout);
     }
 }
