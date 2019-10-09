@@ -596,7 +596,7 @@ public class AxonServerConnectionManager {
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
-        return (getChannel(context) != null);
+        return getChannel(context) != null;
     }
 
     /**
