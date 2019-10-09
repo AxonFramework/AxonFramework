@@ -33,40 +33,40 @@ public class Scheduler {
 
     private final AtomicReference<ScheduledFuture> scheduledTask = new AtomicReference<>();
 
-    private final Runnable runnable;
+    private final Runnable task;
 
     /**
      * Constructs an instance of a {@link Scheduler} using a default initial delay of 10 seconds,
      * a default scheduling period of 1 second and a single thread {@link ScheduledExecutorService}.
      *
-     * @param runnable the task to be scheduled
+     * @param task the task to be scheduled
      */
-    public Scheduler(Runnable runnable) {
-        this(runnable, Executors.newSingleThreadScheduledExecutor());
+    public Scheduler(Runnable task) {
+        this(task, Executors.newSingleThreadScheduledExecutor());
     }
 
     /**
      * Constructs an instance of a {@link Scheduler} using a default initial delay of 10 seconds
      * and a default scheduling period of 1 second.
-     * @param runnable the task to be scheduled
+     * @param task the task to be scheduled
      * @param scheduler the {@link ScheduledExecutorService} to use for scheduling the task
      */
-    public Scheduler(Runnable runnable, ScheduledExecutorService scheduler) {
-        this(runnable, scheduler, DEFAULT_INITIAL_DELAY, DEFAULT_RATE);
+    public Scheduler(Runnable task, ScheduledExecutorService scheduler) {
+        this(task, scheduler, DEFAULT_INITIAL_DELAY, DEFAULT_RATE);
     }
 
     /**
      * Primary constructor for {@link Scheduler}
-     * @param runnable the task to be scheduled
+     * @param task the task to be scheduled
      * @param scheduler the {@link ScheduledExecutorService} to use for scheduling the task
      * @param initialDelay the initial delay, in milliseconds
      * @param rate the scheduling period, in milliseconds
      */
-    public Scheduler(Runnable runnable,
+    public Scheduler(Runnable task,
                      ScheduledExecutorService scheduler,
                      long initialDelay,
                      long rate) {
-        this.runnable = runnable;
+        this.task = task;
         this.scheduler = scheduler;
         this.initialDelay = initialDelay;
         this.rate = rate;
@@ -76,13 +76,13 @@ public class Scheduler {
      * Schedule the specified task accordingly with the specified scheduling setting.
      */
     public void start() {
-        ScheduledFuture<?> task = scheduler.scheduleAtFixedRate(runnable,
-                                                                initialDelay,
-                                                                rate,
-                                                                MILLISECONDS);
-        if (!scheduledTask.compareAndSet(null, task)) {
-            task.cancel(true);
-            LOGGER.warn("{} already scheduled.", runnable.getClass().getSimpleName());
+        ScheduledFuture<?> scheduledFuture = scheduler.scheduleAtFixedRate(task,
+                                                                           initialDelay,
+                                                                           rate,
+                                                                           MILLISECONDS);
+        if (!scheduledTask.compareAndSet(null, scheduledFuture)) {
+            scheduledFuture.cancel(true);
+            LOGGER.warn("{} already scheduled.", task.getClass().getSimpleName());
         }
     }
 
@@ -90,11 +90,11 @@ public class Scheduler {
      * Interrupt the scheduled task if running and stop all the following scheduled executions.
      */
     public void stop() {
-        ScheduledFuture<?> task = scheduledTask.get();
-        if (task != null && scheduledTask.compareAndSet(task, null)) {
-            task.cancel(true);
+        ScheduledFuture<?> scheduledFuture = scheduledTask.get();
+        if (scheduledFuture != null && scheduledTask.compareAndSet(scheduledFuture, null)) {
+            scheduledFuture.cancel(true);
         } else {
-            LOGGER.warn("{} already stopped.", runnable.getClass().getSimpleName());
+            LOGGER.warn("{} already stopped.", task.getClass().getSimpleName());
         }
     }
 }
