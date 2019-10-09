@@ -90,7 +90,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
      */
     @Override
     public void shutdown() {
-        scheduler().start();
+        scheduler().stop();
     }
 
     private Scheduler scheduler() {
