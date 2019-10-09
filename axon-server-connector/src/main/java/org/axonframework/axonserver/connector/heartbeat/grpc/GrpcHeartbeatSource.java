@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  */
 public class GrpcHeartbeatSource implements HeartbeatSource {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcHeartbeatSource.class);
+    private static final Logger logger = LoggerFactory.getLogger(GrpcHeartbeatSource.class);
 
     private final Consumer<PlatformInboundInstruction> platformInstructionSender;
 
@@ -46,7 +46,7 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
                     .build();
             platformInstructionSender.accept(instruction);
         } catch (Exception e) {
-            LOGGER.warn("Problem sending heartbeat to AxonServer.", e);
+            logger.warn("Problem sending heartbeat to AxonServer.", e);
         }
     }
 }

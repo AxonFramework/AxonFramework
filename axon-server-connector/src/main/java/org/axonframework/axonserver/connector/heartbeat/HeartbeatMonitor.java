@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  */
 public class HeartbeatMonitor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HeartbeatMonitor.class);
+    private static final Logger logger = LoggerFactory.getLogger(HeartbeatMonitor.class);
 
     private final Runnable onInvalidConnection;
 
@@ -53,7 +53,7 @@ public class HeartbeatMonitor {
                 onInvalidConnection.run();
             }
         } catch (Exception e) {
-            LOGGER.warn("Impossible to correctly monitor the Axon Server connection state.");
+            logger.warn("Impossible to correctly monitor the Axon Server connection state.");
         }
     }
 }

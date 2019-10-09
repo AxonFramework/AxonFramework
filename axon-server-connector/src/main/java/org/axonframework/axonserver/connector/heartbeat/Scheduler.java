@@ -19,7 +19,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class Scheduler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+    private static final Logger logger = LoggerFactory.getLogger(Scheduler.class);
 
     private static final long DEFAULT_INITIAL_DELAY = 10_000;
 
@@ -82,7 +82,7 @@ public class Scheduler {
                                                                            MILLISECONDS);
         if (!scheduledTask.compareAndSet(null, scheduledFuture)) {
             scheduledFuture.cancel(true);
-            LOGGER.warn("{} already scheduled.", task.getClass().getSimpleName());
+            logger.warn("{} already scheduled.", task.getClass().getSimpleName());
         }
     }
 
@@ -94,7 +94,7 @@ public class Scheduler {
         if (scheduledFuture != null && scheduledTask.compareAndSet(scheduledFuture, null)) {
             scheduledFuture.cancel(true);
         } else {
-            LOGGER.warn("{} already stopped.", task.getClass().getSimpleName());
+            logger.warn("{} already stopped.", task.getClass().getSimpleName());
         }
     }
 }
