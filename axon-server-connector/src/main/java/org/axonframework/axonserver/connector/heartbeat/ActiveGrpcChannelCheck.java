@@ -18,7 +18,7 @@ public class ActiveGrpcChannelCheck implements ConnectionSanityCheck {
      * Constructs an {@link ActiveGrpcChannelCheck} based on the connection manager.
      *
      * @param connectionManager the {@link AxonServerConnectionManager}
-     * @param context           the context for which is verified the AxonServer connection through the gRPC channel
+     * @param context           the (Bounded) Context for which is verified the AxonServer connection through the gRPC channel
      */
     public ActiveGrpcChannelCheck(AxonServerConnectionManager connectionManager, String context) {
         this.connectionManager = connectionManager;
