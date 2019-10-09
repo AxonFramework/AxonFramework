@@ -32,7 +32,7 @@ public class HeartbeatConnectionCheck implements ConnectionSanityCheck {
      * Constructs an instance of {@link HeartbeatConnectionCheck} using the specified parameters.
      *
      * @param connectionManager the connectionManager to AxonServer instance
-     * @param context           the context
+     * @param context           the (Bounded) Context for which is verified the AxonServer connection
      */
     public HeartbeatConnectionCheck(AxonServerConnectionManager connectionManager, String context) {
         this(r -> connectionManager.onOutboundInstruction(context, HEARTBEAT, i -> r.run()),
