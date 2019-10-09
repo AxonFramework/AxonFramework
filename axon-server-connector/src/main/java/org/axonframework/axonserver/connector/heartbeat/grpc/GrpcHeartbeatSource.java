@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Consumer;
 
 /**
- * gRPC implementation of {@link HeartbeatSource}, which send to AxonServer a {@link Heartbeat} message.
+ * gRPC implementation of {@link HeartbeatSource}, which sends to AxonServer a {@link Heartbeat} message.
  *
  * @author Sara Pellegrini
  * @since 4.2.1
