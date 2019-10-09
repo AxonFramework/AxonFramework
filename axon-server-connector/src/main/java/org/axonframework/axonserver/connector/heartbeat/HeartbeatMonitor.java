@@ -23,7 +23,7 @@ public class HeartbeatMonitor {
      * when the AxonServer connection is no longer alive.
      *
      * @param connectionManager connectionManager to AxonServer
-     * @param context           the context
+     * @param context           the (Bounded) Context for which the heartbeat activity is monitored
      */
     public HeartbeatMonitor(AxonServerConnectionManager connectionManager,
                             String context) {
