@@ -197,7 +197,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
-    @ConditionalOnProperty(value = "axon.axonserver.heartbeat.auto-configuration.enabled", havingValue = "true")
+    @ConditionalOnProperty(value = "axon.axonserver.heartbeat.auto-configuration.enabled")
     public HeartbeatConfiguration heartbeatConfiguration(AxonServerConnectionManager connectionManager,
                                                          AxonServerConfiguration configuration) {
         return new HeartbeatConfiguration(c -> connectionManager,

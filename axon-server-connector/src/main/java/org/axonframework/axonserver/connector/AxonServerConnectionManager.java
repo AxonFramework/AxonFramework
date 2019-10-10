@@ -573,7 +573,7 @@ public class AxonServerConnectionManager {
      * @param instruction the message containing information for AxonServer to process
      */
     public void send(String context, PlatformInboundInstruction instruction) {
-        if (isConnected(context)) {
+        if (getChannel(context) != null) {
             instructionStreams.get(context).onNext(instruction);
         }
     }
@@ -596,7 +596,8 @@ public class AxonServerConnectionManager {
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
-        return getChannel(context) != null;
+        ManagedChannel channel = channels.get(context);
+        return channel != null && !channel.isShutdown();
     }
 
     /**
