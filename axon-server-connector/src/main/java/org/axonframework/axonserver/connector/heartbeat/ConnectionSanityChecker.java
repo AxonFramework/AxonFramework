@@ -6,7 +6,7 @@ package org.axonframework.axonserver.connector.heartbeat;
  * @author Sara Pellegrini
  * @since 4.2.1
  */
-public interface ConnectionSanityCheck {
+public interface ConnectionSanityChecker {
 
     /**
      * Returns true if the connection is still alive, false otherwise.

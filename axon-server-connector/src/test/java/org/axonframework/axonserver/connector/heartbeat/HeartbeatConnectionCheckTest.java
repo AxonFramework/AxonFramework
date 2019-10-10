@@ -10,7 +10,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.*;
 
 /**
- * Unit tests for {@link HeartbeatConnectionCheck}.
+ * Unit tests for {@link HeartbeatConnectionChecker}.
  *
  * @author Sara Pellegrini
  */
@@ -19,11 +19,11 @@ public class HeartbeatConnectionCheckTest {
     @Test
     public void testHeartbeatNeverReceived() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
-        HeartbeatConnectionCheck check = new HeartbeatConnectionCheck(1_000,
+        HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
                                                                       r -> {
                                                                       },
-                                                                      () -> true,
-                                                                      new FakeClock(instant::get));
+                                                                          () -> true,
+                                                                          new FakeClock(instant::get));
         instant.set(instant.get().plus(60, SECONDS));
         assertTrue(check.isValid());
     }
@@ -32,10 +32,10 @@ public class HeartbeatConnectionCheckTest {
     public void testHeartbeatProperlyReceived() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
-        HeartbeatConnectionCheck check = new HeartbeatConnectionCheck(1_000,
-                                                                      heartbeatCallback::set,
-                                                                      () -> true,
-                                                                      new FakeClock(instant::get));
+        HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
+                                                                          heartbeatCallback::set,
+                                                                          () -> true,
+                                                                          new FakeClock(instant::get));
         heartbeatCallback.get().run();
         instant.set(instant.get().plus(1, SECONDS));
         assertTrue(check.isValid());
@@ -45,10 +45,10 @@ public class HeartbeatConnectionCheckTest {
     public void testHeartbeatReceivedLate() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
-        HeartbeatConnectionCheck check = new HeartbeatConnectionCheck(1_000,
-                                                                      heartbeatCallback::set,
-                                                                      () -> true,
-                                                                      new FakeClock(instant::get));
+        HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
+                                                                          heartbeatCallback::set,
+                                                                          () -> true,
+                                                                          new FakeClock(instant::get));
         heartbeatCallback.get().run();
         instant.set(instant.get().plus(1001, MILLIS));
         assertFalse(check.isValid());
@@ -58,10 +58,10 @@ public class HeartbeatConnectionCheckTest {
     public void testDelegateDetectsBrokenConnection() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
-        HeartbeatConnectionCheck check = new HeartbeatConnectionCheck(1_000,
-                                                                      heartbeatCallback::set,
-                                                                      () -> false,
-                                                                      new FakeClock(instant::get));
+        HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
+                                                                          heartbeatCallback::set,
+                                                                          () -> false,
+                                                                          new FakeClock(instant::get));
         heartbeatCallback.get().run();
         instant.set(instant.get().plus(900, MILLIS));
         assertFalse(check.isValid());

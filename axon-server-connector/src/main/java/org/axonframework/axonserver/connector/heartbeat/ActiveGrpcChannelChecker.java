@@ -3,24 +3,24 @@ package org.axonframework.axonserver.connector.heartbeat;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 
 /**
- * {@link ConnectionSanityCheck} implementation that verifies if
+ * {@link ConnectionSanityChecker} implementation that verifies if
  * the gRPC channel between client and Axon Server is connected.
  *
  * @author Sara Pellegrini
  * @since 4.2.1
  */
-public class ActiveGrpcChannelCheck implements ConnectionSanityCheck {
+public class ActiveGrpcChannelChecker implements ConnectionSanityChecker {
 
     private final AxonServerConnectionManager connectionManager;
     private final String context;
 
     /**
-     * Constructs an {@link ActiveGrpcChannelCheck} based on the connection manager.
+     * Constructs an {@link ActiveGrpcChannelChecker} based on the connection manager.
      *
      * @param connectionManager the {@link AxonServerConnectionManager}
      * @param context           the (Bounded) Context for which is verified the AxonServer connection through the gRPC channel
      */
-    public ActiveGrpcChannelCheck(AxonServerConnectionManager connectionManager, String context) {
+    public ActiveGrpcChannelChecker(AxonServerConnectionManager connectionManager, String context) {
         this.connectionManager = connectionManager;
         this.context = context;
     }

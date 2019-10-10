@@ -38,7 +38,7 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
      * Sends a {@link PlatformInboundInstruction} to AxonServer that contains a {@link Heartbeat} message.
      */
     @Override
-    public void send() {
+    public void pulse() {
         try {
             PlatformInboundInstruction instruction = PlatformInboundInstruction
                     .newBuilder()

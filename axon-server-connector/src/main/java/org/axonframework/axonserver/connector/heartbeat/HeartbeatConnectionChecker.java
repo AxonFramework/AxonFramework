@@ -11,16 +11,16 @@ import java.util.function.Consumer;
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.HEARTBEAT;
 
 /**
- * Implementation of {@link ConnectionSanityCheck} which verifies that heartbeats are properly received.
+ * Implementation of {@link ConnectionSanityChecker} which verifies that heartbeats are properly received.
  *
  * @author Sara Pellegrini
  * @since 4.2.1
  */
-public class HeartbeatConnectionCheck implements ConnectionSanityCheck {
+public class HeartbeatConnectionChecker implements ConnectionSanityChecker {
 
     private static final long DEFAULT_HEARTBEAT_TIMEOUT_MILLIS = 5_000;
 
-    private final ConnectionSanityCheck delegate;
+    private final ConnectionSanityChecker delegate;
 
     private final long heartbeatTimeout;
 
@@ -29,38 +29,38 @@ public class HeartbeatConnectionCheck implements ConnectionSanityCheck {
     private final AtomicReference<Instant> lastReceivedHeartbeat = new AtomicReference<>();
 
     /**
-     * Constructs an instance of {@link HeartbeatConnectionCheck} using the specified parameters.
+     * Constructs an instance of {@link HeartbeatConnectionChecker} using the specified parameters.
      *
      * @param connectionManager the connectionManager to AxonServer instance
      * @param context           the (Bounded) Context for which is verified the AxonServer connection
      */
-    public HeartbeatConnectionCheck(AxonServerConnectionManager connectionManager, String context) {
+    public HeartbeatConnectionChecker(AxonServerConnectionManager connectionManager, String context) {
         this(r -> connectionManager.onOutboundInstruction(context, HEARTBEAT, i -> r.run()),
-             new ActiveGrpcChannelCheck(connectionManager, context));
+             new ActiveGrpcChannelChecker(connectionManager, context));
     }
 
     /**
-     * Constructs an instance of {@link HeartbeatConnectionCheck} using a default timeout of 5 seconds and the system clock.
+     * Constructs an instance of {@link HeartbeatConnectionChecker} using a default timeout of 5 seconds and the system clock.
      * @param registration function which allows to register a callback for the reception of an heartbeat
-     * @param delegate another implementation of {@link ConnectionSanityCheck} that performs others kind of verifications
+     * @param delegate another implementation of {@link ConnectionSanityChecker} that performs others kind of verifications
      */
-    public HeartbeatConnectionCheck(Consumer<Runnable> registration,
-                                    ConnectionSanityCheck delegate) {
+    public HeartbeatConnectionChecker(Consumer<Runnable> registration,
+                                      ConnectionSanityChecker delegate) {
         this(DEFAULT_HEARTBEAT_TIMEOUT_MILLIS, registration, delegate, Clock.systemUTC());
     }
 
     /**
-     * Primary constructor of {@link HeartbeatConnectionCheck}.
+     * Primary constructor of {@link HeartbeatConnectionChecker}.
      *
      * @param heartbeatTimeout the time without any heartbeat after which the connection is considered no more valid;
      *                         it is expressed in milliseconds
      * @param registerOnHeartbeat function which allows to register a callback for the reception of an heartbeat
-     * @param delegate another implementation of {@link ConnectionSanityCheck} that performs others kind of verifications
+     * @param delegate another implementation of {@link ConnectionSanityChecker} that performs others kind of verifications
      * @param clock clock used to verify the timeout
      */
-    public HeartbeatConnectionCheck(long heartbeatTimeout,
-                                    Consumer<Runnable> registerOnHeartbeat,
-                                    ConnectionSanityCheck delegate, Clock clock) {
+    public HeartbeatConnectionChecker(long heartbeatTimeout,
+                                      Consumer<Runnable> registerOnHeartbeat,
+                                      ConnectionSanityChecker delegate, Clock clock) {
         this.clock = clock;
         this.delegate = delegate;
         this.heartbeatTimeout = heartbeatTimeout;

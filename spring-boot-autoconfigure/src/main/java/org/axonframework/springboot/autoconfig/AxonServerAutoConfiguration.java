@@ -51,6 +51,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -196,6 +197,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
+    @ConditionalOnProperty(value = "axon.axonserver.heartbeat.auto-configuration.enabled", havingValue = "true")
     public HeartbeatConfiguration heartbeatConfiguration(AxonServerConnectionManager connectionManager,
                                                          AxonServerConfiguration configuration) {
         return new HeartbeatConfiguration(c -> connectionManager,

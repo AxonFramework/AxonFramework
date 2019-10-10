@@ -16,7 +16,7 @@ public class HeartbeatMonitor {
 
     private final Runnable onInvalidConnection;
 
-    private final ConnectionSanityCheck connectionSanityCheck;
+    private final ConnectionSanityChecker connectionSanityCheck;
 
     /**
      * Constructs an instance of {@link HeartbeatMonitor} that forces a disconnection
@@ -27,8 +27,8 @@ public class HeartbeatMonitor {
      */
     public HeartbeatMonitor(AxonServerConnectionManager connectionManager,
                             String context) {
-        this(() -> connectionManager.forceDisconnection(context, new RuntimeException("Inactivity timeout.")),
-             new HeartbeatConnectionCheck(connectionManager, context));
+        this(() -> connectionManager.disconnectExceptionally(context, new RuntimeException("Inactivity timeout.")),
+             new HeartbeatConnectionChecker(connectionManager, context));
     }
 
     /**
@@ -37,7 +37,7 @@ public class HeartbeatMonitor {
      * @param onInvalidConnection callback to be call when the connection is no longer alive
      * @param connectionSanityCheck sanity check which allows to verify if the connection is alive
      */
-    public HeartbeatMonitor(Runnable onInvalidConnection, ConnectionSanityCheck connectionSanityCheck) {
+    public HeartbeatMonitor(Runnable onInvalidConnection, ConnectionSanityChecker connectionSanityCheck) {
         this.onInvalidConnection = onInvalidConnection;
         this.connectionSanityCheck = connectionSanityCheck;
     }

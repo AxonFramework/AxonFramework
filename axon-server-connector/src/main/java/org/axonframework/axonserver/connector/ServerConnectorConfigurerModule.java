@@ -20,7 +20,6 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
-import org.axonframework.axonserver.connector.heartbeat.HeartbeatConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
@@ -63,7 +62,6 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         configurer.configureCommandBus(this::buildCommandBus);
         configurer.configureQueryBus(this::buildQueryBus);
         configurer.registerModule(new EventProcessorInfoConfiguration());
-        configurer.registerModule(new HeartbeatConfiguration());
         configurer.registerComponent(TokenStore.class, c -> {
             logger.warn("BEWARE! Falling back to an in-memory token store. It is highly recommended to configure a " +
                                 "persistent implementation, based on the activity of the handler.");

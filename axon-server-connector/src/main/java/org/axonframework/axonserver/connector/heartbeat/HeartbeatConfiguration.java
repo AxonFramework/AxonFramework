@@ -71,7 +71,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
         String context = configuration.getContext();
 
         GrpcHeartbeatSource heartbeatSource = new GrpcHeartbeatSource(connectionManager, context);
-        connectionManager.onOutboundInstruction(context, HEARTBEAT, i -> heartbeatSource.send());
+        connectionManager.onOutboundInstruction(context, HEARTBEAT, i -> heartbeatSource.pulse());
 
         HeartbeatMonitor heartbeatMonitor = new HeartbeatMonitor(connectionManager, context);
         this.heartbeatScheduler.set(new Scheduler(heartbeatMonitor::run));
@@ -79,6 +79,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
 
     /**
      * Starts the monitoring of the connection state.
+     * @throws IllegalStateException if the module is not initialized.
      */
     @Override
     public void start() {
@@ -87,6 +88,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
 
     /**
      * Stops the monitoring of the connection state.
+     * @throws IllegalStateException if the module is not initialized.
      */
     @Override
     public void shutdown() {
@@ -94,7 +96,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
     }
 
     private Scheduler scheduler() {
-        Supplier<RuntimeException> exceptionSupplier = () -> new RuntimeException(
+        Supplier<RuntimeException> exceptionSupplier = () -> new IllegalStateException(
                 "HeartbeatConfiguration not initialized.");
         return Optional.ofNullable(heartbeatScheduler.get()).orElseThrow(exceptionSupplier);
     }

@@ -11,5 +11,5 @@ public interface HeartbeatSource {
     /**
      * Send an heartbeat to AxonServer
      */
-    void send();
+    void pulse();
 }
