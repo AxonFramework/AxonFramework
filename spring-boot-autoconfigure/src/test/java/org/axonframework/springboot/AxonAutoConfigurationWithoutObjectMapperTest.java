@@ -33,8 +33,8 @@
 package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -47,8 +47,11 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
@@ -56,16 +59,16 @@ import org.springframework.test.context.junit4.SpringRunner;
         DataSourceAutoConfiguration.class,
         JacksonAutoConfiguration.class
 })
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializer-without-jackson.test.properties")
-public class AxonAutoConfigurationWithoutObjectMapperTest {
+class AxonAutoConfigurationWithoutObjectMapperTest {
 
     @Autowired
     private ApplicationContext applicationContext;
 
-    @Test(expected = NoSuchBeanDefinitionException.class)
-    public void testNoObjectMapperBeanIsCreatedIfNoJacksonSerializerIsSpecified() {
-        applicationContext.getBean(ObjectMapper.class);
+    @Test
+    void testNoObjectMapperBeanIsCreatedIfNoJacksonSerializerIsSpecified() {
+        assertThrows(NoSuchBeanDefinitionException.class, () -> applicationContext.getBean(ObjectMapper.class));
+
     }
 }

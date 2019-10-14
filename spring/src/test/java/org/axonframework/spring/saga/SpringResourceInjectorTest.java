@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.modelling.saga.ResourceInjector;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -28,7 +28,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
@@ -37,14 +37,14 @@ public class SpringResourceInjectorTest {
 
     private static ResourceInjector testSubject;
 
-    @BeforeClass
-    public static void beforeClass() {
+    @BeforeAll
+    static void beforeClass() {
         ApplicationContext appCtx = new AnnotationConfigApplicationContext(Context.class);
         testSubject = appCtx.getBean(ResourceInjector.class);
     }
 
     @Test
-    public void testInjectSaga() {
+    void testInjectSaga() {
         InjectableSaga injectableSaga = new InjectableSaga();
         testSubject.injectResources(injectableSaga);
         assertNotNull(injectableSaga.getCommandBus());
@@ -52,10 +52,10 @@ public class SpringResourceInjectorTest {
         assertNull(injectableSaga.getEventBus());
     }
 
-    @Test(expected = BeanCreationException.class)
-    public void testResourcesNotAvailable() {
+    @Test
+    void testResourcesNotAvailable() {
         ProblematicInjectableSaga injectableSaga = new ProblematicInjectableSaga();
-        testSubject.injectResources(injectableSaga);
+        assertThrows(BeanCreationException.class, () -> testSubject.injectResources(injectableSaga));
     }
 
     public static class InjectableSaga {

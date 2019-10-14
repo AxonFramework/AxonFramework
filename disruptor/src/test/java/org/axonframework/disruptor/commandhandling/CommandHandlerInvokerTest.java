@@ -35,8 +35,8 @@ import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentMatchers;
 
 import java.io.ByteArrayOutputStream;
@@ -48,10 +48,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class CommandHandlerInvokerTest {
+class CommandHandlerInvokerTest {
 
     private CommandHandlerInvoker testSubject;
     private EventStore mockEventStore;
@@ -66,8 +66,8 @@ public class CommandHandlerInvokerTest {
     private static AtomicInteger messageHandlingCounter;
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockEventStore = mock(EventStore.class);
         mockCache = mock(Cache.class);
         doAnswer(invocation -> {
@@ -94,7 +94,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void usesProvidedParameterResolverFactoryToResolveParameters() {
+    void usesProvidedParameterResolverFactoryToResolveParameters() {
         ParameterResolverFactory parameterResolverFactory =
                 spy(ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         testSubject.createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
@@ -108,8 +108,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
+    void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -128,8 +127,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testLoadFromRepositoryLoadsFromCache() throws Exception {
+    void testLoadFromRepositoryLoadsFromCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -148,8 +146,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testAddToRepositoryAddsInCache() throws Exception {
+    void testAddToRepositoryAddsInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -168,7 +165,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testCacheEntryInvalidatedOnRecoveryEntry() {
+    void testCacheEntryInvalidatedOnRecoveryEntry() {
         commandHandlingEntry.resetAsRecoverEntry(aggregateIdentifier);
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
@@ -177,7 +174,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testCreateRepositoryReturnsSameInstanceOnSecondInvocation() {
+    void testCreateRepositoryReturnsSameInstanceOnSecondInvocation() {
         final Repository<StubAggregate> repository1 = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -191,7 +188,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testCanResolveReturnsTrueForMatchingAggregateDescriptor() {
+    void testCanResolveReturnsTrueForMatchingAggregateDescriptor() {
         Repository<StubAggregate> testRepository =
                 testSubject.createRepository(mockEventStore,
                                              new GenericAggregateFactory<>(StubAggregate.class),
@@ -204,7 +201,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testCanResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
+    void testCanResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
         Repository<StubAggregate> testRepository =
                 testSubject.createRepository(mockEventStore,
                                              new GenericAggregateFactory<>(StubAggregate.class),
@@ -215,7 +212,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testCanResolveReturnsFalseForNonMatchingAggregateType() {
+    void testCanResolveReturnsFalseForNonMatchingAggregateType() {
         Repository<StubAggregate> testRepository =
                 testSubject.createRepository(mockEventStore,
                                              new GenericAggregateFactory<>(StubAggregate.class),
@@ -228,7 +225,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
+    void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
         String testAggregateId = "some-identifier";
         DeadlineMessage<DeadlinePayload> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());

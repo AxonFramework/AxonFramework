@@ -38,32 +38,32 @@ import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
-import org.hamcrest.CoreMatchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.*;
 
 import javax.persistence.*;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.axonframework.config.utils.AssertUtils.assertWithin;
+import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class DefaultConfigurerTest {
+class DefaultConfigurerTest {
 
     private EntityManager em;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         Map<String, String> properties = new HashMap<>();
         properties.put("hibernate.connection.url", "jdbc:hsqldb:mem:axontest");
         properties.put("hibernate.hbm2ddl.auto", "create-drop");
@@ -71,13 +71,13 @@ public class DefaultConfigurerTest {
         em = emf.createEntityManager();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         em.close();
     }
 
     @Test
-    public void defaultConfigurationWithEventSourcing() throws Exception {
+    void defaultConfigurationWithEventSourcing() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                                 .configureCommandBus(c -> AsynchronousCommandBus.builder().build())
@@ -95,7 +95,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
+    void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventHandler(c -> (EventMessageHandler) event -> null);
@@ -107,18 +107,15 @@ public class DefaultConfigurerTest {
         try {
             TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
                                                      .orElseThrow(RuntimeException::new);
-            assertWithin(
-                    5, TimeUnit.SECONDS,
-                    () -> assertEquals(2, config.getComponent(TokenStore.class)
-                                                .fetchSegments(processor.getName()).length)
-            );
+            assertRetryingWithin(Duration.ofSeconds(5), () -> assertEquals(2, config.getComponent(TokenStore.class)
+                    .fetchSegments(processor.getName()).length));
         } finally {
             config.shutdown();
         }
     }
 
     @Test
-    public void defaultConfigurationWithTrackingProcessorExplicitlyConfigured() {
+    void defaultConfigurationWithTrackingProcessorExplicitlyConfigured() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         String processorName = "myProcessor";
         configurer.eventProcessing()
@@ -135,15 +132,15 @@ public class DefaultConfigurerTest {
             TrackingEventProcessor processor = config.eventProcessingConfiguration()
                                                      .eventProcessor(processorName, TrackingEventProcessor.class)
                                                      .orElseThrow(RuntimeException::new);
-            assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class)
-                                                                          .fetchSegments(processor.getName()).length));
+            assertRetryingWithin(Duration.ofSeconds(5), () -> assertEquals(2, config.getComponent(TokenStore.class)
+                    .fetchSegments(processor.getName()).length));
         } finally {
             config.shutdown();
         }
     }
 
     @Test
-    public void defaultConfigurationWithUpcaster() {
+    void defaultConfigurationWithUpcaster() {
         AtomicInteger counter = new AtomicInteger();
         Configuration config = DefaultConfigurer.defaultConfiguration().configureEmbeddedEventStore(
                 c -> JpaEventStorageEngine.builder()
@@ -171,7 +168,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void testJpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
+    void testJpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(
                 () -> em, transactionManager).configureCommandBus(c -> {
@@ -203,7 +200,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void testJpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
+    void testJpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
                                                 .configureCommandBus(c -> {
@@ -228,7 +225,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void testMissingEntityManagerProviderIsReported() {
+    void testMissingEntityManagerProviderIsReported() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureCommandBus(c -> {
                                                     AsynchronousCommandBus commandBus =
@@ -248,7 +245,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void testJpaConfigurationWithJpaRepository() throws Exception {
+    void testJpaConfigurationWithJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em).registerComponent(
                 TransactionManager.class, c -> transactionManager
@@ -281,7 +278,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void defaultConfigurationWithMonitors() throws Exception {
+    void defaultConfigurationWithMonitors() throws Exception {
         MessageCollectingMonitor defaultMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor commandBusMonitor = new MessageCollectingMonitor();
 
@@ -301,21 +298,21 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void testRegisterSeveralModules() {
+    void testRegisterSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureAggregate(Object.class)
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                                 .start();
 
-        assertThat(config.getModules().size(), CoreMatchers.is(2));
+        assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
                               AggregateConfiguration.class,
                               AggregateConfiguration.class);
     }
 
     @Test
-    public void testModuleHandlersOrdering() {
+    void testModuleHandlersOrdering() {
         ModuleConfiguration module1 = mock(ModuleConfiguration.class);
         ModuleConfiguration module2 = mock(ModuleConfiguration.class);
         ModuleConfiguration module3 = mock(ModuleConfiguration.class);
@@ -344,7 +341,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void testModuleHandlersOrderingAfterConfigIsInitialized() {
+    void testModuleHandlersOrderingAfterConfigIsInitialized() {
         ModuleConfiguration module1 = mock(ModuleConfiguration.class);
         ModuleConfiguration module2 = mock(ModuleConfiguration.class);
         ModuleConfiguration module3 = mock(ModuleConfiguration.class);
@@ -371,7 +368,7 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
+    void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
         QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureQueryUpdateEmitter(c -> queryUpdateEmitter)

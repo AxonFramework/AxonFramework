@@ -42,7 +42,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.stubbing.*;
 
@@ -55,13 +55,13 @@ import java.util.stream.Stream;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class DisruptorCommandBusTest_MultiThreaded {
+class DisruptorCommandBusTest_MultiThreaded {
 
     private static final int COMMAND_COUNT = 100;
     private static final int AGGREGATE_COUNT = 10;
@@ -69,8 +69,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
     private DisruptorCommandBus testSubject;
     private Repository<StubAggregate> spiedRepository;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         StubHandler stubHandler = new StubHandler();
         inMemoryEventStore = InMemoryEventStore.builder().build();
         testSubject = DisruptorCommandBus.builder()
@@ -89,14 +89,14 @@ public class DisruptorCommandBusTest_MultiThreaded {
         stubHandler.setRepository(spiedRepository);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         testSubject.stop();
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
+    void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
         doAnswer(trackCreateAndLoad(garbageCollectionPrevention)).when(spiedRepository).newInstance(any());
         doAnswer(trackCreateAndLoad(garbageCollectionPrevention)).when(spiedRepository).load(isA(String.class));
