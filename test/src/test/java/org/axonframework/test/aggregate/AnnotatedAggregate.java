@@ -26,7 +26,7 @@ import java.util.UUID;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
@@ -49,8 +49,8 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
 
     @CommandHandler
     public AnnotatedAggregate(CreateAggregateCommand command, EventBus eventBus, HardToCreateResource resource) {
-        assertNotNull("resource should not be null", resource);
-        assertNotNull("Expected EventBus to be injected as resource", eventBus);
+        assertNotNull(resource, "resource should not be null");
+        assertNotNull(eventBus, "Expected EventBus to be injected as resource");
         apply(new MyEvent(command.getAggregateIdentifier() == null ?
                                   UUID.randomUUID() : command.getAggregateIdentifier(), 0));
     }

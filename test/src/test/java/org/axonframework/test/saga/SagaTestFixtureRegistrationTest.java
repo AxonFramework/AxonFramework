@@ -3,32 +3,33 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.time.Duration.ofSeconds;
 import static java.time.Instant.now;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class dedicated to validating custom registered components on a {@link SagaTestFixture} instance.
  */
-public class SagaTestFixtureRegistrationTest {
+class SagaTestFixtureRegistrationTest {
 
     private SagaTestFixture<SomeTestSaga> fixture;
     private AtomicInteger startRecordingCount;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         fixture = new SagaTestFixture<>(SomeTestSaga.class);
         startRecordingCount = new AtomicInteger();
         fixture.registerStartRecordingCallback(startRecordingCount::getAndIncrement);
     }
 
     @Test
-    public void startRecordingCallbackIsInvokedOnWhenPublishingAnEvent() {
+    void startRecordingCallbackIsInvokedOnWhenPublishingAnEvent() {
         fixture.givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
 
@@ -37,7 +38,7 @@ public class SagaTestFixtureRegistrationTest {
     }
 
     @Test
-    public void startRecordingCallbackIsInvokedOnWhenTimeAdvances() {
+    void startRecordingCallbackIsInvokedOnWhenTimeAdvances() {
         fixture.givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
 
@@ -46,7 +47,7 @@ public class SagaTestFixtureRegistrationTest {
     }
 
     @Test
-    public void startRecordingCallbackIsInvokedOnWhenTimeElapses() {
+    void startRecordingCallbackIsInvokedOnWhenTimeElapses() {
         fixture.givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
 
@@ -55,7 +56,7 @@ public class SagaTestFixtureRegistrationTest {
     }
 
     @Test
-    public void testCustomListenerInvocationErrorHandlerIsUsed() {
+    void testCustomListenerInvocationErrorHandlerIsUsed() {
         SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
 
         ListenerInvocationErrorHandler testSubject = (exception, event, eventHandler) ->
@@ -96,7 +97,7 @@ public class SagaTestFixtureRegistrationTest {
                 return id;
             }
 
-            public Boolean shouldThrowException() {
+            Boolean shouldThrowException() {
                 return shouldThrowException;
             }
 

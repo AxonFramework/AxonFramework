@@ -20,8 +20,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -29,13 +29,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.listWithAllOf;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class ListWithAllOfMatcherTest {
+class ListWithAllOfMatcherTest {
 
     private Matcher<EventMessage<?>> mockMatcher1;
     private Matcher<EventMessage<?>> mockMatcher2;
@@ -45,8 +45,8 @@ public class ListWithAllOfMatcherTest {
     private StubEvent stubEvent2;
 
     @SuppressWarnings({"unchecked"})
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockMatcher1 = mock(Matcher.class);
         mockMatcher2 = mock(Matcher.class);
         mockMatcher3 = mock(Matcher.class);
@@ -59,7 +59,7 @@ public class ListWithAllOfMatcherTest {
     }
 
     @Test
-    public void testMatch_FullMatch() {
+    void testMatch_FullMatch() {
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
         verify(mockMatcher1).matches(stubEvent1);
@@ -71,7 +71,7 @@ public class ListWithAllOfMatcherTest {
     }
 
     @Test
-    public void testMatch_OnlyOneEventMatches() {
+    void testMatch_OnlyOneEventMatches() {
         when(mockMatcher1.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
@@ -87,7 +87,7 @@ public class ListWithAllOfMatcherTest {
     }
 
     @Test
-    public void testMatch_OneMatcherDoesNotMatch() {
+    void testMatch_OneMatcherDoesNotMatch() {
         when(mockMatcher1.matches(any())).thenReturn(false);
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
@@ -99,7 +99,7 @@ public class ListWithAllOfMatcherTest {
     }
 
     @Test
-    public void testDescribe() {
+    void testDescribe() {
         testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
@@ -112,7 +112,7 @@ public class ListWithAllOfMatcherTest {
     }
 
     @Test
-    public void testDescribe_OneMatcherFailed() {
+    void testDescribe_OneMatcherFailed() {
         when(mockMatcher2.matches(any())).thenReturn(false);
 
         testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
@@ -129,7 +129,7 @@ public class ListWithAllOfMatcherTest {
     private static class DescribingAnswer implements Answer<Object> {
         private String description;
 
-        public DescribingAnswer(String description) {
+        DescribingAnswer(String description) {
             this.description = description;
         }
 

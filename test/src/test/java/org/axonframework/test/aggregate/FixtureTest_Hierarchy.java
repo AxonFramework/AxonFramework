@@ -21,17 +21,17 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 /**
  * @author Allard Buijze
  */
-public class FixtureTest_Hierarchy {
+class FixtureTest_Hierarchy {
 
     @Test
-    public void testFixtureSetupWithAggregateHierarchy() {
+    void testFixtureSetupWithAggregateHierarchy() {
         new AggregateTestFixture<>(AbstractAggregate.class)
                 .registerAggregateFactory(new AggregateFactory<AbstractAggregate>() {
                     @Override

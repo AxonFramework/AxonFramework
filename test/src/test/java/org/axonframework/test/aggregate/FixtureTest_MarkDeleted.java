@@ -18,26 +18,27 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.test.AxonAssertionError;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Jan-Hendrik Kuperus
  */
-public class FixtureTest_MarkDeleted {
+class FixtureTest_MarkDeleted {
 
     private FixtureConfiguration<AnnotatedAggregate> fixture;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         fixture = new AggregateTestFixture<>(AnnotatedAggregate.class);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (CurrentUnitOfWork.isStarted()) {
             fail("A unit of work is still running");
         }
@@ -45,7 +46,7 @@ public class FixtureTest_MarkDeleted {
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
-    public void testCreateAggregateYieldsLiveAggregate() {
+    void testCreateAggregateYieldsLiveAggregate() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenNoPriorActivity()
                .when(new CreateAggregateCommand("id"))
@@ -53,30 +54,34 @@ public class FixtureTest_MarkDeleted {
                .expectNotMarkedDeleted();
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testCreateAggregateYieldsLiveAggregateInverted() {
+    @Test
+    void testCreateAggregateYieldsLiveAggregateInverted() {
         fixture.registerInjectableResource(new HardToCreateResource());
-        fixture.givenNoPriorActivity()
-                .when(new CreateAggregateCommand("id"))
-                .expectEvents(new MyEvent("id", 0))
-                .expectMarkedDeleted();
+
+        assertThrows(AxonAssertionError.class, () ->
+                fixture.givenNoPriorActivity()
+                        .when(new CreateAggregateCommand("id"))
+                        .expectEvents(new MyEvent("id", 0))
+                        .expectMarkedDeleted());
     }
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
-    public void testDeletedAggregateYieldsAggregateMarkedDeleted() {
+    void testDeletedAggregateYieldsAggregateMarkedDeleted() {
         fixture.given(new MyEvent("id", 0))
                .when(new DeleteCommand("id", false))
                .expectEvents(new MyAggregateDeletedEvent(false))
                .expectMarkedDeleted();
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testDeletedAggregateYieldsAggregateMarkedDeletedInverted() {
-        fixture.given(new MyEvent("id", 0))
-                .when(new DeleteCommand("id", false))
-                .expectEvents(new MyAggregateDeletedEvent(false))
-                .expectNotMarkedDeleted();
+    @Test
+    void testDeletedAggregateYieldsAggregateMarkedDeletedInverted() {
+        assertThrows(AxonAssertionError.class, () ->
+                fixture.given(new MyEvent("id", 0))
+                        .when(new DeleteCommand("id", false))
+                        .expectEvents(new MyAggregateDeletedEvent(false))
+                        .expectNotMarkedDeleted());
+
     }
 
 }

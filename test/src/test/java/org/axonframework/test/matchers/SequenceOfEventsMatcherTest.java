@@ -20,15 +20,15 @@ import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -47,8 +47,8 @@ public class SequenceOfEventsMatcherTest {
     private Matcher<List<EventMessage<?>>> testSubject;
 
     @SuppressWarnings({"unchecked"})
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockMatcher1 = mock(Matcher.class);
         mockMatcher2 = mock(Matcher.class);
         mockMatcher3 = mock(Matcher.class);
@@ -64,7 +64,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_FullMatch() {
+    void testMatch_FullMatch() {
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3,
                                                      stubEvent4, stubEvent5)));
 
@@ -88,7 +88,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_FullMatchWithGaps() {
+    void testMatch_FullMatchWithGaps() {
         reset(mockMatcher2);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher2.matches(stubEvent5)).thenReturn(true);
@@ -117,7 +117,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_OnlyOneEventMatches() {
+    void testMatch_OnlyOneEventMatches() {
         when(mockMatcher1.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
@@ -136,7 +136,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_NoMatches() {
+    void testMatch_NoMatches() {
         when(mockMatcher1.matches(any())).thenReturn(false);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
@@ -152,7 +152,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testDescribe() {
+    void testDescribe() {
         testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
@@ -165,7 +165,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testDescribe_OneMatcherFailed() {
+    void testDescribe_OneMatcherFailed() {
         when(mockMatcher1.matches(any())).thenReturn(true);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
