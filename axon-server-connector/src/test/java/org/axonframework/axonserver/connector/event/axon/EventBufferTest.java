@@ -26,7 +26,8 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.stubbing.*;
 
 import java.util.UUID;
@@ -35,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -45,7 +46,7 @@ import static org.mockito.Mockito.*;
  * @author Marc Gathier
  * @author Steven van Beelen
  */
-public class EventBufferTest {
+class EventBufferTest {
 
     private EventUpcaster stubUpcaster;
     private XStreamSerializer serializer;
@@ -54,8 +55,8 @@ public class EventBufferTest {
 
     private org.axonframework.serialization.SerializedObject<byte[]> serializedObject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         stubUpcaster = mock(EventUpcaster.class);
         //noinspection unchecked
         when(stubUpcaster.upcast(any()))
@@ -70,7 +71,7 @@ public class EventBufferTest {
     }
 
     @Test
-    public void testDataUpcastAndDeserialized() throws InterruptedException {
+    void testDataUpcastAndDeserialized() throws InterruptedException {
         assertFalse(testSubject.hasNextAvailable());
         testSubject.push(createEventData(1L));
         assertTrue(testSubject.hasNextAvailable());
@@ -91,7 +92,7 @@ public class EventBufferTest {
     }
 
     @Test
-    public void testConsumptionIsRecorded() {
+    void testConsumptionIsRecorded() {
         testSubject = new EventBuffer(stream -> stream.filter(i -> false), serializer);
 
         testSubject.push(createEventData(1));
@@ -105,8 +106,9 @@ public class EventBufferTest {
         assertEquals(3, consumed.get());
     }
 
-    @Test(timeout = 2000)
-    public void testNextAvailableDoesNotBlockIndefinitelyIfTheStreamIsClosedExceptionally()
+    @Test
+    @Timeout(value = 2)
+    void testNextAvailableDoesNotBlockIndefinitelyIfTheStreamIsClosedExceptionally()
             throws InterruptedException {
         RuntimeException expected = new RuntimeException("Some Exception");
         AtomicReference<Exception> result = new AtomicReference<>();

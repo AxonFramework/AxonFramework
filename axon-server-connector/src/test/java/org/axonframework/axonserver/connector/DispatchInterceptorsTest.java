@@ -17,22 +17,21 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.axonserver.connector.DispatchInterceptors;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by Sara Pellegrini on 03/04/2018.
  * sara.pellegrini@gmail.com
  */
-public class DispatchInterceptorsTest {
+class DispatchInterceptorsTest {
 
     @Test
-    public void registerInterceptors() {
+    void registerInterceptors() {
         List<String> results = new ArrayList<>();
         DispatchInterceptors<Message<?>> dispatchInterceptors = new DispatchInterceptors<>();
         dispatchInterceptors.registerDispatchInterceptor(messages -> (a, b) -> {

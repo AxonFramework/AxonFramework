@@ -18,21 +18,21 @@ package org.axonframework.axonserver.connector.event.util;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.SerializedObject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class EventCipherTests {
+class EventCipherTests {
 
     /**
      * Most basic test of a simple encryption scenario.
      */
     @Test
-    public void smoke() {
+    void smoke() {
         String message = "Hello World! AxonIQ Rulez!";
         String aggregateIdentifier = "1234";
         byte[] clearPayload = message.getBytes(StandardCharsets.UTF_8);
@@ -58,7 +58,7 @@ public class EventCipherTests {
     }
 
     @Test
-    public void defaultEventCipherShouldNotEncrypt() {
+    void defaultEventCipherShouldNotEncrypt() {
         String message = "Hello World! AxonIQ Rulez!";
         String aggregateIdentifier = "1234";
         byte[] clearPayload = message.getBytes(StandardCharsets.UTF_8);
@@ -80,7 +80,7 @@ public class EventCipherTests {
     }
 
     @Test
-    public void encryptionShouldBeRandom() {
+    void encryptionShouldBeRandom() {
         String message = "Hello World! AxonIQ Rulez!";
         String aggregateIdentifier = "1234";
         byte[] clearPayload = message.getBytes(StandardCharsets.UTF_8);

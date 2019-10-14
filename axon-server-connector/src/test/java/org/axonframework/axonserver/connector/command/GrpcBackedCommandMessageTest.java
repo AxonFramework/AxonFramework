@@ -23,11 +23,11 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test all the functions provided on the {@link GrpcBackedCommandMessage}. The {@link Command} to be passed to a
@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
  *
  * @author Steven van Beelen
  */
-public class GrpcBackedCommandMessageTest {
+class GrpcBackedCommandMessageTest {
 
     private static final TestCommand TEST_COMMAND = new TestCommand("aggregateId", 42);
     private static final String ROUTING_KEY = "someRoutingKey";
@@ -46,7 +46,7 @@ public class GrpcBackedCommandMessageTest {
             new CommandSerializer(serializer, new AxonServerConfiguration());
 
     @Test
-    public void testGetCommandNameReturnsTheNameOfTheCommandAsSpecifiedInTheGrpcCommand() {
+    void testGetCommandNameReturnsTheNameOfTheCommandAsSpecifiedInTheGrpcCommand() {
         CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(TEST_COMMAND);
         Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
         GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
@@ -55,7 +55,7 @@ public class GrpcBackedCommandMessageTest {
     }
 
     @Test
-    public void testGetIdentifierReturnsTheSameIdentifierAsSpecifiedInTheGrpcCommand() {
+    void testGetIdentifierReturnsTheSameIdentifierAsSpecifiedInTheGrpcCommand() {
         CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(TEST_COMMAND);
         Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
         GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
@@ -64,7 +64,7 @@ public class GrpcBackedCommandMessageTest {
     }
 
     @Test
-    public void testGetMetaDataReturnsTheSameMapAsWasInsertedInTheGrpcCommand() {
+    void testGetMetaDataReturnsTheSameMapAsWasInsertedInTheGrpcCommand() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         CommandMessage<TestCommand> testCommandMessage =
                 GenericCommandMessage.<TestCommand>asCommandMessage(TEST_COMMAND).withMetaData(expectedMetaData);
@@ -75,7 +75,7 @@ public class GrpcBackedCommandMessageTest {
     }
 
     @Test
-    public void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheGrpcCommand() {
+    void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheGrpcCommand() {
         TestCommand expectedCommand = TEST_COMMAND;
         CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(expectedCommand);
         Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
@@ -85,7 +85,7 @@ public class GrpcBackedCommandMessageTest {
     }
 
     @Test
-    public void testGetPayloadTypeReturnsTheTypeOfTheInsertedCommand() {
+    void testGetPayloadTypeReturnsTheTypeOfTheInsertedCommand() {
         CommandMessage<TestCommand> testCommandMessage = GenericCommandMessage.asCommandMessage(TEST_COMMAND);
         Command testCommand = commandSerializer.serialize(testCommandMessage, ROUTING_KEY, PRIORITY);
         GrpcBackedCommandMessage<TestCommand> testSubject = new GrpcBackedCommandMessage<>(testCommand, serializer);
@@ -94,7 +94,7 @@ public class GrpcBackedCommandMessageTest {
     }
 
     @Test
-    public void testWithMetaDataCompletelyReplacesTheInitialMetaDataMap() {
+    void testWithMetaDataCompletelyReplacesTheInitialMetaDataMap() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         CommandMessage<TestCommand> testCommandMessage =
                 GenericCommandMessage.<TestCommand>asCommandMessage(TEST_COMMAND).withMetaData(testMetaData);
@@ -110,7 +110,7 @@ public class GrpcBackedCommandMessageTest {
     }
 
     @Test
-    public void testAndMetaDataAppendsToTheExistingMetaData() {
+    void testAndMetaDataAppendsToTheExistingMetaData() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         CommandMessage<TestCommand> testCommandMessage =
                 GenericCommandMessage.<TestCommand>asCommandMessage(TEST_COMMAND).withMetaData(testMetaData);

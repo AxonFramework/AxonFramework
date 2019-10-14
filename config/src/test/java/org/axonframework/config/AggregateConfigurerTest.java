@@ -23,9 +23,9 @@ import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.Repository;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -42,7 +42,7 @@ public class AggregateConfigurerTest {
 
     private AggregateConfigurer<TestAggregate> testSubject;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mockConfiguration = mock(Configuration.class);
 

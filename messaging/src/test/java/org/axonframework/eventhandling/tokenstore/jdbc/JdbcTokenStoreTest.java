@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,6 +50,7 @@ import java.time.Duration;
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ContextConfiguration
@@ -157,15 +157,15 @@ public class JdbcTokenStoreTest {
 
         transactionManager.executeInTransaction(() -> {
             final int[] segments = tokenStore.fetchSegments("proc1");
-            Assert.assertThat(segments.length, is(2));
+            assertThat(segments.length, is(2));
         });
         transactionManager.executeInTransaction(() -> {
             final int[] segments = tokenStore.fetchSegments("proc2");
-            Assert.assertThat(segments.length, is(2));
+            assertThat(segments.length, is(2));
         });
         transactionManager.executeInTransaction(() -> {
             final int[] segments = tokenStore.fetchSegments("proc3");
-            Assert.assertThat(segments.length, is(0));
+            assertThat(segments.length, is(0));
         });
     }
 

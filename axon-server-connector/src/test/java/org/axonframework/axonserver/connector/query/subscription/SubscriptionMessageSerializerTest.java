@@ -32,7 +32,7 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,12 +40,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Sara Pellegrini
  */
-public class SubscriptionMessageSerializerTest {
+class SubscriptionMessageSerializerTest {
 
     private final Serializer xStreamSerializer = XStreamSerializer.builder().build();
 
@@ -60,7 +60,7 @@ public class SubscriptionMessageSerializerTest {
             new SubscriptionMessageSerializer(jacksonSerializer, xStreamSerializer, configuration);
 
     @Test
-    public void testInitialResponse() {
+    void testInitialResponse() {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
@@ -77,7 +77,7 @@ public class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    public void testUpdate() {
+    void testUpdate() {
         List<String> payload = new ArrayList<>();
         payload.add("A");
         payload.add("B");
@@ -93,7 +93,7 @@ public class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    public void testSubscriptionQueryMessage() {
+    void testSubscriptionQueryMessage() {
         GenericSubscriptionQueryMessage<String, Integer, Integer> message = new GenericSubscriptionQueryMessage<>(
                 "query",
                 "MyQueryName",
@@ -112,13 +112,13 @@ public class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    public void testComplete() {
+    void testComplete() {
         QueryProviderOutbound grpcMessage = testSubject.serializeComplete("subscriptionId");
         assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
     }
 
     @Test
-    public void testCompleteExceptionally() {
+    void testCompleteExceptionally() {
         QueryProviderOutbound grpcMessage = testSubject.serializeCompleteExceptionally("subscriptionId",
                                                                                        new RuntimeException("Error"));
         SubscriptionQueryResponse subscriptionQueryResponse = grpcMessage.getSubscriptionQueryResponse();

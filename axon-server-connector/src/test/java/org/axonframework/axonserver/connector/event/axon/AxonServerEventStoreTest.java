@@ -31,9 +31,9 @@ import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,18 +41,18 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class AxonServerEventStoreTest {
+class AxonServerEventStoreTest {
 
     private StubServer server;
     private AxonServerEventStore testSubject;
     private EventUpcaster upcasterChain;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         server = new StubServer(6123);
         server.start();
         upcasterChain = mock(EventUpcaster.class);
@@ -75,13 +75,13 @@ public class AxonServerEventStoreTest {
                                           .build();
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         server.shutdown();
     }
 
     @Test
-    public void testPublishAndConsumeEvents() throws Exception {
+    void testPublishAndConsumeEvents() throws Exception {
         UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(GenericEventMessage.asEventMessage("Test1"),
                             GenericEventMessage.asEventMessage("Test2"),
@@ -100,7 +100,7 @@ public class AxonServerEventStoreTest {
     }
 
     @Test
-    public void testLoadEventsWithMultiUpcaster() {
+    void testLoadEventsWithMultiUpcaster() {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
             Stream<IntermediateEventRepresentation> si = invocation.getArgument(0);
@@ -122,7 +122,7 @@ public class AxonServerEventStoreTest {
     }
 
     @Test
-    public void testLoadSnapshotAndEventsWithMultiUpcaster() {
+    void testLoadSnapshotAndEventsWithMultiUpcaster() {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
             Stream<IntermediateEventRepresentation> si = invocation.getArgument(0);
@@ -142,13 +142,13 @@ public class AxonServerEventStoreTest {
         assertFalse(actual.hasNext());
     }
 
-    @Test(expected = EventStoreException.class)
-    public void testLastSequenceNumberFor() {
-        testSubject.lastSequenceNumberFor("Agg1");
+    @Test
+    void testLastSequenceNumberFor() {
+        assertThrows(EventStoreException.class, () -> testSubject.lastSequenceNumberFor("Agg1"));
     }
 
     @Test
-    public void testCreateStreamableMessageSourceForContext() {
+    void testCreateStreamableMessageSourceForContext() {
         assertNotNull(testSubject.createStreamableMessageSourceForContext("some-context"));
     }
 }

@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.processor;
 
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.function.Consumer;
 
@@ -25,13 +25,13 @@ import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.Requ
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.mockito.Mockito.*;
 
-public class EventProcessorControlServiceTest {
+class EventProcessorControlServiceTest {
 
     private final AxonServerConnectionManager axonServerConnectionManager = mock(AxonServerConnectionManager.class);
     private final EventProcessorController eventProcessorController = mock(EventProcessorController.class);
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         when(axonServerConnectionManager.getDefaultContext()).thenReturn(BOUNDED_CONTEXT);
 
         EventProcessorControlService testSubject =
@@ -41,7 +41,7 @@ public class EventProcessorControlServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testStartAddOutboundInstructionToTheAxonServerConnectionManager() {
+    void testStartAddOutboundInstructionToTheAxonServerConnectionManager() {
         verify(axonServerConnectionManager).onOutboundInstruction(
                 eq(BOUNDED_CONTEXT), eq(PAUSE_EVENT_PROCESSOR), any(Consumer.class)
         );
