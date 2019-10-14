@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -33,7 +33,7 @@ import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Rene de Waele
@@ -43,7 +43,7 @@ public abstract class EventStorageEngineTest {
 
     private EventStorageEngine testSubject;
 
-    @After
+    @AfterEach
     public void tearDown() {
         GenericEventMessage.clock = Clock.systemUTC();
     }
@@ -59,13 +59,13 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testStoreAndLoadEventsArray() {
+    void testStoreAndLoadEventsArray() {
         testSubject.appendEvents(createEvent(0), createEvent(1));
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 
     @Test
-    public void testStoreAndLoadApplicationEvent() {
+    void testStoreAndLoadApplicationEvent() {
         testSubject.appendEvents(new GenericEventMessage<>("application event", MetaData.with("key", "value")));
         assertEquals(1, testSubject.readEvents(null, false).count());
         EventMessage<?> message = testSubject.readEvents(null, false).findFirst().get();
@@ -74,7 +74,7 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testReturnedEventMessageBehavior() {
+    void testReturnedEventMessageBehavior() {
         testSubject.appendEvents(createEvent().withMetaData(singletonMap("key", "value")));
         DomainEventMessage<?> messageWithMetaData = testSubject.readEvents(AGGREGATE).next();
 
@@ -93,13 +93,13 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testLoadNonExistent() {
+    void testLoadNonExistent() {
         assertEquals(0L, testSubject.readEvents(randomUUID().toString()).asStream().count());
     }
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testReadPartialStream() {
+    void testReadPartialStream() {
         testSubject.appendEvents(createEvents(5));
         assertEquals(2L, testSubject.readEvents(AGGREGATE, 2).asStream().findFirst().get().getSequenceNumber());
         assertEquals(4L, testSubject.readEvents(AGGREGATE, 2).asStream().reduce((a, b) -> b).get().getSequenceNumber());
@@ -107,7 +107,7 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testStoreAndLoadSnapshot() {
+    void testStoreAndLoadSnapshot() {
         testSubject.storeSnapshot(createEvent(0));
         testSubject.storeSnapshot(createEvent(1));
         testSubject.storeSnapshot(createEvent(3));
@@ -118,7 +118,7 @@ public abstract class EventStorageEngineTest {
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testLoadTrackedEvents() throws InterruptedException {
+    void testLoadTrackedEvents() throws InterruptedException {
         testSubject.appendEvents(createEvents(4));
         assertEquals(4, testSubject.readEvents(null, false).count());
 
@@ -134,7 +134,7 @@ public abstract class EventStorageEngineTest {
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testLoadPartialStreamOfTrackedEvents() {
+    void testLoadPartialStreamOfTrackedEvents() {
         List<DomainEventMessage<?>> events = createEvents(4);
         testSubject.appendEvents(events);
         TrackingToken token = testSubject.readEvents(null, false).findFirst().get().trackingToken();

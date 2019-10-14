@@ -30,7 +30,8 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +40,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 
@@ -56,8 +57,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
     private List<Thread> startedThreads = new ArrayList<>();
 
-    @Test(timeout = 60000)
-    public void testPessimisticLocking() throws Throwable {
+    @Test
+    @Timeout(value = 6)
+    void testPessimisticLocking() throws Throwable {
         initializeRepository();
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
 
@@ -108,9 +110,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         long lastSequenceNumber = -1;
         while (committedEvents.hasNext()) {
             DomainEventMessage nextEvent = committedEvents.next();
-            assertEquals("Events are not stored sequentially. Most likely due to unlocked concurrent access.",
-                         ++lastSequenceNumber,
-                         nextEvent.getSequenceNumber());
+            assertEquals(++lastSequenceNumber,
+                         nextEvent.getSequenceNumber(),
+                    "Events are not stored sequentially. Most likely due to unlocked concurrent access.");
         }
         return lastSequenceNumber;
     }
@@ -185,7 +187,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private static class SimpleAggregateFactory extends AbstractAggregateFactory<SimpleAggregateRoot> {
 
-        public SimpleAggregateFactory() {
+        SimpleAggregateFactory() {
             super(SimpleAggregateRoot.class);
         }
 
