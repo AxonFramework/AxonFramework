@@ -19,22 +19,22 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.mockito.Mockito.mock;
 
-public class AbstractEventProcessorTest {
+class AbstractEventProcessorTest {
 
     @Test
-    public void expectCallbackForAllMessages() throws Exception {
+    void expectCallbackForAllMessages() throws Exception {
         List<DomainEventMessage<?>> events = createEvents(2);
         Set<DomainEventMessage<?>> pending = new HashSet<>(events);
         MessageMonitor<EventMessage<?>> messageMonitor = (message) -> new MessageMonitor.MonitorCallback() {
@@ -76,7 +76,7 @@ public class AbstractEventProcessorTest {
 
         testSubject.processInBatchingUnitOfWork(events);
 
-        assertTrue("Not all events were presented to monitor", pending.isEmpty());
+        assertTrue(pending.isEmpty(), "Not all events were presented to monitor");
     }
 
     private static class TestEventProcessor extends AbstractEventProcessor {

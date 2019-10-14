@@ -19,27 +19,27 @@ package org.axonframework.serialization.json;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.common.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 /**
  * @author Allard Buijze
  */
-public class JsonNodeToByteArrayConverterTest {
+class JsonNodeToByteArrayConverterTest {
 
     private JsonNodeToByteArrayConverter testSubject;
     private ObjectMapper objectMapper;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         objectMapper = new ObjectMapper();
         testSubject = new JsonNodeToByteArrayConverter(objectMapper);
     }
 
     @Test
-    public void testConvertNodeToBytes() throws Exception {
+    void testConvertNodeToBytes() throws Exception {
         final String content = "{\"someKey\":\"someValue\",\"someOther\":true}";
         JsonNode node = objectMapper.readTree(content);
         assertArrayEquals(content.getBytes(IOUtils.UTF8), testSubject.convert(node));

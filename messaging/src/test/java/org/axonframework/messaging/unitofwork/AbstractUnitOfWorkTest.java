@@ -21,9 +21,9 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.ResultMessage;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import java.util.ArrayList;
@@ -33,20 +33,20 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class AbstractUnitOfWorkTest {
+class AbstractUnitOfWorkTest {
 
     private List<PhaseTransition> phaseTransitions;
     private UnitOfWork<?> subject;
 
-    @SuppressWarnings({"unchecked", "deprecation"})
-    @Before
-    public void setUp() {
+    @SuppressWarnings({"unchecked"})
+    @BeforeEach
+    void setUp() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -68,13 +68,13 @@ public class AbstractUnitOfWorkTest {
         unitOfWork.onCleanup(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.CLEANUP)));
     }
 
-    @After
-    public void tearDown() {
-        assertFalse("A UnitOfWork was not properly cleared", CurrentUnitOfWork.isStarted());
+    @AfterEach
+    void tearDown() {
+        assertFalse(CurrentUnitOfWork.isStarted(), "A UnitOfWork was not properly cleared");
     }
 
     @Test
-    public void testHandlersForCurrentPhaseAreExecuted() {
+    void testHandlersForCurrentPhaseAreExecuted() {
         AtomicBoolean prepareCommit = new AtomicBoolean();
         AtomicBoolean commit = new AtomicBoolean();
         AtomicBoolean afterCommit = new AtomicBoolean();
@@ -94,7 +94,7 @@ public class AbstractUnitOfWorkTest {
     }
 
     @Test
-    public void testExecuteTask() {
+    void testExecuteTask() {
         Runnable task = mock(Runnable.class);
         doNothing().when(task).run();
         subject.execute(task);
@@ -106,7 +106,7 @@ public class AbstractUnitOfWorkTest {
     }
 
     @Test
-    public void testExecuteFailingTask() {
+    void testExecuteFailingTask() {
         Runnable task = mock(Runnable.class);
         MockException mockException = new MockException();
         doThrow(mockException).when(task).run();
@@ -125,7 +125,7 @@ public class AbstractUnitOfWorkTest {
     }
 
     @Test
-    public void testExecuteTaskWithResult() throws Exception {
+    void testExecuteTaskWithResult() throws Exception {
         Object taskResult = new Object();
         Callable<Object> task = mock(Callable.class);
         when(task.call()).thenReturn(taskResult);
@@ -141,7 +141,7 @@ public class AbstractUnitOfWorkTest {
     }
 
     @Test
-    public void testExecuteTaskReturnsResultMessage() throws Exception {
+    void testExecuteTaskReturnsResultMessage() throws Exception {
         ResultMessage<Object> resultMessage = asResultMessage(new Object());
         Callable<ResultMessage<Object>> task = mock(Callable.class);
         when(task.call()).thenReturn(resultMessage);
@@ -150,7 +150,7 @@ public class AbstractUnitOfWorkTest {
     }
 
     @Test
-    public void testAttachedTransactionCommittedOnUnitOfWorkCommit() {
+    void testAttachedTransactionCommittedOnUnitOfWorkCommit() {
         TransactionManager transactionManager = mock(TransactionManager.class);
         Transaction transaction = mock(Transaction.class);
         when(transactionManager.startTransaction()).thenReturn(transaction);
@@ -163,7 +163,7 @@ public class AbstractUnitOfWorkTest {
     }
 
     @Test
-    public void testAttachedTransactionRolledBackOnUnitOfWorkRollBack() {
+    void testAttachedTransactionRolledBackOnUnitOfWorkRollBack() {
         TransactionManager transactionManager = mock(TransactionManager.class);
         Transaction transaction = mock(Transaction.class);
         when(transactionManager.startTransaction()).thenReturn(transaction);
@@ -180,7 +180,7 @@ public class AbstractUnitOfWorkTest {
     }
 
     @Test
-    public void unitOfWorkIsRolledBackWhenTransactionFailsToStart() {
+    void unitOfWorkIsRolledBackWhenTransactionFailsToStart() {
         TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.startTransaction()).thenThrow(new MockException());
         try {

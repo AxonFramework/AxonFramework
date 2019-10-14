@@ -24,7 +24,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Helper test implementation of {@link ResponseType} tests.

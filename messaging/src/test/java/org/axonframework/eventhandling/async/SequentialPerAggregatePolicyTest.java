@@ -20,19 +20,19 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class SequentialPerAggregatePolicyTest {
+class SequentialPerAggregatePolicyTest {
 
     @Test
-    public void testSequentialIdentifier() {
+    void testSequentialIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
         String aggregateIdentifier = UUID.randomUUID().toString();
@@ -42,8 +42,8 @@ public class SequentialPerAggregatePolicyTest {
         Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>("bla"));
 
         assertEquals(id1, id2);
-        assertFalse(id1.equals(id3));
-        assertFalse(id2.equals(id3));
+        assertNotEquals(id1, id3);
+        assertNotEquals(id2, id3);
         assertNull(id4);
     }
 

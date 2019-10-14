@@ -17,21 +17,21 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Map;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class GenericCommandMessageTest {
+class GenericCommandMessageTest {
 
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         Object payload = new Object();
         CommandMessage<Object> message1 = asCommandMessage(payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
@@ -52,13 +52,13 @@ public class GenericCommandMessageTest {
         assertEquals(Object.class, message3.getPayload().getClass());
         assertEquals(Object.class, message3.getPayloadType());
 
-        assertFalse(message1.getIdentifier().equals(message2.getIdentifier()));
-        assertFalse(message1.getIdentifier().equals(message3.getIdentifier()));
-        assertFalse(message2.getIdentifier().equals(message3.getIdentifier()));
+        assertNotEquals(message1.getIdentifier(), message2.getIdentifier());
+        assertNotEquals(message1.getIdentifier(), message3.getIdentifier());
+        assertNotEquals(message2.getIdentifier(), message3.getIdentifier());
     }
 
     @Test
-    public void testWithMetaData() {
+    void testWithMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -72,7 +72,7 @@ public class GenericCommandMessageTest {
     }
 
     @Test
-    public void testAndMetaData() {
+    void testAndMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -88,12 +88,12 @@ public class GenericCommandMessageTest {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         String actual = GenericCommandMessage.asCommandMessage("MyPayload").andMetaData(MetaData.with("key", "value").and("key2", 13)).toString();
-        assertTrue("Wrong output: " + actual, actual.startsWith("GenericCommandMessage{payload={MyPayload}, metadata={"));
-        assertTrue("Wrong output: " + actual, actual.contains("'key'->'value'"));
-        assertTrue("Wrong output: " + actual, actual.contains("'key2'->'13'"));
-        assertTrue("Wrong output: " + actual, actual.endsWith("', commandName='java.lang.String'}"));
-        assertEquals("Wrong output: " + actual, 173, actual.length());
+        assertTrue(actual.startsWith("GenericCommandMessage{payload={MyPayload}, metadata={"), "Wrong output: " + actual);
+        assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
+        assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
+        assertTrue(actual.endsWith("', commandName='java.lang.String'}"), "Wrong output: " + actual);
+        assertEquals(173, actual.length(), "Wrong output: " + actual);
     }
 }

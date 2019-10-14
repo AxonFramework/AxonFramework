@@ -22,34 +22,34 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
  */
-public class CurrentUnitOfWorkParameterResolverFactoryTest {
+class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     private CurrentUnitOfWorkParameterResolverFactory testSubject;
     private Method method;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         testSubject = new CurrentUnitOfWorkParameterResolverFactory();
         method = getClass().getMethod("equals", Object.class);
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public void someMethod(UnitOfWork unitOfWork) {
     }
 
     @Test
-    public void testCreateInstance() throws Exception {
+    void testCreateInstance() throws Exception {
         Method someMethod = getClass().getMethod("someMethod", UnitOfWork.class);
 
         assertNull(testSubject.createInstance(method, method.getParameters(), 0));
@@ -57,7 +57,7 @@ public class CurrentUnitOfWorkParameterResolverFactoryTest {
     }
 
     @Test
-    public void testResolveParameterValue() {
+    void testResolveParameterValue() {
         DefaultUnitOfWork.startAndGet(null);
         try {
             assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(GenericCommandMessage.class)));
@@ -67,12 +67,12 @@ public class CurrentUnitOfWorkParameterResolverFactoryTest {
     }
 
     @Test
-    public void testResolveParameterValueWithoutActiveUnitOfWork() {
+    void testResolveParameterValueWithoutActiveUnitOfWork() {
         assertNull(testSubject.resolveParameterValue(mock(GenericCommandMessage.class)));
     }
 
     @Test
-    public void testMatches() {
+    void testMatches() {
         assertTrue(testSubject.matches(mock(GenericCommandMessage.class)));
         DefaultUnitOfWork.startAndGet(null);
         try {

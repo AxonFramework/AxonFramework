@@ -20,24 +20,24 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.messaging.GenericMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ConsistentHashTest {
+class ConsistentHashTest {
 
     private ConsistentHash testSubject;
     private Member member1;
     private Member member2;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         // md5(routingkey) -> de596bb1f674a2c001d807ce1024ae7f
         // md5(someOtherKey) -> 70ce6e22841006dd1122a89311f7e9fe
         // 276db5f995e944c0721c3daefb90f2f6 --> member3
@@ -56,52 +56,52 @@ public class ConsistentHashTest {
     }
 
     @Test
-    public void testToString() {
-        assertEquals(testSubject.toString(), "ConsistentHash [member1(2),member2(2),member3(2)]");
+    void testToString() {
+        assertEquals("ConsistentHash [member1(2),member2(2),member3(2)]", testSubject.toString());
     }
 
     @Test
-    public void testConsistentHashChangesVersionWhenModified() {
+    void testConsistentHashChangesVersionWhenModified() {
         assertEquals(3, testSubject.version());
         assertEquals(4, testSubject.without(member1).version());
         assertEquals(4, testSubject.without(member1).without(member1).version());
     }
 
     @Test
-    public void testMessageRoutedToFirstEligibleMember() {
+    void testMessageRoutedToFirstEligibleMember() {
         Optional<Member> actual = testSubject.getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "name1"));
         assertTrue(actual.isPresent());
         assertEquals("member1", actual.get().name());
     }
 
     @Test
-    public void testMessageRoutedToNextEligibleMemberIfFirstChoiceIsRemoved() {
+    void testMessageRoutedToNextEligibleMemberIfFirstChoiceIsRemoved() {
         Optional<Member> actual = testSubject.without(member1).getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "name1"));
         assertTrue(actual.isPresent());
         assertEquals("member2", actual.get().name());
     }
 
     @Test
-    public void testNonEligibleMembersIgnored() {
+    void testNonEligibleMembersIgnored() {
         Optional<Member> actual = testSubject.getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "name3"));
         assertTrue(actual.isPresent());
         assertEquals("member3", actual.get().name());
     }
 
     @Test
-    public void testNoMemberReturnedWhenNoEligibleMembers() {
+    void testNoMemberReturnedWhenNoEligibleMembers() {
         Optional<Member> actual = testSubject.getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "unknown"));
         assertFalse(actual.isPresent());
     }
 
     @Test
-    public void testEligibleMembersCorrectlyOrdered() {
+    void testEligibleMembersCorrectlyOrdered() {
         Collection<ConsistentHash.ConsistentHashMember> actual = testSubject.getEligibleMembers("someOtherKey");
         assertEquals(asList("member2", "member1", "member3"), actual.stream().map(ConsistentHash.ConsistentHashMember::name).collect(Collectors.toList()));
     }
 
     @Test
-    public void testConflictingHashesDoNotImpactMembership() {
+    void testConflictingHashesDoNotImpactMembership() {
         ConsistentHash consistentHash = new ConsistentHash(s -> "fixed").with(member1, 1, AcceptAll.INSTANCE);
         ConsistentHash consistentHashModified = consistentHash
                                                             .with(member2, 1, AcceptAll.INSTANCE)

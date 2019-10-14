@@ -1,36 +1,28 @@
 package org.axonframework.eventhandling;
 
-import static org.junit.Assert.assertEquals;
-
 import org.axonframework.serialization.TestSerializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Collection;
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Tests serialization capabilities of {@link ReplayToken}.
- * 
+ *
  * @author JohT
  */
-@RunWith(Parameterized.class)
 public class ReplayTokenSerializationTest {
 
-    private final TestSerializer serializer;
-
-    public ReplayTokenSerializationTest(TestSerializer serializer) {
-        this.serializer = serializer;
-    }
-    
-    @Parameterized.Parameters(name = "{index} {0}")
     public static Collection<TestSerializer> serializers() {
-       return TestSerializer.all();
+        return TestSerializer.all();
     }
 
-    @Test
-    public void testTokenShouldBeSerializable() {
+    @MethodSource("serializers")
+    @ParameterizedTest
+    public void testTokenShouldBeSerializable(TestSerializer serializer) {
         TrackingToken innerToken = GapAwareTrackingToken.newInstance(10, Collections.singleton(9L));
         ReplayToken token = new ReplayToken(innerToken);
         assertEquals(token, serializer.serializeDeserialize(token));

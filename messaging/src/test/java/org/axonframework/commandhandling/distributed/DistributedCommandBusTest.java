@@ -21,23 +21,25 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Optional;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
-@RunWith(MockitoJUnitRunner.class)
-public class DistributedCommandBusTest {
+@ExtendWith(MockitoExtension.class)
+class DistributedCommandBusTest {
 
     private DistributedCommandBus testSubject;
 
@@ -52,8 +54,8 @@ public class DistributedCommandBusTest {
     @Mock
     private Member mockMember;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
                                            .connector(mockConnector)
@@ -64,7 +66,7 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testDispatchWithoutCallbackWithMessageMonitor() throws Exception {
+    void testDispatchWithoutCallbackWithMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
         testSubject.dispatch(testCommandMessage);
@@ -76,7 +78,7 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testDefaultCallbackIsUsedWhenFireAndForget() {
+    void testDefaultCallbackIsUsedWhenFireAndForget() {
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         testSubject = DistributedCommandBus.builder()
                                            .commandRouter(mockCommandRouter)
@@ -92,7 +94,7 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testDispatchFailingCommandWithoutCallbackWithMessageMonitor() throws Exception {
+    void testDispatchFailingCommandWithoutCallbackWithMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
 
         testSubject.dispatch(testCommandMessage);
@@ -104,7 +106,8 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testDispatchWithoutCallbackAndWithoutMessageMonitor() throws Exception {
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testDispatchWithoutCallbackAndWithoutMessageMonitor() throws Exception {
         testSubject = DistributedCommandBus.builder().commandRouter(mockCommandRouter).connector(mockConnector).build();
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
@@ -118,7 +121,8 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testUnknownCommandWithoutCallbackAndWithoutMessageMonitor() throws Exception {
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testUnknownCommandWithoutCallbackAndWithoutMessageMonitor() throws Exception {
         testSubject = DistributedCommandBus.builder().commandRouter(mockCommandRouter).connector(mockConnector).build();
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("unknown");
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
@@ -141,7 +145,7 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testDispatchWithCallbackAndMessageMonitor() throws Exception {
+    void testDispatchWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
         CommandCallback mockCallback = mock(CommandCallback.class);
@@ -159,7 +163,7 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testUnknownCommandWithCallbackAndMessageMonitor() throws Exception {
+    void testUnknownCommandWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
 
@@ -180,7 +184,7 @@ public class DistributedCommandBusTest {
     }
 
     @Test
-    public void testDispatchFailingCommandWithCallbackAndMessageMonitor() throws Exception {
+    void testDispatchFailingCommandWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
 
         CommandCallback mockCallback = mock(CommandCallback.class);

@@ -24,14 +24,14 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.Log4jLoggerAdapter;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
@@ -43,15 +43,15 @@ import static org.mockito.Mockito.*;
  * @author Nakul Mishra
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-public class LoggingInterceptorTest {
+class LoggingInterceptorTest {
 
     private LoggingInterceptor<Message<?>> testSubject;
     private org.apache.log4j.Logger mockLogger;
     private InterceptorChain interceptorChain;
     private UnitOfWork<Message<?>> unitOfWork;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         testSubject = new LoggingInterceptor<>();
 
         Log4jLoggerAdapter logger = (Log4jLoggerAdapter) LoggerFactory.getLogger(LoggingInterceptor.class);
@@ -66,7 +66,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testConstructorWithCustomLogger() throws Exception {
+    void testConstructorWithCustomLogger() throws Exception {
         testSubject = new LoggingInterceptor<>("my.custom.logger");
         Field field = testSubject.getClass().getDeclaredField("logger");
         field.setAccessible(true);
@@ -75,7 +75,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testHandlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
+    void testHandlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -90,7 +90,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testHandlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
+    void testHandlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -105,7 +105,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testHandlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
+    void testHandlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
         when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
@@ -119,7 +119,7 @@ public class LoggingInterceptorTest {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    public void testHandlerInterceptorWithFailedExecution() throws Exception {
+    void testHandlerInterceptorWithFailedExecution() throws Exception {
         RuntimeException exception = new RuntimeException();
         when(interceptorChain.proceed()).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);
@@ -136,7 +136,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testDispatchInterceptorLogging() {
+    void testDispatchInterceptorLogging() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         testSubject.handle(new GenericMessage<Object>(new StubMessage()));

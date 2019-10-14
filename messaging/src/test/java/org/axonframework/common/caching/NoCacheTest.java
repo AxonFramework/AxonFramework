@@ -17,23 +17,23 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.cache.CacheException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
  */
-public class NoCacheTest {
+class NoCacheTest {
 
     @Test
-    public void testCacheDoesNothing() throws CacheException {
+    void testCacheDoesNothing() throws CacheException {
         // this is pretty stupid, but we're testing that it does absolutely nothing
         NoCache cache = NoCache.INSTANCE;
         Registration registration = cache.registerCacheEntryListener(mock(Cache.EntryListener.class));

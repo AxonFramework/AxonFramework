@@ -21,44 +21,43 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class BeanValidationInterceptorTest {
+class BeanValidationInterceptorTest {
 
     private BeanValidationInterceptor<Message<?>> testSubject;
     private InterceptorChain mockInterceptorChain;
     private UnitOfWork<Message<?>> uow;
 
-    @Before
-    @SuppressWarnings("unchecked")
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new BeanValidationInterceptor<>();
         mockInterceptorChain = mock(InterceptorChain.class);
         uow = new DefaultUnitOfWork<>(null);
     }
 
     @Test
-    public void testValidateSimpleObject() throws Exception {
+    void testValidateSimpleObject() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>("Simple instance"));
         testSubject.handle(uow, mockInterceptorChain);
         verify(mockInterceptorChain).proceed();
     }
 
     @Test
-    public void testValidateAnnotatedObject_IllegalNullValue() throws Exception {
+    void testValidateAnnotatedObject_IllegalNullValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance(null)));
         try {
             testSubject.handle(uow, mockInterceptorChain);
@@ -70,14 +69,14 @@ public class BeanValidationInterceptorTest {
     }
 
     @Test
-    public void testValidateAnnotatedObject_LegalValue() throws Exception {
+    void testValidateAnnotatedObject_LegalValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>(new JSR303AnnotatedInstance("abc")));
         testSubject.handle(uow, mockInterceptorChain);
         verify(mockInterceptorChain).proceed();
     }
 
     @Test
-    public void testValidateAnnotatedObject_IllegalValue() throws Exception {
+    void testValidateAnnotatedObject_IllegalValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("bea")));
         try {
             testSubject.handle(
@@ -90,7 +89,7 @@ public class BeanValidationInterceptorTest {
     }
 
     @Test
-    public void testCustomValidatorFactory() throws Exception {
+    void testCustomValidatorFactory() throws Exception {
         uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("abc")));
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);

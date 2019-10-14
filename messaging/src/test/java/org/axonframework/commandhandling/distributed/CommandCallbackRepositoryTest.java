@@ -17,24 +17,24 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class CommandCallbackRepositoryTest {
+class CommandCallbackRepositoryTest {
     private int successCounter;
     private int failCounter;
 
-    @Before
-    public void reset() {
+    @BeforeEach
+    void reset() {
         successCounter = 0;
         failCounter = 0;
     }
 
     @Test
-    public void testCallback() {
+    void testCallback() {
         CommandCallbackRepository<Object> repository = new CommandCallbackRepository<>();
         CommandCallbackWrapper<Object, Object, Object> commandCallbackWrapper = createWrapper("A");
         repository.store("A", commandCallbackWrapper);
@@ -51,7 +51,7 @@ public class CommandCallbackRepositoryTest {
 
 
     @Test
-    public void testOverwriteCallback() {
+    void testOverwriteCallback() {
         CommandCallbackRepository<Object> repository = new CommandCallbackRepository<>();
         CommandCallbackWrapper<Object, Object, Object> commandCallbackWrapper = createWrapper("A");
         repository.store("A", commandCallbackWrapper);
@@ -67,7 +67,7 @@ public class CommandCallbackRepositoryTest {
     }
 
     @Test
-    public void testCancelCallbacks() {
+    void testCancelCallbacks() {
         CommandCallbackRepository<Object> repository = new CommandCallbackRepository<>();
         repository.store("A", createWrapper("A"));
         repository.store("B", createWrapper("A"));

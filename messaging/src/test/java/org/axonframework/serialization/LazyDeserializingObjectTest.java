@@ -16,16 +16,16 @@
 
 package org.axonframework.serialization;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class LazyDeserializingObjectTest {
+class LazyDeserializingObjectTest {
 
     private Serializer mockSerializer;
 
@@ -35,8 +35,8 @@ public class LazyDeserializingObjectTest {
     private String mockDeserializedObject = "I'm a mock";
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockSerializer = mock(Serializer.class);
         mockType = mock(SerializedType.class);
         mockObject = new SimpleSerializedObject(mockDeserializedObject, String.class, mockType);
@@ -47,7 +47,7 @@ public class LazyDeserializingObjectTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testLazilyDeserialized() {
+    void testLazilyDeserialized() {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<>(mockObject, mockSerializer);
         verify(mockSerializer, never()).deserialize(any(SerializedObject.class));
         assertEquals(String.class, testSubject.getType());
@@ -57,26 +57,26 @@ public class LazyDeserializingObjectTest {
         assertTrue(testSubject.isDeserialized());
     }
 
-    @Test(expected = Exception.class)
-    public void testLazilyDeserialized_NullObject() {
-        new LazyDeserializingObject<>(null, mockSerializer);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testLazilyDeserialized_NullSerializer() {
-        new LazyDeserializingObject<>(mockObject, null);
+    @Test
+    void testLazilyDeserialized_NullObject() {
+        assertThrows(Exception.class, () -> new LazyDeserializingObject<>(null, mockSerializer));
     }
 
     @Test
-    public void testWithProvidedDeserializedInstance() {
+    void testLazilyDeserialized_NullSerializer() {
+        assertThrows(IllegalArgumentException.class, () -> new LazyDeserializingObject<>(mockObject, null));
+    }
+
+    @Test
+    void testWithProvidedDeserializedInstance() {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<>(mockDeserializedObject);
         assertEquals(mockDeserializedObject.getClass(), testSubject.getType());
         assertSame(mockDeserializedObject, testSubject.getObject());
         assertTrue(testSubject.isDeserialized());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testWithProvidedDeserializedNullInstance() {
-        new LazyDeserializingObject<>(null);
+    @Test
+    void testWithProvidedDeserializedNullInstance() {
+        assertThrows(IllegalArgumentException.class, () -> new LazyDeserializingObject<>(null));
     }
 }

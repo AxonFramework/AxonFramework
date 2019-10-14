@@ -1,14 +1,14 @@
 package org.axonframework.common;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Random;
 
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.BuilderUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class BuilderUtilsTest {
+class BuilderUtilsTest {
 
     private static final int NUMBER_OF_RANDOM_NUMBERS = 256;
 
@@ -22,7 +22,7 @@ public class BuilderUtilsTest {
     }
 
     @Test
-    public void testAssertThat() {
+    void testAssertThat() {
         assertThat(0, n -> (n == 0), "Zero must be zero");
 
         testAssertFails(() -> assertThat(0, n -> n != 0, "Zero must be zero"),
@@ -30,7 +30,7 @@ public class BuilderUtilsTest {
     }
 
     @Test
-    public void testAssertNonNull() {
+    void testAssertNonNull() {
         BuilderUtils.assertNonNull(this, "This is not null");
 
         testAssertFails(() -> assertNonNull(null, "Null should be null"),
@@ -38,7 +38,7 @@ public class BuilderUtilsTest {
     }
 
     @Test
-    public void testAssertPositiveInteger() {
+    void testAssertPositiveInteger() {
         // Fixed tests
         assertPositive(0, "Zero is positive");
         assertPositive(1, "One is also positive");
@@ -58,7 +58,7 @@ public class BuilderUtilsTest {
     }
 
     @Test
-    public void testAssertPositiveLong() {
+    void testAssertPositiveLong() {
         // Fixed tests
         assertPositive(0L, "Zero is positive");
         assertPositive(1L, "One is also positive");
@@ -78,7 +78,7 @@ public class BuilderUtilsTest {
     }
 
     @Test
-    public void testAssertStrictPositiveInteger() {
+    void testAssertStrictPositiveInteger() {
         // Fixed tests
         assertStrictPositive(1, "One is positive");
         testAssertFails(() -> assertStrictPositive(0, "Zero is not strict positive"),
@@ -99,7 +99,7 @@ public class BuilderUtilsTest {
     }
 
     @Test
-    public void testAssertStrictPositiveLong() {
+    void testAssertStrictPositiveLong() {
         // Fixed tests
         assertStrictPositive(1L, "One is also positive");
         testAssertFails(() -> assertStrictPositive(0L, "Zero is not strict positive"),

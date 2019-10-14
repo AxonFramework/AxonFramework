@@ -16,23 +16,24 @@
 
 package org.axonframework.serialization.converters;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Allard Buijze
  */
-public class StringToByteArrayConverterTest {
+class StringToByteArrayConverterTest {
 
     @Test
-    public void testConvert() throws UnsupportedEncodingException {
+    void testConvert() throws UnsupportedEncodingException {
         StringToByteArrayConverter testSubject = new StringToByteArrayConverter();
         assertEquals(String.class, testSubject.expectedSourceType());
         assertEquals(byte[].class, testSubject.targetType());
-        assertArrayEquals("hello".getBytes("UTF-8"), testSubject.convert("hello"));
+        assertArrayEquals("hello".getBytes(StandardCharsets.UTF_8), testSubject.convert("hello"));
     }
 }

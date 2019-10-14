@@ -16,14 +16,14 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class GlobalSequenceTrackingTokenTest {
+class GlobalSequenceTrackingTokenTest {
 
     @Test
-    public void testUpperBound() {
+    void testUpperBound() {
         GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
         GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
 
@@ -33,7 +33,7 @@ public class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    public void testLowerBound() {
+    void testLowerBound() {
         GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
         GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
 
@@ -43,7 +43,7 @@ public class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    public void testCovers() {
+    void testCovers() {
         GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
         GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
 
@@ -54,7 +54,7 @@ public class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    public void testPosition() {
+    void testPosition() {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(1L);
 
         assertEquals(1L, token.position().getAsLong());

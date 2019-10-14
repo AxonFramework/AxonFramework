@@ -16,32 +16,32 @@
 
 package org.axonframework.common.jdbc;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.axonframework.common.jdbc.ConnectionWrapperFactory.wrap;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class ConnectionWrapperFactoryTest {
+class ConnectionWrapperFactoryTest {
 
     private ConnectionWrapperFactory.ConnectionCloseHandler closeHandler;
     private Connection connection;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         closeHandler = mock(ConnectionWrapperFactory.ConnectionCloseHandler.class);
         connection = mock(Connection.class);
     }
 
     @Test
-    public void testWrapperDelegatesAllButClose() throws Exception {
+    void testWrapperDelegatesAllButClose() throws Exception {
         Connection wrapped = wrap(connection, closeHandler);
         wrapped.commit();
         verify(closeHandler).commit(connection);
@@ -57,7 +57,7 @@ public class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    public void testEquals_WithWrapper() {
+    void testEquals_WithWrapper() {
         final Runnable runnable = mock(Runnable.class);
         Connection wrapped = wrap(connection, Runnable.class, runnable, closeHandler);
 
@@ -66,7 +66,7 @@ public class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    public void testEquals_WithoutWrapper() {
+    void testEquals_WithoutWrapper() {
         Connection wrapped = wrap(connection, closeHandler);
 
         assertNotEquals(wrapped, connection);
@@ -74,37 +74,37 @@ public class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    public void testHashCode_WithWrapper() {
+    void testHashCode_WithWrapper() {
         final Runnable runnable = mock(Runnable.class);
         Connection wrapped = wrap(connection, Runnable.class, runnable, closeHandler);
         assertEquals(wrapped.hashCode(), wrapped.hashCode());
     }
 
     @Test
-    public void testHashCode_WithoutWrapper() {
+    void testHashCode_WithoutWrapper() {
         Connection wrapped = wrap(connection, closeHandler);
         assertEquals(wrapped.hashCode(), wrapped.hashCode());
     }
 
-    @Test(expected = SQLException.class)
-    public void testUnwrapInvocationTargetException() throws Exception {
+    @Test
+    void testUnwrapInvocationTargetException() throws Exception {
         when(connection.prepareStatement(anyString())).thenThrow(new SQLException());
 
         Connection wrapper = wrap(connection, closeHandler);
-        wrapper.prepareStatement("foo");
+        assertThrows(SQLException.class, () -> wrapper.prepareStatement("foo"));
     }
 
-    @Test(expected = SQLException.class)
-    public void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface1() throws Exception {
+    @Test
+    void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface1() throws Exception {
         WrapperInterface wrapperImplementation = mock(WrapperInterface.class);
         when(connection.prepareStatement(anyString())).thenThrow(new SQLException());
 
         Connection wrapper = wrap(connection, WrapperInterface.class, wrapperImplementation, closeHandler);
-        wrapper.prepareStatement("foo");
+        assertThrows(SQLException.class, () -> wrapper.prepareStatement("foo"));
     }
 
-    @Test(expected = SQLException.class)
-    public void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface2() throws Exception {
+    @Test
+    void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface2() throws Exception {
         WrapperInterface wrapperImplementation = mock(WrapperInterface.class);
         doThrow(new SQLException()).when(wrapperImplementation).foo();
 
@@ -112,7 +112,7 @@ public class ConnectionWrapperFactoryTest {
                                                            WrapperInterface.class,
                                                            wrapperImplementation,
                                                            closeHandler);
-        wrapper.foo();
+        assertThrows(SQLException.class, wrapper::foo);
     }
 
     private interface WrapperInterface {

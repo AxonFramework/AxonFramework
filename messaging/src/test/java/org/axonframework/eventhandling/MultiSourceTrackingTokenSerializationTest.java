@@ -16,39 +16,30 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.axonframework.serialization.TestSerializer;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-
-import org.axonframework.serialization.TestSerializer;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests serialization capabilities of {@link MultiSourceTrackingToken}.
- * 
+ *
  * @author JohT
  */
-@RunWith(Parameterized.class)
-public class MultiSourceTrackingTokenSerializationTest {
+class MultiSourceTrackingTokenSerializationTest {
 
-    private final TestSerializer serializer;
-
-    public MultiSourceTrackingTokenSerializationTest(TestSerializer serializer) {
-        this.serializer = serializer;
-    }
-
-    @Parameterized.Parameters(name = "{index} {0}")
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
         return TestSerializer.all();
     }
 
-    @Test
-    public void testTokenShouldBeSerializable() {
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void testTokenShouldBeSerializable(TestSerializer serializer) {
         Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));

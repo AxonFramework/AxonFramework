@@ -17,30 +17,36 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.utils.MockException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-public class PropagatingErrorHandlerTest {
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class PropagatingErrorHandlerTest {
 
     private PropagatingErrorHandler testSubject = PropagatingErrorHandler.instance();
 
-    @Test(expected = MockError.class)
-    public void handleErrorRethrowsOriginalWhenError() throws Exception {
-        testSubject.handleError(new ErrorContext("test", new MockError(), Collections.emptyList()));
+    @Test
+    void handleErrorRethrowsOriginalWhenError() throws Exception {
+        ErrorContext context = new ErrorContext("test", new MockError(), Collections.emptyList());
+
+        assertThrows(MockError.class, () -> testSubject.handleError(context));
     }
 
-    @Test(expected = MockException.class)
-    public void handleErrorRethrowsOriginalWhenException() throws Exception {
-        testSubject.handleError(new ErrorContext("test", new MockException(), Collections.emptyList()));
+    @Test
+    void handleErrorRethrowsOriginalWhenException() throws Exception {
+        ErrorContext context = new ErrorContext("test", new MockException(), Collections.emptyList());
+
+        assertThrows(MockException.class, () -> testSubject.handleError(context));
     }
 
-    @Test(expected = EventProcessingException.class)
-    public void handleErrorWrapsOriginalWhenThrowable() throws Exception {
-        testSubject.handleError(new ErrorContext("test", new Throwable("Unknown"), Collections.emptyList()));
+    @Test
+    void handleErrorWrapsOriginalWhenThrowable() throws Exception {
+        ErrorContext context = new ErrorContext("test", new Throwable("Unknown"), Collections.emptyList());
+
+        assertThrows(EventProcessingException.class, () -> testSubject.handleError(context));
     }
-
-
 
     private static class MockError extends Error {
         public MockError() {super("Mock");}

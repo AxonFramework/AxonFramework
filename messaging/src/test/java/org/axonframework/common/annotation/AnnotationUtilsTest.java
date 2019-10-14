@@ -17,7 +17,7 @@
 package org.axonframework.common.annotation;
 
 import org.axonframework.commandhandling.RoutingKey;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,28 +25,28 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class AnnotationUtilsTest {
+class AnnotationUtilsTest {
 
     @Test
-    public void testFindAttributesOnDirectAnnotation() throws NoSuchMethodException {
+    void testFindAttributesOnDirectAnnotation() throws NoSuchMethodException {
         Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("directAnnotated"), TheTarget.class).get();
 
         assertEquals("value", results.get("property"));
-        assertFalse("value property should use annotation Simple class name as key", results.containsKey("value"));
+        assertFalse(results.containsKey("value"), "value property should use annotation Simple class name as key");
         assertEquals("value()", results.get("theTarget"));
     }
 
     @Test
-    public void testFindAttributesOnStaticMetaAnnotation() throws NoSuchMethodException {
+    void testFindAttributesOnStaticMetaAnnotation() throws NoSuchMethodException {
         Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("staticallyOverridden"), TheTarget.class).get();
 
         assertEquals("overridden_statically", results.get("property"));
     }
 
     @Test
-    public void testFindAttributesOnDynamicMetaAnnotation() throws NoSuchMethodException {
+    void testFindAttributesOnDynamicMetaAnnotation() throws NoSuchMethodException {
         Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class).get();
 
         assertEquals("dynamic-override", results.get("property"));
@@ -54,7 +54,7 @@ public class AnnotationUtilsTest {
     }
 
     @Test
-    public void testFindAttributesOnDynamicMetaAnnotationUsingAnnotationName() throws NoSuchMethodException {
+    void testFindAttributesOnDynamicMetaAnnotationUsingAnnotationName() throws NoSuchMethodException {
         Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class.getName()).get();
 
         assertEquals("dynamic-override", results.get("property"));
@@ -63,9 +63,9 @@ public class AnnotationUtilsTest {
     }
 
     @Test
-    public void testFindAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
-        assertFalse("Didn't expect attributes to be found for non-existent annotation",
-                    AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class).isPresent());
+    void testFindAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
+        assertFalse(AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class).isPresent(),
+                "Didn't expect attributes to be found for non-existent annotation");
     }
 
     @TheTarget

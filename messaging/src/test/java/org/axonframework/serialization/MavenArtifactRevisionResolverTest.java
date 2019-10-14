@@ -16,25 +16,25 @@
 
 package org.axonframework.serialization;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Allard Buijze
  */
-public class MavenArtifactRevisionResolverTest {
+class MavenArtifactRevisionResolverTest {
 
     @Test
-    public void testFindVersionOfExistingPomProperties() throws Exception {
+    void testFindVersionOfExistingPomProperties() throws Exception {
         MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("org.axonframework", "axon-modelling");
 
         assertEquals("2.1-SNAPSHOT", testSubject.revisionOf(Object.class));
     }
 
     @Test
-    public void testFindVersionOfNonExistingProperties() throws Exception {
+    void testFindVersionOfNonExistingProperties() throws Exception {
         MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("does.not.exist", "axon-modelling");
 
         assertNull(testSubject.revisionOf(Object.class));

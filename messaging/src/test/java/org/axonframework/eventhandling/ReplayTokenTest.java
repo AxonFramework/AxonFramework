@@ -17,26 +17,26 @@
 package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
 
 import static java.util.Collections.emptySet;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ReplayTokenTest {
+class ReplayTokenTest {
 
     private TrackingToken innerToken;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         innerToken = GapAwareTrackingToken.newInstance(10, Collections.singleton(9L));
     }
 
     @Test
-    public void testAdvanceReplayTokenWithinReplaySegment() {
+    void testAdvanceReplayTokenWithinReplaySegment() {
         ReplayToken testSubject = new ReplayToken(innerToken);
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
         assertTrue(actual instanceof ReplayToken);
@@ -44,7 +44,7 @@ public class ReplayTokenTest {
     }
 
     @Test
-    public void testRegularTokenIsProvidedWhenResetBeyondCurrentPosition() {
+    void testRegularTokenIsProvidedWhenResetBeyondCurrentPosition() {
         TrackingToken token1 = new GlobalSequenceTrackingToken(1);
         TrackingToken token2 = new GlobalSequenceTrackingToken(2);
 
@@ -53,7 +53,7 @@ public class ReplayTokenTest {
     }
 
     @Test
-    public void testSerializationDeserialization() throws IOException {
+    void testSerializationDeserialization() throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         ReplayToken replayToken = new ReplayToken(innerToken);
         String serializedReplayToken = objectMapper.writer().writeValueAsString(replayToken);
@@ -63,13 +63,13 @@ public class ReplayTokenTest {
     }
 
     @Test
-    public void testPosition() {
+    void testPosition() {
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken, GapAwareTrackingToken.newInstance(11L, Collections.singleton(9L)));
         assertEquals(11L, replayToken.position().getAsLong());
     }
 
     @Test
-    public void testPositionIsNotPresent() {
+    void testPositionIsNotPresent() {
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
         assertFalse(replayToken.position().isPresent());
     }

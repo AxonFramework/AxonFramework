@@ -16,17 +16,17 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 
-public class EventUpcasterChainTest {
+class EventUpcasterChainTest {
 
     @Test
-    public void testCreateChainAndUpcast() {
+    void testCreateChainAndUpcast() {
         EventUpcasterChain eventUpcasterChain = new EventUpcasterChain(new SomeEventUpcaster(),
                                                                        new SomeOtherEventUpcaster());
         IntermediateEventRepresentation mockRepresentation = mock(IntermediateEventRepresentation.class);

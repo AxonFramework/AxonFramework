@@ -33,7 +33,7 @@ import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.utils.SecondStubEvent;
 import org.axonframework.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,23 +41,23 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /*
  This test class should only assert whether the context map is created, filled with data and if that data is used to
  upcast an event.
  The other upcaster regularities are already asserted by the SingleEventUpcasterTest and can thus be skipped.
  */
-public class AbstractContextAwareSingleEventUpcasterTest {
+class AbstractContextAwareSingleEventUpcasterTest {
 
     private Upcaster<IntermediateEventRepresentation> upcaster;
     private Serializer serializer;
 
     private String expectedNewString;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         expectedNewString = "newNameValue";
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -67,7 +67,7 @@ public class AbstractContextAwareSingleEventUpcasterTest {
     }
 
     @Test
-    public void testUpcastsAddsContextValueFromFirstEvent() {
+    void testUpcastsAddsContextValueFromFirstEvent() {
         int expectedNumberOfEvents = 2;
         String expectedContextEventString = "oldName";
         Integer expectedContextEventNumber = 1;

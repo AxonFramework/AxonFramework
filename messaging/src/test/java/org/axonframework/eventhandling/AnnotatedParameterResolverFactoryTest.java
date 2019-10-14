@@ -18,33 +18,33 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Mark Ingram
  */
-public class AnnotatedParameterResolverFactoryTest {
+class AnnotatedParameterResolverFactoryTest {
     @Test
-    public void testTimestampParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
+    void testTimestampParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithTimestampParameter", Instant.class, Long.class, Instant.class);
         testMethod(new TimestampParameterResolverFactory(), method,
                    new Class<?>[]{TimestampParameterResolverFactory.TimestampParameterResolver.class, null, null});
     }
 
     @Test
-    public void testSequenceNumberParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
+    void testSequenceNumberParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithSequenceNumberParameter", Long.class, Instant.class);
         testMethod(new SequenceNumberParameterResolverFactory(), method,
                    new Class<?>[]{SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class, null});
     }
 
     @Test
-    public void testSequenceNumberParameterResolverHandlesPrimitive() throws NoSuchMethodException {
+    void testSequenceNumberParameterResolverHandlesPrimitive() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithPrimitiveParameter", long.class);
         testMethod(new SequenceNumberParameterResolverFactory(), method,
                    new Class<?>[]{SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class});
@@ -69,7 +69,7 @@ public class AnnotatedParameterResolverFactoryTest {
         Class<?>[] parameterTypes = method.getParameterTypes();
         for (int param = 0; param < parameterTypes.length; param++) {
             ParameterResolver resolver = factory.createInstance(method, method.getParameters(), param);
-            assertEquals("Result incorrect for param: " + param, expectedResolvers[param], resolver != null ? resolver.getClass() : null);
+            assertEquals(expectedResolvers[param], resolver != null ? resolver.getClass() : null, "Result incorrect for param: " + param);
         }
     }
 }

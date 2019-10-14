@@ -23,8 +23,8 @@ import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singletonMap;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  * @author Nakul Mishra
  */
 @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-public class CommandGatewayFactoryTest {
+class CommandGatewayFactoryTest {
 
     private CommandBus mockCommandBus;
     private CommandGatewayFactory testSubject;
@@ -50,8 +50,8 @@ public class CommandGatewayFactoryTest {
     private RetryScheduler mockRetryScheduler;
     private CommandCallback callback;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         testSubject = CommandGatewayFactory.builder()
@@ -65,8 +65,9 @@ public class CommandGatewayFactoryTest {
         gateway = testSubject.createGateway(CompleteGateway.class);
     }
 
-    @Test//(timeout = 2000)
-    public void testGatewayFireAndForget() {
+    @Test//
+    @Timeout(value = 2)
+    void testGatewayFireAndForget() {
         doAnswer(i -> {
             ((CommandCallback) i.getArguments()[1]).onResult((CommandMessage) i.getArguments()[0],
                                                              asCommandResultMessage(null));
@@ -84,8 +85,9 @@ public class CommandGatewayFactoryTest {
         verify(callback).onResult(isA(CommandMessage.class), any());
     }
 
-    @Test(timeout = 2000)
-    public void testGatewayFireAndForgetWithoutRetryScheduler() {
+    @Test
+    @Timeout(value = 2)
+    void testGatewayFireAndForgetWithoutRetryScheduler() {
         final Object metaTest = new Object();
         CommandGatewayFactory testSubject = CommandGatewayFactory.builder().commandBus(mockCommandBus).build();
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
@@ -99,20 +101,22 @@ public class CommandGatewayFactoryTest {
                 && "value".equals(x.getMetaData().get("key"))));
     }
 
-    @Test(timeout = 2000)
-    public void testGatewayTimeout() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testGatewayTimeout() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new CountDown(cdl)).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                    isA(CommandCallback.class));
         Thread t = new Thread(() -> gateway.fireAndWait("Command"));
         t.start();
-        assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
+        assertTrue(cdl.await(1, TimeUnit.SECONDS), "Expected command bus to be invoked");
         assertTrue(t.isAlive());
         t.interrupt();
     }
 
-    @Test(timeout = 2000)
-    public void testGatewayWithReturnValueReturns() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testGatewayWithReturnValueReturns() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
         CommandResultMessage<String> returnValue = asCommandResultMessage("ReturnValue");
@@ -120,14 +124,15 @@ public class CommandGatewayFactoryTest {
                                                                               isA(CommandCallback.class));
         Thread t = new Thread(() -> result.set(gateway.waitForReturnValue("Command")));
         t.start();
-        assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
+        assertTrue(cdl.await(1, TimeUnit.SECONDS), "Expected command bus to be invoked");
         t.join();
         assertEquals("ReturnValue", result.get());
         verify(callback).onResult(any(), eq(returnValue));
     }
 
-    @Test(timeout = 2000)
-    public void testGatewayWithReturnValueUndeclaredException() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testGatewayWithReturnValueUndeclaredException() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -141,9 +146,9 @@ public class CommandGatewayFactoryTest {
             }
         });
         t.start();
-        assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
+        assertTrue(cdl.await(1, TimeUnit.SECONDS), "Expected command bus to be invoked");
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
+        assertNull(result.get(), "Did not expect ReturnValue");
         assertTrue(error.get() instanceof CommandExecutionException);
         assertTrue(error.get().getCause() instanceof ExpectedException);
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
@@ -153,8 +158,9 @@ public class CommandGatewayFactoryTest {
         assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
-    @Test(timeout = 2000)
-    public void testGatewayWithReturnValueInterrupted() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testGatewayWithReturnValueInterrupted() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -167,13 +173,13 @@ public class CommandGatewayFactoryTest {
         t.start();
         t.interrupt();
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
-        assertTrue("Expected CommandExecutionException", error.get() instanceof CommandExecutionException);
-        assertTrue("Expected wrapped InterruptedException", error.get().getCause() instanceof InterruptedException);
+        assertNull(result.get(), "Did not expect ReturnValue");
+        assertTrue(error.get() instanceof CommandExecutionException, "Expected CommandExecutionException");
+        assertTrue(error.get().getCause() instanceof InterruptedException, "Expected wrapped InterruptedException");
     }
 
     @Test
-    public void testGatewayWithReturnValueRuntimeException() {
+    void testGatewayWithReturnValueRuntimeException() {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         RuntimeException runtimeException = new RuntimeException();
@@ -184,16 +190,17 @@ public class CommandGatewayFactoryTest {
         } catch (Throwable e) {
             error.set(e);
         }
-        assertNull("Did not expect ReturnValue", result.get());
-        assertSame("Expected exact instance of RunTimeException being propagated", runtimeException, error.get());
+        assertNull(result.get(), "Did not expect ReturnValue");
+        assertSame(runtimeException, error.get(), "Expected exact instance of RunTimeException being propagated");
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(RuntimeException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
-    @Test(timeout = 2000)
-    public void testGatewayWaitForExceptionInterrupted() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testGatewayWaitForExceptionInterrupted() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -206,12 +213,13 @@ public class CommandGatewayFactoryTest {
         t.start();
         t.interrupt();
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
+        assertNull(result.get(), "Did not expect ReturnValue");
         assertTrue(error.get() instanceof InterruptedException);
     }
 
-    @Test(timeout = 2000)
-    public void testGatewayWaitForUndeclaredInterruptedException() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testGatewayWaitForUndeclaredInterruptedException() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -224,12 +232,13 @@ public class CommandGatewayFactoryTest {
         t.start();
         t.interrupt();
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
+        assertNull(result.get(), "Did not expect ReturnValue");
         assertTrue(error.get() instanceof CommandExecutionException);
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameterReturns() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndWaitWithTimeoutParameterReturns() throws InterruptedException {
         CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new Success(cdl, asCommandResultMessage("OK!")))
                 .when(mockCommandBus)
@@ -247,12 +256,13 @@ public class CommandGatewayFactoryTest {
         assertTrue(cdl.await(1, TimeUnit.SECONDS));
         t.interrupt();
         // the return type is void, so return value is ignored
-        assertNull("Did not expect ReturnValue", result.get());
-        assertNull("Did not expect exception", error.get());
+        assertNull(result.get(), "Did not expect ReturnValue");
+        assertNull(error.get(), "Did not expect exception");
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameterTimeout() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndWaitWithTimeoutParameterTimeout() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -264,13 +274,14 @@ public class CommandGatewayFactoryTest {
         });
         t.start();
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
-        assertTrue("Expected CommandExecutionException", error.get() instanceof CommandExecutionException);
-        assertTrue("Expected wrapped InterruptedException", error.get().getCause() instanceof TimeoutException);
+        assertNull(result.get(), "Did not expect ReturnValue");
+        assertTrue(error.get() instanceof CommandExecutionException, "Expected CommandExecutionException");
+        assertTrue(error.get().getCause() instanceof TimeoutException, "Expected wrapped InterruptedException");
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameterTimeoutException() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndWaitWithTimeoutParameterTimeoutException() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -282,12 +293,13 @@ public class CommandGatewayFactoryTest {
         });
         t.start();
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
+        assertNull(result.get(), "Did not expect ReturnValue");
         assertTrue(error.get() instanceof TimeoutException);
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndWaitWithTimeoutParameterInterrupted() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndWaitWithTimeoutParameterInterrupted() throws InterruptedException {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -300,13 +312,14 @@ public class CommandGatewayFactoryTest {
         t.start();
         t.interrupt();
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
-        assertTrue("Expected CommandExecutionException", error.get() instanceof CommandExecutionException);
-        assertTrue("Expected wrapped InterruptedException", error.get().getCause() instanceof InterruptedException);
+        assertNull(result.get(), "Did not expect ReturnValue");
+        assertTrue(error.get() instanceof CommandExecutionException, "Expected CommandExecutionException");
+        assertTrue(error.get().getCause() instanceof InterruptedException, "Expected wrapped InterruptedException");
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndWaitForCheckedException() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndWaitForCheckedException() throws InterruptedException {
         CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new Failure(cdl, new ExpectedException())).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                                           isA(CommandCallback.class));
@@ -322,7 +335,7 @@ public class CommandGatewayFactoryTest {
         t.start();
         assertTrue(cdl.await(1, TimeUnit.SECONDS));
         t.join();
-        assertNull("Did not expect ReturnValue", result.get());
+        assertNull(result.get(), "Did not expect ReturnValue");
         assertTrue(error.get() instanceof ExpectedException);
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
@@ -331,8 +344,9 @@ public class CommandGatewayFactoryTest {
         assertEquals(ExpectedException.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndGetFuture() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndGetFuture() throws InterruptedException {
         final AtomicReference<Future<Object>> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -344,12 +358,13 @@ public class CommandGatewayFactoryTest {
         });
         t.start();
         t.join();
-        assertNotNull("Expected to get a Future return value", result.get());
+        assertNotNull(result.get(), "Expected to get a Future return value");
         assertNull(error.get());
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndGetCompletableFuture() throws InterruptedException {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndGetCompletableFuture() throws InterruptedException {
         final AtomicReference<CompletableFuture<Object>> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -361,12 +376,13 @@ public class CommandGatewayFactoryTest {
         });
         t.start();
         t.join();
-        assertNotNull("Expected to get a Future return value", result.get());
+        assertNotNull(result.get(), "Expected to get a Future return value");
         assertNull(error.get());
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndGetFutureWithTimeout() throws Throwable {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndGetFutureWithTimeout() throws Throwable {
         final AtomicReference<Future<Object>> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -381,11 +397,12 @@ public class CommandGatewayFactoryTest {
         if (error.get() != null) {
             throw error.get();
         }
-        assertNotNull("Expected to get a Future return value", result.get());
+        assertNotNull(result.get(), "Expected to get a Future return value");
     }
 
-    @Test(timeout = 2000)
-    public void testFireAndGetCompletionStageWithTimeout() throws Throwable {
+    @Test
+    @Timeout(value = 2)
+    void testFireAndGetCompletionStageWithTimeout() throws Throwable {
         final AtomicReference<CompletionStage<Object>> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
@@ -400,11 +417,12 @@ public class CommandGatewayFactoryTest {
         if (error.get() != null) {
             throw error.get();
         }
-        assertNotNull("Expected to get a CompletionStage return value", result.get());
+        assertNotNull(result.get(), "Expected to get a CompletionStage return value");
     }
 
-    @Test(timeout = 2000)
-    public void testRetrySchedulerInvokedOnFailure() throws Throwable {
+    @Test
+    @Timeout(value = 2)
+    void testRetrySchedulerInvokedOnFailure() throws Throwable {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new SomeRuntimeException())).when(mockCommandBus).dispatch(isA(CommandMessage.class),
@@ -423,11 +441,12 @@ public class CommandGatewayFactoryTest {
                                                  anyList(),
                                                  any(Runnable.class));
         assertNotNull(error.get());
-        assertNull("Did not Expect to get a Future return value", result.get());
+        assertNull(result.get(), "Did not Expect to get a Future return value");
     }
 
-    @Test(timeout = 2000)
-    public void testRetrySchedulerNotInvokedOnCheckedException() throws Throwable {
+    @Test
+    @Timeout(value = 2)
+    void testRetrySchedulerNotInvokedOnCheckedException() throws Throwable {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new ExpectedException())).when(mockCommandBus).dispatch(isA(CommandMessage.class),
@@ -446,11 +465,12 @@ public class CommandGatewayFactoryTest {
                                                           anyList(),
                                                           any(Runnable.class));
         assertNotNull(error.get());
-        assertNull("Did not Expect to get a Future return value", result.get());
+        assertNull(result.get(), "Did not Expect to get a Future return value");
     }
 
-    @Test(timeout = 2000)
-    public void testRetrySchedulerInvokedOnExceptionCausedByDeadlock() {
+    @Test
+    @Timeout(value = 2)
+    void testRetrySchedulerInvokedOnExceptionCausedByDeadlock() {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new RuntimeException(new DeadlockException("Mock"))))
@@ -465,11 +485,12 @@ public class CommandGatewayFactoryTest {
                                                  anyList(),
                                                  any(Runnable.class));
         assertNotNull(error.get());
-        assertNull("Did not Expect to get a Future return value", result.get());
+        assertNull(result.get(), "Did not Expect to get a Future return value");
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayWaitForResultAndInvokeCallbacksSuccess() {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayWaitForResultAndInvokeCallbacksSuccess() {
         CountDownLatch cdl = new CountDownLatch(1);
 
         final CommandCallback callback1 = mock(CommandCallback.class);
@@ -487,8 +508,9 @@ public class CommandGatewayFactoryTest {
         verify(callback2).onResult(any(), eq(ok));
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayWaitForResultAndInvokeCallbacksFailure() {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayWaitForResultAndInvokeCallbacksFailure() {
         final CommandCallback callback1 = mock(CommandCallback.class);
         final CommandCallback callback2 = mock(CommandCallback.class);
 
@@ -509,8 +531,9 @@ public class CommandGatewayFactoryTest {
         }
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayAsyncWithCallbacksSuccess() {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayAsyncWithCallbacksSuccess() {
         CountDownLatch cdl = new CountDownLatch(1);
 
         final CommandCallback callback1 = mock(CommandCallback.class);
@@ -527,8 +550,8 @@ public class CommandGatewayFactoryTest {
         verify(callback2).onResult(any(), eq(ok));
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayAsyncWithCallbacksSuccessButReturnTypeDoesNotMatchCallback() {
+    @Test@Timeout(value = 2)
+    void testCreateGatewayAsyncWithCallbacksSuccessButReturnTypeDoesNotMatchCallback() {
         CountDownLatch cdl = new CountDownLatch(1);
 
         final CommandCallback callback1 = mock(CommandCallback.class);
@@ -546,8 +569,9 @@ public class CommandGatewayFactoryTest {
         verify(callback, never()).onResult(any(), any());
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayAsyncWithCallbacksFailure() {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayAsyncWithCallbacksFailure() {
         final CommandCallback callback1 = mock(CommandCallback.class);
         final CommandCallback callback2 = mock(CommandCallback.class);
 
@@ -565,8 +589,9 @@ public class CommandGatewayFactoryTest {
         assertEquals(exception, commandResultMessageCaptor.getAllValues().get(1).exceptionResult());
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayCompletableFutureFailure() {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayCompletableFutureFailure() {
         final RuntimeException exception = new RuntimeException();
         doAnswer(new Failure(exception))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
@@ -576,8 +601,9 @@ public class CommandGatewayFactoryTest {
         assertTrue(future.isCompletedExceptionally());
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayCompletableFutureSuccessfulResult() throws Throwable {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayCompletableFutureSuccessfulResult() throws Throwable {
         doAnswer(invocationOnMock -> {
             ((CommandCallback) invocationOnMock.getArguments()[1])
                     .onResult((CommandMessage) invocationOnMock.getArguments()[0],
@@ -587,11 +613,12 @@ public class CommandGatewayFactoryTest {
 
         CompletableFuture future = gateway.fireAndGetCompletableFuture("Command");
         assertTrue(future.isDone());
-        assertEquals(future.get(), "returnValue");
+        assertEquals("returnValue", future.get());
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayFutureSuccessfulResult() throws Throwable {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayFutureSuccessfulResult() throws Throwable {
         doAnswer(invocationOnMock -> {
             ((CommandCallback) invocationOnMock.getArguments()[1])
                     .onResult((CommandMessage) invocationOnMock.getArguments()[0],
@@ -601,11 +628,12 @@ public class CommandGatewayFactoryTest {
 
         Future future = gateway.fireAndGetFuture("Command");
         assertTrue(future.isDone());
-        assertEquals(future.get(), "returnValue");
+        assertEquals("returnValue", future.get());
     }
 
-    @Test(timeout = 2000)
-    public void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() {
+    @Test
+    @Timeout(value = 2)
+    void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new RuntimeException(new DeadlockException("Mock"))))
@@ -623,11 +651,12 @@ public class CommandGatewayFactoryTest {
                                                           anyList(),
                                                           any(Runnable.class));
         assertNotNull(error.get());
-        assertNull("Did not Expect to get a Future return value", result.get());
+        assertNull(result.get(), "Did not Expect to get a Future return value");
     }
 
-    @Test(timeout = 2000)
-    public void testCreateGatewayEqualsAndHashCode() {
+    @Test
+    @Timeout(value = 2)
+    void testCreateGatewayEqualsAndHashCode() {
         CompleteGateway gateway2 = testSubject.createGateway(CompleteGateway.class);
 
         assertNotSame(gateway, gateway2);

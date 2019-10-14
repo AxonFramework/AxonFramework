@@ -18,105 +18,103 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.axonframework.messaging.MetaData;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(Parameterized.class)
-public class MetaDataDeserializerTest {
 
-    private final ObjectMapper.DefaultTyping defaultTyping;
-    private String serializedString;
-    private String emptySerializedString;
-    private String serializedContainerString;
-    private String serializedDataInDataString;
-    private ObjectMapper objectMapper;
+class MetaDataDeserializerTest {
 
-    @Parameters(name = "{0}")
-    public static Collection<ObjectMapper.DefaultTyping> data() {
-        return Arrays.asList(null,
-                             ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT,
-                             ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS,
-                             ObjectMapper.DefaultTyping.NON_FINAL,
-                             ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE);
+    public static Stream<Arguments> objectMappers() {
+        return Stream.of(null,
+                ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT,
+                ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE)
+                .map(defaultTyping -> Arguments.of(objectMapper(defaultTyping), defaultTyping));
     }
 
-    public MetaDataDeserializerTest(ObjectMapper.DefaultTyping defaultTyping) {
-        this.defaultTyping = defaultTyping;
-    }
-
-    @Before
-    public void setup() throws JsonProcessingException {
-        objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(
+    private static ObjectMapper objectMapper(ObjectMapper.DefaultTyping defaultTyping) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer()));
 
         if (defaultTyping != null) {
             objectMapper.enableDefaultTyping(defaultTyping);
         }
+        return objectMapper;
+    }
 
+    @MethodSource("objectMappers")
+    @ParameterizedTest
+    void testMetaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
         MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
-        this.serializedString = objectMapper.writeValueAsString(metaData);
+        String serializedString = objectMapper.writeValueAsString(metaData);
 
+        MetaData deserialized = objectMapper.readValue(serializedString, MetaData.class);
+        assertEquals("two", deserialized.get("one"));
+        assertEquals(serializedString, objectMapper.writeValueAsString(deserialized));
+    }
+
+    @MethodSource("objectMappers")
+    @ParameterizedTest
+    void testEmptyMetaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
         MetaData metaData1 = new MetaData(new HashMap<>());
-        this.emptySerializedString = objectMapper.writeValueAsString(metaData1);
+        String emptySerializedString = objectMapper.writeValueAsString(metaData1);
+
+        MetaData deserialized = objectMapper.readValue(emptySerializedString, MetaData.class);
+        assertTrue(deserialized.entrySet().isEmpty());
+
+        assertEquals(emptySerializedString, objectMapper.writeValueAsString(deserialized));
+    }
+
+    @MethodSource("objectMappers")
+    @ParameterizedTest
+    void testMetaDataContainerWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
+        MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
 
         Container container = new Container("a", metaData, 1);
-        this.serializedContainerString = objectMapper.writeValueAsString(container);
+        String serializedContainerString = objectMapper.writeValueAsString(container);
+
+        Container deserialized = objectMapper.readValue(serializedContainerString, Container.class);
+        assertEquals("two", deserialized.b.get("one"));
+
+        assertEquals(serializedContainerString, objectMapper.writeValueAsString(deserialized));
+    }
+
+    @MethodSource("objectMappers")
+    @ParameterizedTest
+    void testMetaDataContainerWithDataInDataWithDefaultTyping(ObjectMapper objectMapper, ObjectMapper.DefaultTyping defaultTyping) throws IOException {
+        MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
 
         Map<String, Object> map2 = new HashMap<>();
         map2.put("one", metaData);
         MetaData dataInData = new MetaData(map2);
         Container container2 = new Container("a", dataInData, 1);
-        this.serializedDataInDataString = objectMapper.writeValueAsString(container2);
-    }
+        String serializedDataInDataString = objectMapper.writeValueAsString(container2);
 
-    @Test
-    public void testMetaDataSerializationWithDefaultTyping() throws IOException {
-        MetaData deserialized = this.objectMapper.readValue(this.serializedString, MetaData.class);
-        assertEquals(deserialized.get("one"), "two");
-        assertEquals(this.serializedString, objectMapper.writeValueAsString(deserialized));
-    }
-
-    @Test
-    public void testEmptyMetaDataSerializationWithDefaultTyping() throws IOException {
-        MetaData deserialized = this.objectMapper.readValue(this.emptySerializedString, MetaData.class);
-        assertTrue(deserialized.entrySet().isEmpty());
-
-        assertEquals(this.emptySerializedString, objectMapper.writeValueAsString(deserialized));
-    }
-
-    @Test
-    public void testMetaDataContainerWithDefaultTyping() throws IOException {
-        Container deserialized = this.objectMapper.readValue(this.serializedContainerString, Container.class);
-        assertEquals(deserialized.b.get("one"), "two");
-
-        assertEquals(this.serializedContainerString, objectMapper.writeValueAsString(deserialized));
-    }
-
-    @Test
-    public void testMetaDataContainerWithDataInDataWithDefaultTyping() throws IOException {
-        Container deserialized = this.objectMapper.readValue(this.serializedDataInDataString, Container.class);
+        Container deserialized = objectMapper.readValue(serializedDataInDataString, Container.class);
         if (defaultTyping != null) {
             assertEquals(((MetaData) deserialized.b.get("one")).get("one"), "two");
-        } else {
+        }
+        else {
             // as there is no typing information, Jackson can't know it's a MetaData entry
             assertEquals(((Map) deserialized.b.get("one")).get("one"), "two");
         }
 
-        assertEquals(this.serializedDataInDataString, objectMapper.writeValueAsString(deserialized));
+        assertEquals(serializedDataInDataString, objectMapper.writeValueAsString(deserialized));
     }
 
     public static class Container {

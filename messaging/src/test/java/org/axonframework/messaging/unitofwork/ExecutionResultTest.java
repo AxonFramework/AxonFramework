@@ -17,18 +17,18 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.messaging.ResultMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
 /**
  * @author Rene de Waele
  */
-public class ExecutionResultTest {
+class ExecutionResultTest {
 
     @Test
-    public void testNormalExecutionResult() {
+    void testNormalExecutionResult() {
         Object resultPayload = new Object();
         ResultMessage<Object> result = asResultMessage(resultPayload);
         ExecutionResult subject = new ExecutionResult(result);
@@ -38,7 +38,7 @@ public class ExecutionResultTest {
     }
 
     @Test
-    public void testUncheckedExceptionResult() {
+    void testUncheckedExceptionResult() {
         RuntimeException mockException = new RuntimeException();
         ResultMessage<RuntimeException> resultMessage = asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);
@@ -48,7 +48,7 @@ public class ExecutionResultTest {
     }
 
     @Test
-    public void testCheckedExceptionResult() {
+    void testCheckedExceptionResult() {
         Exception mockException = new Exception();
         ResultMessage<Exception> resultMessage = asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);

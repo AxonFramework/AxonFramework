@@ -17,27 +17,27 @@
 package org.axonframework.common.annotation;
 
 import org.axonframework.common.Priority;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PriorityAnnotationComparatorTest {
+class PriorityAnnotationComparatorTest {
 
     private PriorityAnnotationComparator<Object> testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = PriorityAnnotationComparator.getInstance();
     }
 
     @Test
-    public void testCompareDifferentPriorities() {
+    void testCompareDifferentPriorities() {
         assertTrue(testSubject.compare(new LowPrio(), new HighPrio()) > 0);
         assertTrue(testSubject.compare(new LowPrio(), new NeutralPrio()) > 0);
         assertTrue(testSubject.compare(new NeutralPrio(), new HighPrio()) > 0);
@@ -48,14 +48,14 @@ public class PriorityAnnotationComparatorTest {
     }
 
     @Test
-    public void testCompareSamePriorities() {
+    void testCompareSamePriorities() {
         assertEquals(0, testSubject.compare(new LowPrio(), new LowPrio()));
         assertEquals(0, testSubject.compare(new NeutralPrio(), new NeutralPrio()));
         assertEquals(0, testSubject.compare(new HighPrio(), new HighPrio()));
     }
 
     @Test
-    public void testUndefinedConsideredNeutralPriority() {
+    void testUndefinedConsideredNeutralPriority() {
         assertTrue(testSubject.compare(new UndefinedPrio(), new HighPrio()) > 0);
         assertTrue(testSubject.compare(new UndefinedPrio(), new LowPrio()) < 0);
         assertTrue(testSubject.compare(new UndefinedPrio(), new NeutralPrio()) == 0);
@@ -66,7 +66,7 @@ public class PriorityAnnotationComparatorTest {
     }
 
     @Test
-    public void sortComparisonResultsInCorrectSortOrder() {
+    void sortComparisonResultsInCorrectSortOrder() {
         HighPrio highPrio = new HighPrio();
         LowPrio lowPrio = new LowPrio();
         List<Object> result = Arrays.asList(new NeutralPrio(), new UndefinedPrio(), highPrio, lowPrio);

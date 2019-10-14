@@ -18,21 +18,21 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.RoutingKey;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class AnnotationRoutingStrategyTest {
+class AnnotationRoutingStrategyTest {
 
     private AnnotationRoutingStrategy testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AnnotationRoutingStrategy();
     }
 
     @Test
-    public void testGetRoutingKeyFromField() {
+    void testGetRoutingKeyFromField() {
         assertEquals("Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeFieldAnnotatedCommand())));
         assertEquals(
                 "Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeOtherFieldAnnotatedCommand()))
@@ -40,7 +40,7 @@ public class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    public void testGetRoutingKeyFromMethod() {
+    void testGetRoutingKeyFromMethod() {
         assertEquals(
                 "Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeMethodAnnotatedCommand()))
         );
@@ -49,14 +49,16 @@ public class AnnotationRoutingStrategyTest {
         );
     }
 
-    @Test(expected = CommandDispatchException.class)
-    public void testNullRoutingKeyOnFieldThrowsCommandDispatchException() {
-        testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullFieldAnnotatedCommand()));
+    @Test
+    void testNullRoutingKeyOnFieldThrowsCommandDispatchException() {
+        assertThrows(CommandDispatchException.class,
+                () -> testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand())));
     }
 
-    @Test(expected = CommandDispatchException.class)
-    public void testNullRoutingKeyOnMethodThrowsCommandDispatchException() {
-        testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand()));
+    @Test
+    void testNullRoutingKeyOnMethodThrowsCommandDispatchException() {
+        assertThrows(CommandDispatchException.class,
+                () -> testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand())));
     }
 
     public static class SomeFieldAnnotatedCommand {

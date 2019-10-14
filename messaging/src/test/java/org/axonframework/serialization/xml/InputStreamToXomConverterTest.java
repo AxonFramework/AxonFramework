@@ -17,28 +17,28 @@
 package org.axonframework.serialization.xml;
 
 import nu.xom.Document;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Jochen Munz
  */
-public class InputStreamToXomConverterTest {
+class InputStreamToXomConverterTest {
 
     private InputStreamToXomConverter testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new InputStreamToXomConverter();
     }
 
     @Test
-    public void testConvert() {
+    void testConvert() {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         Document actual = testSubject.convert(inputStream);
