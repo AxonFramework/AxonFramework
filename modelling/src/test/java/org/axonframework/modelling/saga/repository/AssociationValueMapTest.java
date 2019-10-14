@@ -17,63 +17,63 @@
 package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.modelling.saga.AssociationValue;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
  */
-public class AssociationValueMapTest {
+class AssociationValueMapTest {
 
     private AssociationValueMap testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AssociationValueMap();
     }
 
     @Test
-    public void testStoreVarietyOfItems() {
+    void testStoreVarietyOfItems() {
         assertTrue(testSubject.isEmpty());
 
         Object anObject = new Object();
         testSubject.add(av("1"), "T", "1");
         testSubject.add(av("1"), "T", "1");
-        assertEquals("Wrong count after adding an object twice", 1, testSubject.size());
+        assertEquals(1, testSubject.size(), "Wrong count after adding an object twice");
         testSubject.add(av("2"), "T", "1");
-        assertEquals("Wrong count after adding two objects", 2, testSubject.size());
+        assertEquals(2, testSubject.size(), "Wrong count after adding two objects");
         testSubject.add(av("a"), "T", "1");
         testSubject.add(av("a"), "T", "1");
-        assertEquals("Wrong count after adding two identical Strings", 3, testSubject.size());
+        assertEquals(3, testSubject.size(), "Wrong count after adding two identical Strings");
         testSubject.add(av("b"), "T", "1");
-        assertEquals("Wrong count after adding two identical Strings", 4, testSubject.size());
+        assertEquals(4, testSubject.size(), "Wrong count after adding two identical Strings");
 
         testSubject.add(av("a"), "T", "2");
         testSubject.add(av("a"), "Y", "2");
-        assertEquals("Wrong count after adding two identical Strings for different saga", 6, testSubject.size());
+        assertEquals(6, testSubject.size(), "Wrong count after adding two identical Strings for different saga");
         assertEquals(2, testSubject.findSagas("T", av("a")).size());
     }
 
     @Test
-    public void testRemoveItems() {
+    void testRemoveItems() {
         testStoreVarietyOfItems();
-        assertEquals("Wrong initial item count", 6, testSubject.size());
+        assertEquals(6, testSubject.size(), "Wrong initial item count");
         testSubject.remove(av("a"), "T", "1");
-        assertEquals("Wrong item count", 5, testSubject.size());
+        assertEquals(5, testSubject.size(), "Wrong item count");
         testSubject.remove(av("a"), "T", "2");
-        assertEquals("Wrong item count", 4, testSubject.size());
+        assertEquals(4, testSubject.size(), "Wrong item count");
 
         testSubject.clear();
         assertTrue(testSubject.isEmpty());
-        assertEquals("Wrong item count", 0, testSubject.size());
+        assertEquals(0, testSubject.size(), "Wrong item count");
     }
 
     private AssociationValue av(String value) {
@@ -81,7 +81,7 @@ public class AssociationValueMapTest {
     }
 
     @Test
-    public void testFindAssociations() {
+    void testFindAssociations() {
         List<AssociationValue> usedAssociations = new ArrayList<>(1000);
         for (int t = 0; t < 1000; t++) {
             String key = UUID.randomUUID().toString();
@@ -97,7 +97,7 @@ public class AssociationValueMapTest {
         assertEquals(10000, testSubject.size());
         for (AssociationValue item : usedAssociations) {
             Set<String> actualResult = testSubject.findSagas("type", item);
-            assertEquals("Failure on item: " + usedAssociations.indexOf(item), 1, actualResult.size());
+            assertEquals(1, actualResult.size(),"Failure on item: " + usedAssociations.indexOf(item));
             assertEquals(item.getKey(), actualResult.iterator().next());
         }
     }

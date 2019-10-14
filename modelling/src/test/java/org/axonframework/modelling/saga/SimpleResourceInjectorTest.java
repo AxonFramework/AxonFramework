@@ -18,24 +18,24 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.modelling.utils.MockException;
 import org.axonframework.eventhandling.EventMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author Allard Buijze
  */
-public class SimpleResourceInjectorTest {
+class SimpleResourceInjectorTest {
 
     private SimpleResourceInjector testSubject;
 
     @Test
-    public void testInjectFieldResource() {
+    void testInjectFieldResource() {
         SomeFieldResource expectedFieldResource = new SomeFieldResource();
         testSubject = new SimpleResourceInjector(expectedFieldResource);
         final StubSaga saga = new StubSaga();
@@ -46,7 +46,7 @@ public class SimpleResourceInjectorTest {
     }
 
     @Test
-    public void testInjectMethodResource() {
+    void testInjectMethodResource() {
         final SomeMethodResource expectedMethodResource = new SomeMethodResource();
         testSubject = new SimpleResourceInjector(expectedMethodResource);
         final StubSaga saga = new StubSaga();
@@ -57,7 +57,7 @@ public class SimpleResourceInjectorTest {
     }
 
     @Test
-    public void testInjectFieldAndMethodResources() {
+    void testInjectFieldAndMethodResources() {
         final SomeFieldResource expectedFieldResource = new SomeFieldResource();
         final SomeMethodResource expectedMethodResource = new SomeMethodResource();
         testSubject = new SimpleResourceInjector(expectedFieldResource, expectedMethodResource);
@@ -70,7 +70,7 @@ public class SimpleResourceInjectorTest {
     }
 
     @Test
-    public void testInjectResource_ExceptionsIgnored() {
+    void testInjectResource_ExceptionsIgnored() {
         final SomeMethodResource resource = new SomeMethodResource();
         testSubject = new SimpleResourceInjector(resource, new SomeWeirdResource());
         final StubSaga saga = new StubSaga();

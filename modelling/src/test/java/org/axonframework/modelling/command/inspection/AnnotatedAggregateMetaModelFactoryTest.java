@@ -27,7 +27,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -53,17 +53,15 @@ import javax.persistence.Id;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test case to validate all operations performed by the {@link AnnotatedAggregateMetaModelFactory}.
  */
-public class AnnotatedAggregateMetaModelFactoryTest {
+class AnnotatedAggregateMetaModelFactoryTest {
 
     @Test
-    public void testDetectAllAnnotatedHandlers() throws Exception {
+    void testDetectAllAnnotatedHandlers() throws Exception {
         AggregateModel<SomeAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
@@ -73,7 +71,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testDetectAllAnnotatedHandlersInHierarchy() throws Exception {
+    void testDetectAllAnnotatedHandlersInHierarchy() throws Exception {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
@@ -84,7 +82,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testDetectFactoryMethodHandler() {
+    void testDetectFactoryMethodHandler() {
         AggregateModel<SomeAnnotatedFactoryMethodClass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
 
@@ -93,16 +91,15 @@ public class AnnotatedAggregateMetaModelFactoryTest {
                 getHandler(inspector, message);
         final Optional<CommandMessageHandlingMember> unwrap =
                 messageHandlingMember.unwrap(CommandMessageHandlingMember.class);
-        assertThat(unwrap, notNullValue());
-        assertThat(unwrap.isPresent(), is(true));
-        @SuppressWarnings("OptionalGetWithoutIsPresent") // Asserted prior to calling get
+        assertNotNull(unwrap);
+        assertTrue(unwrap.isPresent());
         final CommandMessageHandlingMember commandMessageHandlingMember = unwrap.get();
-        assertThat(commandMessageHandlingMember.isFactoryHandler(), is(true));
+        assertTrue(commandMessageHandlingMember.isFactoryHandler());
     }
 
 
     @Test
-    public void testEventIsPublishedThroughoutRecursiveHierarchy() {
+    void testEventIsPublishedThroughoutRecursiveHierarchy() {
         // Note that if the inspector does not support recursive entities this will throw an StackOverflowError.
         AggregateModel<SomeRecursiveEntity> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeRecursiveEntity.class);
@@ -160,22 +157,22 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testLinkedListIsModifiedDuringIterationInRecursiveHierarchy() {
+    void testLinkedListIsModifiedDuringIterationInRecursiveHierarchy() {
         testCollectionIsModifiedDuringIterationInRecursiveHierarchy(LinkedList::new);
     }
 
     @Test
-    public void testHashSetIsModifiedDuringIterationInRecursiveHierarchy() {
+    void testHashSetIsModifiedDuringIterationInRecursiveHierarchy() {
         testCollectionIsModifiedDuringIterationInRecursiveHierarchy(HashSet::new);
     }
 
     @Test
-    public void testCopyOnWriteArrayListIsModifiedDuringIterationInRecursiveHierarchy() {
+    void testCopyOnWriteArrayListIsModifiedDuringIterationInRecursiveHierarchy() {
         testCollectionIsModifiedDuringIterationInRecursiveHierarchy(CopyOnWriteArrayList::new);
     }
 
     @Test
-    public void testConcurrentLinkedQueueIsModifiedDuringIterationInRecursiveHierarchy() {
+    void testConcurrentLinkedQueueIsModifiedDuringIterationInRecursiveHierarchy() {
         testCollectionIsModifiedDuringIterationInRecursiveHierarchy(ConcurrentLinkedQueue::new);
     }
 
@@ -218,7 +215,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testEventIsPublishedThroughoutHierarchy() {
+    void testEventIsPublishedThroughoutHierarchy() {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
@@ -230,7 +227,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testExpectCommandToBeForwardedToEntity() throws Exception {
+    void testExpectCommandToBeForwardedToEntity() throws Exception {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
@@ -241,7 +238,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testFindIdentifier() {
+    void testFindIdentifier() {
         AggregateModel<SomeAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
@@ -251,7 +248,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testFindJavaxPersistenceIdentifier() {
+    void testFindJavaxPersistenceIdentifier() {
         AggregateModel<JavaxPersistenceAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceAnnotatedHandlers.class);
 
@@ -260,7 +257,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testFindIdentifierInSuperClass() {
+    void testFindIdentifierInSuperClass() {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
@@ -269,7 +266,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testEntityInitializationIsThreadSafe() {
+    void testEntityInitializationIsThreadSafe() {
         for (int i = 0; i < 100; i++) {
             AggregateModel<PolyMorphAggregate> inspector =
                     AnnotatedAggregateMetaModelFactory.inspectAggregate(PolyMorphAggregate.class);
@@ -287,21 +284,22 @@ public class AnnotatedAggregateMetaModelFactoryTest {
             task1.join();
             task2.join();
 
-            assertEquals("Concurrency issue detected after " + i + " attempts.", 2, counter.get());
+            assertEquals(2, counter.get(), "Concurrency issue detected after " + i + " attempts.");
         }
     }
 
-    @Test(expected = AxonConfigurationException.class)
-    public void testIllegalFactoryMethodThrowsExceptionClass() {
-        AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class);
+    @Test
+    void testIllegalFactoryMethodThrowsExceptionClass() {
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class));
     }
 
-    @Test(expected = AxonConfigurationException.class)
-    public void typedAggregateIdentifier() {
-        AggregateModel<TypedIdentifierAggregate> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class);
-
-        assertNotNull(inspector.getIdentifier(new TypedIdentifierAggregate()));
+    @Test
+    void typedAggregateIdentifier() {
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class));
     }
 
     @SuppressWarnings("unchecked")

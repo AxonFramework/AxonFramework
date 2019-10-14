@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.Arrays;
@@ -34,10 +34,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Supplier;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.*;
 
-public class SagaManagerTest {
+class SagaManagerTest {
 
     private AbstractSagaManager<Object> testSubject;
     private SagaRepository<Object> mockSagaRepository;
@@ -48,8 +49,8 @@ public class SagaManagerTest {
     private AssociationValue associationValue;
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockSagaRepository = mock(SagaRepository.class);
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
@@ -85,7 +86,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testSagasLoaded() throws Exception {
+    void testSagasLoaded() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult(() -> {
@@ -99,7 +100,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testExceptionPropagated() throws Exception {
+    void testExceptionPropagated() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handle(event);
@@ -121,7 +122,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testSagaIsCreatedInRootSegment() throws Exception {
+    void testSagaIsCreatedInRootSegment() throws Exception {
         testSubject = TestableAbstractSagaManager.builder()
                                                  .sagaRepository(mockSagaRepository)
                                                  .listenerInvocationErrorHandler(mockErrorHandler)
@@ -138,7 +139,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testSagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
+    void testSagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
         testSubject = TestableAbstractSagaManager.builder()
                                                  .sagaRepository(mockSagaRepository)
                                                  .listenerInvocationErrorHandler(mockErrorHandler)
@@ -162,15 +163,15 @@ public class SagaManagerTest {
         verify(mockSagaRepository).createInstance(any(), any());
 
         createdSaga.getAllValues()
-                   .forEach(sagaId -> assertTrue("Saga ID doesn't match segment that should have created it: " + sagaId,
-                                                 matchingSegment.matches(sagaId)));
+                   .forEach(sagaId -> assertTrue(matchingSegment.matches(sagaId),
+                           "Saga ID doesn't match segment that should have created it: " + sagaId) );
         createdSaga.getAllValues()
-                   .forEach(sagaId -> assertFalse("Saga ID matched against the wrong segment: " + sagaId,
-                                                  otherSegment.matches(sagaId)));
+                   .forEach(sagaId -> assertFalse(otherSegment.matches(sagaId),
+                           "Saga ID matched against the wrong segment: " + sagaId));
     }
 
     @Test
-    public void testSagaIsNotCreatedIfAssociationValueAndSagaIdMatchDifferentSegments() throws Exception {
+    void testSagaIsNotCreatedIfAssociationValueAndSagaIdMatchDifferentSegments() throws Exception {
         AssociationValue associationValue = new AssociationValue("someKey", "someValue");
         testSubject = TestableAbstractSagaManager.builder()
                 .sagaRepository(mockSagaRepository)
@@ -180,7 +181,7 @@ public class SagaManagerTest {
                 .build();
 
         // Test won't work if the saga ID and association value map to the same minimum-sized segment.
-        Assume.assumeTrue((associationValue.hashCode() & Integer.MAX_VALUE) !=
+        assumeTrue((associationValue.hashCode() & Integer.MAX_VALUE) !=
                 (mockSaga1.getSagaIdentifier().hashCode() & Integer.MAX_VALUE));
 
         EventMessage<?> event = new GenericEventMessage<>(new Object());
@@ -204,7 +205,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testExceptionSuppressed() throws Exception {
+    void testExceptionSuppressed() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handle(event);
