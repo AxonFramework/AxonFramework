@@ -18,41 +18,41 @@ package org.axonframework.integrationtests.modelling.saga.repository.jdbc;
 
 import org.axonframework.modelling.saga.repository.jdbc.Oracle11SagaSqlSchema;
 import org.axonframework.modelling.saga.repository.jdbc.SagaSchema;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
-import static org.junit.Assume.assumeNoException;
 
-public class Oracle11SagaSqlSchemaTest {
+class Oracle11SagaSqlSchemaTest {
 
     private Oracle11SagaSqlSchema testSubject;
     private Connection connection;
     private SagaSchema sagaSchema;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         sagaSchema = new SagaSchema();
         testSubject = new Oracle11SagaSqlSchema(sagaSchema);
         try {
             connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "system", "oracle");
         } catch (SQLException e) {
-            assumeNoException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
+            throw new TestAbortedException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
         }
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         closeQuietly(connection);
     }
 
     @Test
-    public void testSql_createTableAssocValueEntry() throws Exception {
+    void testSql_createTableAssocValueEntry() throws Exception {
         // test passes if no exception is thrown
         testSubject.sql_createTableAssocValueEntry(connection)
                 .execute();
@@ -66,7 +66,7 @@ public class Oracle11SagaSqlSchemaTest {
     }
 
     @Test
-    public void testSql_createTableSagaEntry() throws Exception {
+    void testSql_createTableSagaEntry() throws Exception {
         // test passes if no exception is thrown
         testSubject.sql_createTableSagaEntry(connection)
                 .execute();

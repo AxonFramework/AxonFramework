@@ -36,16 +36,14 @@ import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
-import org.mockito.junit.*;
 
 import java.util.Objects;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -53,15 +51,13 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
-@RunWith(MockitoJUnitRunner.class)
-public class CommandHandlerInterceptorTest {
+class CommandHandlerInterceptorTest {
 
     private CommandGateway commandGateway;
     private EventStore eventStore;
 
-    @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         Repository<MyAggregate> myAggregateRepository = EventSourcingRepository.builder(MyAggregate.class)
                                                                                .eventStore(eventStore)
@@ -79,7 +75,7 @@ public class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInterceptor() {
+    void testInterceptor() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         String result = commandGateway
                 .sendAndWait(asCommandMessage(new UpdateMyAggregateStateCommand("id", "state")));
@@ -98,7 +94,7 @@ public class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInterceptorWithChainProceeding() {
+    void testInterceptorWithChainProceeding() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", true)));
 
@@ -112,7 +108,7 @@ public class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInterceptorWithoutChainProceeding() {
+    void testInterceptorWithoutChainProceeding() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", false)));
 
@@ -124,7 +120,7 @@ public class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInterceptorWithNestedEntity() {
+    void testInterceptorWithNestedEntity() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new MyNestedCommand("id", "state")));
 
@@ -140,7 +136,7 @@ public class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInterceptorWithNestedNestedEntity() {
+    void testInterceptorWithNestedNestedEntity() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new MyNestedNestedCommand("id", "state")));
 
@@ -159,15 +155,17 @@ public class CommandHandlerInterceptorTest {
                      eventCaptor.getAllValues().get(5).getPayload());
     }
 
-    @Test(expected = AxonConfigurationException.class)
-    public void testInterceptorWithNonVoidReturnType() {
-        EventSourcingRepository.builder(MyAggregateWithInterceptorReturningNonVoid.class)
-                               .eventStore(eventStore)
-                               .build();
+    @Test
+    void testInterceptorWithNonVoidReturnType() {
+        EventSourcingRepository.Builder<MyAggregateWithInterceptorReturningNonVoid> builder =
+                EventSourcingRepository.builder(MyAggregateWithInterceptorReturningNonVoid.class)
+                        .eventStore(eventStore);
+
+        assertThrows(AxonConfigurationException.class, builder::build);
     }
 
     @Test
-    public void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
+    void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
         EventSourcingRepository.builder(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
                 .eventStore(eventStore)
                 .build();
@@ -175,14 +173,12 @@ public class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInterceptorThrowingAnException() {
+    void testInterceptorThrowingAnException() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
-        try {
-            commandGateway.sendAndWait(asCommandMessage(new InterceptorThrowingCommand("id")));
-            fail("Expected exception");
-        } catch (InterceptorException e) {
-            // we are expecting this
-        }
+        assertThrows(
+                InterceptorException.class,
+                () -> commandGateway.sendAndWait(asCommandMessage(new InterceptorThrowingCommand("id")))
+        );
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(1)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());

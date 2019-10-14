@@ -24,12 +24,12 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-public class QueryEventHandlingTest {
+class QueryEventHandlingTest {
 
     @Test
-    public void testQueryHandlerAndEventHandlerCleanlyShutdown() {
+    void testQueryHandlerAndEventHandlerCleanlyShutdown() {
         UserSummaryProjection userSummaryProjection = new UserSummaryProjection();
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();

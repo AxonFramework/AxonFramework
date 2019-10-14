@@ -46,8 +46,8 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,7 +63,7 @@ import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcesso
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -73,10 +73,10 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = GenericJpaRepositoryIntegrationTest.TestContext.class)
 @TestPropertySource("classpath:hsqldb.database.properties")
@@ -93,8 +93,8 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
     private EntityManager entityManager;
     private SubscribingEventProcessor eventProcessor;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
                                                                                  .eventHandlers(this)
                                                                                  .build();
@@ -106,8 +106,8 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
         eventProcessor.start();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         eventProcessor.shutDown();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
@@ -116,7 +116,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testStoreAndLoadNewAggregate() throws Exception {
+    void testStoreAndLoadNewAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         String originalId = repository.newInstance(() -> new JpaAggregate("Hello")).invoke(JpaAggregate::getIdentifier);
         uow.commit();
@@ -136,7 +136,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
     }
 
     @Test
-    public void testUpdateAnAggregate() {
+    void testUpdateAnAggregate() {
         JpaAggregate agg = new JpaAggregate("First message");
         entityManager.persist(agg);
         entityManager.flush();
@@ -154,7 +154,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
     }
 
     @Test
-    public void testDeleteAnAggregate() {
+    void testDeleteAnAggregate() {
         JpaAggregate agg = new JpaAggregate("First message");
         entityManager.persist(agg);
         entityManager.flush();

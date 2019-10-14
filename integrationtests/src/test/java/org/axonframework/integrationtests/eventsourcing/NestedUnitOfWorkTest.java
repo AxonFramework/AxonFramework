@@ -24,7 +24,7 @@ import org.axonframework.modelling.command.EntityId;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,17 +32,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class NestedUnitOfWorkTest {
+class NestedUnitOfWorkTest {
     @Test
-    public void testStagedEventsLoadInCorrectOrder() {
+    void testStagedEventsLoadInCorrectOrder() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureAggregate(TestAggregate.class)
                                                 .registerCommandHandler(x -> new Handler())
                                                 .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
-                                                .registerComponent(List.class, c -> new CopyOnWriteArrayList())
+                                                .registerComponent(List.class, c -> new CopyOnWriteArrayList<>())
                                                 .buildConfiguration();
 
 
@@ -145,12 +145,7 @@ public class NestedUnitOfWorkTest {
         public void handle(Test2 cmd, CommandGateway gw) {
             gw.sendAndWait(new Add("1", "second"));
             gw.sendAndWait(new ShowItems("1", "pre-rollback"));
-            try {
-                gw.sendAndWait(new Oops());
-                fail("Command should have failed");
-            } catch (RuntimeException e) {
-                // expected
-            }
+            assertThrows(RuntimeException.class, () -> gw.sendAndWait(new Oops()));
             gw.sendAndWait(new ShowItems("1", "post-rollback"));
         }
 

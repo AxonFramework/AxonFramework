@@ -18,41 +18,41 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.Oracle11EventTableFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static org.axonframework.common.io.IOUtils.closeQuietly;
-import static org.junit.Assume.assumeNoException;
 
-public class Oracle11EventTableFactoryTest {
+class Oracle11EventTableFactoryTest {
 
     private Oracle11EventTableFactory testSubject;
     private Connection connection;
     private EventSchema eventSchema;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
         try {
             connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "system", "oracle");
         } catch (SQLException e) {
-            assumeNoException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
+            throw new TestAbortedException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
         }
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         closeQuietly(connection);
     }
 
     @Test
-    public void testCreateDomainEventTable() throws Exception {
+    void testCreateDomainEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createDomainEventTable(connection, eventSchema)
                 .execute();
@@ -66,7 +66,7 @@ public class Oracle11EventTableFactoryTest {
     }
 
     @Test
-    public void testCreateSnapshotEventTable() throws Exception {
+    void testCreateSnapshotEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createSnapshotEventTable(connection, eventSchema)
                 .execute();

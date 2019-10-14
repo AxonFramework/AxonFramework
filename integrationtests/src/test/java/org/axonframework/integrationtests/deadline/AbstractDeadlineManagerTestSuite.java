@@ -36,9 +36,9 @@ import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
@@ -52,8 +52,8 @@ import static java.util.Arrays.asList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.spy;
 
 /**
@@ -76,8 +76,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     protected Configuration configuration;
     private List<Object> published;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EventStore eventStore = spy(EmbeddedEventStore.builder()
                                                       .storageEngine(new InMemoryEventStorageEngine())
                                                       .build());
@@ -94,8 +94,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.eventBus().subscribe(msgs -> msgs.forEach(msg -> published.add(msg.getPayload())));
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         configuration.shutdown();
     }
 
@@ -108,7 +108,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
 
     @Test
-    public void testDeadlineOnAggregate() {
+    void testDeadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
@@ -116,7 +116,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineCancellationWithinScopeOnAggregate() {
+    void testDeadlineCancellationWithinScopeOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, new Object()));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, new Object()));
@@ -127,14 +127,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineCancellationOnAggregate() {
+    void testDeadlineCancellationOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT, CANCEL_BEFORE_DEADLINE));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
 
     @Test
-    public void testDeadlineOnChildEntity() {
+    void testDeadlineOnChildEntity() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
         configuration.commandGateway().sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
 
@@ -144,7 +144,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineWithSpecifiedDeadlineName() {
+    void testDeadlineWithSpecifiedDeadlineName() {
         String expectedDeadlinePayload = "deadlinePayload";
 
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT, CANCEL_BEFORE_DEADLINE));
@@ -155,7 +155,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineWithoutPayload() {
+    void testDeadlineWithoutPayload() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT, CANCEL_BEFORE_DEADLINE));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
 
@@ -164,7 +164,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testHandlerInterceptorOnAggregate() {
+    void testHandlerInterceptorOnAggregate() {
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
                     .asDeadlineMessage(deadlineMessage.getDeadlineName(),
@@ -179,7 +179,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDispatchInterceptorOnAggregate() {
+    void testDispatchInterceptorOnAggregate() {
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
                 GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
                                                          new DeadlinePayload("fakeId"),
@@ -191,7 +191,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testScheduleInPastTriggersDeadline() {
+    void testScheduleInPastTriggersDeadline() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, -10000));
 
         assertPublishedEventsWithin(100,
@@ -200,7 +200,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testFailedExecution() throws InterruptedException {
+    void testFailedExecution() throws InterruptedException {
         configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
             interceptorChain.proceed();
             throw new MockException("Simulating handling error");
@@ -212,7 +212,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineOnSaga() {
+    void testDeadlineOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.eventStore().publish(testEventMessage);
@@ -222,7 +222,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineCancellationWithinScopeOnSaga() {
+    void testDeadlineCancellationWithinScopeOnSaga() {
         SagaStartingEvent sagaStartingEvent = new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE);
         ScheduleSpecificDeadline firstSchedule = new ScheduleSpecificDeadline(IDENTIFIER, new Object());
         ScheduleSpecificDeadline secondSchedule = new ScheduleSpecificDeadline(IDENTIFIER, new Object());
@@ -240,14 +240,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineCancellationOnSaga() {
+    void testDeadlineCancellationOnSaga() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
     }
 
     @Test
-    public void testDeadlineWithSpecifiedDeadlineNameOnSaga() {
+    void testDeadlineWithSpecifiedDeadlineNameOnSaga() {
         String expectedDeadlinePayload = "deadlinePayload";
 
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
@@ -261,7 +261,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDeadlineWithoutPayloadOnSaga() {
+    void testDeadlineWithoutPayloadOnSaga() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         configuration.eventStore().publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, null)));
 
@@ -271,7 +271,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testHandlerInterceptorOnSaga() {
+    void testHandlerInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
@@ -287,7 +287,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    public void testDispatchInterceptorOnSaga() {
+    void testDispatchInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
