@@ -1,7 +1,5 @@
 language: java
 
-dist: trusty
-
 sudo: required
 
 services:
@@ -9,8 +7,8 @@ services:
   - mysql
 
 jdk:
-  - oraclejdk8
-  - oraclejdk11
+  - openjdk8
+  - openjdk11
 
 before_install:
   - docker run -d -p 1521:1521 gautamsaggar/oracle11g:v2 || echo "WARNING - Unable to start Oracle 11g"
