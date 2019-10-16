@@ -1,6 +1,7 @@
-package org.axonframework.axonserver.connector.heartbeat;
+package org.axonframework.axonserver.connector.heartbeat.connection.checker;
 
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.heartbeat.ConnectionSanityChecker;
 
 import java.time.Clock;
 import java.time.Instant;

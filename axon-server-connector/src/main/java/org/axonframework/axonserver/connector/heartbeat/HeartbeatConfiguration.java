@@ -2,7 +2,7 @@ package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.heartbeat.grpc.GrpcHeartbeatSource;
+import org.axonframework.axonserver.connector.heartbeat.source.GrpcHeartbeatSource;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ModuleConfiguration;
 

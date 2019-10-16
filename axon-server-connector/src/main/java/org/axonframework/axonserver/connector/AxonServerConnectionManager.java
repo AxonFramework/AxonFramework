@@ -37,6 +37,7 @@ import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import io.netty.handler.ssl.SslContext;
+import org.axonframework.axonserver.connector.util.AxonFrameworkVersionResolver;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.GrpcBufferingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
@@ -63,6 +64,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -91,6 +93,7 @@ public class AxonServerConnectionManager {
     private final AxonServerConfiguration axonServerConfiguration;
     private final TagsConfiguration tagsConfiguration;
     private final ScheduledExecutorService scheduler;
+    private final Supplier<String> axonFrameworkVersionResolver;
 
     /**
      * Initializes the Axon Server Connection Manager with the connect information. An empty {@link TagsConfiguration}
@@ -129,6 +132,7 @@ public class AxonServerConnectionManager {
                     }
                 }
         );
+        this.axonFrameworkVersionResolver = AxonFrameworkVersionResolver.getInstance();
     }
 
     /**
@@ -141,6 +145,7 @@ public class AxonServerConnectionManager {
         this.axonServerConfiguration = builder.axonServerConfiguration;
         this.tagsConfiguration = builder.tagsConfiguration;
         this.scheduler = builder.scheduler;
+        this.axonFrameworkVersionResolver = builder.axonFrameworkVersionResolver;
     }
 
     /**
@@ -184,6 +189,7 @@ public class AxonServerConnectionManager {
                                         .setClientId(axonServerConfiguration.getClientId())
                                         .setComponentName(axonServerConfiguration.getComponentName())
                                         .putAllTags(tagsConfiguration.getTags())
+                                        .setVersion(axonFrameworkVersionResolver.get())
                                         .build();
 
             ManagedChannel previousChannel = channels.remove(context);
@@ -651,6 +657,7 @@ public class AxonServerConnectionManager {
         private static final int DEFAULT_POOL_SIZE = 1;
 
         private AxonServerConfiguration axonServerConfiguration;
+        private Supplier<String> axonFrameworkVersionResolver = AxonFrameworkVersionResolver.getInstance();
         private TagsConfiguration tagsConfiguration = new TagsConfiguration();
         private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
                 DEFAULT_POOL_SIZE,
@@ -706,6 +713,12 @@ public class AxonServerConnectionManager {
         public Builder scheduler(ScheduledExecutorService scheduler) {
             assertNonNull(scheduler, "ScheduledExecutorService may not be null");
             this.scheduler = scheduler;
+            return this;
+        }
+
+        public Builder axonFrameworkVersionResolver(Supplier<String> axonFrameworkVersionResolver) {
+            assertNonNull(axonFrameworkVersionResolver, "AxonConnectorProperties may not be null");
+            this.axonFrameworkVersionResolver = axonFrameworkVersionResolver;
             return this;
         }
 

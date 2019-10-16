@@ -1,4 +1,4 @@
-package org.axonframework.axonserver.connector.heartbeat.grpc;
+package org.axonframework.axonserver.connector.heartbeat.source;
 
 import io.axoniq.axonserver.grpc.control.Heartbeat;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
