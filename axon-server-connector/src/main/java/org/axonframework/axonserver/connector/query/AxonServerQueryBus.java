@@ -16,7 +16,9 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import com.google.protobuf.Any;
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.UnknownRequest;
 import io.axoniq.axonserver.grpc.query.QueryComplete;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
@@ -71,6 +73,7 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -83,6 +86,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -605,6 +609,7 @@ public class AxonServerQueryBus implements QueryBus {
                 return outboundStreamObserver;
             }
 
+            AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamRef = new AtomicReference<>();
             StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
                 @Override
                 public void onNext(QueryProviderInbound inboundRequest) {
@@ -614,9 +619,16 @@ public class AxonServerQueryBus implements QueryBus {
 
                     switch (requestCase) {
                         case CONFIRMATION:
+                        case SUBSCRIPTION_QUERY_REQUEST:
                             break;
                         case QUERY:
                             queryExecutor.execute(new QueryProcessingTask(inboundRequest.getQuery()));
+                            break;
+                        case UNKNOWN_REQUEST:
+                            logger.warn("Unknown query request sent: {}.", inboundRequest.getUnknownRequest());
+                        default:
+                            Optional.ofNullable(inboundStreamRef.get())
+                                    .ifPresent(is -> sendUnknownQueryInstruction(inboundRequest, is));
                             break;
                     }
                 }
@@ -637,6 +649,7 @@ public class AxonServerQueryBus implements QueryBus {
 
             ResubscribableStreamObserver<QueryProviderInbound> resubscribableStreamObserver =
                     new ResubscribableStreamObserver<>(queryProviderInboundStreamObserver, t -> resubscribe());
+            inboundStreamRef.set(resubscribableStreamObserver);
 
             StreamObserver<QueryProviderOutbound> streamObserver = axonServerConnectionManager.getQueryStream(
                     context, resubscribableStreamObserver
@@ -651,6 +664,18 @@ public class AxonServerQueryBus implements QueryBus {
                     t -> t.getRequestCase().equals(QueryProviderOutbound.RequestCase.QUERY_RESPONSE)
             ).sendInitialPermits();
             return outboundStreamObserver;
+        }
+
+        private void sendUnknownQueryInstruction(QueryProviderInbound inboundRequest,
+                                                 StreamObserver<QueryProviderInbound> streamObserver) {
+            UnknownRequest unknownRequest = UnknownRequest.newBuilder()
+                                                          .setDetails("Unknown query request received by AxonServerConnector.")
+                                                          .setMessage(Any.pack(inboundRequest))
+                                                          .build();
+            QueryProviderInbound message = QueryProviderInbound.newBuilder()
+                                                             .setUnknownRequest(unknownRequest)
+                                                             .build();
+            streamObserver.onNext(message);
         }
 
         public void unsubscribe(String queryName, Type responseType, String componentName) {

@@ -16,7 +16,9 @@
 
 package org.axonframework.axonserver.connector.command;
 
+import com.google.protobuf.Any;
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.UnknownRequest;
 import io.axoniq.axonserver.grpc.command.*;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
@@ -42,9 +44,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -629,12 +633,24 @@ public class AxonServerCommandBus implements CommandBus {
                 return subscriberStreamObserver;
             }
 
+            AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamRef = new AtomicReference<>();
             StreamObserver<CommandProviderInbound> commandsFromRoutingServer = new StreamObserver<CommandProviderInbound>() {
                 @Override
                 public void onNext(CommandProviderInbound commandToSubscriber) {
                     logger.debug("Received command from server: {}", commandToSubscriber);
-                    if (commandToSubscriber.getRequestCase() == CommandProviderInbound.RequestCase.COMMAND) {
-                        commandExecutor.execute(new CommandProcessingTask(commandToSubscriber.getCommand()));
+                    switch (commandToSubscriber.getRequestCase()) {
+                        case COMMAND:
+                            commandExecutor.execute(new CommandProcessingTask(commandToSubscriber.getCommand()));
+                            break;
+                        case UNKNOWN_REQUEST:
+                            logger.warn("Unknown command request sent: {}.", commandToSubscriber.getUnknownRequest());
+                            break;
+                        case CONFIRMATION:
+                            break;
+                        default:
+                            Optional.ofNullable(inboundStreamRef.get())
+                                    .ifPresent(is -> sendUnknownCommandRequest(commandToSubscriber, is));
+                            break;
                     }
                 }
 
@@ -654,6 +670,7 @@ public class AxonServerCommandBus implements CommandBus {
 
             ResubscribableStreamObserver<CommandProviderInbound> resubscribableStreamObserver =
                     new ResubscribableStreamObserver<>(commandsFromRoutingServer, t -> resubscribe());
+            inboundStreamRef.set(resubscribableStreamObserver);
 
             StreamObserver<CommandProviderOutbound> streamObserver =
                     axonServerConnectionManager.getCommandStream(context, resubscribableStreamObserver);
@@ -667,6 +684,18 @@ public class AxonServerCommandBus implements CommandBus {
                     t -> t.getRequestCase().equals(CommandProviderOutbound.RequestCase.COMMAND_RESPONSE)
             ).sendInitialPermits();
             return subscriberStreamObserver;
+        }
+
+        private void sendUnknownCommandRequest(CommandProviderInbound commandToSubscriber,
+                                               StreamObserver<CommandProviderInbound> streamObserver) {
+            UnknownRequest unknownRequest = UnknownRequest.newBuilder()
+                                                          .setDetails("Unknown command request received by AxonServerConnector.")
+                                                          .setMessage(Any.pack(commandToSubscriber))
+                                                          .build();
+            CommandProviderInbound message = CommandProviderInbound.newBuilder()
+                                                                   .setUnknownRequest(unknownRequest)
+                                                                   .build();
+            streamObserver.onNext(message);
         }
 
         public void unsubscribe(String command) {

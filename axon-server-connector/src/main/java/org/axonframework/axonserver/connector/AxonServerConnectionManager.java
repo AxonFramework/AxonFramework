@@ -16,6 +16,8 @@
 
 package org.axonframework.axonserver.connector;
 
+import com.google.protobuf.Any;
+import io.axoniq.axonserver.grpc.UnknownRequest;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
@@ -44,6 +46,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -335,6 +338,7 @@ public class AxonServerConnectionManager {
                                                      String name,
                                                      ClientIdentification clientIdentification) {
         logger.debug("Start instruction stream to node [{}] for context [{}]", name, context);
+        AtomicReference<StreamObserver<PlatformInboundInstruction>> inputStreamRef = new AtomicReference<>();
         SynchronizedStreamObserver<PlatformInboundInstruction> inputStream = new SynchronizedStreamObserver<>(
                 PlatformServiceGrpc.newStub(intercepted(
                         context, channels.get(context)
@@ -360,7 +364,14 @@ public class AxonServerConnectionManager {
                                 }
                                 reconnect.accept(context);
                                 break;
-                            case REQUEST_NOT_SET:
+                            case UNKNOWN_INSTRUCTION:
+                                logger.warn("Unknown instruction sent: {}.",
+                                            messagePlatformOutboundInstruction.getUnknownInstruction());
+                                break;
+                            default:
+                                Optional.ofNullable(inputStreamRef.get())
+                                        .ifPresent(is -> sendUnknownInstruction(messagePlatformOutboundInstruction,
+                                                                                is));
                                 break;
                         }
                     }
@@ -387,12 +398,25 @@ public class AxonServerConnectionManager {
                     }
                 })
         );
+        inputStreamRef.set(inputStream);
 
         inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(clientIdentification).build());
         StreamObserver<PlatformInboundInstruction> existingStream = instructionStreams.put(context, inputStream);
         if (existingStream != null) {
             existingStream.onCompleted();
         }
+    }
+
+    private void sendUnknownInstruction(PlatformOutboundInstruction messagePlatformOutboundInstruction,
+                                        StreamObserver<PlatformInboundInstruction> streamObserver) {
+        UnknownRequest unknownInstruction =
+                UnknownRequest.newBuilder()
+                              .setDetails("Unknown outbound instruction received by AxonServerConnector.")
+                              .setMessage(Any.pack(messagePlatformOutboundInstruction))
+                              .build();
+        streamObserver.onNext(PlatformInboundInstruction.newBuilder()
+                                                        .setUnknownInstruction(unknownInstruction)
+                                                        .build());
     }
 
     private synchronized void scheduleReconnect(String context, boolean immediate) {
