@@ -82,4 +82,23 @@ public class AxonServerConnectionManagerTest {
         assertEquals(1, connectionExpectedTags.size());
         assertEquals("value", connectionExpectedTags.get("key"));
     }
+
+    @Test
+    public void testFrameworkVersionSent() {
+        String version = "4.2.1";
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(configuration)
+                                           .axonFrameworkVersionResolver(() -> version)
+                                           .build();
+
+        assertNotNull(axonServerConnectionManager.getChannel());
+
+        List<ClientIdentification> clientIdentificationRequests = stubServer.getPlatformService()
+                                                                            .getClientIdentificationRequests();
+        assertEquals(1, clientIdentificationRequests.size());
+        String receivedVersion = clientIdentificationRequests.get(0).getVersion();
+        assertEquals(version, receivedVersion);
+    }
 }

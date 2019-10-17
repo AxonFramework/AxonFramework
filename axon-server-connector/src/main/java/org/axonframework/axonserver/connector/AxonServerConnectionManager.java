@@ -132,7 +132,7 @@ public class AxonServerConnectionManager {
                     }
                 }
         );
-        this.axonFrameworkVersionResolver = AxonFrameworkVersionResolver.getInstance();
+        this.axonFrameworkVersionResolver = new AxonFrameworkVersionResolver();
     }
 
     /**
@@ -657,7 +657,7 @@ public class AxonServerConnectionManager {
         private static final int DEFAULT_POOL_SIZE = 1;
 
         private AxonServerConfiguration axonServerConfiguration;
-        private Supplier<String> axonFrameworkVersionResolver = AxonFrameworkVersionResolver.getInstance();
+        private Supplier<String> axonFrameworkVersionResolver = new AxonFrameworkVersionResolver();
         private TagsConfiguration tagsConfiguration = new TagsConfiguration();
         private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
                 DEFAULT_POOL_SIZE,
