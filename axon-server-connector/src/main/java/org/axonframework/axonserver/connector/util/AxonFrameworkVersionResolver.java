@@ -31,7 +31,7 @@ public class AxonFrameworkVersionResolver implements Supplier<String> {
 
     /**
      * Creates an instance that uses a {@link MavenArtifactVersionResolver} to resolve the Axon Server Connector jar
-     * version, and {@link System#getenv(String)} to resolve the AXON_SERVER_CONNECTOR environment property as a
+     * version, and {@link System#getenv(String)} to resolve the AXON_FRAMEWORK_VERSION environment property as a
      * fallback.
      */
     public AxonFrameworkVersionResolver() {
