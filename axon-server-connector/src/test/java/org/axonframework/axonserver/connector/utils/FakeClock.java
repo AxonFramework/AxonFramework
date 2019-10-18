@@ -1,4 +1,4 @@
-package org.axonframework.axonserver.connector.heartbeat;
+package org.axonframework.axonserver.connector.utils;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -41,5 +41,9 @@ public class FakeClock extends Clock {
     @Override
     public Instant instant() {
         return instant.get();
+    }
+
+    public FakeClock plusMillis(long millis) {
+        return new FakeClock(() -> instant.get().plusMillis(millis), zone);
     }
 }

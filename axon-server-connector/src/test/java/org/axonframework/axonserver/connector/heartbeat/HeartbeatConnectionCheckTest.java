@@ -1,5 +1,6 @@
 package org.axonframework.axonserver.connector.heartbeat;
 
+import org.axonframework.axonserver.connector.utils.FakeClock;
 import org.junit.*;
 
 import java.time.Instant;

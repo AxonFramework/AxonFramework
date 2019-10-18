@@ -1,8 +1,14 @@
 package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.util.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Verifies if the connection is still alive, and react if it is not.
@@ -12,11 +18,17 @@ import org.slf4j.LoggerFactory;
  */
 public class HeartbeatMonitor {
 
+    private static final long DEFAULT_INITIAL_DELAY = 10_000;
+    private static final long DEFAULT_DELAY = 1_000;
+    private final Scheduler scheduler;
+
     private static final Logger logger = LoggerFactory.getLogger(HeartbeatMonitor.class);
 
     private final Runnable onInvalidConnection;
 
     private final ConnectionSanityChecker connectionSanityCheck;
+    private final long initialDelay;
+    private final long delay;
 
     /**
      * Constructs an instance of {@link HeartbeatMonitor} that forces a disconnection
@@ -28,25 +40,36 @@ public class HeartbeatMonitor {
     public HeartbeatMonitor(AxonServerConnectionManager connectionManager,
                             String context) {
         this(() -> connectionManager.disconnectExceptionally(context, new RuntimeException("Inactivity timeout.")),
-             new HeartbeatConnectionChecker(connectionManager, context));
+             new HeartbeatConnectionChecker(connectionManager, context),
+             new DefaultScheduler(),
+             DEFAULT_INITIAL_DELAY,
+             DEFAULT_DELAY);
     }
+
 
     /**
      * Primary constructor of {@link HeartbeatMonitor}.
      *
      * @param onInvalidConnection callback to be call when the connection is no longer alive
      * @param connectionSanityCheck sanity check which allows to verify if the connection is alive
+     * @param scheduler the {@link Scheduler} to use for scheduling the task
+     * @param initialDelay the initial delay, in milliseconds
+     * @param delay the scheduling period, in milliseconds
      */
-    public HeartbeatMonitor(Runnable onInvalidConnection, ConnectionSanityChecker connectionSanityCheck) {
+    public HeartbeatMonitor(Runnable onInvalidConnection, ConnectionSanityChecker connectionSanityCheck,
+                            Scheduler scheduler, long initialDelay, long delay) {
         this.onInvalidConnection = onInvalidConnection;
         this.connectionSanityCheck = connectionSanityCheck;
+        this.scheduler = scheduler;
+        this.initialDelay = initialDelay;
+        this.delay = delay;
     }
 
     /**
      * Verify if the connection with AxonServer is still alive.
      * If it is not, invoke a callback in order to react to the disconnection.
      */
-    public void run() {
+    private void run() {
         try {
             boolean valid = connectionSanityCheck.isValid();
             if (!valid) {
@@ -54,6 +77,37 @@ public class HeartbeatMonitor {
             }
         } catch (Exception e) {
             logger.warn("Impossible to correctly monitor the Axon Server connection state.");
+        }
+    }
+
+    /**
+     * Schedule a task that verifies that the connection is still alive and, if it is not,
+     * invoke a callback in order to react to the disconnection.
+     */
+    public void start() {
+        this.scheduler.scheduleWithFixedDelay(this::run, initialDelay, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Stops the scheduled task and shutdown the monitor, that cannot be restarted again.
+     */
+    public void shutdown() {
+        this.scheduler.shutdownNow();
+    }
+
+    private static final class DefaultScheduler implements Scheduler {
+
+        private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+        @Override
+        public ScheduledTask scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+            ScheduledFuture<?> scheduled = executor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+            return scheduled::cancel;
+        }
+
+        @Override
+        public void shutdownNow() {
+            executor.shutdown();
         }
     }
 }
