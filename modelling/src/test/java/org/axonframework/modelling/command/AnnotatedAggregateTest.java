@@ -34,8 +34,7 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {
 
@@ -49,9 +48,25 @@ public class AnnotatedAggregateTest {
         repository = StubRepository.builder().eventBus(eventBus).build();
     }
 
+    // Tests for issue #1248 - https://github.com/AxonFramework/AxonFramework/issues/1248
+    @Test
+    public void applyingMultipleEventsInAndThenPublishesWithRightState() {
+        Command command = new Command(ID, 2);
+        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
+        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
+                .newInstance(() -> new AggregateRoot(command))).getPayload();
+        assertNotNull(aggregate);
+
+        InOrder inOrder = inOrder(eventBus);
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
+                .equals(x.getPayloadType()) && ((Event_1) x.getPayload()).value == 1));
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
+                .equals(x.getPayloadType()) && ((Event_1) x.getPayload()).value == 2));
+    }
+
     @Test
     public void testApplyingEventInHandlerPublishesInRightOrder() {
-        Command command = new Command(ID);
+        Command command = new Command(ID, 0);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
                 .newInstance(() -> new AggregateRoot(command))).getPayload();
@@ -67,26 +82,38 @@ public class AnnotatedAggregateTest {
     private static class Command {
 
         private final String id;
+        private final int value;
 
-        private Command(String id) {
+        private Command(String id, int value) {
             this.id = id;
+            this.value = value;
         }
 
         public String getId() {
             return id;
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 
     private static class Event_1 {
 
         private final String id;
+        private final int value;
 
-        private Event_1(String id) {
+        private Event_1(String id, int value) {
             this.id = id;
+            this.value = value;
         }
 
         public String getId() {
             return id;
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 
@@ -108,17 +135,23 @@ public class AnnotatedAggregateTest {
         @AggregateIdentifier
         private String id;
 
+        private int value;
+
         public AggregateRoot() {
         }
 
         @CommandHandler
         public AggregateRoot(Command command) {
-            apply(new Event_1(command.getId()));
+            ApplyMore antThen = apply(new Event_1(command.getId(), 0));
+            for (int i = 0; i < command.value; i++) {
+                antThen = antThen.andThenApply(() -> new Event_1(id, value + 1));
+            }
         }
 
         @EventHandler
         public void on(Event_1 event) {
             this.id = event.getId();
+            this.value = event.value;
             apply(new Event_2(event.getId()));
         }
 
@@ -131,13 +164,13 @@ public class AnnotatedAggregateTest {
 
         private final EventBus eventBus;
 
+        public static Builder builder() {
+            return new Builder();
+        }
+
         private StubRepository(Builder builder) {
             super(builder);
             this.eventBus = builder.eventBus;
-        }
-
-        public static Builder builder() {
-            return new Builder();
         }
 
         @Override
