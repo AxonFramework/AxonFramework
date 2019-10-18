@@ -34,7 +34,8 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 public class AnnotatedAggregateTest {
 
@@ -117,6 +118,7 @@ public class AnnotatedAggregateTest {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     private static class Event_2 {
 
         private final String id;
@@ -130,6 +132,7 @@ public class AnnotatedAggregateTest {
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class AggregateRoot {
 
         @AggregateIdentifier
@@ -142,9 +145,9 @@ public class AnnotatedAggregateTest {
 
         @CommandHandler
         public AggregateRoot(Command command) {
-            ApplyMore antThen = apply(new Event_1(command.getId(), 0));
+            ApplyMore andThen = apply(new Event_1(command.getId(), 0));
             for (int i = 0; i < command.value; i++) {
-                antThen = antThen.andThenApply(() -> new Event_1(id, value + 1));
+                andThen = andThen.andThenApply(() -> new Event_1(id, value + 1));
             }
         }
 
