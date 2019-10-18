@@ -6,12 +6,12 @@ import org.axonframework.axonserver.connector.heartbeat.source.GrpcHeartbeatSour
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ModuleConfiguration;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.HEARTBEAT;
+import static java.util.Optional.ofNullable;
 
 /**
  * Module configuration that defines the components needed to enable heartbeat and monitor the
@@ -26,7 +26,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
 
     private final Function<Configuration, AxonServerConfiguration> axonServerConfigurationSupplier;
 
-    private final AtomicReference<Scheduler> heartbeatScheduler = new AtomicReference<>();
+    private final AtomicReference<HeartbeatMonitor> heartbeatMonitor = new AtomicReference<>();
 
     /**
      * Default constructor for {@link HeartbeatConfiguration}, that uses {@link Configuration} in order to
@@ -73,8 +73,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
         GrpcHeartbeatSource heartbeatSource = new GrpcHeartbeatSource(connectionManager, context);
         connectionManager.onOutboundInstruction(context, HEARTBEAT, i -> heartbeatSource.pulse());
 
-        HeartbeatMonitor heartbeatMonitor = new HeartbeatMonitor(connectionManager, context);
-        this.heartbeatScheduler.set(new Scheduler(heartbeatMonitor::run));
+        heartbeatMonitor.set(new HeartbeatMonitor(connectionManager, context));
     }
 
     /**
@@ -83,7 +82,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
      */
     @Override
     public void start() {
-        scheduler().start();
+        heartbeatMonitor().start();
     }
 
     /**
@@ -92,12 +91,12 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
      */
     @Override
     public void shutdown() {
-        scheduler().stop();
+        heartbeatMonitor().shutdown();
     }
 
-    private Scheduler scheduler() {
+    private HeartbeatMonitor heartbeatMonitor() {
         Supplier<RuntimeException> exceptionSupplier = () -> new IllegalStateException(
                 "HeartbeatConfiguration not initialized.");
-        return Optional.ofNullable(heartbeatScheduler.get()).orElseThrow(exceptionSupplier);
+        return ofNullable(heartbeatMonitor.get()).orElseThrow(exceptionSupplier);
     }
 }
