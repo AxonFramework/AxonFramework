@@ -137,9 +137,9 @@ public class DummyMessagePlatformServer {
     }
 
     public void simulateError(String command) {
-        StreamObserver subscription = this.subscriptions(command);
+        StreamObserver subscription = subscriptions.remove(command);
         subscription.onError(new RuntimeException());
-        subscriptions.remove(command);
+
     }
 
 }

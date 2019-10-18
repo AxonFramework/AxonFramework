@@ -336,6 +336,7 @@ public class AxonServerCommandBusTest {
         );
 
         //noinspection unchecked
-        verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+        assertWithin(500, TimeUnit.MILLISECONDS,
+                     () -> verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class)));
     }
 }
