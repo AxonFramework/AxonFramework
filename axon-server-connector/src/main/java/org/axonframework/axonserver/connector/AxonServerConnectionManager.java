@@ -650,7 +650,9 @@ public class AxonServerConnectionManager {
      * <p>
      * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the
      * {@link ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory}
-     * tied to it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     * tied to it. The Axon Framework version resolver ({@link Supplier}<{@link String}>) is defaulted to
+     * {@link AxonFrameworkVersionResolver}. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as
+     * such should be provided.
      */
     public static class Builder {
 
@@ -716,8 +718,15 @@ public class AxonServerConnectionManager {
             return this;
         }
 
+        /**
+         * Sets the Axon Framework version resolver used in order to communicate the client version to send to Axon
+         * Server.
+         *
+         * @param axonFrameworkVersionResolver a string supplier that retrieve the current Axon Framework version
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder axonFrameworkVersionResolver(Supplier<String> axonFrameworkVersionResolver) {
-            assertNonNull(axonFrameworkVersionResolver, "AxonConnectorProperties may not be null");
+            assertNonNull(axonFrameworkVersionResolver, "Axon Framework Version Resolver may not be null");
             this.axonFrameworkVersionResolver = axonFrameworkVersionResolver;
             return this;
         }

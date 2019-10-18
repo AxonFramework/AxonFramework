@@ -19,9 +19,9 @@ import java.util.function.Supplier;
  */
 public class AxonFrameworkVersionResolver implements Supplier<String> {
 
-    private static final String ORG_AXONFRAMEWORK = "org.axonframework";
-    private static final String AXON_SERVER_CONNECTOR = "axon-server-connector";
-    private static final String AXON_FRAMEWORK_VERSION = "AXON_FRAMEWORK_VERSION";
+    private static final String ORG_AXONFRAMEWORK_GROUP_ID = "org.axonframework";
+    private static final String AXON_SERVER_CONNECTOR_ARTIFACT_ID = "axon-server-connector";
+    private static final String AXON_FRAMEWORK_VERSION_ENV_PROPERTY = "AXON_FRAMEWORK_VERSION";
     private static final String UNKNOWN_VERSION = "";
 
     private final Supplier<String> mavenAxonVersionSupplier;
@@ -37,19 +37,19 @@ public class AxonFrameworkVersionResolver implements Supplier<String> {
     public AxonFrameworkVersionResolver() {
         this(() -> {
             try {
-                return new MavenArtifactVersionResolver(ORG_AXONFRAMEWORK,
-                                                        AXON_SERVER_CONNECTOR,
+                return new MavenArtifactVersionResolver(ORG_AXONFRAMEWORK_GROUP_ID,
+                                                        AXON_SERVER_CONNECTOR_ARTIFACT_ID,
                                                         AxonFrameworkVersionResolver.class.getClassLoader()).get();
             } catch (IOException e) {
-                throw new RuntimeException("Impossible to read maven artifact version for " + AXON_SERVER_CONNECTOR);
+                throw new RuntimeException(
+                        "Impossible to read maven artifact version for " + AXON_SERVER_CONNECTOR_ARTIFACT_ID);
             }
         }, System::getenv);
     }
 
     /**
-     * Creates an instance that tries to obtain a the axon version from the specified axonArtifactVersionSupplier, or as
-     * a
-     * fallback in case of null/empty string, tries to obtain the axon version from the environment properties through
+     * Creates an instance that tries to obtain the axon version from the specified axonArtifactVersionSupplier, or as
+     * a fallback in case of null/empty string, tries to obtain the axon version from the environment properties through
      * the envPropertySupplier.
      *
      * @param axonArtifactVersionSupplier used to retrieve the axon version from artifact metadata
@@ -78,7 +78,7 @@ public class AxonFrameworkVersionResolver implements Supplier<String> {
         String version = mavenAxonVersionSupplier.get();
 
         if (version == null) {
-            version = envPropertySupplier.apply(AXON_FRAMEWORK_VERSION);
+            version = envPropertySupplier.apply(AXON_FRAMEWORK_VERSION_ENV_PROPERTY);
         }
 
         return (version != null) ? version : UNKNOWN_VERSION;

@@ -7,7 +7,6 @@ import java.util.Properties;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
- *
  * Artifact version resolver that uses Maven meta data to retrieve the jar version.
  * <p/>
  * By default, Maven stores the meta-data in a file called 'pom.properties' in the JAR files under
