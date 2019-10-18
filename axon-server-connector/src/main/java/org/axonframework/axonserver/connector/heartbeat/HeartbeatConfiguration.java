@@ -60,7 +60,6 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
      * Initializes the {@link HeartbeatMonitor} component, needed to force a disconnection if the
      * communication between the client and the server is no longer available.
      * <p>
-     * Initializes the {@link Scheduler} used to start and stop the monitor of the connection state.
      *
      * @param config the global configuration, providing access to generic components
      */
