@@ -76,7 +76,7 @@ public class HeartbeatMonitor {
                 onInvalidConnection.run();
             }
         } catch (Exception e) {
-            logger.warn("Impossible to correctly monitor the Axon Server connection state.");
+            logger.warn("Impossible to correctly monitor the Axon Server connection state.", e);
         }
     }
 
