@@ -1,6 +1,7 @@
 package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.heartbeat.connection.checker.HeartbeatConnectionChecker;
 import org.axonframework.axonserver.connector.util.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
