@@ -16,17 +16,26 @@
 
 package org.axonframework.axonserver.connector.command;
 
-import com.google.protobuf.Any;
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.UnknownRequest;
-import io.axoniq.axonserver.grpc.command.*;
+import io.axoniq.axonserver.grpc.InstructionResult;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
-import org.axonframework.axonserver.connector.*;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.DispatchInterceptors;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
+import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -44,12 +53,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
+import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -189,7 +202,7 @@ public class AxonServerCommandBus implements CommandBus {
         this.defaultCommandCallback = NoOpCallback.INSTANCE;
 
         this.commandProcessor = new CommandProcessor(
-                context, configuration, ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder()
+                context, configuration, ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder(), so -> (StreamObserver<CommandProviderOutbound>) so.getRequestStream()
         );
 
         dispatchInterceptors = new DispatchInterceptors<>();
@@ -216,7 +229,10 @@ public class AxonServerCommandBus implements CommandBus {
         String context = configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
-        this.commandProcessor = new CommandProcessor(context, configuration, builder.executorServiceBuilder);
+        this.commandProcessor = new CommandProcessor(context,
+                                                     configuration,
+                                                     builder.executorServiceBuilder,
+                                                     builder.requestStreamFactory);
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
@@ -363,6 +379,8 @@ public class AxonServerCommandBus implements CommandBus {
                 c -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
+        private Function<UpstreamAwareStreamObserver<CommandProviderInbound>, StreamObserver<CommandProviderOutbound>> requestStreamFactory = so -> (StreamObserver<CommandProviderOutbound>) so
+                .getRequestStream();
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -495,6 +513,18 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         /**
+         * Sets the request stream factory that creates a request stream based on upstream.
+         *
+         * @param requestStreamFactory factory that creates a request stream based on upstream
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder requestStreamFactory(Function<UpstreamAwareStreamObserver<CommandProviderInbound>, StreamObserver<CommandProviderOutbound>> requestStreamFactory) {
+            assertNonNull(requestStreamFactory, "RequestStreamFactory may not be null");
+            this.requestStreamFactory = requestStreamFactory;
+            return this;
+        }
+
+        /**
          * Initializes a {@link AxonServerCommandBus} as specified through this Builder.
          *
          * @return a {@link AxonServerCommandBus} as specified through this Builder
@@ -536,6 +566,7 @@ public class AxonServerCommandBus implements CommandBus {
         private final String context;
         private final CopyOnWriteArraySet<String> subscribedCommands;
         private final ExecutorService commandExecutor;
+        private final Function<UpstreamAwareStreamObserver<CommandProviderInbound>, StreamObserver<CommandProviderOutbound>> requestStreamFactory;
 
         private volatile boolean subscribing;
         private volatile boolean running = true;
@@ -543,7 +574,8 @@ public class AxonServerCommandBus implements CommandBus {
 
         CommandProcessor(String context,
                          AxonServerConfiguration configuration,
-                         ExecutorServiceBuilder executorServiceBuilder) {
+                         ExecutorServiceBuilder executorServiceBuilder,
+                         Function<UpstreamAwareStreamObserver<CommandProviderInbound>, StreamObserver<CommandProviderOutbound>> requestStreamFactory) {
             this.context = context;
             subscribedCommands = new CopyOnWriteArraySet<>();
             PriorityBlockingQueue<Runnable> commandProcessQueue = new PriorityBlockingQueue<>(
@@ -555,6 +587,7 @@ public class AxonServerCommandBus implements CommandBus {
                     )
             );
             commandExecutor = executorServiceBuilder.apply(configuration, commandProcessQueue);
+            this.requestStreamFactory = requestStreamFactory;
         }
 
         private void resubscribe() {
@@ -633,23 +666,23 @@ public class AxonServerCommandBus implements CommandBus {
                 return subscriberStreamObserver;
             }
 
-            AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamRef = new AtomicReference<>();
-            StreamObserver<CommandProviderInbound> commandsFromRoutingServer = new StreamObserver<CommandProviderInbound>() {
+            StreamObserver<CommandProviderInbound> commandsFromRoutingServer = new UpstreamAwareStreamObserver<CommandProviderInbound>() {
                 @Override
                 public void onNext(CommandProviderInbound commandToSubscriber) {
                     logger.debug("Received command from server: {}", commandToSubscriber);
                     switch (commandToSubscriber.getRequestCase()) {
                         case COMMAND:
                             commandExecutor.execute(new CommandProcessingTask(commandToSubscriber.getCommand()));
-                            break;
-                        case UNKNOWN_REQUEST:
-                            logger.warn("Unknown command request sent: {}.", commandToSubscriber.getUnknownRequest());
+                            sendSuccessfulInstructionResult(commandToSubscriber.getInstructionId(),
+                                                            requestStreamFactory.apply(this));
                             break;
                         case CONFIRMATION:
+                            logger.trace("Received command confirmation: {}.", commandToSubscriber.getConfirmation());
                             break;
                         default:
-                            Optional.ofNullable(inboundStreamRef.get())
-                                    .ifPresent(is -> sendUnknownCommandRequest(commandToSubscriber, is));
+                            sendUnsuccessfulInstructionResult(commandToSubscriber.getInstructionId(),
+                                                              unsupportedInstruction(),
+                                                              requestStreamFactory.apply(this));
                             break;
                     }
                 }
@@ -670,7 +703,6 @@ public class AxonServerCommandBus implements CommandBus {
 
             ResubscribableStreamObserver<CommandProviderInbound> resubscribableStreamObserver =
                     new ResubscribableStreamObserver<>(commandsFromRoutingServer, t -> resubscribe());
-            inboundStreamRef.set(resubscribableStreamObserver);
 
             StreamObserver<CommandProviderOutbound> streamObserver =
                     axonServerConnectionManager.getCommandStream(context, resubscribableStreamObserver);
@@ -686,15 +718,36 @@ public class AxonServerCommandBus implements CommandBus {
             return subscriberStreamObserver;
         }
 
-        private void sendUnknownCommandRequest(CommandProviderInbound commandToSubscriber,
-                                               StreamObserver<CommandProviderInbound> streamObserver) {
-            UnknownRequest unknownRequest = UnknownRequest.newBuilder()
-                                                          .setDetails("Unknown command request received by AxonServerConnector.")
-                                                          .setMessage(Any.pack(commandToSubscriber))
-                                                          .build();
-            CommandProviderInbound message = CommandProviderInbound.newBuilder()
-                                                                   .setUnknownRequest(unknownRequest)
-                                                                   .build();
+        private ErrorMessage unsupportedInstruction() {
+            return ErrorMessage.newBuilder()
+                               .setErrorCode(UNSUPPORTED_INSTRUCTION.errorCode())
+                               .addDetails("Unsupported command instruction")
+                               .setLocation(configuration.getClientId())
+                               .build();
+        }
+
+        private void sendSuccessfulInstructionResult(String instructionId,
+                                                     StreamObserver<CommandProviderOutbound> streamObserver) {
+            sendInstructionResult(instructionId, true, null, streamObserver);
+        }
+
+        private void sendUnsuccessfulInstructionResult(String instructionId, ErrorMessage errorMessage,
+                                                       StreamObserver<CommandProviderOutbound> streamObserver) {
+            sendInstructionResult(instructionId, false, errorMessage, streamObserver);
+        }
+
+        private void sendInstructionResult(String instructionId, boolean success, ErrorMessage errorMessage,
+                                           StreamObserver<CommandProviderOutbound> streamObserver) {
+            InstructionResult.Builder builder = InstructionResult.newBuilder()
+                                                                 .setInstructionId(instructionId)
+                                                                 .setSuccess(success);
+            if (errorMessage != null) {
+                builder.setError(errorMessage);
+            }
+            InstructionResult commandResult = builder.build();
+            CommandProviderOutbound message = CommandProviderOutbound.newBuilder()
+                                                                     .setResult(commandResult)
+                                                                     .build();
             streamObserver.onNext(message);
         }
 

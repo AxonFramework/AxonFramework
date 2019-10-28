@@ -23,6 +23,7 @@ import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.*;
+import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
 import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
@@ -262,6 +263,7 @@ public class AxonServerCommandBusTest {
                                     .configuration(configuration)
                                     .localSegment(localSegment)
                                     .serializer(serializer)
+                                    .requestStreamFactory(os -> new TestStreamObserver<>())
                                     .routingStrategy(command -> "RoutingKey")
                                     .build();
         testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));

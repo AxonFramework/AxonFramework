@@ -48,6 +48,8 @@ public enum ErrorCode {
     // Generic errors processing client request
     AUTHENTICATION_TOKEN_MISSING("AXONIQ-1000", (code, error, details) -> new AxonServerException(code, error)),
     AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", (code, error, details) -> new AxonServerException(code, error)),
+    UNSUPPORTED_INSTRUCTION("AXONIQ-1002", (code, error, details) -> new AxonServerException(code, error)),
+    INSTRUCTION_EXECUTION_ERROR("AXONIQ-1003", (code, error, details) -> new AxonServerException(code, error)),
 
     //Event publishing errors
     INVALID_EVENT_SEQUENCE(

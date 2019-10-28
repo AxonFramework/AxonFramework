@@ -16,9 +16,8 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import com.google.protobuf.Any;
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.UnknownRequest;
+import io.axoniq.axonserver.grpc.InstructionResult;
 import io.axoniq.axonserver.grpc.query.QueryComplete;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
@@ -33,8 +32,10 @@ import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.DefaultHandlers;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.Handlers;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
@@ -70,10 +71,8 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -92,7 +91,8 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
+import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.*;
+import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.numberOfResults;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -123,7 +123,7 @@ public class AxonServerQueryBus implements QueryBus {
     private final QueryProcessor queryProcessor;
     private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors;
     private final Map<String, Set<String>> subscriptions = new ConcurrentHashMap<>();
-    private final Map<RequestCase, Collection<Consumer<QueryProviderInbound>>> queryHandlers;
+    private final Handlers<QueryProviderInbound.RequestCase, BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> queryHandlers = new DefaultHandlers<>();
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
 
     /**
@@ -210,7 +210,6 @@ public class AxonServerQueryBus implements QueryBus {
         this.queryProcessor =
                 new QueryProcessor(context, configuration, ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder());
         dispatchInterceptors = new DispatchInterceptors<>();
-        queryHandlers = new EnumMap<>(RequestCase.class);
 
         this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::resubscribe);
         this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
@@ -242,7 +241,6 @@ public class AxonServerQueryBus implements QueryBus {
 
         this.queryProcessor = new QueryProcessor(context, configuration, builder.executorServiceBuilder);
         dispatchInterceptors = new DispatchInterceptors<>();
-        queryHandlers = new EnumMap<>(RequestCase.class);
 
         this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::resubscribe);
         this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
@@ -421,9 +419,48 @@ public class AxonServerQueryBus implements QueryBus {
     }
 
     private void on(RequestCase requestCase, BiConsumer<String, QueryProviderInbound> consumer) {
-        Collection<Consumer<QueryProviderInbound>> consumers =
-                queryHandlers.computeIfAbsent(requestCase, rc -> new CopyOnWriteArraySet<>());
-        consumers.add(qpi -> consumer.accept(configuration.getContext(), qpi));
+        queryHandlers.register(requestCase, wrapWithResult(consumer));
+    }
+
+    private BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>> wrapWithResult(BiConsumer<String, QueryProviderInbound> handler) {
+        return (inbound, stream) -> {
+            try {
+                handler.accept(configuration.getContext(), inbound);
+                sendSuccessfulInstructionResult(inbound.getInstructionId(), stream);
+            } catch (Exception e) {
+                logger.warn("Error happened while handling query instruction {}.", inbound.getInstructionId());
+                sendUnsuccessfulInstructionResult(inbound.getInstructionId(),
+                                                  ErrorMessage.newBuilder()
+                                                              .setErrorCode(ErrorCode.INSTRUCTION_EXECUTION_ERROR.errorCode())
+                                                              .addDetails("Error happened while handling query instruction")
+                                                              .setLocation(configuration.getClientId())
+                                                              .build(),
+                                                  stream);
+            }
+        };
+    }
+
+    private void sendSuccessfulInstructionResult(String instructionId, StreamObserver<QueryProviderOutbound> stream) {
+        sendInstructionResult(instructionId, true, null, stream);
+    }
+
+    private void sendUnsuccessfulInstructionResult(String instructionId, ErrorMessage errorMessage,
+                                                   StreamObserver<QueryProviderOutbound> stream) {
+        sendInstructionResult(instructionId, false, errorMessage, stream);
+    }
+
+    private void sendInstructionResult(String instructionId, boolean success, ErrorMessage errorMessage,
+                                       StreamObserver<QueryProviderOutbound> stream) {
+        InstructionResult.Builder builder = InstructionResult.newBuilder()
+                                                             .setInstructionId(instructionId)
+                                                             .setSuccess(success);
+        if (errorMessage != null) {
+            builder.setError(errorMessage);
+        }
+        InstructionResult instructionResult = builder.build();
+        stream.onNext(QueryProviderOutbound.newBuilder()
+                                           .setResult(instructionResult)
+                                           .build());
     }
 
     @Override
@@ -503,6 +540,11 @@ public class AxonServerQueryBus implements QueryBus {
                     )
             );
             queryExecutor = executorServiceBuilder.apply(configuration, queryProcessQueue);
+            on(QUERY,
+               (ctx, inbound) -> queryExecutor.execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery())));
+            queryHandlers.register(CONFIRMATION,
+                                   (inbound, stream) -> logger
+                                           .trace("Received query confirmation {}.", inbound.getConfirmation()));
         }
 
         private void resubscribe() {
@@ -610,27 +652,17 @@ public class AxonServerQueryBus implements QueryBus {
             }
 
             AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamRef = new AtomicReference<>();
-            StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
+            StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new UpstreamAwareStreamObserver<QueryProviderInbound>() {
                 @Override
                 public void onNext(QueryProviderInbound inboundRequest) {
                     RequestCase requestCase = inboundRequest.getRequestCase();
-                    queryHandlers.getOrDefault(requestCase, Collections.emptySet())
-                                 .forEach(consumer -> consumer.accept(inboundRequest));
-
-                    switch (requestCase) {
-                        case CONFIRMATION:
-                        case SUBSCRIPTION_QUERY_REQUEST:
-                            break;
-                        case QUERY:
-                            queryExecutor.execute(new QueryProcessingTask(inboundRequest.getQuery()));
-                            break;
-                        case UNKNOWN_REQUEST:
-                            logger.warn("Unknown query request sent: {}.", inboundRequest.getUnknownRequest());
-                        default:
-                            Optional.ofNullable(inboundStreamRef.get())
-                                    .ifPresent(is -> sendUnknownQueryInstruction(inboundRequest, is));
-                            break;
-                    }
+                    Collection<BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> defaultHandlers = Collections
+                            .singleton((qpi, stream) -> sendUnsuccessfulInstructionResult(inboundRequest.getInstructionId(),
+                                                                                          unsupportedInstruction(),
+                                                                                          stream));
+                    queryHandlers.getOrDefault(configuration.getContext(), requestCase, defaultHandlers)
+                                 .forEach(consumer -> consumer.accept(inboundRequest,
+                                                                      (StreamObserver<QueryProviderOutbound>) getRequestStream()));
                 }
 
                 @SuppressWarnings("Duplicates")
@@ -666,16 +698,12 @@ public class AxonServerQueryBus implements QueryBus {
             return outboundStreamObserver;
         }
 
-        private void sendUnknownQueryInstruction(QueryProviderInbound inboundRequest,
-                                                 StreamObserver<QueryProviderInbound> streamObserver) {
-            UnknownRequest unknownRequest = UnknownRequest.newBuilder()
-                                                          .setDetails("Unknown query request received by AxonServerConnector.")
-                                                          .setMessage(Any.pack(inboundRequest))
-                                                          .build();
-            QueryProviderInbound message = QueryProviderInbound.newBuilder()
-                                                             .setUnknownRequest(unknownRequest)
-                                                             .build();
-            streamObserver.onNext(message);
+        private ErrorMessage unsupportedInstruction() {
+            return ErrorMessage.newBuilder()
+                               .setErrorCode(UNSUPPORTED_INSTRUCTION.errorCode())
+                               .addDetails("Unsupported query instruction")
+                               .setLocation(configuration.getClientId())
+                               .build();
         }
 
         public void unsubscribe(String queryName, Type responseType, String componentName) {

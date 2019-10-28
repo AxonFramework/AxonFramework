@@ -16,16 +16,25 @@
 
 package org.axonframework.axonserver.connector;
 
-import com.google.protobuf.Any;
-import io.axoniq.axonserver.grpc.UnknownRequest;
+import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.InstructionResult;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.axoniq.axonserver.grpc.control.*;
+import io.axoniq.axonserver.grpc.control.ClientIdentification;
+import io.axoniq.axonserver.grpc.control.NodeInfo;
+import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformInfo;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
-import io.grpc.*;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptors;
+import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -40,16 +49,26 @@ import org.axonframework.config.TagsConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.net.ssl.SSLException;
 
+import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -64,7 +83,7 @@ public class AxonServerConnectionManager {
     private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
 
     private final Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
-    private final Map<String, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new ConcurrentHashMap<>();
+    private final Handlers<PlatformOutboundInstruction.RequestCase, BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>>> handlers = new DefaultHandlers<>();
     private Map<String, StreamObserver<PlatformInboundInstruction>> instructionStreams = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> reconnectTasks = new ConcurrentHashMap<>();
     private final List<Consumer<String>> reconnectListeners = new CopyOnWriteArrayList<>();
@@ -126,6 +145,11 @@ public class AxonServerConnectionManager {
         this.axonServerConfiguration = builder.axonServerConfiguration;
         this.tagsConfiguration = builder.tagsConfiguration;
         this.scheduler = builder.scheduler;
+        onOutboundInstruction(NODE_NOTIFICATION,
+                              instruction -> logger.debug("Received: {}", instruction.getNodeNotification()));
+        handlers.register(RESULT,
+                          (instruction, stream) -> logger
+                                  .trace("Received instruction result {}.", instruction.getResult()));
     }
 
     /**
@@ -209,7 +233,9 @@ public class AxonServerConnectionManager {
                                 clusterInfo.getPrimary().getGrpcPort()
                         ));
                     }
-
+                    onOutboundInstruction(context,
+                                          REQUEST_RECONNECT,
+                                          (instruction, requestStream) -> onRequestReconnect(context, requestStream));
                     startInstructionStream(context, clusterInfo.getPrimary().getNodeName(), clientIdentification);
                     axonServerUnavailable = false;
                     logger.info("Re-subscribing commands and queries");
@@ -241,6 +267,18 @@ public class AxonServerConnectionManager {
         }
 
         return intercepted(context, channels.get(context));
+    }
+
+    private void onRequestReconnect(String context, StreamObserver<PlatformInboundInstruction> requestStream) {
+        Consumer<String> reconnect = (c) -> {
+            notifyConnectionChange(disconnectListeners, c);
+            requestStream.onCompleted();
+            scheduleReconnect(context, true);
+        };
+        for (Function<Consumer<String>, Consumer<String>> interceptor : reconnectInterceptors) {
+            reconnect = interceptor.apply(reconnect);
+        }
+        reconnect.accept(context);
     }
 
     private void notifyConnectionChange(List<Consumer<String>> listeners, String context) {
@@ -338,42 +376,22 @@ public class AxonServerConnectionManager {
                                                      String name,
                                                      ClientIdentification clientIdentification) {
         logger.debug("Start instruction stream to node [{}] for context [{}]", name, context);
-        AtomicReference<StreamObserver<PlatformInboundInstruction>> inputStreamRef = new AtomicReference<>();
         SynchronizedStreamObserver<PlatformInboundInstruction> inputStream = new SynchronizedStreamObserver<>(
-                PlatformServiceGrpc.newStub(intercepted(
-                        context, channels.get(context)
-                )).openStream(new UpstreamAwareStreamObserver<PlatformOutboundInstruction>() {
+                PlatformServiceGrpc.newStub(intercepted(context, channels.get(context)))
+                                   .openStream(new UpstreamAwareStreamObserver<PlatformOutboundInstruction>() {
 
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
-                        handlers.getOrDefault(context, Collections.emptyList())
-                                .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
-
-                        switch (messagePlatformOutboundInstruction.getRequestCase()) {
-                            case NODE_NOTIFICATION:
-                                logger.debug("Received: {}", messagePlatformOutboundInstruction.getNodeNotification());
-                                break;
-                            case REQUEST_RECONNECT:
-                                Consumer<String> reconnect = (c) -> {
-                                    notifyConnectionChange(disconnectListeners, c);
-                                    getRequestStream().onCompleted();
-                                    scheduleReconnect(context, true);
-                                };
-                                for (Function<Consumer<String>, Consumer<String>> interceptor : reconnectInterceptors) {
-                                    reconnect = interceptor.apply(reconnect);
-                                }
-                                reconnect.accept(context);
-                                break;
-                            case UNKNOWN_INSTRUCTION:
-                                logger.warn("Unknown instruction sent: {}.",
-                                            messagePlatformOutboundInstruction.getUnknownInstruction());
-                                break;
-                            default:
-                                Optional.ofNullable(inputStreamRef.get())
-                                        .ifPresent(is -> sendUnknownInstruction(messagePlatformOutboundInstruction,
-                                                                                is));
-                                break;
-                        }
+                        Collection<BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>>> defaultHandlers = Collections
+                                .singleton((poi, stream) -> sendUnsuccessfulInstructionResult(
+                                        messagePlatformOutboundInstruction.getInstructionId(),
+                                        unsupportedInstruction(),
+                                        stream));
+                        handlers.getOrDefault(context,
+                                              messagePlatformOutboundInstruction.getRequestCase(),
+                                              defaultHandlers)
+                                .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction,
+                                                                     (StreamObserver<PlatformInboundInstruction>) getRequestStream()));
                     }
 
                     @Override
@@ -398,7 +416,6 @@ public class AxonServerConnectionManager {
                     }
                 })
         );
-        inputStreamRef.set(inputStream);
 
         inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(clientIdentification).build());
         StreamObserver<PlatformInboundInstruction> existingStream = instructionStreams.put(context, inputStream);
@@ -407,15 +424,35 @@ public class AxonServerConnectionManager {
         }
     }
 
-    private void sendUnknownInstruction(PlatformOutboundInstruction messagePlatformOutboundInstruction,
-                                        StreamObserver<PlatformInboundInstruction> streamObserver) {
-        UnknownRequest unknownInstruction =
-                UnknownRequest.newBuilder()
-                              .setDetails("Unknown outbound instruction received by AxonServerConnector.")
-                              .setMessage(Any.pack(messagePlatformOutboundInstruction))
-                              .build();
+    private ErrorMessage unsupportedInstruction() {
+        return ErrorMessage.newBuilder()
+                           .addDetails("Unsupported instruction")
+                           .setErrorCode(ErrorCode.UNSUPPORTED_INSTRUCTION.errorCode())
+                           .setLocation(axonServerConfiguration.getClientId())
+                           .build();
+    }
+
+    private void sendSuccessfulInstructionResult(String instructionId,
+                                                 StreamObserver<PlatformInboundInstruction> streamObserver) {
+        sendInstructionResult(instructionId, true, null, streamObserver);
+    }
+
+    private void sendUnsuccessfulInstructionResult(String instructionId, ErrorMessage errorMessage,
+                                                    StreamObserver<PlatformInboundInstruction> streamObserver) {
+        sendInstructionResult(instructionId, false, errorMessage, streamObserver);
+    }
+
+    private void sendInstructionResult(String instructionId, boolean success, ErrorMessage errorMessage,
+                                       StreamObserver<PlatformInboundInstruction> streamObserver) {
+        InstructionResult.Builder instructionBuilder = InstructionResult.newBuilder()
+                                                                        .setInstructionId(instructionId)
+                                                                        .setSuccess(success);
+        if (errorMessage != null) {
+            instructionBuilder.setError(errorMessage);
+        }
+        InstructionResult instructionResult = instructionBuilder.build();
         streamObserver.onNext(PlatformInboundInstruction.newBuilder()
-                                                        .setUnknownInstruction(unknownInstruction)
+                                                        .setResult(instructionResult)
                                                         .build());
     }
 
@@ -564,11 +601,84 @@ public class AxonServerConnectionManager {
     public void onOutboundInstruction(String context,
                                       PlatformOutboundInstruction.RequestCase requestCase,
                                       Consumer<PlatformOutboundInstruction> consumer) {
-        this.handlers.computeIfAbsent(context, (rc) -> new LinkedList<>()).add(i -> {
-            if (i.getRequestCase().equals(requestCase)) {
-                consumer.accept(i);
+        onOutboundInstruction(context, requestCase, (i, s) -> consumer.accept(i));
+    }
+
+    /**
+     * Registers a handler to handle instructions from AxonServer.
+     *
+     * @param requestCase the type of instruction to respond to
+     * @param handler     the handler of the instruction
+     */
+    public void onOutboundInstruction(PlatformOutboundInstruction.RequestCase requestCase,
+                                      BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>> handler) {
+        this.handlers.register(requestCase, wrapWithConfirmation(handler));
+    }
+
+    /**
+     * Registers a handler to handle instructions from AxonServer.
+     *
+     * @param context the context
+     * @param handler the handler of the instruction
+     */
+    public void onOutboundInstruction(String context,
+                                      BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>> handler) {
+        this.handlers.register(context, wrapWithConfirmation(handler));
+    }
+
+    /**
+     * Registers a handler to handle instructions from AxonServer.
+     *
+     * @param handler the handler of the instruction
+     */
+    public void onOutboundInstruction(
+            BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>> handler) {
+        this.handlers.register(wrapWithConfirmation(handler));
+    }
+
+    /**
+     * Registers a handler to handle instructions from AxonServer.
+     *
+     * @param context     the context
+     * @param requestCase the type of instruction to respond to
+     * @param handler     the handler of the instruction
+     */
+    public void onOutboundInstruction(String context,
+                                      PlatformOutboundInstruction.RequestCase requestCase,
+                                      BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>> handler) {
+        this.handlers.register(context, requestCase, wrapWithConfirmation(handler));
+    }
+
+    /**
+     * Registers a handler to handle instructions from AxonServer.
+     *
+     * @param handlerSelector selects a handler based on context and request case
+     * @param handler         the handler of the instruction
+     */
+    public void onOutboundInstruction(
+            BiPredicate<String, PlatformOutboundInstruction.RequestCase> handlerSelector,
+            BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>> handler) {
+        this.handlers.register(handlerSelector, wrapWithConfirmation(handler));
+    }
+
+    private BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>> wrapWithConfirmation(
+            BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>> handler) {
+        return (i, s) -> {
+            try {
+                handler.accept(i, s);
+                sendSuccessfulInstructionResult(i.getInstructionId(), s);
+            } catch (Exception e) {
+                logger.warn("Error happened while handling instruction {}.", i.getInstructionId());
+                sendUnsuccessfulInstructionResult(i.getInstructionId(),
+                                                  ErrorMessage.newBuilder()
+                                                              .setErrorCode(ErrorCode.INSTRUCTION_EXECUTION_ERROR
+                                                                                    .errorCode())
+                                                              .setLocation(axonServerConfiguration.getClientId())
+                                                              .addDetails("Error happened while handling instruction")
+                                                              .build(),
+                                                  s);
             }
-        });
+        };
     }
 
     /**
