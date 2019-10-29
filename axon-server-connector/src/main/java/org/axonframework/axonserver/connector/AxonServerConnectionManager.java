@@ -95,6 +95,7 @@ public class AxonServerConnectionManager {
     private final AxonServerConfiguration axonServerConfiguration;
     private final TagsConfiguration tagsConfiguration;
     private final ScheduledExecutorService scheduler;
+    private final Function<UpstreamAwareStreamObserver<PlatformOutboundInstruction>, StreamObserver<PlatformInboundInstruction>> requestStreamFactory;
 
     /**
      * Initializes the Axon Server Connection Manager with the connect information. An empty {@link TagsConfiguration}
@@ -133,6 +134,7 @@ public class AxonServerConnectionManager {
                     }
                 }
         );
+        this.requestStreamFactory = os -> (StreamObserver<PlatformInboundInstruction>) os.getRequestStream();
     }
 
     /**
@@ -145,6 +147,7 @@ public class AxonServerConnectionManager {
         this.axonServerConfiguration = builder.axonServerConfiguration;
         this.tagsConfiguration = builder.tagsConfiguration;
         this.scheduler = builder.scheduler;
+        this.requestStreamFactory = builder.requestStreamFactory;
         onOutboundInstruction(NODE_NOTIFICATION,
                               (instruction, stream) -> logger.debug("Received: {}", instruction.getNodeNotification()));
         handlers.register(RESULT,
@@ -377,8 +380,7 @@ public class AxonServerConnectionManager {
                                                      ClientIdentification clientIdentification) {
         logger.debug("Start instruction stream to node [{}] for context [{}]", name, context);
         SynchronizedStreamObserver<PlatformInboundInstruction> inputStream = new SynchronizedStreamObserver<>(
-                PlatformServiceGrpc.newStub(intercepted(context, channels.get(context)))
-                                   .openStream(new UpstreamAwareStreamObserver<PlatformOutboundInstruction>() {
+                getPlatformStream(context, new UpstreamAwareStreamObserver<PlatformOutboundInstruction>() {
 
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
@@ -386,12 +388,12 @@ public class AxonServerConnectionManager {
                                 .singleton((poi, stream) -> sendUnsuccessfulInstructionResult(
                                         poi.getInstructionId(),
                                         unsupportedInstruction(),
-                                        stream));
+                                        requestStreamFactory.apply(this)));
                         handlers.getOrDefault(context,
                                               messagePlatformOutboundInstruction.getRequestCase(),
                                               defaultHandlers)
                                 .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction,
-                                                                     (StreamObserver<PlatformInboundInstruction>) getRequestStream()));
+                                                                     requestStreamFactory.apply(this)));
                     }
 
                     @Override
@@ -562,7 +564,6 @@ public class AxonServerConnectionManager {
                                  .openStream(inboundCommandStream);
     }
 
-
     /**
      * Opens a Stream for incoming queries from AxonServer in the given {@code context}. While either reuse an existing
      * Channel or create a new one.
@@ -575,6 +576,20 @@ public class AxonServerConnectionManager {
                                                                 StreamObserver<QueryProviderInbound> inboundQueryStream) {
         return QueryServiceGrpc.newStub(getChannel(context))
                                .openStream(inboundQueryStream);
+    }
+
+    /**
+     * Opens a Stream for platform instructions in given {@code context}. It assumes that channel with given {@code
+     * context} is already opened.
+     *
+     * @param context                   the context
+     * @param outboundInstructionStream the callback to invoke outbounding instructions
+     * @return the stream to send instructions
+     */
+    public StreamObserver<PlatformInboundInstruction> getPlatformStream(String context,
+                                                                        StreamObserver<PlatformOutboundInstruction> outboundInstructionStream) {
+        return PlatformServiceGrpc.newStub(intercepted(context, channels.get(context)))
+                                  .openStream(outboundInstructionStream);
     }
 
     /**
@@ -757,6 +772,8 @@ public class AxonServerConnectionManager {
                     }
                 }
         );
+        private Function<UpstreamAwareStreamObserver<PlatformOutboundInstruction>, StreamObserver<PlatformInboundInstruction>> requestStreamFactory = os -> (StreamObserver<PlatformInboundInstruction>) os
+                .getRequestStream();
 
         /**
          * Sets the {@link AxonServerConfiguration} used to correctly configure connections between Axon clients and
@@ -800,6 +817,19 @@ public class AxonServerConnectionManager {
         public Builder scheduler(ScheduledExecutorService scheduler) {
             assertNonNull(scheduler, "ScheduledExecutorService may not be null");
             this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * Sets the request stream factory that creates a request stream based on upstream.
+         *
+         * @param requestStreamFactory factory that creates a request stream based on upstream
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder requestStreamFactory(
+                Function<UpstreamAwareStreamObserver<PlatformOutboundInstruction>, StreamObserver<PlatformInboundInstruction>> requestStreamFactory) {
+            assertNonNull(requestStreamFactory, "RequestStreamFactory may not be null");
+            this.requestStreamFactory = requestStreamFactory;
             return this;
         }
 
