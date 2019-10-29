@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -203,6 +204,7 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void processQuery() {
+        TestStreamObserver<QueryProviderOutbound> requestStream = new TestStreamObserver<>();
         AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
                                                            .axonServerConnectionManager(axonServerConnectionManager)
                                                            .configuration(configuration)
@@ -211,6 +213,7 @@ public class AxonServerQueryBusTest {
                                                            .messageSerializer(serializer)
                                                            .genericSerializer(serializer)
                                                            .targetContextResolver(targetContextResolver)
+                                                           .requestStreamFactory(so -> requestStream)
                                                            .build();
 
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
@@ -222,6 +225,50 @@ public class AxonServerQueryBusTest {
         inboundStreamObserver.get().onNext(inboundMessage);
 
         result.close();
+
+        assertTrue(requestStream.sentMessages()
+                                .stream()
+                                .anyMatch(outbound -> outbound.getRequestCase()
+                                                              .equals(QueryProviderOutbound.RequestCase.RESULT)
+                                && outbound.getResult().getSuccess()
+                                && outbound.getResult().getInstructionId().equals("instructionId")));
+    }
+
+    @Test
+    public void unsupportedQueryInstruction() {
+        TestStreamObserver<QueryProviderOutbound> requestStream = new TestStreamObserver<>();
+        AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
+                                                           .axonServerConnectionManager(axonServerConnectionManager)
+                                                           .configuration(configuration)
+                                                           .localSegment(localSegment)
+                                                           .updateEmitter(localSegment.queryUpdateEmitter())
+                                                           .messageSerializer(serializer)
+                                                           .genericSerializer(serializer)
+                                                           .targetContextResolver(targetContextResolver)
+                                                           .requestStreamFactory(so -> requestStream)
+                                                           .build();
+
+        AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
+                buildInboundQueryStreamObserverReference();
+
+        Registration result = testSubject.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
+
+        String instructionId = "instructionId";
+        QueryProviderInbound inboundMessage = QueryProviderInbound.newBuilder()
+                                                                  .setInstructionId(instructionId)
+                                                                  .build();
+        inboundStreamObserver.get().onNext(inboundMessage);
+
+        result.close();
+
+        assertTrue(requestStream.sentMessages()
+                                .stream()
+                                .anyMatch(outbound -> outbound.getRequestCase()
+                                                              .equals(QueryProviderOutbound.RequestCase.RESULT)
+                                        && !outbound.getResult().getSuccess()
+                                        && outbound.getResult().getError().getErrorCode()
+                                                   .equals(UNSUPPORTED_INSTRUCTION.errorCode())
+                                        && outbound.getResult().getInstructionId().equals(instructionId)));
     }
 
     @Test
@@ -336,6 +383,7 @@ public class AxonServerQueryBusTest {
                                                             .setType(String.class.getName())
                                                             .build();
         return QueryProviderInbound.newBuilder()
+                                   .setInstructionId("instructionId")
                                    .setQuery(QueryRequest.newBuilder()
                                                          .setQuery("testQuery")
                                                          .setResponseType(testResponseType)

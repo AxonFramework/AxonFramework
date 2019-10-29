@@ -88,6 +88,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -208,7 +209,8 @@ public class AxonServerQueryBus implements QueryBus {
         this.targetContextResolver = targetContextResolver.orElse(m -> context);
 
         this.queryProcessor =
-                new QueryProcessor(context, configuration, ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder());
+                new QueryProcessor(context, configuration, ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder(),
+                                   so -> (StreamObserver<QueryProviderOutbound>) so.getRequestStream());
         dispatchInterceptors = new DispatchInterceptors<>();
 
         this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::resubscribe);
@@ -239,7 +241,10 @@ public class AxonServerQueryBus implements QueryBus {
         String context = configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
-        this.queryProcessor = new QueryProcessor(context, configuration, builder.executorServiceBuilder);
+        this.queryProcessor = new QueryProcessor(context,
+                                                 configuration,
+                                                 builder.executorServiceBuilder,
+                                                 builder.requestStreamFactory);
         dispatchInterceptors = new DispatchInterceptors<>();
 
         this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::resubscribe);
@@ -521,6 +526,7 @@ public class AxonServerQueryBus implements QueryBus {
         private final String context;
         private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries;
         private final ExecutorService queryExecutor;
+        private final Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory;
 
         private volatile boolean subscribing;
         private volatile boolean running = true;
@@ -528,8 +534,10 @@ public class AxonServerQueryBus implements QueryBus {
 
         QueryProcessor(String context,
                        AxonServerConfiguration configuration,
-                       ExecutorServiceBuilder executorServiceBuilder) {
+                       ExecutorServiceBuilder executorServiceBuilder,
+                       Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory) {
             this.context = context;
+            this.requestStreamFactory = requestStreamFactory;
             subscribedQueries = new ConcurrentHashMap<>();
             PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(
                     QUERY_QUEUE_CAPACITY,
@@ -662,7 +670,7 @@ public class AxonServerQueryBus implements QueryBus {
                                                                                           stream));
                     queryHandlers.getOrDefault(configuration.getContext(), requestCase, defaultHandlers)
                                  .forEach(consumer -> consumer.accept(inboundRequest,
-                                                                      (StreamObserver<QueryProviderOutbound>) getRequestStream()));
+                                                                      requestStreamFactory.apply(this)));
                 }
 
                 @SuppressWarnings("Duplicates")
@@ -849,6 +857,8 @@ public class AxonServerQueryBus implements QueryBus {
                 q -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
+        private Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory = so -> (StreamObserver<QueryProviderOutbound>) so
+                .getRequestStream();
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -978,6 +988,18 @@ public class AxonServerQueryBus implements QueryBus {
         public Builder executorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
             assertNonNull(executorServiceBuilder, "ExecutorServiceBuilder may not be null");
             this.executorServiceBuilder = executorServiceBuilder;
+            return this;
+        }
+
+        /**
+         * Sets the request stream factory that creates a request stream based on upstream.
+         *
+         * @param requestStreamFactory factory that creates a request stream based on upstream
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder requestStreamFactory(Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory) {
+            assertNonNull(requestStreamFactory, "RequestStreamFactory may not be null");
+            this.requestStreamFactory = requestStreamFactory;
             return this;
         }
 

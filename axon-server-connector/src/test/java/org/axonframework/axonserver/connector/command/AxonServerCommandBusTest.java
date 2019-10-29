@@ -298,7 +298,7 @@ public class AxonServerCommandBusTest {
     }
 
     @Test
-    public void unsupportedInstruction() {
+    public void unsupportedCommandInstruction() {
         AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
         AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
         doAnswer(invocationOnMock -> {
