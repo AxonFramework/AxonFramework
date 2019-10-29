@@ -24,7 +24,6 @@ import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.*;
-import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
 import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
@@ -259,14 +258,13 @@ public class AxonServerCommandBusTest {
             inboundStreamObserverRef.set(invocationOnMock.getArgument(1));
             return new TestStreamObserver<CommandProviderInbound>();
         }).when(mockAxonServerConnectionManager).getCommandStream(any(), any());
-        TestStreamObserver<CommandProviderOutbound> requestStream = new TestStreamObserver<>();
         AxonServerCommandBus testSubject2 =
                 AxonServerCommandBus.builder()
                                     .axonServerConnectionManager(mockAxonServerConnectionManager)
                                     .configuration(configuration)
                                     .localSegment(localSegment)
                                     .serializer(serializer)
-                                    .requestStreamFactory(os -> requestStream)
+                                    .requestStreamFactory(os -> new TestStreamObserver<>())
                                     .routingStrategy(command -> "RoutingKey")
                                     .build();
         testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
@@ -289,12 +287,6 @@ public class AxonServerCommandBusTest {
 
         //noinspection unchecked
         verify(mockAxonServerConnectionManager).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
-        assertTrue(requestStream.sentMessages()
-                                .stream()
-                                .anyMatch(outbound -> outbound.getRequestCase()
-                                                              .equals(CommandProviderOutbound.RequestCase.RESULT)
-                                        && outbound.getResult().getSuccess()
-                                        && outbound.getResult().getInstructionId().equals(instructionId)));
     }
 
     @Test

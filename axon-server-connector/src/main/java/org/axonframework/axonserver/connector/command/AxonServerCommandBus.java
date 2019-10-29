@@ -65,7 +65,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
@@ -565,29 +564,6 @@ public class AxonServerCommandBus implements CommandBus {
         }
     }
 
-    private void on(CommandProviderInbound.RequestCase requestCase, Consumer<CommandProviderInbound> handler) {
-        commandHandlers.register(requestCase, wrapWithResult(handler));
-    }
-
-    private BiConsumer<CommandProviderInbound, StreamObserver<CommandProviderOutbound>> wrapWithResult(
-            Consumer<CommandProviderInbound> handler) {
-        return (inbound, stream) -> {
-            try {
-                handler.accept(inbound);
-                sendSuccessfulInstructionResult(inbound.getInstructionId(), stream);
-            } catch (Exception e) {
-                logger.warn("Error happened while handling command instruction {}.", inbound.getInstructionId());
-                sendUnsuccessfulInstructionResult(inbound.getInstructionId(),
-                                                  ErrorMessage.newBuilder()
-                                                              .setErrorCode(ErrorCode.INSTRUCTION_EXECUTION_ERROR.errorCode())
-                                                              .addDetails("Error happened while handling command instruction")
-                                                              .setLocation(configuration.getClientId())
-                                                              .build(),
-                                                  stream);
-            }
-        };
-    }
-
     private void sendSuccessfulInstructionResult(String instructionId,
                                                  StreamObserver<CommandProviderOutbound> streamObserver) {
         sendInstructionResult(instructionId, true, null, streamObserver);
@@ -643,8 +619,9 @@ public class AxonServerCommandBus implements CommandBus {
             );
             commandExecutor = executorServiceBuilder.apply(configuration, commandProcessQueue);
             this.requestStreamFactory = requestStreamFactory;
-            on(CommandProviderInbound.RequestCase.COMMAND,
-               inbound -> commandExecutor.execute(new CommandProcessingTask(inbound.getCommand())));
+            commandHandlers.register(CommandProviderInbound.RequestCase.COMMAND,
+                                     (inbound, stream) -> commandExecutor
+                                             .execute(new CommandProcessingTask(inbound.getCommand())));
             commandHandlers.register(CommandProviderInbound.RequestCase.CONFIRMATION,
                                      (inbound, stream) -> logger
                                              .trace("Received command confirmation: {}.", inbound.getConfirmation()));
