@@ -418,8 +418,8 @@ public class AxonServerQueryBus implements QueryBus {
         this.queryProcessor.getSubscriberObserver(context).onNext(providerOutbound);
     }
 
-    private void on(RequestCase requestCase, BiConsumer<String, QueryProviderInbound> consumer) {
-        queryHandlers.register(requestCase, wrapWithResult(consumer));
+    private void on(RequestCase requestCase, BiConsumer<String, QueryProviderInbound> handler) {
+        queryHandlers.register(requestCase, wrapWithResult(handler));
     }
 
     private BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>> wrapWithResult(BiConsumer<String, QueryProviderInbound> handler) {
@@ -657,7 +657,7 @@ public class AxonServerQueryBus implements QueryBus {
                 public void onNext(QueryProviderInbound inboundRequest) {
                     RequestCase requestCase = inboundRequest.getRequestCase();
                     Collection<BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> defaultHandlers = Collections
-                            .singleton((qpi, stream) -> sendUnsuccessfulInstructionResult(inboundRequest.getInstructionId(),
+                            .singleton((qpi, stream) -> sendUnsuccessfulInstructionResult(qpi.getInstructionId(),
                                                                                           unsupportedInstruction(),
                                                                                           stream));
                     queryHandlers.getOrDefault(configuration.getContext(), requestCase, defaultHandlers)

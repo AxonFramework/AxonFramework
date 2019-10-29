@@ -146,7 +146,7 @@ public class AxonServerConnectionManager {
         this.tagsConfiguration = builder.tagsConfiguration;
         this.scheduler = builder.scheduler;
         onOutboundInstruction(NODE_NOTIFICATION,
-                              instruction -> logger.debug("Received: {}", instruction.getNodeNotification()));
+                              (instruction, stream) -> logger.debug("Received: {}", instruction.getNodeNotification()));
         handlers.register(RESULT,
                           (instruction, stream) -> logger
                                   .trace("Received instruction result {}.", instruction.getResult()));
@@ -384,7 +384,7 @@ public class AxonServerConnectionManager {
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
                         Collection<BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>>> defaultHandlers = Collections
                                 .singleton((poi, stream) -> sendUnsuccessfulInstructionResult(
-                                        messagePlatformOutboundInstruction.getInstructionId(),
+                                        poi.getInstructionId(),
                                         unsupportedInstruction(),
                                         stream));
                         handlers.getOrDefault(context,
