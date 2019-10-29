@@ -548,8 +548,9 @@ public class AxonServerQueryBus implements QueryBus {
                     )
             );
             queryExecutor = executorServiceBuilder.apply(configuration, queryProcessQueue);
-            on(QUERY,
-               (ctx, inbound) -> queryExecutor.execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery())));
+            queryHandlers.register(QUERY,
+                                   (inbound, stream) -> queryExecutor
+                                           .execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery())));
             queryHandlers.register(CONFIRMATION,
                                    (inbound, stream) -> logger
                                            .trace("Received query confirmation {}.", inbound.getConfirmation()));

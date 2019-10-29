@@ -204,7 +204,6 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void processQuery() {
-        TestStreamObserver<QueryProviderOutbound> requestStream = new TestStreamObserver<>();
         AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
                                                            .axonServerConnectionManager(axonServerConnectionManager)
                                                            .configuration(configuration)
@@ -213,7 +212,7 @@ public class AxonServerQueryBusTest {
                                                            .messageSerializer(serializer)
                                                            .genericSerializer(serializer)
                                                            .targetContextResolver(targetContextResolver)
-                                                           .requestStreamFactory(so -> requestStream)
+                                                           .requestStreamFactory(so -> new TestStreamObserver<>())
                                                            .build();
 
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
@@ -225,13 +224,6 @@ public class AxonServerQueryBusTest {
         inboundStreamObserver.get().onNext(inboundMessage);
 
         result.close();
-
-        assertTrue(requestStream.sentMessages()
-                                .stream()
-                                .anyMatch(outbound -> outbound.getRequestCase()
-                                                              .equals(QueryProviderOutbound.RequestCase.RESULT)
-                                && outbound.getResult().getSuccess()
-                                && outbound.getResult().getInstructionId().equals("instructionId")));
     }
 
     @Test
