@@ -150,9 +150,18 @@ public class AxonServerConnectionManager {
         this.requestStreamFactory = builder.requestStreamFactory;
         onOutboundInstruction(NODE_NOTIFICATION,
                               (instruction, stream) -> logger.debug("Received: {}", instruction.getNodeNotification()));
-        handlers.register(RESULT,
-                          (instruction, stream) -> logger
-                                  .trace("Received instruction result {}.", instruction.getResult()));
+        handlers.register(RESULT, (instruction, stream) -> {
+            if (isUnsupportedInstructionErrorResult(instruction.getResult())) {
+                logger.warn("Unsupported instruction sent to the server. {}", instruction.getResult());
+            } else {
+                logger.trace("Received instruction result {}.", instruction.getResult());
+            }
+        });
+    }
+
+    private boolean isUnsupportedInstructionErrorResult(InstructionResult instructionResult) {
+        return instructionResult.hasError()
+                && instructionResult.getError().getErrorCode().equals(ErrorCode.UNSUPPORTED_INSTRUCTION.errorCode());
     }
 
     /**

@@ -551,9 +551,19 @@ public class AxonServerQueryBus implements QueryBus {
             queryHandlers.register(QUERY,
                                    (inbound, stream) -> queryExecutor
                                            .execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery())));
-            queryHandlers.register(CONFIRMATION,
-                                   (inbound, stream) -> logger
-                                           .trace("Received query confirmation {}.", inbound.getConfirmation()));
+            queryHandlers.register(CONFIRMATION, (inbound, stream) -> {
+                if (isUnsupportedInstructionErrorResult(inbound.getConfirmation())) {
+                    logger.warn("Unsupported query instruction sent to the server. {}", inbound.getConfirmation());
+                } else {
+                    logger.trace("Received query confirmation {}.", inbound.getConfirmation());
+                }
+            });
+        }
+
+        private boolean isUnsupportedInstructionErrorResult(InstructionResult instructionResult) {
+            return instructionResult.hasError()
+                    && instructionResult.getError().getErrorCode().equals(ErrorCode.UNSUPPORTED_INSTRUCTION
+                                                                                  .errorCode());
         }
 
         private void resubscribe() {
