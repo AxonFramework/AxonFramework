@@ -622,11 +622,11 @@ public class AxonServerCommandBus implements CommandBus {
             commandHandlers.register(CommandProviderInbound.RequestCase.COMMAND,
                                      (inbound, stream) -> commandExecutor
                                              .execute(new CommandProcessingTask(inbound.getCommand())));
-            commandHandlers.register(CommandProviderInbound.RequestCase.CONFIRMATION, (inbound, stream) -> {
-                if (isUnsupportedInstructionErrorResult(inbound.getConfirmation())) {
-                    logger.warn("Unsupported command instruction sent to the server. {}", inbound.getConfirmation());
+            commandHandlers.register(CommandProviderInbound.RequestCase.RESULT, (inbound, stream) -> {
+                if (isUnsupportedInstructionErrorResult(inbound.getResult())) {
+                    logger.warn("Unsupported command instruction sent to the server. {}", inbound.getResult());
                 } else {
-                    logger.trace("Received command confirmation: {}.", inbound.getConfirmation());
+                    logger.trace("Received command confirmation: {}.", inbound.getResult());
                 }
             });
         }
