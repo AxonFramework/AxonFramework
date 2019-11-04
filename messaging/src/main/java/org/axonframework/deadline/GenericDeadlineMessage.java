@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,6 +38,35 @@ public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements
     private static final long serialVersionUID = 2615162095663478618L;
 
     private final String deadlineName;
+
+    /**
+     * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage. If the
+     * {@code messageOrPayload} parameter is of type {@link Message}, a new DeadlineMessage will be created using the
+     * payload and meta data of the given deadline.
+     * Otherwise, the given {@code messageOrPayload} is wrapped into a GenericDeadlineMessage as its payload.
+     *
+     * @param deadlineName     A {@link String} denoting the deadline's name
+     * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
+     * @param <T>              The generic type of the expected payload of the resulting object
+     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
+     * {@code messageOrPayload} as the payload
+     * @deprecated Use {@link #asDeadlineMessage(String, Object, Instant)} instead, as it sets the timestamp of the
+     * deadline, rather than the current time
+     */
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static <T> DeadlineMessage<T> asDeadlineMessage(String deadlineName, Object messageOrPayload) {
+        return asDeadlineMessage(deadlineName, messageOrPayload, clock.instant());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> DeadlineMessage<T> asDeadlineMessage(String deadlineName, Object messageOrPayload, Instant scheduleTime) {
+        return messageOrPayload instanceof Message
+                ? new GenericDeadlineMessage<>(deadlineName, (Message) messageOrPayload, () -> scheduleTime)
+                : new GenericDeadlineMessage<>(deadlineName,
+                                               new GenericMessage<>((T) messageOrPayload),
+                                               () -> scheduleTime);
+    }
 
     /**
      * Instantiate a GenericDeadlineMessage with the given {@code deadlineName}, a {@code null} payload and en empty
@@ -102,28 +131,6 @@ public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements
     public GenericDeadlineMessage(String deadlineName, Message<T> delegate, Supplier<Instant> timestampSupplier) {
         super(delegate, timestampSupplier);
         this.deadlineName = deadlineName;
-    }
-
-    /**
-     * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage. If the
-     * {@code messageOrPayload} parameter is of type {@link Message}, a new DeadlineMessage will be created using the
-     * payload and meta data of the given deadline.
-     * Otherwise, the given {@code messageOrPayload} is wrapped into a GenericDeadlineMessage as its payload.
-     *
-     * @param deadlineName     A {@link String} denoting the deadline's name
-     * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
-     * @param <T>              The generic type of the expected payload of the resulting object
-     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
-     * {@code messageOrPayload} as the payload
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> DeadlineMessage<T> asDeadlineMessage(String deadlineName, Object messageOrPayload) {
-        Instant now = clock.instant();
-        return messageOrPayload instanceof Message
-                ? new GenericDeadlineMessage<>(deadlineName, (Message) messageOrPayload, () -> now)
-                : new GenericDeadlineMessage<>(deadlineName,
-                                               new GenericMessage<>((T) messageOrPayload),
-                                               () -> now);
     }
 
     @Override

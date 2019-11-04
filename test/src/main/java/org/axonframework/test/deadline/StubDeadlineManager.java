@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.test.deadline;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
@@ -85,8 +84,9 @@ public class StubDeadlineManager implements DeadlineManager {
                          String deadlineName,
                          Object payloadOrMessage,
                          ScopeDescriptor deadlineScope) {
-        DeadlineMessage<?> deadlineMessage = processDispatchInterceptors(asDeadlineMessage(deadlineName, payloadOrMessage));
-        DeadlineMessage<?> scheduledMessage = new GenericDeadlineMessage<>(deadlineName, deadlineMessage, () -> triggerDateTime);
+        DeadlineMessage<?> scheduledMessage = processDispatchInterceptors(asDeadlineMessage(deadlineName,
+                                                                                            payloadOrMessage,
+                                                                                            triggerDateTime));
 
         schedules.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                 deadlineName,
