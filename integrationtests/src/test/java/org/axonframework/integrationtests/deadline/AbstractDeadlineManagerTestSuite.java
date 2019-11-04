@@ -29,6 +29,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.EntityId;
@@ -169,6 +170,18 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+    }
+
+    @Test
+    public void testFailedExecution() throws InterruptedException {
+        configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
+            interceptorChain.proceed();
+            throw new MockException("Simulating handling error");
+        });
+        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+
+        Thread.sleep(200); // this would have triggered the deadline
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
 
     @Test
