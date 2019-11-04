@@ -54,18 +54,32 @@ public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements
      * deadline, rather than the current time
      */
     @Deprecated
-    @SuppressWarnings("unchecked")
     public static <T> DeadlineMessage<T> asDeadlineMessage(String deadlineName, Object messageOrPayload) {
         return asDeadlineMessage(deadlineName, messageOrPayload, clock.instant());
     }
 
+    /**
+     * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage which expires at the
+     * given {@code expiryTime}. If the {@code messageOrPayload} parameter is of type {@link Message}, a new
+     * {@code DeadlineMessage} instance will be created using the payload and meta data of the given message.
+     * Otherwise, the given {@code messageOrPayload} is wrapped into a {@code GenericDeadlineMessage} as its payload.
+     *
+     * @param deadlineName     A {@link String} denoting the deadline's name
+     * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
+     * @param expiryTime       The timestamp at which the deadline expires
+     * @param <T>              The generic type of the expected payload of the resulting object
+     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
+     * {@code messageOrPayload} as the payload
+     */
     @SuppressWarnings("unchecked")
-    public static <T> DeadlineMessage<T> asDeadlineMessage(String deadlineName, Object messageOrPayload, Instant scheduleTime) {
+    public static <T> DeadlineMessage<T> asDeadlineMessage(String deadlineName,
+                                                           Object messageOrPayload,
+                                                           Instant expiryTime) {
         return messageOrPayload instanceof Message
-                ? new GenericDeadlineMessage<>(deadlineName, (Message) messageOrPayload, () -> scheduleTime)
+                ? new GenericDeadlineMessage<>(deadlineName, (Message) messageOrPayload, () -> expiryTime)
                 : new GenericDeadlineMessage<>(deadlineName,
                                                new GenericMessage<>((T) messageOrPayload),
-                                               () -> scheduleTime);
+                                               () -> expiryTime);
     }
 
     /**

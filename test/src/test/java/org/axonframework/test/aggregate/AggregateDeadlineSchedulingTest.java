@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,13 +17,14 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.junit.*;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Duration;
 
@@ -82,7 +83,7 @@ public class AggregateDeadlineSchedulingTest {
     public void testDeadlineDispatcherInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
                 messages -> (i, m) -> GenericDeadlineMessage
-                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails"))
+                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
                .givenNoPriorActivity()
                .andGivenCommands(new CreateMyAggregateCommand("id"))
                .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -93,7 +94,7 @@ public class AggregateDeadlineSchedulingTest {
     public void testDeadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
                     uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails"));
+                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp()));
                     return chain.proceed();
                 })
                .givenNoPriorActivity()
