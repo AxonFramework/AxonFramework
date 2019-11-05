@@ -19,16 +19,16 @@ package org.axonframework.metrics;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.Timer;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MessageTimerMonitorTest {
+class MessageTimerMonitorTest {
 
     @Test
-    public void testSuccessMessage(){
+    void testSuccessMessage(){
         TestClock testClock = new TestClock();
         MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
@@ -49,7 +49,7 @@ public class MessageTimerMonitorTest {
     }
 
     @Test
-    public void testFailureMessage(){
+    void testFailureMessage(){
         TestClock testClock = new TestClock();
         MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
@@ -70,7 +70,7 @@ public class MessageTimerMonitorTest {
     }
 
     @Test
-    public void testIgnoredMessage(){
+    void testIgnoredMessage(){
         TestClock testClock = new TestClock();
         MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
