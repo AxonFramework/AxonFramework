@@ -113,9 +113,9 @@ public class AxonServerConnectionManagerTest {
         assertTrue(requestStream.sentMessages()
                                 .stream()
                                 .anyMatch(inbound -> inbound.getRequestCase()
-                                                            .equals(PlatformInboundInstruction.RequestCase.RESULT)
-                                        && !inbound.getResult().getSuccess()
-                                        && inbound.getResult().getError().getErrorCode().equals(UNSUPPORTED_INSTRUCTION.errorCode())
-                                        && inbound.getResult().getInstructionId().equals(instructionId)));
+                                                            .equals(PlatformInboundInstruction.RequestCase.ACK)
+                                        && !inbound.getAck().getSuccess()
+                                        && inbound.getAck().getError().getErrorCode().equals(UNSUPPORTED_INSTRUCTION.errorCode())
+                                        && inbound.getAck().getInstructionId().equals(instructionId)));
     }
 }

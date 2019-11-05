@@ -317,11 +317,11 @@ public class AxonServerCommandBusTest {
         assertTrue(requestStream.sentMessages()
                                 .stream()
                                 .anyMatch(outbound -> outbound.getRequestCase()
-                                                              .equals(CommandProviderOutbound.RequestCase.RESULT)
-                                        && !outbound.getResult().getSuccess()
-                                        && outbound.getResult().getError().getErrorCode()
+                                                              .equals(CommandProviderOutbound.RequestCase.ACK)
+                                        && !outbound.getAck().getSuccess()
+                                        && outbound.getAck().getError().getErrorCode()
                                                    .equals(UNSUPPORTED_INSTRUCTION.errorCode())
-                                        && outbound.getResult().getInstructionId().equals(instructionId)));
+                                        && outbound.getAck().getInstructionId().equals(instructionId)));
     }
 
     @Test

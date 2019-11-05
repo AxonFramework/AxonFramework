@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.InstructionResult;
+import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
@@ -150,16 +150,16 @@ public class AxonServerConnectionManager {
         this.requestStreamFactory = builder.requestStreamFactory;
         onOutboundInstruction(NODE_NOTIFICATION,
                               (instruction, stream) -> logger.debug("Received: {}", instruction.getNodeNotification()));
-        handlers.register(RESULT, (instruction, stream) -> {
-            if (isUnsupportedInstructionErrorResult(instruction.getResult())) {
-                logger.warn("Unsupported instruction sent to the server. {}", instruction.getResult());
+        handlers.register(ACK, (instruction, stream) -> {
+            if (isUnsupportedInstructionErrorAck(instruction.getAck())) {
+                logger.warn("Unsupported instruction sent to the server. {}", instruction.getAck());
             } else {
-                logger.trace("Received instruction result {}.", instruction.getResult());
+                logger.trace("Received instruction ack {}.", instruction.getAck());
             }
         });
     }
 
-    private boolean isUnsupportedInstructionErrorResult(InstructionResult instructionResult) {
+    private boolean isUnsupportedInstructionErrorAck(InstructionAck instructionResult) {
         return instructionResult.hasError()
                 && instructionResult.getError().getErrorCode().equals(ErrorCode.UNSUPPORTED_INSTRUCTION.errorCode());
     }
@@ -394,7 +394,7 @@ public class AxonServerConnectionManager {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
                         Collection<BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>>> defaultHandlers = Collections
-                                .singleton((poi, stream) -> sendUnsuccessfulInstructionResult(
+                                .singleton((poi, stream) -> sendUnsuccessfulInstructionAck(
                                         poi.getInstructionId(),
                                         unsupportedInstruction(),
                                         requestStreamFactory.apply(this)));
@@ -443,27 +443,27 @@ public class AxonServerConnectionManager {
                            .build();
     }
 
-    private void sendSuccessfulInstructionResult(String instructionId,
+    private void sendSuccessfulInstructionAck(String instructionId,
                                                  StreamObserver<PlatformInboundInstruction> streamObserver) {
-        sendInstructionResult(instructionId, true, null, streamObserver);
+        sendInstructionAck(instructionId, true, null, streamObserver);
     }
 
-    private void sendUnsuccessfulInstructionResult(String instructionId, ErrorMessage errorMessage,
+    private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
                                                     StreamObserver<PlatformInboundInstruction> streamObserver) {
-        sendInstructionResult(instructionId, false, errorMessage, streamObserver);
+        sendInstructionAck(instructionId, false, errorMessage, streamObserver);
     }
 
-    private void sendInstructionResult(String instructionId, boolean success, ErrorMessage errorMessage,
+    private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
                                        StreamObserver<PlatformInboundInstruction> streamObserver) {
-        InstructionResult.Builder instructionBuilder = InstructionResult.newBuilder()
+        InstructionAck.Builder instructionBuilder = InstructionAck.newBuilder()
                                                                         .setInstructionId(instructionId)
                                                                         .setSuccess(success);
         if (errorMessage != null) {
             instructionBuilder.setError(errorMessage);
         }
-        InstructionResult instructionResult = instructionBuilder.build();
+        InstructionAck instructionResult = instructionBuilder.build();
         streamObserver.onNext(PlatformInboundInstruction.newBuilder()
-                                                        .setResult(instructionResult)
+                                                        .setAck(instructionResult)
                                                         .build());
     }
 
@@ -690,10 +690,10 @@ public class AxonServerConnectionManager {
         return (i, s) -> {
             try {
                 handler.accept(i, s);
-                sendSuccessfulInstructionResult(i.getInstructionId(), s);
+                sendSuccessfulInstructionAck(i.getInstructionId(), s);
             } catch (Exception e) {
                 logger.warn("Error happened while handling instruction {}.", i.getInstructionId());
-                sendUnsuccessfulInstructionResult(i.getInstructionId(),
+                sendUnsuccessfulInstructionAck(i.getInstructionId(),
                                                   ErrorMessage.newBuilder()
                                                               .setErrorCode(ErrorCode.INSTRUCTION_EXECUTION_ERROR
                                                                                     .errorCode())

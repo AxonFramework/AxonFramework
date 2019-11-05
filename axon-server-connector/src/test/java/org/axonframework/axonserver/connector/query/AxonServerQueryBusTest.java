@@ -256,11 +256,11 @@ public class AxonServerQueryBusTest {
         assertTrue(requestStream.sentMessages()
                                 .stream()
                                 .anyMatch(outbound -> outbound.getRequestCase()
-                                                              .equals(QueryProviderOutbound.RequestCase.RESULT)
-                                        && !outbound.getResult().getSuccess()
-                                        && outbound.getResult().getError().getErrorCode()
+                                                              .equals(QueryProviderOutbound.RequestCase.ACK)
+                                        && !outbound.getAck().getSuccess()
+                                        && outbound.getAck().getError().getErrorCode()
                                                    .equals(UNSUPPORTED_INSTRUCTION.errorCode())
-                                        && outbound.getResult().getInstructionId().equals(instructionId)));
+                                        && outbound.getAck().getInstructionId().equals(instructionId)));
     }
 
     @Test

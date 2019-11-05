@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.InstructionResult;
+import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.query.QueryComplete;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase;
@@ -431,10 +431,10 @@ public class AxonServerQueryBus implements QueryBus {
         return (inbound, stream) -> {
             try {
                 handler.accept(configuration.getContext(), inbound);
-                sendSuccessfulInstructionResult(inbound.getInstructionId(), stream);
+                sendSuccessfulInstructionAck(inbound.getInstructionId(), stream);
             } catch (Exception e) {
                 logger.warn("Error happened while handling query instruction {}.", inbound.getInstructionId());
-                sendUnsuccessfulInstructionResult(inbound.getInstructionId(),
+                sendUnsuccessfulInstructionAck(inbound.getInstructionId(),
                                                   ErrorMessage.newBuilder()
                                                               .setErrorCode(ErrorCode.INSTRUCTION_EXECUTION_ERROR.errorCode())
                                                               .addDetails("Error happened while handling query instruction")
@@ -445,26 +445,26 @@ public class AxonServerQueryBus implements QueryBus {
         };
     }
 
-    private void sendSuccessfulInstructionResult(String instructionId, StreamObserver<QueryProviderOutbound> stream) {
-        sendInstructionResult(instructionId, true, null, stream);
+    private void sendSuccessfulInstructionAck(String instructionId, StreamObserver<QueryProviderOutbound> stream) {
+        sendInstructionAck(instructionId, true, null, stream);
     }
 
-    private void sendUnsuccessfulInstructionResult(String instructionId, ErrorMessage errorMessage,
+    private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
                                                    StreamObserver<QueryProviderOutbound> stream) {
-        sendInstructionResult(instructionId, false, errorMessage, stream);
+        sendInstructionAck(instructionId, false, errorMessage, stream);
     }
 
-    private void sendInstructionResult(String instructionId, boolean success, ErrorMessage errorMessage,
+    private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
                                        StreamObserver<QueryProviderOutbound> stream) {
-        InstructionResult.Builder builder = InstructionResult.newBuilder()
+        InstructionAck.Builder builder = InstructionAck.newBuilder()
                                                              .setInstructionId(instructionId)
                                                              .setSuccess(success);
         if (errorMessage != null) {
             builder.setError(errorMessage);
         }
-        InstructionResult instructionResult = builder.build();
+        InstructionAck instructionResult = builder.build();
         stream.onNext(QueryProviderOutbound.newBuilder()
-                                           .setResult(instructionResult)
+                                           .setAck(instructionResult)
                                            .build());
     }
 
@@ -551,16 +551,16 @@ public class AxonServerQueryBus implements QueryBus {
             queryHandlers.register(QUERY,
                                    (inbound, stream) -> queryExecutor
                                            .execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery())));
-            queryHandlers.register(RESULT, (inbound, stream) -> {
-                if (isUnsupportedInstructionErrorResult(inbound.getResult())) {
-                    logger.warn("Unsupported query instruction sent to the server. {}", inbound.getResult());
+            queryHandlers.register(ACK, (inbound, stream) -> {
+                if (isUnsupportedInstructionErrorResult(inbound.getAck())) {
+                    logger.warn("Unsupported query instruction sent to the server. {}", inbound.getAck());
                 } else {
-                    logger.trace("Received query confirmation {}.", inbound.getResult());
+                    logger.trace("Received query ack {}.", inbound.getAck());
                 }
             });
         }
 
-        private boolean isUnsupportedInstructionErrorResult(InstructionResult instructionResult) {
+        private boolean isUnsupportedInstructionErrorResult(InstructionAck instructionResult) {
             return instructionResult.hasError()
                     && instructionResult.getError().getErrorCode().equals(ErrorCode.UNSUPPORTED_INSTRUCTION
                                                                                   .errorCode());
@@ -676,9 +676,9 @@ public class AxonServerQueryBus implements QueryBus {
                 public void onNext(QueryProviderInbound inboundRequest) {
                     RequestCase requestCase = inboundRequest.getRequestCase();
                     Collection<BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> defaultHandlers = Collections
-                            .singleton((qpi, stream) -> sendUnsuccessfulInstructionResult(qpi.getInstructionId(),
-                                                                                          unsupportedInstruction(),
-                                                                                          stream));
+                            .singleton((qpi, stream) -> sendUnsuccessfulInstructionAck(qpi.getInstructionId(),
+                                                                                       unsupportedInstruction(),
+                                                                                       stream));
                     queryHandlers.getOrDefault(configuration.getContext(), requestCase, defaultHandlers)
                                  .forEach(consumer -> consumer.accept(inboundRequest,
                                                                       requestStreamFactory.apply(this)));

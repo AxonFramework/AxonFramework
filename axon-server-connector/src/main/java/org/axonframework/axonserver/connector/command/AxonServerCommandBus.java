@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.InstructionResult;
+import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
@@ -564,27 +564,27 @@ public class AxonServerCommandBus implements CommandBus {
         }
     }
 
-    private void sendSuccessfulInstructionResult(String instructionId,
+    private void sendSuccessfulInstructionAck(String instructionId,
                                                  StreamObserver<CommandProviderOutbound> streamObserver) {
-        sendInstructionResult(instructionId, true, null, streamObserver);
+        sendInstructionAck(instructionId, true, null, streamObserver);
     }
 
-    private void sendUnsuccessfulInstructionResult(String instructionId, ErrorMessage errorMessage,
+    private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
                                                    StreamObserver<CommandProviderOutbound> streamObserver) {
-        sendInstructionResult(instructionId, false, errorMessage, streamObserver);
+        sendInstructionAck(instructionId, false, errorMessage, streamObserver);
     }
 
-    private void sendInstructionResult(String instructionId, boolean success, ErrorMessage errorMessage,
+    private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
                                        StreamObserver<CommandProviderOutbound> streamObserver) {
-        InstructionResult.Builder builder = InstructionResult.newBuilder()
+        InstructionAck.Builder builder = InstructionAck.newBuilder()
                                                              .setInstructionId(instructionId)
                                                              .setSuccess(success);
         if (errorMessage != null) {
             builder.setError(errorMessage);
         }
-        InstructionResult commandResult = builder.build();
+        InstructionAck commandResult = builder.build();
         CommandProviderOutbound message = CommandProviderOutbound.newBuilder()
-                                                                 .setResult(commandResult)
+                                                                 .setAck(commandResult)
                                                                  .build();
         streamObserver.onNext(message);
     }
@@ -622,16 +622,16 @@ public class AxonServerCommandBus implements CommandBus {
             commandHandlers.register(CommandProviderInbound.RequestCase.COMMAND,
                                      (inbound, stream) -> commandExecutor
                                              .execute(new CommandProcessingTask(inbound.getCommand())));
-            commandHandlers.register(CommandProviderInbound.RequestCase.RESULT, (inbound, stream) -> {
-                if (isUnsupportedInstructionErrorResult(inbound.getResult())) {
-                    logger.warn("Unsupported command instruction sent to the server. {}", inbound.getResult());
+            commandHandlers.register(CommandProviderInbound.RequestCase.ACK, (inbound, stream) -> {
+                if (isUnsupportedInstructionErrorResult(inbound.getAck())) {
+                    logger.warn("Unsupported command instruction sent to the server. {}", inbound.getAck());
                 } else {
-                    logger.trace("Received command confirmation: {}.", inbound.getResult());
+                    logger.trace("Received command ack: {}.", inbound.getAck());
                 }
             });
         }
 
-        private boolean isUnsupportedInstructionErrorResult(InstructionResult instructionResult) {
+        private boolean isUnsupportedInstructionErrorResult(InstructionAck instructionResult) {
             return instructionResult.hasError()
                     && instructionResult.getError().getErrorCode().equals(ErrorCode.UNSUPPORTED_INSTRUCTION.errorCode());
         }
@@ -718,9 +718,10 @@ public class AxonServerCommandBus implements CommandBus {
                     logger.debug("Received command from server: {}", commandToSubscriber);
                     CommandProviderInbound.RequestCase requestCase = commandToSubscriber.getRequestCase();
                     Collection<BiConsumer<CommandProviderInbound, StreamObserver<CommandProviderOutbound>>> defaultHandlers = Collections
-                            .singleton((cpi, stream) -> sendUnsuccessfulInstructionResult(cpi.getInstructionId(),
-                                                                                          unsupportedInstruction(),
-                                                                                          requestStreamFactory.apply(this)));
+                            .singleton((cpi, stream) -> sendUnsuccessfulInstructionAck(cpi.getInstructionId(),
+                                                                                       unsupportedInstruction(),
+                                                                                       requestStreamFactory
+                                                                                               .apply(this)));
                     commandHandlers.getOrDefault(configuration.getContext(), requestCase, defaultHandlers)
                                    .forEach(handler -> handler.accept(commandToSubscriber,
                                                                       requestStreamFactory.apply(this)));
