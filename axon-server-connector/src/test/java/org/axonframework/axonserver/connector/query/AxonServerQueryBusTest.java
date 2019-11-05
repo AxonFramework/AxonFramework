@@ -264,6 +264,33 @@ public class AxonServerQueryBusTest {
     }
 
     @Test
+    public void unsupportedQueryInstructionWithoutInstructionId() {
+        TestStreamObserver<QueryProviderOutbound> requestStream = new TestStreamObserver<>();
+        AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
+                                                           .axonServerConnectionManager(axonServerConnectionManager)
+                                                           .configuration(configuration)
+                                                           .localSegment(localSegment)
+                                                           .updateEmitter(localSegment.queryUpdateEmitter())
+                                                           .messageSerializer(serializer)
+                                                           .genericSerializer(serializer)
+                                                           .targetContextResolver(targetContextResolver)
+                                                           .requestStreamFactory(so -> requestStream)
+                                                           .build();
+
+        AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
+                buildInboundQueryStreamObserverReference();
+
+        Registration result = testSubject.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
+
+        QueryProviderInbound inboundMessage = QueryProviderInbound.newBuilder().build();
+        inboundStreamObserver.get().onNext(inboundMessage);
+
+        result.close();
+
+        assertEquals(0, requestStream.sentMessages().size());
+    }
+
+    @Test
     public void scatterGather() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class))
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 10));

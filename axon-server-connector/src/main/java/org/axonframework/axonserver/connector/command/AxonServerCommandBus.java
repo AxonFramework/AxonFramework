@@ -565,20 +565,23 @@ public class AxonServerCommandBus implements CommandBus {
     }
 
     private void sendSuccessfulInstructionAck(String instructionId,
-                                                 StreamObserver<CommandProviderOutbound> streamObserver) {
+                                              StreamObserver<CommandProviderOutbound> streamObserver) {
         sendInstructionAck(instructionId, true, null, streamObserver);
     }
 
     private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
-                                                   StreamObserver<CommandProviderOutbound> streamObserver) {
+                                                StreamObserver<CommandProviderOutbound> streamObserver) {
         sendInstructionAck(instructionId, false, errorMessage, streamObserver);
     }
 
     private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
-                                       StreamObserver<CommandProviderOutbound> streamObserver) {
+                                    StreamObserver<CommandProviderOutbound> streamObserver) {
+        if (instructionId == null || instructionId.equals("")) {
+            return;
+        }
         InstructionAck.Builder builder = InstructionAck.newBuilder()
-                                                             .setInstructionId(instructionId)
-                                                             .setSuccess(success);
+                                                       .setInstructionId(instructionId)
+                                                       .setSuccess(success);
         if (errorMessage != null) {
             builder.setError(errorMessage);
         }
@@ -619,9 +622,10 @@ public class AxonServerCommandBus implements CommandBus {
             );
             commandExecutor = executorServiceBuilder.apply(configuration, commandProcessQueue);
             this.requestStreamFactory = requestStreamFactory;
-            commandHandlers.register(CommandProviderInbound.RequestCase.COMMAND,
-                                     (inbound, stream) -> commandExecutor
-                                             .execute(new CommandProcessingTask(inbound.getCommand())));
+            commandHandlers.register(CommandProviderInbound.RequestCase.COMMAND, (inbound, stream) -> {
+                commandExecutor.execute(new CommandProcessingTask(inbound.getCommand()));
+                sendSuccessfulInstructionAck(inbound.getInstructionId(), stream);
+            });
             commandHandlers.register(CommandProviderInbound.RequestCase.ACK, (inbound, stream) -> {
                 if (isUnsupportedInstructionErrorResult(inbound.getAck())) {
                     logger.warn("Unsupported command instruction sent to the server. {}", inbound.getAck());

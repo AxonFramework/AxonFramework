@@ -444,20 +444,23 @@ public class AxonServerConnectionManager {
     }
 
     private void sendSuccessfulInstructionAck(String instructionId,
-                                                 StreamObserver<PlatformInboundInstruction> streamObserver) {
+                                              StreamObserver<PlatformInboundInstruction> streamObserver) {
         sendInstructionAck(instructionId, true, null, streamObserver);
     }
 
     private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
-                                                    StreamObserver<PlatformInboundInstruction> streamObserver) {
+                                                StreamObserver<PlatformInboundInstruction> streamObserver) {
         sendInstructionAck(instructionId, false, errorMessage, streamObserver);
     }
 
     private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
-                                       StreamObserver<PlatformInboundInstruction> streamObserver) {
+                                    StreamObserver<PlatformInboundInstruction> streamObserver) {
+        if (instructionId == null || instructionId.equals("")) {
+            return;
+        }
         InstructionAck.Builder instructionBuilder = InstructionAck.newBuilder()
-                                                                        .setInstructionId(instructionId)
-                                                                        .setSuccess(success);
+                                                                  .setInstructionId(instructionId)
+                                                                  .setSuccess(success);
         if (errorMessage != null) {
             instructionBuilder.setError(errorMessage);
         }

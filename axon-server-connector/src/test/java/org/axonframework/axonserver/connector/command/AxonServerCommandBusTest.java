@@ -325,6 +325,31 @@ public class AxonServerCommandBusTest {
     }
 
     @Test
+    public void unsupportedCommandInstructionWithoutInstructionId() {
+        AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
+        AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            inboundStreamObserverRef.set(invocationOnMock.getArgument(1));
+            return new TestStreamObserver<CommandProviderInbound>();
+        }).when(mockAxonServerConnectionManager).getCommandStream(any(), any());
+        TestStreamObserver<CommandProviderOutbound> requestStream = new TestStreamObserver<>();
+        AxonServerCommandBus testSubject2 =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(mockAxonServerConnectionManager)
+                                    .configuration(configuration)
+                                    .localSegment(localSegment)
+                                    .serializer(serializer)
+                                    .requestStreamFactory(os -> requestStream)
+                                    .routingStrategy(command -> "RoutingKey")
+                                    .build();
+        testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
+
+        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder().build());
+
+        assertEquals(0, requestStream.sentMessages().size());
+    }
+
+    @Test
     public void resubscribe() throws Exception {
         testSubject.subscribe(String.class.getName(), c -> "Done");
         assertWithin(

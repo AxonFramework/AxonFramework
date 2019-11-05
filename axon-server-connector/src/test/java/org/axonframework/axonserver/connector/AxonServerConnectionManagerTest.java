@@ -118,4 +118,25 @@ public class AxonServerConnectionManagerTest {
                                         && inbound.getAck().getError().getErrorCode().equals(UNSUPPORTED_INSTRUCTION.errorCode())
                                         && inbound.getAck().getInstructionId().equals(instructionId)));
     }
+
+    @Test
+    public void unsupportedInstructionWithoutInstructionId() {
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        TestStreamObserver<PlatformInboundInstruction> requestStream = new TestStreamObserver<>();
+        AxonServerConnectionManager axonServerConnectionManager =
+                spy(AxonServerConnectionManager.builder()
+                                               .axonServerConfiguration(configuration)
+                                               .requestStreamFactory(so -> requestStream)
+                                               .build());
+        AtomicReference<StreamObserver<PlatformOutboundInstruction>> outboundStreamObserverRef = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            outboundStreamObserverRef.set(invocationOnMock.getArgument(1));
+            return new TestStreamObserver<PlatformOutboundInstruction>();
+        }).when(axonServerConnectionManager).getPlatformStream(any(), any());
+
+        axonServerConnectionManager.getChannel();
+
+        outboundStreamObserverRef.get().onNext(PlatformOutboundInstruction.newBuilder().build());
+        assertEquals(0, requestStream.sentMessages().size());
+    }
 }

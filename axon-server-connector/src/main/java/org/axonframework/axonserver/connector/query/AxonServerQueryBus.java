@@ -450,15 +450,18 @@ public class AxonServerQueryBus implements QueryBus {
     }
 
     private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
-                                                   StreamObserver<QueryProviderOutbound> stream) {
+                                                StreamObserver<QueryProviderOutbound> stream) {
         sendInstructionAck(instructionId, false, errorMessage, stream);
     }
 
     private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
-                                       StreamObserver<QueryProviderOutbound> stream) {
+                                    StreamObserver<QueryProviderOutbound> stream) {
+        if (instructionId == null || instructionId.equals("")) {
+            return;
+        }
         InstructionAck.Builder builder = InstructionAck.newBuilder()
-                                                             .setInstructionId(instructionId)
-                                                             .setSuccess(success);
+                                                       .setInstructionId(instructionId)
+                                                       .setSuccess(success);
         if (errorMessage != null) {
             builder.setError(errorMessage);
         }
@@ -548,9 +551,10 @@ public class AxonServerQueryBus implements QueryBus {
                     )
             );
             queryExecutor = executorServiceBuilder.apply(configuration, queryProcessQueue);
-            queryHandlers.register(QUERY,
-                                   (inbound, stream) -> queryExecutor
-                                           .execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery())));
+            queryHandlers.register(QUERY, (inbound, stream) -> {
+                queryExecutor.execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery()));
+                sendSuccessfulInstructionAck(inbound.getInstructionId(), stream);
+            });
             queryHandlers.register(ACK, (inbound, stream) -> {
                 if (isUnsupportedInstructionErrorResult(inbound.getAck())) {
                     logger.warn("Unsupported query instruction sent to the server. {}", inbound.getAck());
