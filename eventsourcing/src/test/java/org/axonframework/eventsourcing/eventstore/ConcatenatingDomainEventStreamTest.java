@@ -19,8 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,12 +116,7 @@ public class ConcatenatingDomainEventStreamTest {
         assertSame(event1.getPayload(), concat.next().getPayload());
         assertSame(event1.getPayload(), concat.next().getPayload());
         assertSame(event2.getPayload(), concat.next().getPayload());
-
-        assertSame(event3.getPayload(), concat.peek().getPayload());
-
         assertSame(event3.getPayload(), concat.next().getPayload());
-
-        assertSame(event4.getPayload(), concat.peek().getPayload());
         assertSame(event4.getPayload(), concat.next().getPayload());
         assertFalse(concat.hasNext());
     }
