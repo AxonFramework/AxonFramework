@@ -96,6 +96,7 @@ public class AxonServerConnectionManager {
     private final TagsConfiguration tagsConfiguration;
     private final ScheduledExecutorService scheduler;
     private final Function<UpstreamAwareStreamObserver<PlatformOutboundInstruction>, StreamObserver<PlatformInboundInstruction>> requestStreamFactory;
+    private final InstructionAckSource<PlatformInboundInstruction> instructionAckSource;
 
     /**
      * Initializes the Axon Server Connection Manager with the connect information. An empty {@link TagsConfiguration}
@@ -135,6 +136,9 @@ public class AxonServerConnectionManager {
                 }
         );
         this.requestStreamFactory = os -> (StreamObserver<PlatformInboundInstruction>) os.getRequestStream();
+        this.instructionAckSource = new DefaultInstructionAckSource<>(ack -> PlatformInboundInstruction.newBuilder()
+                                                                                                       .setAck(ack)
+                                                                                                       .build());
     }
 
     /**
@@ -148,6 +152,7 @@ public class AxonServerConnectionManager {
         this.tagsConfiguration = builder.tagsConfiguration;
         this.scheduler = builder.scheduler;
         this.requestStreamFactory = builder.requestStreamFactory;
+        this.instructionAckSource = builder.instructionAckSource;
         onOutboundInstruction(NODE_NOTIFICATION,
                               (instruction, stream) -> logger.debug("Received: {}", instruction.getNodeNotification()));
         handlers.register(ACK, (instruction, stream) -> {
@@ -394,10 +399,10 @@ public class AxonServerConnectionManager {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
                         Collection<BiConsumer<PlatformOutboundInstruction, StreamObserver<PlatformInboundInstruction>>> defaultHandlers = Collections
-                                .singleton((poi, stream) -> sendUnsuccessfulInstructionAck(
-                                        poi.getInstructionId(),
-                                        unsupportedInstruction(),
-                                        requestStreamFactory.apply(this)));
+                                .singleton((poi, stream) -> instructionAckSource
+                                        .sendUnsupportedInstruction(poi.getInstructionId(),
+                                                                    axonServerConfiguration.getClientId(),
+                                                                    requestStreamFactory.apply(this)));
                         handlers.getOrDefault(context,
                                               messagePlatformOutboundInstruction.getRequestCase(),
                                               defaultHandlers)
@@ -433,41 +438,6 @@ public class AxonServerConnectionManager {
         if (existingStream != null) {
             existingStream.onCompleted();
         }
-    }
-
-    private ErrorMessage unsupportedInstruction() {
-        return ErrorMessage.newBuilder()
-                           .addDetails("Unsupported instruction")
-                           .setErrorCode(ErrorCode.UNSUPPORTED_INSTRUCTION.errorCode())
-                           .setLocation(axonServerConfiguration.getClientId())
-                           .build();
-    }
-
-    private void sendSuccessfulInstructionAck(String instructionId,
-                                              StreamObserver<PlatformInboundInstruction> streamObserver) {
-        sendInstructionAck(instructionId, true, null, streamObserver);
-    }
-
-    private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
-                                                StreamObserver<PlatformInboundInstruction> streamObserver) {
-        sendInstructionAck(instructionId, false, errorMessage, streamObserver);
-    }
-
-    private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
-                                    StreamObserver<PlatformInboundInstruction> streamObserver) {
-        if (instructionId == null || instructionId.equals("")) {
-            return;
-        }
-        InstructionAck.Builder instructionBuilder = InstructionAck.newBuilder()
-                                                                  .setInstructionId(instructionId)
-                                                                  .setSuccess(success);
-        if (errorMessage != null) {
-            instructionBuilder.setError(errorMessage);
-        }
-        InstructionAck instructionResult = instructionBuilder.build();
-        streamObserver.onNext(PlatformInboundInstruction.newBuilder()
-                                                        .setAck(instructionResult)
-                                                        .build());
     }
 
     private synchronized void scheduleReconnect(String context, boolean immediate) {
@@ -693,17 +663,16 @@ public class AxonServerConnectionManager {
         return (i, s) -> {
             try {
                 handler.accept(i, s);
-                sendSuccessfulInstructionAck(i.getInstructionId(), s);
+                instructionAckSource.sendSuccessfulAck(i.getInstructionId(), s);
             } catch (Exception e) {
                 logger.warn("Error happened while handling instruction {}.", i.getInstructionId());
-                sendUnsuccessfulInstructionAck(i.getInstructionId(),
-                                                  ErrorMessage.newBuilder()
-                                                              .setErrorCode(ErrorCode.INSTRUCTION_EXECUTION_ERROR
-                                                                                    .errorCode())
-                                                              .setLocation(axonServerConfiguration.getClientId())
-                                                              .addDetails("Error happened while handling instruction")
-                                                              .build(),
-                                                  s);
+                ErrorMessage instructionAckError = ErrorMessage
+                        .newBuilder()
+                        .setErrorCode(ErrorCode.INSTRUCTION_ACK_ERROR.errorCode())
+                        .setLocation(axonServerConfiguration.getClientId())
+                        .addDetails("Error happened while handling instruction")
+                        .build();
+                instructionAckSource.sendUnsuccessfulAck(i.getInstructionId(), instructionAckError, s);
             }
         };
     }
@@ -786,6 +755,10 @@ public class AxonServerConnectionManager {
         );
         private Function<UpstreamAwareStreamObserver<PlatformOutboundInstruction>, StreamObserver<PlatformInboundInstruction>> requestStreamFactory = os -> (StreamObserver<PlatformInboundInstruction>) os
                 .getRequestStream();
+        private InstructionAckSource<PlatformInboundInstruction> instructionAckSource =
+                new DefaultInstructionAckSource<>(ack -> PlatformInboundInstruction.newBuilder()
+                                                                                   .setAck(ack)
+                                                                                   .build());
 
         /**
          * Sets the {@link AxonServerConfiguration} used to correctly configure connections between Axon clients and
@@ -842,6 +815,18 @@ public class AxonServerConnectionManager {
                 Function<UpstreamAwareStreamObserver<PlatformOutboundInstruction>, StreamObserver<PlatformInboundInstruction>> requestStreamFactory) {
             assertNonNull(requestStreamFactory, "RequestStreamFactory may not be null");
             this.requestStreamFactory = requestStreamFactory;
+            return this;
+        }
+
+        /**
+         * Sets the instruction ack source used to send instruction acknowledgements.
+         *
+         * @param instructionAckSource used to send instruction acknowledgements
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder instructionAckSource(InstructionAckSource<PlatformInboundInstruction> instructionAckSource) {
+            assertNonNull(instructionAckSource, "InstructionAckSource may not be null");
+            this.instructionAckSource = instructionAckSource;
             return this;
         }
 

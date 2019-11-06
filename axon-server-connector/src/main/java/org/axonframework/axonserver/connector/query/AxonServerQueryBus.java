@@ -33,9 +33,11 @@ import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DefaultHandlers;
+import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.Handlers;
+import org.axonframework.axonserver.connector.InstructionAckSource;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
@@ -93,7 +95,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.*;
-import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.numberOfResults;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -126,6 +127,7 @@ public class AxonServerQueryBus implements QueryBus {
     private final Map<String, Set<String>> subscriptions = new ConcurrentHashMap<>();
     private final Handlers<QueryProviderInbound.RequestCase, BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> queryHandlers = new DefaultHandlers<>();
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
+    private final InstructionAckSource<QueryProviderOutbound> instructionAckSource;
 
     /**
      * Creates an instance of the Axon Server {@link QueryBus} client. Will connect to an Axon Server instance to submit
@@ -222,6 +224,9 @@ public class AxonServerQueryBus implements QueryBus {
                 new SubscriptionQueryRequestTarget(localSegment, qpo -> publish(context, qpo), subscriptionSerializer);
         this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
         this.axonServerConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
+        this.instructionAckSource = new DefaultInstructionAckSource<>(ack -> QueryProviderOutbound.newBuilder()
+                                                                                                  .setAck(ack)
+                                                                                                  .build());
     }
 
     /**
@@ -256,6 +261,7 @@ public class AxonServerQueryBus implements QueryBus {
                 new SubscriptionQueryRequestTarget(localSegment, qpo -> publish(context, qpo), subscriptionSerializer);
         this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
         this.axonServerConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
+        this.instructionAckSource = builder.instructionAckSource;
     }
 
     /**
@@ -431,44 +437,17 @@ public class AxonServerQueryBus implements QueryBus {
         return (inbound, stream) -> {
             try {
                 handler.accept(configuration.getContext(), inbound);
-                sendSuccessfulInstructionAck(inbound.getInstructionId(), stream);
+                instructionAckSource.sendSuccessfulAck(inbound.getInstructionId(), stream);
             } catch (Exception e) {
                 logger.warn("Error happened while handling query instruction {}.", inbound.getInstructionId());
-                sendUnsuccessfulInstructionAck(inbound.getInstructionId(),
-                                                  ErrorMessage.newBuilder()
-                                                              .setErrorCode(ErrorCode.INSTRUCTION_EXECUTION_ERROR.errorCode())
-                                                              .addDetails("Error happened while handling query instruction")
-                                                              .setLocation(configuration.getClientId())
-                                                              .build(),
-                                                  stream);
+                ErrorMessage error = ErrorMessage.newBuilder()
+                                                 .setErrorCode(ErrorCode.INSTRUCTION_ACK_ERROR.errorCode())
+                                                 .addDetails("Error happened while handling query instruction")
+                                                 .setLocation(configuration.getClientId())
+                                                 .build();
+                instructionAckSource.sendUnsuccessfulAck(inbound.getInstructionId(), error, stream);
             }
         };
-    }
-
-    private void sendSuccessfulInstructionAck(String instructionId, StreamObserver<QueryProviderOutbound> stream) {
-        sendInstructionAck(instructionId, true, null, stream);
-    }
-
-    private void sendUnsuccessfulInstructionAck(String instructionId, ErrorMessage errorMessage,
-                                                StreamObserver<QueryProviderOutbound> stream) {
-        sendInstructionAck(instructionId, false, errorMessage, stream);
-    }
-
-    private void sendInstructionAck(String instructionId, boolean success, ErrorMessage errorMessage,
-                                    StreamObserver<QueryProviderOutbound> stream) {
-        if (instructionId == null || instructionId.equals("")) {
-            return;
-        }
-        InstructionAck.Builder builder = InstructionAck.newBuilder()
-                                                       .setInstructionId(instructionId)
-                                                       .setSuccess(success);
-        if (errorMessage != null) {
-            builder.setError(errorMessage);
-        }
-        InstructionAck instructionResult = builder.build();
-        stream.onNext(QueryProviderOutbound.newBuilder()
-                                           .setAck(instructionResult)
-                                           .build());
     }
 
     @Override
@@ -553,7 +532,7 @@ public class AxonServerQueryBus implements QueryBus {
             queryExecutor = executorServiceBuilder.apply(configuration, queryProcessQueue);
             queryHandlers.register(QUERY, (inbound, stream) -> {
                 queryExecutor.execute(new QueryProcessor.QueryProcessingTask(inbound.getQuery()));
-                sendSuccessfulInstructionAck(inbound.getInstructionId(), stream);
+                instructionAckSource.sendSuccessfulAck(inbound.getInstructionId(), stream);
             });
             queryHandlers.register(ACK, (inbound, stream) -> {
                 if (isUnsupportedInstructionErrorResult(inbound.getAck())) {
@@ -680,9 +659,10 @@ public class AxonServerQueryBus implements QueryBus {
                 public void onNext(QueryProviderInbound inboundRequest) {
                     RequestCase requestCase = inboundRequest.getRequestCase();
                     Collection<BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> defaultHandlers = Collections
-                            .singleton((qpi, stream) -> sendUnsuccessfulInstructionAck(qpi.getInstructionId(),
-                                                                                       unsupportedInstruction(),
-                                                                                       stream));
+                            .singleton((qpi, stream) -> instructionAckSource
+                                    .sendUnsupportedInstruction(qpi.getInstructionId(),
+                                                                configuration.getClientId(),
+                                                                stream));
                     queryHandlers.getOrDefault(configuration.getContext(), requestCase, defaultHandlers)
                                  .forEach(consumer -> consumer.accept(inboundRequest,
                                                                       requestStreamFactory.apply(this)));
@@ -719,14 +699,6 @@ public class AxonServerQueryBus implements QueryBus {
                     t -> t.getRequestCase().equals(QueryProviderOutbound.RequestCase.QUERY_RESPONSE)
             ).sendInitialPermits();
             return outboundStreamObserver;
-        }
-
-        private ErrorMessage unsupportedInstruction() {
-            return ErrorMessage.newBuilder()
-                               .setErrorCode(UNSUPPORTED_INSTRUCTION.errorCode())
-                               .addDetails("Unsupported query instruction")
-                               .setLocation(configuration.getClientId())
-                               .build();
         }
 
         public void unsubscribe(String queryName, Type responseType, String componentName) {
@@ -874,6 +846,8 @@ public class AxonServerQueryBus implements QueryBus {
                 ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
         private Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory = so -> (StreamObserver<QueryProviderOutbound>) so
                 .getRequestStream();
+        private InstructionAckSource<QueryProviderOutbound> instructionAckSource = new DefaultInstructionAckSource<>(ack -> QueryProviderOutbound
+                .newBuilder().setAck(ack).build());
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -1015,6 +989,18 @@ public class AxonServerQueryBus implements QueryBus {
         public Builder requestStreamFactory(Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory) {
             assertNonNull(requestStreamFactory, "RequestStreamFactory may not be null");
             this.requestStreamFactory = requestStreamFactory;
+            return this;
+        }
+
+        /**
+         * Sets the instruction ack source used to send instruction acknowledgements.
+         *
+         * @param instructionAckSource used to send instruction acknowledgements
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder instructionAckSource(InstructionAckSource<QueryProviderOutbound> instructionAckSource) {
+            assertNonNull(instructionAckSource, "InstructionAckSource may not be null");
+            this.instructionAckSource = instructionAckSource;
             return this;
         }
 
