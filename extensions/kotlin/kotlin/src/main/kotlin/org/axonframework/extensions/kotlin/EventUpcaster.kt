@@ -24,6 +24,9 @@ import org.axonframework.serialization.upcasting.event.IntermediateEventRepresen
 import org.axonframework.serialization.upcasting.event.SingleEventUpcaster
 import kotlin.reflect.KClass
 
+/**
+ * Helpers for event upcaster.
+ */
 object EventUpcaster {
     /**
      * Creates a singleEventUpcaster for given type and revisions and calls [IntermediateEventRepresentation#upcastPayload] using the [converter].

@@ -21,6 +21,12 @@ package org.axonframework.extensions.kotlin
 
 import org.axonframework.eventhandling.GenericEventMessage
 
+/**
+ * Extensions for generic message handling.
+ */
 object GenericEventMessageExtensions {
+    /**
+     * Reified version of asEventMessage.
+     */
     inline fun <reified P> asEventMessage(event: Any) = GenericEventMessage.asEventMessage<P>(event)
 }
