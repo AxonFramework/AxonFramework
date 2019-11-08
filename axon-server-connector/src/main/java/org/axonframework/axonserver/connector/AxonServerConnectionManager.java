@@ -807,6 +807,7 @@ public class AxonServerConnectionManager {
 
         /**
          * Sets the request stream factory that creates a request stream based on upstream.
+         * Defaults to {@link UpstreamAwareStreamObserver#getRequestStream()}.
          *
          * @param requestStreamFactory factory that creates a request stream based on upstream
          * @return the current Builder instance, for fluent interfacing
@@ -820,6 +821,7 @@ public class AxonServerConnectionManager {
 
         /**
          * Sets the instruction ack source used to send instruction acknowledgements.
+         * Defaults to {@link DefaultInstructionAckSource}.
          *
          * @param instructionAckSource used to send instruction acknowledgements
          * @return the current Builder instance, for fluent interfacing

@@ -25,7 +25,8 @@ import java.util.function.BiPredicate;
  *
  * @param <Case>    the type of the case
  * @param <Handler> the type of the handler
- * @author Sara Pellegrini, Milan Savic
+ * @author Sara Pellegrini
+ * @author Milan Savic
  * @since 4.2.1
  */
 public interface Handlers<Case, Handler> {

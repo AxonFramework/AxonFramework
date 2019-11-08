@@ -653,7 +653,6 @@ public class AxonServerQueryBus implements QueryBus {
                 return outboundStreamObserver;
             }
 
-            AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamRef = new AtomicReference<>();
             StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new UpstreamAwareStreamObserver<QueryProviderInbound>() {
                 @Override
                 public void onNext(QueryProviderInbound inboundRequest) {
@@ -684,7 +683,6 @@ public class AxonServerQueryBus implements QueryBus {
 
             ResubscribableStreamObserver<QueryProviderInbound> resubscribableStreamObserver =
                     new ResubscribableStreamObserver<>(queryProviderInboundStreamObserver, t -> resubscribe());
-            inboundStreamRef.set(resubscribableStreamObserver);
 
             StreamObserver<QueryProviderOutbound> streamObserver = axonServerConnectionManager.getQueryStream(
                     context, resubscribableStreamObserver
@@ -982,6 +980,7 @@ public class AxonServerQueryBus implements QueryBus {
 
         /**
          * Sets the request stream factory that creates a request stream based on upstream.
+         * Defaults to {@link UpstreamAwareStreamObserver#getRequestStream()}.
          *
          * @param requestStreamFactory factory that creates a request stream based on upstream
          * @return the current Builder instance, for fluent interfacing
@@ -994,6 +993,7 @@ public class AxonServerQueryBus implements QueryBus {
 
         /**
          * Sets the instruction ack source used to send instruction acknowledgements.
+         * Defaults to {@link DefaultInstructionAckSource}.
          *
          * @param instructionAckSource used to send instruction acknowledgements
          * @return the current Builder instance, for fluent interfacing
