@@ -44,6 +44,8 @@ public class DefaultInstructionAckSource<T> implements InstructionAckSource<T> {
 
     @Override
     public void sendAck(String instructionId, boolean success, ErrorMessage error, StreamObserver<T> stream) {
+        // Do not send an ack if instructionId is not set.
+        // This way, requesting side can control for which instructions ack is needed
         if (instructionId == null || instructionId.equals("")) {
             return;
         }
