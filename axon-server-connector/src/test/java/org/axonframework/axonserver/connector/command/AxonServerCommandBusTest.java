@@ -21,19 +21,30 @@ import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.stub.StreamObserver;
-import org.axonframework.axonserver.connector.*;
-import org.axonframework.commandhandling.*;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TestStreamObserver;
+import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,8 +53,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -86,6 +97,7 @@ public class AxonServerCommandBusTest {
                                           .serializer(serializer)
                                           .routingStrategy(command -> "RoutingKey")
                                           .targetContextResolver(targetContextResolver)
+                                          .loadFactorProvider(command -> 36)
                                           .build();
     }
 
@@ -338,5 +350,38 @@ public class AxonServerCommandBusTest {
         //noinspection unchecked
         assertWithin(500, TimeUnit.MILLISECONDS,
                      () -> verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class)));
+    }
+
+    @Test
+    public void subscribeWithLoadFactor() {
+        testSubject.subscribe(String.class.getName(), c -> "Done");
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            Optional<CommandSubscription> subscription = dummyMessagePlatformServer.subscriptionForCommand(String.class
+                                                                                                                   .getName());
+            assertTrue(subscription.isPresent());
+            assertEquals(36, subscription.get().getLoadFactor());
+        });
+    }
+
+    @Test
+    public void resubscribeWithLoadFactor() throws IOException {
+        testSubject.subscribe(String.class.getName(), c -> "Done");
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            Optional<CommandSubscription> subscription = dummyMessagePlatformServer.subscriptionForCommand(String.class
+                                                                                                                   .getName());
+            assertTrue(subscription.isPresent());
+        });
+
+        reset(axonServerConnectionManager);
+        dummyMessagePlatformServer.stop();
+        assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName()));
+
+        dummyMessagePlatformServer.start();
+        assertWithin(5, TimeUnit.SECONDS, () -> {
+            Optional<CommandSubscription> subscription = dummyMessagePlatformServer.subscriptionForCommand(String.class
+                                                                                                                   .getName());
+            assertTrue(subscription.isPresent());
+            assertEquals(36, subscription.get().getLoadFactor());
+        });
     }
 }

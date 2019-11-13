@@ -197,7 +197,7 @@ public class AxonServerCommandBus implements CommandBus {
         String context = configuration.getContext();
         this.targetContextResolver = targetContextResolver.orElse(m -> context);
         this.defaultCommandCallback = NoOpCallback.INSTANCE;
-        this.loadFactorProvider = new DefaultCommandLoadFactorProvider();
+        this.loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
         this.commandProcessor = new CommandProcessor(
                 context, configuration, ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder()
         );
@@ -373,7 +373,7 @@ public class AxonServerCommandBus implements CommandBus {
                 c -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
-        private CommandLoadFactorProvider loadFactorProvider = new DefaultCommandLoadFactorProvider();
+        private CommandLoadFactorProvider loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -505,6 +505,15 @@ public class AxonServerCommandBus implements CommandBus {
             return this;
         }
 
+        /**
+         * Sets the {@link CommandLoadFactorProvider} which provides the load factor values for all commands this
+         * client can handle. The load factor values are sent to AxonServer during command subscription. AxonServer
+         * uses these values to balance the dispatching of commands among the client instances.
+         *
+         * @param loadFactorProvider a {@link CommandLoadFactorProvider} used to get the load factor value for each
+         *                           specific command that this client can handle
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder loadFactorProvider(CommandLoadFactorProvider loadFactorProvider) {
             assertNonNull(loadFactorProvider, "CommandLoadFactorProvider may not be null");
             this.loadFactorProvider = loadFactorProvider;
