@@ -112,6 +112,17 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
+    public void testDeadlineCancellationWithinScopeOnAggregate() {
+        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, new Object()));
+        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, new Object()));
+        configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
+        configuration.commandGateway().sendAndWait(new CancelDeadlineWithinScope(IDENTIFIER));
+
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
+    }
+
+    @Test
     public void testDeadlineCancellationOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
 
@@ -179,6 +190,24 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
+    }
+
+    @Test
+    public void testDeadlineCancellationWithinScopeOnSaga() {
+        SagaStartingEvent sagaStartingEvent = new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE);
+        ScheduleSpecificDeadline firstSchedule = new ScheduleSpecificDeadline(IDENTIFIER, new Object());
+        ScheduleSpecificDeadline secondSchedule = new ScheduleSpecificDeadline(IDENTIFIER, new Object());
+        ScheduleSpecificDeadline thirdSchedule = new ScheduleSpecificDeadline(IDENTIFIER, null);
+        CancelDeadlineWithinScope scheduleCancellation = new CancelDeadlineWithinScope(IDENTIFIER);
+
+        configuration.eventStore().publish(asEventMessage(sagaStartingEvent));
+        configuration.eventStore().publish(asEventMessage(firstSchedule));
+        configuration.eventStore().publish(asEventMessage(secondSchedule));
+        configuration.eventStore().publish(asEventMessage(thirdSchedule));
+        configuration.eventStore().publish(asEventMessage(scheduleCancellation));
+
+
+        assertPublishedEvents(sagaStartingEvent, firstSchedule, secondSchedule, thirdSchedule, scheduleCancellation);
     }
 
     @Test
@@ -257,6 +286,37 @@ public abstract class AbstractDeadlineManagerTestSuite {
         private CreateMyAggregateCommand(String id, boolean cancelBeforeDeadline) {
             this.id = id;
             this.cancelBeforeDeadline = cancelBeforeDeadline;
+        }
+    }
+
+    private static class CancelDeadlineWithinScope {
+
+        @TargetAggregateIdentifier
+        private final String id;
+
+        private CancelDeadlineWithinScope(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            CancelDeadlineWithinScope that = (CancelDeadlineWithinScope) o;
+            return Objects.equals(id, that.id);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
         }
     }
 
@@ -549,6 +609,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
             }
         }
 
+        @SagaEventHandler(associationProperty = "id")
+        public void on(CancelDeadlineWithinScope evt, DeadlineManager deadlineManager) {
+            deadlineManager.cancelWithinScope("deadlineName");
+            deadlineManager.cancelWithinScope("specificDeadlineName");
+            deadlineManager.cancelWithinScope("payloadlessDeadline");
+        }
+
         @DeadlineHandler
         public void on(DeadlinePayload deadlinePayload, @Timestamp Instant timestamp) {
             assertNotNull(timestamp);
@@ -600,6 +667,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
             } else {
                 deadlineManager.schedule(Duration.ofMillis(DEADLINE_TIMEOUT), "payloadlessDeadline");
             }
+        }
+
+        @CommandHandler
+        public void on(CancelDeadlineWithinScope command, DeadlineManager deadlineManager) {
+            deadlineManager.cancelWithinScope("deadlineName");
+            deadlineManager.cancelWithinScope("specificDeadlineName");
+            deadlineManager.cancelWithinScope("payloadlessDeadline");
         }
 
         @EventSourcingHandler
