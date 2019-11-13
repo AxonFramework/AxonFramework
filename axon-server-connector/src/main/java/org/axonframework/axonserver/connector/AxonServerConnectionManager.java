@@ -39,6 +39,7 @@ import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import io.netty.handler.ssl.SslContext;
+import org.axonframework.axonserver.connector.util.AxonFrameworkVersionResolver;
 import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.GrpcBufferingInterceptor;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
@@ -52,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -67,6 +69,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.net.ssl.SSLException;
+import java.util.function.Supplier;
 
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -95,6 +98,7 @@ public class AxonServerConnectionManager {
     private final AxonServerConfiguration axonServerConfiguration;
     private final TagsConfiguration tagsConfiguration;
     private final ScheduledExecutorService scheduler;
+    private final Supplier<String> axonFrameworkVersionResolver;
     private final Function<UpstreamAwareStreamObserver<PlatformOutboundInstruction>, StreamObserver<PlatformInboundInstruction>> requestStreamFactory;
     private final InstructionAckSource<PlatformInboundInstruction> instructionAckSource;
 
@@ -135,6 +139,7 @@ public class AxonServerConnectionManager {
                     }
                 }
         );
+        this.axonFrameworkVersionResolver = new AxonFrameworkVersionResolver();
         this.requestStreamFactory = os -> (StreamObserver<PlatformInboundInstruction>) os.getRequestStream();
         this.instructionAckSource = new DefaultInstructionAckSource<>(ack -> PlatformInboundInstruction.newBuilder()
                                                                                                        .setAck(ack)
@@ -151,6 +156,7 @@ public class AxonServerConnectionManager {
         this.axonServerConfiguration = builder.axonServerConfiguration;
         this.tagsConfiguration = builder.tagsConfiguration;
         this.scheduler = builder.scheduler;
+        this.axonFrameworkVersionResolver = builder.axonFrameworkVersionResolver;
         this.requestStreamFactory = builder.requestStreamFactory;
         this.instructionAckSource = builder.instructionAckSource;
         onOutboundInstruction(NODE_NOTIFICATION,
@@ -210,6 +216,7 @@ public class AxonServerConnectionManager {
                                         .setClientId(axonServerConfiguration.getClientId())
                                         .setComponentName(axonServerConfiguration.getComponentName())
                                         .putAllTags(tagsConfiguration.getTags())
+                                        .setVersion(axonFrameworkVersionResolver.get())
                                         .build();
 
             ManagedChannel previousChannel = channels.remove(context);
@@ -691,6 +698,28 @@ public class AxonServerConnectionManager {
     }
 
     /**
+     * Forces a disconnection from AxonServer for the specified context.
+     *
+     * @param context the (Bounded) Context for which the disconnection is required
+     * @param cause   the cause of the disconnection
+     */
+    public void disconnectExceptionally(String context, Throwable cause) {
+        if (isConnected(context)) {
+            instructionStreams.get(context).onError(cause);
+        }
+    }
+
+    /**
+     * Returns {@code true} if a gRPC channel for the specific context is opened between client and AxonServer.
+     * @param context the (Bounded) Context for for which is verified the AxonServer connection through the gRPC channel
+     * @return if the gRPC channel is opened, false otherwise
+     */
+    public boolean isConnected(String context) {
+        ManagedChannel channel = channels.get(context);
+        return channel != null && !channel.isShutdown();
+    }
+
+    /**
      * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
      */
     public void shutdown() {
@@ -734,13 +763,16 @@ public class AxonServerConnectionManager {
      * <p>
      * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the
      * {@link ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory}
-     * tied to it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     * tied to it. The Axon Framework version resolver ({@link Supplier}<{@link String}>) is defaulted to
+     * {@link AxonFrameworkVersionResolver}. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as
+     * such should be provided.
      */
     public static class Builder {
 
         private static final int DEFAULT_POOL_SIZE = 1;
 
         private AxonServerConfiguration axonServerConfiguration;
+        private Supplier<String> axonFrameworkVersionResolver = new AxonFrameworkVersionResolver();
         private TagsConfiguration tagsConfiguration = new TagsConfiguration();
         private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
                 DEFAULT_POOL_SIZE,
@@ -802,6 +834,19 @@ public class AxonServerConnectionManager {
         public Builder scheduler(ScheduledExecutorService scheduler) {
             assertNonNull(scheduler, "ScheduledExecutorService may not be null");
             this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * Sets the Axon Framework version resolver used in order to communicate the client version to send to Axon
+         * Server.
+         *
+         * @param axonFrameworkVersionResolver a string supplier that retrieve the current Axon Framework version
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder axonFrameworkVersionResolver(Supplier<String> axonFrameworkVersionResolver) {
+            assertNonNull(axonFrameworkVersionResolver, "Axon Framework Version Resolver may not be null");
+            this.axonFrameworkVersionResolver = axonFrameworkVersionResolver;
             return this;
         }
 
