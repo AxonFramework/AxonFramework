@@ -17,10 +17,19 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.command.*;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
-import org.axonframework.axonserver.connector.*;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.DispatchInterceptors;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
@@ -43,7 +52,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -68,6 +81,7 @@ public class AxonServerCommandBus implements CommandBus {
     private final CommandSerializer serializer;
     private final RoutingStrategy routingStrategy;
     private final CommandPriorityCalculator priorityCalculator;
+    private final CommandLoadFactorProvider loadFactorProvider;
 
     private final CommandProcessor commandProcessor;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors;
@@ -183,7 +197,7 @@ public class AxonServerCommandBus implements CommandBus {
         String context = configuration.getContext();
         this.targetContextResolver = targetContextResolver.orElse(m -> context);
         this.defaultCommandCallback = NoOpCallback.INSTANCE;
-
+        this.loadFactorProvider = new DefaultCommandLoadFactorProvider();
         this.commandProcessor = new CommandProcessor(
                 context, configuration, ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder()
         );
@@ -208,7 +222,7 @@ public class AxonServerCommandBus implements CommandBus {
         this.routingStrategy = builder.routingStrategy;
         this.priorityCalculator = builder.priorityCalculator;
         this.defaultCommandCallback = builder.defaultCommandCallback;
-
+        this.loadFactorProvider = builder.loadFactorProvider;
         String context = configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
@@ -359,6 +373,7 @@ public class AxonServerCommandBus implements CommandBus {
                 c -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
+        private CommandLoadFactorProvider loadFactorProvider = new DefaultCommandLoadFactorProvider();
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -490,6 +505,12 @@ public class AxonServerCommandBus implements CommandBus {
             return this;
         }
 
+        public Builder loadFactorProvider(CommandLoadFactorProvider loadFactorProvider) {
+            assertNonNull(loadFactorProvider, "CommandLoadFactorProvider may not be null");
+            this.loadFactorProvider = loadFactorProvider;
+            return this;
+        }
+
         /**
          * Initializes a {@link AxonServerCommandBus} as specified through this Builder.
          *
@@ -568,6 +589,7 @@ public class AxonServerCommandBus implements CommandBus {
                                                    .setComponentName(configuration.getComponentName())
                                                    .setClientId(configuration.getClientId())
                                                    .setMessageId(UUID.randomUUID().toString())
+                                                   .setLoadFactor(loadFactorProvider.getFor(command))
                                                    .build()
                         ).build()
                 ));
@@ -587,6 +609,7 @@ public class AxonServerCommandBus implements CommandBus {
                                            .setClientId(configuration.getClientId())
                                            .setComponentName(configuration.getComponentName())
                                            .setMessageId(UUID.randomUUID().toString())
+                                           .setLoadFactor(loadFactorProvider.getFor(commandName))
                                            .build()
                 ).build());
             } catch (Exception e) {
