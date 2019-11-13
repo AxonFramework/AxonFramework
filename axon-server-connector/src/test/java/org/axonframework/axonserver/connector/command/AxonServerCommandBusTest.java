@@ -21,6 +21,7 @@ import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.*;
 import org.axonframework.commandhandling.*;
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
@@ -262,6 +264,7 @@ public class AxonServerCommandBusTest {
                                     .configuration(configuration)
                                     .localSegment(localSegment)
                                     .serializer(serializer)
+                                    .requestStreamFactory(os -> new TestStreamObserver<>())
                                     .routingStrategy(command -> "RoutingKey")
                                     .build();
         testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
@@ -276,10 +279,74 @@ public class AxonServerCommandBusTest {
                                  .setPayload(commandPayload)
                                  .putMetaData("test1", MetaDataValue.newBuilder().setTextValue("Text").build())
                                  .build();
-        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder().setCommand(command).build());
+        String instructionId = "instructionId";
+        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder()
+                                                                    .setInstructionId(instructionId)
+                                                                    .setCommand(command)
+                                                                    .build());
 
         //noinspection unchecked
         verify(mockAxonServerConnectionManager).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+    }
+
+    @Test
+    public void unsupportedCommandInstruction() {
+        AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
+        AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            inboundStreamObserverRef.set(invocationOnMock.getArgument(1));
+            return new TestStreamObserver<CommandProviderInbound>();
+        }).when(mockAxonServerConnectionManager).getCommandStream(any(), any());
+        TestStreamObserver<CommandProviderOutbound> requestStream = new TestStreamObserver<>();
+        AxonServerCommandBus testSubject2 =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(mockAxonServerConnectionManager)
+                                    .configuration(configuration)
+                                    .localSegment(localSegment)
+                                    .serializer(serializer)
+                                    .requestStreamFactory(os -> requestStream)
+                                    .routingStrategy(command -> "RoutingKey")
+                                    .build();
+        testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
+
+        String instructionId = "instructionId";
+        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder()
+                                                                    .setInstructionId(instructionId)
+                                                                    .build());
+
+        assertTrue(requestStream.sentMessages()
+                                .stream()
+                                .anyMatch(outbound -> outbound.getRequestCase()
+                                                              .equals(CommandProviderOutbound.RequestCase.ACK)
+                                        && !outbound.getAck().getSuccess()
+                                        && outbound.getAck().getError().getErrorCode()
+                                                   .equals(UNSUPPORTED_INSTRUCTION.errorCode())
+                                        && outbound.getAck().getInstructionId().equals(instructionId)));
+    }
+
+    @Test
+    public void unsupportedCommandInstructionWithoutInstructionId() {
+        AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
+        AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            inboundStreamObserverRef.set(invocationOnMock.getArgument(1));
+            return new TestStreamObserver<CommandProviderInbound>();
+        }).when(mockAxonServerConnectionManager).getCommandStream(any(), any());
+        TestStreamObserver<CommandProviderOutbound> requestStream = new TestStreamObserver<>();
+        AxonServerCommandBus testSubject2 =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(mockAxonServerConnectionManager)
+                                    .configuration(configuration)
+                                    .localSegment(localSegment)
+                                    .serializer(serializer)
+                                    .requestStreamFactory(os -> requestStream)
+                                    .routingStrategy(command -> "RoutingKey")
+                                    .build();
+        testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
+
+        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder().build());
+
+        assertEquals(0, requestStream.sentMessages().size());
     }
 
     @Test

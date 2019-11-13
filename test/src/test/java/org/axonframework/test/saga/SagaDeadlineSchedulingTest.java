@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,8 @@ import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -95,7 +96,7 @@ public class SagaDeadlineSchedulingTest {
     public void testDeadlineDispatchInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
                 messages -> (i, m) -> GenericDeadlineMessage
-                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails"))
+                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
                .givenAggregate("id").published(new TriggerSagaStartEvent("id"))
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
@@ -107,7 +108,7 @@ public class SagaDeadlineSchedulingTest {
     public void testDeadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
                     uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails"));
+                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp()));
                     return chain.proceed();
                 })
                .givenAggregate("id").published(new TriggerSagaStartEvent("id"))
