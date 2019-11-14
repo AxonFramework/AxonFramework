@@ -509,6 +509,7 @@ public class AxonServerCommandBus implements CommandBus {
          * Sets the {@link CommandLoadFactorProvider} which provides the load factor values for all commands this
          * client can handle. The load factor values are sent to AxonServer during command subscription. AxonServer
          * uses these values to balance the dispatching of commands among the client instances.
+         * The default implementation of loadFactorProvider returns always {@link CommandLoadFactorProvider#DEFAULT_VALUE}
          *
          * @param loadFactorProvider a {@link CommandLoadFactorProvider} used to get the load factor value for each
          *                           specific command that this client can handle
