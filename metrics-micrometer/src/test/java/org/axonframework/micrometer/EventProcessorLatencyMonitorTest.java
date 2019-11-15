@@ -21,30 +21,29 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("unchecked")
-public class EventProcessorLatencyMonitorTest {
+class EventProcessorLatencyMonitorTest {
 
     private static final String METER_NAME_PREFIX = "processor";
 
     private MeterRegistry meterRegistry;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         meterRegistry = new SimpleMeterRegistry();
     }
 
     @Test
-    public void testMessages() {
+    void testMessages() {
         EventProcessorLatencyMonitor testSubject = EventProcessorLatencyMonitor.buildMonitor(METER_NAME_PREFIX,
                                                                                              meterRegistry);
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
@@ -62,7 +61,7 @@ public class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    public void testFailureMessage() {
+    void testFailureMessage() {
         EventProcessorLatencyMonitor testSubject = EventProcessorLatencyMonitor.buildMonitor(METER_NAME_PREFIX,
                                                                                              meterRegistry);
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
@@ -80,7 +79,7 @@ public class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    public void testNullMessage() {
+    void testNullMessage() {
         EventProcessorLatencyMonitor testSubject = EventProcessorLatencyMonitor.buildMonitor(METER_NAME_PREFIX,
                                                                                              meterRegistry);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
