@@ -1,5 +1,7 @@
 # Axon Framework - Kotlin Extension
 
+[![Open Source Helpers](https://www.codetriage.com/axonframework/extension-kotlin/badges/users.svg)](https://www.codetriage.com/axonframework/extension-kotlin)
+
 _Note:_ This extension is still in an experimental stage.
 
 Axon Framework is a framework for building evolutionary, event-driven microservice systems,
