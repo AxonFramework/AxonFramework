@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeDescriptor;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -102,5 +105,20 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
         delegates.stream()
                  .filter(EventHandlerInvoker::supportsReset)
                  .forEach(EventHandlerInvoker::performReset);
+    }
+
+    @Override
+    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        for (EventHandlerInvoker invoker : delegates) {
+            if (invoker.canResolve(scopeDescription)) {
+                invoker.send(message, scopeDescription);
+            }
+        }
+    }
+
+    @Override
+    public boolean canResolve(ScopeDescriptor scopeDescription) {
+        return delegates.stream()
+                        .anyMatch(ehi -> ehi.canResolve(scopeDescription));
     }
 }

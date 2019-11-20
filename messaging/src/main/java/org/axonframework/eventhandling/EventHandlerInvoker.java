@@ -16,12 +16,16 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeDescriptor;
+
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
  *
  * @author Rene de Waele
  */
-public interface EventHandlerInvoker {
+public interface EventHandlerInvoker extends ScopeAware {
 
     /**
      * Check whether or not this invoker has handlers that can handle the given {@code eventMessage} for a given
@@ -70,5 +74,15 @@ public interface EventHandlerInvoker {
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      */
     default void performReset() {
+    }
+
+    @Override
+    default void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        // noop
+    }
+
+    @Override
+    default boolean canResolve(ScopeDescriptor scopeDescription) {
+        return false;
     }
 }

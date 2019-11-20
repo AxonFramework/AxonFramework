@@ -16,8 +16,11 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
+import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeDescriptor;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Allard Buijze
  * @since 1.2
  */
-public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMessage<?>> {
+public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMessage<?>>, ScopeAware {
 
     /**
      * Returns the name of this event processor. This name is used to detect distributed instances of the
@@ -69,5 +72,15 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
      */
     default CompletableFuture<Void> shutdownAsync() {
         return CompletableFuture.runAsync(this::shutDown);
+    }
+
+    @Override
+    default void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        // noop
+    }
+
+    @Override
+    default boolean canResolve(ScopeDescriptor scopeDescription) {
+        return false;
     }
 }

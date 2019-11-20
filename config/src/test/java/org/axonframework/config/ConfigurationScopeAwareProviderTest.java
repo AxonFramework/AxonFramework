@@ -16,19 +16,19 @@
 
 package org.axonframework.config;
 
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.saga.AbstractSagaManager;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.axonframework.modelling.command.Repository;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 
 import java.util.List;
 
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,10 +52,7 @@ public class ConfigurationScopeAwareProviderTest {
     private Repository aggregateRepository;
 
     @Mock
-    private SagaConfiguration sagaConfiguration;
-
-    @Mock
-    private AbstractSagaManager sagaManager;
+    private EventProcessor eventProcessor;
 
     @Mock
     private EventProcessingModule eventProcessingConfiguration;
@@ -82,15 +79,14 @@ public class ConfigurationScopeAwareProviderTest {
     }
 
     @Test
-    public void providesScopeAwareSagasFromModuleConfiguration() {
-        when(eventProcessingConfiguration.sagaConfigurations())
-                .thenReturn(singletonList(sagaConfiguration));
-        when(sagaConfiguration.manager()).thenReturn(sagaManager);
+    public void providesScopeAwareEventProcessorsFromModuleConfiguration() {
+        when(eventProcessingConfiguration.eventProcessors())
+                .thenReturn(singletonMap("myProcessor", eventProcessor));
 
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                                                         .collect(toList());
 
-        assertThat(components, equalTo(singletonList(sagaManager)));
+        assertThat(components, equalTo(singletonList(eventProcessor)));
     }
 
     @Test

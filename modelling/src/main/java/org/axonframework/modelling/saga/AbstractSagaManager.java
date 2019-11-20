@@ -46,7 +46,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, ScopeAware {
+public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
 

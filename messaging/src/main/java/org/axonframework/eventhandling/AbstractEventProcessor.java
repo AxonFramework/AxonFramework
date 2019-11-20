@@ -21,6 +21,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -28,9 +29,11 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -143,6 +146,33 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
     }
 
+    protected void processInUnitOfWork(Map<EventMessage<?>, ScopeDescriptor> scopeEvents,
+                                       UnitOfWork<EventMessage<?>> unitOfWork) throws Exception {
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
+            MessageMonitor.MonitorCallback monitorCallback =
+                    messageMonitor.onMessageIngested(unitOfWork.getMessage());
+            try {
+                EventMessage<?> currentEvent = unitOfWork.getMessage();
+                eventHandlerInvoker.send(currentEvent, scopeEvents.get(currentEvent));
+                monitorCallback.reportSuccess();
+                return null;
+            }catch (Exception e) {
+                monitorCallback.reportFailure(e);
+                throw e;
+            }
+        }, rollbackConfiguration);
+
+        if (resultMessage.isExceptional()) {
+            Throwable e = resultMessage.exceptionResult();
+            if (unitOfWork.isRolledBack()) {
+                errorHandler.handleError(new ErrorContext(getName(), e, new ArrayList<>(scopeEvents.keySet())));
+            } else {
+                logger.info("Exception occurred while processing a message, but unit of work was committed. {}",
+                            e.getClass().getName());
+            }
+        }
+    }
+
     /**
      * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
      * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
@@ -182,6 +212,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                             e.getClass().getName());
             }
         }
+    }
+
+    @Override
+    public boolean canResolve(ScopeDescriptor scopeDescription) {
+        return eventHandlerInvoker.canResolve(scopeDescription);
     }
 
     /**
