@@ -16,9 +16,9 @@
 
 package org.axonframework.config;
 
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Assert;
-import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -66,7 +66,7 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
     private List<ScopeAware> retrieveScopeAwareComponents() {
         List<ScopeAware> components = new ArrayList<>();
         components.addAll(retrieveAggregateRepositories());
-        components.addAll(retrieveSagaManagers());
+        components.addAll(retrieveEventProcessors());
         return components;
     }
 
@@ -76,11 +76,9 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
                             .collect(toList());
     }
 
-    private List<AbstractSagaManager> retrieveSagaManagers() {
-        return configuration.eventProcessingConfiguration()
-                            .sagaConfigurations()
-                            .stream()
-                            .map(SagaConfiguration::manager)
-                            .collect(toList());
+    private List<EventProcessor> retrieveEventProcessors() {
+        return new ArrayList<>(configuration.eventProcessingConfiguration()
+                                            .eventProcessors()
+                                            .values());
     }
 }

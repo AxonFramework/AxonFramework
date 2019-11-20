@@ -21,13 +21,17 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -113,6 +117,21 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
             throw e;
         } catch (Exception e) {
             throw new EventProcessingException("Exception occurred while processing events", e);
+        }
+    }
+
+    @Override
+    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        if (!(message instanceof EventMessage)) {
+            String exceptionMessage = String.format(
+                    "Something else than an EventMessage was scheduled to be dispatched via "
+                            + "SubscribingEventProcessor [%s].", getName());
+            throw new IllegalArgumentException(exceptionMessage);
+        }
+        if (canResolve(scopeDescription)) {
+            EventMessage<?> eventMessage = (EventMessage<?>) message;
+            DefaultUnitOfWork<EventMessage<?>> uow = new DefaultUnitOfWork<>(eventMessage);
+            processInUnitOfWork(Collections.singletonMap(eventMessage, scopeDescription), uow);
         }
     }
 

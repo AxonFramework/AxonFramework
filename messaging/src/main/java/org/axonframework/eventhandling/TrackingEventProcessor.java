@@ -24,6 +24,8 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -71,9 +73,20 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
 
+    private static class ScopeEvent {
+        private final EventMessage<?> event;
+        private final ScopeDescriptor scope;
+
+        private ScopeEvent(EventMessage<?> event, ScopeDescriptor scope) {
+            this.event = event;
+            this.scope = scope;
+        }
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+    private final Deque<ScopeEvent> scopeEvents = new LinkedBlockingDeque<>(1_000); // TODO: 11/19/2019 make queue size configurable
     private final TokenStore tokenStore;
     private final Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder;
     private final TransactionManager transactionManager;
@@ -272,6 +285,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     && canClaimSegment(segment.getSegmentId())) {
                 try {
                     eventStream = ensureEventStreamOpened(eventStream, segment);
+                    processScopeEvents();
                     processBatch(segment, eventStream);
                     errorWaitTime = 1;
                 } catch (UnableToClaimTokenException e) {
@@ -653,6 +667,32 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public CompletableFuture<Void> shutdownAsync() {
         setShutdownState();
         return CompletableFuture.runAsync(this::awaitTermination);
+    }
+
+    private void processScopeEvents() throws Exception {
+        if (scopeEvents.size() == 0) {
+            return;
+        }
+        ScopeEvent scopeEvent;
+        Map<EventMessage<?>, ScopeDescriptor> batch = new LinkedHashMap<>();
+        while ((scopeEvent = scopeEvents.poll()) != null && batch.size() < batchSize) {
+            batch.put(scopeEvent.event, scopeEvent.scope);
+        }
+        BatchingUnitOfWork<EventMessage<?>> uow = new BatchingUnitOfWork<>(new ArrayList<>(batch.keySet()));
+        processInUnitOfWork(batch, uow);
+    }
+
+    @Override
+    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        if (!(message instanceof EventMessage)) {
+            String exceptionMessage = String.format(
+                    "Something else than an EventMessage was scheduled to be dispatched via "
+                            + "TrackingEventProcessor [%s].", getName());
+            throw new IllegalArgumentException(exceptionMessage);
+        }
+        if (canResolve(scopeDescription)) {
+            scopeEvents.add(new ScopeEvent((EventMessage) message, scopeDescription));
+        }
     }
 
     /**
