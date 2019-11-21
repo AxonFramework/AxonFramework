@@ -143,6 +143,33 @@ public class DefaultConfigurerTest {
     }
 
     @Test
+    public void defaultConfigurationWithTrackingProcessorAutoStartDisabled() throws Exception {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        String processorName = "myProcessor";
+        configurer.eventProcessing()
+                  .registerTrackingEventProcessor(processorName,
+                                                  Configuration::eventStore,
+                                                  c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                          .andAutoStart(false))
+                  .byDefaultAssignTo(processorName)
+                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+        Configuration config = configurer
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
+        try {
+            TrackingEventProcessor processor = config.eventProcessingConfiguration()
+                                                     .eventProcessor(processorName, TrackingEventProcessor.class)
+                                                     .orElseThrow(RuntimeException::new);
+            assertFalse(processor.isRunning());
+            processor.start();
+            assertTrue(processor.isRunning());
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
     public void defaultConfigurationWithUpcaster() {
         AtomicInteger counter = new AtomicInteger();
         Configuration config = DefaultConfigurer.defaultConfiguration().configureEmbeddedEventStore(

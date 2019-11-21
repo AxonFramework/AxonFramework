@@ -165,7 +165,7 @@ public class EventProcessingModule
 
     @Override
     public void start() {
-        eventProcessors.forEach((name, component) -> component.get().start());
+        eventProcessors.forEach((name, component) -> component.get().startAutomatically());
     }
 
     @Override

@@ -79,6 +79,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final int segmentsSize;
+    private final boolean autoStart;
 
     private final ThreadFactory threadFactory;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
@@ -125,6 +126,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.eventAvailabilityTimeout = config.getEventAvailabilityTimeout();
         this.storeTokenBeforeProcessing = builder.storeTokenBeforeProcessing;
         this.batchSize = config.getBatchSize();
+        this.autoStart = config.isAutoStart();
 
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
@@ -177,6 +179,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         State previousState = state.getAndSet(State.STARTED);
         if (!previousState.isRunning()) {
             startSegmentWorkers();
+        }
+    }
+
+    /**
+     * Start this processor if it is configured for automatic startup.
+     *
+     * @see #start()
+     */
+    @Override
+    public void startAutomatically() {
+        if (autoStart) {
+            start();
         }
     }
 

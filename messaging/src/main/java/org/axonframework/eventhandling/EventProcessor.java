@@ -62,6 +62,14 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
     void shutDown();
 
     /**
+     * Starts processing events if this processor is configured to start automatically. Automatic startup can be
+     * disabled for some event processor types.
+     */
+    default void startAutomatically() {
+        start();
+    }
+
+    /**
      * Initiates a shutdown, providing a {@link CompletableFuture} that completes when the shutdown process is
      * finished.
      *
