@@ -30,7 +30,7 @@ public abstract class AssertUtils {
     }
 
     /**
-     * Assert that the given {@code assertion} succeeds with the given {@code time} and {@code unit}.
+     * Assert that the given {@code assertion} succeeds with the given {@code duration}.
      *
      * @param duration  specifies the time in which the assertion must
      *                  pass
