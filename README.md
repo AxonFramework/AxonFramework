@@ -1,4 +1,6 @@
-# Axon Framework [![Build Status](https://travis-ci.org/AxonFramework/AxonFramework.svg?branch=master)](https://travis-ci.org/AxonFramework/AxonFramework)
+# Axon Framework 
+[![Build Status](https://travis-ci.org/AxonFramework/AxonFramework.svg?branch=master)](https://travis-ci.org/AxonFramework/AxonFramework)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon)
 
 Axon Framework is a framework for building evolutionary, event-driven microservice systems,
  based on the principles of Domain Driven Design, Command-Query Responsibility Segregation (CQRS) and Event Sourcing.
