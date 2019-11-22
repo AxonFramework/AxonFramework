@@ -105,10 +105,10 @@ class EventProcessingModuleTest {
     @Test
     void testAssigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration()
-                .configureEventBus(c -> SimpleEventBus.builder().build())
-                .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
-                        .registerEventHandler(c -> new TrackingEventHandler())
-                        .registerTrackingEventProcessor("tracking"));
+                                                 .configureEventBus(c -> SimpleEventBus.builder().build())
+                                                 .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                                                                          .registerEventHandler(c -> new TrackingEventHandler())
+                                                                          .registerTrackingEventProcessor("tracking"));
 
         assertThrows(AxonConfigurationException.class, configurer::start);
     }
