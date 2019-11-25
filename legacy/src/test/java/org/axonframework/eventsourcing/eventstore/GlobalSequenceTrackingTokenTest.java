@@ -5,9 +5,9 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test whether the serialized form of the
@@ -16,14 +16,14 @@ import static org.junit.Assert.*;
  *
  * @author Steven van Beelen
  */
-public class GlobalSequenceTrackingTokenTest {
+class GlobalSequenceTrackingTokenTest {
 
     private static final String LEGACY_GLOBAL_SEQUENCE_TRACKING_TOKEN_CLASS_NAME =
             "org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken";
     private static final int GLOBAL_INDEX = 10;
 
     @Test
-    public void testXStreamSerializationOfOldGlobalSequenceTrackingToken() {
+    void testXStreamSerializationOfOldGlobalSequenceTrackingToken() {
         XStreamSerializer serializer = XStreamSerializer.defaultSerializer();
 
         String xmlSerializedGlobalSequenceTrackingToken =
@@ -40,7 +40,7 @@ public class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    public void testJacksonSerializationOfOldGlobalSequenceTrackingToken() {
+    void testJacksonSerializationOfOldGlobalSequenceTrackingToken() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedGlobalSequenceTrackingToken =

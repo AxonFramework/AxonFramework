@@ -14,8 +14,8 @@
 package org.axonframework.spring.messaging.unitofwork;
 
 import org.axonframework.common.transaction.Transaction;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -26,14 +26,14 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class SpringTransactionManagerTest {
+class SpringTransactionManagerTest {
 
     private SpringTransactionManager testSubject;
     private PlatformTransactionManager transactionManager;
     private TransactionStatus underlyingTransactionStatus;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         underlyingTransactionStatus = mock(TransactionStatus.class);
         transactionManager = mock(PlatformTransactionManager.class);
         testSubject = new SpringTransactionManager(transactionManager);
@@ -43,7 +43,7 @@ public class SpringTransactionManagerTest {
     }
 
     @Test
-    public void testManageTransaction_CustomTransactionStatus() {
+    void testManageTransaction_CustomTransactionStatus() {
         testSubject = new SpringTransactionManager(transactionManager, mock(TransactionDefinition.class));
         testSubject.startTransaction().commit();
 
@@ -52,7 +52,7 @@ public class SpringTransactionManagerTest {
     }
 
     @Test
-    public void testManageTransaction_DefaultTransactionStatus() {
+    void testManageTransaction_DefaultTransactionStatus() {
         testSubject.startTransaction().commit();
 
         verify(transactionManager).getTransaction(isA(DefaultTransactionDefinition.class));
@@ -60,7 +60,7 @@ public class SpringTransactionManagerTest {
     }
 
     @Test
-    public void testCommitTransaction_NoCommitOnInactiveTransaction() {
+    void testCommitTransaction_NoCommitOnInactiveTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
         transaction.commit();
@@ -69,7 +69,7 @@ public class SpringTransactionManagerTest {
     }
 
     @Test
-    public void testCommitTransaction_NoRollbackOnInactiveTransaction() {
+    void testCommitTransaction_NoRollbackOnInactiveTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
         transaction.rollback();
@@ -78,7 +78,7 @@ public class SpringTransactionManagerTest {
     }
 
     @Test
-    public void testCommitTransaction_NoCommitOnNestedTransaction() {
+    void testCommitTransaction_NoCommitOnNestedTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
         transaction.commit();
@@ -87,7 +87,7 @@ public class SpringTransactionManagerTest {
     }
 
     @Test
-    public void testCommitTransaction_NoRollbackOnNestedTransaction() {
+    void testCommitTransaction_NoRollbackOnNestedTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
         transaction.rollback();

@@ -21,26 +21,26 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created on 04/02/17.
  *
  * @author Reda.Housni-Alaoui
  */
-public class DefaultEventMessageConverterTest {
+class DefaultEventMessageConverterTest {
 
 	private EventMessageConverter eventMessageConverter = new DefaultEventMessageConverter();
 
 	@Test
-	public void given_generic_event_message_when_converting_twice_then_resulting_event_should_be_the_same(){
+	void given_generic_event_message_when_converting_twice_then_resulting_event_should_be_the_same(){
 		Instant instant = Instant.EPOCH;
 		String id = UUID.randomUUID().toString();
 
@@ -62,7 +62,7 @@ public class DefaultEventMessageConverterTest {
 	}
 
 	@Test
-	public void given_domain_event_message_when_converting_twice_then_resulting_event_should_be_the_same(){
+	void given_domain_event_message_when_converting_twice_then_resulting_event_should_be_the_same(){
 		Instant instant = Instant.EPOCH;
 		String id = UUID.randomUUID().toString();
 		String aggId = UUID.randomUUID().toString();

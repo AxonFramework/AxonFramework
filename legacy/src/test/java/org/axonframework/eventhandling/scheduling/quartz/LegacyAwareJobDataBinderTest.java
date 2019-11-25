@@ -17,27 +17,27 @@ package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.quartz.JobDataMap;
 
 import java.io.ObjectInputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class LegacyAwareJobDataBinderTest {
+class LegacyAwareJobDataBinderTest {
 
     private LegacyAwareJobDataBinder testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new LegacyAwareJobDataBinder();
     }
 
     @Test
-    public void testReadLegacyInstance() {
+    void testReadLegacyInstance() {
         JobDataMap legacyJobDataMap = mock(JobDataMap.class);
         when(legacyJobDataMap.get("org.axonframework.domain.EventMessage")).thenAnswer(
                 i -> {
@@ -57,7 +57,7 @@ public class LegacyAwareJobDataBinderTest {
     }
 
     @Test
-    public void testReadRecentInstance() {
+    void testReadRecentInstance() {
         JobDataMap legacyJobDataMap = mock(JobDataMap.class);
         when(legacyJobDataMap.get(EventMessage.class.getName())).thenReturn(new GenericEventMessage<>("new"));
 

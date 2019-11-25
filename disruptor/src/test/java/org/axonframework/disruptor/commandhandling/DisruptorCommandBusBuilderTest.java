@@ -17,17 +17,19 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-public class DisruptorCommandBusBuilderTest {
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-    @Test(expected = AxonConfigurationException.class)
-    public void testSetIllegalPublisherThreadCount() {
-        DisruptorCommandBus.builder().publisherThreadCount(0).build();
+class DisruptorCommandBusBuilderTest {
+
+    @Test
+    void testSetIllegalPublisherThreadCount() {
+        assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().publisherThreadCount(0));
     }
 
-    @Test(expected = AxonConfigurationException.class)
-    public void testSetIllegalInvokerThreadCount() {
-        DisruptorCommandBus.builder().invokerThreadCount(0).build();
+    @Test
+    void testSetIllegalInvokerThreadCount() {
+        assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().invokerThreadCount(0));
     }
 }

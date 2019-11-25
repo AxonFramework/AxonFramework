@@ -28,18 +28,18 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class DisruptorRepositoryTest {
+class DisruptorRepositoryTest {
 
     private final EventStore eventStore = mock(EventStore.class);
 
     @Test
-    public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
+    void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
         DisruptorCommandBus commandBus = DisruptorCommandBus.builder().build();
         Repository<TestAggregate> repository = commandBus
                 .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class));

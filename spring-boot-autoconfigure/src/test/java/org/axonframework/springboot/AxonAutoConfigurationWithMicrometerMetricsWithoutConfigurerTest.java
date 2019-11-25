@@ -19,8 +19,8 @@ package org.axonframework.springboot;
 import com.codahale.metrics.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.micrometer.GlobalMetricRegistry;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -30,9 +30,9 @@ import org.springframework.boot.autoconfigure.web.reactive.function.client.WebCl
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
@@ -40,8 +40,8 @@ import static org.junit.Assert.*;
         DataSourceAutoConfiguration.class
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
-@RunWith(SpringRunner.class)
-public class AxonAutoConfigurationWithMicrometerMetricsWithoutConfigurerTest {
+@ExtendWith(SpringExtension.class)
+class AxonAutoConfigurationWithMicrometerMetricsWithoutConfigurerTest {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -62,7 +62,7 @@ public class AxonAutoConfigurationWithMicrometerMetricsWithoutConfigurerTest {
     private org.axonframework.metrics.MetricsConfigurerModule metricsModuleMetricsConfigurerModule;
 
     @Test
-    public void testContextInitialization() {
+    void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(meterRegistry);

@@ -5,9 +5,9 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test whether the serialized form of the {@link org.axonframework.eventhandling.saga.SagaScopeDescriptor} can be
@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
  *
  * @author Steven van Beelen
  */
-public class SagaScopeDescriptorTest {
+class SagaScopeDescriptorTest {
 
     private static final String LEGACY_SCOPE_DESCRIPTOR_CLASS_NAME =
             "org.axonframework.eventhandling.saga.SagaScopeDescriptor";
@@ -23,7 +23,7 @@ public class SagaScopeDescriptorTest {
     private static final String SAGA_ID = "saga-id";
 
     @Test
-    public void testXStreamSerializationOfOldSagaScopeDescriptor() {
+    void testXStreamSerializationOfOldSagaScopeDescriptor() {
         XStreamSerializer serializer = XStreamSerializer.defaultSerializer();
 
         String xmlSerializedScopeDescriptor =
@@ -41,7 +41,7 @@ public class SagaScopeDescriptorTest {
     }
 
     @Test
-    public void testJacksonSerializationOfOldSagaScopeDescriptor() {
+    void testJacksonSerializationOfOldSagaScopeDescriptor() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedScopeDescriptor =

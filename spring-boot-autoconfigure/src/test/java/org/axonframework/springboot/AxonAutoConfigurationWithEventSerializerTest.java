@@ -47,8 +47,8 @@ import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -60,19 +60,19 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
         AxonServerAutoConfiguration.class})
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class AxonAutoConfigurationWithEventSerializerTest {
 
@@ -83,7 +83,7 @@ public class AxonAutoConfigurationWithEventSerializerTest {
     private EntityManager entityManager;
 
     @Test
-    public void testContextInitialization() {
+    void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
@@ -104,7 +104,7 @@ public class AxonAutoConfigurationWithEventSerializerTest {
     }
 
     @Test
-    public void testEventStorageEngineUsesSerializerBean() {
+    void testEventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("myEventSerializer", Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);

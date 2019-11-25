@@ -19,7 +19,7 @@ package org.axonframework.config;
 import java.util.List;
 
 import static java.util.Arrays.stream;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Assertion utils for axon {@link Configuration}.

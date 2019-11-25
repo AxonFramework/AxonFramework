@@ -35,8 +35,8 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -48,10 +48,11 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
@@ -59,16 +60,15 @@ import static org.junit.Assert.*;
         DataSourceAutoConfiguration.class,
         JacksonAutoConfiguration.class
 })
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")
-public class ObjectMapperAutoConfigurationTest {
+class ObjectMapperAutoConfigurationTest {
 
     @Autowired
     private ApplicationContext applicationContext;
 
     @Test
-    public void testEventSerializerIsOfTypeJacksonSerializerAndUsesDefaultAxonObjectMapperBean() {
+    void testEventSerializerIsOfTypeJacksonSerializerAndUsesDefaultAxonObjectMapperBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final ObjectMapper objectMapper = applicationContext.getBean("defaultAxonObjectMapper", ObjectMapper.class);

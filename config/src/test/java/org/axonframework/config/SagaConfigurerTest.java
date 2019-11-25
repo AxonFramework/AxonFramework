@@ -22,16 +22,19 @@ import org.axonframework.modelling.saga.AnnotatedSagaManager;
 import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class SagaConfigurerTest {
+@ExtendWith(MockitoExtension.class)
+class SagaConfigurerTest {
 
     @Test
-    public void testNullChecksOnSagaConfigurer() {
+    void testNullChecksOnSagaConfigurer() {
         SagaConfigurer<Object> configurer = SagaConfigurer.forType(Object.class);
         assertConfigurerNullCheck(() -> SagaConfigurer.forType(null), "Saga type should be checked for null");
         assertConfigurerNullCheck(() -> configurer.configureSagaStore(null), "Saga store builder should be checked for null");
@@ -41,9 +44,9 @@ public class SagaConfigurerTest {
     }
 
     @Test
-    public void testDefaultConfiguration() {
-        ListenerInvocationErrorHandler listenerInvocationErrorHandler = mock(ListenerInvocationErrorHandler.class);
-        SagaStore store = mock(SagaStore.class);
+    void testDefaultConfiguration(
+            @Mock ListenerInvocationErrorHandler listenerInvocationErrorHandler,
+            @Mock SagaStore store) {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .eventProcessing(ep -> ep.registerSaga(Object.class))
                                                        .registerComponent(ListenerInvocationErrorHandler.class,
@@ -60,10 +63,10 @@ public class SagaConfigurerTest {
     }
 
     @Test
-    public void testCustomConfiguration() {
+    void testCustomConfiguration(
+            @Mock SagaRepository<Object> repository,
+            @Mock AnnotatedSagaManager<Object> manager) {
         SagaStore<Object> sagaStore = new InMemorySagaStore();
-        SagaRepository<Object> repository = mock(SagaRepository.class);
-        AnnotatedSagaManager<Object> manager = mock(AnnotatedSagaManager.class);
         String processingGroup = "myProcessingGroup";
 
         EventProcessingModule eventProcessingModule = new EventProcessingModule();

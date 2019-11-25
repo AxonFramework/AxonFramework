@@ -20,15 +20,15 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class ConfigurationParameterResolverFactoryTest {
+class ConfigurationParameterResolverFactoryTest {
 
     private Configuration configuration;
     private ConfigurationParameterResolverFactory testSubject;
@@ -36,8 +36,8 @@ public class ConfigurationParameterResolverFactoryTest {
     private Method method;
     private CommandBus commandBus;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         configuration = mock(Configuration.class);
         commandBus = SimpleCommandBus.builder().build();
         when(configuration.getComponent(CommandBus.class)).thenReturn(commandBus);
@@ -48,14 +48,14 @@ public class ConfigurationParameterResolverFactoryTest {
     }
 
     @Test
-    public void testReturnsNullOnUnavailableParameter() {
+    void testReturnsNullOnUnavailableParameter() {
         assertNull(testSubject.createInstance(method, parameters, 0));
 
         verify(configuration).getComponent(String.class);
     }
 
     @Test
-    public void testConfigurationContainsRequestedParameter() {
+    void testConfigurationContainsRequestedParameter() {
         ParameterResolver<?> actual = testSubject.createInstance(method, parameters, 1);
         assertNotNull(actual);
         assertSame(commandBus, actual.resolveParameterValue(new GenericMessage<>("test")));
@@ -63,7 +63,7 @@ public class ConfigurationParameterResolverFactoryTest {
         verify(configuration).getComponent(CommandBus.class);
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public void donorMethod(String type, CommandBus commandBus) {
 
     }

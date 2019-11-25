@@ -37,8 +37,8 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -50,10 +50,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AxonHandlerConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
@@ -61,7 +62,6 @@ import static org.junit.Assert.*;
         HibernateJpaAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
         AxonServerAutoConfiguration.class})
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class AxonHandlerConfigurationTest {
 
@@ -72,7 +72,7 @@ public class AxonHandlerConfigurationTest {
     private CommandGateway commandGateway;
 
     @Test
-    public void testMessageRoutedToCorrectMethod() throws Exception {
+    void testMessageRoutedToCorrectMethod() throws Exception {
         assertEquals("Command: info", commandGateway.send("info").get());
         assertEquals("Query: info", queryGateway.query("info", String.class).get());
     }

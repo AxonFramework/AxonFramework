@@ -4,27 +4,27 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests JPA auto-configuration
  *
  * @author Sara Pellegrini
  */
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class JpaAutoConfigurationTest {
+class JpaAutoConfigurationTest {
 
     @Autowired
     private TokenStore tokenStore;
@@ -33,7 +33,7 @@ public class JpaAutoConfigurationTest {
     private SagaStore sagaStore;
 
     @Test
-    public void testContextInitialization() {
+    void testContextInitialization() {
         assertTrue(tokenStore instanceof JpaTokenStore);
         assertTrue(sagaStore instanceof JpaSagaStore);
     }

@@ -1,36 +1,36 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.stream.IntStream;
 
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 
-public class FirstLevelCacheTest {
+class FirstLevelCacheTest {
 
     private EventSourcedAggregate<MyAggregate> cacheable;
     private FirstLevelCache<MyAggregate> cache;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         cacheable = mock(EventSourcedAggregate.class);
         cache = new FirstLevelCache<>();
     }
 
     @Test
-    public void shouldPut() {
+    void shouldPut() {
         cache.put("key", cacheable);
 
-        assertEquals(cache.size(), 1);
+        assertEquals(1, cache.size());
     }
 
     @Test
-    public void shouldGet() {
+    void shouldGet() {
         cache.put("key", cacheable);
         EventSourcedAggregate<MyAggregate> cached = cache.get("key");
 
@@ -38,7 +38,7 @@ public class FirstLevelCacheTest {
     }
 
     @Test
-    public void shouldRemove() {
+    void shouldRemove() {
         cache.put("key", cacheable);
         EventSourcedAggregate<MyAggregate> cached = cache.remove("key");
 
@@ -48,7 +48,7 @@ public class FirstLevelCacheTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldClearWeakValues() throws Exception {
+    void shouldClearWeakValues() throws Exception {
 
         FirstLevelCache<FirstLevelCacheTest.MyAggregate> myCache = new FirstLevelCache<>();
 

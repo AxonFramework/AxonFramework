@@ -21,8 +21,8 @@ import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.lang.annotation.ElementType;
@@ -30,22 +30,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class AnnotationQueryHandlerBeanPostProcessorTest {
+class AnnotationQueryHandlerBeanPostProcessorTest {
 
     private AnnotationQueryHandlerBeanPostProcessor testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AnnotationQueryHandlerBeanPostProcessor();
     }
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testQueryHandlerCallsRedirectToAdapter() throws Exception {
+    void testQueryHandlerCallsRedirectToAdapter() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedQueryHandler(), "beanName");
@@ -64,7 +64,7 @@ public class AnnotationQueryHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testQueryHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
+    void testQueryHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new CustomAnnotatedQueryHandler(), "beanName");
