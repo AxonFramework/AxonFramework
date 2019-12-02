@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,15 +38,15 @@ public class ConcatenatingDomainEventStreamTest {
 
     @Before
     public void setUp() {
-        event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 0,
+        event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 0,
                                                  "Mock contents 1", MetaData.emptyInstance());
-        event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 1,
+        event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 1,
                                                  "Mock contents 2", MetaData.emptyInstance());
-        event3 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 2,
+        event3 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 2,
                                                  "Mock contents 3", MetaData.emptyInstance());
-        event4 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 3,
+        event4 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 3,
                                                  "Mock contents 4", MetaData.emptyInstance());
-        event5 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 4,
+        event5 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 4,
                                                  "Mock contents 5", MetaData.emptyInstance());
     }
 
@@ -102,6 +102,21 @@ public class ConcatenatingDomainEventStreamTest {
         assertSame(event3.getPayload(), concat.next().getPayload());
 
         assertSame(event4.getPayload(), concat.peek().getPayload());
+        assertSame(event4.getPayload(), concat.next().getPayload());
+        assertFalse(concat.hasNext());
+    }
+
+    @Test
+    public void testConcatDoesNotSkipDuplicateSequencesInSameStream() {
+        DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event1, event2),
+                                                                      DomainEventStream.of(event2, event2, event3),
+                                                                      DomainEventStream.of(event3, event4));
+
+        assertTrue(concat.hasNext());
+        assertSame(event1.getPayload(), concat.next().getPayload());
+        assertSame(event1.getPayload(), concat.next().getPayload());
+        assertSame(event2.getPayload(), concat.next().getPayload());
+        assertSame(event3.getPayload(), concat.next().getPayload());
         assertSame(event4.getPayload(), concat.next().getPayload());
         assertFalse(concat.hasNext());
     }

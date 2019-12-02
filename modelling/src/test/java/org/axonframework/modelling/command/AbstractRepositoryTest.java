@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,24 +16,22 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.concurrent.Callable;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -137,7 +135,7 @@ class AbstractRepositoryTest {
     @SuppressWarnings("unchecked")
     @Test
     void testSendWorksAsExpected() throws Exception {
-        DeadlineMessage<String> testMsg = GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload");
+        DeadlineMessage<String> testMsg = GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
 
@@ -160,7 +158,7 @@ class AbstractRepositoryTest {
     @SuppressWarnings("unchecked")
     @Test
     void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
-        DeadlineMessage<String> testMsg = GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload");
+        DeadlineMessage<String> testMsg = GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), "some-other-aggregate-id");
 
