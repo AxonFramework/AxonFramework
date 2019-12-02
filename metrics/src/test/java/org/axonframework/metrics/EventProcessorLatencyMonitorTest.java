@@ -20,20 +20,20 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
-public class EventProcessorLatencyMonitorTest {
+class EventProcessorLatencyMonitorTest {
 
     @Test
-    public void testMessages(){
+    void testMessages(){
         EventProcessorLatencyMonitor testSubject = new EventProcessorLatencyMonitor();
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
@@ -52,7 +52,7 @@ public class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    public void testFailureMessage(){
+    void testFailureMessage(){
         EventProcessorLatencyMonitor testSubject = new EventProcessorLatencyMonitor();
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
@@ -71,7 +71,7 @@ public class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    public void testNullMessage(){
+    void testNullMessage(){
         EventProcessorLatencyMonitor testSubject = new EventProcessorLatencyMonitor();
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         monitorCallback.reportSuccess();

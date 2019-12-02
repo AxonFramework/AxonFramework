@@ -28,22 +28,22 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class GlobalMetricRegistryTest {
+class GlobalMetricRegistryTest {
 
     private GlobalMetricRegistry subject;
 
     private MetricRegistry dropWizardRegistry;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         DropwizardConfig config = new DropwizardConfig() {
             @Override
             public String prefix() {
@@ -68,7 +68,7 @@ public class GlobalMetricRegistryTest {
     }
 
     @Test
-    public void createEventProcessorMonitor() {
+    void createEventProcessorMonitor() {
         MessageMonitor<? super EventMessage<?>> monitor1 = subject.registerEventProcessor("test1");
         MessageMonitor<? super EventMessage<?>> monitor2 = subject.registerEventProcessor("test2");
 
@@ -85,7 +85,7 @@ public class GlobalMetricRegistryTest {
     }
 
     @Test
-    public void createEventBusMonitor() {
+    void createEventBusMonitor() {
         MessageMonitor<? super EventMessage<?>> monitor = subject.registerEventBus("eventBus");
 
         monitor.onMessageIngested(asEventMessage("test")).reportSuccess();
@@ -98,7 +98,7 @@ public class GlobalMetricRegistryTest {
     }
 
     @Test
-    public void createCommandBusMonitor() {
+    void createCommandBusMonitor() {
         MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus("commandBus");
 
         monitor.onMessageIngested(new GenericCommandMessage<>("test")).reportSuccess();
@@ -111,7 +111,7 @@ public class GlobalMetricRegistryTest {
     }
 
     @Test
-    public void createMonitorForUnknownComponent() {
+    void createMonitorForUnknownComponent() {
         MessageMonitor<? extends Message<?>> actual = subject.registerComponent(String.class, "test");
 
         assertSame(NoOpMessageMonitor.instance(), actual);

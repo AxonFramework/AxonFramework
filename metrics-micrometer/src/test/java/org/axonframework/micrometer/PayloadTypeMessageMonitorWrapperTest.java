@@ -23,19 +23,19 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
-public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>>> {
+@ExtendWith(MockitoExtension.class)
+class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>>> {
 
     private static final CommandMessage<Object> STRING_MESSAGE = asCommandMessage("stringCommand");
     private static final CommandMessage<Object> INTEGER_MESSAGE = asCommandMessage(1);
@@ -49,21 +49,21 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
     private final Appender appender = mock(Appender.class);
     private final Logger logger = Logger.getRootLogger();
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         logger.addAppender(appender);
 
         expectedMonitorClass = CapacityMonitor.class;
         testSubject = new PayloadTypeMessageMonitorWrapper<>(name -> CapacityMonitor.buildMonitor(name, meterRegistry));
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         logger.removeAppender(appender);
     }
 
     @Test
-    public void testInstantiateMessageMonitorOfTypeMonitorOnMessageIngested() throws Exception {
+    void testInstantiateMessageMonitorOfTypeMonitorOnMessageIngested() throws Exception {
         Field payloadTypeMonitorsField = testSubject.getClass().getDeclaredField("payloadTypeMonitors");
         payloadTypeMonitorsField.setAccessible(true);
 
@@ -81,7 +81,7 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
     }
 
     @Test
-    public void testInstantiatesOneMessageMonitorPerIngestedPayloadType() throws Exception {
+    void testInstantiatesOneMessageMonitorPerIngestedPayloadType() throws Exception {
         Field payloadTypeMonitorsField = testSubject.getClass().getDeclaredField("payloadTypeMonitors");
         payloadTypeMonitorsField.setAccessible(true);
 
@@ -108,7 +108,7 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
     }
 
     @Test
-    public void testMonitorNameFollowsGivenMonitorNameBuilderSpecifics() {
+    void testMonitorNameFollowsGivenMonitorNameBuilderSpecifics() {
         String testPrefix = "additional-monitor-name.";
         PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject = new PayloadTypeMessageMonitorWrapper<>(
                 name -> CapacityMonitor.buildMonitor(name, meterRegistry),

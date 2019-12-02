@@ -22,8 +22,8 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,18 +32,18 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import javax.sql.DataSource;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = SpringDataSourceConnectionProviderTest.Context.class)
-@RunWith(SpringJUnit4ClassRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class SpringDataSourceConnectionProviderTest {
 
@@ -58,8 +58,8 @@ public class SpringDataSourceConnectionProviderTest {
     private ConnectionProvider connectionProvider;
     private SpringTransactionManager springTransactionManager;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         springTransactionManager  = new SpringTransactionManager(transactionManager);
     }
 
@@ -81,7 +81,7 @@ public class SpringDataSourceConnectionProviderTest {
     }
 
     @Test
-    public void testConnectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
+    void testConnectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
         doAnswer(invocation -> {
             final Object spy = spy(invocation.callRealMethod());
             mockConnection = (Connection) spy;

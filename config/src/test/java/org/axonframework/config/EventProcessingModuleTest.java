@@ -29,8 +29,11 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,21 +43,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class EventProcessingModuleTest {
+@ExtendWith(MockitoExtension.class)
+class EventProcessingModuleTest {
 
     private Configurer configurer;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         configurer = DefaultConfigurer.defaultConfiguration();
     }
 
     @Test
-    public void testAssignmentRules() {
+    void testAssignmentRules() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
         AnnotatedBean annotatedBean = new AnnotatedBean();
@@ -85,7 +89,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testProcessorsDefaultToSubscribingWhenUsingSimpleEventBus() {
+    void testProcessorsDefaultToSubscribingWhenUsingSimpleEventBus() {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureEventBus(c -> SimpleEventBus.builder().build())
                                                        .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
@@ -98,18 +102,19 @@ public class EventProcessingModuleTest {
         assertTrue(configuration.eventProcessingConfiguration().eventProcessor("tracking").map(p -> p instanceof SubscribingEventProcessor).orElse(false));
     }
 
-    @Test(expected = AxonConfigurationException.class)
-    public void testAssigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
-        DefaultConfigurer.defaultConfiguration()
-                         .configureEventBus(c -> SimpleEventBus.builder().build())
-                         .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
-                                                  .registerEventHandler(c -> new TrackingEventHandler())
-                                                  .registerTrackingEventProcessor("tracking"))
-                         .start();
+    @Test
+    void testAssigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration()
+                                                 .configureEventBus(c -> SimpleEventBus.builder().build())
+                                                 .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                                                                          .registerEventHandler(c -> new TrackingEventHandler())
+                                                                          .registerTrackingEventProcessor("tracking"));
+
+        assertThrows(AxonConfigurationException.class, configurer::start);
     }
 
     @Test
-    public void testAssignmentRulesOverrideThoseWithLowerPriority() {
+    void testAssignmentRulesOverrideThoseWithLowerPriority() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
         configurer.eventProcessing()
@@ -141,7 +146,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testDefaultAssignToKeepsAnnotationScanning() {
+    void testDefaultAssignToKeepsAnnotationScanning() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         AnnotatedBean annotatedBean = new AnnotatedBean();
         Object object = new Object();
@@ -165,7 +170,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testTypeAssignment() {
+    void testTypeAssignment() {
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myGroup", c -> "java.lang".equals(c.getPackage().getName()))
                   .registerSaga(Object.class)
@@ -182,7 +187,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testAssignSequencingPolicy() throws NoSuchFieldException {
+    void testAssignSequencingPolicy() throws NoSuchFieldException {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
         SequentialPolicy sequentialPolicy = new SequentialPolicy();
@@ -213,7 +218,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testAssignInterceptors() {
+    void testAssignInterceptors() {
         StubInterceptor interceptor1 = new StubInterceptor();
         StubInterceptor interceptor2 = new StubInterceptor();
         configurer.eventProcessing()
@@ -233,7 +238,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testConfigureMonitor() throws Exception {
+    void testConfigureMonitor() throws Exception {
         MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
         CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
@@ -256,7 +261,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testConfigureDefaultListenerInvocationErrorHandler() throws Exception {
+    void testConfigureDefaultListenerInvocationErrorHandler() throws Exception {
         GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
 
         int expectedListenerInvocationErrorHandlerCalls = 2;
@@ -282,7 +287,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testConfigureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
+    void testConfigureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
         GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
 
         int expectedErrorHandlerCalls = 1;
@@ -312,7 +317,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testConfigureDefaultErrorHandler() throws Exception {
+    void testConfigureDefaultErrorHandler() throws Exception {
         GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
 
         int expectedErrorHandlerCalls = 2;
@@ -339,8 +344,8 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testTrackingProcessorsUsesConfiguredDefaultStreamableMessageSource() {
-        StreamableMessageSource<TrackedEventMessage<?>> mock = mock(StreamableMessageSource.class);
+    void testTrackingProcessorsUsesConfiguredDefaultStreamableMessageSource(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mock) {
         configurer.eventProcessing().configureDefaultStreamableMessageSource(c -> mock);
         configurer.eventProcessing().usingTrackingEventProcessors();
         configurer.registerEventHandler(c -> new TrackingEventHandler());
@@ -352,9 +357,9 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testTrackingProcessorsUsesSpecificSource() {
-        StreamableMessageSource<TrackedEventMessage<?>> mock = mock(StreamableMessageSource.class);
-        StreamableMessageSource<TrackedEventMessage<?>> mock2 = mock(StreamableMessageSource.class);
+    void testTrackingProcessorsUsesSpecificSource(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mock,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mock2) {
         configurer.eventProcessing()
                   .configureDefaultStreamableMessageSource(c -> mock)
                   .registerTrackingEventProcessor("tracking", c -> mock2)
@@ -367,8 +372,8 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testSubscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource() {
-        SubscribableMessageSource<EventMessage<?>> mock = mock(SubscribableMessageSource.class);
+    void testSubscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource(
+            @Mock SubscribableMessageSource<EventMessage<?>> mock) {
         configurer.eventProcessing().configureDefaultSubscribableMessageSource(c -> mock);
         configurer.eventProcessing().usingSubscribingEventProcessors();
         configurer.registerEventHandler(c -> new SubscribingEventHandler());
@@ -380,9 +385,9 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testSubscribingProcessorsUsesSpecificSource() {
-        SubscribableMessageSource<EventMessage<?>> mock = mock(SubscribableMessageSource.class);
-        SubscribableMessageSource<EventMessage<?>> mock2 = mock(SubscribableMessageSource.class);
+    void testSubscribingProcessorsUsesSpecificSource(
+            @Mock SubscribableMessageSource<EventMessage<?>> mock,
+            @Mock SubscribableMessageSource<EventMessage<?>> mock2) {
         configurer.eventProcessing()
                   .configureDefaultSubscribableMessageSource(c -> mock)
                   .registerSubscribingEventProcessor("subscribing", c -> mock2)
@@ -396,7 +401,7 @@ public class EventProcessingModuleTest {
 
 
     @Test
-    public void testConfigureErrorHandlerPerEventProcessor() throws Exception {
+    void testConfigureErrorHandlerPerEventProcessor() throws Exception {
         GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
 
         int expectedErrorHandlerCalls = 1;
@@ -427,7 +432,7 @@ public class EventProcessingModuleTest {
     }
 
     @Test
-    public void testPackageOfObject() {
+    void testPackageOfObject() {
         String expectedPackageName = EventProcessingModule.class.getPackage().getName();
         assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
     }

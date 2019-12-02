@@ -25,6 +25,7 @@ import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
+import org.axonframework.axonserver.connector.heartbeat.HeartbeatConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
@@ -52,6 +53,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -203,6 +205,14 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return new EventProcessorInfoConfiguration(c -> eventProcessingConfiguration,
                                                    c -> connectionManager,
                                                    c -> configuration);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "axon.axonserver.heartbeat.auto-configuration.enabled")
+    public HeartbeatConfiguration heartbeatConfiguration(AxonServerConnectionManager connectionManager,
+                                                         AxonServerConfiguration configuration) {
+        return new HeartbeatConfiguration(c -> connectionManager,
+                                          c -> configuration);
     }
 
     @Bean
