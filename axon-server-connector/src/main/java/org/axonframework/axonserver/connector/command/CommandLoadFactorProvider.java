@@ -11,7 +11,7 @@ package org.axonframework.axonserver.connector.command;
 public interface CommandLoadFactorProvider {
 
     /**
-     * The default value for command load factor.
+     * The default value for command load factor: 100.
      * It represents the fixed value of load factor sent to Axon Server for any command's subscription if
      * no specific implementation of CommandLoadFactorProvider is configured.
      */

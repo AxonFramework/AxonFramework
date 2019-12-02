@@ -136,7 +136,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean
     public CommandLoadFactorProvider commandLoadFactorProvider(
-            @Value("${axon.command.load-factor:100}") int loadFactor) {
+            @Value("${axon.axonserver.command.load-factor:100}") int loadFactor) {
         return command -> loadFactor;
     }
 
