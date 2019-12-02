@@ -171,6 +171,13 @@ public class AxonServerConfiguration {
      */
     private int maxGrpcBufferedMessages = 500;
 
+
+    /**
+     * It represents the fixed value of load factor sent to Axon Server for any command's subscription if
+     * no specific implementation of CommandLoadFactorProvider is configured. The default value is 100.
+     */
+    private int commandLoadFactor = 100;
+
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
      *
@@ -401,6 +408,14 @@ public class AxonServerConfiguration {
         this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
     }
 
+    public int getCommandLoadFactor() {
+        return commandLoadFactor;
+    }
+
+    public void setCommandLoadFactor(int commandLoadFactor) {
+        this.commandLoadFactor = commandLoadFactor;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
 
@@ -453,6 +468,11 @@ public class AxonServerConfiguration {
 
         public Builder snapshotPrefetch(int snapshotPrefetch) {
             instance.snapshotPrefetch = snapshotPrefetch;
+            return this;
+        }
+
+        public Builder commandLoadFactor(int commandLoadFactor) {
+            instance.commandLoadFactor = commandLoadFactor;
             return this;
         }
 
