@@ -55,6 +55,7 @@ import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.Executable;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -508,7 +509,7 @@ class DisruptorCommandBusTest {
     @Test
     void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
         DeadlineMessage<DeadlinePayload> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload(), Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), aggregateIdentifier);
 
@@ -525,7 +526,7 @@ class DisruptorCommandBusTest {
     @Test
     void testSendThrowsMessageHandlerInvocationExceptionIfHandleFails() throws Exception {
         DeadlineMessage<FailingEvent> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new FailingEvent());
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new FailingEvent(), Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), aggregateIdentifier);
 
@@ -540,7 +541,7 @@ class DisruptorCommandBusTest {
     @Test
     void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
         DeadlineMessage<DeadlinePayload> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload(), Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), "some-other-aggregate-id");
 

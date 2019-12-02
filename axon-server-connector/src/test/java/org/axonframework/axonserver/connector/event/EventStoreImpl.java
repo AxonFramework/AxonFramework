@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2019. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,26 +16,16 @@
 
 package org.axonframework.axonserver.connector.event;
 
-import io.axoniq.axonserver.grpc.event.Confirmation;
-import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.*;
 import io.grpc.stub.StreamObserver;
-import io.axoniq.axonserver.grpc.event.EventStoreGrpc;
-import io.axoniq.axonserver.grpc.event.EventWithToken;
-import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
-import io.axoniq.axonserver.grpc.event.GetEventsRequest;
-import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrRequest;
-import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
     private final List<Event> events = new LinkedList<>();
+    private final Map<String, Event> snapshots = new HashMap<>();
 
     @Override
     public StreamObserver<Event> appendEvent(StreamObserver<Confirmation> responseObserver) {
@@ -63,12 +54,19 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
     @Override
     public void appendSnapshot(Event request, StreamObserver<Confirmation> responseObserver) {
-        super.appendSnapshot(request, responseObserver);
+        snapshots.put(request.getAggregateIdentifier(), request.toBuilder().setSnapshot(true).build());
+        responseObserver.onNext(Confirmation.newBuilder().setSuccess(true).build());
+        responseObserver.onCompleted();
     }
 
     @Override
     public void listAggregateEvents(GetAggregateEventsRequest request, StreamObserver<Event> responseObserver) {
+        Event snapshot = snapshots.get(request.getAggregateId());
+        if (snapshot != null) {
+            responseObserver.onNext(snapshot);
+        }
         events.stream().filter(e -> e.getAggregateIdentifier().equals(request.getAggregateId()))
+              .filter(e -> snapshot == null || snapshot.getAggregateSequenceNumber() < e.getAggregateSequenceNumber())
               .forEach(responseObserver::onNext);
         responseObserver.onCompleted();
     }
