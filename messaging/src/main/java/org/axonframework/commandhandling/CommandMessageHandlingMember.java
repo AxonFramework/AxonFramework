@@ -49,4 +49,13 @@ public interface CommandMessageHandlingMember<T> extends MessageHandlingMember<T
      * @return {@code true} if this handler is also factory for entities, {@code false} otherwise.
      */
     boolean isFactoryHandler();
+
+    /**
+     * Checks if the createIfMissing flag is set for this command handler.
+     *
+     * @return true if handler may create a new instance of the entity.
+     */
+    default boolean createIfMissing() {
+        return false;
+    }
 }

@@ -16,7 +16,13 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandMessageHandler;
+import org.axonframework.commandhandling.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
@@ -27,10 +33,16 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Command handler that handles commands based on {@link CommandHandler} annotations on an aggregate. Those annotations
@@ -107,11 +119,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
                 if (cmh.isFactoryHandler()) {
                     handlersFound.add(new AggregateConstructorCommandHandler(handler));
-                    supportedCommandNames.add(cmh.commandName());
+                } else if (cmh.createIfMissing()) {
+                    handlersFound.add(new AggregateCreateOrUpdateCommandHandler(handler,
+                                                                                aggregateModel
+                                                                                        .entityClass()::newInstance));
                 } else {
                     handlersFound.add(new AggregateCommandHandler(handler));
-                    supportedCommandNames.add(cmh.commandName());
                 }
+                supportedCommandNames.add(cmh.commandName());
             });
         });
         return handlersFound;
@@ -326,6 +341,34 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         public Object handle(CommandMessage<?> command) throws Exception {
             Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
             return resolveReturnValue(command, aggregate);
+        }
+
+        @Override
+        public boolean canHandle(CommandMessage<?> message) {
+            return handler.canHandle(message);
+        }
+    }
+
+    private class AggregateCreateOrUpdateCommandHandler implements MessageHandler<CommandMessage<?>> {
+
+        private final MessageHandlingMember<? super T> handler;
+        private final Callable<T> factoryMethod;
+
+        public AggregateCreateOrUpdateCommandHandler(MessageHandlingMember<? super T> handler,
+                                                     Callable<T> factoryMethod) {
+            this.handler = handler;
+            this.factoryMethod = factoryMethod;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object handle(CommandMessage<?> command) throws Exception {
+            VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
+            Aggregate<T> inst = repository.loadOrCreate(iv.getIdentifier(), iv.getVersion(), factoryMethod);
+            Object result = inst.handle(command);
+            assertThat(inst.identifier(), id -> id != null && id.equals(iv.getIdentifier()),
+                       "Identifier must be set after handling the message");
+            return result;
         }
 
         @Override

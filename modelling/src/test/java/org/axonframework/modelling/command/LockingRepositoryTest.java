@@ -36,8 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -80,6 +79,18 @@ public class LockingRepositoryTest {
 
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
         verify(mockEventBus).publish(isA(EventMessage.class));
+    }
+
+    @Test
+    public void testLoadOrCreateAggregate() {
+        startAndGetUnitOfWork();
+        Aggregate<StubAggregate> createdAggregate = testSubject.loadOrCreate("newAggregate", null, StubAggregate::new);
+        verify(lockFactory).obtainLock("newAggregate");
+
+        Aggregate<StubAggregate> loadedAggregate = testSubject.loadOrCreate("newAggregate", null, StubAggregate::new);
+        assertEquals(createdAggregate.identifier(), loadedAggregate.identifier());
+        CurrentUnitOfWork.commit();
+        verify(lock).release();
     }
 
     @Test
@@ -204,6 +215,10 @@ public class LockingRepositoryTest {
 
         @Override
         protected Aggregate<StubAggregate> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
+            if (!store.containsKey(aggregateIdentifier)) {
+                throw new AggregateNotFoundException(aggregateIdentifier,
+                                                     "Aggregate not found");
+            }
             return store.get(aggregateIdentifier);
         }
 
