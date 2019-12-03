@@ -23,7 +23,7 @@ import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.HashSet;
@@ -31,33 +31,33 @@ import java.util.Set;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.messaging.unitofwork.DefaultUnitOfWork.startAndGet;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
-public class AnnotatedSagaRepositoryTest {
+class AnnotatedSagaRepositoryTest {
 
     private AnnotatedSagaRepository<Object> testSubject;
     private SagaStore store;
 
     private UnitOfWork<?> currentUnitOfWork;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         currentUnitOfWork = startAndGet(null);
         this.store = spy(new InMemorySagaStore());
         this.testSubject = AnnotatedSagaRepository.builder().sagaType(Object.class).sagaStore(store).build();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (currentUnitOfWork.isActive()) {
             currentUnitOfWork.commit();
         }
     }
 
     @Test
-    public void testLoadedFromUnitOfWorkAfterCreate() {
+    void testLoadedFromUnitOfWorkAfterCreate() {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
@@ -72,7 +72,7 @@ public class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    public void testLoadedFromNestedUnitOfWorkAfterCreate() throws Exception {
+    void testLoadedFromNestedUnitOfWorkAfterCreate() throws Exception {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
@@ -88,7 +88,7 @@ public class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    public void testLoadedFromNestedUnitOfWorkAfterCreateAndStore() {
+    void testLoadedFromNestedUnitOfWorkAfterCreateAndStore() {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
@@ -108,7 +108,7 @@ public class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    public void testLoadedFromUnitOfWorkAfterPreviousLoad() {
+    void testLoadedFromUnitOfWorkAfterPreviousLoad() {
         Saga<Object> preparedSaga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         currentUnitOfWork.commit();
@@ -131,7 +131,7 @@ public class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    public void testSagaAssociationsVisibleInOtherThreadsBeforeSagaIsCommitted() throws Exception {
+    void testSagaAssociationsVisibleInOtherThreadsBeforeSagaIsCommitted() throws Exception {
         String sagaId = "sagaId";
         AssociationValue associationValue = new AssociationValue("test", "value");
 

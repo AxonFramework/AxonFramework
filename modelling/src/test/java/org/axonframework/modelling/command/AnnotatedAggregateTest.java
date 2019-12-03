@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 
@@ -32,7 +32,7 @@ import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -43,15 +43,15 @@ public class AnnotatedAggregateTest {
     private Repository<AggregateRoot> repository;
     private EventBus eventBus;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         eventBus = mock(EventBus.class);
         repository = StubRepository.builder().eventBus(eventBus).build();
     }
 
     // Tests for issue #1248 - https://github.com/AxonFramework/AxonFramework/issues/1248
     @Test
-    public void applyingMultipleEventsInAndThenPublishesWithRightState() {
+    void applyingMultipleEventsInAndThenPublishesWithRightState() {
         Command command = new Command(ID, 2);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
@@ -66,7 +66,7 @@ public class AnnotatedAggregateTest {
     }
 
     @Test
-    public void testApplyingEventInHandlerPublishesInRightOrder() {
+    void testApplyingEventInHandlerPublishesInRightOrder() {
         Command command = new Command(ID, 0);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
@@ -123,7 +123,7 @@ public class AnnotatedAggregateTest {
 
         private final String id;
 
-        public Event_2(String id) {
+        Event_2(String id) {
             this.id = id;
         }
 

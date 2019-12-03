@@ -2,8 +2,6 @@ package org.axonframework.modelling;
 
 import java.beans.ConstructorProperties;
 
-import org.junit.Ignore;
-
 import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +15,6 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
  * 
  * @author JohT
  */
-@Ignore
 public class OnlyAcceptConstructorPropertiesAnnotation extends JacksonAnnotationIntrospector {
 
     private static final long serialVersionUID = 1L;
