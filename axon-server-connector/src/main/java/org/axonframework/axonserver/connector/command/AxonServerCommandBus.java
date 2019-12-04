@@ -27,6 +27,8 @@ import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DefaultHandlers;
 import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
@@ -92,6 +94,7 @@ public class AxonServerCommandBus implements CommandBus {
     private final CommandSerializer serializer;
     private final RoutingStrategy routingStrategy;
     private final CommandPriorityCalculator priorityCalculator;
+    private final CommandLoadFactorProvider loadFactorProvider;
 
     private final CommandProcessor commandProcessor;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors;
@@ -208,7 +211,7 @@ public class AxonServerCommandBus implements CommandBus {
         String context = configuration.getContext();
         this.targetContextResolver = targetContextResolver.orElse(m -> context);
         this.defaultCommandCallback = NoOpCallback.INSTANCE;
-
+        this.loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
         this.commandProcessor = new CommandProcessor(context,
                                                      configuration,
                                                      ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder(),
@@ -235,7 +238,7 @@ public class AxonServerCommandBus implements CommandBus {
         this.routingStrategy = builder.routingStrategy;
         this.priorityCalculator = builder.priorityCalculator;
         this.defaultCommandCallback = builder.defaultCommandCallback;
-
+        this.loadFactorProvider = builder.loadFactorProvider;
         String context = configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
@@ -390,6 +393,7 @@ public class AxonServerCommandBus implements CommandBus {
                 c -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
+        private CommandLoadFactorProvider loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
         private Function<UpstreamAwareStreamObserver<CommandProviderInbound>, StreamObserver<CommandProviderOutbound>> requestStreamFactory = so -> (StreamObserver<CommandProviderOutbound>) so
                 .getRequestStream();
         private InstructionAckSource<CommandProviderOutbound> instructionAckSource = new DefaultInstructionAckSource<>(
@@ -526,6 +530,22 @@ public class AxonServerCommandBus implements CommandBus {
         }
 
         /**
+         * Sets the {@link CommandLoadFactorProvider} which provides the load factor values for all commands this
+         * client can handle. The load factor values are sent to AxonServer during command subscription. AxonServer
+         * uses these values to balance the dispatching of commands among the client instances.
+         * The default implementation of loadFactorProvider returns always {@link CommandLoadFactorProvider#DEFAULT_VALUE}
+         *
+         * @param loadFactorProvider a {@link CommandLoadFactorProvider} used to get the load factor value for each
+         *                           specific command that this client can handle
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder loadFactorProvider(CommandLoadFactorProvider loadFactorProvider) {
+            assertNonNull(loadFactorProvider, "CommandLoadFactorProvider may not be null");
+            this.loadFactorProvider = loadFactorProvider;
+            return this;
+        }
+
+        /**
          * Sets the request stream factory that creates a request stream based on upstream.
          * Defaults to {@link UpstreamAwareStreamObserver#getRequestStream()}.
          *
@@ -651,6 +671,7 @@ public class AxonServerCommandBus implements CommandBus {
                                                    .setComponentName(configuration.getComponentName())
                                                    .setClientId(configuration.getClientId())
                                                    .setMessageId(UUID.randomUUID().toString())
+                                                   .setLoadFactor(loadFactorProvider.getFor(command))
                                                    .build()
                         ).build()
                 ));
@@ -670,6 +691,7 @@ public class AxonServerCommandBus implements CommandBus {
                                            .setClientId(configuration.getClientId())
                                            .setComponentName(configuration.getComponentName())
                                            .setMessageId(UUID.randomUUID().toString())
+                                           .setLoadFactor(loadFactorProvider.getFor(commandName))
                                            .build()
                 ).build());
             } catch (Exception e) {
