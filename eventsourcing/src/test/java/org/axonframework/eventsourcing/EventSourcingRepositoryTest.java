@@ -31,7 +31,7 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.ArrayList;
@@ -39,13 +39,13 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.axonframework.messaging.MetaData.emptyInstance;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class EventSourcingRepositoryTest {
+class EventSourcingRepositoryTest {
 
     private EventStore mockEventStore;
     private EventSourcingRepository<TestAggregate> testSubject;
@@ -54,8 +54,8 @@ public class EventSourcingRepositoryTest {
     private SnapshotTriggerDefinition triggerDefinition;
     private SnapshotTrigger snapshotTrigger;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockEventStore = mock(EventStore.class);
         stubAggregateFactory = new StubAggregateFactory();
         snapshotTrigger = mock(SnapshotTrigger.class);
@@ -70,16 +70,15 @@ public class EventSourcingRepositoryTest {
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (unitOfWork.isActive()) {
             unitOfWork.rollback();
         }
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testLoadAndSaveAggregate() {
+    void testLoadAndSaveAggregate() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
@@ -108,7 +107,7 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testFilterEventsByType() {
+    void testFilterEventsByType() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
@@ -125,7 +124,7 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoad_FirstEventIsSnapshot() {
+    void testLoad_FirstEventIsSnapshot() {
         String identifier = UUID.randomUUID().toString();
         TestAggregate aggregate = new TestAggregate(identifier);
         when(mockEventStore.readEvents(identifier)).thenReturn(
@@ -134,7 +133,7 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoadWithConflictingChanges() {
+    void testLoadWithConflictingChanges() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -154,7 +153,7 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
+    void testLoadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -173,7 +172,7 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoadEventsWithSnapshotter() {
+    void testLoadEventsWithSnapshotter() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),

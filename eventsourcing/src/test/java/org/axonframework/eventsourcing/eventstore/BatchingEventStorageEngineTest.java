@@ -16,10 +16,10 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
 

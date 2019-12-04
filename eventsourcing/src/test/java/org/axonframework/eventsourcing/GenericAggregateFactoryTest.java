@@ -20,24 +20,24 @@ import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class GenericAggregateFactoryTest {
+class GenericAggregateFactoryTest {
 
-    @Test(expected = IncompatibleAggregateException.class)
-    public void testInitializeRepository_NoSuitableConstructor() {
-        new GenericAggregateFactory<>(UnsuitableAggregate.class);
+    @Test
+    void testInitializeRepository_NoSuitableConstructor() {
+        assertThrows(IncompatibleAggregateException.class, () -> new GenericAggregateFactory<>(UnsuitableAggregate.class));
     }
 
     @Test
-    public void testInitializeRepository_ConstructorNotCallable() {
+    void testInitializeRepository_ConstructorNotCallable() {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
         try {
@@ -49,7 +49,7 @@ public class GenericAggregateFactoryTest {
     }
 
     @Test
-    public void testInitializeFromAggregateSnapshot() {
+    void testInitializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>("type", aggregate.getIdentifier(),
                                                                                             2, aggregate);

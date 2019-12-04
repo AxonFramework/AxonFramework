@@ -33,28 +33,28 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class CachingEventSourcingRepositoryTest {
+class CachingEventSourcingRepositoryTest {
 
     private CachingEventSourcingRepository<StubAggregate> testSubject;
     private EventStore mockEventStore;
     private Cache cache;
     private net.sf.ehcache.Cache ehCache;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockEventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
 
         final CacheManager cacheManager = CacheManager.getInstance();
@@ -68,16 +68,15 @@ public class CachingEventSourcingRepositoryTest {
                 .build();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testAggregatesRetrievedFromCache() throws Exception {
+    void testAggregatesRetrievedFromCache() throws Exception {
         startAndGetUnitOfWork();
 
         LockAwareAggregate<StubAggregate, EventSourcedAggregate<StubAggregate>> aggregate1 =
@@ -110,7 +109,7 @@ public class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoadDeletedAggregate() throws Exception {
+    void testLoadDeletedAggregate() throws Exception {
         String identifier = "aggregateId";
 
         startAndGetUnitOfWork();
@@ -134,8 +133,7 @@ public class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testCacheClearedAfterRollbackOfAddedAggregate() throws Exception {
+    void testCacheClearedAfterRollbackOfAddedAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         doThrow(new MockException()).when(mockEventStore).publish(anyList());
         try {

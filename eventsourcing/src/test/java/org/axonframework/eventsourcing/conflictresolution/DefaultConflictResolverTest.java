@@ -20,60 +20,62 @@ import org.axonframework.modelling.command.ConflictingModificationException;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.spy;
 
-public class DefaultConflictResolverTest {
+class DefaultConflictResolverTest {
 
     private EventStore eventStore;
     private DefaultConflictResolver subject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         eventStore.publish(IntStream.range(0, 10).mapToObj(
                 sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber)).collect(toList()));
     }
 
-    @Test(expected = ConflictingModificationException.class)
-    public void testDetectConflicts() {
+    @Test
+    void testDetectConflicts() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
-        subject.detectConflicts(Conflicts.payloadTypeOf(String.class));
+        assertThrows(
+                ConflictingModificationException.class,
+                () -> subject.detectConflicts(Conflicts.payloadTypeOf(String.class)));
     }
 
     @Test
-    public void testDetectNoConflictsWhenPredicateDoesNotMatch() {
+    void testDetectNoConflictsWhenPredicateDoesNotMatch() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         subject.detectConflicts(Conflicts.payloadTypeOf(Long.class));
     }
 
     @Test
-    public void testDetectNoConflictsWithoutUnseenEvents() {
+    void testDetectNoConflictsWithoutUnseenEvents() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 5);
         subject.detectConflicts(Conflicts.payloadTypeOf(String.class));
     }
 
-    @Test(expected = ConflictingModificationException.class)
-    public void testEnsureConflictsResolvedThrowsExceptionWithoutRegisteredConflicts() {
+    @Test
+    void testEnsureConflictsResolvedThrowsExceptionWithoutRegisteredConflicts() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
-        subject.ensureConflictsResolved();
+        assertThrows(ConflictingModificationException.class, subject::ensureConflictsResolved);
     }
 
     @Test
-    public void testEnsureConflictsResolvedDoesNothingWithRegisteredConflicts() {
+    void testEnsureConflictsResolvedDoesNothingWithRegisteredConflicts() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         subject.detectConflicts(Conflicts.payloadMatching(Long.class::isInstance));
         subject.ensureConflictsResolved();
     }
 
     @Test
-    public void testConflictingEventsAreAvailableInExceptionBuilder() {
+    void testConflictingEventsAreAvailableInExceptionBuilder() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         try {
             subject.detectConflicts(Conflicts.payloadTypeOf(String.class),
@@ -85,7 +87,7 @@ public class DefaultConflictResolverTest {
     }
 
     @Test
-    public void testConflictResolverProvidingNullExceptionIgnoresConflict() {
+    void testConflictResolverProvidingNullExceptionIgnoresConflict() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         subject.detectConflicts(Conflicts.payloadTypeOf(String.class), c -> null);
     }

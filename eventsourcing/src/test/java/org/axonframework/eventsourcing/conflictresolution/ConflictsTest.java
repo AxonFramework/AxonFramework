@@ -17,32 +17,32 @@
 package org.axonframework.eventsourcing.conflictresolution;
 
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConflictsTest {
+class ConflictsTest {
 
     private final List<DomainEventMessage<?>> events = IntStream.range(0, 10)
                                                                 .mapToObj(sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber))
                                                                 .collect(toList());
 
     @Test
-    public void testPayload() {
+    void testPayload() {
         assertTrue(Conflicts.payloadMatching(payload -> Objects.equals(payload, PAYLOAD + 2)).test(events));
         assertTrue(Conflicts.payloadMatching(String.class, payload -> Objects.equals(payload, PAYLOAD + 5)).test(events));
         assertFalse(Conflicts.payloadMatching(payload -> Objects.equals(payload, PAYLOAD + 11)).test(events));
     }
 
     @Test
-    public void testPayloadType() {
+    void testPayloadType() {
         assertTrue(Conflicts.payloadTypeOf(String.class).test(events));
         assertTrue(Conflicts.payloadTypeOf(Object.class).test(events));
         assertFalse(Conflicts.payloadTypeOf(Long.class).test(events));
