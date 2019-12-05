@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -156,6 +157,23 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                 throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
             }
         });
+    }
+
+    @Override
+    public void cancelWithinScope(String deadlineName, ScopeDescriptor scope) {
+        try {
+            Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
+            for (JobKey jobKey : jobKeys) {
+                JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+                ScopeDescriptor jobScope = DeadlineJob.DeadlineJobDataBinder
+                        .deadlineScope(serializer, jobDetail.getJobDataMap());
+                if (scope.equals(jobScope)) {
+                    cancelSchedule(jobKey);
+                }
+            }
+        } catch (SchedulerException e) {
+            throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
+        }
     }
 
     private void cancelSchedule(JobKey jobKey) {
