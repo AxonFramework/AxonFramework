@@ -316,11 +316,11 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                 if (resultMessage.isExceptional()) {
                     Throwable e = resultMessage.exceptionResult();
                     logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
-                                 deadlineName.getDeadlineName(), deadlineId.getDeadlineId(), e);
+                                 deadlineId.getDeadlineName(), deadlineId.getDeadlineId(), e);
                 }
             } catch (Exception e) {
                 logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
-                             deadlineName, deadlineId, e);
+                             deadlineId.getDeadlineName(), deadlineId.getDeadlineId(), e);
             } finally {
                 scheduledTasks.remove(deadlineId);
             }
