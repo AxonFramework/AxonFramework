@@ -16,7 +16,9 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.utils.MockException;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,12 +68,25 @@ public class DefaultQueryGatewayTest {
     }
 
     @Test
+    public void testDispatchMessageWithMetaData() {
+        when(mockBus.query(anyMessage(String.class, String.class)))
+                .thenReturn(CompletableFuture.completedFuture(answer));
+
+        CompletableFuture<String> result = testSubject.query(new GenericMessage<>("Query", MetaData.with("key", "value")), instanceOf(String.class));
+
+        verify(mockBus).query(argThat(
+                (ArgumentMatcher<QueryMessage<String, String>>) x -> "Query".equals(x.getPayload())
+                        && "value".equals(x.getMetaData().get("key"))
+        ));
+    }
+
+    @Test
     public void testDispatchSingleResultQueryWhenBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(CompletableFuture
-                                                                                       .completedFuture(new GenericQueryResponseMessage<>(
-                                                                                               String.class,
-                                                                                               expected)));
+                .completedFuture(new GenericQueryResponseMessage<>(
+                        String.class,
+                        expected)));
         CompletableFuture<String> result = testSubject.query("query", String.class);
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
