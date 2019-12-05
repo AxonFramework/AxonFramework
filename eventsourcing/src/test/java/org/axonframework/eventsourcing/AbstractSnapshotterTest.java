@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.slf4j.Logger;
 
@@ -41,30 +41,30 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Nakul Mishra
  */
-public class AbstractSnapshotterTest {
+class AbstractSnapshotterTest {
 
     private AbstractSnapshotter testSubject;
     private EventStore mockEventStore;
     private Logger logger;
     private Logger originalLogger;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mockEventStore = mock(EventStore.class);
         testSubject = TestSnapshotter.builder().eventStore(mockEventStore).build();
         logger = mock(Logger.class);
         originalLogger = replaceLogger(logger);
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (originalLogger != null) {
             replaceLogger(originalLogger);
         }
     }
 
     @Test
-    public void testScheduleSnapshot() {
+    void testScheduleSnapshot() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenReturn(DomainEventStream.of(createEvents(2)));
@@ -73,7 +73,7 @@ public class AbstractSnapshotterTest {
     }
 
     @Test
-    public void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
+    void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
                 .doThrow(new ConcurrencyException("Mock"))
@@ -89,7 +89,7 @@ public class AbstractSnapshotterTest {
     }
 
     @Test
-    public void testScheduleSnapshot_SnapshotIsNull() {
+    void testScheduleSnapshot_SnapshotIsNull() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent()));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -97,7 +97,7 @@ public class AbstractSnapshotterTest {
     }
 
     @Test
-    public void testScheduleSnapshot_SnapshotReplacesOneEvent() {
+    void testScheduleSnapshot_SnapshotReplacesOneEvent() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -106,7 +106,7 @@ public class AbstractSnapshotterTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testScheduleSnapshot_WithTransaction() {
+    void testScheduleSnapshot_WithTransaction() {
         Transaction mockTransaction = mock(Transaction.class);
         TransactionManager txManager = spy(new StubTransactionManager(mockTransaction));
         when(txManager.startTransaction()).thenReturn(mockTransaction);

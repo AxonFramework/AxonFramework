@@ -1,6 +1,12 @@
 package org.axonframework.modelling.saga;
 
-import static org.junit.Assert.assertEquals;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.axonframework.modelling.OnlyAcceptConstructorPropertiesAnnotation;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -8,33 +14,26 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.axonframework.modelling.OnlyAcceptConstructorPropertiesAnnotation;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests serialization capabilities of {@link SagaScopeDescriptor}.
  * 
  * @author JohT
  */
-public class SagaScopeDescriptorSerializationTest {
+class SagaScopeDescriptorSerializationTest {
 
     private SagaScopeDescriptor testSubject;
     private String expectedType = "sagaType";
     private String expectedIdentifier = "identifier";
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new SagaScopeDescriptor(expectedType, expectedIdentifier);
     }
 
     @Test
-    public void testJavaSerializationCorrectlySetsIdentifierField() throws IOException, ClassNotFoundException {
+    void testJavaSerializationCorrectlySetsIdentifierField() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(out);
         objectOutputStream.writeObject(testSubject);
@@ -49,7 +48,7 @@ public class SagaScopeDescriptorSerializationTest {
     }
 
     @Test
-    public void testXStreamSerializationWorksAsExpected() {
+    void testXStreamSerializationWorksAsExpected() {
         XStreamSerializer xStreamSerializer = XStreamSerializer.builder().build();
         xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
 
@@ -61,7 +60,7 @@ public class SagaScopeDescriptorSerializationTest {
     }
 
     @Test
-    public void testJacksonSerializationWorksAsExpected() {
+    void testJacksonSerializationWorksAsExpected() {
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
 
         SerializedObject<String> serializedObject = jacksonSerializer.serialize(testSubject, String.class);
@@ -72,7 +71,7 @@ public class SagaScopeDescriptorSerializationTest {
     }
 
     @Test
-    public void testResponseTypeShouldBeSerializableWithJacksonUsingConstructorProperties() throws IOException {
+    void testResponseTypeShouldBeSerializableWithJacksonUsingConstructorProperties() throws IOException {
         ObjectMapper objectMapper = OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper());
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().objectMapper(objectMapper).build();
 

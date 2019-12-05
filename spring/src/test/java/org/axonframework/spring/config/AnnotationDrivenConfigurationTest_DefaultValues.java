@@ -22,8 +22,8 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -31,14 +31,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = AnnotationDrivenConfigurationTest_DefaultValues.Context.class)
 public class AnnotationDrivenConfigurationTest_DefaultValues {
@@ -47,7 +47,7 @@ public class AnnotationDrivenConfigurationTest_DefaultValues {
     private ApplicationContext applicationContext;
 
     @Test
-    public void testAnnotationConfigurationAnnotationWrapsBeans() {
+    void testAnnotationConfigurationAnnotationWrapsBeans() {
         Object eventHandler = applicationContext.getBean("eventHandler");
         Object commandHandler = applicationContext.getBean("commandHandler");
 

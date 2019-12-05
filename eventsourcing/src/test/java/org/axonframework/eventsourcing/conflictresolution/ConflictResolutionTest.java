@@ -22,43 +22,43 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-public class ConflictResolutionTest {
+class ConflictResolutionTest {
 
     private Method method;
     private ConflictResolution subject;
     private ConflictResolver conflictResolver;
     private CommandMessage<String> commandMessage = new GenericCommandMessage<>("test");
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         method = getClass().getDeclaredMethod("handle", String.class, ConflictResolver.class);
         subject = new ConflictResolution();
         conflictResolver = mock(ConflictResolver.class);
         DefaultUnitOfWork.startAndGet(commandMessage);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         CurrentUnitOfWork.ifStarted(UnitOfWork::commit);
     }
 
     @Test
-    public void testFactoryMethod() {
+    void testFactoryMethod() {
         assertNotNull(subject.createInstance(method, method.getParameters(), 1));
         assertNull(subject.createInstance(method, method.getParameters(), 0));
     }
 
     @Test
-    public void testResolve() {
+    void testResolve() {
         ConflictResolution.initialize(conflictResolver);
         assertFalse(subject.matches(GenericEventMessage.asEventMessage("testEvent")));
         assertTrue(subject.matches(commandMessage));
@@ -67,7 +67,7 @@ public class ConflictResolutionTest {
     }
 
     @Test
-    public void testResolveWithoutInitializationReturnsNoConflictsResolver() {
+    void testResolveWithoutInitializationReturnsNoConflictsResolver() {
         assertTrue(subject.matches(commandMessage));
         assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(commandMessage));
     }

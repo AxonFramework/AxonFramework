@@ -25,6 +25,8 @@ import java.util.function.Consumer;
  * Interface for a source of {@link Message messages} to which message processors can subscribe.
  *
  * @param <M> the message type
+ * @author Allard Buijze
+ * @since 3.0
  */
 public interface SubscribableMessageSource<M extends Message<?>> {
 
@@ -39,5 +41,4 @@ public interface SubscribableMessageSource<M extends Message<?>> {
      * messages.
      */
     Registration subscribe(Consumer<List<? extends M>> messageProcessor);
-
 }

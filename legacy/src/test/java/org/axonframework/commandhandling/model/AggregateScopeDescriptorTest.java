@@ -4,9 +4,9 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test whether the serialized form of the {@link org.axonframework.commandhandling.model.AggregateScopeDescriptor} can
@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
  *
  * @author Steven van Beelen
  */
-public class AggregateScopeDescriptorTest {
+class AggregateScopeDescriptorTest {
 
     private static final String LEGACY_SCOPE_DESCRIPTOR_CLASS_NAME =
             "org.axonframework.commandhandling.model.AggregateScopeDescriptor";
@@ -23,7 +23,7 @@ public class AggregateScopeDescriptorTest {
     private static final String AGGREGATE_ID = "aggregate-id";
 
     @Test
-    public void testXStreamSerializationOfOldAggregateScopeDescriptor() {
+    void testXStreamSerializationOfOldAggregateScopeDescriptor() {
         XStreamSerializer serializer = XStreamSerializer.defaultSerializer();
 
         String xmlSerializedScopeDescriptor =
@@ -46,7 +46,7 @@ public class AggregateScopeDescriptorTest {
     }
 
     @Test
-    public void testJacksonSerializationOfOldAggregateScopeDescriptor() {
+    void testJacksonSerializationOfOldAggregateScopeDescriptor() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedScopeDescriptor =

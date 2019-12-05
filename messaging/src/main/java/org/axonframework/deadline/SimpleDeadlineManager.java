@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,12 +21,8 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -36,12 +32,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -105,15 +96,15 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                            String deadlineName,
                            Object messageOrPayload,
                            ScopeDescriptor deadlineScope) {
-        DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+        DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = deadlineMessage.getIdentifier();
-        Duration triggerDuration = Duration.between(Instant.now(), triggerDateTime);
         runOnPrepareCommitOrNow(() -> {
             DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineName,
                                                          deadlineScope,
                                                          interceptedDeadlineMessage,
                                                          deadlineId);
+            Duration triggerDuration = Duration.between(Instant.now(), triggerDateTime);
             ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(
                     deadlineTask,
                     triggerDuration.toMillis(),
@@ -307,10 +298,12 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                 ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
                 if (resultMessage.isExceptional()) {
                     Throwable e = resultMessage.exceptionResult();
-                    throw new DeadlineException(format("An error occurred while triggering the deadline %s %s",
-                                                       deadlineName,
-                                                       deadlineId), e);
+                    logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
+                                 deadlineName, deadlineId, e);
                 }
+            } catch (Exception e) {
+                logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
+                             deadlineName, deadlineId, e);
             } finally {
                 scheduledTasks.remove(new DeadlineId(deadlineName, deadlineId));
             }

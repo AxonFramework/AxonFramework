@@ -16,11 +16,9 @@
 
 package org.axonframework.serialization;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
+import org.axonframework.util.MavenArtifactVersionResolver;
 
-import static org.axonframework.common.io.IOUtils.closeQuietly;
+import java.io.IOException;
 
 /**
  * RevisionResolver that uses Maven meta data to retrieve the application version. This application version is used
@@ -61,19 +59,10 @@ public class MavenArtifactRevisionResolver implements RevisionResolver {
      */
     public MavenArtifactRevisionResolver(String groupId, String artifactId, ClassLoader classLoader)
             throws IOException {
-        final InputStream propFile = classLoader.getResourceAsStream(
-                "META-INF/maven/" + groupId + "/" + artifactId + "/pom.properties");
-        if (propFile != null) {
-            try {
-                Properties mavenProps = new Properties();
-                mavenProps.load(propFile);
-                version = mavenProps.getProperty("version");
-            } finally {
-                closeQuietly(propFile);
-            }
-        } else {
-            version = null;
-        }
+        MavenArtifactVersionResolver versionResolver = new MavenArtifactVersionResolver(groupId,
+                                                                                        artifactId,
+                                                                                        classLoader);
+        version = versionResolver.get();
     }
 
     @Override

@@ -21,21 +21,21 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MessageCountingMonitorTest {
+class MessageCountingMonitorTest {
 
     private static final String PROCESSOR_NAME = "processorName";
 
     @Test
-    public void testMessages() {
+    void testMessages() {
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         MessageCountingMonitor testSubject = MessageCountingMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry);
         EventMessage<Object> foo = asEventMessage("foo");

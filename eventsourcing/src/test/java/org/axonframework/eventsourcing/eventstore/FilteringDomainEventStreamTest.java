@@ -19,22 +19,22 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class FilteringDomainEventStreamTest {
+class FilteringDomainEventStreamTest {
 
     private DomainEventMessage event1;
     private DomainEventMessage event2;
     private DomainEventMessage event3;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         event1 = new GenericDomainEventMessage<>("type", "1", (long) 0,
                                                  "Create type 1", MetaData.emptyInstance());
         event2 = new GenericDomainEventMessage<>("type2", "1", (long) 0,
@@ -44,7 +44,7 @@ public class FilteringDomainEventStreamTest {
     }
 
     @Test
-    public void testForEachRemainingType1() {
+    void testForEachRemainingType1() {
         List<DomainEventMessage> expectedMessages = Arrays.asList(event1);
 
         DomainEventStream concat = new FilteringDomainEventStream(
@@ -59,7 +59,7 @@ public class FilteringDomainEventStreamTest {
     }
     
     @Test
-    public void testForEachRemainingType2() {
+    void testForEachRemainingType2() {
         List<DomainEventMessage> expectedMessages = Arrays.asList(event2, event3);
 
         DomainEventStream concat = new FilteringDomainEventStream(

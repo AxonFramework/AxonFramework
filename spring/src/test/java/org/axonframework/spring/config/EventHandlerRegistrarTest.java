@@ -19,8 +19,8 @@ package org.axonframework.spring.config;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.ModuleConfiguration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.springframework.core.annotation.Order;
@@ -31,15 +31,15 @@ import java.util.function.Function;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 
-public class EventHandlerRegistrarTest {
+class EventHandlerRegistrarTest {
 
     private AxonConfiguration axonConfig;
     private ModuleConfiguration eventConfiguration;
     private EventProcessingConfigurer eventConfigurer;
     private EventHandlerRegistrar testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         axonConfig = mock(AxonConfiguration.class);
         eventConfiguration = mock(ModuleConfiguration.class);
         eventConfigurer = mock(EventProcessingConfigurer.class);
@@ -47,7 +47,7 @@ public class EventHandlerRegistrarTest {
     }
 
     @Test
-    public void testBeansRegisteredInOrder() {
+    void testBeansRegisteredInOrder() {
         testSubject.setEventHandlers(Arrays.asList(new OrderedBean(), new LateOrderedBean(), new UnorderedBean()));
 
         InOrder inOrder = Mockito.inOrder(eventConfigurer);

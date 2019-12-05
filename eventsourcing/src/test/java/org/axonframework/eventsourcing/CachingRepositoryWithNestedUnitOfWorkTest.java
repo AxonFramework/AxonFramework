@@ -32,8 +32,8 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ import java.util.function.Function;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Minimal test cases triggering an issue with the NestedUnitOfWork and the CachingEventSourcingRepository, see <a
@@ -92,7 +92,7 @@ import static org.junit.Assert.*;
  *
  * @author patrickh
  */
-public class CachingRepositoryWithNestedUnitOfWorkTest {
+class CachingRepositoryWithNestedUnitOfWorkTest {
 
     private final List<String> events = new ArrayList<>();
     private CachingEventSourcingRepository<TestAggregate> repository;
@@ -100,8 +100,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     private AggregateFactory<TestAggregate> aggregateFactory;
     private EventStore eventStore;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         final CacheManager cacheManager = CacheManager.getInstance();
         realCache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
 
@@ -123,7 +123,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    public void testWithoutCache() throws Exception {
+    void testWithoutCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
@@ -133,7 +133,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    public void testWithCache() throws Exception {
+    void testWithCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
@@ -143,7 +143,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    public void testMinimalScenarioWithoutCache() throws Exception {
+    void testMinimalScenarioWithoutCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
@@ -153,7 +153,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    public void testMinimalScenarioWithCache() throws Exception {
+    void testMinimalScenarioWithCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
@@ -163,8 +163,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
 
-    @SuppressWarnings("unchecked")
-    public void testMinimalScenario(String id) throws Exception {
+    private void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
@@ -190,7 +189,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         assertTrue(verify.tokens.containsAll(asList("1", "2")));
     }
 
-    @SuppressWarnings("unchecked")
     private void executeComplexScenario(String id) throws Exception {
         // Unit Of Work hierarchy:
         // root ("2")
@@ -240,12 +238,10 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         assertFalse(verify.tokens.contains("UOW10"));
         assertEquals(7, verify.tokens.size());
         for (int i = 0; i < verify.tokens.size(); i++) {
-            assertTrue("Expected event with sequence number " + i + " but got :" + events.get(i),
-                       events.get(i).startsWith(i + " "));
+            assertTrue(events.get(i).startsWith(i + " "), "Expected event with sequence number " + i + " but got :" + events.get(i));
         }
     }
 
-    @SuppressWarnings("unchecked")
     private TestAggregate loadAggregate(String id) {
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Aggregate<TestAggregate> verify = repository.load(id);

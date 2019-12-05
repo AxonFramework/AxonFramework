@@ -5,14 +5,14 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test whether the serialized form of the {@link org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken} can
@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
  *
  * @author Steven van Beelen
  */
-public class GapAwareTrackingTokenTest {
+class GapAwareTrackingTokenTest {
 
     private static final String LEGACY_GAP_AWARE_TRACKING_TOKEN_CLASS_NAME =
             "org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken";
@@ -29,7 +29,7 @@ public class GapAwareTrackingTokenTest {
     private static final List<Long> TOKEN_GAPS = Stream.of(0L, 25L, 58L).collect(Collectors.toList());
 
     @Test
-    public void testXStreamSerializationOfOldGapAwareTrackingToken() {
+    void testXStreamSerializationOfOldGapAwareTrackingToken() {
         XStreamSerializer serializer = XStreamSerializer.defaultSerializer();
 
         String xmlSerializedGapAwareTrackingToken =
@@ -62,7 +62,7 @@ public class GapAwareTrackingTokenTest {
     }
 
     @Test
-    public void testJacksonSerializationOfOldGapAwareTrackingToken() {
+    void testJacksonSerializationOfOldGapAwareTrackingToken() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedGapAwareTrackingToken =

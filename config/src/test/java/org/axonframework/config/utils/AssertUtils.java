@@ -16,7 +16,9 @@
 
 package org.axonframework.config.utils;
 
-import java.util.concurrent.TimeUnit;
+import org.opentest4j.AssertionFailedError;
+
+import java.time.Duration;
 
 /**
  * Utility class for special assertions
@@ -28,22 +30,21 @@ public abstract class AssertUtils {
     }
 
     /**
-     * Assert that the given {@code assertion} succeeds with the given {@code time} and {@code unit}.
+     * Assert that the given {@code assertion} succeeds with the given {@code duration}.
      *
-     * @param time      an {@code int} which paired with the {@code unit} specifies the time in which the assertion must
+     * @param duration  specifies the time in which the assertion must
      *                  pass
-     * @param unit      a {@link TimeUnit} in which {@code time} is expressed
      * @param assertion a {@link Runnable} containing the assertion to succeed within the deadline
      */
     @SuppressWarnings("Duplicates")
-    public static void assertWithin(int time, TimeUnit unit, Runnable assertion) {
+    public static void assertRetryingWithin(Duration duration, Runnable assertion) {
         long now = System.currentTimeMillis();
-        long deadline = now + unit.toMillis(time);
+        long deadline = now + duration.toMillis();
         do {
             try {
                 assertion.run();
                 break;
-            } catch (AssertionError e) {
+            } catch (AssertionFailedError e) {
                 if (now >= deadline) {
                     throw e;
                 }
