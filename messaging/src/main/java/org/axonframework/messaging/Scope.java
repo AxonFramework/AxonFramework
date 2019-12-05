@@ -203,7 +203,13 @@ public abstract class Scope {
         @Override
         public void complete() {
             Assert.state(!completed, () -> "This Async handle has already been marked as completed");
-            if (bound && CURRENT_SCOPE.get().peek() == Scope.this) {
+            if (bound) {
+                lock.unlock();
+                if (Scope.this != CURRENT_SCOPE.get().peek()) {
+                    throw new IllegalStateException(
+                            "Incorrectly trying to end another Scope than the currently active one."
+                    );
+                }
                 CURRENT_SCOPE.get().pop();
             }
             if (asyncCounter.decrementAndGet() <= 0) {
@@ -220,11 +226,10 @@ public abstract class Scope {
         @Override
         public void bindScope() {
             Assert.state(!completed, () -> "Cannot bind Scope to current thread if Async has been marked as completed");
-            // TODO: Ensure Scope is thread safe to use.
-            if (!bound && CURRENT_SCOPE.get().peek() != Scope.this) {
-                CURRENT_SCOPE.get().push(Scope.this);
-            }
+            Assert.state(!bound, () -> "Cannot bind Scope to more than once");
             bound = true;
+            CURRENT_SCOPE.get().push(Scope.this);
+            lock.lock();
         }
     }
 }

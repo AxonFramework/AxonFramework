@@ -7,7 +7,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -23,20 +22,24 @@ public class ScopeTest {
 
     @Test
     public void testScopeCompletionAwaitsAsyncCompletion() throws Exception {
-        AtomicInteger counter = new AtomicInteger();
+        int asyncCount = 10;
+        int counter[] = new int[1];
         MockScope scope = new MockScope();
         scope.executeWithResult(() -> {
             assertSame(scope, Scope.getCurrentScope());
-            Scope.Async async = scope.doStartAsync();
-            return executor.schedule(() -> {
-                async.bindScope();
-                counter.incrementAndGet();
-                assertSame(scope, Scope.getCurrentScope());
-                async.complete();
-                return null;
-            }, 10, TimeUnit.MILLISECONDS);
+            for (int i = 0; i < asyncCount; i++) {
+                Scope.Async async = scope.doStartAsync();
+                executor.schedule(() -> {
+                    async.bindScope();
+                    counter[0]++;
+                    assertSame(scope, Scope.getCurrentScope());
+                    async.complete();
+                    return null;
+                }, 10, TimeUnit.MILLISECONDS);
+            }
+            return counter[0]++;
         });
-        assertEquals(1, counter.get());
+        assertEquals(asyncCount + 1, counter[0]);
     }
 
     @Test
@@ -53,6 +56,24 @@ public class ScopeTest {
             assertTrue("Unexpected message: " + e.getMessage(), e.getMessage().contains("marked"));
             assertTrue("Unexpected message: " + e.getMessage(), e.getMessage().contains("as completed"));
         } finally {
+            scope.endScope();
+        }
+    }
+
+    @Test
+    public void testBindingOfAsyncScopeOnlyAllowedOnce() {
+        MockScope scope = new MockScope();
+        scope.startScope();
+        Scope.Async async = scope.doStartAsync();
+        async.bindScope();
+        try {
+            async.bindScope();
+            fail("Expected exception");
+        } catch (IllegalStateException e) {
+            assertTrue("Unexpected message: " + e.getMessage(), e.getMessage().contains("bind Scope"));
+            assertTrue("Unexpected message: " + e.getMessage(), e.getMessage().contains("more than once"));
+        } finally {
+            async.complete();
             scope.endScope();
         }
     }
