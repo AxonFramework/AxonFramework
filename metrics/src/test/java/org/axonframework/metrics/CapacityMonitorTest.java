@@ -21,20 +21,20 @@ import com.codahale.metrics.Metric;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
-public class CapacityMonitorTest {
+class CapacityMonitorTest {
 
     @Test
-    public void testSingleThreadedCapacity() {
+    void testSingleThreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
@@ -47,7 +47,7 @@ public class CapacityMonitorTest {
     }
 
     @Test
-    public void testMultithreadedCapacity() {
+    void testMultithreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         EventMessage<Object> foo = asEventMessage("foo");
@@ -64,7 +64,7 @@ public class CapacityMonitorTest {
     }
 
     @Test
-    public void testEmptyCapacity() {
+    void testEmptyCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         Map<String, Metric> metricSet = testSubject.getMetrics();

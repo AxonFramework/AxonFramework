@@ -35,8 +35,8 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,16 +47,16 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonMap;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration
 public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
@@ -71,10 +71,10 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
     private Context.MyOtherEventHandler myOtherEventHandler;
 
     @Test
-    public void testEventHandlerIsRegisteredWithCustomProcessor() {
+    void testEventHandlerIsRegisteredWithCustomProcessor() {
         eventBus.publish(asEventMessage("Testing 123"));
 
-        assertNotNull("Expected EventBus to be wired", myEventHandler.eventBus);
+        assertNotNull(myEventHandler.eventBus, "Expected EventBus to be wired");
         assertTrue(myEventHandler.received.contains("value"));
         assertTrue(myOtherEventHandler.received.contains("Testing 123"));
     }

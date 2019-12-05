@@ -17,23 +17,23 @@
 package org.axonframework.micrometer.reservoir;
 
 import io.micrometer.core.instrument.Clock;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * Adapted from com.codahale.metrics.SlidingTimeWindowReservoirTest from io.dropwizard.metrics:metrics-core:3.1.2
  */
-public class SlidingTimeWindowReservoirTest {
+class SlidingTimeWindowReservoirTest {
     private final Clock clock = mock(Clock.class);
     private final SlidingTimeWindowReservoir reservoir = new SlidingTimeWindowReservoir(10, TimeUnit.NANOSECONDS, clock);
 
     @Test
-    public void storesMeasurementsWithDuplicateTicks() {
+    void storesMeasurementsWithDuplicateTicks() {
         when(clock.monotonicTime()).thenReturn(20L);
 
         reservoir.update(1L);
@@ -43,7 +43,7 @@ public class SlidingTimeWindowReservoirTest {
     }
 
     @Test
-    public void boundsMeasurementsToATimeWindow() {
+    void boundsMeasurementsToATimeWindow() {
         when(clock.monotonicTime()).thenReturn(0L);
         reservoir.update(1L);
 

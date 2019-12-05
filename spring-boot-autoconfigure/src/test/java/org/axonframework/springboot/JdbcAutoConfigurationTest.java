@@ -24,8 +24,8 @@ import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
@@ -36,14 +36,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,12 +52,12 @@ import static org.mockito.Mockito.when;
  *
  * @author Milan Savic
  */
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = JdbcAutoConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {
         JpaRepositoriesAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
         AxonServerAutoConfiguration.class})
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class JdbcAutoConfigurationTest {
 
@@ -65,7 +65,7 @@ public class JdbcAutoConfigurationTest {
     private ApplicationContext applicationContext;
 
     @Test
-    public void testContextInitialization() {
+    void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertTrue(applicationContext.getBean(EventStorageEngine.class) instanceof JdbcEventStorageEngine);

@@ -20,8 +20,8 @@ import com.codahale.metrics.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.micrometer.GlobalMetricRegistry;
 import org.axonframework.micrometer.MetricsConfigurerModule;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -30,17 +30,17 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
         DataSourceAutoConfiguration.class
 })
-@RunWith(SpringRunner.class)
-public class AxonAutoConfigurationWithMicrometerMetricsTest {
+class AxonAutoConfigurationWithMicrometerMetricsTest {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -64,7 +64,7 @@ public class AxonAutoConfigurationWithMicrometerMetricsTest {
     private org.axonframework.metrics.MetricsConfigurerModule metricsModuleMetricsConfigurerModule;
 
     @Test
-    public void testContextInitialization() {
+    void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(MeterRegistry.class));

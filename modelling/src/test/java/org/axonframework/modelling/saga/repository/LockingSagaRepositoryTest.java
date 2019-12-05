@@ -23,7 +23,7 @@ import org.axonframework.modelling.saga.Saga;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Set;
@@ -34,14 +34,14 @@ import static org.mockito.Mockito.*;
 /**
  * @author Rene de Waele
  */
-public class LockingSagaRepositoryTest {
+class LockingSagaRepositoryTest {
 
     private LockFactory lockFactory;
     private Lock lock;
     private LockingSagaRepository<Object> subject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         lockFactory = mock(LockFactory.class);
         lock = mock(Lock.class);
         when(lockFactory.obtainLock(anyString())).thenReturn(lock);
@@ -49,13 +49,13 @@ public class LockingSagaRepositoryTest {
         DefaultUnitOfWork.startAndGet(null);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         CurrentUnitOfWork.ifStarted(UnitOfWork::commit);
     }
 
     @Test
-    public void testLockReleasedOnUnitOfWorkCleanUpAfterCreate() {
+    void testLockReleasedOnUnitOfWorkCleanUpAfterCreate() {
         subject.createInstance("id", Object::new);
         verify(lockFactory).obtainLock("id");
         verify(subject).doCreateInstance(eq("id"), any());
@@ -65,7 +65,7 @@ public class LockingSagaRepositoryTest {
     }
 
     @Test
-    public void testLockReleasedOnUnitOfWorkCleanUpAfterLoad() {
+    void testLockReleasedOnUnitOfWorkCleanUpAfterLoad() {
         subject.load("id");
         verify(lockFactory).obtainLock("id");
         verify(subject).doLoad("id");

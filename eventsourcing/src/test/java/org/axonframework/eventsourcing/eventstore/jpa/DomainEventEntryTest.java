@@ -21,21 +21,21 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.Collections;
 
 import static java.util.UUID.randomUUID;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class DomainEventEntryTest {
+class DomainEventEntryTest {
 
     @Test
-    public void testDomainEventEntry_WrapEventsCorrectly() {
+    void testDomainEventEntry_WrapEventsCorrectly() {
         Serializer serializer = XStreamSerializer.builder().build();
 
         String payload = "Payload";

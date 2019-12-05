@@ -116,7 +116,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                            String deadlineName,
                            Object messageOrPayload,
                            ScopeDescriptor deadlineScope) {
-        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
 
         runOnPrepareCommitOrNow(() -> {

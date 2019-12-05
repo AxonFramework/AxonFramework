@@ -28,14 +28,14 @@ import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.StubSaga;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,12 +45,12 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(locations = "/META-INF/spring/saga-repository-test.xml")
 @Transactional
@@ -65,8 +65,8 @@ public class JpaSagaStoreTest {
     private EntityManager entityManager;
     private DefaultUnitOfWork<Message<?>> unitOfWork;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         JpaSagaStore sagaStore = JpaSagaStore.builder()
                                              .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
                                              .build();
@@ -93,8 +93,8 @@ public class JpaSagaStoreTest {
         unitOfWork.onCommit(u -> txManager.commit(tx));
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -102,7 +102,7 @@ public class JpaSagaStoreTest {
 
     @DirtiesContext
     @Test
-    public void testAddingAnInactiveSagaDoesntStoreIt() throws Exception {
+    void testAddingAnInactiveSagaDoesntStoreIt() throws Exception {
         unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -123,7 +123,7 @@ public class JpaSagaStoreTest {
 
     @DirtiesContext
     @Test
-    public void testAddAndLoadSaga_ByIdentifier() throws Exception {
+    void testAddAndLoadSaga_ByIdentifier() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
                 IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
                 .getPayload();
@@ -138,7 +138,7 @@ public class JpaSagaStoreTest {
 
     @DirtiesContext
     @Test
-    public void testAddAndLoadSaga_ByAssociationValue() throws Exception {
+    void testAddAndLoadSaga_ByAssociationValue() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -163,7 +163,7 @@ public class JpaSagaStoreTest {
 
     @DirtiesContext
     @Test
-    public void testLoadSaga_AssociationValueRemoved() throws Exception {
+    void testLoadSaga_AssociationValueRemoved() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -185,7 +185,7 @@ public class JpaSagaStoreTest {
 
     @DirtiesContext
     @Test
-    public void testEndSaga() throws Exception {
+    void testEndSaga() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -209,7 +209,7 @@ public class JpaSagaStoreTest {
 
     @DirtiesContext
     @Test
-    public void testStoreSagaWithCustomEntity() throws Exception {
+    void testStoreSagaWithCustomEntity() throws Exception {
         JpaSagaStore sagaStore = new JpaSagaStore(
                 JpaSagaStore.builder().entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
         ) {

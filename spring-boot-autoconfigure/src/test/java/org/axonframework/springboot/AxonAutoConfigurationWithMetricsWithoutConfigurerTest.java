@@ -24,8 +24,8 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -39,19 +39,19 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
         DataSourceAutoConfiguration.class, MicrometerMetricsAutoConfiguration.class
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
@@ -65,7 +65,7 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     private GlobalMetricRegistry globalMetricRegistry;
 
     @Test
-    public void testContextInitialization() {
+    void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertTrue(applicationContext.containsBean("metricRegistry"));
@@ -80,7 +80,7 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     }
 
     @Test
-    public void testAxonServerEventStoreRequestedMonitor() {
+    void testAxonServerEventStoreRequestedMonitor() {
         assertNotNull(applicationContext.getBean(AxonServerEventStore.class));
 
         MessageMonitorFactory monitor = applicationContext.getBean("mockMessageMonitorFactory", MessageMonitorFactory.class);

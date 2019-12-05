@@ -16,14 +16,14 @@
 
 package org.axonframework.eventsourcing;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
-public class NoSnapshotTriggerDefinitionTest {
+class NoSnapshotTriggerDefinitionTest {
 
     @Test
-    public void triggerDefinitionReturnsSameInstance() {
+    void triggerDefinitionReturnsSameInstance() {
         SnapshotTrigger instance1 = NoSnapshotTriggerDefinition.INSTANCE.prepareTrigger(Object.class);
         SnapshotTrigger instance2 = NoSnapshotTriggerDefinition.INSTANCE.prepareTrigger(Object.class);
         SnapshotTrigger instance3 = NoSnapshotTriggerDefinition.INSTANCE.prepareTrigger(Object.class);

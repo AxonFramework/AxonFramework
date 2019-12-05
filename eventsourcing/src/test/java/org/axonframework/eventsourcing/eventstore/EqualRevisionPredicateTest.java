@@ -22,44 +22,44 @@ import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class EqualRevisionPredicateTest {
+class EqualRevisionPredicateTest {
 
     private static final String PAYLOAD = "payload", AGGREGATE = "aggregate", TYPE = "type", METADATA = "metadata";
     private EqualRevisionPredicate testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new EqualRevisionPredicate(new AnnotationRevisionResolver(), XStreamSerializer.builder().build());
     }
 
     @Test
-    public void testSameRevisionForAggregateAndPayload() {
+    void testSameRevisionForAggregateAndPayload() {
         assertTrue(testSubject.test(createEntry(WithAnnotationAggregate.class.getName(), "2.3-TEST")));
     }
 
     @Test
-    public void testDifferentRevisionsForAggregateAndPayload() {
+    void testDifferentRevisionsForAggregateAndPayload() {
         assertFalse(testSubject.test(createEntry(WithAnnotationAggregate.class.getName(), "2.3-TEST-DIFFERENT")));
     }
 
     @Test
-    public void testNoRevisionForAggregateAndPayload() {
+    void testNoRevisionForAggregateAndPayload() {
         assertTrue(testSubject.test(createEntry(WithoutAnnotationAggregate.class.getName())));
     }
 
     @Test
-    public void testNoRevisionForPayload() {
+    void testNoRevisionForPayload() {
         assertFalse(testSubject.test(createEntry(WithAnnotationAggregate.class.getName())));
     }
 
     @Test
-    public void testNoRevisionForAggregate() {
+    void testNoRevisionForAggregate() {
         assertFalse(testSubject.test(createEntry(WithoutAnnotationAggregate.class.getName(), "2.3-TEST")));
     }
 

@@ -18,8 +18,8 @@ package org.axonframework.springboot;
 
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -28,32 +28,32 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests whether gathering of Axon tags is properly configured.
  *
  * @author Milan Savic
  */
+@ExtendWith(SpringExtension.class)
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
         AxonServerAutoConfiguration.class
 })
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:test.tags.application.properties")
-public class AxonAutoConfigurationWithTagsTest {
+class AxonAutoConfigurationWithTagsTest {
 
     @Autowired
     private ApplicationContext applicationContext;
 
     @Test
-    public void testConfig() {
+    void testConfig() {
         TagsConfiguration tagsConfiguration = applicationContext.getBean(TagsConfiguration.class);
         assertNotNull(tagsConfiguration);
         Map<String, String> tags = tagsConfiguration.getTags();

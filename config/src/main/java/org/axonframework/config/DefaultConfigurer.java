@@ -105,11 +105,11 @@ public class DefaultConfigurer implements Configurer {
             c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()))
     );
 
-    private final Component<Function<Class, HandlerDefinition>> handlerDefinition = new Component<>(
+    private final Component<Function<Class<?>, HandlerDefinition>> handlerDefinition = new Component<>(
             config, "handlerDefinition",
             c -> this::defaultHandlerDefinition);
 
-    private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
+    private final Map<Class<?>, AggregateConfiguration<?>> aggregateConfigurations = new HashMap<>();
 
     private final List<ConsumerHandler> initHandlers = new ArrayList<>();
     private final List<RunnableHandler> startHandlers = new ArrayList<>();
@@ -458,7 +458,7 @@ public class DefaultConfigurer implements Configurer {
             Object handler = annotatedCommandHandlerBuilder.apply(config);
             Assert.notNull(handler, () -> "annotatedCommandHandler may not be null");
             Registration registration =
-                    new AnnotationCommandHandlerAdapter(handler,
+                    new AnnotationCommandHandlerAdapter<>(handler,
                                                         config.parameterResolverFactory(),
                                                         config.handlerDefinition(handler.getClass()))
                             .subscribe(config.commandBus());
@@ -468,13 +468,12 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Configurer registerQueryHandler(int phase, Function<Configuration, Object> annotatedQueryHandlerBuilder) {
         startHandlers.add(new RunnableHandler(phase, () -> {
             Object annotatedHandler = annotatedQueryHandlerBuilder.apply(config);
             Assert.notNull(annotatedHandler, () -> "annotatedQueryHandler may not be null");
 
-            Registration registration = new AnnotationQueryHandlerAdapter(annotatedHandler,
+            Registration registration = new AnnotationQueryHandlerAdapter<>(annotatedHandler,
                                                                           config.parameterResolverFactory(),
                                                                           config.handlerDefinition(annotatedHandler
                                                                                                            .getClass()))
@@ -658,7 +657,7 @@ public class DefaultConfigurer implements Configurer {
         @SuppressWarnings("unchecked")
         public <T> Repository<T> repository(Class<T> aggregateType) {
             AggregateConfiguration<T> aggregateConfigurer =
-                    DefaultConfigurer.this.aggregateConfigurations.get(aggregateType);
+                    (AggregateConfiguration<T>) DefaultConfigurer.this.aggregateConfigurations.get(aggregateType);
             if (aggregateConfigurer == null) {
                 throw new IllegalArgumentException(
                         "Aggregate " + aggregateType.getSimpleName() + " has not been configured");

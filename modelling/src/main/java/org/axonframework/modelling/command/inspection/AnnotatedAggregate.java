@@ -70,6 +70,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     private final EventBus eventBus;
     private T aggregateRoot;
     private boolean applying = false;
+    private boolean executingDelayedTasks = false;
     private boolean isDeleted = false;
     private Long lastKnownSequence;
 
@@ -281,11 +282,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     protected void registerRoot(Callable<T> aggregateFactory) throws Exception {
         this.aggregateRoot = executeWithResult(aggregateFactory);
         execute(() -> {
-            applying = true;
             while (!delayedTasks.isEmpty()) {
                 delayedTasks.remove().run();
             }
-            applying = false;
         });
     }
 
@@ -451,15 +450,22 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             applying = true;
             try {
                 publish(createMessage(payload, metaData));
-                while (!delayedTasks.isEmpty()) {
-                    delayedTasks.remove().run();
-                }
             } finally {
-                delayedTasks.clear();
                 applying = false;
             }
+            if (!executingDelayedTasks) {
+                executingDelayedTasks = true;
+                try {
+                    while (!delayedTasks.isEmpty()) {
+                        delayedTasks.remove().run();
+                    }
+                } finally {
+                    executingDelayedTasks = false;
+                    delayedTasks.clear();
+                }
+            }
         } else {
-            delayedTasks.add(() -> publish(createMessage(payload, metaData)));
+            delayedTasks.add(() -> doApply(payload, metaData));
         }
         return this;
     }
