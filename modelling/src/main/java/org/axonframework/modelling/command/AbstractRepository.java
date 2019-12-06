@@ -74,6 +74,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         this.aggregateModel = builder.buildAggregateModel();
     }
 
+    @Override
     public A newInstance(Callable<T> factoryMethod) throws Exception {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
@@ -128,14 +129,13 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
 
     @Override
-    public Aggregate<T> loadOrCreate(String aggregateIdentifier, Long expectedVersion, Callable<T> factoryMethod) {
+    public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
                                                  s -> {
                                                      try {
                                                          return doLoadOrCreate(aggregateIdentifier,
-                                                                               expectedVersion,
                                                                                factoryMethod);
                                                      } catch (RuntimeException e) {
                                                          throw e;
@@ -144,7 +144,6 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
                                                      }
                                                  });
         uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
-        validateOnLoad(aggregate, expectedVersion);
         prepareForCommit(aggregate);
 
         return aggregate;
@@ -287,13 +286,12 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * factoryMethod}.
      *
      * @param aggregateIdentifier the identifier of the aggregate
-     * @param expectedVersion     the expected version of the aggregate (null for no check)
      * @param factoryMethod       the method that creates a new instance
      * @return the aggregate
      *
      * @throws Exception when loading or creating the aggregate failed
      */
-    protected A doLoadOrCreate(String aggregateIdentifier, Long expectedVersion, Callable<T> factoryMethod)
+    protected A doLoadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod)
             throws Exception {
         throw new UnsupportedOperationException("doLoadOrCreate not implemented for this repository type");
     }

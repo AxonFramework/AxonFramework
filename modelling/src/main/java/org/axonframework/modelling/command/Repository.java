@@ -66,11 +66,10 @@ public interface Repository<T> extends ScopeAware {
      * {@code factoryMethod}.
      *
      * @param aggregateIdentifier The identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the loaded aggregate
      * @param factoryMethod       The method to create the aggregate's root instance
      * @return The aggregate root with the given identifier.
      */
-    default Aggregate<T> loadOrCreate(String aggregateIdentifier, Long expectedVersion, Callable<T> factoryMethod) {
+    default Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
         throw new UnsupportedOperationException("loadOrCreate not implemented on this repository");
     }
 }

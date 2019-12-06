@@ -82,12 +82,12 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadOrCreateAggregate() {
+    public void testLoadOrCreateAggregate() throws Exception {
         startAndGetUnitOfWork();
-        Aggregate<StubAggregate> createdAggregate = testSubject.loadOrCreate("newAggregate", null, StubAggregate::new);
+        Aggregate<StubAggregate> createdAggregate = testSubject.loadOrCreate("newAggregate", StubAggregate::new);
         verify(lockFactory).obtainLock("newAggregate");
 
-        Aggregate<StubAggregate> loadedAggregate = testSubject.loadOrCreate("newAggregate", null, StubAggregate::new);
+        Aggregate<StubAggregate> loadedAggregate = testSubject.loadOrCreate("newAggregate", StubAggregate::new);
         assertEquals(createdAggregate.identifier(), loadedAggregate.identifier());
         CurrentUnitOfWork.commit();
         verify(lock).release();

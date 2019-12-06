@@ -68,11 +68,4 @@ public @interface CommandHandler {
      */
     Class<?> payloadType() default Object.class;
 
-
-    /**
-     * Option to specify if the command handler can create an aggregate instance if the aggregate does not exist yet.
-     *
-     * @return true if the command handler can create an aggregate instance if the aggregate does not exist yet
-     */
-    boolean createIfMissing() default false;
 }

@@ -171,14 +171,14 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerCreatesOrUpdatesAggregateInstance() {
+    public void testCommandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
 
         final CommandCallback callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
-        when(mockRepository.loadOrCreate(anyString(), any(), any()))
+        when(mockRepository.loadOrCreate(anyString(), any()))
                 .thenReturn(createAggregate(new StubCommandAnnotatedAggregate()));
         commandBus.dispatch(message, callback);
-        verify(mockRepository).loadOrCreate(anyString(), any(), any());
+        verify(mockRepository).loadOrCreate(anyString(), any());
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
                 .forClass(CommandResultMessage.class);
@@ -608,7 +608,8 @@ public class AggregateAnnotationCommandHandlerTest {
             super(aggregateIdentifier);
         }
 
-        @CommandHandler(createIfMissing = true)
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
         public String handleCreateOrUpdate(CreateOrUpdateCommand createOrUpdateCommand) {
             this.setIdentifier(createOrUpdateCommand.id);
             return "Create or update works fine";

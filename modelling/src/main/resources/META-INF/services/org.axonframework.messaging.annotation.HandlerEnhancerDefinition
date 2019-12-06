@@ -32,3 +32,4 @@
 
 org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition
 org.axonframework.modelling.command.inspection.MethodCommandHandlerInterceptorDefinition
+org.axonframework.modelling.command.inspection.MethodCreationPolicyDefinition

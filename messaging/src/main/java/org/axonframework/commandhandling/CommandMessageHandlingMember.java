@@ -52,8 +52,9 @@ public interface CommandMessageHandlingMember<T> extends MessageHandlingMember<T
 
     /**
      * Checks if the createIfMissing flag is set for this command handler.
+     * Default value is {@code false}.
      *
-     * @return true if handler may create a new instance of the entity.
+     * @return {@code true} if handler may create a new instance of the entity.
      */
     default boolean createIfMissing() {
         return false;

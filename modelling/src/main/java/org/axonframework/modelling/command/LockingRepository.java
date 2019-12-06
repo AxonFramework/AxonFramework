@@ -126,11 +126,11 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     }
 
     @Override
-    protected LockAwareAggregate<T, A> doLoadOrCreate(String aggregateIdentifier, Long expectedVersion,
+    protected LockAwareAggregate<T, A> doLoadOrCreate(String aggregateIdentifier,
                                                       Callable<T> factoryMethod) throws Exception {
         Lock lock = lockFactory.obtainLock(aggregateIdentifier);
         try {
-            final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
+            final A aggregate = doLoadWithLock(aggregateIdentifier, null);
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
             return new LockAwareAggregate<>(aggregate, lock);
         } catch (AggregateNotFoundException ex) {
@@ -138,7 +138,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
             return new LockAwareAggregate<>(aggregate, lock);
         } catch (Throwable ex) {
-            logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
+            logger.debug("Exception occurred while trying to load/create an aggregate. Releasing lock.", ex);
             lock.release();
             throw ex;
         }

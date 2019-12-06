@@ -32,6 +32,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -116,16 +118,34 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
         List<MessageHandler<CommandMessage<?>>> handlersFound = new ArrayList<>();
         aggregateModel.commandHandlers().forEach(handler -> {
+            AtomicReference<AggregateCreationPolicy> aggregateCreationPolicy = new AtomicReference<>(
+                    AggregateCreationPolicy.NEVER);
+            handler.unwrap(CreationPolicyMember.class).ifPresent(
+                    cmd -> aggregateCreationPolicy.set(cmd.creationPolicy()));
+
+
             handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
                 if (cmh.isFactoryHandler()) {
-                    handlersFound.add(new AggregateConstructorCommandHandler(handler));
-                } else if (cmh.createIfMissing()) {
-                    handlersFound.add(new AggregateCreateOrUpdateCommandHandler(handler,
-                                                                                aggregateModel
-                                                                                        .entityClass()::newInstance));
-                } else {
-                    handlersFound.add(new AggregateCommandHandler(handler));
+                    assertThat(aggregateCreationPolicy.get(),
+                               policy -> policy == null || AggregateCreationPolicy.ALWAYS.equals(policy),
+                               aggregateModel.type()
+                                       + ": Static methods/constructors can only use creationPolicy ALWAYS");
+                    aggregateCreationPolicy.set(AggregateCreationPolicy.ALWAYS);
                 }
+                switch (aggregateCreationPolicy.get()) {
+                    case ALWAYS:
+                        handlersFound.add(new AggregateConstructorCommandHandler(handler));
+                        break;
+                    case CREATE_IF_MISSING:
+                        handlersFound.add(
+                                new AggregateCreateOrUpdateCommandHandler(handler,
+                                                                          aggregateModel.entityClass()::newInstance));
+                        break;
+                    case NEVER:
+                        handlersFound.add(new AggregateCommandHandler(handler));
+                        break;
+                }
+
                 supportedCommandNames.add(cmh.commandName());
             });
         });
@@ -364,7 +384,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
-            Aggregate<T> inst = repository.loadOrCreate(iv.getIdentifier(), iv.getVersion(), factoryMethod);
+            Aggregate<T> inst = repository.loadOrCreate(iv.getIdentifier(), factoryMethod);
             Object result = inst.handle(command);
             assertThat(inst.identifier(), id -> id != null && id.equals(iv.getIdentifier()),
                        "Identifier must be set after handling the message");
