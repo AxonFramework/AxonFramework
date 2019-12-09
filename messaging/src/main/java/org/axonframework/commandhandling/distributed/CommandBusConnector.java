@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -23,6 +24,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.RemoteHandlingException;
+
+import java.util.Optional;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -33,15 +36,14 @@ import org.axonframework.messaging.RemoteHandlingException;
 public interface CommandBusConnector extends MessageHandlerInterceptorSupport<CommandMessage<?>> {
 
     /**
-     * Sends the given {@code command} to the node assigned to handle messages with the given
-     * {@code routingKey}. The sender does not expect a reply.
+     * Sends the given {@code command} to the node assigned to handle messages with the given {@code routingKey}. The
+     * sender does not expect a reply.
      * <p/>
      * If this method throws an exception, the sender is guaranteed that the destination of the command did not receive
      * it. If the method returns normally, the actual implementation of the connector defines the delivery guarantees.
      * <p/>
-     * Connectors route the commands based on the given {@code routingKey}. Using the same {@code routingKey}
-     * will result in the command being sent to the same member. Each message must be sent to <em>exactly one
-     * member</em>.
+     * Connectors route the commands based on the given {@code routingKey}. Using the same {@code routingKey} will
+     * result in the command being sent to the same member. Each message must be sent to <em>exactly one member</em>.
      *
      * @param destination The member of the network to send the message to
      * @param command     The command to send to the (remote) member
@@ -50,20 +52,19 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
     <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception;
 
     /**
-     * Sends the given {@code command} to the node assigned to handle messages with the given
-     * {@code routingKey}. The sender expect a reply, and will be notified of the result in the given
-     * {@code callback}.
+     * Sends the given {@code command} to the node assigned to handle messages with the given {@code routingKey}. The
+     * sender expect a reply, and will be notified of the result in the given {@code callback}.
      * <p/>
      * If this method throws an exception, the sender is guaranteed that the destination of the command did not receive
      * it. If the method returns normally, the actual implementation of the connector defines the delivery guarantees.
      * Implementations <em>should</em> always invoke the callback with an outcome.
      * <p/>
      * If a member's connection was lost, and the result of the command is unclear, the {@link
-     * CommandCallback#onResult(CommandMessage, CommandResultMessage)}} method is invoked with a
-     * {@link RemoteHandlingException} describing the failed connection. A client may choose to resend a command.
+     * CommandCallback#onResult(CommandMessage, CommandResultMessage)}} method is invoked with a {@link
+     * RemoteHandlingException} describing the failed connection. A client may choose to resend a command.
      * <p/>
-     * Connectors route the commands based on the given {@code routingKey}. Using the same {@code routingKey}
-     * will result in the command being sent to the same member.
+     * Connectors route the commands based on the given {@code routingKey}. Using the same {@code routingKey} will
+     * result in the command being sent to the same member.
      *
      * @param destination The member of the network to send the message to
      * @param command     The command to send to the (remote) member
@@ -72,14 +73,27 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
      * @param <R>         The type of object expected as result of the command
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception;
+    <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback)
+            throws Exception;
 
     /**
      * Subscribes a command message handler for commands with given {@code commandName}.
      *
      * @param commandName the command name. Usually this equals the fully qualified class name of the command.
-     * @param handler the handler to subscribe
+     * @param handler     the handler to subscribe
      * @return a handle that can be used to end the subscription
      */
     Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
+
+    /**
+     * Return an {@link Optional} containing the {@link CommandBus} which is used by this {@link CommandBusConnector} to
+     * dispatch local and incoming {@link CommandMessage}s on. It is <b>highly recommended</b> to implement this method
+     * to ensure an actual CommandBus is provided instead of a default {@link Optional#empty()}.
+     *
+     * @return an {@link Optional} containing the {@link CommandBus} which is used by this {@link CommandBusConnector}
+     * to dispatch local and incoming {@link CommandMessage}s on
+     */
+    default Optional<CommandBus> localSegment() {
+        return Optional.empty();
+    }
 }

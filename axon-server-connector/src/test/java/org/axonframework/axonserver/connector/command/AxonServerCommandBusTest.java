@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,15 +23,23 @@ import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.grpc.stub.StreamObserver;
-import org.axonframework.axonserver.connector.*;
-import org.axonframework.commandhandling.*;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TestStreamObserver;
+import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -44,8 +52,8 @@ import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTR
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -125,6 +133,7 @@ public class AxonServerCommandBusTest {
     @Test
     public void fireAndForgetUsesDefaultCallback() throws InterruptedException {
         testSubject.disconnect();
+        //noinspection unchecked
         CommandCallback<Object, Object> mockDefaultCommandCallback = mock(CommandCallback.class);
         testSubject = AxonServerCommandBus.builder()
                                           .axonServerConnectionManager(axonServerConnectionManager)
@@ -202,7 +211,7 @@ public class AxonServerCommandBusTest {
     public void dispatchWithConcurrencyException() throws Exception {
         CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is a concurrency issue");
         CountDownLatch waiter = new CountDownLatch(1);
-        AtomicReference<CommandResultMessage> resultHolder = new AtomicReference<>();
+        AtomicReference<CommandResultMessage<? extends String>> resultHolder = new AtomicReference<>();
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             resultHolder.set(result);
@@ -221,7 +230,7 @@ public class AxonServerCommandBusTest {
     public void dispatchWithExceptionFromHandler() throws Exception {
         CommandMessage<String> commandMessage = new GenericCommandMessage<>("give me an exception");
         CountDownLatch waiter = new CountDownLatch(1);
-        AtomicReference<CommandResultMessage> resultHolder = new AtomicReference<>();
+        AtomicReference<CommandResultMessage<? extends String>> resultHolder = new AtomicReference<>();
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             resultHolder.set(result);
@@ -370,7 +379,8 @@ public class AxonServerCommandBusTest {
         );
 
         //noinspection unchecked
-        verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+        verify(axonServerConnectionManager, atLeastOnce())
+                .getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 
     @Test
@@ -403,6 +413,12 @@ public class AxonServerCommandBusTest {
         );
 
         //noinspection unchecked
-        verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+        verify(axonServerConnectionManager, atLeastOnce())
+                .getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+    }
+
+    @Test
+    public void testLocalSegmentReturnsLocalCommandBus() {
+        assertEquals(localSegment, testSubject.localSegment());
     }
 }
