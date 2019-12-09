@@ -16,6 +16,8 @@
 
 package org.axonframework.config;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
@@ -64,6 +66,30 @@ public class AggregateConfigurerTest {
         when(disruptorCommandBus.createRepository(any(), any(), any(), any(), any(), any()))
                 .thenReturn(expectedRepository);
         when(mockConfiguration.commandBus()).thenReturn(disruptorCommandBus);
+
+        testSubject.initialize(mockConfiguration);
+
+        Repository<TestAggregate> resultRepository = testSubject.repository();
+
+        assertEquals(expectedRepository, resultRepository);
+        //noinspection unchecked
+        verify(disruptorCommandBus).createRepository(
+                eq(testEventStore), isA(GenericAggregateFactory.class), eq(NoSnapshotTriggerDefinition.INSTANCE),
+                eq(testParameterResolverFactory), any(), any()
+        );
+    }
+
+    @Test
+    public void testConfiguredDisruptorCommandBusAsLocalSegmentCreatesTheRepository() {
+        //noinspection unchecked
+        Repository<Object> expectedRepository = mock(Repository.class);
+
+        DisruptorCommandBus disruptorCommandBus = mock(DisruptorCommandBus.class);
+        when(disruptorCommandBus.createRepository(any(), any(), any(), any(), any(), any()))
+                .thenReturn(expectedRepository);
+        CommandBus distributedCommandBusImplementation = mock(CommandBus.class);
+        when(distributedCommandBusImplementation.localSegment()).thenReturn(disruptorCommandBus);
+        when(mockConfiguration.commandBus()).thenReturn(distributedCommandBusImplementation);
 
         testSubject.initialize(mockConfiguration);
 
