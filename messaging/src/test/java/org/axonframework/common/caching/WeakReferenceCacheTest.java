@@ -27,6 +27,13 @@ import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+
+/**
+ * Tests for cache implementation that keeps values in the cache until the garbage collector has removed them {@link WeakReferenceCache}.
+ *
+ * @author Steven van Beelen
+ * @author Henrique Sena
+ */
 public class WeakReferenceCacheTest {
 
     private WeakReferenceCache testSubject;
@@ -97,5 +104,15 @@ public class WeakReferenceCacheTest {
 
         assertNull(testSubject.get("test1"));
         verifyNoMoreInteractions(mockListener);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnGet() {
+        testSubject.get(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnContainsKey() {
+        testSubject.containsKey(null);
     }
 }
