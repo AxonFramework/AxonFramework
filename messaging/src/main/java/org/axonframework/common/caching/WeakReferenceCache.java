@@ -16,6 +16,7 @@
 
 package org.axonframework.common.caching;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 
 import java.lang.ref.Reference;
@@ -39,6 +40,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * are not notified.
  *
  * @author Allard Buijze
+ * @author Henrique Sena
  * @since 2.2.1
  */
 public class WeakReferenceCache implements Cache {
@@ -56,6 +58,7 @@ public class WeakReferenceCache implements Cache {
     @Override
     @SuppressWarnings("unchecked")
     public <K, V> V get(K key) {
+        Assert.nonNull(key, () -> "Key may not be null");
         purgeItems();
         final Reference<Object> entry = cache.get(key);
 
@@ -114,6 +117,7 @@ public class WeakReferenceCache implements Cache {
 
     @Override
     public <K> boolean containsKey(K key) {
+        Assert.nonNull(key, () -> "Key may not be null");
         purgeItems();
         final Reference<Object> entry = cache.get(key);
 
