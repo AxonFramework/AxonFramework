@@ -67,5 +67,4 @@ public @interface CommandHandler {
      * @return the payload type expected by this handler
      */
     Class<?> payloadType() default Object.class;
-
 }

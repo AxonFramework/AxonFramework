@@ -46,7 +46,6 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
 
         private final String commandName;
         private final boolean isFactoryHandler;
-        private final boolean createIfMissing;
         private final String routingKey;
 
         private MethodCommandMessageHandlingMember(MessageHandlingMember<T> delegate,
@@ -68,8 +67,6 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
                                                              "which is equal to or a subclass of the declaring type");
             }
             isFactoryHandler = executable instanceof Constructor || factoryMethod;
-
-            this.createIfMissing = Boolean.TRUE.equals(annotationAttributes.get("createIfMissing"));
         }
 
         @Override
@@ -90,11 +87,6 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         @Override
         public boolean isFactoryHandler() {
             return isFactoryHandler;
-        }
-
-        @Override
-        public boolean createIfMissing() {
-            return createIfMissing;
         }
     }
 }
