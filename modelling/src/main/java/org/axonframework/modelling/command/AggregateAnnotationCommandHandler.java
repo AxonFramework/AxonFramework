@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -120,14 +121,18 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         aggregateModel.commandHandlers().forEach(handler -> {
             AtomicReference<AggregateCreationPolicy> aggregateCreationPolicy = new AtomicReference<>(
                     AggregateCreationPolicy.NEVER);
+            AtomicBoolean creationPolicySet = new AtomicBoolean();
             handler.unwrap(CreationPolicyMember.class).ifPresent(
-                    cmd -> aggregateCreationPolicy.set(cmd.creationPolicy()));
+                    cmd -> {
+                        aggregateCreationPolicy.set(cmd.creationPolicy());
+                        creationPolicySet.set(true);
+                    });
 
 
             handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
                 if (cmh.isFactoryHandler()) {
                     assertThat(aggregateCreationPolicy.get(),
-                               policy -> policy == null || AggregateCreationPolicy.ALWAYS.equals(policy),
+                               policy -> !creationPolicySet.get() || AggregateCreationPolicy.ALWAYS.equals(policy),
                                aggregateModel.type()
                                        + ": Static methods/constructors can only use creationPolicy ALWAYS");
                     aggregateCreationPolicy.set(AggregateCreationPolicy.ALWAYS);
