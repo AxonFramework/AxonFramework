@@ -76,15 +76,4 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * @return a handle to unsubscribe the {@code handler}. When unsubscribed it will no longer receive commands.
      */
     Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
-
-    /**
-     * Return the {@link CommandBus} which is regarded as the local segment for this implementation. Would return the
-     * CommandBus used to dispatch and handle command in a local environment to bridge the gap in a distributed set up.
-     * Might return {@code this} if no distributed CommandBus is used.
-     *
-     * @return the {@link CommandBus} which is the local segment for this implementation
-     */
-    default CommandBus localSegment() {
-        return this;
-    }
 }
