@@ -46,6 +46,7 @@ import org.junit.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +58,7 @@ import static org.axonframework.axonserver.connector.TestTargetContextResolver.B
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
@@ -296,6 +298,19 @@ public class AxonServerQueryBusTest {
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 10));
 
         assertEquals(10, testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS).count());
+
+        verify(targetContextResolver).resolveContext(testQuery);
+    }
+
+    @Test
+    public void queryForOptionalWillRequestInstanceOfFromRemoteDestination() {
+        QueryMessage<String, Optional<String>> testQuery = new GenericQueryMessage<>("Hello, World", optionalInstanceOf(String.class))
+                .andMetaData(MetaData.with("repeat", 10).and("interval", 10));
+
+        assertEquals(10, testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS)
+                                    .filter(i -> Optional.class.isAssignableFrom(i.getPayloadType()))
+                                    .filter(i -> i.getPayload().isPresent())
+                                    .count());
 
         verify(targetContextResolver).resolveContext(testQuery);
     }

@@ -85,8 +85,8 @@ public class OptionalResponseType<R> extends AbstractResponseType<Optional<R>> {
     }
 
     @Override
-    public Class<?> getExpectedResponseType() {
-        return super.getExpectedResponseType();
+    public ResponseType<?> forSerialization() {
+        return ResponseTypes.instanceOf(expectedResponseType);
     }
 
     @Override

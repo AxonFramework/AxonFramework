@@ -87,7 +87,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -320,7 +319,7 @@ public class AxonServerQueryBus implements QueryBus {
                                @Override
                                public void onNext(QueryResponse queryResponse) {
                                    logger.debug("Received query response [{}]", queryResponse);
-                                   completableFuture.complete(serializer.deserializeResponse(queryResponse));
+                                   completableFuture.complete(serializer.deserializeResponse(queryResponse, queryMessage.getResponseType()));
                                }
 
                                @Override
@@ -382,7 +381,7 @@ public class AxonServerQueryBus implements QueryBus {
                                    logger.debug("The received query response has error message [{}]",
                                                 queryResponse.getErrorMessage());
                                } else {
-                                   if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse))) {
+                                   if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse, queryMessage.getResponseType()))) {
                                        getRequestStream().cancel("Cancellation requested by client", null);
                                    }
                                }
