@@ -49,6 +49,7 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -81,7 +82,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerCommandBus implements CommandBus {
+public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus> {
 
     private static final Logger logger = LoggerFactory.getLogger(AxonServerCommandBus.class);
 

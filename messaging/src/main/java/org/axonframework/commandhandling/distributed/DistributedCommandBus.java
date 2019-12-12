@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -52,7 +53,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DistributedCommandBus implements CommandBus {
+public class DistributedCommandBus implements CommandBus, Distributed<CommandBus> {
 
     /**
      * The initial load factor of this node when it is registered with the {@link CommandRouter}.
