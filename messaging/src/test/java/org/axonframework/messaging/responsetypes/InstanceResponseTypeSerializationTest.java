@@ -13,19 +13,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * 
  * @author JohT
  */
-public class InstanceResponseTypeSerializationTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
+class InstanceResponseTypeSerializationTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
 
-    public InstanceResponseTypeSerializationTest() {
+    InstanceResponseTypeSerializationTest() {
         super(new InstanceResponseType<>(QueryResponse.class));
     }
     
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
        return TestSerializer.all();
     }
        
     @MethodSource("serializers")
     @ParameterizedTest
-    public void testResponseTypeShouldBeSerializable(TestSerializer serializer) {
+    void testResponseTypeShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());
     }
 }

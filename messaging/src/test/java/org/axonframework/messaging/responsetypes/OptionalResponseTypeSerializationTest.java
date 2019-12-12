@@ -30,20 +30,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * 
  * @author JohT
  */
-public class OptionalResponseTypeSerializationTest
+class OptionalResponseTypeSerializationTest
         extends AbstractResponseTypeTest<Optional<AbstractResponseTypeTest.QueryResponse>> {
 
-    public OptionalResponseTypeSerializationTest() {
+    OptionalResponseTypeSerializationTest() {
         super(new OptionalResponseType<>(QueryResponse.class));
     }
 
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
         return TestSerializer.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    public void testResponseTypeShouldBeSerializable(TestSerializer serializer) {
+    void testResponseTypeShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());
     }
 }

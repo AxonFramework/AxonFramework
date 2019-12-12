@@ -13,15 +13,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * 
  * @author JohT
  */
-public class GlobalSequenceTrackingTokenSerializationTest {
+class GlobalSequenceTrackingTokenSerializationTest {
 
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
        return TestSerializer.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    public void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void testTokenShouldBeSerializable(TestSerializer serializer) {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(Long.MAX_VALUE);
         assertEquals(token, serializer.serializeDeserialize(token));
     }

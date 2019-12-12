@@ -51,21 +51,20 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class DirectEventJobDataBinderTest {
+class DirectEventJobDataBinderTest {
 
     private static final String TEST_EVENT_PAYLOAD = "event-payload";
 
     private final EventMessage<String> testEventMessage;
     private final MetaData testMetaData;
 
-    public DirectEventJobDataBinderTest() {
-        EventMessage<String> testEventMessage = GenericEventMessage.asEventMessage(TEST_EVENT_PAYLOAD);
-        testMetaData = MetaData.with("some-key", "some-value");
-        this.testEventMessage = testEventMessage.withMetaData(testMetaData);
-
+    DirectEventJobDataBinderTest() {
+        this.testMetaData = MetaData.with("some-key", "some-value");
+        this.testEventMessage = GenericEventMessage.<String>asEventMessage(TEST_EVENT_PAYLOAD)
+                .withMetaData(testMetaData);
     }
 
-    public static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
+    static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
         return Stream.of(
                 Arguments.arguments(
                         spy(JavaSerializer.builder().build()),
@@ -87,7 +86,7 @@ public class DirectEventJobDataBinderTest {
 
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
-    public void testEventMessageToJobData(
+    void testEventMessageToJobData(
             Serializer serializer,
             Function<Class, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher
@@ -113,7 +112,7 @@ public class DirectEventJobDataBinderTest {
     @SuppressWarnings("unchecked")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
-    public void testEventMessageFromJobData(
+    void testEventMessageFromJobData(
             Serializer serializer,
             Function<Class, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher

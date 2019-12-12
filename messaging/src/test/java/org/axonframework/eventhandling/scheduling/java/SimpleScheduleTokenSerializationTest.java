@@ -13,15 +13,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * 
  * @author JohT
  */
-public class SimpleScheduleTokenSerializationTest {
+class SimpleScheduleTokenSerializationTest {
 
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
        return TestSerializer.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    public void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void testTokenShouldBeSerializable(TestSerializer serializer) {
         SimpleScheduleToken tokenToTest = new SimpleScheduleToken("28bda08d-2dd5-4420-98cb-75ca073446b4");
         assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
     }

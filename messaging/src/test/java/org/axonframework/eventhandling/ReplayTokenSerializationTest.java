@@ -14,15 +14,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * @author JohT
  */
-public class ReplayTokenSerializationTest {
+class ReplayTokenSerializationTest {
 
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
         return TestSerializer.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    public void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void testTokenShouldBeSerializable(TestSerializer serializer) {
         TrackingToken innerToken = GapAwareTrackingToken.newInstance(10, Collections.singleton(9L));
         ReplayToken token = new ReplayToken(innerToken);
         assertEquals(token, serializer.serializeDeserialize(token));
