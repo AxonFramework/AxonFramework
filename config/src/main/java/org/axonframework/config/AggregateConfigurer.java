@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.caching.Cache;
@@ -29,6 +30,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
@@ -185,11 +187,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                   "Store to use, or configure a specific repository implementation for " +
                                   aggregate.toString());
 
-                    if (c.commandBus() instanceof DisruptorCommandBus) {
-                        return buildDisruptorRepository((DisruptorCommandBus) c.commandBus(), c, aggregate);
-                    } else if (c.commandBus().localSegment() instanceof DisruptorCommandBus) {
+                    CommandBus commandBus = c.commandBus();
+                    if (commandBus instanceof DisruptorCommandBus) {
+                        return buildDisruptorRepository((DisruptorCommandBus) commandBus, c, aggregate);
+                    } else if (commandBusHasDisruptorLocalSegment(commandBus)) {
+                        //noinspection unchecked
+                        Distributed<CommandBus> distributedCommandBus = (Distributed<CommandBus>) commandBus;
                         return buildDisruptorRepository(
-                                (DisruptorCommandBus) c.commandBus().localSegment(), c, aggregate
+                                (DisruptorCommandBus) distributedCommandBus.localSegment(), c, aggregate
                         );
                     }
 
@@ -214,6 +219,12 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                  .commandTargetResolver(commandTargetResolver.get())
                                                  .aggregateModel(metaModel.get())
                                                  .build());
+    }
+
+    private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {
+        //noinspection unchecked
+        return commandBus instanceof Distributed
+                && ((Distributed<CommandBus>) commandBus).localSegment() instanceof DisruptorCommandBus;
     }
 
     private Repository<A> buildDisruptorRepository(DisruptorCommandBus commandBus,

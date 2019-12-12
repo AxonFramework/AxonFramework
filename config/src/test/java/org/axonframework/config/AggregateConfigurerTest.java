@@ -16,7 +16,6 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
@@ -87,7 +86,7 @@ public class AggregateConfigurerTest {
         DisruptorCommandBus disruptorCommandBus = mock(DisruptorCommandBus.class);
         when(disruptorCommandBus.createRepository(any(), any(), any(), any(), any(), any()))
                 .thenReturn(expectedRepository);
-        CommandBus distributedCommandBusImplementation = mock(CommandBus.class);
+        DistributedCommandBus distributedCommandBusImplementation = mock(DistributedCommandBus.class);
         when(distributedCommandBusImplementation.localSegment()).thenReturn(disruptorCommandBus);
         when(mockConfiguration.commandBus()).thenReturn(distributedCommandBusImplementation);
 
