@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.function.Predicate;
@@ -28,21 +28,21 @@ import java.util.function.Predicate;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.*;
 
-public class FilteringEventStorageEngineTest {
+class FilteringEventStorageEngineTest {
 
     private Predicate<EventMessage<?>> filter;
     private EventStorageEngine mockStorage;
     private FilteringEventStorageEngine testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         filter = m -> m.getPayload().toString().contains("accept");
         mockStorage = mock(EventStorageEngine.class);
         testSubject = new FilteringEventStorageEngine(mockStorage, filter);
     }
 
     @Test
-    public void testEventsFromArrayMatchingAreForwarded() {
+    void testEventsFromArrayMatchingAreForwarded() {
         EventMessage<String> event1 = GenericEventMessage.asEventMessage("accept");
         EventMessage<String> event2 = GenericEventMessage.asEventMessage("fail");
         EventMessage<String> event3 = GenericEventMessage.asEventMessage("accept");
@@ -53,7 +53,7 @@ public class FilteringEventStorageEngineTest {
     }
 
     @Test
-    public void testEventsFromListMatchingAreForwarded() {
+    void testEventsFromListMatchingAreForwarded() {
         EventMessage<String> event1 = GenericEventMessage.asEventMessage("accept");
         EventMessage<String> event2 = GenericEventMessage.asEventMessage("fail");
         EventMessage<String> event3 = GenericEventMessage.asEventMessage("accept");
@@ -64,7 +64,7 @@ public class FilteringEventStorageEngineTest {
     }
 
     @Test
-    public void testStoreSnapshotDelegated() {
+    void testStoreSnapshotDelegated() {
         GenericDomainEventMessage<Object> snapshot = new GenericDomainEventMessage<>("type", "id", 0, "fail");
         testSubject.storeSnapshot(snapshot);
 
@@ -72,21 +72,21 @@ public class FilteringEventStorageEngineTest {
     }
 
     @Test
-    public void testCreateTailTokenDelegated() {
+    void testCreateTailTokenDelegated() {
         testSubject.createTailToken();
 
         verify(mockStorage).createTailToken();
     }
 
     @Test
-    public void testCreateHeadTokenDelegated() {
+    void testCreateHeadTokenDelegated() {
         testSubject.createHeadToken();
 
         verify(mockStorage).createHeadToken();
     }
 
     @Test
-    public void testCreateTokenAtDelegated() {
+    void testCreateTokenAtDelegated() {
         Instant now = Instant.now();
         testSubject.createTokenAt(now);
 

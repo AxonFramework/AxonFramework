@@ -24,14 +24,14 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -42,9 +42,9 @@ public class AggregateSnapshotterTest {
     private AggregateSnapshotter testSubject;
     private AggregateFactory mockAggregateFactory;
 
-    @Before
+    @BeforeEach
     @SuppressWarnings({"unchecked"})
-    public void setUp() {
+    void setUp() {
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
         testSubject = AggregateSnapshotter.builder()
@@ -55,7 +55,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    public void testCreateSnapshot() {
+    void testCreateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
@@ -72,7 +72,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    public void testCreateSnapshot_FirstEventLoadedIsSnapshotEvent() {
+    void testCreateSnapshot_FirstEventLoadedIsSnapshotEvent() {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
 
@@ -87,14 +87,14 @@ public class AggregateSnapshotterTest {
 
         DomainEventMessage snapshot = testSubject.createSnapshot(StubAggregate.class,
                                                                  aggregateIdentifier.toString(), eventStream);
-        assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getPayload());
+        assertSame(aggregate, snapshot.getPayload(), "Snapshotter did not recognize the aggregate snapshot");
 
         verify(mockAggregateFactory).createAggregateRoot(any(), any(DomainEventMessage.class));
     }
 
     @Test
     @SuppressWarnings({"unchecked"})
-    public void testCreateSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
+    void testCreateSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
@@ -108,7 +108,7 @@ public class AggregateSnapshotterTest {
                                                                  aggregateIdentifier, eventStream);
 
         verify(mockAggregateFactory).createAggregateRoot(aggregateIdentifier, firstEvent);
-        assertNull("Snapshotter shouldn't have created snapshot of deleted aggregate", snapshot);
+        assertNull(snapshot, "Snapshotter shouldn't have created snapshot of deleted aggregate");
     }
 
     public static class StubAggregate {

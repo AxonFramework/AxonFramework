@@ -19,26 +19,26 @@ package org.axonframework.modelling.saga.metamodel;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertTrue;
 
-public class AnnotationSagaMetaModelFactoryTest {
+class AnnotationSagaMetaModelFactoryTest {
 
     private AnnotationSagaMetaModelFactory testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AnnotationSagaMetaModelFactory();
     }
 
     @Test
-    public void testInspectSaga() {
+    void testInspectSaga() {
         SagaModel<MySaga> sagaModel = testSubject.modelOf(MySaga.class);
 
         Optional<AssociationValue> actual = sagaModel.resolveAssociation(asEventMessage(new MySagaStartEvent("value")));

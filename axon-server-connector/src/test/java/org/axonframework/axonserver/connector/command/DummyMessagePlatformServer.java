@@ -18,7 +18,12 @@ package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
-import io.axoniq.axonserver.grpc.command.*;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -27,6 +32,7 @@ import org.axonframework.axonserver.connector.PlatformService;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,6 +42,7 @@ public class DummyMessagePlatformServer {
     private final int port;
     private Server server;
     private Map<String, StreamObserver> subscriptions = new ConcurrentHashMap<>();
+    private Map<String, CommandSubscription> commandSubscriptions = new ConcurrentHashMap<>();
 
     public DummyMessagePlatformServer(int port) {
         this.port = port;
@@ -62,19 +69,32 @@ public class DummyMessagePlatformServer {
         return subscriptions.get(command);
     }
 
+    public Optional<CommandSubscription> subscriptionForCommand(String command) {
+        return Optional.ofNullable(commandSubscriptions.get(command));
+    }
+
+    public void simulateError(String command) {
+        StreamObserver subscription = subscriptions.remove(command);
+        subscription.onError(new RuntimeException());
+    }
+
     class CommandHandler extends CommandServiceGrpc.CommandServiceImplBase {
 
         @Override
         public StreamObserver<CommandProviderOutbound> openStream(StreamObserver<CommandProviderInbound> responseObserver) {
             return new StreamObserver<CommandProviderOutbound>() {
                 @Override
-                public void onNext(CommandProviderOutbound queryProviderOutbound) {
-                    switch(queryProviderOutbound.getRequestCase()) {
+                public void onNext(CommandProviderOutbound commandProviderOutbound) {
+                    switch (commandProviderOutbound.getRequestCase()) {
                         case SUBSCRIBE:
-                            subscriptions.put(queryProviderOutbound.getSubscribe().getCommand(), responseObserver);
+                            CommandSubscription subscription = commandProviderOutbound.getSubscribe();
+                            String command = subscription.getCommand();
+                            subscriptions.put(command, responseObserver);
+                            commandSubscriptions.put(command, subscription);
                             break;
                         case UNSUBSCRIBE:
-                            subscriptions.remove(queryProviderOutbound.getUnsubscribe().getCommand(), responseObserver);
+                            subscriptions.remove(commandProviderOutbound.getUnsubscribe().getCommand(),
+                                                 responseObserver);
                             break;
                         case FLOW_CONTROL:
                             break;
@@ -133,12 +153,6 @@ public class DummyMessagePlatformServer {
             }
             responseObserver.onCompleted();
         }
-
-    }
-
-    public void simulateError(String command) {
-        StreamObserver subscription = subscriptions.remove(command);
-        subscription.onError(new RuntimeException());
 
     }
 

@@ -16,29 +16,29 @@
 
 package org.axonframework.modelling.saga;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class AssociationValuesImplTest {
+class AssociationValuesImplTest {
 
     private AssociationValuesImpl testSubject;
     private AssociationValue associationValue;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AssociationValuesImpl();
         associationValue = new AssociationValue("key", "value");
     }
 
     @Test
-    public void testAddAssociationValue() {
+    void testAddAssociationValue() {
         testSubject.add(associationValue);
 
         assertEquals(1, testSubject.addedAssociations().size());
@@ -46,7 +46,7 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testAddAssociationValue_AddedTwice() {
+    void testAddAssociationValue_AddedTwice() {
         testSubject.add(associationValue);
         testSubject.commit();
         testSubject.add(associationValue);
@@ -55,7 +55,7 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testRemoveAssociationValue() {
+    void testRemoveAssociationValue() {
         assertTrue(testSubject.add(associationValue));
         testSubject.commit();
         assertTrue(testSubject.remove(associationValue));
@@ -64,14 +64,14 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testRemoveAssociationValue_NotInContainer() {
+    void testRemoveAssociationValue_NotInContainer() {
         testSubject.remove(associationValue);
         assertTrue(testSubject.addedAssociations().isEmpty());
         assertTrue(testSubject.removedAssociations().isEmpty());
     }
 
     @Test
-    public void testAddAndRemoveEntry() {
+    void testAddAndRemoveEntry() {
         testSubject.add(associationValue);
         testSubject.remove(associationValue);
 
@@ -80,7 +80,7 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testContains() {
+    void testContains() {
         assertFalse(testSubject.contains(associationValue));
         testSubject.add(associationValue);
         assertTrue(testSubject.contains(associationValue));
@@ -90,7 +90,7 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testAsSet() {
+    void testAsSet() {
         testSubject.add(associationValue);
         int t = 0;
         for (AssociationValue actual : testSubject.asSet()) {
@@ -101,7 +101,7 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testIterator() {
+    void testIterator() {
         testSubject.add(associationValue);
         Iterator<AssociationValue> iterator = testSubject.iterator();
         assertSame(associationValue, iterator.next());

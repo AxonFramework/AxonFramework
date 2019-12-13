@@ -16,20 +16,20 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Jochen Munz
  */
-public class SQLStateResolverTest {
+class SQLStateResolverTest {
 
     @Test
-    public void testDefaultResolver_duplicateKeyException() {
+    void testDefaultResolver_duplicateKeyException() {
         SQLStateResolver resolver = new SQLStateResolver();
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(duplicateKeyException());
@@ -38,7 +38,7 @@ public class SQLStateResolverTest {
     }
 
     @Test
-    public void testDefaultResolver_integrityConstraintViolated() {
+    void testDefaultResolver_integrityConstraintViolated() {
         SQLStateResolver resolver = new SQLStateResolver();
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(integrityContraintViolation());
@@ -47,7 +47,7 @@ public class SQLStateResolverTest {
     }
 
     @Test
-    public void testExplicitResolver_duplicateKeyException() {
+    void testExplicitResolver_duplicateKeyException() {
         SQLStateResolver resolver = new SQLStateResolver("23505");
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(duplicateKeyException());
@@ -57,12 +57,12 @@ public class SQLStateResolverTest {
 
 
     @Test
-    public void testExplicitResolver_integrityConstraintViolated() {
+    void testExplicitResolver_integrityConstraintViolated() {
         SQLStateResolver resolver = new SQLStateResolver("23505");
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(integrityContraintViolation());
 
-        assertFalse("A general state code should not be matched by the explicitly configured resolver", isDuplicateKey);
+        assertFalse(isDuplicateKey, "A general state code should not be matched by the explicitly configured resolver");
     }
 
     private Exception integrityContraintViolation() {

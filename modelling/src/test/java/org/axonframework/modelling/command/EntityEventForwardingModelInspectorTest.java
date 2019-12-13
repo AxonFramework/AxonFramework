@@ -18,7 +18,7 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.eventhandling.EventHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,15 +28,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory.inspectAggregate;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class EntityEventForwardingModelInspectorTest {
+class EntityEventForwardingModelInspectorTest {
 
     private static final String AGGREGATE_ID = "aggregateId";
     private static final String ENTITY_ID = "entityId";
 
     @Test
-    public void testExpectEventsToBeRoutedToNoEntityForForwardModeSetToNone() {
+    void testExpectEventsToBeRoutedToNoEntityForForwardModeSetToNone() {
         AggregateModel<SomeNoneEventForwardingEntityAggregate> inspector =
                 inspectAggregate(SomeNoneEventForwardingEntityAggregate.class);
 
@@ -53,7 +53,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnly() {
+    void testExpectEventsToBeRoutedToRightEntityOnly() {
         AggregateModel<SomeEventForwardingEntityAggregate> inspector =
                 inspectAggregate(SomeEventForwardingEntityAggregate.class);
 
@@ -71,7 +71,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnlyWithSpecificRoutingKey() {
+    void testExpectEventsToBeRoutedToRightEntityOnlyWithSpecificRoutingKey() {
         AggregateModel<SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey> inspector =
                 inspectAggregate(SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey.class);
 
@@ -90,7 +90,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityCollection() {
+    void testExpectEventsToBeRoutedToRightEntityOnlyForEntityCollection() {
         AggregateModel<SomeEventForwardingEntityCollectionAggregate> inspector =
                 inspectAggregate(SomeEventForwardingEntityCollectionAggregate.class);
 
@@ -110,7 +110,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityMap() {
+    void testExpectEventsToBeRoutedToRightEntityOnlyForEntityMap() {
         AggregateModel<SomeEventForwardingEntityMapAggregate> inspector =
                 inspectAggregate(SomeEventForwardingEntityMapAggregate.class);
 

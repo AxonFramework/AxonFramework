@@ -28,9 +28,9 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class LockingRepositoryTest {
+class LockingRepositoryTest {
 
     private Repository<StubAggregate> testSubject;
     private EventBus mockEventBus;
@@ -50,8 +50,8 @@ public class LockingRepositoryTest {
     private Lock lock;
     private static final Message<?> MESSAGE = new GenericMessage<Object>("test");
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockEventBus = mock(EventBus.class);
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
         when(lockFactory.obtainLock(anyString()))
@@ -63,15 +63,15 @@ public class LockingRepositoryTest {
         }
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
     }
 
     @Test
-    public void testStoreNewAggregate() throws Exception {
+    void testStoreNewAggregate() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
@@ -94,7 +94,7 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadAndStoreAggregate() throws Exception {
+    void testLoadAndStoreAggregate() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
@@ -115,7 +115,7 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadAndStoreAggregate_LockReleasedOnException() throws Exception {
+    void testLoadAndStoreAggregate_LockReleasedOnException() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
 
@@ -144,7 +144,7 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
+    void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
         testSubject = InMemoryLockingRepository.builder().lockFactory(lockFactory).eventStore(mockEventBus).build();
         testSubject = spy(testSubject);

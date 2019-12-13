@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Parameter;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -228,7 +229,7 @@ class CommandHandlerInvokerTest {
     void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
         String testAggregateId = "some-identifier";
         DeadlineMessage<DeadlinePayload> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload(), Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), testAggregateId);
 

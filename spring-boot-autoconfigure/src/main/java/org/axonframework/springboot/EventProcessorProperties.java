@@ -82,12 +82,13 @@ public class EventProcessorProperties {
         private String source;
 
         /**
-         * Indicates whether this processor should be Tracking, or Subscribing its source.
+         * Indicates whether this processor should be Tracking, or Subscribing its source. Defaults to Tracking.
          */
-        private Mode mode = Mode.SUBSCRIBING;
+        private Mode mode = Mode.TRACKING;
 
         /**
          * Indicates the number of segments that should be created when the processor starts for the first time.
+         * Defaults to 1.
          */
         private int initialSegmentCount = 1;
 
@@ -101,13 +102,13 @@ public class EventProcessorProperties {
         /**
          * The time unit of tokens claim interval.
          *
-         * Defaults to MILLISECONDS.
+         * Defaults to {@link TimeUnit#MILLISECONDS}.
          */
         private TimeUnit tokenClaimIntervalTimeUnit = TimeUnit.MILLISECONDS;
 
         /**
          * The maximum number of threads the processor should process events with. Defaults to the number of initial
-         * segments if this is not further specified.
+         * segments if this is not further specified. Defaults to 1.
          */
         private int threadCount = -1;
 
