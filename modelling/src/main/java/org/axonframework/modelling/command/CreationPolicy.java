@@ -37,5 +37,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface CreationPolicy {
 
+    /**
+     * Specifies the {@link AggregateCreationPolicy} to apply. {@code NEVER} when not set.
+     *
+     * @return the creation policy
+     */
     AggregateCreationPolicy value() default AggregateCreationPolicy.NEVER;
 }

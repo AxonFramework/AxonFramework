@@ -27,5 +27,10 @@ import org.axonframework.modelling.command.AggregateCreationPolicy;
  */
 public interface CreationPolicyMember<T> extends MessageHandlingMember<T> {
 
+    /**
+     * Returns the creation policy set on the {@link MessageHandlingMember}.
+     *
+     * @return the creation policy set on the handler
+     */
     AggregateCreationPolicy creationPolicy();
 }
