@@ -387,6 +387,11 @@ public class AxonServerQueryBusTest {
         verify(axonServerConnectionManager, times(2)).getQueryStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 
+    @Test
+    public void testLocalSegmentReturnsLocalQueryBus() {
+        assertEquals(localSegment, testSubject.localSegment());
+    }
+
     private QueryProviderInbound testQueryMessage() {
         org.axonframework.serialization.SerializedObject<byte[]> serializedResponseType =
                 serializer.serialize(instanceOf(String.class), byte[].class);
@@ -409,7 +414,6 @@ public class AxonServerQueryBusTest {
                                                          .setPayload(testQueryPayload)
                                    ).build();
     }
-
 
     private AtomicReference<StreamObserver<QueryProviderInbound>> buildInboundQueryStreamObserverReference() {
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver = new AtomicReference<>();
