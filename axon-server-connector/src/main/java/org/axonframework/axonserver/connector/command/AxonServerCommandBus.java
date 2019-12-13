@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -51,6 +51,7 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -71,7 +72,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -84,7 +84,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerCommandBus implements CommandBus {
+public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus> {
 
     private static final Logger logger = LoggerFactory.getLogger(AxonServerCommandBus.class);
 
@@ -346,6 +346,11 @@ public class AxonServerCommandBus implements CommandBus {
                 registration,
                 () -> commandProcessor.unsubscribe(commandName)
         );
+    }
+
+    @Override
+    public CommandBus localSegment() {
+        return localSegment;
     }
 
     @Override

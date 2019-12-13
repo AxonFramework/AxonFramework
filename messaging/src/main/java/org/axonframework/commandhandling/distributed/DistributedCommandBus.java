@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,18 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.MonitorAwareCallback;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -39,8 +44,8 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
- * spread load. Each "physical" CommandBus instance is considered a "segment" of a conceptual distributed CommandBus.
+ * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to spread
+ * load. Each "physical" CommandBus instance is considered a "segment" of a conceptual distributed CommandBus.
  * <p/>
  * The DistributedCommandBus relies on a {@link CommandBusConnector} to dispatch commands and replies to different
  * segments of the CommandBus. Depending on the implementation used, each segment may run in a different JVM.
@@ -48,7 +53,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DistributedCommandBus implements CommandBus {
+public class DistributedCommandBus implements CommandBus, Distributed<CommandBus> {
 
     /**
      * The initial load factor of this node when it is registered with the {@link CommandRouter}.
@@ -71,9 +76,8 @@ public class DistributedCommandBus implements CommandBus {
     /**
      * Instantiate a Builder to be able to create a {@link DistributedCommandBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
-     * The {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
-     * provided.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}. The {@link CommandRouter} and {@link
+     * CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link DistributedCommandBus}
      */
@@ -84,8 +88,8 @@ public class DistributedCommandBus implements CommandBus {
     /**
      * Instantiate a {@link DistributedCommandBus} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link CommandRouter}, {@link CommandBusConnector} and {@link MessageMonitor} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the {@link CommandRouter}, {@link CommandBusConnector} and {@link MessageMonitor} are not {@code
+     * null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link DistributedCommandBus} instance
      */
@@ -192,6 +196,17 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Will call {@link CommandBusConnector#localSegment()}. If this returns an {@link Optional#empty()}, this method
+     * defaults to returning {@code this} as last resort.
+     */
+    @Override
+    public CommandBus localSegment() {
+        return connector.localSegment().orElse(this);
+    }
+
+    /**
      * Returns the current load factor of this node.
      *
      * @return the current load factor
@@ -211,8 +226,8 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     /**
-     * Registers the given list of dispatch interceptors to the command bus. All incoming commands will pass through
-     * the interceptors at the given order before the command is dispatched toward the command handler.
+     * Registers the given list of dispatch interceptors to the command bus. All incoming commands will pass through the
+     * interceptors at the given order before the command is dispatched toward the command handler.
      *
      * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
      * @return handle to unregister the interceptor
@@ -232,9 +247,8 @@ public class DistributedCommandBus implements CommandBus {
     /**
      * Builder class to instantiate a {@link DistributedCommandBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
-     * The {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
-     * provided.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}. The {@link CommandRouter} and {@link
+     * CommandBusConnector} are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -283,8 +297,8 @@ public class DistributedCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link #dispatch(CommandMessage)}. Defaults to using no callback, which requests the connectors to use a
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
+         * #dispatch(CommandMessage)}. Defaults to using no callback, which requests the connectors to use a
          * fire-and-forget strategy for dispatching event.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command

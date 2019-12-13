@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -137,6 +137,7 @@ public class AxonServerCommandBusTest {
     @Test
     public void fireAndForgetUsesDefaultCallback() throws InterruptedException {
         testSubject.disconnect();
+        //noinspection unchecked
         CommandCallback<Object, Object> mockDefaultCommandCallback = mock(CommandCallback.class);
         testSubject = AxonServerCommandBus.builder()
                                           .axonServerConnectionManager(axonServerConnectionManager)
@@ -214,7 +215,7 @@ public class AxonServerCommandBusTest {
     public void dispatchWithConcurrencyException() throws Exception {
         CommandMessage<String> commandMessage = new GenericCommandMessage<>("this is a concurrency issue");
         CountDownLatch waiter = new CountDownLatch(1);
-        AtomicReference<CommandResultMessage> resultHolder = new AtomicReference<>();
+        AtomicReference<CommandResultMessage<? extends String>> resultHolder = new AtomicReference<>();
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             resultHolder.set(result);
@@ -233,7 +234,7 @@ public class AxonServerCommandBusTest {
     public void dispatchWithExceptionFromHandler() throws Exception {
         CommandMessage<String> commandMessage = new GenericCommandMessage<>("give me an exception");
         CountDownLatch waiter = new CountDownLatch(1);
-        AtomicReference<CommandResultMessage> resultHolder = new AtomicReference<>();
+        AtomicReference<CommandResultMessage<? extends String>> resultHolder = new AtomicReference<>();
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             resultHolder.set(result);
@@ -382,7 +383,8 @@ public class AxonServerCommandBusTest {
         );
 
         //noinspection unchecked
-        verify(axonServerConnectionManager, atLeastOnce()).getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+        verify(axonServerConnectionManager, atLeastOnce())
+                .getCommandStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 
     @Test
@@ -450,5 +452,10 @@ public class AxonServerCommandBusTest {
             assertTrue(subscription.isPresent());
             assertEquals(36, subscription.get().getLoadFactor());
         });
+    }
+
+    @Test
+    public void testLocalSegmentReturnsLocalCommandBus() {
+        assertEquals(localSegment, testSubject.localSegment());
     }
 }

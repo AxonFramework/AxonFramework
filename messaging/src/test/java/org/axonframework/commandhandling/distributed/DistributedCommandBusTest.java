@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +16,21 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 
 import java.util.Optional;
 
@@ -123,7 +126,7 @@ public class DistributedCommandBusTest {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("unknown");
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
 
-        CommandCallback callback = mock(CommandCallback.class);
+        CommandCallback<Object, Object> callback = mock(CommandCallback.class);
         testSubject.dispatch(testCommandMessage, callback);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
@@ -132,7 +135,7 @@ public class DistributedCommandBusTest {
         verify(mockMessageMonitor, never()).onMessageIngested(any());
         verify(mockMonitorCallback, never()).reportSuccess();
 
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+        ArgumentCaptor<CommandResultMessage<Object>> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(any(), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
@@ -144,14 +147,14 @@ public class DistributedCommandBusTest {
     public void testDispatchWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
-        CommandCallback mockCallback = mock(CommandCallback.class);
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         testSubject.dispatch(testCommandMessage, mockCallback);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+        ArgumentCaptor<CommandResultMessage<Object>> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertFalse(commandResultMessageCaptor.getValue().isExceptional());
@@ -163,7 +166,7 @@ public class DistributedCommandBusTest {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
 
-        CommandCallback mockCallback = mock(CommandCallback.class);
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         testSubject.dispatch(testCommandMessage, mockCallback);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
@@ -171,7 +174,7 @@ public class DistributedCommandBusTest {
         verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportFailure(any());
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+        ArgumentCaptor<CommandResultMessage<Object>> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
@@ -183,17 +186,27 @@ public class DistributedCommandBusTest {
     public void testDispatchFailingCommandWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
 
-        CommandCallback mockCallback = mock(CommandCallback.class);
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         testSubject.dispatch(testCommandMessage, mockCallback);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportFailure(isA(Exception.class));
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+        ArgumentCaptor<CommandResultMessage<Object>> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback).onResult(eq(testCommandMessage), commandResultMessageCaptor.capture());
         assertEquals(Exception.class, commandResultMessageCaptor.getValue().exceptionResult().getClass());
+    }
+
+    @Test
+    public void testLocalSegmentReturnsTheCommandBusConnectorsLocalSegmentResult() {
+        CommandBus expectedLocalSegment = mock(CommandBus.class);
+        when(mockConnector.localSegment()).thenReturn(Optional.of(expectedLocalSegment));
+
+        CommandBus resultLocalSegment = testSubject.localSegment();
+
+        assertEquals(expectedLocalSegment, resultLocalSegment);
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {
