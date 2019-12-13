@@ -51,6 +51,7 @@ import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.MethodCommandHandlerInterceptorDefinition;
+import org.axonframework.modelling.command.inspection.MethodCreationPolicyDefinition;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
@@ -70,7 +71,8 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.internal.util.collections.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -91,15 +93,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
@@ -286,18 +290,21 @@ public class SpringAxonAutoConfigurerTest {
         assertEquals(MyHandlerDefinition.class, handlerDefinition.getDelegates().get(2).getClass());
         assertEquals(MyHandlerDefinition.class, handlerDefinition.getDelegates().get(3).getClass());
 
-        assertEquals(SagaMethodMessageHandlerDefinition.class,
-                     handlerEnhancerDefinition.getDelegates().get(0).getClass());
-        assertEquals(MethodCommandHandlerInterceptorDefinition.class,
-                     handlerEnhancerDefinition.getDelegates().get(1).getClass());
-        assertEquals(MethodCommandHandlerDefinition.class, handlerEnhancerDefinition.getDelegates().get(2).getClass());
-        assertEquals(MethodQueryMessageHandlerDefinition.class,
-                     handlerEnhancerDefinition.getDelegates().get(3).getClass());
-        assertEquals(ReplayAwareMessageHandlerWrapper.class,
-                     handlerEnhancerDefinition.getDelegates().get(4).getClass());
-        assertEquals(DeadlineMethodMessageHandlerDefinition.class,
-                     handlerEnhancerDefinition.getDelegates().get(5).getClass());
-        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(6).getClass());
+        Set<Class> enhancerClasses = handlerEnhancerDefinition.getDelegates()
+                                                              .stream()
+                                                              .map(HandlerEnhancerDefinition::getClass)
+                                                              .collect(Collectors.toSet());
+
+        assertEquals(Sets.newSet(SagaMethodMessageHandlerDefinition.class,
+                                 MethodCommandHandlerInterceptorDefinition.class,
+                                 MethodCommandHandlerDefinition.class,
+                                 MethodCommandHandlerDefinition.class,
+                                 MethodQueryMessageHandlerDefinition.class,
+                                 ReplayAwareMessageHandlerWrapper.class,
+                                 DeadlineMethodMessageHandlerDefinition.class,
+                                 MethodCreationPolicyDefinition.class,
+                                 MethodCreationPolicyDefinition.class,
+                                 MyHandlerEnhancerDefinition.class), enhancerClasses);
     }
 
     @SuppressWarnings("unchecked")

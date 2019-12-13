@@ -88,6 +88,5 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         public boolean isFactoryHandler() {
             return isFactoryHandler;
         }
-
     }
 }
