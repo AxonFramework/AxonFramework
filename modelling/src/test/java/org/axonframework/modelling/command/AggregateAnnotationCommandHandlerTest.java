@@ -134,6 +134,7 @@ class AggregateAnnotationCommandHandlerTest {
         Set<String> actual = testSubject.supportedCommandNames();
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
+                CreateOrUpdateCommand.class.getName(),
                 CreateFactoryMethodCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),
                 FailingCreateCommand.class.getName(),
@@ -175,6 +176,22 @@ class AggregateAnnotationCommandHandlerTest {
         assertEquals("id", responseCaptor.getValue().getPayload());
     }
 
+    @Test
+    public void testCommandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
+
+        final CommandCallback callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
+        when(mockRepository.loadOrCreate(anyString(), any()))
+                .thenReturn(createAggregate(new StubCommandAnnotatedAggregate()));
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).loadOrCreate(anyString(), any());
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+    }
 
     @Test
     void testCommandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
@@ -532,14 +549,21 @@ class AggregateAnnotationCommandHandlerTest {
     private abstract static class AbstractStubCommandAnnotatedAggregate {
 
         @AggregateIdentifier(routingKey = "aggregateIdentifier")
-        private final String identifier;
+        private String identifier;
 
         AbstractStubCommandAnnotatedAggregate(String identifier) {
             this.identifier = identifier;
         }
 
+        public AbstractStubCommandAnnotatedAggregate() {
+        }
+
         public String getIdentifier() {
             return identifier;
+        }
+
+        public void setIdentifier(String identifier) {
+            this.identifier = identifier;
         }
 
         @CommandHandler
@@ -569,6 +593,7 @@ class AggregateAnnotationCommandHandlerTest {
             apply(new StubDomainEvent());
         }
 
+
         @CommandHandler
         public static StubCommandAnnotatedAggregate createStubCommandAnnotatedAggregate(
                 CreateFactoryMethodCommand createFactoryMethodCommand) {
@@ -581,8 +606,19 @@ class AggregateAnnotationCommandHandlerTest {
             throw new RuntimeException(createCommand.getParameter());
         }
 
-        StubCommandAnnotatedAggregate(String aggregateIdentifier) {
+        public StubCommandAnnotatedAggregate() {
+            super();
+        }
+
+        public StubCommandAnnotatedAggregate(String aggregateIdentifier) {
             super(aggregateIdentifier);
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        public String handleCreateOrUpdate(CreateOrUpdateCommand createOrUpdateCommand) {
+            this.setIdentifier(createOrUpdateCommand.id);
+            return "Create or update works fine";
         }
 
         @Override
@@ -720,6 +756,27 @@ class AggregateAnnotationCommandHandlerTest {
         private String parameter;
 
         private CreateCommand(String id, String parameter) {
+            this.id = id;
+            this.parameter = parameter;
+        }
+
+        public String getParameter() {
+            return parameter;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    private static class CreateOrUpdateCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+
+        private String parameter;
+
+        private CreateOrUpdateCommand(String id, String parameter) {
             this.id = id;
             this.parameter = parameter;
         }
