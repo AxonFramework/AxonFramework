@@ -9,13 +9,15 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Implementation of a QueryResponseMessage that is aware of the requested response type and performs
- * a just-in-time conversion to ensure the response is formatted as requested.
+ * Implementation of a QueryResponseMessage that is aware of the requested response type and performs a just-in-time
+ * conversion to ensure the response is formatted as requested.
  * <p>
- * The conversion is generally used to accommodate response types that aren't compatible with serialization,
- * such as {@link OptionalResponseType}.
+ * The conversion is generally used to accommodate response types that aren't compatible with serialization, such as
+ * {@link OptionalResponseType}.
  *
- * @param <R> The type of response expected
+ * @param <R> the type of response expected
+ * @author Allard Buijze
+ * @since 4.3
  */
 public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
 
@@ -23,8 +25,8 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     private final QueryResponseMessage<?> responseMessage;
 
     /**
-     * Initialize a response message, using {@code expectedResponseType} to convert the payload from
-     * the {@code responseMessage}, if necessary.
+     * Initialize a response message, using {@code expectedResponseType} to convert the payload from the {@code
+     * responseMessage}, if necessary.
      *
      * @param expectedResponseType an instance describing the expected response type
      * @param responseMessage      the message containing the actual response from the handler
