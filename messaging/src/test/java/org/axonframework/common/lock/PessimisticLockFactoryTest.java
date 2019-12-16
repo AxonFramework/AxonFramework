@@ -16,7 +16,8 @@
 
 package org.axonframework.common.lock;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -24,18 +25,19 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class PessimisticLockFactoryTest {
+class PessimisticLockFactoryTest {
 
     private String identifier = "mockId";
 
     @Test
-    public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
+    void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
         PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
         Lock lock = manager.obtainLock(identifier);
         lock.release();
@@ -43,11 +45,11 @@ public class PessimisticLockFactoryTest {
         Field locksField = manager.getClass().getDeclaredField("locks");
         locksField.setAccessible(true);
         Map locks = (Map) locksField.get(manager);
-        assertEquals("Expected lock to be cleaned up", 0, locks.size());
+        assertEquals(0, locks.size(), "Expected lock to be cleaned up");
     }
 
     @Test
-    public void testLockOnlyCleanedUpIfNoLocksAreHeld() throws NoSuchFieldException, IllegalAccessException {
+    void testLockOnlyCleanedUpIfNoLocksAreHeld() throws NoSuchFieldException, IllegalAccessException {
         PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
         Lock lock1 = manager.obtainLock(identifier);
         Lock lock2 = manager.obtainLock(identifier);
@@ -56,15 +58,16 @@ public class PessimisticLockFactoryTest {
         Field locksField = manager.getClass().getDeclaredField("locks");
         locksField.setAccessible(true);
         Map locks = (Map) locksField.get(manager);
-        assertEquals("Expected lock not to be cleaned up", 1, locks.size());
+        assertEquals(1, locks.size(), "Expected lock not to be cleaned up");
 
         lock2.release();
         locks = (Map) locksField.get(manager);
-        assertEquals("Expected locks to be cleaned up", 0, locks.size());
+        assertEquals(0, locks.size(), "Expected locks to be cleaned up");
     }
 
-    @Test(timeout = 10000)
-    public void testDeadlockDetected_TwoThreadsInVector() throws InterruptedException {
+    @Test
+    @Timeout(value = 10)
+    void testDeadlockDetected_TwoThreadsInVector() throws InterruptedException {
         final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
@@ -82,8 +85,9 @@ public class PessimisticLockFactoryTest {
         }
     }
 
-    @Test(timeout = 10000)
-    public void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
+    @Test
+    @Timeout(value = 10)
+    void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
         final PessimisticLockFactory lock1 = PessimisticLockFactory.builder().build();
         final PessimisticLockFactory lock2 = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(1);
@@ -102,8 +106,9 @@ public class PessimisticLockFactoryTest {
         }
     }
 
-    @Test(timeout = 10000)
-    public void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
+    @Test
+    @Timeout(value = 10)
+    void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
         final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(3);
         final CountDownLatch cdl = new CountDownLatch(1);
@@ -145,8 +150,9 @@ public class PessimisticLockFactoryTest {
         });
     }
 
-    @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
-    public void testAcquireBackoff() {
+    @Test
+    @Timeout(value = 5)
+    void testAcquireBackoff() {
         final PessimisticLockFactory lockFactory = PessimisticLockFactory.builder()
                                                                          .acquireAttempts(10)
                                                                          .queueLengthThreshold(Integer.MAX_VALUE)
@@ -159,14 +165,15 @@ public class PessimisticLockFactoryTest {
             // Obtain the lock
             createThreadObtainLockAndWaitForState(lockFactory, Thread.State.WAITING, rendezvous, exceptionInThread, id);
             // backoff triggers, too many spins
-            lockFactory.obtainLock(id);
+            assertThrows(LockAcquisitionFailedException.class, () -> lockFactory.obtainLock(id));
         } finally {
             rendezvous.countDown();
         }
     }
 
-    @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
-    public void testQueueBackoff() {
+    @Test
+    @Timeout(value = 5)
+    void testQueueBackoff() {
         final PessimisticLockFactory lockFactory = PessimisticLockFactory.builder()
                                                                          .acquireAttempts(Integer.MAX_VALUE)
                                                                          .queueLengthThreshold(2)
@@ -183,35 +190,36 @@ public class PessimisticLockFactoryTest {
             // Fill Queue 2/2
             createThreadObtainLockAndWaitForState(lockFactory, Thread.State.TIMED_WAITING, rendezvous, exceptionInThread, id);
             // backoff triggers, queue
-            lockFactory.obtainLock(id);
+            assertThrows(LockAcquisitionFailedException.class, () -> lockFactory.obtainLock(id));
         } finally {
             rendezvous.countDown();
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBackoffParametersConstructorAquireAttempts() {
+    @Test
+    void testBackoffParametersConstructorAquireAttempts() {
         int illegalValue = 0;
-        PessimisticLockFactory.builder().acquireAttempts(illegalValue);
+        assertThrows(IllegalArgumentException.class, () -> PessimisticLockFactory.builder().acquireAttempts(illegalValue));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBackoffParametersConstructorMaximumQueued() {
+    @Test
+    void testBackoffParametersConstructorMaximumQueued() {
         int illegalValue = 0;
-        PessimisticLockFactory.builder().queueLengthThreshold(illegalValue);
+        assertThrows(IllegalArgumentException.class, () -> PessimisticLockFactory.builder().queueLengthThreshold(illegalValue));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBackoffParametersConstructorSpinTime() {
+    @Test
+    void testBackoffParametersConstructorSpinTime() {
         int illegalValue = -1;
-        PessimisticLockFactory.builder().lockAttemptTimeout(illegalValue);
+        assertThrows(IllegalArgumentException.class, () -> PessimisticLockFactory.builder().lockAttemptTimeout(illegalValue));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testShouldThrowIllegalArgumentExceptionWhenIdentifierIsNull() {
+    @Test
+    void testShouldThrowIllegalArgumentExceptionWhenIdentifierIsNull() {
         this.identifier = null;
         PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
-        manager.obtainLock(identifier);
+
+        assertThrows(IllegalArgumentException.class, () -> manager.obtainLock(identifier));
     }
 
     private void createThreadObtainLockAndWaitForState(PessimisticLockFactory lockFactory, Thread.State state, CountDownLatch rendezvous, AtomicReference<Exception> exceptionInThread, String id) {

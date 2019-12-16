@@ -1,19 +1,19 @@
 package org.axonframework.common;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Marc Gathier
  */
-public class ProcessUtilsTest {
+class ProcessUtilsTest {
 
     @Test
-    public void executeWithRetry() {
+    void executeWithRetry() {
         AtomicLong retryCounter = new AtomicLong();
 
         ProcessUtils.executeWithRetry(() -> {
@@ -26,23 +26,25 @@ public class ProcessUtilsTest {
         assertEquals(6, retryCounter.get());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void executeWithRetryStops() {
+    @Test
+    void executeWithRetryStops() {
         AtomicLong retryCounter = new AtomicLong();
 
-        ProcessUtils.executeWithRetry(() -> {
-                                          if (retryCounter.getAndIncrement() < 11) {
-                                              throw new IllegalArgumentException("Waiting for 11");
-                                          }
-                                      },
-                                      e -> ExceptionUtils.findException(e, IllegalArgumentException.class).isPresent(),
-                                      100,
-                                      TimeUnit.MILLISECONDS,
-                                      10);
+        assertThrows(IllegalArgumentException.class, () ->
+                ProcessUtils.executeWithRetry(() -> {
+                            if (retryCounter.getAndIncrement() < 11) {
+                                throw new IllegalArgumentException("Waiting for 11");
+                            }
+                        },
+                        e -> ExceptionUtils.findException(e, IllegalArgumentException.class).isPresent(),
+                        100,
+                        TimeUnit.MILLISECONDS,
+                        10)
+        );
     }
 
     @Test
-    public void executeWithRetryImmediatelyStopsOnOther() {
+    void executeWithRetryImmediatelyStopsOnOther() {
         AtomicLong retryCounter = new AtomicLong();
 
         try {

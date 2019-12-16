@@ -17,21 +17,18 @@
 package org.axonframework.monitoring;
 
 import org.axonframework.messaging.Message;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 
 import static org.mockito.Mockito.mock;
 
-@RunWith(MockitoJUnitRunner.class)
-public class MultiMessageMonitorTest {
+class MultiMessageMonitorTest {
 
     @Test
-    public void test_onMessageIngested_SingleMessageMonitor_failure(){
+    void test_onMessageIngested_SingleMessageMonitor_failure() {
         MessageMonitor<Message<?>> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
         MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
@@ -47,7 +44,7 @@ public class MultiMessageMonitorTest {
     }
 
     @Test
-    public void test_onMessageIngested_SingleMessageMonitor_success(){
+    void test_onMessageIngested_SingleMessageMonitor_success() {
         MessageMonitor<Message<?>> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
         MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
@@ -62,7 +59,7 @@ public class MultiMessageMonitorTest {
     }
 
     @Test
-    public void test_onMessageIngested_MultipleMessageMonitors(){
+    void test_onMessageIngested_MultipleMessageMonitors() {
         MessageMonitor<Message<?>> messageMonitorMock1 = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback1 = mock(MessageMonitor.MonitorCallback.class);
         MessageMonitor<Message<?>> messageMonitorMock2 = mock(MessageMonitor.class);

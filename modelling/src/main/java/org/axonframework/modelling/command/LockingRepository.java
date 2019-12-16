@@ -126,6 +126,25 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     }
 
     @Override
+    protected LockAwareAggregate<T, A> doLoadOrCreate(String aggregateIdentifier,
+                                                      Callable<T> factoryMethod) throws Exception {
+        Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+        try {
+            final A aggregate = doLoadWithLock(aggregateIdentifier, null);
+            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
+            return new LockAwareAggregate<>(aggregate, lock);
+        } catch (AggregateNotFoundException ex) {
+            final A aggregate = doCreateNewForLock(factoryMethod);
+            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
+            return new LockAwareAggregate<>(aggregate, lock);
+        } catch (Throwable ex) {
+            logger.debug("Exception occurred while trying to load/create an aggregate. Releasing lock.", ex);
+            lock.release();
+            throw ex;
+        }
+    }
+
+    @Override
     protected void prepareForCommit(LockAwareAggregate<T, A> aggregate) {
         Assert.state(aggregate.isLockHeld(), () -> "An aggregate is being used for which a lock is no longer held");
         super.prepareForCommit(aggregate);

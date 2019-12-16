@@ -18,18 +18,18 @@ package org.axonframework.messaging.correlation;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class SimpleCorrelationDataProviderTest {
+class SimpleCorrelationDataProviderTest {
 
     @Test
-    public void testResolveCorrelationData() {
+    void testResolveCorrelationData() {
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("key1", "value1");
         metaData.put("key2", "value2");

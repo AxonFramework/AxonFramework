@@ -1,36 +1,31 @@
 package org.axonframework.messaging.responsetypes;
 
-import static org.junit.Assert.assertEquals;
-
 import org.axonframework.serialization.TestSerializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Collection;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests serialization capabilities of {@link InstanceResponseType}.
  * 
  * @author JohT
  */
-@RunWith(Parameterized.class)
-public class InstanceResponseTypeSerializationTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
+class InstanceResponseTypeSerializationTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
 
-    private final TestSerializer serializer;
-
-    public InstanceResponseTypeSerializationTest(TestSerializer serializer) {
+    InstanceResponseTypeSerializationTest() {
         super(new InstanceResponseType<>(QueryResponse.class));
-        this.serializer = serializer;
     }
     
-    @Parameterized.Parameters(name = "{index} {0}")
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
        return TestSerializer.all();
     }
        
-    @Test
-    public void testResponseTypeShouldBeSerializable() {
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void testResponseTypeShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());
     }
 }

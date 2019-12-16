@@ -20,8 +20,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
@@ -35,19 +35,19 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import static org.axonframework.utils.EventTestUtils.createEvent;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class AsynchronousEventProcessingStrategyTest {
+class AsynchronousEventProcessingStrategyTest {
 
     private Executor executor;
     private AsynchronousEventProcessingStrategy testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         executor = mock(Executor.class);
         doAnswer(invocation -> {
             // since we need to pretend we run in another thread, we clear the Unit of Work first
@@ -68,7 +68,7 @@ public class AsynchronousEventProcessingStrategyTest {
     }
 
     @Test
-    public void testOrderingOfEvents() throws Exception {
+    void testOrderingOfEvents() throws Exception {
         testSubject =
                 new AsynchronousEventProcessingStrategy(Executors.newSingleThreadExecutor(), new SequentialPolicy());
 
@@ -104,7 +104,7 @@ public class AsynchronousEventProcessingStrategyTest {
     }
 
     @Test
-    public void testEventsScheduledForHandling() {
+    void testEventsScheduledForHandling() {
         EventMessage<?> message1 = createEvent("aggregate1", 1);
         EventMessage<?> message2 = createEvent("aggregate2", 1);
 
@@ -114,7 +114,7 @@ public class AsynchronousEventProcessingStrategyTest {
     }
 
     @Test
-    public void testEventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
+    void testEventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
         EventMessage<?> message1 = createEvent("aggregate1", 1);
         EventMessage<?> message2 = createEvent("aggregate2", 1);
 

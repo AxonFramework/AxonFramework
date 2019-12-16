@@ -18,29 +18,29 @@ package org.axonframework.serialization;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class SerializationAwareTest {
+class SerializationAwareTest {
 
     private GenericEventMessage<String> testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new GenericEventMessage<>("payload", Collections.singletonMap("key", "value"));
     }
 
     @Test
-    public void testIsSerializedAsGenericEventMessage() throws IOException, ClassNotFoundException {
+    void testIsSerializedAsGenericEventMessage() throws IOException, ClassNotFoundException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(testSubject);
@@ -51,7 +51,7 @@ public class SerializationAwareTest {
     }
 
     @Test
-    public void testSerializePayloadTwice() {
+    void testSerializePayloadTwice() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
@@ -67,7 +67,7 @@ public class SerializationAwareTest {
     }
 
     @Test
-    public void testSerializePayloadTwice_DifferentRepresentations() {
+    void testSerializePayloadTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
@@ -85,7 +85,7 @@ public class SerializationAwareTest {
     }
 
     @Test
-    public void testSerializeMetaDataTwice() {
+    void testSerializeMetaDataTwice() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
@@ -100,7 +100,7 @@ public class SerializationAwareTest {
     }
 
     @Test
-    public void testSerializeMetaDataTwice_DifferentRepresentations() {
+    void testSerializeMetaDataTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);

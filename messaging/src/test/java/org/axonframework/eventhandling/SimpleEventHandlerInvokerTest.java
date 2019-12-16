@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.List;
@@ -28,10 +28,10 @@ import static org.mockito.Mockito.*;
 /**
  * @author Rene de Waele
  */
-public class SimpleEventHandlerInvokerTest {
+class SimpleEventHandlerInvokerTest {
 
     @Test
-    public void testSingleEventPublication() throws Exception {
+    void testSingleEventPublication() throws Exception {
         EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
         EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
         SimpleEventHandlerInvoker subject =
@@ -48,7 +48,7 @@ public class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    public void testRepeatedEventPublication() throws Exception {
+    void testRepeatedEventPublication() throws Exception {
         EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
         EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
         SimpleEventHandlerInvoker subject =

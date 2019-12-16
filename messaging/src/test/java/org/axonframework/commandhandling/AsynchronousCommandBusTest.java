@@ -21,20 +21,20 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class AsynchronousCommandBusTest {
+class AsynchronousCommandBusTest {
 
     private MessageHandlerInterceptor handlerInterceptor;
     private MessageDispatchInterceptor dispatchInterceptor;
@@ -42,9 +42,9 @@ public class AsynchronousCommandBusTest {
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
 
-    @Before
+    @BeforeEach
     @SuppressWarnings("unchecked")
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         commandHandler = mock(MessageHandler.class);
         executorService = mock(ExecutorService.class);
         dispatchInterceptor = mock(MessageDispatchInterceptor.class);
@@ -64,7 +64,7 @@ public class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testDispatchWithCallback() throws Exception {
+    void testDispatchWithCallback() throws Exception {
         testSubject.subscribe(Object.class.getName(), commandHandler);
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         CommandMessage<Object> command = asCommandMessage(new Object());
@@ -89,7 +89,7 @@ public class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testDispatchWithoutCallback() throws Exception {
+    void testDispatchWithoutCallback() throws Exception {
         MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
         testSubject.dispatch(asCommandMessage(new Object()));
@@ -102,7 +102,7 @@ public class AsynchronousCommandBusTest {
     }
 
     @Test
-    public void testShutdown_ExecutorServiceUsed() {
+    void testShutdown_ExecutorServiceUsed() {
         testSubject.shutdown();
 
         verify(executorService).shutdown();
@@ -110,7 +110,7 @@ public class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testExceptionIsThrownWhenNoHandlerIsRegistered() {
+    void testExceptionIsThrownWhenNoHandlerIsRegistered() {
         CommandCallback callback = mock(CommandCallback.class);
         CommandMessage<Object> command = asCommandMessage("test");
         testSubject.dispatch(command, callback);
@@ -123,7 +123,7 @@ public class AsynchronousCommandBusTest {
     }
 
     @Test
-    public void testShutdown_ExecutorUsed() {
+    void testShutdown_ExecutorUsed() {
         Executor executor = mock(Executor.class);
         AsynchronousCommandBus.builder().executor(executor).build().shutdown();
 

@@ -16,19 +16,19 @@
 
 package org.axonframework.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class CollectionUtilsTest {
+class CollectionUtilsTest {
 
     @Test
-    public void testCreateCollectionFromPotentialCollection() {
+    void testCreateCollectionFromPotentialCollection() {
         Collection<String> collectionFromElement = CollectionUtils.asCollection("item");
         Collection<String> collectionFromNull = CollectionUtils.asCollection(null);
         Collection<String> collectionFromArray = CollectionUtils.asCollection(new String[]{"item1", "item2"});
@@ -45,7 +45,7 @@ public class CollectionUtilsTest {
     }
 
     @Test
-    public void testIntersect() {
+    void testIntersect() {
         TreeSet<Integer> result1 = CollectionUtils.intersect(asList(1, 2, 4, 5), asList(1, 3, 5, 7), TreeSet::new);
         TreeSet<Integer> result2 = CollectionUtils.intersect(emptyList(), asList(1, 3, 5, 7), TreeSet::new);
         List<Integer> result3 = CollectionUtils.intersect(singletonList(1), asList(1, 3, 5, 7), ArrayList::new);

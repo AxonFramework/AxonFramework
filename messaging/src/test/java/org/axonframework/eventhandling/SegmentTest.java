@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,21 +30,22 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SegmentTest {
+class SegmentTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(SegmentTest.class);
 
     private List<DomainEventMessage> domainEventMessages;
 
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         domainEventMessages = produceEvents();
     }
 
     @Test
-    public void testSegmentSplitAddsUp() {
+    void testSegmentSplitAddsUp() {
 
         final List<Long> identifiers = domainEventMessages.stream().map(de -> {
             final String aggregateIdentifier = de.getAggregateIdentifier();
@@ -64,7 +65,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testSegmentSplit() {
+    void testSegmentSplit() {
 
         // Split segment 0
         final Segment[] splitSegment0 = Segment.ROOT_SEGMENT.split();
@@ -131,7 +132,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testSegmentSplitNTimes() {
+    void testSegmentSplitNTimes() {
         {
             //
             final List<Segment> segmentMasks = Segment.splitBalanced(Segment.ROOT_SEGMENT, 5);
@@ -146,7 +147,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testSplitFromRootSegmentAlwaysYieldsSequentialSegmentIds() {
+    void testSplitFromRootSegmentAlwaysYieldsSequentialSegmentIds() {
         for (int i = 0; i < 500; i++) {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, i);
             assertEquals(i + 1, segments.size());
@@ -157,7 +158,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testMergeable() {
+    void testMergeable() {
         Segment[] segments = Segment.ROOT_SEGMENT.split();
         assertFalse(segments[0].isMergeableWith(segments[0]));
         assertFalse(segments[1].isMergeableWith(segments[1]));
@@ -176,7 +177,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testMergeableSegment() {
+    void testMergeableSegment() {
         Segment[] segments = Segment.ROOT_SEGMENT.split();
         assertEquals(segments[1].getSegmentId(), segments[0].mergeableSegmentId());
         assertEquals(segments[0].getSegmentId(), segments[1].mergeableSegmentId());
@@ -184,7 +185,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testMergeSegments() {
+    void testMergeSegments() {
         Segment[] segments = Segment.ROOT_SEGMENT.split();
         Segment[] segments2 = segments[0].split();
 
@@ -195,7 +196,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testSegmentResolve() {
+    void testSegmentResolve() {
         {
             final int[] segments = {};
             final Segment[] segmentMasks = Segment.computeSegments(segments);
@@ -289,7 +290,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testComputeSegment() {
+    void testComputeSegment() {
         for (int segmentCount = 0; segmentCount < 256; segmentCount++) {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount);
             int[] segmentIds = new int[segments.size()];
@@ -298,13 +299,14 @@ public class SegmentTest {
             }
 
             for (Segment segment : segments) {
-                assertEquals("Got wrong segment for " + segmentCount + " number of segments", segment, Segment.computeSegment(segment.getSegmentId(), segmentIds));
+                assertEquals(segment, Segment.computeSegment(segment.getSegmentId(), segmentIds),
+                        "Got wrong segment for " + segmentCount + " number of segments");
             }
         }
     }
 
     @Test
-    public void testComputeSegment_Imbalanced() {
+    void testComputeSegment_Imbalanced() {
         List<Segment> segments = new ArrayList<>();
         Segment initialSegment = Segment.ROOT_SEGMENT;
         for (int i = 0; i < 8; i++) {
@@ -324,14 +326,14 @@ public class SegmentTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSegmentSplitBeyondBoundary() {
+    @Test
+    void testSegmentSplitBeyondBoundary() {
         final Segment segment = new Segment(0, Integer.MAX_VALUE);
-        segment.split();
+        assertThrows(IllegalArgumentException.class, segment::split);
     }
 
-    @Test()
-    public void testSegmentSplitOnBoundary() {
+    @Test
+    void testSegmentSplitOnBoundary() {
 
         final Segment segment = new Segment(0, Integer.MAX_VALUE >>> 1);
         final Segment[] splitSegment = segment.split();
@@ -343,7 +345,7 @@ public class SegmentTest {
     }
 
     @Test
-    public void testItemsAssignedToOnlyOneSegment() {
+    void testItemsAssignedToOnlyOneSegment() {
         for (int j = 0; j < 10; j++) {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, ThreadLocalRandom.current().nextInt(50) + 1);
             for (int i = 0; i < 100_000; i++) {

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Ignore;
 
 import java.beans.ConstructorProperties;
 import java.util.Base64;
@@ -20,7 +19,6 @@ import java.util.EnumSet;
  * 
  * @author JohT
  */
-@Ignore
 public enum TestSerializer {
 
     JAVA {

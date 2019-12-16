@@ -17,28 +17,28 @@
 package org.axonframework.serialization.xml;
 
 import org.dom4j.Document;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Allard Buijze
  */
-public class InputStreamToDom4jConverterTest {
+class InputStreamToDom4jConverterTest {
 
     private InputStreamToDom4jConverter testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new InputStreamToDom4jConverter();
     }
 
     @Test
-    public void testConvert() {
+    void testConvert() {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         Document actual = testSubject.convert(inputStream);

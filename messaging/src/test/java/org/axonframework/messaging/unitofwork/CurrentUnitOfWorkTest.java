@@ -16,40 +16,41 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
  */
-public class CurrentUnitOfWorkTest {
+class CurrentUnitOfWorkTest {
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testGetSession_NoCurrentSession() {
-        CurrentUnitOfWork.get();
     }
 
     @Test
-    public void testSetSession() {
+    void testGetSession_NoCurrentSession() {
+        assertThrows(IllegalStateException.class, CurrentUnitOfWork::get);
+    }
+
+    @Test
+    void testSetSession() {
         UnitOfWork<?> mockUnitOfWork = mock(UnitOfWork.class);
         CurrentUnitOfWork.set(mockUnitOfWork);
         assertSame(mockUnitOfWork, CurrentUnitOfWork.get());
@@ -59,7 +60,7 @@ public class CurrentUnitOfWorkTest {
     }
 
     @Test
-    public void testNotCurrentUnitOfWorkCommitted() {
+    void testNotCurrentUnitOfWorkCommitted() {
         DefaultUnitOfWork<?> outerUoW = new DefaultUnitOfWork<>(null);
         outerUoW.start();
         new DefaultUnitOfWork<>(null).start();

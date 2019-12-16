@@ -18,26 +18,26 @@ package org.axonframework.eventhandling.tokenstore.inmemory;
 
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class InMemoryTokenStoreTest {
+class InMemoryTokenStoreTest {
 
     private InMemoryTokenStore testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new InMemoryTokenStore();
     }
 
     @Test
-    public void testInitializeTokens() {
+    void testInitializeTokens() {
         testSubject.initializeTokenSegments("test1", 7);
 
         int[] actual = testSubject.fetchSegments("test1");
@@ -46,7 +46,7 @@ public class InMemoryTokenStoreTest {
     }
 
     @Test
-    public void testInitializeTokensAtGivenPosition() {
+    void testInitializeTokensAtGivenPosition() {
         testSubject.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
 
         int[] actual = testSubject.fetchSegments("test1");
@@ -59,7 +59,7 @@ public class InMemoryTokenStoreTest {
     }
 
     @Test
-    public void testUpdateToken() {
+    void testUpdateToken() {
         testSubject.initializeTokenSegments("test1", 1);
         testSubject.storeToken(new GlobalSequenceTrackingToken(1), "test1", 0);
 
@@ -67,21 +67,20 @@ public class InMemoryTokenStoreTest {
     }
 
     @Test
-    public void testInitializeAtGivenToken() {
+    void testInitializeAtGivenToken() {
         testSubject.initializeTokenSegments("test1", 2, new GlobalSequenceTrackingToken(1));
 
         assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 0));
         assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 1));
     }
 
-    @Test(expected = UnableToClaimTokenException.class)
-    public void testInitializeTokensWhileAlreadyPresent() {
-        testSubject.fetchToken("test1", 1);
-        testSubject.initializeTokenSegments("test1", 7);
+    @Test
+    void testInitializeTokensWhileAlreadyPresent() {
+        assertThrows(UnableToClaimTokenException.class, () -> testSubject.fetchToken("test1", 1));
     }
 
     @Test
-    public void testQuerySegments() {
+    void testQuerySegments() {
         testSubject.initializeTokenSegments("test", 1);
 
         assertNull(testSubject.fetchToken("test", 0));
@@ -92,16 +91,16 @@ public class InMemoryTokenStoreTest {
 
         {
             final int[] segments = testSubject.fetchSegments("proc1");
-            Assert.assertThat(segments.length, is(2));
+            assertThat(segments.length, is(2));
         }
         {
             final int[] segments = testSubject.fetchSegments("proc2");
-            Assert.assertThat(segments.length, is(1));
+            assertThat(segments.length, is(1));
         }
 
         {
             final int[] segments = testSubject.fetchSegments("proc3");
-            Assert.assertThat(segments.length, is(0));
+            assertThat(segments.length, is(0));
         }
     }
 

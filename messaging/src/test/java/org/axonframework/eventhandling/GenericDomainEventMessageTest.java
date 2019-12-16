@@ -17,21 +17,21 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class GenericDomainEventMessageTest {
+class GenericDomainEventMessageTest {
 
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
@@ -60,13 +60,13 @@ public class GenericDomainEventMessageTest {
         assertEquals(Object.class, message3.getPayload().getClass());
         assertEquals(Object.class, message3.getPayloadType());
 
-        assertFalse(message1.getIdentifier().equals(message2.getIdentifier()));
-        assertFalse(message1.getIdentifier().equals(message3.getIdentifier()));
-        assertFalse(message2.getIdentifier().equals(message3.getIdentifier()));
+        assertNotEquals(message1.getIdentifier(), message2.getIdentifier());
+        assertNotEquals(message1.getIdentifier(), message3.getIdentifier());
+        assertNotEquals(message2.getIdentifier(), message3.getIdentifier());
     }
 
     @Test
-    public void testWithMetaData() {
+    void testWithMetaData() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
@@ -82,7 +82,7 @@ public class GenericDomainEventMessageTest {
     }
 
     @Test
-    public void testAndMetaData() {
+    void testAndMetaData() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
@@ -100,15 +100,15 @@ public class GenericDomainEventMessageTest {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         String actual = new GenericDomainEventMessage<>("AggregateType", "id1", 1, "MyPayload").andMetaData(MetaData.with("key", "value").and("key2", 13)).toString();
-        assertTrue("Wrong output: " + actual, actual.startsWith("GenericDomainEventMessage{payload={MyPayload}, metadata={"));
-        assertTrue("Wrong output: " + actual, actual.contains("'key'->'value'"));
-        assertTrue("Wrong output: " + actual, actual.contains("'key2'->'13'"));
-        assertTrue("Wrong output: " + actual, actual.contains("', timestamp='"));
-        assertTrue("Wrong output: " + actual, actual.contains("', aggregateIdentifier='id1'"));
-        assertTrue("Wrong output: " + actual, actual.contains("', aggregateType='AggregateType'"));
-        assertTrue("Wrong output: " + actual, actual.contains("', sequenceNumber=1"));
-        assertTrue("Wrong output: " + actual, actual.endsWith("}"));
+        assertTrue(actual.startsWith("GenericDomainEventMessage{payload={MyPayload}, metadata={"), "Wrong output: " + actual);
+        assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
+        assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
+        assertTrue(actual.contains("', timestamp='"), "Wrong output: " + actual);
+        assertTrue(actual.contains("', aggregateIdentifier='id1'"), "Wrong output: " + actual);
+        assertTrue(actual.contains("', aggregateType='AggregateType'"), "Wrong output: " + actual);
+        assertTrue(actual.contains("', sequenceNumber=1"), "Wrong output: " + actual);
+        assertTrue(actual.endsWith("}"), "Wrong output: " + actual);
     }
 }

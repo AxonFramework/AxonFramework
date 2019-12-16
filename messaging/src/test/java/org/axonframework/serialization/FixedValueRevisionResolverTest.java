@@ -16,17 +16,17 @@
 
 package org.axonframework.serialization;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Allard Buijze
  */
-public class FixedValueRevisionResolverTest {
+class FixedValueRevisionResolverTest {
 
     @Test
-    public void testRevisionOf() {
+    void testRevisionOf() {
         assertEquals("test", new FixedValueRevisionResolver("test").revisionOf(Object.class));
     }
 }

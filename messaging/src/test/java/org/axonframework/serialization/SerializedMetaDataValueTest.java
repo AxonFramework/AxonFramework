@@ -17,17 +17,17 @@
 package org.axonframework.serialization;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class SerializedMetaDataValueTest {
+class SerializedMetaDataValueTest {
 
     @Test
-    public void testSerializeMetaData() {
+    void testSerializeMetaData() {
         byte[] stubData = new byte[]{};
         SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(stubData, byte[].class);
         assertEquals(stubData, serializedMetaData.getData());
@@ -37,7 +37,7 @@ public class SerializedMetaDataValueTest {
     }
 
     @Test
-    public void testIsSerializedMetaData() {
+    void testIsSerializedMetaData() {
         SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(new byte[]{}, byte[].class);
         assertTrue(SerializedMetaData.isSerializedMetaData(serializedMetaData));
         assertFalse(SerializedMetaData.isSerializedMetaData(

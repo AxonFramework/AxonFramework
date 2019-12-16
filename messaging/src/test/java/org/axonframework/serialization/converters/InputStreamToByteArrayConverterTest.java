@@ -16,28 +16,28 @@
 
 package org.axonframework.serialization.converters;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 /**
  * @author Allard Buijze
  */
-public class InputStreamToByteArrayConverterTest {
+class InputStreamToByteArrayConverterTest {
 
     private InputStreamToByteArrayConverter testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new InputStreamToByteArrayConverter();
     }
 
     @Test
-    public void testConvert() {
+    void testConvert() {
         byte[] bytes = "Hello, world!".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         byte[] actual = testSubject.convert(inputStream);

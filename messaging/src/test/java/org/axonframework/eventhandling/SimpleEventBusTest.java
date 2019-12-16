@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,16 +27,16 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class SimpleEventBusTest {
+class SimpleEventBusTest {
 
     private Consumer<List<? extends EventMessage<?>>> listener1;
     private Consumer<List<? extends EventMessage<?>>> listener2;
     private Consumer<List<? extends EventMessage<?>>> listener3;
     private EventBus testSubject;
 
-    @Before
+    @BeforeEach
     @SuppressWarnings("unchecked")
-    public void setUp() {
+    void setUp() {
         listener1 = mock(Consumer.class);
         listener2 = mock(Consumer.class);
         listener3 = mock(Consumer.class);
@@ -44,8 +44,7 @@ public class SimpleEventBusTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testEventIsDispatchedToSubscribedListeners() throws Exception {
+    void testEventIsDispatchedToSubscribedListeners() throws Exception {
         testSubject.publish(newEvent());
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference

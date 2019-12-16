@@ -16,8 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
@@ -27,6 +25,8 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,6 +122,28 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
                                                  s -> doLoad(aggregateIdentifier, expectedVersion));
         uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
         validateOnLoad(aggregate, expectedVersion);
+        prepareForCommit(aggregate);
+
+        return aggregate;
+    }
+
+
+    @Override
+    public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) {
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        Map<String, A> aggregates = managedAggregates(uow);
+        A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
+                                                 s -> {
+                                                     try {
+                                                         return doLoadOrCreate(aggregateIdentifier,
+                                                                               factoryMethod);
+                                                     } catch (RuntimeException e) {
+                                                         throw e;
+                                                     } catch (Exception e) {
+                                                         throw new RuntimeException(e);
+                                                     }
+                                                 });
+        uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
         prepareForCommit(aggregate);
 
         return aggregate;
@@ -258,6 +280,21 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     protected abstract A doLoad(String aggregateIdentifier, Long expectedVersion);
 
+
+    /**
+     * Loads an aggregate from the reporsitory. If the aggregate does not exists, it is created using the {@code
+     * factoryMethod}.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate
+     * @param factoryMethod       the method that creates a new instance
+     * @return the aggregate
+     *
+     * @throws Exception when loading or creating the aggregate failed
+     */
+    protected A doLoadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod)
+            throws Exception {
+        throw new UnsupportedOperationException("doLoadOrCreate not implemented for this repository type");
+    }
     /**
      * Removes the aggregate from the repository. Typically, the repository should ensure that any calls to {@link
      * #doLoad(String, Long)} throw a {@link AggregateNotFoundException} when

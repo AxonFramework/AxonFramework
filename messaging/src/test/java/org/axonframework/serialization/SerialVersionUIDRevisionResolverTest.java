@@ -16,33 +16,34 @@
 
 package org.axonframework.serialization;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Allard Buijze
  */
-public class SerialVersionUIDRevisionResolverTest {
+class SerialVersionUIDRevisionResolverTest {
 
     private SerialVersionUIDRevisionResolver testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new SerialVersionUIDRevisionResolver();
     }
 
     @Test
-    public void testRevisionOfAnnotatedClass() {
+    void testRevisionOfAnnotatedClass() {
         assertEquals("7038084420164786502", testSubject.revisionOf(IsSerializable.class));
     }
 
     @Test
-    public void testRevisionOfNonAnnotatedClass() {
-        assertEquals(null, testSubject.revisionOf(NotSerializable.class));
+    void testRevisionOfNonAnnotatedClass() {
+        assertNull(testSubject.revisionOf(NotSerializable.class));
     }
 
     private static class IsSerializable implements Serializable {
