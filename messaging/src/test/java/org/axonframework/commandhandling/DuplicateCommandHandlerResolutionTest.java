@@ -17,10 +17,10 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.messaging.MessageHandler;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -30,13 +30,13 @@ import static org.mockito.Mockito.mock;
  *
  * @author Steven van Beelen
  */
-public class DuplicateCommandHandlerResolutionTest {
+class DuplicateCommandHandlerResolutionTest {
 
     private MessageHandler<? super CommandMessage<?>> initialHandler;
     private MessageHandler<? super CommandMessage<?>> duplicateHandler;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         //noinspection unchecked
         initialHandler = mock(MessageHandler.class);
         doReturn(DuplicateCommandHandlerResolutionTest.Handler1.class).when(initialHandler).getTargetType();
@@ -46,7 +46,7 @@ public class DuplicateCommandHandlerResolutionTest {
     }
 
     @Test
-    public void testLogAndOverride() {
+    void testLogAndOverride() {
         DuplicateCommandHandlerResolver testSubject = DuplicateCommandHandlerResolution.logAndOverride();
 
         MessageHandler<? super CommandMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
@@ -55,7 +55,7 @@ public class DuplicateCommandHandlerResolutionTest {
     }
 
     @Test
-    public void testSilentlyOverride() {
+    void testSilentlyOverride() {
         DuplicateCommandHandlerResolver testSubject = DuplicateCommandHandlerResolution.silentOverride();
 
         MessageHandler<? super CommandMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
@@ -64,7 +64,7 @@ public class DuplicateCommandHandlerResolutionTest {
     }
 
     @Test
-    public void testDuplicateHandlersRejected() {
+    void testDuplicateHandlersRejected() {
         DuplicateCommandHandlerResolver testSubject =
                 DuplicateCommandHandlerResolution.rejectDuplicates();
 

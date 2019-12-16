@@ -21,7 +21,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,25 +33,25 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 
 /**
  * @author Rene de Waele
  */
-public class BatchingUnitOfWorkTest {
+class BatchingUnitOfWorkTest {
 
     private List<PhaseTransition> transitions;
     private BatchingUnitOfWork<?> subject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         transitions = new ArrayList<>();
     }
 
     @Test
-    public void testExecuteTask() throws Exception {
+    void testExecuteTask() throws Exception {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         subject.executeWithResult(() -> {
@@ -65,7 +65,7 @@ public class BatchingUnitOfWorkTest {
     }
 
     @Test
-    public void testRollback() {
+    void testRollback() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         MockException e = new MockException();
@@ -86,7 +86,7 @@ public class BatchingUnitOfWorkTest {
     }
 
     @Test
-    public void testSuppressedExceptionOnRollback() {
+    void testSuppressedExceptionOnRollback() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         MockException taskException = new MockException("task exception");

@@ -18,31 +18,31 @@ package org.axonframework.serialization.xml;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class Dom4JToByteArrayConverterTest {
+class Dom4JToByteArrayConverterTest {
 
     private Dom4JToByteArrayConverter testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new Dom4JToByteArrayConverter();
     }
 
     @Test
-    public void testCanConvert() {
+    void testCanConvert() {
         assertEquals(Document.class, testSubject.expectedSourceType());
         assertEquals(byte[].class, testSubject.targetType());
     }
 
     @Test
-    public void testConvert() {
+    void testConvert() {
         DocumentFactory df = DocumentFactory.getInstance();
         Document doc = df.createDocument("UTF-8");
         doc.setRootElement(df.createElement("rootElement"));
@@ -52,6 +52,6 @@ public class Dom4JToByteArrayConverterTest {
         assertNotNull(actual);
         String actualString = new String(actual);
 
-        assertTrue("Wrong output: " + actualString, actualString.contains("rootElement"));
+        assertTrue(actualString.contains("rootElement"), "Wrong output: " + actualString);
     }
 }

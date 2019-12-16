@@ -20,44 +20,44 @@ import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandler;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test whether the {@link MethodQueryMessageHandlerDefinition} correctly deals with return types, as well as for
  * example {@link java.util.concurrent.Future} and {@link Optional} which contain a generic type.
  */
-public class MethodQueryMessageHandlerDefinitionTest {
+class MethodQueryMessageHandlerDefinitionTest {
 
     private MethodQueryMessageHandlerDefinition testSubject;
     private AnnotatedMessageHandlingMemberDefinition handlerDefinition;
     private ParameterResolverFactory parameterResolver;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         parameterResolver = ClasspathParameterResolverFactory.forClass(getClass());
         testSubject = new MethodQueryMessageHandlerDefinition();
         handlerDefinition = new AnnotatedMessageHandlingMemberDefinition();
     }
 
-    @Test(expected = UnsupportedHandlerException.class)
-    public void testVoidNotAcceptedAsReturnType() {
-        messageHandler("illegalQueryResponseType");
+    @Test
+    void testVoidNotAcceptedAsReturnType() {
+        assertThrows(UnsupportedHandlerException.class, () -> messageHandler("illegalQueryResponseType"));
     }
 
     @Test
-    public void testFutureResponseTypeUnwrapped() {
+    void testFutureResponseTypeUnwrapped() {
         QueryHandlingMember handler = messageHandler("futureReturnType");
         assertEquals(String.class, handler.getResultType());
     }
 
     @Test
-    public void testOptionalResponseTypeUnwrapped() throws Exception {
+    void testOptionalResponseTypeUnwrapped() throws Exception {
         QueryHandlingMember handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.getResultType());
 
@@ -71,19 +71,19 @@ public class MethodQueryMessageHandlerDefinitionTest {
 
 
     @Test
-    public void testUnspecifiedOptionalResponseTypeUnwrapped() {
+    void testUnspecifiedOptionalResponseTypeUnwrapped() {
         QueryHandlingMember handler = messageHandler("unspecifiedOptionalType");
         assertEquals(Object.class, handler.getResultType());
     }
 
     @Test
-    public void testWildcardOptionalResponseTypeUnwrapped() {
+    void testWildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember handler = messageHandler("wildcardOptionalType");
         assertEquals(Object.class, handler.getResultType());
     }
 
     @Test
-    public void testUpperBoundWildcardOptionalResponseTypeUnwrapped() {
+    void testUpperBoundWildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember handler = messageHandler("upperBoundWildcardOptionalType");
         assertEquals(CharSequence.class, handler.getResultType());
     }

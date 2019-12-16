@@ -18,25 +18,25 @@ package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  * @author Nakul Mishra
  */
-public class DefaultInterceptorChainTest {
+class DefaultInterceptorChainTest {
 
     private UnitOfWork<Message<?>> unitOfWork;
     private MessageHandler<Message<?>> mockHandler;
 
-    @Before
+    @BeforeEach
     @SuppressWarnings("unchecked")
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         unitOfWork = new DefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
         when(mockHandler.handle(isA(Message.class))).thenReturn("Result");
@@ -44,7 +44,7 @@ public class DefaultInterceptorChainTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testChainWithDifferentProceedCalls() throws Exception {
+    void testChainWithDifferentProceedCalls() throws Exception {
         MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> new GenericMessage<>("testing"));
             return interceptorChain.proceed();

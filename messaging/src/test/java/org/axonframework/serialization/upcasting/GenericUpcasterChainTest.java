@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.upcasting;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,15 +26,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Rene de Waele
  */
-public class GenericUpcasterChainTest {
+class GenericUpcasterChainTest {
 
     @Test
-    public void testChainWithSingleUpcasterCanUpcastMultipleEvents() {
+    void testChainWithSingleUpcasterCanUpcastMultipleEvents() {
         Object a = "a", b = "b", c = "c";
         Upcaster<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(a, b));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
@@ -42,7 +42,7 @@ public class GenericUpcasterChainTest {
     }
 
     @Test
-    public void testUpcastingResultOfOtherUpcaster() {
+    void testUpcastingResultOfOtherUpcaster() {
         Object a = "a", b = "b", c = "c";
         Upcaster<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(a, b), new AToBUpcaster(b, c));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
@@ -50,7 +50,7 @@ public class GenericUpcasterChainTest {
     }
 
     @Test
-    public void testUpcastingResultOfOtherUpcasterOnlyWorksIfUpcastersAreInCorrectOrder() {
+    void testUpcastingResultOfOtherUpcasterOnlyWorksIfUpcastersAreInCorrectOrder() {
         Object a = "a", b = "b", c = "c";
         Upcaster<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(b, c), new AToBUpcaster(a, b));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
@@ -58,7 +58,7 @@ public class GenericUpcasterChainTest {
     }
 
     @Test
-    public void testRemainderAddedAndUpcasted() {
+    void testRemainderAddedAndUpcasted() {
         Object a = "a", b = "b", c = "c";
         Upcaster<Object> testSubject =
                 new GenericUpcasterChain<>(new UpcasterWithRemainder(a, b), new AToBUpcaster(b, c));
@@ -67,7 +67,7 @@ public class GenericUpcasterChainTest {
     }
 
     @Test
-    public void testRemainderReleasedAfterUpcasting() {
+    void testRemainderReleasedAfterUpcasting() {
         Object a = "a", b = "b", c = "c", d = "d";
         Upcaster<Object> testSubject =
                 new GenericUpcasterChain<>(new ConditionalUpcaster(a, b, c), new ConditionalUpcaster(c, d, a));
@@ -76,7 +76,7 @@ public class GenericUpcasterChainTest {
     }
 
     @Test
-    public void testUpcastToMultipleTypes() {
+    void testUpcastToMultipleTypes() {
         Object a = "a", b = "b", c = "c";
         Upcaster<Object> testSubject = new GenericUpcasterChain<>(new MultipleTypesUpcaster(), new AToBUpcaster(b, c));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, c));

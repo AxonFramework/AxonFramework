@@ -18,20 +18,20 @@ package org.axonframework.serialization;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class SerializedMessageTest {
+class SerializedMessageTest {
 
     private SerializedObject<String> serializedPayload = new SimpleSerializedObject<>("serializedPayload",
                                                                                             String.class,
@@ -45,8 +45,8 @@ public class SerializedMessageTest {
     private Serializer serializer = mock(Serializer.class);
     private String eventId = "eventId";
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         when(serializer.deserialize(serializedMetaData)).thenReturn(deserializedMetaData);
         when(serializer.deserialize(serializedPayload)).thenReturn(deserializedPayload);
         when(serializer.classForType(isA(SerializedType.class))).thenReturn(Object.class);
@@ -54,7 +54,7 @@ public class SerializedMessageTest {
     }
 
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         SerializedMessage<Object> message1 = new SerializedMessage<>(eventId,
                                                                            serializedPayload,
                                                                            serializedMetaData, serializer);
@@ -67,7 +67,7 @@ public class SerializedMessageTest {
     }
 
     @Test
-    public void testWithMetaData() {
+    void testWithMetaData() {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
@@ -82,7 +82,7 @@ public class SerializedMessageTest {
     }
 
     @Test
-    public void testAndMetaData() {
+    void testAndMetaData() {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
@@ -99,7 +99,7 @@ public class SerializedMessageTest {
     }
 
     @Test
-    public void testSerializePayloadImmediately() {
+    void testSerializePayloadImmediately() {
         SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                           serializedMetaData, serializer);
 
@@ -112,7 +112,7 @@ public class SerializedMessageTest {
     }
 
     @Test
-    public void testSerializeMetaDataImmediately() {
+    void testSerializeMetaDataImmediately() {
         SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                           serializedMetaData, serializer);
 

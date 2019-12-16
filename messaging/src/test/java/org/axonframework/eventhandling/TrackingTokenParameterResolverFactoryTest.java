@@ -16,29 +16,27 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class TrackingTokenParameterResolverFactoryTest {
+class TrackingTokenParameterResolverFactoryTest {
 
     private Method method;
     private TrackingTokenParameterResolverFactory testSubject;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         method = getClass().getDeclaredMethod("method1", Object.class, TrackingToken.class);
         testSubject = new TrackingTokenParameterResolverFactory();
     }
 
     @Test
-    public void createInstance() {
+    void createInstance() {
         assertNull(testSubject.createInstance(method, method.getParameters(), 0));
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
 

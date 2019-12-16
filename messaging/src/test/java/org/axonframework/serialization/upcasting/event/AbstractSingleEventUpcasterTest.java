@@ -31,23 +31,23 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.dom4j.Document;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
-public class AbstractSingleEventUpcasterTest {
+class AbstractSingleEventUpcasterTest {
 
     @Test
-    public void testUpcastsKnownType() {
+    void testUpcastsKnownType() {
         String newValue = "newNameValue";
         Serializer serializer = XStreamSerializer.builder().build();
         MetaData metaData = MetaData.with("key", "value");
@@ -69,7 +69,7 @@ public class AbstractSingleEventUpcasterTest {
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testUpcastingDomainEventData() {
+    void testUpcastingDomainEventData() {
         String aggregateType = "test";
         String aggregateId = "aggregateId";
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(10);
@@ -98,7 +98,7 @@ public class AbstractSingleEventUpcasterTest {
     }
 
     @Test
-    public void testIgnoresUnknownType() {
+    void testIgnoresUnknownType() {
         Serializer serializer = XStreamSerializer.builder().build();
         EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
@@ -113,7 +113,7 @@ public class AbstractSingleEventUpcasterTest {
     }
 
     @Test
-    public void testIgnoresWrongVersion() {
+    void testIgnoresWrongVersion() {
         Serializer serializer = XStreamSerializer.builder().build();
         EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName")), serializer

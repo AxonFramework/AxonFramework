@@ -19,15 +19,15 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SimpleResourceParameterResolverFactoryTest {
+class SimpleResourceParameterResolverFactoryTest {
 
     private static final String TEST_RESOURCE = "testResource";
     private static final Long TEST_RESOURCE2 = 42L;
@@ -39,8 +39,8 @@ public class SimpleResourceParameterResolverFactoryTest {
     private Method messageHandlingMethodWithoutResourceParameter;
     private Method messageHandlingMethodWithResourceParameterOfDifferentType;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         testSubject = new SimpleResourceParameterResolverFactory(asList(TEST_RESOURCE, TEST_RESOURCE2));
 
         messageHandlingMethodWithResourceParameter = getClass().getMethod("someMessageHandlingMethodWithResource", Message.class, String.class);
@@ -68,7 +68,7 @@ public class SimpleResourceParameterResolverFactoryTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testResolvesToResourceWhenMessageHandlingMethodHasResourceParameter() {
+    void testResolvesToResourceWhenMessageHandlingMethodHasResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResourceParameter, messageHandlingMethodWithResourceParameter.getParameters(), 1);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
@@ -78,7 +78,7 @@ public class SimpleResourceParameterResolverFactoryTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testResolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() {
+    void testResolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResource2Parameter, messageHandlingMethodWithResource2Parameter.getParameters(), 1);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
@@ -87,14 +87,14 @@ public class SimpleResourceParameterResolverFactoryTest {
     }
 
     @Test
-    public void testIgnoredWhenMessageHandlingMethodHasNoResourceParameter() {
+    void testIgnoredWhenMessageHandlingMethodHasNoResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithoutResourceParameter, messageHandlingMethodWithoutResourceParameter.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    public void testIgnoredWhenMessageHandlingMethodHasResourceParameterOfDifferentType() {
+    void testIgnoredWhenMessageHandlingMethodHasResourceParameterOfDifferentType() {
         ParameterResolver resolver = testSubject.createInstance(messageHandlingMethodWithResourceParameterOfDifferentType, messageHandlingMethodWithResourceParameterOfDifferentType.getParameters(), 1);
         assertNull(resolver);
     }

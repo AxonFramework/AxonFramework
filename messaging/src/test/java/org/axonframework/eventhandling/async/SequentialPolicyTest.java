@@ -19,19 +19,19 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Allard Buijze
  */
-public class SequentialPolicyTest {
+class SequentialPolicyTest {
 
     @Test
-    public void testSequencingIdentifier() {
+    void testSequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPolicy testSubject = new SequentialPolicy();
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));

@@ -23,7 +23,7 @@ import org.axonframework.serialization.FixedValueRevisionResolver;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,66 +31,67 @@ import java.util.Map;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.messaging.Headers.*;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for {@link Headers}
  *
  * @author Nakul Mishra
  */
-public class HeadersTests {
+class HeadersTests {
 
     private Serializer serializer;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         serializer = XStreamSerializer.builder()
                                       .revisionResolver(new FixedValueRevisionResolver("stub-revision"))
                                       .build();
     }
 
     @Test
-    public void testMessageIdText() {
+    void testMessageIdText() {
         assertThat(MESSAGE_ID, is("axon-message-id"));
     }
 
     @Test
-    public void testMessageTypeText() {
+    void testMessageTypeText() {
         assertThat(MESSAGE_TYPE, is("axon-message-type"));
     }
 
     @Test
-    public void testMessageRevisionText() {
+    void testMessageRevisionText() {
         assertThat(MESSAGE_REVISION, is("axon-message-revision"));
     }
 
     @Test
-    public void testMessageTimeStampText() {
+    void testMessageTimeStampText() {
         assertThat(MESSAGE_TIMESTAMP, is("axon-message-timestamp"));
     }
 
     @Test
-    public void testMessageAggregateIdText() {
+    void testMessageAggregateIdText() {
         assertThat(AGGREGATE_ID, is("axon-message-aggregate-id"));
     }
 
     @Test
-    public void testMessageAggregateSeqText() {
+    void testMessageAggregateSeqText() {
         assertThat(AGGREGATE_SEQ, is("axon-message-aggregate-seq"));
     }
 
     @Test
-    public void testMessageAggregateTypeText() {
+    void testMessageAggregateTypeText() {
         assertThat(AGGREGATE_TYPE, is("axon-message-aggregate-type"));
     }
 
     @Test
-    public void testMessageMetadataText() {
+    void testMessageMetadataText() {
         assertThat(MESSAGE_METADATA, is("axon-metadata"));
     }
 
     @Test
-    public void testGeneratingDefaultMessagingHeaders() {
+    void testGeneratingDefaultMessagingHeaders() {
         EventMessage<Object> message = asEventMessage("foo");
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
         Map<String, Object> expected = new HashMap<String, Object>() {{
@@ -103,14 +104,14 @@ public class HeadersTests {
         assertThat(defaultHeaders(message, serializedObject), is(expected));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGeneratingDefaultMessagingHeaders_InvalidSerializedObject() {
+    @Test
+    void testGeneratingDefaultMessagingHeaders_InvalidSerializedObject() {
         EventMessage<Object> message = asEventMessage("foo");
-        defaultHeaders(message, null);
+        assertThrows(IllegalArgumentException.class, () -> defaultHeaders(message, null));
     }
 
     @Test
-    public void testGeneratingDomainMessagingHeaders() {
+    void testGeneratingDomainMessagingHeaders() {
         DomainEventMessage<String> message = domainMessage();
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
 

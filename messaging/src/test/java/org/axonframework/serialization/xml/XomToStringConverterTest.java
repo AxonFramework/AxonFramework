@@ -18,37 +18,37 @@ package org.axonframework.serialization.xml;
 
 import nu.xom.Document;
 import nu.xom.Element;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Jochen Munz
  */
-public class XomToStringConverterTest {
+class XomToStringConverterTest {
 
     private XomToStringConverter testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new XomToStringConverter();
     }
 
     @Test
-    public void testCanConvert() {
+    void testCanConvert() {
         assertEquals(Document.class, testSubject.expectedSourceType());
         assertEquals(String.class, testSubject.targetType());
     }
 
     @Test
-    public void testConvert() {
+    void testConvert() {
         Document doc = new Document(new Element("rootElement"));
 
         String actual = testSubject.convert(doc);
 
         assertNotNull(actual);
 
-        assertTrue("Wrong output: " + actual, actual.contains("rootElement"));
+        assertTrue(actual.contains("rootElement"), "Wrong output: " + actual);
     }
 }

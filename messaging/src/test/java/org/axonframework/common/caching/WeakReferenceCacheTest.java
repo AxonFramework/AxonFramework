@@ -17,14 +17,14 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
@@ -34,21 +34,21 @@ import static org.mockito.Mockito.*;
  * @author Steven van Beelen
  * @author Henrique Sena
  */
-public class WeakReferenceCacheTest {
+class WeakReferenceCacheTest {
 
     private WeakReferenceCache testSubject;
     private Cache.EntryListener mockListener;
     private Registration registration;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockListener = mock(Cache.EntryListener.class);
         testSubject = new WeakReferenceCache();
         registration = testSubject.registerCacheEntryListener(mockListener);
     }
 
     @Test
-    public void testItemPurgedWhenNoLongerReferenced() throws Exception {
+    void testItemPurgedWhenNoLongerReferenced() throws Exception {
         // Mockito holds a reference to all parameters, preventing GC
         registration.cancel();
         final Set<String> expiredEntries = new CopyOnWriteArraySet<>();
@@ -86,7 +86,7 @@ public class WeakReferenceCacheTest {
     }
 
     @Test
-    public void testEntryListenerNotifiedOfCreationUpdateAndDeletion() {
+    void testEntryListenerNotifiedOfCreationUpdateAndDeletion() {
 
         Object value = new Object();
         Object value2 = new Object();
@@ -106,13 +106,13 @@ public class WeakReferenceCacheTest {
         verifyNoMoreInteractions(mockListener);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnGet() {
-        testSubject.get(null);
+    @Test
+    void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnGet() {
+        assertThrows(IllegalArgumentException.class, () -> testSubject.get(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnContainsKey() {
-        testSubject.containsKey(null);
+    @Test
+    void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnContainsKey() {
+        assertThrows(IllegalArgumentException.class, () -> testSubject.containsKey(null));
     }
 }

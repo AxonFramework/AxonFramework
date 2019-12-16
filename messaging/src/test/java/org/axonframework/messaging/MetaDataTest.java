@@ -16,19 +16,20 @@
 
 package org.axonframework.messaging;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class MetaDataTest {
+class MetaDataTest {
 
     @Test
-    public void testAddNullValueToMetaData() {
+    void testAddNullValueToMetaData() {
         MetaData metaData = MetaData.with("nullkey", null).and("otherkey", "value").and("lastkey", "lastvalue")
                 .subset("nullkey", "otherkey");
 
         assertEquals(2, metaData.size());
-        assertEquals(null, metaData.get("nullkey"));
+        assertNull(metaData.get("nullkey"));
         assertEquals("value", metaData.get("otherkey"));
     }
 }

@@ -1,34 +1,27 @@
 package org.axonframework.messaging;
 
-import static org.junit.Assert.assertEquals;
-
 import org.axonframework.serialization.TestSerializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Collection;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Tests serialization capabilities of {@link RemoteExceptionDescription}.
+ *
  * @author JohT
  */
-@RunWith(Parameterized.class)
-public class RemoteExceptionDescriptionSerializationTest {
+class RemoteExceptionDescriptionSerializationTest {
 
-    private final TestSerializer serializer;
-
-    public RemoteExceptionDescriptionSerializationTest(TestSerializer serializer) {
-        this.serializer = serializer;
+    static Collection<TestSerializer> serializers() {
+        return TestSerializer.all();
     }
 
-    @Parameterized.Parameters(name = "{index} {0}")
-    public static Collection<TestSerializer> serializers() {
-       return TestSerializer.all();
-    }
-    
-    @Test
-    public void testTokenShouldBeSerializableWithJackson() {
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void testTokenShouldBeSerializableWithJackson(TestSerializer serializer) {
         Throwable cause = new IllegalArgumentException("This is a test");
         Throwable exception = new IllegalStateException("Test with cause", cause);
         RemoteExceptionDescription descriptionToTest = RemoteExceptionDescription.describing(exception);

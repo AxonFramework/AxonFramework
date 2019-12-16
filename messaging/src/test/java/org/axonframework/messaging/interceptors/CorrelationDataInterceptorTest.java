@@ -20,8 +20,8 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 /**
  * @author Rene de Waele
  */
-public class CorrelationDataInterceptorTest {
+class CorrelationDataInterceptorTest {
 
     private CorrelationDataInterceptor<Message<?>> subject;
     private UnitOfWork<Message<?>> mockUnitOfWork;
@@ -39,9 +39,9 @@ public class CorrelationDataInterceptorTest {
     private CorrelationDataProvider mockProvider1;
     private CorrelationDataProvider mockProvider2;
 
-    @Before
+    @BeforeEach
     @SuppressWarnings("unchecked")
-    public void setUp() {
+    void setUp() {
         mockProvider1 = mock(CorrelationDataProvider.class);
         mockProvider2 = mock(CorrelationDataProvider.class);
         subject = new CorrelationDataInterceptor<>(Arrays.asList(mockProvider1, mockProvider2));
@@ -50,7 +50,7 @@ public class CorrelationDataInterceptorTest {
     }
 
     @Test
-    public void testAttachesCorrelationDataProvidersToUnitOfWork() throws Exception {
+    void testAttachesCorrelationDataProvidersToUnitOfWork() throws Exception {
         subject.handle(mockUnitOfWork, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);

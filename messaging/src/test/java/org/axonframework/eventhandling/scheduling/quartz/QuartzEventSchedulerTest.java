@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -36,13 +36,13 @@ import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class QuartzEventSchedulerTest {
+class QuartzEventSchedulerTest {
 
     private static final String GROUP_ID = "TestGroup";
 
@@ -50,8 +50,8 @@ public class QuartzEventSchedulerTest {
     private EventBus eventBus;
     private Scheduler scheduler;
 
-    @Before
-    public void setUp() throws SchedulerException {
+    @BeforeEach
+    void setUp() throws SchedulerException {
         eventBus = mock(EventBus.class);
         SchedulerFactory schedulerFactory = new org.quartz.impl.StdSchedulerFactory();
         scheduler = schedulerFactory.getScheduler();
@@ -64,15 +64,15 @@ public class QuartzEventSchedulerTest {
         testSubject.setGroupIdentifier(GROUP_ID);
     }
 
-    @After
-    public void tearDown() throws SchedulerException {
+    @AfterEach
+    void tearDown() throws SchedulerException {
         if (scheduler != null) {
             scheduler.shutdown(true);
         }
     }
 
     @Test
-    public void testScheduleJob() throws InterruptedException {
+    void testScheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -86,7 +86,7 @@ public class QuartzEventSchedulerTest {
     }
 
     @Test
-    public void testScheduleJobTransactionalUnitOfWork() throws InterruptedException {
+    void testScheduleJobTransactionalUnitOfWork() throws InterruptedException {
         Transaction mockTransaction = mock(Transaction.class);
         final TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.startTransaction()).thenReturn(mockTransaction);
@@ -115,7 +115,7 @@ public class QuartzEventSchedulerTest {
     }
 
     @Test
-    public void testScheduleJobTransactionalUnitOfWorkFailingTransaction() throws InterruptedException {
+    void testScheduleJobTransactionalUnitOfWorkFailingTransaction() throws InterruptedException {
         final TransactionManager transactionManager = mock(TransactionManager.class);
         final CountDownLatch latch = new CountDownLatch(1);
         when(transactionManager.startTransaction()).thenAnswer(i -> {
@@ -143,7 +143,7 @@ public class QuartzEventSchedulerTest {
     }
 
     @Test
-    public void testCancelJob() throws SchedulerException {
+    void testCancelJob() throws SchedulerException {
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(1000), buildTestEvent());
         assertEquals(1, scheduler.getJobKeys(GroupMatcher.groupEquals(GROUP_ID)).size());
         testSubject.cancelSchedule(token);

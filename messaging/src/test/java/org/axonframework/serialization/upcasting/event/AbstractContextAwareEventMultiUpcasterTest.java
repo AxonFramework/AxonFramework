@@ -36,7 +36,7 @@ import org.axonframework.utils.SecondStubEvent;
 import org.axonframework.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.axonframework.utils.ThirdStubEvent;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,15 +45,15 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /*
  This test class should only assert whether the context map is created, filled with data and if that data is used to
  upcast an event.
  The other upcaster regularities are already asserted by the EventMultiUpcasterTest and can thus be skipped.
  */
-public class AbstractContextAwareEventMultiUpcasterTest {
+class AbstractContextAwareEventMultiUpcasterTest {
 
     private Upcaster<IntermediateEventRepresentation> upcaster;
     private Serializer serializer;
@@ -62,8 +62,8 @@ public class AbstractContextAwareEventMultiUpcasterTest {
     private Integer expectedNewInteger;
     private List<Boolean> expectedNewBooleans;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         expectedNewString = "newNameValue";
         expectedNewInteger = 42;
         expectedNewBooleans = new ArrayList<>();
@@ -77,7 +77,7 @@ public class AbstractContextAwareEventMultiUpcasterTest {
     }
 
     @Test
-    public void testUpcastsAddsContextValueFromFirstEvent() {
+    void testUpcastsAddsContextValueFromFirstEvent() {
         int expectedNumberOfEvents = 4;
         String expectedContextEventString = "oldName";
         Integer expectedContextEventNumber = 1;

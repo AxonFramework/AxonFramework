@@ -18,22 +18,22 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class GenericEventMessageTest {
+class GenericEventMessageTest {
 
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         Object payload = new Object();
         GenericEventMessage<Object> message1 = new GenericEventMessage<>(payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
@@ -60,7 +60,7 @@ public class GenericEventMessageTest {
     }
 
     @Test
-    public void testWithMetaData() {
+    void testWithMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -74,7 +74,7 @@ public class GenericEventMessageTest {
     }
 
     @Test
-    public void testAndMetaData() {
+    void testAndMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -90,7 +90,7 @@ public class GenericEventMessageTest {
     }
 
     @Test
-    public void testTimestampInEventMessageIsAlwaysSerialized() throws IOException, ClassNotFoundException {
+    void testTimestampInEventMessageIsAlwaysSerialized() throws IOException, ClassNotFoundException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         GenericEventMessage<String> testSubject =
@@ -105,12 +105,12 @@ public class GenericEventMessageTest {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         String actual = GenericEventMessage.asEventMessage("MyPayload").andMetaData(MetaData.with("key", "value").and("key2", 13)).toString();
-        assertTrue("Wrong output: " + actual, actual.startsWith("GenericEventMessage{payload={MyPayload}, metadata={"));
-        assertTrue("Wrong output: " + actual, actual.contains("'key'->'value'"));
-        assertTrue("Wrong output: " + actual, actual.contains("'key2'->'13'"));
-        assertTrue("Wrong output: " + actual, actual.contains("', timestamp='"));
-        assertTrue("Wrong output: " + actual, actual.endsWith("}"));
+        assertTrue(actual.startsWith("GenericEventMessage{payload={MyPayload}, metadata={"), "Wrong output: " + actual);
+        assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
+        assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
+        assertTrue(actual.contains("', timestamp='"), "Wrong output: " + actual);
+        assertTrue(actual.endsWith("}"), "Wrong output: " + actual);
     }
 }

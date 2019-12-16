@@ -40,7 +40,7 @@ import org.axonframework.utils.SecondStubEvent;
 import org.axonframework.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.axonframework.utils.ThirdStubEvent;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -48,10 +48,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class AbstractEventMultiUpcasterTest {
+class AbstractEventMultiUpcasterTest {
 
     private String expectedNewString;
     private Integer expectedNewInteger;
@@ -60,8 +60,8 @@ public class AbstractEventMultiUpcasterTest {
     private Serializer serializer;
     private Upcaster<IntermediateEventRepresentation> upcaster;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         expectedNewString = "newNameValue";
         expectedNewInteger = 42;
         expectedNewBooleans = new ArrayList<>();
@@ -75,7 +75,7 @@ public class AbstractEventMultiUpcasterTest {
     }
 
     @Test
-    public void testUpcasterIgnoresWrongEventType() {
+    void testUpcasterIgnoresWrongEventType() {
         GenericDomainEventMessage<String> testEventMessage =
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString");
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
@@ -92,7 +92,7 @@ public class AbstractEventMultiUpcasterTest {
     }
 
     @Test
-    public void testUpcasterIgnoresWrongEventRevision() {
+    void testUpcasterIgnoresWrongEventRevision() {
         String expectedRevisionNumber = "1";
 
         GenericDomainEventMessage<StubDomainEvent> testEventMessage =
@@ -117,7 +117,7 @@ public class AbstractEventMultiUpcasterTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void testUpcastingDomainEventData() {
+    void testUpcastingDomainEventData() {
         String testAggregateType = "test";
         String testAggregateId = "aggregateId";
         GlobalSequenceTrackingToken testTrackingToken = new GlobalSequenceTrackingToken(10);
@@ -157,7 +157,7 @@ public class AbstractEventMultiUpcasterTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void testUpcastsKnownType() {
+    void testUpcastsKnownType() {
         String expectedRevisionNumber = "1";
         String expectedSecondAndThirdRevisionNumber = null;
 
