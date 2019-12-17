@@ -16,37 +16,37 @@
 
 package org.axonframework.test.matchers;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class MatchAllFieldFilterTest {
+class MatchAllFieldFilterTest {
 
     @SuppressWarnings("unused")
     private String field;
 
     @Test
-    public void testAcceptWhenEmpty() throws Exception {
+    void testAcceptWhenEmpty() throws Exception {
         assertTrue(new MatchAllFieldFilter(Collections.emptyList())
                            .accept(MatchAllFieldFilterTest.class.getDeclaredField("field")));
     }
 
     @Test
-    public void testAcceptWhenAllAccept() throws Exception {
+    void testAcceptWhenAllAccept() throws Exception {
         assertTrue(new MatchAllFieldFilter(Arrays.asList(AllFieldsFilter.instance(),
                                                          AllFieldsFilter.instance()))
                            .accept(MatchAllFieldFilterTest.class.getDeclaredField("field")));
     }
 
     @Test
-    public void testRejectWhenOneRejects() throws Exception {
+    void testRejectWhenOneRejects() throws Exception {
         assertFalse(new MatchAllFieldFilter(Arrays.asList(AllFieldsFilter.instance(),
                                                           field -> false))
                             .accept(MatchAllFieldFilterTest.class.getDeclaredField("field")));

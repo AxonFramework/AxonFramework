@@ -20,8 +20,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -30,13 +30,13 @@ import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.andNoMore;
 import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class ExactSequenceOfEventsMatcherTest {
+class ExactSequenceOfEventsMatcherTest {
 
     private Matcher<EventMessage<?>> mockMatcher1;
     private Matcher<EventMessage<?>> mockMatcher2;
@@ -47,8 +47,8 @@ public class ExactSequenceOfEventsMatcherTest {
     private StubEvent stubEvent3;
 
     @SuppressWarnings({"unchecked"})
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockMatcher1 = mock(Matcher.class);
         mockMatcher2 = mock(Matcher.class);
         mockMatcher3 = mock(Matcher.class);
@@ -62,7 +62,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_FullMatch() {
+    void testMatch_FullMatch() {
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3)));
 
         verify(mockMatcher1).matches(stubEvent1);
@@ -79,7 +79,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_FullMatchAndNoMore() {
+    void testMatch_FullMatchAndNoMore() {
         testSubject = exactSequenceOf(mockMatcher1, mockMatcher2, mockMatcher3, andNoMore());
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3)));
 
@@ -97,7 +97,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_ExcessIsRefused() {
+    void testMatch_ExcessIsRefused() {
         testSubject = exactSequenceOf(mockMatcher1, mockMatcher2, mockMatcher3, andNoMore());
         assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3, new StubEvent())));
 
@@ -115,7 +115,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_FullMatchWithGaps() {
+    void testMatch_FullMatchWithGaps() {
         reset(mockMatcher2);
         when(mockMatcher2.matches(any())).thenReturn(false);
 
@@ -133,7 +133,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_MoreMatchersThanEvents() {
+    void testMatch_MoreMatchersThanEvents() {
         when(mockMatcher3.matches(null)).thenReturn(false);
         assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
@@ -147,7 +147,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testMatch_ExcessEventsIgnored() {
+    void testMatch_ExcessEventsIgnored() {
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3, new StubEvent())));
 
         verify(mockMatcher1).matches(stubEvent1);
@@ -160,7 +160,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testDescribe() {
+    void testDescribe() {
         testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
@@ -173,7 +173,7 @@ public class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    public void testDescribe_OneMatcherFailed() {
+    void testDescribe_OneMatcherFailed() {
         when(mockMatcher1.matches(any())).thenReturn(true);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
@@ -192,7 +192,7 @@ public class ExactSequenceOfEventsMatcherTest {
     private static class DescribingAnswer implements Answer<Object> {
         private String description;
 
-        public DescribingAnswer(String description) {
+        DescribingAnswer(String description) {
             this.description = description;
         }
 

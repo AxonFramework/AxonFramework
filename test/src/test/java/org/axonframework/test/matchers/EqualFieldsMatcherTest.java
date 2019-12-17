@@ -19,61 +19,61 @@ package org.axonframework.test.matchers;
 import org.axonframework.test.aggregate.MyEvent;
 import org.axonframework.test.aggregate.MyOtherEvent;
 import org.hamcrest.StringDescription;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class EqualFieldsMatcherTest {
+class EqualFieldsMatcherTest {
 
     private EqualFieldsMatcher<MyEvent> testSubject;
     private MyEvent expectedEvent;
     private String aggregateId = "AggregateId";
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         expectedEvent = new MyEvent(aggregateId, 1);
         testSubject = Matchers.equalTo(expectedEvent);
     }
 
     @Test
-    public void testMatches_SameInstance() {
+    void testMatches_SameInstance() {
         assertTrue(testSubject.matches(expectedEvent));
     }
 
     @Test
-    public void testMatches_EqualInstance() {
+    void testMatches_EqualInstance() {
         assertTrue(testSubject.matches(new MyEvent(aggregateId, 1)));
     }
 
     @Test
-    public void testMatches_WrongEventType() {
+    void testMatches_WrongEventType() {
         assertFalse(testSubject.matches(new MyOtherEvent()));
     }
 
     @Test
-    public void testMatches_WrongFieldValue() {
+    void testMatches_WrongFieldValue() {
         assertFalse(testSubject.matches(new MyEvent(aggregateId, 2)));
         assertEquals("someValue", testSubject.getFailedField().getName());
     }
 
     @Test
-    public void testMatches_WrongFieldValueInIgnoredField() {
+    void testMatches_WrongFieldValueInIgnoredField() {
         testSubject = Matchers.equalTo(expectedEvent, field -> !field.getName().equals("someValue"));
         assertTrue(testSubject.matches(new MyEvent(aggregateId, 2)));
     }
 
     @Test
-    public void testMatches_WrongFieldValueInArray() {
+    void testMatches_WrongFieldValueInArray() {
         assertFalse(testSubject.matches(new MyEvent(aggregateId, 1, new byte[]{1, 2})));
         assertEquals("someBytes", testSubject.getFailedField().getName());
     }
 
     @Test
-    public void testDescription_AfterSuccess() {
+    void testDescription_AfterSuccess() {
         testSubject.matches(expectedEvent);
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
@@ -81,7 +81,7 @@ public class EqualFieldsMatcherTest {
     }
 
     @Test
-    public void testDescription_AfterMatchWithWrongType() {
+    void testDescription_AfterMatchWithWrongType() {
         testSubject.matches(new MyOtherEvent());
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
@@ -89,7 +89,7 @@ public class EqualFieldsMatcherTest {
     }
 
     @Test
-    public void testDescription_AfterMatchWithWrongFieldValue() {
+    void testDescription_AfterMatchWithWrongFieldValue() {
         testSubject.matches(new MyEvent(aggregateId, 2));
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);

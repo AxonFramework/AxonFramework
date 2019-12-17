@@ -23,40 +23,40 @@ import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
-public class AggregateDeadlineSchedulingTest {
+class AggregateDeadlineSchedulingTest {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
 
     private AggregateTestFixture<MyAggregate> fixture;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         fixture = new AggregateTestFixture<>(MyAggregate.class);
     }
 
     @Test
-    public void testDeadlineScheduling() {
+    void testDeadlineScheduling() {
         fixture.givenNoPriorActivity()
                .when(new CreateMyAggregateCommand("id"))
                .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
     }
 
     @Test
-    public void testDeadlineSchedulingTypeMatching() {
+    void testDeadlineSchedulingTypeMatching() {
         fixture.givenNoPriorActivity()
                .when(new CreateMyAggregateCommand("id"))
                .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
     }
 
     @Test
-    public void testDeadlineMet() {
+    void testDeadlineMet() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(new CreateMyAggregateCommand("id"))
                .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -64,7 +64,7 @@ public class AggregateDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineWhichCancelsSchedule() {
+    void testDeadlineWhichCancelsSchedule() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(new CreateMyAggregateCommand("id"))
                .when(new ResetTriggerCommand("id"))
@@ -72,7 +72,7 @@ public class AggregateDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineWhichCancelsAll() {
+    void testDeadlineWhichCancelsAll() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(new CreateMyAggregateCommand("id"))
                .when(new ResetAllTriggerCommand("id"))
@@ -80,7 +80,7 @@ public class AggregateDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineDispatcherInterceptor() {
+    void testDeadlineDispatcherInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
                 messages -> (i, m) -> GenericDeadlineMessage
                         .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
@@ -91,7 +91,7 @@ public class AggregateDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineHandlerInterceptor() {
+    void testDeadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
                     uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
                             .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp()));
