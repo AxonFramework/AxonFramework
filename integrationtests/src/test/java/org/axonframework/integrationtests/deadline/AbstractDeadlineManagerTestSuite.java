@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.deadline;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
@@ -66,9 +67,9 @@ import static org.mockito.Mockito.spy;
  */
 public abstract class AbstractDeadlineManagerTestSuite {
 
-    private static final int DEADLINE_TIMEOUT = 100;
+    private static final int DEADLINE_TIMEOUT = 500;
     private static final int DEADLINE_WAIT_THRESHOLD = 10 * DEADLINE_TIMEOUT;
-    private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 50;
+    private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 250;
     private static final String IDENTIFIER = "id";
     private static final boolean CANCEL_BEFORE_DEADLINE = true;
     private static final boolean DO_NOT_CANCEL_BEFORE_DEADLINE = false;
@@ -203,7 +204,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public void testFailedExecution() throws InterruptedException {
         configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
             interceptorChain.proceed();
-            throw new MockException("Simulating handling error");
+            throw new AxonNonTransientException("Simulating handling error"){};
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
 
@@ -305,6 +306,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     private void assertPublishedEventsWithin(int millis, Object... expectedEvents) {
+        try {
+            Thread.sleep(DEADLINE_TIMEOUT);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         assertWithin(millis,
                      TimeUnit.MILLISECONDS,
                      () -> assertEquals(asList(expectedEvents), published));
@@ -659,9 +665,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         @SagaEventHandler(associationProperty = "id")
         public void on(CancelDeadlineWithinScope evt, DeadlineManager deadlineManager) {
-            deadlineManager.cancelWithinScope("deadlineName");
-            deadlineManager.cancelWithinScope("specificDeadlineName");
-            deadlineManager.cancelWithinScope("payloadlessDeadline");
+            deadlineManager.cancelAllWithinScope("deadlineName");
+            deadlineManager.cancelAllWithinScope("specificDeadlineName");
+            deadlineManager.cancelAllWithinScope("payloadlessDeadline");
         }
 
         @DeadlineHandler
@@ -719,9 +725,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         @CommandHandler
         public void on(CancelDeadlineWithinScope command, DeadlineManager deadlineManager) {
-            deadlineManager.cancelWithinScope("deadlineName");
-            deadlineManager.cancelWithinScope("specificDeadlineName");
-            deadlineManager.cancelWithinScope("payloadlessDeadline");
+            deadlineManager.cancelAllWithinScope("deadlineName");
+            deadlineManager.cancelAllWithinScope("specificDeadlineName");
+            deadlineManager.cancelAllWithinScope("payloadlessDeadline");
         }
 
         @EventSourcingHandler

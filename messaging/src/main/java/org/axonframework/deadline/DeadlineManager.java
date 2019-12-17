@@ -172,14 +172,14 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
     void cancelAll(String deadlineName);
 
     /**
-     * Cancels all deadlines corresponding to the given {@code deadlineName} that are scheduled withing {@link
+     * Cancels all deadlines corresponding to the given {@code deadlineName} that are scheduled within {@link
      * Scope#describeCurrentScope()}.
      * This method has no impact on deadlines which have already been triggered.
      *
      * @param deadlineName a {@link String} representing the name of the deadlines to cancel
      */
-    default void cancelWithinScope(String deadlineName) {
-        cancelWithinScope(deadlineName, Scope.describeCurrentScope());
+    default void cancelAllWithinScope(String deadlineName) {
+        cancelAllWithinScope(deadlineName, Scope.describeCurrentScope());
     }
 
     /**
@@ -189,5 +189,11 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      * @param deadlineName a {@link String} representing the name of the deadlines to cancel
      * @param scope        a {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      */
-    void cancelWithinScope(String deadlineName, ScopeDescriptor scope);
+    void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope);
+
+    /**
+     * Shuts down this deadline manager.
+     */
+    default void shutdown() {
+    }
 }

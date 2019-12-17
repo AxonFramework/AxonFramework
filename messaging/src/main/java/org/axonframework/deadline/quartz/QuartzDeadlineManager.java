@@ -160,7 +160,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelWithinScope(String deadlineName, ScopeDescriptor scope) {
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
         try {
             Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
             for (JobKey jobKey : jobKeys) {
@@ -200,6 +200,15 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                              .forJob(key)
                              .startAt(Date.from(triggerDateTime))
                              .build();
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            scheduler.shutdown(true);
+        } catch (SchedulerException e) {
+            throw new DeadlineException("An error occurred while trying to shutdown the deadline manager", e);
+        }
     }
 
     /**
