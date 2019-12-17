@@ -321,7 +321,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                @Override
                                public void onNext(QueryResponse queryResponse) {
                                    logger.debug("Received query response [{}]", queryResponse);
-                                   completableFuture.complete(serializer.deserializeResponse(queryResponse));
+                                   completableFuture.complete(serializer.deserializeResponse(queryResponse, queryMessage.getResponseType()));
                                }
 
                                @Override
@@ -383,7 +383,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                    logger.debug("The received query response has error message [{}]",
                                                 queryResponse.getErrorMessage());
                                } else {
-                                   if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse))) {
+                                   if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse, queryMessage.getResponseType()))) {
                                        getRequestStream().cancel("Cancellation requested by client", null);
                                    }
                                }

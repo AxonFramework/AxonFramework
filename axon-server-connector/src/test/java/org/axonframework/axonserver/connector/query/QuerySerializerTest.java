@@ -73,7 +73,7 @@ public class QuerySerializerTest {
         }};
         QueryResponseMessage message = new GenericQueryResponseMessage<>(BigDecimal.class, BigDecimal.ONE, metadata);
         QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
-        QueryResponseMessage<Object> deserialized = testSubject.deserializeResponse(grpcMessage);
+        QueryResponseMessage<BigDecimal> deserialized = testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
 
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
@@ -90,7 +90,7 @@ public class QuerySerializerTest {
                 MetaData.with("test", "testValue"));
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
-        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound);
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
         assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
@@ -108,7 +108,7 @@ public class QuerySerializerTest {
                 MetaData.with("test", "testValue"));
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
-        QueryResponseMessage<?> deserialize = testSubject.deserializeResponse(outbound);
+        QueryResponseMessage<?> deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
         assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
