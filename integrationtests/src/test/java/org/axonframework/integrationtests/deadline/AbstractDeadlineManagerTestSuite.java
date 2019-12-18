@@ -440,6 +440,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
         public int hashCode() {
             return Objects.hash(id);
         }
+
+        @Override
+        public String toString() {
+            return "MyAggregateCreatedEvent{" +
+                    "id='" + id + '\'' +
+                    '}';
+        }
     }
 
     private static class SagaStartingEvent {
