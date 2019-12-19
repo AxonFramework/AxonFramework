@@ -35,7 +35,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Gerard de Leeuw
@@ -57,8 +57,8 @@ public class LoopBackWithInterweavedCommandsAndEventsTest {
     private MyCommand command;
     private Configuration configuration;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         configuration = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .configureAggregate(AggregateConfigurer.defaultConfiguration(MyAggregate.class)
@@ -83,14 +83,14 @@ public class LoopBackWithInterweavedCommandsAndEventsTest {
     }
 
     @Test
-    public void orderInCommandHandlerAggregate() {
+    void orderInCommandHandlerAggregate() {
         MyAggregate commandHandlerAggregate = configuration.commandGateway().sendAndWait(command);
 
         assertEquals(expectedDescriptions(command), commandHandlerAggregate.getHandledCommands());
     }
 
     @Test
-    public void orderInEventSourcedAggregate() {
+    void orderInEventSourcedAggregate() {
         Repository<MyAggregate> repository = configuration.repository(MyAggregate.class);
         configuration.commandGateway().sendAndWait(command);
 
@@ -102,7 +102,7 @@ public class LoopBackWithInterweavedCommandsAndEventsTest {
     }
 
     @Test
-    public void orderInEventStore() {
+    void orderInEventStore() {
         configuration.commandGateway().sendAndWait(command);
         assertEquals(expectedDescriptions(command), configuration.eventStore()
                 .readEvents(aggregateIdentifier)
