@@ -134,7 +134,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelWithinScope(String deadlineName, ScopeDescriptor scope) {
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
         runOnPrepareCommitOrNow(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
@@ -148,6 +148,11 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
         if (future != null) {
             future.cancel(false);
         }
+    }
+
+    @Override
+    public void shutdown() {
+        scheduledExecutorService.shutdown();
     }
 
     private static class DeadlineId {
