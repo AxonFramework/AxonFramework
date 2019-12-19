@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
@@ -43,7 +44,7 @@ import static org.mockito.Mockito.*;
  */
 public class AxonServerConnectionManagerTest {
 
-    private StubServer stubServer = new StubServer(8124, 9657);
+    private StubServer stubServer = new StubServer(18124, 9657);
     private StubServer secondNode = new StubServer(9657, 9657);
 
     @Before
@@ -61,7 +62,7 @@ public class AxonServerConnectionManagerTest {
     @Test
     public void checkWhetherConnectionPreferenceIsSent() {
         TagsConfiguration tags = new TagsConfiguration(Collections.singletonMap("key", "value"));
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(configuration)
@@ -90,9 +91,36 @@ public class AxonServerConnectionManagerTest {
     }
 
     @Test
+    public void testConnectionTimeout() throws IOException, InterruptedException {
+        String version = "4.2.1";
+        stubServer.shutdown();
+        stubServer = new StubServer(stubServer.getPort(), new PlatformService(secondNode.getPort()){
+            @Override
+            public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
+                // ignore calls
+            }
+        });
+        stubServer.start();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder()
+                .servers("localhost:" + stubServer.getPort()).connectTimeout(50)
+                .build();
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                        .axonServerConfiguration(configuration)
+                        .axonFrameworkVersionResolver(() -> version)
+                        .build();
+        try {
+            axonServerConnectionManager.getChannel();
+            fail("Was not expecting to get a connection");
+        } catch (AxonServerException e) {
+            assertTrue(e.getMessage().contains("connection"));
+        }
+    }
+
+    @Test
     public void testFrameworkVersionSent() {
         String version = "4.2.1";
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(configuration)
@@ -110,7 +138,7 @@ public class AxonServerConnectionManagerTest {
 
     @Test
     public void unsupportedInstruction() {
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         TestStreamObserver<PlatformInboundInstruction> requestStream = new TestStreamObserver<>();
         AxonServerConnectionManager axonServerConnectionManager =
                 spy(AxonServerConnectionManager.builder()
@@ -140,7 +168,7 @@ public class AxonServerConnectionManagerTest {
 
     @Test
     public void unsupportedInstructionWithoutInstructionId() {
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         TestStreamObserver<PlatformInboundInstruction> requestStream = new TestStreamObserver<>();
         AxonServerConnectionManager axonServerConnectionManager =
                 spy(AxonServerConnectionManager.builder()
