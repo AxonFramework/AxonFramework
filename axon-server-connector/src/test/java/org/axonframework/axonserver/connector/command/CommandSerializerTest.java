@@ -50,7 +50,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    public void testSerializeRequest(CommandSerializer testSubject) {
+    void testSerializeRequest(CommandSerializer testSubject) {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
