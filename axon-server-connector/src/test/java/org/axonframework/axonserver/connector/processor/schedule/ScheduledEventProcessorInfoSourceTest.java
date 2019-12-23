@@ -18,36 +18,36 @@ package org.axonframework.axonserver.connector.processor.schedule;
 
 import org.axonframework.axonserver.connector.processor.FakeEventProcessorInfoSource;
 import org.axonframework.axonserver.connector.utils.AssertUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Created by Sara Pellegrini on 23/03/2018.
  * sara.pellegrini@gmail.com
  */
-public class ScheduledEventProcessorInfoSourceTest {
+class ScheduledEventProcessorInfoSourceTest {
 
     private ScheduledEventProcessorInfoSource scheduled;
     private FakeEventProcessorInfoSource delegate;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         delegate = new FakeEventProcessorInfoSource();
         scheduled = new ScheduledEventProcessorInfoSource(50, 30, delegate);
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         scheduled.shutdown();
     }
 
     @Test
-    public void notifyInformation() throws InterruptedException {
+    void notifyInformation() throws InterruptedException {
         scheduled.start();
         TimeUnit.MILLISECONDS.sleep(50);
         AssertUtils.assertWithin(100, TimeUnit.MILLISECONDS, () -> assertEquals(2, delegate.notifyCalls()));

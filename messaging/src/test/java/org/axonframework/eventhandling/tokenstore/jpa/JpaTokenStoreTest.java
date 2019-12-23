@@ -27,7 +27,6 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,6 +58,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -235,16 +235,16 @@ public class JpaTokenStoreTest {
 
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc1");
-            Assert.assertThat(segments.length, is(2));
+            assertThat(segments.length, is(2));
         }
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc2");
-            Assert.assertThat(segments.length, is(1));
+            assertThat(segments.length, is(1));
         }
 
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc3");
-            Assert.assertThat(segments.length, is(0));
+            assertThat(segments.length, is(0));
         }
 
 

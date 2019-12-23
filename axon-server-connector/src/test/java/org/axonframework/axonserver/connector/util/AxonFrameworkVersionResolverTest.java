@@ -1,19 +1,19 @@
 package org.axonframework.axonserver.connector.util;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link AxonFrameworkVersionResolver}
  *
  * @author Sara Pellegrini
  */
-public class AxonFrameworkVersionResolverTest {
+class AxonFrameworkVersionResolverTest {
 
 
     @Test
-    public void testMavenPriorityOverEnvProperty() {
+    void testMavenPriorityOverEnvProperty() {
         AxonFrameworkVersionResolver testSubject = new AxonFrameworkVersionResolver(
                 () -> "4.2.1",
                 property -> property.equals("AXON_FRAMEWORK_VERSION") ? "3.5" : null);
@@ -22,7 +22,7 @@ public class AxonFrameworkVersionResolverTest {
     }
 
     @Test
-    public void testEnvPropertyUsedAsFallback() {
+    void testEnvPropertyUsedAsFallback() {
         AxonFrameworkVersionResolver testSubject = new AxonFrameworkVersionResolver(
                 () -> null,
                 property -> property.equals("AXON_FRAMEWORK_VERSION") ? "3.5" : null);
@@ -31,7 +31,7 @@ public class AxonFrameworkVersionResolverTest {
     }
 
     @Test
-    public void testEmptyStringAsFallback() {
+    void testEmptyStringAsFallback() {
         AxonFrameworkVersionResolver testSubject = new AxonFrameworkVersionResolver(() -> null, property -> null);
 
         assertEquals("", testSubject.get());

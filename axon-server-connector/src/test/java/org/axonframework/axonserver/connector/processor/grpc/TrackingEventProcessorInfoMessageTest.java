@@ -20,35 +20,31 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.axonframework.eventhandling.Segment.ROOT_SEGMENT;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
  * Created by Sara Pellegrini on 01/08/2018.
  * sara.pellegrini@gmail.com
  */
-@RunWith(MockitoJUnitRunner.class)
-public class TrackingEventProcessorInfoMessageTest {
-
-    @Mock
-    private TrackingEventProcessor trackingEventProcessor;
-
+@ExtendWith(MockitoExtension.class)
+class TrackingEventProcessorInfoMessageTest {
     private Map<Integer, EventTrackerStatus> processingStatus = new HashMap<Integer, EventTrackerStatus>(){{
         this.put(0, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[0], true, false, new GlobalSequenceTrackingToken(100), null));
         this.put(1, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[1], true, false, new GlobalSequenceTrackingToken(100), new RuntimeException("Testing")));
     }};
 
     @Test
-    public void instruction() {
+    void instruction(@Mock TrackingEventProcessor trackingEventProcessor) {
         when(trackingEventProcessor.processingStatus()).thenReturn(processingStatus);
         when(trackingEventProcessor.getName()).thenReturn("ProcessorName");
         when(trackingEventProcessor.activeProcessorThreads()).thenReturn(3);
