@@ -17,14 +17,18 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -143,6 +147,23 @@ class AbstractEventBusTest {
     }
 
     @Test
+    void testMessageMonitorRecordsIngestionAndPublication_InUnitOfWork() {
+        MessageMonitor<? super EventMessage<?>> mockMonitor = mock(MessageMonitor.class);
+        MessageMonitor.MonitorCallback mockMonitorCallback = mock(MessageMonitor.MonitorCallback.class);
+        when(mockMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
+        testSubject = spy(StubPublishingEventBus.builder().messageMonitor(mockMonitor).build());
+
+        testSubject.publish(GenericEventMessage.asEventMessage("test1"), GenericEventMessage.asEventMessage("test2"));
+
+        verify(mockMonitor, times(2)).onMessageIngested(any());
+        verify(mockMonitorCallback, never()).reportSuccess();
+
+        unitOfWork.commit();
+        verify(mockMonitorCallback, times(2)).reportSuccess();
+
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void testDispatchInterceptor() {
         MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
@@ -248,6 +269,12 @@ class AbstractEventBusTest {
 
             private Builder publicationPhase(UnitOfWork.Phase publicationPhase) {
                 this.publicationPhase = publicationPhase;
+                return this;
+            }
+
+            @Override
+            public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+                super.messageMonitor(messageMonitor);
                 return this;
             }
 
