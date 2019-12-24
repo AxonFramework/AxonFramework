@@ -24,7 +24,7 @@ class CommandGatewayExtensionsTest {
     fun `Send extension should invoke correct method on the gateway`() {
         every { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) } just Runs
 
-        subjectGateway.send<ExampleCommand, Any>(command = exampleCommand, onError = { a, b, c -> }, onSuccess = { a, b, c -> })
+        subjectGateway.send<ExampleCommand, Any>(command = exampleCommand, onError = { _, _, _ -> }, onSuccess = { _, _, _ -> })
 
         verify { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) }
     }
@@ -35,8 +35,8 @@ class CommandGatewayExtensionsTest {
 
         subjectGateway.send(
             command = exampleCommand,
-            onError = { a: Any, b: Throwable, c: MetaData -> },
-            onSuccess = { a: CommandMessage<out ExampleCommand>, b: Any, c: MetaData -> }
+            onError = { _: Any, _: Throwable, _: MetaData -> },
+            onSuccess = { _: CommandMessage<out ExampleCommand>, _: Any, _: MetaData -> }
         )
 
         verify { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) }
