@@ -691,7 +691,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
             outboundStreamObserver = new FlowControllingStreamObserver<>(
                     streamObserver,
-                    configuration,
+                    configuration.getClientId(),
+                    configuration.getQueryFlowControl(),
                     flowControl -> QueryProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
                     t -> t.getRequestCase().equals(QueryProviderOutbound.RequestCase.QUERY_RESPONSE)
             ).sendInitialPermits();
