@@ -94,7 +94,7 @@ class DeadlineJobDataBinderTest {
 
         assertEquals(TEST_DEADLINE_NAME, result.get(DEADLINE_NAME));
         assertEquals(testDeadlineMessage.getIdentifier(), result.get(MESSAGE_ID));
-        assertEquals(testDeadlineMessage.getTimestamp().toEpochMilli(), result.get(MESSAGE_TIMESTAMP));
+        assertEquals(testDeadlineMessage.getTimestamp().toString(), result.get(MESSAGE_TIMESTAMP));
         String expectedPayloadType = expectedSerializedClassType.apply(testDeadlineMessage.getPayloadType());
         assertEquals(expectedPayloadType, result.get(MESSAGE_TYPE));
         Object resultRevision = result.get(MESSAGE_REVISION);

@@ -240,7 +240,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
             EventMessage eventMessage = (EventMessage) event;
 
             jobData.put(MESSAGE_ID, eventMessage.getIdentifier());
-            jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toEpochMilli());
+            jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedPayload =
                     serializer.serialize(eventMessage.getPayload(), byte[].class);
@@ -305,7 +305,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         }
 
         private Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {
-            return Instant.ofEpochMilli((long) jobDataMap.get(MESSAGE_TIMESTAMP));
+            Object timestamp = jobDataMap.get(MESSAGE_TIMESTAMP);
+            if (timestamp instanceof String) return Instant.parse(timestamp.toString());
+            return Instant.ofEpochMilli((long) timestamp);
         }
     }
 
