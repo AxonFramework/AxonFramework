@@ -79,9 +79,24 @@ public class AxonServerConfiguration {
     private boolean sslEnabled;
 
 
+    /**
+     * Default flow control settings.
+     */
     private FlowControlConfiguration defaultFlowControl = new FlowControlConfiguration();
+
+    /**
+     * specific flow control settings for the event message stream
+     */
     private FlowControlConfiguration eventFlowControl;
+
+    /**
+     * specific flow control settings for the queue message stream
+     */
     private FlowControlConfiguration queryFlowControl;
+
+    /**
+     * specific flow control settings for the command message stream
+     */
     private FlowControlConfiguration commandFlowControl;
 
 
