@@ -85,17 +85,17 @@ public class AxonServerConfiguration {
     private FlowControlConfiguration defaultFlowControl = new FlowControlConfiguration();
 
     /**
-     * specific flow control settings for the event message stream
+     * Specific flow control settings for the event message stream
      */
     private FlowControlConfiguration eventFlowControl;
 
     /**
-     * specific flow control settings for the queue message stream
+     * Specific flow control settings for the queue message stream
      */
     private FlowControlConfiguration queryFlowControl;
 
     /**
-     * specific flow control settings for the command message stream
+     * Specific flow control settings for the command message stream
      */
     private FlowControlConfiguration commandFlowControl;
 
@@ -470,6 +470,7 @@ public class AxonServerConfiguration {
     }
 
     public static class FlowControlConfiguration {
+
         /**
          * Initial number of permits send for message streams (events, commands, queries)
          */
