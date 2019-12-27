@@ -306,7 +306,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
 
         private Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {
             Object timestamp = jobDataMap.get(MESSAGE_TIMESTAMP);
-            if (timestamp instanceof String) return Instant.parse(timestamp.toString());
+            if (timestamp instanceof String) {
+                return Instant.parse(timestamp.toString());
+            }
             return Instant.ofEpochMilli((long) timestamp);
         }
     }
