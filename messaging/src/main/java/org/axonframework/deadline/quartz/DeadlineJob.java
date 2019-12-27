@@ -223,7 +223,7 @@ public class DeadlineJob implements Job {
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
             jobData.put(MESSAGE_ID, deadlineMessage.getIdentifier());
-            jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toEpochMilli());
+            jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
                     serializer.serialize(deadlineMessage.getPayload(), byte[].class);
@@ -290,7 +290,11 @@ public class DeadlineJob implements Job {
         }
 
         private static Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {
-            return Instant.ofEpochMilli((long) jobDataMap.get(MESSAGE_TIMESTAMP));
+            Object timestamp = jobDataMap.get(MESSAGE_TIMESTAMP);
+            if (timestamp instanceof String) {
+                return Instant.parse(timestamp.toString());
+            }
+            return Instant.ofEpochMilli((long) timestamp);
         }
 
         /**
