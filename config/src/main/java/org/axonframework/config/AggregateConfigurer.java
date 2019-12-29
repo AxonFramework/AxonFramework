@@ -88,7 +88,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                         () -> AnnotationCommandTargetResolver.builder().build()));
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
-        cache = new Component<>(() -> parent, name("cache"), c -> c.getComponent(Cache.class, () -> null));
+        cache = new Component<>(() -> parent, name("cache"), c -> null);
         aggregateFactory =
                 new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
         eventStreamFilter =
