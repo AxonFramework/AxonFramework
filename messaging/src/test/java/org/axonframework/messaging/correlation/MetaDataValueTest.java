@@ -17,22 +17,24 @@
 package org.axonframework.messaging.correlation;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class MetaDataValueTest {
+class MetaDataValueTest {
 
     @Test
-    public void createMetaData() {
+    void createMetaData() {
         Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData = new MetaData(metaDataValues);
@@ -43,7 +45,7 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testMergedMetaData() {
+    void testMergedMetaData() {
         Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData = new MetaData(metaDataValues);
@@ -56,7 +58,7 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testRemovedMetaData() {
+    void testRemovedMetaData() {
         Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         metaDataValues.put("second", "value");
@@ -67,7 +69,7 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData1 = new MetaData(metaDataValues);
@@ -89,7 +91,7 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testSerialization() throws IOException, ClassNotFoundException {
+    void testSerialization() throws IOException, ClassNotFoundException {
         MetaData metaData1 = MetaData.from(Collections.singletonMap("Key1", "Value"));
         MetaData metaData2 = MetaData.from(Collections.singletonMap("Key2", "Value"));
         MetaData emptyMetaData = MetaData.emptyInstance();
@@ -110,7 +112,7 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testBuildMetaDataThroughFrom() {
+    void testBuildMetaDataThroughFrom() {
         Map<String, String> testMetaDataMap = new HashMap<>();
         testMetaDataMap.put("firstKey", "firstVal");
         testMetaDataMap.put("secondKey", "secondVal");
@@ -122,14 +124,14 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testBuildMetaDataThroughWith() {
+    void testBuildMetaDataThroughWith() {
         MetaData result = MetaData.with("key", "val");
 
         assertEquals("val", result.get("key"));
     }
 
     @Test
-    public void testBuildMetaDataThroughWithAnd() {
+    void testBuildMetaDataThroughWithAnd() {
         MetaData result = MetaData.with("firstKey", "firstVal").and("secondKey", "secondVal");
 
         assertEquals("firstVal", result.get("firstKey"));
@@ -137,7 +139,7 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testBuildMetaDataThroughAndIfNotPresentAddsNewValue() {
+    void testBuildMetaDataThroughAndIfNotPresentAddsNewValue() {
         MetaData result = MetaData.with("firstKey", "firstVal").andIfNotPresent("secondKey", () -> "secondVal");
 
         assertEquals("firstVal", result.get("firstKey"));
@@ -145,51 +147,65 @@ public class MetaDataValueTest {
     }
 
     @Test
-    public void testBuildMetaDataThroughAndIfNotPresentDoesntAddNewValue() {
+    void testBuildMetaDataThroughAndIfNotPresentDoesntAddNewValue() {
         MetaData result = MetaData.with("firstKey", "firstVal").andIfNotPresent("firstKey", () -> "firstVal");
 
         assertEquals("firstVal", result.get("firstKey"));
         assertEquals(1, result.size());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMetaDataModification_Clear() {
-        new MetaData(Collections.emptyMap()).clear();
-    }
+    @Test
+    void testMetaDataModification_Clear() {
+        MetaData metaData = new MetaData(Collections.emptyMap());
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMetaDataModification_Put() {
-        new MetaData(Collections.emptyMap()).put("", "");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMetaDataModification_Remove() {
-        new MetaData(Collections.emptyMap()).remove("");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMetaDataModification_PutAll() {
-        new MetaData(Collections.emptyMap()).putAll(Collections.emptyMap());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMetaDataModification_KeySet_Remove() {
-        new MetaData(Collections.emptyMap()).keySet().remove("Hello");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMetaDataModification_Values_Remove() {
-        new MetaData(Collections.emptyMap()).values().remove("Hello");
-    }
-
-    @SuppressWarnings({"SuspiciousMethodCalls"})
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMetaDataModification_EntrySet_Remove() {
-        new MetaData(Collections.emptyMap()).entrySet().remove("Hello");
+        assertThrows(UnsupportedOperationException.class, metaData::clear);
     }
 
     @Test
-    public void testMetaDataSubsetReturnsSubsetOfMetaDataInstance() {
+    void testMetaDataModification_Put() {
+        MetaData metaData = new MetaData(Collections.emptyMap());
+
+        assertThrows(UnsupportedOperationException.class, () -> metaData.put("", ""));
+    }
+
+    @Test
+    void testMetaDataModification_Remove() {
+        MetaData metaData = new MetaData(Collections.emptyMap());
+
+        assertThrows(UnsupportedOperationException.class, () -> metaData.remove(""));
+    }
+
+    @Test
+    void testMetaDataModification_PutAll() {
+        MetaData metaData = new MetaData(Collections.emptyMap());
+
+        assertThrows(UnsupportedOperationException.class, () -> metaData.putAll(Collections.emptyMap()));
+    }
+
+    @Test
+    void testMetaDataModification_KeySet_Remove() {
+        Set<String> keySet = new MetaData(Collections.emptyMap()).keySet();
+
+        assertThrows(UnsupportedOperationException.class, () -> keySet.remove("Hello"));
+    }
+
+    @Test
+    void testMetaDataModification_Values_Remove() {
+        Collection<Object> values = new MetaData(Collections.emptyMap()).values();
+
+        assertThrows(UnsupportedOperationException.class, () -> values.remove("Hello"));
+    }
+
+    @SuppressWarnings({"SuspiciousMethodCalls"})
+    @Test
+    void testMetaDataModification_EntrySet_Remove() {
+        Set<Map.Entry<String,Object>> entrySet = new MetaData(Collections.emptyMap()).entrySet();
+
+        assertThrows(UnsupportedOperationException.class, () -> entrySet.remove("Hello"));
+    }
+
+    @Test
+    void testMetaDataSubsetReturnsSubsetOfMetaDataInstance() {
         MetaData testMetaData = MetaData.with("firstKey", "firstValue")
                 .and("secondKey", "secondValue")
                 .and("thirdKey", "thirdValue")

@@ -4,7 +4,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.JdbcException;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,14 +16,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test the {@link IntervalRetryScheduler}.
  *
  * @author Bert Laverman
  */
-public class IntervalRetrySchedulerTest {
+class IntervalRetrySchedulerTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -32,8 +32,8 @@ public class IntervalRetrySchedulerTest {
 
     private IntervalRetryScheduler retryScheduler;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         retryScheduler = IntervalRetryScheduler
                 .builder()
                 .retryExecutor(new ScheduledThreadPoolExecutor(1))
@@ -81,18 +81,19 @@ public class IntervalRetrySchedulerTest {
     }
 
     @Test
-    public void scheduleRetry() {
+    void scheduleRetry() {
         for (int nrOfFailures = 1; nrOfFailures <= MAX_RETRIES; nrOfFailures++) {
-            assertTrue("Scheduling a retry should wait the required delay.",
-                       doScheduleRetry(retryScheduler, nrOfFailures) >= RETRY_INTERVAL);
+            assertTrue(doScheduleRetry(retryScheduler, nrOfFailures) >= RETRY_INTERVAL,
+                    "Scheduling a retry should wait the required delay.");
         }
 
-        assertEquals("Scheduling a retry when past maxRetryCount should have failed.",
-                     0, doScheduleRetry(retryScheduler, MAX_RETRIES + 1));
+        assertEquals(0, doScheduleRetry(retryScheduler, MAX_RETRIES + 1),
+                "Scheduling a retry when past maxRetryCount should have failed.");
     }
 
-    @Test(expected = AxonConfigurationException.class)
-    public void testBuildingWhilstMissingScheduledExecutorServiceThrowsConfigurationException() {
-        IntervalRetryScheduler.builder().build();
+    @Test
+    void testBuildingWhilstMissingScheduledExecutorServiceThrowsConfigurationException() {
+        IntervalRetryScheduler.Builder builder = IntervalRetryScheduler.builder();
+        assertThrows(AxonConfigurationException.class, builder::build);
     }
 }

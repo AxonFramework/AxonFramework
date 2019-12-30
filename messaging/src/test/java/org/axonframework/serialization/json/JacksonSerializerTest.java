@@ -23,8 +23,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -33,34 +33,34 @@ import java.util.Objects;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class JacksonSerializerTest {
+class JacksonSerializerTest {
 
     private JacksonSerializer testSubject;
     private Instant time;
     private ObjectMapper objectMapper;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         objectMapper = new ObjectMapper();
         testSubject = JacksonSerializer.builder().objectMapper(objectMapper).build();
         time = Instant.now();
     }
 
     @Test
-    public void testCanSerializeToStringByteArrayAndInputStream() {
+    void testCanSerializeToStringByteArrayAndInputStream() {
         assertTrue(testSubject.canSerializeTo(byte[].class));
         assertTrue(testSubject.canSerializeTo(String.class));
         assertTrue(testSubject.canSerializeTo(InputStream.class));
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_StringFormat() {
+    void testSerializeAndDeserializeObject_StringFormat() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -72,7 +72,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeArray() {
+    void testSerializeAndDeserializeArray() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -85,7 +85,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeList() {
+    void testSerializeAndDeserializeList() {
         objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, JsonTypeInfo.As.PROPERTY);
 
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
@@ -100,7 +100,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_ByteArrayFormat() {
+    void testSerializeAndDeserializeObject_ByteArrayFormat() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -113,7 +113,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObjectUnknownType() {
+    void testSerializeAndDeserializeObjectUnknownType() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -135,7 +135,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_JsonNodeFormat() {
+    void testSerializeAndDeserializeObject_JsonNodeFormat() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -147,7 +147,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testCustomObjectMapperRevisionResolverAndConverter() {
+    void testCustomObjectMapperRevisionResolverAndConverter() {
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
         ChainingConverter converter = spy(new ChainingConverter());
         ObjectMapper objectMapper = spy(new ObjectMapper());
@@ -171,7 +171,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testCustomObjectMapperAndRevisionResolver() {
+    void testCustomObjectMapperAndRevisionResolver() {
         ObjectMapper objectMapper = spy(new ObjectMapper());
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
 
@@ -192,7 +192,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testCustomObjectMapper() {
+    void testCustomObjectMapper() {
         ObjectMapper objectMapper = spy(new ObjectMapper());
 
         testSubject = JacksonSerializer.builder()
@@ -210,7 +210,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeMetaData() {
+    void testSerializeMetaData() {
         testSubject = JacksonSerializer.builder().build();
 
         SerializedObject<byte[]> serialized = testSubject.serialize(MetaData.from(singletonMap("test", "test")),
@@ -223,7 +223,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeMetaDataWithComplexObjects() {
+    void testSerializeMetaDataWithComplexObjects() {
         // typing must be enabled for this (which we expect end-users to do
         testSubject.getObjectMapper()
                    .enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
@@ -236,7 +236,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testDeserializeNullValue() {
+    void testDeserializeNullValue() {
         SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
         SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(
                 serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class)
@@ -246,7 +246,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testDeserializeEmptyBytes() {
+    void testDeserializeEmptyBytes() {
         assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
         assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
     }

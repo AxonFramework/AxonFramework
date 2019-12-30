@@ -179,6 +179,12 @@ public class AxonServerConfiguration {
     private int commandLoadFactor = 100;
 
     /**
+     * Represents the maximum time in milliseconds a request for the initial Axon Server connection may last.
+     * Defaults to 5000 (5 seconds).
+     */
+    private long connectTimeout = 5000;
+
+    /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
      *
      * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
@@ -416,6 +422,14 @@ public class AxonServerConfiguration {
         this.commandLoadFactor = commandLoadFactor;
     }
 
+    public long getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(long connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
 
@@ -502,6 +516,11 @@ public class AxonServerConfiguration {
 
         public Builder clientId(String clientId) {
             instance.setClientId(clientId);
+            return this;
+        }
+
+        public Builder connectTimeout(long timeout) {
+            instance.setConnectTimeout(timeout);
             return this;
         }
     }

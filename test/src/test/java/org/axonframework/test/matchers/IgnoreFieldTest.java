@@ -17,35 +17,36 @@
 package org.axonframework.test.matchers;
 
 import org.axonframework.test.FixtureExecutionException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class IgnoreFieldTest {
+class IgnoreFieldTest {
 
     @SuppressWarnings("unused") private String field;
     @SuppressWarnings("unused") private String ignoredField;
 
     @Test
-    public void testAcceptOtherFields_ClassStringConstructor() throws Exception {
+    void testAcceptOtherFields_ClassStringConstructor() throws Exception {
         IgnoreField testSubject = new IgnoreField(IgnoreFieldTest.class, "ignoredField");
         assertTrue(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("field")));
         assertFalse(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("ignoredField")));
     }
 
     @Test
-    public void testAcceptOtherFields_FieldConstructor() throws Exception {
+    void testAcceptOtherFields_FieldConstructor() throws Exception {
         IgnoreField testSubject = new IgnoreField(IgnoreFieldTest.class.getDeclaredField("ignoredField"));
         assertTrue(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("field")));
         assertFalse(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("ignoredField")));
     }
 
-    @Test(expected = FixtureExecutionException.class)
-    public void testRejectNonExistentField() {
-        new IgnoreField(IgnoreFieldTest.class, "nonExistent");
+    @Test
+    void testRejectNonExistentField() {
+        assertThrows(FixtureExecutionException.class, () -> new IgnoreField(IgnoreFieldTest.class, "nonExistent"));
     }
 }

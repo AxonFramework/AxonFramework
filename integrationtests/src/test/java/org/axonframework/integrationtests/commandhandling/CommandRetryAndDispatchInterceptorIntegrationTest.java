@@ -27,7 +27,7 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
@@ -36,20 +36,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author <a href="https://github.com/davispw">Peter Davis</a>
  */
-public class CommandRetryAndDispatchInterceptorIntegrationTest {
+class CommandRetryAndDispatchInterceptorIntegrationTest {
 
     private SimpleCommandBus commandBus;
     private CommandGateway commandGateway;
     private ScheduledExecutorService scheduledThreadPool;
     private IntervalRetryScheduler retryScheduler;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         this.commandBus = SimpleCommandBus.builder().build();
         scheduledThreadPool = Executors.newScheduledThreadPool(1);
         retryScheduler = IntervalRetryScheduler.builder()
@@ -59,8 +60,8 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
                                                .build();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         scheduledThreadPool.shutdownNow();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
@@ -75,11 +76,9 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
      * that type. If a checked exception is thrown that has not been declared, it is wrapped in a
      * CommandExecutionException, which is a RuntimeException.<br> &hellip; </blockquote>
      */
-    @Test(expected =
-            SecurityException.class, // per documentation, an unchecked exception (theoretically
-            // the only kind throwable by an interceptor) is returned unwrapped
-            timeout = 10000) // bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
-    public void testCommandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
+    @Test
+    @Timeout(value = 10)// bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
+    void testCommandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)
                                               .retryScheduler(retryScheduler)
@@ -110,7 +109,10 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         });
 
         // wait, but hopefully not forever...
-        commandGateway.sendAndWait("command");
+        // per documentation, an unchecked exception (theoretically the only kind throwable by an interceptor)
+        // is returned unwrapped
+        assertThrows(SecurityException.class, () -> commandGateway.sendAndWait("command"));
+
     }
 
     /**
@@ -124,8 +126,9 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
      * is not preserved.
      */
     @SuppressWarnings("unchecked")
-    @Test(timeout = 10000)
-    public void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
+    @Test
+    @Timeout(value = 10)
+    void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
         commandGateway =
                 DefaultCommandGateway.builder()
@@ -161,8 +164,9 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
      * be possible given how {@link RetryingCallback} works, so verify that it
      * behaves as designed (if not as "expected").
      */
-    @Test(timeout = 10000)
-    public void testCommandBusDispatchInterceptorMetaDataIsNotPreservedOnRetry() {
+    @Test
+    @Timeout(value = 10)
+    void testCommandBusDispatchInterceptorMetaDataIsNotPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)

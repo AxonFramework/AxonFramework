@@ -1,21 +1,21 @@
 package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.utils.FakeScheduler;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link HeartbeatMonitor}
  *
  * @author Sara Pellegrini
  */
-public class HeartbeatMonitorTest {
+class HeartbeatMonitorTest {
 
     @Test
-    public void testConnectionAlive() {
+    void testConnectionAlive() {
         FakeScheduler fakeScheduler = new FakeScheduler();
         AtomicBoolean reconnect = new AtomicBoolean(false);
         HeartbeatMonitor monitor = new HeartbeatMonitor(() -> reconnect.set(true),
@@ -32,7 +32,7 @@ public class HeartbeatMonitorTest {
     }
 
     @Test
-    public void testDisconnection() {
+    void testDisconnection() {
         FakeScheduler fakeScheduler = new FakeScheduler();
         AtomicBoolean reconnect = new AtomicBoolean(false);
         HeartbeatMonitor monitor = new HeartbeatMonitor(() -> reconnect.set(true),

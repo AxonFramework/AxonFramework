@@ -17,46 +17,51 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.axonframework.monitoring.MessageMonitor;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
-public class AbstractEventBusTest {
+class AbstractEventBusTest {
 
     private UnitOfWork<?> unitOfWork;
     private StubPublishingEventBus testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         (unitOfWork = spy(new DefaultUnitOfWork<>(null))).start();
         testSubject = spy(StubPublishingEventBus.builder().build());
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
     }
 
     @Test
-    public void testConsumersRegisteredWithUnitOfWorkWhenFirstEventIsPublished() {
+    void testConsumersRegisteredWithUnitOfWorkWhenFirstEventIsPublished() {
         EventMessage<?> event = newEvent();
         testSubject.publish(event);
         verify(unitOfWork).onPrepareCommit(any());
@@ -69,7 +74,7 @@ public class AbstractEventBusTest {
     }
 
     @Test
-    public void testNoMoreConsumersRegisteredWithUnitOfWorkWhenSecondEventIsPublished() {
+    void testNoMoreConsumersRegisteredWithUnitOfWorkWhenSecondEventIsPublished() {
         EventMessage<?> event = newEvent();
         testSubject.publish(event);
         verify(unitOfWork).onPrepareCommit(any());
@@ -90,7 +95,7 @@ public class AbstractEventBusTest {
     }
 
     @Test
-    public void testCommitOnUnitOfWork() {
+    void testCommitOnUnitOfWork() {
         EventMessage<?> event = newEvent();
         testSubject.publish(event);
         unitOfWork.commit();
@@ -98,7 +103,7 @@ public class AbstractEventBusTest {
     }
 
     @Test
-    public void testPublicationOrder() {
+    void testPublicationOrder() {
         EventMessage<?> eventA = newEvent(), eventB = newEvent();
         testSubject.publish(eventA);
         testSubject.publish(eventB);
@@ -107,7 +112,7 @@ public class AbstractEventBusTest {
     }
 
     @Test
-    public void testPublicationWithNestedUow() {
+    void testPublicationWithNestedUow() {
         testSubject.publish(numberedEvent(5));
         unitOfWork.commit();
         assertEquals(Arrays.asList(numberedEvent(5), numberedEvent(4), numberedEvent(3), numberedEvent(2),
@@ -122,26 +127,45 @@ public class AbstractEventBusTest {
         verify(unitOfWork, times(6)).onCommit(any());
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testPublicationForbiddenDuringUowCommitPhase() {
+    @Test
+    void testPublicationForbiddenDuringUowCommitPhase() {
         StubPublishingEventBus.builder()
                               .publicationPhase(UnitOfWork.Phase.COMMIT)
                               .startNewUowBeforePublishing(false)
                               .build()
                               .publish(numberedEvent(5));
-        unitOfWork.commit();
+
+        assertThrows(IllegalStateException.class, unitOfWork::commit);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testPublicationForbiddenDuringRootUowCommitPhase() {
+    @Test
+    void testPublicationForbiddenDuringRootUowCommitPhase() {
         testSubject = spy(StubPublishingEventBus.builder().publicationPhase(UnitOfWork.Phase.COMMIT).build());
         testSubject.publish(numberedEvent(1));
+
+        assertThrows(IllegalStateException.class, unitOfWork::commit);
+    }
+
+    @Test
+    void testMessageMonitorRecordsIngestionAndPublication_InUnitOfWork() {
+        MessageMonitor<? super EventMessage<?>> mockMonitor = mock(MessageMonitor.class);
+        MessageMonitor.MonitorCallback mockMonitorCallback = mock(MessageMonitor.MonitorCallback.class);
+        when(mockMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
+        testSubject = spy(StubPublishingEventBus.builder().messageMonitor(mockMonitor).build());
+
+        testSubject.publish(GenericEventMessage.asEventMessage("test1"), GenericEventMessage.asEventMessage("test2"));
+
+        verify(mockMonitor, times(2)).onMessageIngested(any());
+        verify(mockMonitorCallback, never()).reportSuccess();
+
         unitOfWork.commit();
+        verify(mockMonitorCallback, times(2)).reportSuccess();
+
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testDispatchInterceptor() {
+    void testDispatchInterceptor() {
         MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
         String key = "additional", value = "metaData";
         when(dispatchInterceptorMock.handle(anyList())).thenAnswer(invocation -> {
@@ -248,6 +272,12 @@ public class AbstractEventBusTest {
                 return this;
             }
 
+            @Override
+            public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+                super.messageMonitor(messageMonitor);
+                return this;
+            }
+
             private Builder startNewUowBeforePublishing(boolean startNewUowBeforePublishing) {
                 this.startNewUowBeforePublishing = startNewUowBeforePublishing;
                 return this;
@@ -261,7 +291,7 @@ public class AbstractEventBusTest {
 
     private static class StubNumberedEvent extends GenericEventMessage<Integer> {
 
-        public StubNumberedEvent(Integer payload) {
+        StubNumberedEvent(Integer payload) {
             super(payload);
         }
 

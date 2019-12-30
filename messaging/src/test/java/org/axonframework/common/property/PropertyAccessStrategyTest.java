@@ -16,13 +16,13 @@
 
 package org.axonframework.common.property;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class PropertyAccessStrategyTest {
+class PropertyAccessStrategyTest {
 
     private PropertyAccessStrategy mock1 = new StubPropertyAccessStrategy(1000, "mock1");
     private PropertyAccessStrategy mock2 = new StubPropertyAccessStrategy(1200, "mock2");
@@ -30,8 +30,8 @@ public class PropertyAccessStrategyTest {
     private PropertyAccessStrategy mock4 = new StubPropertyAccessStrategy(1000, "mock4");
     private TestPropertyAccessStrategy testPropertyAccessStrategy = new TestPropertyAccessStrategy();
 
-    @After
-    public void setUp() {
+    @AfterEach
+    void setUp() {
         PropertyAccessStrategy.unregister(mock1);
         PropertyAccessStrategy.unregister(mock2);
         PropertyAccessStrategy.unregister(mock3);
@@ -40,26 +40,26 @@ public class PropertyAccessStrategyTest {
     }
 
     @Test
-    public void test_BeanPropertyAccess() {
+    void test_BeanPropertyAccess() {
         assertEquals("beanProperty", PropertyAccessStrategy.getProperty(Bean.class, "beanProperty")
                                                            .getValue(new Bean()));
     }
 
     @Test
-    public void test_UniformPropertyAccess() {
+    void test_UniformPropertyAccess() {
         assertEquals("uniformProperty", PropertyAccessStrategy.getProperty(Bean.class, "uniformProperty").getValue(
                 new Bean()));
     }
 
     @Test
-    public void test_Register() {
+    void test_Register() {
         PropertyAccessStrategy.register(testPropertyAccessStrategy);
         assertEquals("testGetterInvoked",
                      PropertyAccessStrategy.getProperty(Bean.class, "testProperty").getValue(new Bean()));
     }
 
     @Test
-    public void testInvocationOrdering() {
+    void testInvocationOrdering() {
         PropertyAccessStrategy.register(mock1);
         PropertyAccessStrategy.register(mock2);
         assertEquals("mock2",
@@ -67,7 +67,7 @@ public class PropertyAccessStrategyTest {
     }
 
     @Test
-    public void testInvocationOrdering_EqualPriorityUsesClassName() {
+    void testInvocationOrdering_EqualPriorityUsesClassName() {
         PropertyAccessStrategy.register(mock3);
         PropertyAccessStrategy.register(mock4);
         assertEquals("mock3",

@@ -16,9 +16,8 @@
 
 package org.axonframework.common.lock;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -27,10 +26,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Test that discovers <a href="https://github.com/AxonFramework/AxonFramework/issues/32">issue #32</a>.
  */
-public class LockFactoryTest {
+class LockFactoryTest {
 
     private static final int THREAD_COUNT = 4;
     private static final int ATTEMPTS = 3000;
@@ -38,14 +39,14 @@ public class LockFactoryTest {
     private LockFactory lockFactory;
     private String aggregateIdentifier;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         lockFactory = PessimisticLockFactory.builder().build();
         aggregateIdentifier = UUID.randomUUID().toString();
     }
 
     @Test
-    public void testObtainLock() {
+    void testObtainLock() {
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         LockUnlock[] attempts = new LockUnlock[ATTEMPTS];
         for (int t = 0; t < ATTEMPTS; t++) {
@@ -62,7 +63,7 @@ public class LockFactoryTest {
         try {
             service.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            Assert.fail("Interrupted");
+            fail("Interrupted");
         }
 
         int failedAttempts = 0;
@@ -71,7 +72,7 @@ public class LockFactoryTest {
                 failedAttempts++;
             }
         }
-        Assert.assertEquals("Failed LockUnlock count", 0, failedAttempts);
+        assertEquals(0, failedAttempts, "Failed LockUnlock count");
     }
 
 
@@ -80,7 +81,7 @@ public class LockFactoryTest {
         private int instanceIndex;
         private boolean success;
 
-        public LockUnlock(int instanceIndex) {
+        LockUnlock(int instanceIndex) {
             this.instanceIndex = instanceIndex;
         }
 

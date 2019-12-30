@@ -540,6 +540,7 @@ public class DefaultConfigurer implements Configurer {
         if (!initialized) {
             verifyIdentifierFactory();
             prepareModules();
+            shutdownHandlers.add(new RunnableHandler(0, () -> config.deadlineManager().shutdown()));
             invokeInitHandlers();
         }
         return config;

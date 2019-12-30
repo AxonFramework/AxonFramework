@@ -17,35 +17,28 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.serialization.TestSerializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 /**
  * Tests serialization capabilities of {@link MergedTrackingToken}.
- * 
+ *
  * @author JohT
  */
-@RunWith(Parameterized.class)
-public class MergedTrackingTokenSerializationTest {
+class MergedTrackingTokenSerializationTest {
 
-    private final TestSerializer serializer;
-
-    public MergedTrackingTokenSerializationTest(TestSerializer serializer) {
-        this.serializer = serializer;
-    }
-
-    @Parameterized.Parameters(name = "{index} {0}")
-    public static Collection<TestSerializer> serializers() {
+    static Collection<TestSerializer> serializers() {
         return TestSerializer.all();
     }
 
-    @Test
-    public void testTokenShouldBeSerializable() {
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void testTokenShouldBeSerializable(TestSerializer serializer) {
         MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(5)), token(3));
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }

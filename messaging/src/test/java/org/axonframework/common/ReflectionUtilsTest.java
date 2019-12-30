@@ -16,14 +16,14 @@
 
 package org.axonframework.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.axonframework.common.ReflectionUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
@@ -32,7 +32,7 @@ import static org.junit.Assert.*;
 public class ReflectionUtilsTest {
 
     @Test
-    public void testFindFieldsInClass() {
+    void testFindFieldsInClass() {
         Iterable<Field> actualFields = ReflectionUtils.fieldsOf(SomeSubType.class);
         int t = 0;
         for (Field actual : actualFields) {
@@ -46,11 +46,9 @@ public class ReflectionUtilsTest {
                     break;
                 case 1:
                 case 2:
-                    assertTrue(
+                    assertTrue("field1".equals(actual.getName()) || "field2".equals(actual.getName()),
                             "Expected either field1 or field2, but got " + actual.getName()
-                                    + " declared in " + actual.getDeclaringClass().getName(),
-                            "field1".equals(actual.getName())
-                                    || "field2".equals(actual.getName()));
+                                                        + " declared in " + actual.getDeclaringClass().getName());
                     break;
             }
         }
@@ -58,7 +56,7 @@ public class ReflectionUtilsTest {
     }
 
     @Test
-    public void testFindMethodsInClass() {
+    void testFindMethodsInClass() {
         Iterable<Method> actualMethods = ReflectionUtils.methodsOf(SomeSubType.class);
         int t = 0;
         for (Method actual : actualMethods) {
@@ -76,10 +74,9 @@ public class ReflectionUtilsTest {
                     break;
                 case 2:
                 case 3:
-                    assertTrue("Expected either getField1 or getField2, but got " + actual.getName()
-                                       + " declared in " + actual.getDeclaringClass().getName(),
-                               "getField1".equals(actual.getName())
-                                       || "getField2".equals(actual.getName()));
+                    assertTrue("getField1".equals(actual.getName()) || "getField2".equals(actual.getName()),
+                            "Expected either getField1 or getField2, but got " + actual.getName()
+                                                           + " declared in " + actual.getDeclaringClass().getName());
                     break;
                 case 4:
                     assertEquals("SomeInterface", actual.getDeclaringClass().getSimpleName());
@@ -90,13 +87,13 @@ public class ReflectionUtilsTest {
     }
 
     @Test
-    public void testGetFieldValue() throws NoSuchFieldException {
+    void testGetFieldValue() throws NoSuchFieldException {
         Object value = ReflectionUtils.getFieldValue(SomeType.class.getDeclaredField("field1"), new SomeSubType());
         assertEquals("field1", value);
     }
 
     @Test
-    public void testSetFieldValue() throws Exception {
+    void testSetFieldValue() throws Exception {
         int expectedFieldValue = 4;
         SomeSubType testObject = new SomeSubType();
         ReflectionUtils.setFieldValue(SomeSubType.class.getDeclaredField("field3"), testObject, expectedFieldValue);
@@ -104,7 +101,7 @@ public class ReflectionUtilsTest {
     }
 
     @Test
-    public void testIsAccessible() throws NoSuchFieldException {
+    void testIsAccessible() throws NoSuchFieldException {
         Field field1 = SomeType.class.getDeclaredField("field1");
         Field field2 = SomeType.class.getDeclaredField("field2");
         Field field3 = SomeSubType.class.getDeclaredField("field3");
@@ -114,14 +111,14 @@ public class ReflectionUtilsTest {
     }
 
     @Test
-    public void testExplicitlyUnequal_NullValues() {
+    void testExplicitlyUnequal_NullValues() {
         assertFalse(explicitlyUnequal(null, null));
         assertTrue(explicitlyUnequal(null, ""));
         assertTrue(explicitlyUnequal("", null));
     }
 
     @Test
-    public void testHasEqualsMethod() {
+    void testHasEqualsMethod() {
         assertTrue(hasEqualsMethod(String.class));
         assertTrue(hasEqualsMethod(ArrayList.class));
         assertFalse(hasEqualsMethod(SomeType.class));
@@ -129,24 +126,24 @@ public class ReflectionUtilsTest {
 
     @SuppressWarnings("RedundantStringConstructorCall")
     @Test
-    public void testExplicitlyUnequal_ComparableValues() {
+    void testExplicitlyUnequal_ComparableValues() {
         assertFalse(explicitlyUnequal("value", new String("value")));
         assertTrue(explicitlyUnequal("value1", "value2"));
     }
 
     @Test
-    public void testExplicitlyUnequal_OverridesEqualsMethod() {
+    void testExplicitlyUnequal_OverridesEqualsMethod() {
         assertFalse(explicitlyUnequal(Collections.singletonList("value"), Collections.singletonList("value")));
         assertTrue(explicitlyUnequal(Collections.singletonList("value1"), Collections.singletonList("value")));
     }
 
     @Test
-    public void testExplicitlyUnequal_NoEqualsOrComparable() {
+    void testExplicitlyUnequal_NoEqualsOrComparable() {
         assertFalse(explicitlyUnequal(new SomeType(), new SomeType()));
     }
 
     @Test
-    public void testResolvePrimitiveWrapperTypeForLong() {
+    void testResolvePrimitiveWrapperTypeForLong() {
         assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
     }
 

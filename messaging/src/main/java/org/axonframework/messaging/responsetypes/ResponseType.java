@@ -74,4 +74,16 @@ public interface ResponseType<R> extends Serializable {
      * @return actual response type or generic placeholder
      */
     Class<?> getExpectedResponseType();
+
+    /**
+     * Returns the {@code ResponseType} instance that should be used when serializing responses. This method
+     * has a default implementation that returns {@code this}. Implementations that describe a Response Type
+     * that is not suited for serialization, should return an alternative that is suitable, and ensure the
+     * {@link #convert(Object)} is capable of converting that type of response to the request type in this instance.
+     *
+     * @return a {@code ResponseType} instance describing a type suitable for serialization
+     */
+    default ResponseType<?> forSerialization() {
+        return this;
+    }
 }

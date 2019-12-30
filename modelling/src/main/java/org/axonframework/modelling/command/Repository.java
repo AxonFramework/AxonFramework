@@ -59,4 +59,17 @@ public interface Repository<T> extends ScopeAware {
      * @throws Exception when the factoryMethod throws an exception
      */
     Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception;
+
+    /**
+     * Loads an aggregate from the repository. If the aggregate is not found it creates the aggregate using the
+     * specified
+     * {@code factoryMethod}.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to load
+     * @param factoryMethod       The method to create the aggregate's root instance
+     * @return The aggregate root with the given identifier.
+     */
+    default Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+        throw new UnsupportedOperationException("loadOrCreate not implemented on this repository");
+    }
 }

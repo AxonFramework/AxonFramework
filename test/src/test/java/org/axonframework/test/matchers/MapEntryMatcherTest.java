@@ -1,7 +1,7 @@
 package org.axonframework.test.matchers;
 
 import org.hamcrest.StringDescription;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,9 +10,10 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.*;
 import static org.axonframework.test.matchers.EqualsMatcher.equalTo;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MapEntryMatcherTest {
+class MapEntryMatcherTest {
 
     private static final Map<String, Object> EXPECTED = new HashMap<>();
 
@@ -25,19 +26,19 @@ public class MapEntryMatcherTest {
     private final MapEntryMatcher matcher = new MapEntryMatcher(EXPECTED);
 
     @Test
-    public void nullSafe() {
+    void nullSafe() {
         assertFalse(matcher.matches(null));
     }
 
     @Test
-    public void testExpectedEntriesNotPresent() {
+    void testExpectedEntriesNotPresent() {
         assertFalse(matcher.matches(singletonMap("a", new ValueItem("a"))));
 
         assertThat(matcher.getMissingEntries(), equalTo(newHashMap("b", new ValueItem("b"), "c", new ValueItem("c"))));
     }
 
     @Test
-    public void testTooManyEntries() {
+    void testTooManyEntries() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "c", new ValueItem("c"),
                                                "d", new ValueItem("d"), "e", new ValueItem("e"))));
 
@@ -45,7 +46,7 @@ public class MapEntryMatcherTest {
     }
 
     @Test
-    public void testIncorrectValue() {
+    void testIncorrectValue() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "c", new ValueItem("CCCC"))));
 
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap("c", new ValueItem("CCCC"))));
@@ -57,7 +58,7 @@ public class MapEntryMatcherTest {
     }
 
     @Test
-    public void testIncorrectKey() {
+    void testIncorrectKey() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "CCCC", new ValueItem("c"))));
 
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap("CCCC", new ValueItem("c"))));
@@ -69,8 +70,8 @@ public class MapEntryMatcherTest {
     }
 
     @Test
-    public void testAnyOrder() {
-        TreeMap<String, Object> sortedMap = new TreeMap();
+    void testAnyOrder() {
+        TreeMap<String, Object> sortedMap = new TreeMap<>();
         sortedMap.putAll(EXPECTED);
 
         assertTrue(matcher.matches(sortedMap));
@@ -78,23 +79,23 @@ public class MapEntryMatcherTest {
     }
 
     @Test
-    public void matchEmptyMap() {
+    void matchEmptyMap() {
         assertTrue(new MapEntryMatcher(emptyMap()).matches(emptyMap()));
     }
 
     @Test
-    public void testNull() {
+    void testNull() {
         assertFalse(new MapEntryMatcher(emptyMap()).matches(null));
     }
 
     @Test
-    public void testNonMapType() {
+    void testNonMapType() {
         assertFalse(new MapEntryMatcher(emptyMap()).matches(new Object()));
         assertFalse(new MapEntryMatcher(emptyMap()).matches(emptySet()));
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         assertEquals(description.toString(), "map containing " + String.format("[<%s=%s>,<%s=%s>,<%s=%s>]", EXPECTED.entrySet().stream().flatMap(entry -> Stream.of(entry.getKey(), entry.getValue())).toArray()));
@@ -115,7 +116,7 @@ public class MapEntryMatcherTest {
 
         private String name;
 
-        public ValueItem(String name) {
+        ValueItem(String name) {
             this.name = name;
         }
 

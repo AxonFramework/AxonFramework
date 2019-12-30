@@ -24,20 +24,20 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test in order to verify that the {@link DisallowReplay} annotation has the expected behaviour.
  */
-public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
+class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
     private SomeHandler handler;
     private SomeMethodHandler methodHandler;
@@ -45,8 +45,8 @@ public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     private AnnotationEventHandlerAdapter testMethodSubject;
     private ReplayToken replayToken;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         handler = new SomeHandler();
         methodHandler = new SomeMethodHandler();
         testSubject = new AnnotationEventHandlerAdapter(handler);
@@ -55,7 +55,7 @@ public class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     }
 
     @Test
-    public void testInvokeWithReplayTokens() throws Exception {
+    void testInvokeWithReplayTokens() throws Exception {
         GenericTrackedEventMessage<Object> stringEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage("1"));
         GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
         assertTrue(testSubject.canHandle(stringEvent));

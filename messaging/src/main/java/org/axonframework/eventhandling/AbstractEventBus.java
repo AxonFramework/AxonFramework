@@ -34,10 +34,12 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.AFTER_COMMIT;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.COMMIT;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.PREPARE_COMMIT;
 
 /**
  * Base class for the Event Bus. In case events are published while a Unit of Work is active the Unit of Work root
@@ -109,7 +111,8 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public void publish(List<? extends EventMessage<?>> events) {
-        Stream<MessageMonitor.MonitorCallback> ingested = events.stream().map(messageMonitor::onMessageIngested);
+        List<MessageMonitor.MonitorCallback> ingested = events.stream().map(messageMonitor::onMessageIngested)
+                                                              .collect(Collectors.toList());
 
         if (CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();

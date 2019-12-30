@@ -27,10 +27,9 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -40,7 +39,7 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -59,14 +58,15 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ContextConfiguration
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class JpaTokenStoreTest {
 
@@ -90,7 +90,7 @@ public class JpaTokenStoreTest {
     private TransactionTemplate txTemplate;
 
     @Transactional
-    @Before
+    @BeforeEach
     public void setUp() {
         this.txTemplate = new TransactionTemplate(transactionManager);
     }
@@ -156,10 +156,9 @@ public class JpaTokenStoreTest {
     }
 
     @Transactional
-    @Test(expected = UnableToClaimTokenException.class)
+    @Test
     public void testInitializeTokensWhileAlreadyPresent() {
-        jpaTokenStore.fetchToken("test1", 1);
-        jpaTokenStore.initializeTokenSegments("test1", 7);
+        assertThrows(UnableToClaimTokenException.class, () -> jpaTokenStore.fetchToken("test1", 1));
     }
 
     @Transactional
@@ -236,16 +235,16 @@ public class JpaTokenStoreTest {
 
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc1");
-            Assert.assertThat(segments.length, is(2));
+            assertThat(segments.length, is(2));
         }
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc2");
-            Assert.assertThat(segments.length, is(1));
+            assertThat(segments.length, is(1));
         }
 
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc3");
-            Assert.assertThat(segments.length, is(0));
+            assertThat(segments.length, is(0));
         }
 
 

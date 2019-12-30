@@ -16,34 +16,34 @@
 
 package org.axonframework.messaging;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class HandlerExecutionExceptionTest {
+class HandlerExecutionExceptionTest {
 
     @Test
-    public void testResolveDetailsFromNestedExecutionException() {
+    void testResolveDetailsFromNestedExecutionException() {
         Exception exception = new RuntimeException(new StubHandlerExecutionException("test", null, "Details!"));
 
         assertEquals("Details!", HandlerExecutionException.resolveDetails(exception).orElse(null));
     }
 
     @Test
-    public void testResolveDetailsFromExecutionException() {
+    void testResolveDetailsFromExecutionException() {
         Exception exception = new StubHandlerExecutionException("test", null, "Details!");
 
         assertEquals("Details!", HandlerExecutionException.resolveDetails(exception).orElse(null));
     }
 
     @Test
-    public void testResolveDetailsFromNull() {
+    void testResolveDetailsFromNull() {
         assertFalse(HandlerExecutionException.resolveDetails(null).isPresent());
     }
 
     @Test
-    public void testResolveDetailsFromRuntimeException() {
+    void testResolveDetailsFromRuntimeException() {
         assertFalse(HandlerExecutionException.resolveDetails(new RuntimeException()).isPresent());
     }
 

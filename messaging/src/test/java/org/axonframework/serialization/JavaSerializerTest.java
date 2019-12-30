@@ -16,26 +16,26 @@
 
 package org.axonframework.serialization;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.io.Serializable;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class JavaSerializerTest {
+class JavaSerializerTest {
 
     private JavaSerializer testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = JavaSerializer.builder().build();
     }
 
     @Test
-    public void testSerializeAndDeserialize() {
+    void testSerializeAndDeserialize() {
         SerializedObject<byte[]> serializedObject = testSubject.serialize(new MySerializableObject("hello"),
                                                                           byte[].class);
         assertEquals(MySerializableObject.class.getName(), serializedObject.getType().getName());
@@ -47,14 +47,14 @@ public class JavaSerializerTest {
     }
 
     @Test
-    public void testClassForType() {
+    void testClassForType() {
         Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(),
                                                                          "2166108932776672373"));
         assertEquals(MySerializableObject.class, actual);
     }
 
     @Test
-    public void testClassForType_CustomRevisionResolver() {
+    void testClassForType_CustomRevisionResolver() {
         testSubject = JavaSerializer.builder()
                                     .revisionResolver(new FixedValueRevisionResolver("fixed"))
                                     .build();
@@ -64,12 +64,12 @@ public class JavaSerializerTest {
     }
 
     @Test
-    public void testClassForType_UnknownClass() {
+    void testClassForType_UnknownClass() {
         assertEquals(UnknownSerializedType.class, testSubject.classForType(new SimpleSerializedType("unknown", "0")));
     }
 
     @Test
-    public void testDeserializeNullValue() {
+    void testDeserializeNullValue() {
         SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
         SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(
                 serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class)
@@ -79,7 +79,7 @@ public class JavaSerializerTest {
     }
 
     @Test
-    public void testDeserializeEmptyBytes() {
+    void testDeserializeEmptyBytes() {
         assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
         assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
     }

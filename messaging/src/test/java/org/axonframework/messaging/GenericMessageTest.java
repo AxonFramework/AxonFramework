@@ -21,39 +21,39 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * @author Rene de Waele
  */
-public class GenericMessageTest {
+class GenericMessageTest {
 
     private Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         UnitOfWork<?> unitOfWork = mock(UnitOfWork.class);
         when(unitOfWork.getCorrelationData()).thenAnswer(invocation -> correlationData);
         CurrentUnitOfWork.set(unitOfWork);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.clear(CurrentUnitOfWork.get());
         }
     }
 
     @Test
-    public void testCorrelationDataAddedToNewMessage() {
+    void testCorrelationDataAddedToNewMessage() {
         assertEquals(correlationData, new HashMap<>(new GenericMessage<>(new Object()).getMetaData()));
 
         MetaData newMetaData = MetaData.from(Collections.singletonMap("whatever", new Object()));
@@ -62,14 +62,14 @@ public class GenericMessageTest {
     }
 
     @Test
-    public void testMessageSerialization() {
+    void testMessageSerialization() {
         GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
         Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
         SerializedObject<String> serializedPayload = message.serializePayload(jacksonSerializer, String.class);
         SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);
 
-        Assert.assertEquals("\"payload\"", serializedPayload.getData());
-        Assert.assertEquals("{\"key\":\"value\",\"foo\":\"bar\"}", serializedMetaData.getData());
+        assertEquals("\"payload\"", serializedPayload.getData());
+        assertEquals("{\"key\":\"value\",\"foo\":\"bar\"}", serializedMetaData.getData());
     }
 }

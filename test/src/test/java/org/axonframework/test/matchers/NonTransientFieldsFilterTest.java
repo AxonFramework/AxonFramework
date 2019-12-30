@@ -16,15 +16,15 @@
 
 package org.axonframework.test.matchers;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class NonTransientFieldsFilterTest {
+class NonTransientFieldsFilterTest {
 
     @SuppressWarnings("unused")
     private transient String transientField;
@@ -32,13 +32,13 @@ public class NonTransientFieldsFilterTest {
     private String nonTransientField;
 
     @Test
-    public void testAcceptNonTransientField() throws Exception {
+    void testAcceptNonTransientField() throws Exception {
         assertTrue(NonTransientFieldsFilter.instance()
                                            .accept(getClass().getDeclaredField("nonTransientField")));
     }
 
     @Test
-    public void testRejectTransientField() throws Exception {
+    void testRejectTransientField() throws Exception {
         assertFalse(NonTransientFieldsFilter.instance()
                                             .accept(getClass().getDeclaredField("transientField")));
     }

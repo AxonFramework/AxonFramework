@@ -20,36 +20,36 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.hamcrest.CoreMatchers.any;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class FixtureTest_StateStorage {
+class FixtureTest_StateStorage {
 
     private FixtureConfiguration<StateStoredAggregate> fixture;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         fixture = new AggregateTestFixture<>(StateStoredAggregate.class);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (CurrentUnitOfWork.isStarted()) {
             fail("A unit of work is still running");
         }
     }
 
     @Test
-    public void testCreateStateStoredAggregate() {
+    void testCreateStateStoredAggregate() {
         fixture.givenState(() -> new StateStoredAggregate("id", "message"))
                .when(new SetMessageCommand("id", "message2"))
                .expectEvents(new StubDomainEvent())
@@ -57,7 +57,7 @@ public class FixtureTest_StateStorage {
     }
 
     @Test
-    public void testEmittedEventsFromExpectStateAreNotStored() {
+    void testEmittedEventsFromExpectStateAreNotStored() {
         fixture.givenState(() -> new StateStoredAggregate("id", "message"))
                .when(new SetMessageCommand("id", "message2"))
                .expectEvents(new StubDomainEvent())
@@ -66,23 +66,20 @@ public class FixtureTest_StateStorage {
                    assertEquals("message2", aggregate.getMessage());
                })
                .expectEvents(new StubDomainEvent())
-               .expectState(Assert::assertNotNull);
+               .expectState(Assertions::assertNotNull);
     }
 
     @Test
-    public void testCreateStateStoredAggregate_ErrorInChanges() {
+    void testCreateStateStoredAggregate_ErrorInChanges() {
         ResultValidator<StateStoredAggregate> result =
                 fixture.givenState(() -> new StateStoredAggregate("id", "message"))
                        .when(new ErrorCommand("id", "message2"))
                        .expectException(any(Exception.class))
                        .expectNoEvents();
-        try {
-            result.expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
-            fail("Expected an exception");
-        } catch (IllegalStateException e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("Unit of Work"));
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("rolled back"));
-        }
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> result.expectState(aggregate -> assertEquals("message2", aggregate.getMessage())));
+        assertTrue(e.getMessage().contains("Unit of Work"), "Wrong message: " + e.getMessage());
+        assertTrue(e.getMessage().contains("rolled back"), "Wrong message: " + e.getMessage());
     }
 
     private static class InitializeCommand {
@@ -151,7 +148,7 @@ public class FixtureTest_StateStorage {
 
         private String message;
 
-        public StateStoredAggregate(String id, String message) {
+        StateStoredAggregate(String id, String message) {
             this.id = id;
             this.message = message;
         }
@@ -183,7 +180,7 @@ public class FixtureTest_StateStorage {
 
     private static class StubDomainEvent {
 
-        public StubDomainEvent() {
+        StubDomainEvent() {
         }
     }
 }

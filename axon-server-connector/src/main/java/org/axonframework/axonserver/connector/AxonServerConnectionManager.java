@@ -53,7 +53,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -230,6 +229,7 @@ public class AxonServerConnectionManager {
                 ManagedChannel candidate = createChannel(nodeInfo.getHostName(), nodeInfo.getGrpcPort());
                 PlatformServiceGrpc.PlatformServiceBlockingStub stub =
                         PlatformServiceGrpc.newBlockingStub(candidate)
+                                           .withDeadlineAfter(axonServerConfiguration.getConnectTimeout(), TimeUnit.MILLISECONDS)
                                            .withInterceptors(
                                                    new ContextAddingInterceptor(axonServerConfiguration.getContext()),
                                                    new TokenAddingInterceptor(axonServerConfiguration.getToken())
@@ -271,9 +271,7 @@ public class AxonServerConnectionManager {
                             "Connecting to AxonServer node [{}]:[{}] failed: {}",
                             nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage()
                     );
-                    if (sre.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
-                        axonServerUnavailable = true;
-                    }
+                    axonServerUnavailable = true;
                 }
             }
 

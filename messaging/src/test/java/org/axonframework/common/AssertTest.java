@@ -16,30 +16,32 @@
 
 package org.axonframework.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Allard Buijze
  */
-public class AssertTest {
+class AssertTest {
 
     @Test
-    public void testState_Accept() {
+    void testState_Accept() {
         Assert.state(true, () -> "Hello");
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testState_Fail() {
-        Assert.state(false, () -> "Hello");
+    @Test
+    void testState_Fail() {
+        assertThrows(IllegalStateException.class, () -> Assert.state(false, () -> "Hello"));
     }
 
     @Test
-    public void testIsTrue_Accept() {
+    void testIsTrue_Accept() {
         Assert.isTrue(true, () -> "Hello");
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testIsTrue_Fail() {
-        org.axonframework.common.Assert.isTrue(false, () -> "Hello");
+    @Test
+    void testIsTrue_Fail() {
+        assertThrows(IllegalArgumentException.class, () -> Assert.isTrue(false, () -> "Hello"));
     }
 }

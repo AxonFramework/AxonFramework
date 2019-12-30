@@ -21,19 +21,19 @@ import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.common.AxonException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
  * Author: marc
  */
-public class ErrorCodeTest {
+class ErrorCodeTest {
 
     @Test
-    public void testConvert4002FromCodeAndMessage() {
+    void testConvert4002FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4002");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
         assertTrue(exception instanceof CommandExecutionException);
@@ -42,7 +42,7 @@ public class ErrorCodeTest {
     }
 
     @Test
-    public void testConvertUnknownFromCodeAndMessage() {
+    void testConvertUnknownFromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("????????");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build());
         assertTrue(exception instanceof AxonServerException);
@@ -50,7 +50,7 @@ public class ErrorCodeTest {
     }
 
     @Test
-    public void testConvertWithoutSource() {
+    void testConvertWithoutSource() {
         RuntimeException exception = new RuntimeException("oops");
         AxonException axonException = ErrorCode.getFromCode("AXONIQ-4002").convert(exception);
         assertEquals(exception.getMessage(), axonException.getMessage());

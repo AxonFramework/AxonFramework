@@ -29,7 +29,7 @@ import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -38,12 +38,15 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.test.matchers.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class to verify correct execution of the {@link FixtureExecutionResultImpl}.
+ *
  * @author Allard Buijze
  */
-public class FixtureExecutionResultImplTest {
+class FixtureExecutionResultImplTest {
 
     private FixtureExecutionResultImpl<StubSaga> testSubject;
     private RecordingCommandBus commandBus;
@@ -54,24 +57,29 @@ public class FixtureExecutionResultImplTest {
     private TimerTriggeredEvent applicationEvent;
     private String identifier;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         commandBus = new RecordingCommandBus();
         eventBus = SimpleEventBus.builder().build();
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
         sagaStore = new InMemorySagaStore();
-        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
-                                                       commandBus, StubSaga.class, AllFieldsFilter.instance());
+        testSubject = new FixtureExecutionResultImpl<>(
+                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
+                AllFieldsFilter.instance()
+        );
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
         applicationEvent = new TimerTriggeredEvent(identifier);
     }
 
     @Test
-    public void testStartRecording() {
-        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
-                                                       commandBus, StubSaga.class, AllFieldsFilter.instance());
+    void testStartRecording() {
+        testSubject = new FixtureExecutionResultImpl<>(
+                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
+                AllFieldsFilter.instance()
+        );
+
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaStartEvent(identifier)));
         testSubject.startRecording();
@@ -86,48 +94,57 @@ public class FixtureExecutionResultImplTest {
         testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(equalTo("Second"), andNoMore())));
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectPublishedEvents_WrongCount() {
+    @Test
+    void testExpectPublishedEvents_WrongCount() {
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
 
-        testSubject.expectPublishedEvents(new TriggerSagaEndEvent(identifier),
-                                          new TriggerExistingSagaEvent(identifier));
+        assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectPublishedEvents(
+                        new TriggerSagaEndEvent(identifier), new TriggerExistingSagaEvent(identifier)
+                )
+        );
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectPublishedEvents_WrongType() {
+    @Test
+    void testExpectPublishedEvents_WrongType() {
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
 
-        testSubject.expectPublishedEvents(new TriggerExistingSagaEvent(identifier));
+        assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectPublishedEvents(new TriggerExistingSagaEvent(identifier))
+        );
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectPublishedEvents_FailedMatcher() {
+    @Test
+    void testExpectPublishedEvents_FailedMatcher() {
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
 
-        testSubject.expectPublishedEvents(new FailingMatcher<EventMessage>());
+        assertThrows(
+                AxonAssertionError.class, () -> testSubject.expectPublishedEvents(new FailingMatcher<EventMessage<?>>())
+        );
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectDispatchedCommands_FailedCount() {
+    @Test
+    void testExpectDispatchedCommands_FailedCount() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"));
 
-        testSubject.expectDispatchedCommands("First", "Second", "Third");
-    }
-
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectDispatchedCommands_FailedType() {
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
-
-        testSubject.expectDispatchedCommands("First", "Third");
+        assertThrows(AxonAssertionError.class, () -> testSubject.expectDispatchedCommands("First", "Second", "Third"));
     }
 
     @Test
-    public void testExpectDispatchedCommands() {
+    void testExpectDispatchedCommands_FailedType() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+
+        assertThrows(AxonAssertionError.class, () -> testSubject.expectDispatchedCommands("First", "Third"));
+    }
+
+    @Test
+    void testExpectDispatchedCommands() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
@@ -135,7 +152,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test
-    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals() {
+    void testExpectDispatchedCommands_ObjectsNotImplementingEquals() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
@@ -143,196 +160,194 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test
-    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
+    void testExpectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
-        try {
-            testSubject.expectDispatchedCommands(new SimpleCommand("Second"), new SimpleCommand("Thrid"));
-            fail("Expected exception");
-        } catch (AxonAssertionError e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("expected <Second>"));
-        }
+        AxonAssertionError e = assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectDispatchedCommands(new SimpleCommand("Second"), new SimpleCommand("Third"))
+        );
+        assertTrue(e.getMessage().contains("expected <Second>"), "Wrong message: " + e.getMessage());
     }
 
     @Test
-    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
+    void testExpectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
-        try {
-            testSubject.expectDispatchedCommands("Second", new SimpleCommand("Thrid"));
-            fail("Expected exception");
-        } catch (AxonAssertionError e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("Expected <String>"));
-        }
+        AxonAssertionError e = assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectDispatchedCommands("Second", new SimpleCommand("Third"))
+        );
+        assertTrue(e.getMessage().contains("Expected <String>"), "Wrong message: " + e.getMessage());
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectNoDispatchedCommands_Failed() {
+    @Test
+    void testExpectNoDispatchedCommands_Failed() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+        assertThrows(AxonAssertionError.class, testSubject::expectNoDispatchedCommands);
+    }
+
+    @Test
+    void testExpectNoDispatchedCommands() {
         testSubject.expectNoDispatchedCommands();
     }
 
     @Test
-    public void testExpectNoDispatchedCommands() {
-        testSubject.expectNoDispatchedCommands();
+    void testExpectDispatchedCommands_FailedMatcher() {
+        assertThrows(
+                AxonAssertionError.class, () -> testSubject.expectDispatchedCommands(new FailingMatcher<String>())
+        );
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectDispatchedCommands_FailedMatcher() {
-        testSubject.expectDispatchedCommands(new FailingMatcher<String>());
+    @Test
+    void testExpectNoScheduledEvents_EventIsScheduled() {
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
+        assertThrows(AxonAssertionError.class, testSubject::expectNoScheduledEvents);
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectNoScheduledEvents_EventIsScheduled() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
-                applicationEvent));
+    @Test
+    void testExpectNoScheduledEvents_NoEventScheduled() {
         testSubject.expectNoScheduledEvents();
     }
 
     @Test
-    public void testExpectNoScheduledEvents_NoEventScheduled() {
-        testSubject.expectNoScheduledEvents();
-    }
-
-    @Test
-    public void testExpectNoScheduledEvents_ScheduledEventIsTriggered() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
-                applicationEvent));
+    void testExpectNoScheduledEvents_ScheduledEventIsTriggered() {
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceToNextTrigger();
         testSubject.expectNoScheduledEvents();
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongDateTime() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
-                applicationEvent));
+    @Test
+    void testExpectScheduledEvent_WrongDateTime() {
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
         });
-        testSubject.expectScheduledEvent(Duration.ofSeconds(1), applicationEvent);
-    }
-
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongClass() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
-                applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
-        testSubject.expectScheduledEventOfType(Duration.ofSeconds(1), Object.class);
-    }
-
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongEvent() {
-        eventScheduler.schedule(Duration.ofSeconds(1),
-                                new GenericEventMessage<>(applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
-        testSubject.expectScheduledEvent(Duration.ofSeconds(1),
-                                         new GenericEventMessage<>(new TimerTriggeredEvent(
-                                                 "unexpected")));
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_FailedMatcher() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
-                applicationEvent));
-        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
-        });
-        testSubject.expectScheduledEvent(Duration.ofSeconds(1),
-                                         new FailingMatcher());
+        assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectScheduledEvent(Duration.ofSeconds(1), applicationEvent)
+        );
     }
 
     @Test
-    public void testExpectScheduledEvent_Found() {
-        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
-                applicationEvent));
+    void testExpectScheduledEvent_WrongClass() {
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
+        assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectScheduledEventOfType(Duration.ofSeconds(1), Object.class)
+        );
+    }
+
+    @Test
+    void testExpectScheduledEvent_WrongEvent() {
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
+        assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectScheduledEvent(
+                        Duration.ofSeconds(1), new GenericEventMessage<>(new TimerTriggeredEvent("unexpected"))
+                )
+        );
+    }
+
+    @Test
+    void testExpectScheduledEvent_FailedMatcher() {
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
+        assertThrows(
+                AxonAssertionError.class,
+                () -> testSubject.expectScheduledEvent(Duration.ofSeconds(1), new FailingMatcher<>())
+        );
+    }
+
+    @Test
+    void testExpectScheduledEvent_Found() {
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
         });
         testSubject.expectScheduledEvent(Duration.ofMillis(500), applicationEvent);
     }
 
     @Test
-    public void testExpectScheduledEvent_FoundInMultipleCandidates() {
-        eventScheduler.schedule(Duration.ofSeconds(1),
-                                new GenericEventMessage<>(new TimerTriggeredEvent("unexpected1")));
-        eventScheduler.schedule(Duration.ofSeconds(1),
-                                new GenericEventMessage<>(applicationEvent));
-        eventScheduler.schedule(Duration.ofSeconds(1),
-                                new GenericEventMessage<>(new TimerTriggeredEvent("unexpected2")));
+    void testExpectScheduledEvent_FoundInMultipleCandidates() {
+        eventScheduler.schedule(
+                Duration.ofSeconds(1), new GenericEventMessage<>(new TimerTriggeredEvent("unexpected1"))
+        );
+        eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
+        eventScheduler.schedule(
+                Duration.ofSeconds(1), new GenericEventMessage<>(new TimerTriggeredEvent("unexpected2"))
+        );
         testSubject.expectScheduledEvent(Duration.ofSeconds(1), applicationEvent);
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testAssociationWith_WrongValue() {
-        sagaStore.insertSaga(StubSaga.class,
-                             "test",
-                             new StubSaga(),
-                             Collections.singleton(new AssociationValue("key", "value")));
+    @Test
+    void testAssociationWith_WrongValue() {
+        sagaStore.insertSaga(
+                StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
+        );
 
-        testSubject.expectAssociationWith("key", "value2");
-    }
-
-    @Test(expected = AxonAssertionError.class)
-    public void testAssociationWith_WrongKey() {
-        sagaStore.insertSaga(StubSaga.class,
-                             "test",
-                             new StubSaga(),
-                             Collections.singleton(new AssociationValue("key", "value")));
-
-        testSubject.expectAssociationWith("key2", "value");
+        assertThrows(AxonAssertionError.class, () -> testSubject.expectAssociationWith("key", "value2"));
     }
 
     @Test
-    public void testAssociationWith_Present() {
-        sagaStore.insertSaga(StubSaga.class,
-                             "test",
-                             new StubSaga(),
-                             Collections.singleton(new AssociationValue("key", "value")));
+    void testAssociationWith_WrongKey() {
+        sagaStore.insertSaga(
+                StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
+        );
+
+        assertThrows(AxonAssertionError.class, () -> testSubject.expectAssociationWith("key2", "value"));
+    }
+
+    @Test
+    void testAssociationWith_Present() {
+        sagaStore.insertSaga(
+                StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
+        );
 
         testSubject.expectAssociationWith("key", "value");
     }
 
     @Test
-    public void testNoAssociationWith_WrongValue() {
-        sagaStore.insertSaga(StubSaga.class,
-                             "test",
-                             new StubSaga(),
-                             Collections.singleton(new AssociationValue("key", "value")));
+    void testNoAssociationWith_WrongValue() {
+        sagaStore.insertSaga(
+                StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
+        );
 
         testSubject.expectNoAssociationWith("key", "value2");
     }
 
     @Test
-    public void testNoAssociationWith_WrongKey() {
-        sagaStore.insertSaga(StubSaga.class,
-                             "test",
-                             new StubSaga(),
-                             Collections.singleton(new AssociationValue("key", "value")));
+    void testNoAssociationWith_WrongKey() {
+        sagaStore.insertSaga(
+                StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
+        );
 
         testSubject.expectNoAssociationWith("key2", "value");
     }
 
-    @Test(expected = AxonAssertionError.class)
-    public void testNoAssociationWith_Present() {
-        sagaStore.insertSaga(StubSaga.class,
-                             "test",
-                             new StubSaga(),
-                             Collections.singleton(new AssociationValue("key", "value")));
+    @Test
+    void testNoAssociationWith_Present() {
+        sagaStore.insertSaga(
+                StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
+        );
 
-        testSubject.expectNoAssociationWith("key", "value");
-    }
-
-    @Test(expected = AxonAssertionError.class)
-    public void testExpectActiveSagas_WrongCount() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.emptySet());
-
-        testSubject.expectActiveSagas(2);
+        assertThrows(AxonAssertionError.class, () -> testSubject.expectNoAssociationWith("key", "value"));
     }
 
     @Test
-    public void testExpectActiveSagas_CorrectCount() {
+    void testExpectActiveSagas_WrongCount() {
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.emptySet());
+
+        assertThrows(AxonAssertionError.class, () -> testSubject.expectActiveSagas(2));
+    }
+
+    @Test
+    void testExpectActiveSagas_CorrectCount() {
         sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.emptySet());
         sagaStore.deleteSaga(StubSaga.class, "test", Collections.emptySet());
         sagaStore.insertSaga(StubSaga.class, "test2", new StubSaga(), Collections.emptySet());
@@ -341,7 +356,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test
-    public void testStartRecordingCallback() {
+    void testStartRecordingCallback() {
         AtomicInteger startRecordingCallbackInvocations = new AtomicInteger();
         testSubject.registerStartRecordingCallback(startRecordingCallbackInvocations::incrementAndGet);
         testSubject.startRecording();
@@ -351,6 +366,7 @@ public class FixtureExecutionResultImplTest {
 
     private static class SimpleCommand {
 
+        @SuppressWarnings({"FieldCanBeLocal", "unused"})
         private final String content;
 
         public SimpleCommand(String content) {
@@ -358,7 +374,7 @@ public class FixtureExecutionResultImplTest {
         }
     }
 
-    private class FailingMatcher<T> extends BaseMatcher<List<? extends T>> {
+    private static class FailingMatcher<T> extends BaseMatcher<List<? extends T>> {
 
         @Override
         public boolean matches(Object item) {

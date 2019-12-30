@@ -2,24 +2,24 @@ package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.utils.FakeClock;
 import org.axonframework.axonserver.connector.heartbeat.connection.checker.HeartbeatConnectionChecker;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link HeartbeatConnectionChecker}.
  *
  * @author Sara Pellegrini
  */
-public class HeartbeatConnectionCheckerTest {
+class HeartbeatConnectionCheckerTest {
 
     @Test
-    public void testHeartbeatNeverReceived() {
+    void testHeartbeatNeverReceived() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
                                                                       r -> {
@@ -31,7 +31,7 @@ public class HeartbeatConnectionCheckerTest {
     }
 
     @Test
-    public void testHeartbeatProperlyReceived() {
+    void testHeartbeatProperlyReceived() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
@@ -44,7 +44,7 @@ public class HeartbeatConnectionCheckerTest {
     }
 
     @Test
-    public void testHeartbeatReceivedLate() {
+    void testHeartbeatReceivedLate() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
@@ -57,7 +57,7 @@ public class HeartbeatConnectionCheckerTest {
     }
 
     @Test
-    public void testDelegateDetectsBrokenConnection() {
+    void testDelegateDetectsBrokenConnection() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,

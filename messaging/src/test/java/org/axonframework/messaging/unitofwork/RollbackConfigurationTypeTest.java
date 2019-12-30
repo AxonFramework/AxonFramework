@@ -16,18 +16,18 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class RollbackConfigurationTypeTest {
+class RollbackConfigurationTypeTest {
 
     @Test
-    public void testAnyExceptionsRollback() {
+    void testAnyExceptionsRollback() {
         RollbackConfiguration testSubject = RollbackConfigurationType.ANY_THROWABLE;
         assertTrue(testSubject.rollBackOn(new RuntimeException()));
         assertTrue(testSubject.rollBackOn(new Exception()));
@@ -35,7 +35,7 @@ public class RollbackConfigurationTypeTest {
     }
 
     @Test
-    public void testUncheckedExceptionsRollback() {
+    void testUncheckedExceptionsRollback() {
         RollbackConfiguration testSubject = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
         assertTrue(testSubject.rollBackOn(new RuntimeException()));
         assertFalse(testSubject.rollBackOn(new Exception()));
@@ -43,7 +43,7 @@ public class RollbackConfigurationTypeTest {
     }
 
     @Test
-    public void testRuntimeExceptionsRollback() {
+    void testRuntimeExceptionsRollback() {
         RollbackConfiguration testSubject = RollbackConfigurationType.RUNTIME_EXCEPTIONS;
         assertTrue(testSubject.rollBackOn(new RuntimeException()));
         assertFalse(testSubject.rollBackOn(new Exception()));

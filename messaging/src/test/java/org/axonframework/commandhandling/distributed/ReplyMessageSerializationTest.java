@@ -19,37 +19,29 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
 import java.util.Collection;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests serialization/deserialization of {@link ReplyMessage}.
  *
  * @author Milan Savic
  */
-@RunWith(Parameterized.class)
-public class ReplyMessageSerializationTest {
+class ReplyMessageSerializationTest {
 
-    private final TestSerializer serializer;
-
-    public ReplyMessageSerializationTest(TestSerializer serializer) {
-        this.serializer = serializer;
-    }
-    
-    @Parameterized.Parameters(name = "{index} {0}")
     public static Collection<TestSerializer> serializers() {
        return TestSerializer.all();
     }
-       
-    @Test
-    public void testSerializationDeserializationOfSuccessfulMessage() {
+
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void testSerializationDeserializationOfSuccessfulMessage(TestSerializer serializer) {
         String commandId = "commandId";
         CommandResultMessage<String> success = asCommandResultMessage("success");
         DummyReplyMessage message = new DummyReplyMessage(commandId, success, serializer.getSerializer());
@@ -57,8 +49,9 @@ public class ReplyMessageSerializationTest {
         assertEquals(message, serializer.serializeDeserialize(message));
     }
 
-    @Test
-    public void testSerializationDeserializationOfUnsuccessfulMessage() {
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void testSerializationDeserializationOfUnsuccessfulMessage(TestSerializer serializer) {
         String commandId = "commandId";
         CommandResultMessage<String> failure = asCommandResultMessage(new RuntimeException("oops"));
         DummyReplyMessage message = new DummyReplyMessage(commandId, failure, serializer.getSerializer());

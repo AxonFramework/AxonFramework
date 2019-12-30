@@ -18,11 +18,12 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.config.TagsConfiguration;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -41,27 +42,27 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
-public class AxonServerConnectionManagerTest {
+class AxonServerConnectionManagerTest {
 
-    private StubServer stubServer = new StubServer(8124, 9657);
+    private StubServer stubServer = new StubServer(18124, 9657);
     private StubServer secondNode = new StubServer(9657, 9657);
 
-    @Before
-    public void setUp() throws IOException {
+    @BeforeEach
+    void setUp() throws IOException {
         stubServer.start();
         secondNode.start();
     }
 
-    @After
-    public void tearDown() throws InterruptedException {
+    @AfterEach
+    void tearDown() throws InterruptedException {
         stubServer.shutdown();
         secondNode.shutdown();
     }
 
     @Test
-    public void checkWhetherConnectionPreferenceIsSent() {
+    void checkWhetherConnectionPreferenceIsSent() {
         TagsConfiguration tags = new TagsConfiguration(Collections.singletonMap("key", "value"));
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(configuration)
@@ -90,9 +91,36 @@ public class AxonServerConnectionManagerTest {
     }
 
     @Test
-    public void testFrameworkVersionSent() {
+    void testConnectionTimeout() throws IOException, InterruptedException {
         String version = "4.2.1";
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+        stubServer.shutdown();
+        stubServer = new StubServer(stubServer.getPort(), new PlatformService(secondNode.getPort()){
+            @Override
+            public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
+                // ignore calls
+            }
+        });
+        stubServer.start();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder()
+                .servers("localhost:" + stubServer.getPort()).connectTimeout(50)
+                .build();
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                        .axonServerConfiguration(configuration)
+                        .axonFrameworkVersionResolver(() -> version)
+                        .build();
+        try {
+            axonServerConnectionManager.getChannel();
+            fail("Was not expecting to get a connection");
+        } catch (AxonServerException e) {
+            assertTrue(e.getMessage().contains("connection"));
+        }
+    }
+
+    @Test
+    void testFrameworkVersionSent() {
+        String version = "4.2.1";
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(configuration)
@@ -109,8 +137,8 @@ public class AxonServerConnectionManagerTest {
     }
 
     @Test
-    public void unsupportedInstruction() {
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+    void unsupportedInstruction() {
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         TestStreamObserver<PlatformInboundInstruction> requestStream = new TestStreamObserver<>();
         AxonServerConnectionManager axonServerConnectionManager =
                 spy(AxonServerConnectionManager.builder()
@@ -139,8 +167,8 @@ public class AxonServerConnectionManagerTest {
     }
 
     @Test
-    public void unsupportedInstructionWithoutInstructionId() {
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().build();
+    void unsupportedInstructionWithoutInstructionId() {
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
         TestStreamObserver<PlatformInboundInstruction> requestStream = new TestStreamObserver<>();
         AxonServerConnectionManager axonServerConnectionManager =
                 spy(AxonServerConnectionManager.builder()

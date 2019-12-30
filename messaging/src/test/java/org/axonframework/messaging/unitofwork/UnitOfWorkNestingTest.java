@@ -18,30 +18,30 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.utils.MockException;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class UnitOfWorkNestingTest {
+class UnitOfWorkNestingTest {
 
     private List<PhaseTransition> phaseTransitions = new ArrayList<>();
     private UnitOfWork<?> outer;
     private UnitOfWork<?> middle;
     private UnitOfWork<?> inner;
 
-    @SuppressWarnings({"unchecked", "deprecation"})
-    @Before
-    public void setUp() {
+    @SuppressWarnings({"unchecked"})
+    @BeforeEach
+    void setUp() {
         phaseTransitions.clear();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
@@ -78,13 +78,13 @@ public class UnitOfWorkNestingTest {
         unitOfWork.onCleanup(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.CLEANUP)));
     }
 
-    @After
-    public void tearDown() {
-        assertFalse("A UnitOfWork was not properly cleared", CurrentUnitOfWork.isStarted());
+    @AfterEach
+    void tearDown() {
+        assertFalse(CurrentUnitOfWork.isStarted(), "A UnitOfWork was not properly cleared");
     }
 
     @Test
-    public void testInnerUnitOfWorkNotifiedOfOuterCommitFailure() {
+    void testInnerUnitOfWorkNotifiedOfOuterCommitFailure() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.commit();
@@ -100,7 +100,7 @@ public class UnitOfWorkNestingTest {
             //ok
         }
 
-        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse(CurrentUnitOfWork.isStarted(), "The UnitOfWork hasn't been correctly cleared");
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
@@ -113,7 +113,7 @@ public class UnitOfWorkNestingTest {
     }
 
     @Test
-    public void testInnerUnitOfWorkNotifiedOfOuterPrepareCommitFailure() {
+    void testInnerUnitOfWorkNotifiedOfOuterPrepareCommitFailure() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.commit();
@@ -128,7 +128,7 @@ public class UnitOfWorkNestingTest {
             //ok
         }
 
-        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse(CurrentUnitOfWork.isStarted(), "The UnitOfWork hasn't been correctly cleared");
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
@@ -140,7 +140,7 @@ public class UnitOfWorkNestingTest {
     }
 
     @Test
-    public void testInnerUnitOfWorkNotifiedOfOuterCommit() {
+    void testInnerUnitOfWorkNotifiedOfOuterCommit() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.commit();
@@ -148,7 +148,7 @@ public class UnitOfWorkNestingTest {
         outer.start();
         outer.commit();
 
-        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse(CurrentUnitOfWork.isStarted(), "The UnitOfWork hasn't been correctly cleared");
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
@@ -161,7 +161,7 @@ public class UnitOfWorkNestingTest {
     }
 
     @Test
-    public void testInnerUnitRollbackDoesNotAffectOuterCommit() {
+    void testInnerUnitRollbackDoesNotAffectOuterCommit() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.rollback(new MockException());
@@ -169,7 +169,7 @@ public class UnitOfWorkNestingTest {
         outer.start();
         outer.commit();
 
-        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse(CurrentUnitOfWork.isStarted(), "The UnitOfWork hasn't been correctly cleared");
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.ROLLBACK),
                                    new PhaseTransition(outer, UnitOfWork.Phase.COMMIT),
@@ -180,7 +180,7 @@ public class UnitOfWorkNestingTest {
     }
 
     @Test
-    public void testRollbackOfMiddleUnitOfWorkRollsBackInner() {
+    void testRollbackOfMiddleUnitOfWorkRollsBackInner() {
         outer.onPrepareCommit(u -> {
             middle.start();
             inner.start();
@@ -190,10 +190,10 @@ public class UnitOfWorkNestingTest {
         outer.start();
         outer.commit();
 
-        assertTrue("The middle UnitOfWork hasn't been correctly marked as rolled back", middle.isRolledBack());
-        assertTrue("The inner UnitOfWork hasn't been correctly marked as rolled back", inner.isRolledBack());
-        assertFalse("The out UnitOfWork has been incorrectly marked as rolled back", outer.isRolledBack());
-        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertTrue(middle.isRolledBack(), "The middle UnitOfWork hasn't been correctly marked as rolled back");
+        assertTrue(inner.isRolledBack(), "The inner UnitOfWork hasn't been correctly marked as rolled back");
+        assertFalse(outer.isRolledBack(), "The out UnitOfWork has been incorrectly marked as rolled back");
+        assertFalse(CurrentUnitOfWork.isStarted(), "The UnitOfWork hasn't been correctly cleared");
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
@@ -209,7 +209,7 @@ public class UnitOfWorkNestingTest {
     }
 
     @Test
-    public void testInnerUnitCommitFailureDoesNotAffectOuterCommit() {
+    void testInnerUnitCommitFailureDoesNotAffectOuterCommit() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.onCommit(uow -> {
@@ -226,7 +226,7 @@ public class UnitOfWorkNestingTest {
         outer.start();
         outer.commit();
 
-        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse(CurrentUnitOfWork.isStarted(), "The UnitOfWork hasn't been correctly cleared");
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT, "x"),

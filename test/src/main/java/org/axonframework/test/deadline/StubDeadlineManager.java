@@ -116,6 +116,12 @@ public class StubDeadlineManager implements DeadlineManager {
         schedules.removeIf(scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName));
     }
 
+    @Override
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
+        schedules.removeIf(scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
+                && scheduledDeadline.getDeadlineScope().equals(scope));
+    }
+
     /**
      * @return scheduled deadlines (which have not been met)
      */

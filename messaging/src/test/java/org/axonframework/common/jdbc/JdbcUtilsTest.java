@@ -16,15 +16,15 @@
 
 package org.axonframework.common.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.sql.ResultSet;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the {@link JdbcUtils} class static methods
@@ -32,7 +32,7 @@ import org.junit.Test;
  * @author Albert Attard (Java Creed)
  * @see JdbcUtils
  */
-public class JdbcUtilsTest {
+class JdbcUtilsTest {
 
     /**
      * Tries to read from an empty result set. The method is expected to return
@@ -43,7 +43,7 @@ public class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    public void testNextAndExtract_EmptyResultSet() throws Exception {
+    void testNextAndExtract_EmptyResultSet() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(false);
@@ -59,7 +59,7 @@ public class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    public void testNextAndExtract_NullValue() throws Exception {
+    void testNextAndExtract_NullValue() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);
@@ -76,7 +76,7 @@ public class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    public void testNextAndExtract_NonNullValue() throws Exception {
+    void testNextAndExtract_NonNullValue() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);
@@ -97,7 +97,7 @@ public class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    public void testNextAndExtract_NonNullValue_WasNull() throws Exception {
+    void testNextAndExtract_NonNullValue_WasNull() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);

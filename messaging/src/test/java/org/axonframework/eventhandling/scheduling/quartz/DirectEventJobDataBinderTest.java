@@ -25,83 +25,78 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatcher;
 import org.quartz.JobDataMap;
 
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-import static org.axonframework.messaging.Headers.*;
-import static org.junit.Assert.*;
+import static org.axonframework.messaging.Headers.MESSAGE_ID;
+import static org.axonframework.messaging.Headers.MESSAGE_METADATA;
+import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
+import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
+import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
+import static org.axonframework.messaging.Headers.SERIALIZED_MESSAGE_PAYLOAD;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-@RunWith(Parameterized.class)
-public class DirectEventJobDataBinderTest {
+class DirectEventJobDataBinderTest {
 
     private static final String TEST_EVENT_PAYLOAD = "event-payload";
-
-    private QuartzEventScheduler.DirectEventJobDataBinder testSubject;
-
-    private final Serializer serializer;
-    private final Function<Class, String> expectedSerializedClassType;
-    private final Predicate<Object> revisionMatcher;
 
     private final EventMessage<String> testEventMessage;
     private final MetaData testMetaData;
 
-    @SuppressWarnings("unused") // Test name used to give sensible name to parameterized test
-    public DirectEventJobDataBinderTest(String testName,
-                                        Serializer serializer,
-                                        Function<Class, String> expectedSerializedClassType,
-                                        Predicate<Object> revisionMatcher) {
-        this.serializer = spy(serializer);
-        this.expectedSerializedClassType = expectedSerializedClassType;
-        this.revisionMatcher = revisionMatcher;
-
-        EventMessage<String> testEventMessage = GenericEventMessage.asEventMessage(TEST_EVENT_PAYLOAD);
-        testMetaData = MetaData.with("some-key", "some-value");
-        this.testEventMessage = testEventMessage.withMetaData(testMetaData);
-
-        testSubject = new QuartzEventScheduler.DirectEventJobDataBinder(this.serializer);
+    DirectEventJobDataBinderTest() {
+        this.testMetaData = MetaData.with("some-key", "some-value");
+        this.testEventMessage = GenericEventMessage.<String>asEventMessage(TEST_EVENT_PAYLOAD)
+                .withMetaData(testMetaData);
     }
 
-    @Parameterized.Parameters(name = "Using {0}")
-    public static Collection serializerImplementationAndAssertionSpecifics() {
-        return Arrays.asList(new Object[][]{
-                {
-                        "JavaSerializer",
-                        JavaSerializer.builder().build(),
+    static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
+        return Stream.of(
+                Arguments.arguments(
+                        spy(JavaSerializer.builder().build()),
                         (Function<Class, String>) Class::getName,
-                        (Predicate<Object>) Objects::nonNull},
-                {
-                        "XStreamSerializer",
-                        XStreamSerializer.builder().build(),
+                        (Predicate<Object>) Objects::nonNull
+                ),
+                Arguments.arguments(
+                        spy(XStreamSerializer.builder().build()),
                         (Function<Class, String>) clazz -> clazz.getSimpleName().toLowerCase(),
                         (Predicate<Object>) Objects::isNull
-                },
-                {
-                        "JacksonSerializer",
-                        JacksonSerializer.builder().build(),
+                ),
+                Arguments.arguments(
+                        spy(JacksonSerializer.builder().build()),
                         (Function<Class, String>) Class::getName,
                         (Predicate<Object>) Objects::isNull
-                }
-        });
+                )
+        );
     }
 
-    @Test
-    public void testEventMessageToJobData() {
+    @MethodSource("serializerImplementationAndAssertionSpecifics")
+    @ParameterizedTest
+    void testEventMessageToJobData(
+            Serializer serializer,
+            Function<Class, String> expectedSerializedClassType,
+            Predicate<Object> revisionMatcher
+    ) {
+        QuartzEventScheduler.DirectEventJobDataBinder testSubject = new QuartzEventScheduler.DirectEventJobDataBinder(serializer);
+
         JobDataMap result = testSubject.toJobData(testEventMessage);
 
         assertEquals(testEventMessage.getIdentifier(), result.get(MESSAGE_ID));
-        assertEquals(testEventMessage.getTimestamp().toEpochMilli(), result.get(MESSAGE_TIMESTAMP));
+        assertEquals(testEventMessage.getTimestamp().toString(), result.get(MESSAGE_TIMESTAMP));
         String expectedPayloadType = expectedSerializedClassType.apply(testEventMessage.getPayloadType());
         assertEquals(expectedPayloadType, result.get(MESSAGE_TYPE));
         Object resultRevision = result.get(MESSAGE_REVISION);
@@ -115,8 +110,14 @@ public class DirectEventJobDataBinderTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
-    public void testEventMessageFromJobData() {
+    @MethodSource("serializerImplementationAndAssertionSpecifics")
+    @ParameterizedTest
+    void testEventMessageFromJobData(
+            Serializer serializer,
+            Function<Class, String> expectedSerializedClassType,
+            Predicate<Object> revisionMatcher
+    ) {
+        QuartzEventScheduler.DirectEventJobDataBinder testSubject = new QuartzEventScheduler.DirectEventJobDataBinder(serializer);
         JobDataMap testJobDataMap = testSubject.toJobData(testEventMessage);
 
         Object result = testSubject.fromJobData(testJobDataMap);
@@ -126,26 +127,38 @@ public class DirectEventJobDataBinderTest {
         EventMessage<String> resultEventMessage = (EventMessage<String>) result;
 
         assertEquals(testEventMessage.getIdentifier(), resultEventMessage.getIdentifier());
-        assertEquals(testEventMessage.getTimestamp().truncatedTo(ChronoUnit.MILLIS), resultEventMessage.getTimestamp());
+        assertEquals(testEventMessage.getTimestamp(), resultEventMessage.getTimestamp());
         assertEquals(testEventMessage.getPayload(), resultEventMessage.getPayload());
         assertEquals(testEventMessage.getPayloadType(), resultEventMessage.getPayloadType());
         assertEquals(testEventMessage.getMetaData(), resultEventMessage.getMetaData());
 
         verify(serializer, times(2)).deserialize(
-                (SimpleSerializedObject<?>) argThat(this::assertEventMessageSerializedObject)
+                argThat(new MatchEventMessageSerializedObject(expectedSerializedClassType, revisionMatcher))
         );
     }
 
-    private boolean assertEventMessageSerializedObject(SimpleSerializedObject<?> serializedObject) {
-        String expectedSerializedPayloadType = expectedSerializedClassType.apply(TEST_EVENT_PAYLOAD.getClass());
+    private static class MatchEventMessageSerializedObject implements ArgumentMatcher<SimpleSerializedObject<?>> {
+        private final Function<Class, String> expectedSerializedClassType;
+        private final Predicate<Object> revisionMatcher;
 
-        SerializedType type = serializedObject.getType();
-        String serializedTypeName = type.getName();
-        boolean isSerializedMetaData = serializedTypeName.equals(MetaData.class.getName());
+        MatchEventMessageSerializedObject(Function<Class, String> expectedSerializedClassType, Predicate<Object> revisionMatcher) {
+            this.expectedSerializedClassType = expectedSerializedClassType;
+            this.revisionMatcher = revisionMatcher;
+        }
 
-        return serializedObject.getData() != null &&
-                serializedObject.getContentType().equals(byte[].class) &&
-                (serializedTypeName.equals(expectedSerializedPayloadType) || isSerializedMetaData) &&
-                (isSerializedMetaData || revisionMatcher.test(type.getRevision()));
+        @Override
+        public boolean matches(SimpleSerializedObject<?> serializedObject) {
+            String expectedSerializedPayloadType = expectedSerializedClassType.apply(TEST_EVENT_PAYLOAD.getClass());
+
+            SerializedType type = serializedObject.getType();
+            String serializedTypeName = type.getName();
+            boolean isSerializedMetaData = serializedTypeName.equals(MetaData.class.getName());
+
+            return serializedObject.getData() != null &&
+                    serializedObject.getContentType().equals(byte[].class) &&
+                    (serializedTypeName.equals(expectedSerializedPayloadType) || isSerializedMetaData) &&
+                    (isSerializedMetaData || revisionMatcher.test(type.getRevision()));
+        }
     }
+
 }

@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,12 +28,12 @@ import java.lang.reflect.Parameter;
 import java.time.Instant;
 import java.time.temporal.Temporal;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class TimestampParameterResolverFactoryTest {
+class TimestampParameterResolverFactoryTest {
 
     private TimestampParameterResolverFactory testSubject;
 
@@ -43,8 +43,8 @@ public class TimestampParameterResolverFactoryTest {
     private Method nonAnnotatedInstantMethod;
     private Method metaAnnotatedMethod;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         testSubject = new TimestampParameterResolverFactory();
         instantMethod = getClass().getMethod("someInstantMethod", Instant.class);
         metaAnnotatedMethod = getClass().getMethod("someMetaAnnotatedInstantMethod", Instant.class);
@@ -79,7 +79,7 @@ public class TimestampParameterResolverFactoryTest {
     }
 
     @Test
-    public void testResolvesToDateTimeWhenAnnotated() {
+    void testResolvesToDateTimeWhenAnnotated() {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
 
@@ -89,7 +89,7 @@ public class TimestampParameterResolverFactoryTest {
     }
 
     @Test
-    public void testResolvesToReadableInstantWhenAnnotated() {
+    void testResolvesToReadableInstantWhenAnnotated() {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(temporalMethod, temporalMethod.getParameters(), 0);
 
@@ -99,24 +99,24 @@ public class TimestampParameterResolverFactoryTest {
     }
 
     @Test
-    public void testIgnoredWhenNotAnnotated() {
+    void testIgnoredWhenNotAnnotated() {
         ParameterResolver resolver =
                 testSubject.createInstance(nonAnnotatedInstantMethod, nonAnnotatedInstantMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    public void testIgnoredWhenWrongType() {
+    void testIgnoredWhenWrongType() {
         ParameterResolver resolver = testSubject.createInstance(stringMethod, stringMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    public void testResolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
+    void testResolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
         Parameter[] parameters = metaAnnotatedMethod.getParameters();
         ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-        assertTrue("Resolver should be a match for message " + message, resolver.matches(message));
+        assertTrue(resolver.matches(message), "Resolver should be a match for message " + message);
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
     }
 

@@ -21,8 +21,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
@@ -34,14 +34,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for subscription query functionality.
  *
  * @author Milan Savic
  */
-public class SubscriptionQueryTest {
+class SubscriptionQueryTest {
 
     private static final String FOUND = "found";
 
@@ -53,13 +53,13 @@ public class SubscriptionQueryTest {
     private final AnnotationQueryHandlerAdapter<ChatQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             chatQueryHandler);
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         annotationQueryHandlerAdapter.subscribe(queryBus);
     }
 
     @Test
-    public void testEmittingAnUpdate() {
+    void testEmittingAnUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -108,7 +108,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testEmittingNullUpdate() {
+    void testEmittingNullUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -132,7 +132,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testEmittingUpdateInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void testEmittingUpdateInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
         String testQueryPayload = "axonFrameworkCR";
         String testQueryName = "chatMessages";
         String testUpdate = "some-update";
@@ -167,7 +167,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testCompletingSubscriptionQueryExceptionally() {
+    void testCompletingSubscriptionQueryExceptionally() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -197,7 +197,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testCompletingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
+    void testCompletingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -234,7 +234,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testCompletingSubscriptionExceptionallyInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void testCompletingSubscriptionExceptionallyInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
         String testQueryPayload = "axonFrameworkCR";
         String testQueryName = "chatMessages";
         String testUpdate = "some-update";
@@ -270,7 +270,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testCompletingSubscriptionQuery() {
+    void testCompletingSubscriptionQuery() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -297,7 +297,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testCompletingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void testCompletingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
         String testQueryPayload = "axonFrameworkCR";
         String testQueryName = "chatMessages";
         String testUpdate = "some-update";
@@ -333,7 +333,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testOrderingOfOperationOnUpdateHandler() {
+    void testOrderingOfOperationOnUpdateHandler() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -357,7 +357,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscribingQueryHandlerFailing() {
+    void testSubscribingQueryHandlerFailing() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -380,7 +380,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSeveralSubscriptions() {
+    void testSeveralSubscriptions() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -445,8 +445,8 @@ public class SubscriptionQueryTest {
                                    "Update11"), update3);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testDoubleSubscriptionMessage() {
+    @Test
+    void testDoubleSubscriptionMessage() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -456,11 +456,12 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage);
-        queryBus.subscriptionQuery(queryMessage);
+
+        assertThrows(IllegalArgumentException.class, () -> queryBus.subscriptionQuery(queryMessage));
     }
 
     @Test
-    public void testBufferOverflow() {
+    void testBufferOverflow() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
                 "chatMessages",
@@ -484,7 +485,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscriptionDisposal() {
+    void testSubscriptionDisposal() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
                 "chatMessages",
@@ -504,7 +505,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscriptionQueryWithInterceptors() {
+    void testSubscriptionQueryWithInterceptors() {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
         queryBus.registerDispatchInterceptor(
@@ -533,7 +534,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscriptionQueryUpdateWithInterceptors() {
+    void testSubscriptionQueryUpdateWithInterceptors() {
         // given
         Map<String, String> metaData = Collections.singletonMap("key", "value");
         queryUpdateEmitter.registerDispatchInterceptor(
@@ -559,7 +560,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testActiveSubscriptions() {
+    void testActiveSubscriptions() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -584,7 +585,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscriptionQueryResultHandle() throws InterruptedException {
+    void testSubscriptionQueryResultHandle() throws InterruptedException {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -612,7 +613,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnInitialResult()
+    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnInitialResult()
             throws InterruptedException {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -642,7 +643,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdate() {
+    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -666,11 +667,11 @@ public class SubscriptionQueryTest {
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
         assertEquals(Collections.singletonList("Update1"), updates);
 
-        assertTrue("Expected subscriptions to be cancelled", queryUpdateEmitter.activeSubscriptions().isEmpty());
+        assertTrue(queryUpdateEmitter.activeSubscriptions().isEmpty(), "Expected subscriptions to be cancelled");
     }
 
     @Test
-    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdate() {
+    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -697,11 +698,11 @@ public class SubscriptionQueryTest {
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
         assertEquals(Collections.singletonList("Update1"), updates);
 
-        assertTrue("Expected subscriptions to be cancelled", queryUpdateEmitter.activeSubscriptions().isEmpty());
+        assertTrue(queryUpdateEmitter.activeSubscriptions().isEmpty(), "Expected subscriptions to be cancelled");
     }
 
     @Test
-    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnInitialResult() {
+    void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnInitialResult() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -724,7 +725,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnUpdate() {
+    void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnUpdate() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonFrameworkCR",
@@ -746,7 +747,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testQueryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
+    void testQueryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
         QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
 
@@ -756,7 +757,7 @@ public class SubscriptionQueryTest {
     }
 
     @Test
-    public void testQueryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
+    void testQueryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
         QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
         String result = queryGateway.subscriptionQuery(new SomeQuery(FOUND), String.class, String.class)
                                     .initialResult()

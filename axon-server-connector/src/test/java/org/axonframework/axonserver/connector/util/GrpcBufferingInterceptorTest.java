@@ -20,23 +20,23 @@ import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class GrpcBufferingInterceptorTest {
+class GrpcBufferingInterceptorTest {
 
     private CallOptions mockCallOptions;
     private Channel mockChannel;
     private ClientCall.Listener<Object> mockResponseListener;
     private ClientCall<Object, Object> mockCall;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mockCallOptions = CallOptions.DEFAULT;
         mockChannel = mock(Channel.class);
         mockResponseListener = mock(ClientCall.Listener.class);
@@ -46,7 +46,7 @@ public class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    public void testInterceptClientCall_BiDiStreaming() {
+    void testInterceptClientCall_BiDiStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.BIDI_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -60,7 +60,7 @@ public class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    public void testInterceptClientCall_ServerStreaming() {
+    void testInterceptClientCall_ServerStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.SERVER_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -74,7 +74,7 @@ public class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    public void testInterceptClientCall_ClientStreaming() {
+    void testInterceptClientCall_ClientStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.CLIENT_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -88,7 +88,7 @@ public class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    public void testInterceptClientCall_NoStreaming() {
+    void testInterceptClientCall_NoStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.UNARY);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -102,7 +102,7 @@ public class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    public void testInterceptClientCall_ZeroBuffer() {
+    void testInterceptClientCall_ZeroBuffer() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.BIDI_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(0);

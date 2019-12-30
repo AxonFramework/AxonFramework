@@ -29,7 +29,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.integrationtests.utils.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -38,16 +38,16 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class CommandHandlingTest {
+class CommandHandlingTest {
 
     private EventSourcingRepository<StubAggregate> repository;
     private String aggregateIdentifier;
     private StubEventStore stubEventStore;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         stubEventStore = StubEventStore.builder().build();
         repository = EventSourcingRepository.builder(StubAggregate.class)
                 .eventStore(stubEventStore)
@@ -56,7 +56,7 @@ public class CommandHandlingTest {
     }
 
     @Test
-    public void testCommandHandlerLoadsSameAggregateTwice() throws Exception {
+    void testCommandHandlerLoadsSameAggregateTwice() throws Exception {
         DefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new StubAggregate(aggregateIdentifier)).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();

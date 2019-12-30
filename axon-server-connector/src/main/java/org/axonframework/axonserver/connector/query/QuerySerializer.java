@@ -24,6 +24,8 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.*;
+import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
+import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
@@ -96,7 +98,7 @@ public class QuerySerializer {
                            .setQuery(queryMessage.getQueryName())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
-                           .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType()))
+                           .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType().forSerialization()))
                            .setPayload(payloadSerializer.apply(queryMessage))
                            .addProcessingInstructions(
                                    ProcessingInstruction.newBuilder()
@@ -164,7 +166,7 @@ public class QuerySerializer {
      * @param <R>           a generic specifying the type of the {@link QueryResponseMessage} to convert to
      * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}
      */
-    public <R> QueryResponseMessage<R> deserializeResponse(QueryResponse queryResponse) {
-        return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
+    public <R> QueryResponseMessage<R> deserializeResponse(QueryResponse queryResponse, ResponseType<R> expectedResponseType) {
+        return new ConvertingResponseMessage<>(expectedResponseType, new GrpcBackedResponseMessage<>(queryResponse, messageSerializer));
     }
 }

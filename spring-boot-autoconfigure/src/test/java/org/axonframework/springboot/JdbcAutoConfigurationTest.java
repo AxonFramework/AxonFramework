@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,15 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
@@ -38,10 +42,10 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -53,12 +57,13 @@ import static org.mockito.Mockito.when;
  * @author Milan Savic
  */
 @ExtendWith(SpringExtension.class)
+@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = JdbcAutoConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {
         JpaRepositoriesAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
-        AxonServerAutoConfiguration.class})
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+        AxonServerAutoConfiguration.class
+})
 public class JdbcAutoConfigurationTest {
 
     @Autowired
@@ -69,10 +74,17 @@ public class JdbcAutoConfigurationTest {
         assertNotNull(applicationContext);
 
         assertTrue(applicationContext.getBean(EventStorageEngine.class) instanceof JdbcEventStorageEngine);
+        assertTrue(applicationContext.getBean(PersistenceExceptionResolver.class) instanceof JdbcSQLErrorCodesResolver);
+        assertTrue(
+                applicationContext.getBean(ConnectionProvider.class) instanceof UnitOfWorkAwareConnectionProviderWrapper
+        );
         assertTrue(applicationContext.getBean(TokenStore.class) instanceof JdbcTokenStore);
         assertTrue(applicationContext.getBean(SagaStore.class) instanceof JdbcSagaStore);
-        assertEquals(applicationContext.getBean(TokenStore.class),
-                     applicationContext.getBean(EventProcessingConfiguration.class).tokenStore("test"));
+
+        assertEquals(
+                applicationContext.getBean(TokenStore.class),
+                applicationContext.getBean(EventProcessingConfiguration.class).tokenStore("test")
+        );
     }
 
     @Configuration

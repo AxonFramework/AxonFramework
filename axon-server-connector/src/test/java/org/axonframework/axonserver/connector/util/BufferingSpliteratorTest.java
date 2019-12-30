@@ -16,7 +16,8 @@
 
 package org.axonframework.axonserver.connector.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,26 +27,28 @@ import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Author: marc
  */
-public class BufferingSpliteratorTest {
+class BufferingSpliteratorTest {
 
     private static final Consumer<Object> IGNORE = s -> {};
 
-    @Test(timeout = 1000)
-    public void testTimeout() {
+    @Test
+    @Timeout(value = 1)
+    void testTimeout() {
         BufferingSpliterator<String> bufferingSpliterator = new BufferingSpliterator<>(Instant.now().plusMillis(250));
         long t1 = System.currentTimeMillis();
         assertFalse(bufferingSpliterator.tryAdvance(IGNORE));
         long t2 = System.currentTimeMillis();
-        assertTrue("Expected at least 150 millis to have elapsed", t2 - t1 > 150);
+        assertTrue(t2 - t1 > 150, "Expected at least 150 millis to have elapsed");
     }
 
-    @Test(timeout = 10000)
-    public void testCompleteWithNull() {
+    @Test
+    @Timeout(value = 10)
+    void testCompleteWithNull() {
         BufferingSpliterator<String> bufferingSpliterator = new BufferingSpliterator<>(Instant.now().plusSeconds(10));
         Thread queueListener = new Thread(() -> bufferingSpliterator.tryAdvance(IGNORE));
         queueListener.start();
@@ -54,15 +57,10 @@ public class BufferingSpliteratorTest {
     }
 
     @Test
-    public void testCompleteWithValues() {
+    void testCompleteWithValues() {
         BufferingSpliterator<String> bufferingSpliterator = new BufferingSpliterator<>(Instant.now().plusSeconds(1));
         List<String> items = new CopyOnWriteArrayList<>();
-        Thread queueListener = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                StreamSupport.stream(bufferingSpliterator, false).forEach(items::add);
-            }
-        });
+        Thread queueListener = new Thread(() -> StreamSupport.stream(bufferingSpliterator, false).forEach(items::add));
         queueListener.start();
         bufferingSpliterator.put("One");
         bufferingSpliterator.put("Two");

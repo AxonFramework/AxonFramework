@@ -23,14 +23,14 @@ import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class GrpcBackedResponseMessageTest {
+class GrpcBackedResponseMessageTest {
 
     private static final TestQueryResponse TEST_QUERY_RESPONSE = new TestQueryResponse("aggregateId", 42);
     private static final String REQUEST_MESSAGE_ID = "request-message-id";
@@ -40,7 +40,7 @@ public class GrpcBackedResponseMessageTest {
             new QuerySerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    public void testGetIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryResponseMessage() {
+    void testGetIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryResponseMessage() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(TEST_QUERY_RESPONSE);
         QueryResponse testQueryResponse =
@@ -52,7 +52,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testGetMetaDataReturnsTheSameMapAsWasInsertedInTheQueryResponseMessage() {
+    void testGetMetaDataReturnsTheSameMapAsWasInsertedInTheQueryResponseMessage() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.<TestQueryResponse>asResponseMessage(TEST_QUERY_RESPONSE)
@@ -66,7 +66,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryResponseMessage() {
+    void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryResponseMessage() {
         TestQueryResponse expectedQuery = TEST_QUERY_RESPONSE;
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(expectedQuery);
@@ -79,7 +79,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testGetPayloadReturnsNullIfTheQueryResponseMessageDidNotContainAnyPayload() {
+    void testGetPayloadReturnsNullIfTheQueryResponseMessageDidNotContainAnyPayload() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(
                         TestQueryResponse.class, new IllegalArgumentException("some-exception")
@@ -93,7 +93,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testGetPayloadTypeReturnsTheTypeOfTheInsertedQueryResponseMessage() {
+    void testGetPayloadTypeReturnsTheTypeOfTheInsertedQueryResponseMessage() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(TEST_QUERY_RESPONSE);
         QueryResponse testQueryResponse =
@@ -105,7 +105,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testGetPayloadTypeReturnsNullIfTheQueryResponseMessageDidNotContainAnyPayload() {
+    void testGetPayloadTypeReturnsNullIfTheQueryResponseMessageDidNotContainAnyPayload() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(
                         TestQueryResponse.class, new IllegalArgumentException("some-exception")
@@ -119,7 +119,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testIsExceptionalReturnsTrueForAnExceptionalQueryResponseMessage() {
+    void testIsExceptionalReturnsTrueForAnExceptionalQueryResponseMessage() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(
                         TestQueryResponse.class, new IllegalArgumentException("some-exception")
@@ -133,7 +133,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testOptionalExceptionResultReturnsTheExceptionAsAsInsertedThroughTheQueryResponseMessage() {
+    void testOptionalExceptionResultReturnsTheExceptionAsAsInsertedThroughTheQueryResponseMessage() {
         IllegalArgumentException expectedException = new IllegalArgumentException("some-exception");
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(TestQueryResponse.class, expectedException);
@@ -148,7 +148,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testWithMetaDataCompletelyReplacesTheInitialMetaDataMap() {
+    void testWithMetaDataCompletelyReplacesTheInitialMetaDataMap() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.<TestQueryResponse>asResponseMessage(TEST_QUERY_RESPONSE)
@@ -167,7 +167,7 @@ public class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    public void testAndMetaDataAppendsToTheExistingMetaData() {
+    void testAndMetaDataAppendsToTheExistingMetaData() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.<TestQueryResponse>asResponseMessage(TEST_QUERY_RESPONSE)

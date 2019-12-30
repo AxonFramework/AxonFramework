@@ -18,20 +18,20 @@ package org.axonframework.messaging;
 
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests {@link GenericResultMessage}.
  *
  * @author Milan Savic
  */
-public class GenericResultMessageTest {
+class GenericResultMessageTest {
 
     @Test
-    public void testExceptionalResult() {
+    void testExceptionalResult() {
         Throwable t = new Throwable("oops");
         ResultMessage<?> resultMessage = asResultMessage(t);
         try {
@@ -42,7 +42,7 @@ public class GenericResultMessageTest {
     }
 
     @Test
-    public void testExceptionSerialization() {
+    void testExceptionSerialization() {
         Throwable expected = new Throwable("oops");
         ResultMessage<?> resultMessage = asResultMessage(expected);
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();

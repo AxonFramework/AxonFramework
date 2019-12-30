@@ -20,8 +20,8 @@ import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InOrder;
 
@@ -30,14 +30,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  * @author Nakul Mishra
  */
-public class MultiParameterResolverFactoryTest {
+class MultiParameterResolverFactoryTest {
 
     private ParameterResolverFactory mockFactory1;
     private ParameterResolverFactory mockFactory2;
@@ -47,8 +47,8 @@ public class MultiParameterResolverFactoryTest {
 
     private MultiParameterResolverFactory testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockFactory1 = mock(ParameterResolverFactory.class);
         mockFactory2 = mock(ParameterResolverFactory.class);
 
@@ -66,7 +66,7 @@ public class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    public void testResolversQueriedInOrderProvided() throws Exception {
+    void testResolversQueriedInOrderProvided() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
         assertFalse(factory.matches(null));
@@ -85,7 +85,7 @@ public class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    public void testFirstMatchingResolverMayReturnValue() throws Exception {
+    void testFirstMatchingResolverMayReturnValue() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
@@ -103,7 +103,7 @@ public class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    public void testNestedParameterResolversAreOrdered() {
+    void testNestedParameterResolversAreOrdered() {
         final LowPrioParameterResolverFactory lowPrio = new LowPrioParameterResolverFactory();
         final HighPrioParameterResolverFactory highPrio = new HighPrioParameterResolverFactory();
         testSubject = MultiParameterResolverFactory.ordered(mockFactory1,

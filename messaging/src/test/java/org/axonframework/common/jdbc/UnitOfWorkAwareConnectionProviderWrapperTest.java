@@ -22,23 +22,23 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ExecutionResult;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class UnitOfWorkAwareConnectionProviderWrapperTest {
+class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     private ConnectionProvider mockConnectionProvider;
     private Connection mockConnection;
     private UnitOfWorkAwareConnectionProviderWrapper testSubject;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mockConnectionProvider = mock(ConnectionProvider.class);
         mockConnection = mock(Connection.class);
         when(mockConnectionProvider.getConnection()).thenReturn(mockConnection);
@@ -46,21 +46,21 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
         testSubject = new UnitOfWorkAwareConnectionProviderWrapper(mockConnectionProvider);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
     }
 
     @Test
-    public void testConnectionReturnedImmediatelyWhenNoActiveUnitOfWork() throws SQLException {
+    void testConnectionReturnedImmediatelyWhenNoActiveUnitOfWork() throws SQLException {
         Connection actual = testSubject.getConnection();
         assertSame(actual, mockConnection);
     }
 
     @Test
-    public void testConnectionIsWrappedWhenUnitOfWorkIsActive() throws SQLException {
+    void testConnectionIsWrappedWhenUnitOfWorkIsActive() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         Connection actual = testSubject.getConnection();
         assertNotSame(actual, mockConnection);
@@ -75,7 +75,7 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    public void testWrappedConnectionBlocksCommitCallsUntilUnitOfWorkCommit() throws SQLException {
+    void testWrappedConnectionBlocksCommitCallsUntilUnitOfWorkCommit() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
@@ -95,7 +95,7 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    public void testWrappedConnectionRollsBackCallsWhenUnitOfWorkRollback() throws SQLException {
+    void testWrappedConnectionRollsBackCallsWhenUnitOfWorkRollback() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
@@ -116,7 +116,7 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    public void testOriginalExceptionThrewWhenRollbackFailed() throws SQLException {
+    void testOriginalExceptionThrewWhenRollbackFailed() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = new DefaultUnitOfWork<Message<?>>(null) {
             @Override
             public ExecutionResult getExecutionResult() {
@@ -138,7 +138,7 @@ public class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    public void testInnerUnitOfWorkCommitDoesNotCloseConnection() throws SQLException {
+    void testInnerUnitOfWorkCommitDoesNotCloseConnection() throws SQLException {
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 

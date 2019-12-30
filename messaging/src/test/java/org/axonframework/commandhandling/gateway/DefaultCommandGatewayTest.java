@@ -22,8 +22,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -39,14 +39,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  * @author Nakul Mishra
  */
-public class DefaultCommandGatewayTest {
+class DefaultCommandGatewayTest {
 
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
@@ -54,8 +54,8 @@ public class DefaultCommandGatewayTest {
     private MessageDispatchInterceptor mockCommandMessageTransformer;
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         mockCommandMessageTransformer = mock(MessageDispatchInterceptor.class);
@@ -70,7 +70,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendWithCallbackCommandIsRetried() {
+    void testSendWithCallbackCommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
                     .onResult((CommandMessage) invocation.getArguments()[0],
@@ -98,7 +98,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendWithoutCallbackCommandIsRetried() {
+    void testSendWithoutCallbackCommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
                     .onResult((CommandMessage) invocation.getArguments()[0],
@@ -126,7 +126,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendWithoutCallback() throws ExecutionException, InterruptedException {
+    void testSendWithoutCallback() throws ExecutionException, InterruptedException {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
                     .onResult((CommandMessage) invocation.getArguments()[0], asCommandResultMessage("returnValue"));
@@ -141,7 +141,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendAndWaitCommandIsRetried() {
+    void testSendAndWaitCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
@@ -171,7 +171,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testSendAndWaitWithTimeoutCommandIsRetried() {
+    void testSendAndWaitWithTimeoutCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
@@ -201,20 +201,20 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSendAndWaitNullOnInterrupt() {
+    void testSendAndWaitNullOnInterrupt() {
         doAnswer(invocation -> {
             Thread.currentThread().interrupt();
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
         assertNull(testSubject.sendAndWait("Hello"));
-        assertTrue("Interrupt flag should be set on thread", Thread.interrupted());
+        assertTrue(Thread.interrupted(), "Interrupt flag should be set on thread");
         verify(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSendAndWaitWithTimeoutNullOnInterrupt() {
+    void testSendAndWaitWithTimeoutNullOnInterrupt() {
         doAnswer(invocation -> {
             Thread.currentThread().interrupt();
             return null;
@@ -227,13 +227,13 @@ public class DefaultCommandGatewayTest {
         } catch (CommandExecutionException e) {
             assertTrue(e.getCause() instanceof InterruptedException);
         }
-        assertTrue("Interrupt flag should be set on thread", Thread.interrupted());
+        assertTrue(Thread.interrupted(), "Interrupt flag should be set on thread");
         verify(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSendAndWaitWithTimeoutNullOnTimeout() {
+    void testSendAndWaitWithTimeoutNullOnTimeout() {
         try {
             assertNull(testSubject.sendAndWait("Hello", 10, TimeUnit.MILLISECONDS));
             fail("Expected interrupted exception");
@@ -245,7 +245,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testCorrelationDataIsAttachedToCommandAsObject() {
+    void testCorrelationDataIsAttachedToCommandAsObject() {
         UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
@@ -258,7 +258,7 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testCorrelationDataIsAttachedToCommandAsMessage() {
+    void testCorrelationDataIsAttachedToCommandAsMessage() {
         final Map<String, String> data = new HashMap<>();
         data.put("correlationId", "test");
         data.put("header", "someValue");
@@ -273,7 +273,7 @@ public class DefaultCommandGatewayTest {
     }
 
     @Test
-    public void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
+    void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         doAnswer(i -> {
             CommandCallback<String,String> callback = i.getArgument(1);
             callback.onResult(i.getArgument(0), new GenericCommandResultMessage<String>("result") {

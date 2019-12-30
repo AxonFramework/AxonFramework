@@ -20,13 +20,13 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MessageIdentifierParameterResolverFactoryTest {
+class MessageIdentifierParameterResolverFactoryTest {
 
     private MessageIdentifierParameterResolverFactory testSubject;
 
@@ -34,8 +34,8 @@ public class MessageIdentifierParameterResolverFactoryTest {
     private Method nonAnnotatedMethod;
     private Method integerMethod;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         testSubject = new MessageIdentifierParameterResolverFactory();
 
         messageIdentifierMethod = getClass().getMethod("someMessageIdentifierMethod", String.class);
@@ -43,23 +43,23 @@ public class MessageIdentifierParameterResolverFactoryTest {
         integerMethod = getClass().getMethod("someIntegerMethod", Integer.class);
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public void someMessageIdentifierMethod(@MessageIdentifier String messageIdentifier) {
         //Used in setUp()
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public void someNonAnnotatedMethod(String messageIdentifier) {
         //Used in setUp()
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public void someIntegerMethod(@MessageIdentifier Integer messageIdentifier) {
         //Used in setUp()
     }
 
     @Test
-    public void testResolvesToMessageIdentifierWhenAnnotatedForEventMessage() {
+    void testResolvesToMessageIdentifierWhenAnnotatedForEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
@@ -68,7 +68,7 @@ public class MessageIdentifierParameterResolverFactoryTest {
     }
 
     @Test
-    public void testResolvesToMessageIdentifierWhenAnnotatedForCommandMessage() {
+    void testResolvesToMessageIdentifierWhenAnnotatedForCommandMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
@@ -77,14 +77,14 @@ public class MessageIdentifierParameterResolverFactoryTest {
     }
 
     @Test
-    public void testIgnoredWhenNotAnnotated() {
+    void testIgnoredWhenNotAnnotated() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    public void testIgnoredWhenWrongType() {
+    void testIgnoredWhenWrongType() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
         assertNull(resolver);

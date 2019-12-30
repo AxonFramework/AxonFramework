@@ -10,7 +10,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.command.DummyMessagePlatformServer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-public class AxonServerEventStoreClientTest {
+class AxonServerEventStoreClientTest {
 
     private static final String BOUNDED_CONTEXT = "not-important";
 
@@ -32,8 +32,8 @@ public class AxonServerEventStoreClientTest {
 
     private AxonServerEventStoreClient testSubject;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);
         dummyMessagePlatformServer.start();
 
@@ -52,14 +52,14 @@ public class AxonServerEventStoreClientTest {
         testSubject = new AxonServerEventStoreClient(configuration, axonServerConnectionManager);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         dummyMessagePlatformServer.stop();
         axonServerConnectionManager.shutdown();
     }
 
     @Test
-    public void testListAggregateEvents() {
+    void testListAggregateEvents() {
         GetAggregateEventsRequest testRequest = GetAggregateEventsRequest.getDefaultInstance();
 
         testSubject.listAggregateEvents(testRequest);
@@ -68,7 +68,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testListAggregateEventsWithContext() {
+    void testListAggregateEventsWithContext() {
         GetAggregateEventsRequest testRequest = GetAggregateEventsRequest.getDefaultInstance();
 
         testSubject.listAggregateEvents(BOUNDED_CONTEXT, testRequest);
@@ -77,7 +77,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testListEvents() {
+    void testListEvents() {
         StreamObserver<EventWithToken> testStreamObserver = new TestStreamObserver<>();
 
         testSubject.listEvents(testStreamObserver);
@@ -86,7 +86,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testListEventsWithContext() {
+    void testListEventsWithContext() {
         StreamObserver<EventWithToken> testStreamObserver = new TestStreamObserver<>();
 
         testSubject.listEvents(BOUNDED_CONTEXT, testStreamObserver);
@@ -95,7 +95,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testAppendSnapshot() {
+    void testAppendSnapshot() {
         Event testSnapshotEvent = Event.getDefaultInstance();
 
         testSubject.appendSnapshot(testSnapshotEvent);
@@ -104,7 +104,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testAppendSnapshotWithContext() {
+    void testAppendSnapshotWithContext() {
         Event testSnapshotEvent = Event.getDefaultInstance();
 
         testSubject.appendSnapshot(BOUNDED_CONTEXT, testSnapshotEvent);
@@ -113,35 +113,35 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testGetLastToken() {
+    void testGetLastToken() {
         testSubject.getLastToken();
 
         verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
     }
 
     @Test
-    public void testGetLastTokenWithContext() {
+    void testGetLastTokenWithContext() {
         testSubject.getLastToken(BOUNDED_CONTEXT);
 
         verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
     }
 
     @Test
-    public void testGetFirstToken() {
+    void testGetFirstToken() {
         testSubject.getFirstToken();
 
         verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
     }
 
     @Test
-    public void testGetFirstTokenWithContext() {
+    void testGetFirstTokenWithContext() {
         testSubject.getFirstToken(BOUNDED_CONTEXT);
 
         verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
     }
 
     @Test
-    public void testGetTokenAt() {
+    void testGetTokenAt() {
         Instant testInstant = Instant.now();
 
         testSubject.getTokenAt(testInstant);
@@ -150,7 +150,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testGetTokenAtWithContext() {
+    void testGetTokenAtWithContext() {
         Instant testInstant = Instant.now();
 
         testSubject.getTokenAt(BOUNDED_CONTEXT, testInstant);
@@ -159,21 +159,21 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testCreateAppendEventConnection() {
+    void testCreateAppendEventConnection() {
         testSubject.createAppendEventConnection();
 
         verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
     }
 
     @Test
-    public void testCreateAppendEventConnectionWithContext() {
+    void testCreateAppendEventConnectionWithContext() {
         testSubject.createAppendEventConnection(BOUNDED_CONTEXT);
 
         verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
     }
 
     @Test
-    public void testQuery() {
+    void testQuery() {
         StreamObserver<QueryEventsResponse> testSreamObserver = new TestStreamObserver<>();
 
         testSubject.query(testSreamObserver);
@@ -182,7 +182,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testQueryWithContext() {
+    void testQueryWithContext() {
         StreamObserver<QueryEventsResponse> testSreamObserver = new TestStreamObserver<>();
 
         testSubject.query(BOUNDED_CONTEXT, testSreamObserver);
@@ -191,7 +191,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testLastSequenceNumberFor() {
+    void testLastSequenceNumberFor() {
         String testAggregateId = "some-id";
 
         testSubject.lastSequenceNumberFor(testAggregateId);
@@ -200,7 +200,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testLastSequenceNumberForWithContext() {
+    void testLastSequenceNumberForWithContext() {
         String testAggregateId = "some-id";
 
         testSubject.lastSequenceNumberFor(BOUNDED_CONTEXT, testAggregateId);
@@ -209,7 +209,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testListAggregateSnapshots() {
+    void testListAggregateSnapshots() {
         GetAggregateSnapshotsRequest testRequest = GetAggregateSnapshotsRequest.getDefaultInstance();
 
         testSubject.listAggregateSnapshots(testRequest);
@@ -218,7 +218,7 @@ public class AxonServerEventStoreClientTest {
     }
 
     @Test
-    public void testListAggregateSnapshotsWithContext() {
+    void testListAggregateSnapshotsWithContext() {
         GetAggregateSnapshotsRequest testRequest = GetAggregateSnapshotsRequest.getDefaultInstance();
 
         testSubject.listAggregateSnapshots(BOUNDED_CONTEXT, testRequest);

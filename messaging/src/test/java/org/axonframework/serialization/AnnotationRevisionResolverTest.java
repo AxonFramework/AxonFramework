@@ -16,31 +16,32 @@
 
 package org.axonframework.serialization;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Allard Buijze
  */
-public class AnnotationRevisionResolverTest {
+class AnnotationRevisionResolverTest {
 
     private AnnotationRevisionResolver testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AnnotationRevisionResolver();
     }
 
     @Test
-    public void testRevisionOfAnnotatedClass() {
+    void testRevisionOfAnnotatedClass() {
         assertEquals("2.3-TEST", testSubject.revisionOf(WithAnnotation.class));
     }
 
     @Test
-    public void testRevisionOfNonAnnotatedClass() {
-        assertEquals(null, testSubject.revisionOf(WithoutAnnotation.class));
+    void testRevisionOfNonAnnotatedClass() {
+        assertNull(testSubject.revisionOf(WithoutAnnotation.class));
     }
 
     @Revision("2.3-TEST")
