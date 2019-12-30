@@ -27,11 +27,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
+ * Test correct operations of the {@link GenericMessage} class.
+ *
  * @author Rene de Waele
  */
 class GenericMessageTest {
@@ -71,5 +72,24 @@ class GenericMessageTest {
 
         assertEquals("\"payload\"", serializedPayload.getData());
         assertEquals("{\"key\":\"value\",\"foo\":\"bar\"}", serializedMetaData.getData());
+    }
+
+    @Test
+    void testAsMessageReturnsProvidedMessageAsIs() {
+        GenericMessage<String> testMessage = new GenericMessage<>("payload");
+
+        Message<?> result = GenericMessage.asMessage(testMessage);
+
+        assertEquals(testMessage, result);
+    }
+
+    @Test
+    void testAsMessageWrapsProvidedObjectsInMessage() {
+        String testPayload = "payload";
+
+        Message<?> result = GenericMessage.asMessage(testPayload);
+
+        assertNotEquals(testPayload, result);
+        assertEquals(testPayload, result.getPayload());
     }
 }
