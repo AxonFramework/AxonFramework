@@ -41,6 +41,22 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     private transient volatile SerializedObjectHolder serializedObjectHolder;
 
     /**
+     * Returns a Message representing the given {@code payloadOrMessage}, either by wrapping it or by returning it
+     * as-is. If the given {@code payloadOrMessage} already implements {@link Message}, it is returned as-is, otherwise
+     * a {@link Message} is returned with the parameter as its payload.
+     *
+     * @param payloadOrMessage The payload to wrap or message to return
+     * @return a Message with the given payload or the message
+     */
+    public static Message<?> asMessage(Object payloadOrMessage) {
+        if (payloadOrMessage instanceof Message) {
+            return (Message<?>) payloadOrMessage;
+        } else {
+            return new GenericMessage<>(payloadOrMessage);
+        }
+    }
+
+    /**
      * Constructs a Message for the given {@code payload} using the correlation data of the current Unit of Work, if
      * present.
      *
