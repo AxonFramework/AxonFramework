@@ -21,19 +21,19 @@ import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MessageTimerMonitorTest {
+class MessageTimerMonitorTest {
 
     private static final String PROCESSOR_NAME = "processorName";
 
     @Test
-    public void testSuccessMessage() {
+    void testSuccessMessage() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
         MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry, testClock);
@@ -53,7 +53,7 @@ public class MessageTimerMonitorTest {
     }
 
     @Test
-    public void testFailureMessage() {
+    void testFailureMessage() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
         MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry, testClock);
@@ -73,7 +73,7 @@ public class MessageTimerMonitorTest {
     }
 
     @Test
-    public void testIgnoredMessage() {
+    void testIgnoredMessage() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
         MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry, testClock);

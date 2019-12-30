@@ -38,14 +38,14 @@ import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
@@ -62,13 +62,13 @@ import javax.sql.DataSource;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
 @Transactional
@@ -84,7 +84,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
     private TransactionManager transactionManager = spy(new NoOpTransactionManager());
 
-    @Before
+    @BeforeEach
     public void setUp() throws SQLException {
         entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);

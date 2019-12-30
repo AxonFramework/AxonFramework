@@ -16,17 +16,17 @@
 
 package org.axonframework.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class IdentifierValidatorTest {
+class IdentifierValidatorTest {
 
     private final IdentifierValidator validator = IdentifierValidator.getInstance();
 
     @Test
-    public void boxedPrimitivesAreValidIdentifiers() {
+    void boxedPrimitivesAreValidIdentifiers() {
         assertTrue(validator.isValidIdentifier(Long.class));
         assertTrue(validator.isValidIdentifier(Integer.class));
         assertTrue(validator.isValidIdentifier(Double.class));
@@ -34,17 +34,17 @@ public class IdentifierValidatorTest {
     }
 
     @Test
-    public void stringIsValidIdentifier() {
+    void stringIsValidIdentifier() {
         assertTrue(validator.isValidIdentifier(CharSequence.class));
     }
 
     @Test
-    public void typeWithoutToStringIsNotAccepted() {
+    void typeWithoutToStringIsNotAccepted() {
         assertFalse(validator.isValidIdentifier(CustomType.class));
     }
 
     @Test
-    public void typeWithOverriddenToString() {
+    void typeWithOverriddenToString() {
         assertTrue(validator.isValidIdentifier(CustomType2.class));
     }
 

@@ -16,20 +16,21 @@
 
 package org.axonframework.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Allard Buijze
  */
-public class AxonThreadFactoryTest {
+class AxonThreadFactoryTest {
 
     private AxonThreadFactory testSubject;
 
     @Test
-    public void testCreateWithThreadGroupByName() {
+    void testCreateWithThreadGroupByName() {
         testSubject = new AxonThreadFactory("test");
         Thread t1 = testSubject.newThread(new NoOpRunnable());
         Thread t2 = testSubject.newThread(new NoOpRunnable());
@@ -37,11 +38,11 @@ public class AxonThreadFactoryTest {
         assertEquals("test", t1.getThreadGroup().getName());
         assertEquals("test-0", t1.getName());
         assertEquals("test-1", t2.getName());
-        assertSame("Expected only a single ThreadGroup", t1.getThreadGroup(), t2.getThreadGroup());
+        assertSame(t1.getThreadGroup(), t2.getThreadGroup(), "Expected only a single ThreadGroup");
     }
 
     @Test
-    public void testCreateWithThreadGroupByThreadGroupInstance() {
+    void testCreateWithThreadGroupByThreadGroupInstance() {
         ThreadGroup threadGroup = new ThreadGroup("test");
         testSubject = new AxonThreadFactory(threadGroup);
         Thread t1 = testSubject.newThread(new NoOpRunnable());
@@ -49,12 +50,12 @@ public class AxonThreadFactoryTest {
 
         assertEquals("test", t1.getThreadGroup().getName());
         assertEquals("test-0", t1.getName());
-        assertSame("Expected only a single ThreadGroup", threadGroup, t1.getThreadGroup());
-        assertSame("Expected only a single ThreadGroup", threadGroup, t2.getThreadGroup());
+        assertSame(threadGroup, t1.getThreadGroup(), "Expected only a single ThreadGroup");
+        assertSame(threadGroup, t2.getThreadGroup(), "Expected only a single ThreadGroup");
     }
 
     @Test
-    public void testCreateWithPriority() {
+    void testCreateWithPriority() {
         ThreadGroup threadGroup = new ThreadGroup("test");
         testSubject = new AxonThreadFactory(Thread.MAX_PRIORITY, threadGroup);
         Thread t1 = testSubject.newThread(new NoOpRunnable());
@@ -62,18 +63,20 @@ public class AxonThreadFactoryTest {
 
         assertEquals("test", t1.getThreadGroup().getName());
         assertEquals(Thread.MAX_PRIORITY, t1.getPriority());
-        assertSame("Expected only a single ThreadGroup", threadGroup, t1.getThreadGroup());
-        assertSame("Expected only a single ThreadGroup", threadGroup, t2.getThreadGroup());
+        assertSame(threadGroup, t1.getThreadGroup(), "Expected only a single ThreadGroup");
+        assertSame(threadGroup, t2.getThreadGroup(), "Expected only a single ThreadGroup");
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testRejectsTooHighPriority() {
-        new AxonThreadFactory(Thread.MAX_PRIORITY + 1, new ThreadGroup(""));
+    @Test
+    void testRejectsTooHighPriority() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new AxonThreadFactory(Thread.MAX_PRIORITY + 1, new ThreadGroup("")));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testRejectsTooLowPriority() {
-        new AxonThreadFactory(Thread.MIN_PRIORITY - 1, new ThreadGroup(""));
+    @Test
+    void testRejectsTooLowPriority() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new AxonThreadFactory(Thread.MIN_PRIORITY - 1, new ThreadGroup("")));
     }
 
     private static class NoOpRunnable implements Runnable {

@@ -19,37 +19,36 @@ package org.axonframework.test.utils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
  */
-public class RecordingCommandBusTest {
+class RecordingCommandBusTest {
 
     private RecordingCommandBus testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new RecordingCommandBus();
     }
 
     @Test
-    public void testPublishCommand() {
+    void testPublishCommand() {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
                              (commandMessage, commandResultMessage) -> {
                                  if (commandResultMessage.isExceptional()) {
                                      fail("Didn't expect handling to fail");
                                  }
-                                 assertNull("Expected default callback behavior to invoke onResult(null)",
-                                            commandResultMessage.getPayload());
+                                 assertNull(commandResultMessage.getPayload(),
+                                         "Expected default callback behavior to invoke onResult(null)");
                              });
-        //noinspection AssertEqualsBetweenInconvertibleTypes
         List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());
         assertEquals("First", actual.get(0).getPayload());
@@ -57,7 +56,7 @@ public class RecordingCommandBusTest {
     }
 
     @Test
-    public void testPublishCommandWithCallbackBehavior() {
+    void testPublishCommandWithCallbackBehavior() {
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
@@ -67,7 +66,6 @@ public class RecordingCommandBusTest {
                                  }
                                  assertEquals("callbackResult", commandResultMessage.getPayload());
                              });
-        //noinspection AssertEqualsBetweenInconvertibleTypes
         List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());
         assertEquals("First", actual.get(0).getPayload());
@@ -75,7 +73,7 @@ public class RecordingCommandBusTest {
     }
 
     @Test
-    public void testRegisterHandler() {
+    void testRegisterHandler() {
         MessageHandler<? super CommandMessage<?>> handler = command -> {
             fail("Did not expect handler to be invoked");
             return null;

@@ -17,8 +17,8 @@
 package org.axonframework.serialization;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -29,13 +29,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class ChainedConverterTest {
+class ChainedConverterTest {
 
     private ContentTypeConverter testSubject;
     private Object source;
@@ -46,8 +46,8 @@ public class ChainedConverterTest {
     private ContentTypeConverter<?, ?> bytesToInputStreamConverter;
     private ContentTypeConverter<?, ?> numberToStringConverter;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         candidates = new ArrayList<>();
         numberToStringConverter = mockConverter(Number.class, String.class, "hello");
         stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
@@ -75,7 +75,7 @@ public class ChainedConverterTest {
     }
 
     @Test
-    public void testComplexRoute() throws Exception {
+    void testComplexRoute() throws Exception {
         target = InputStream.class;
         source = 1L;
         testSubject = ChainedConverter.calculateChain(Number.class, target, candidates);
@@ -100,7 +100,7 @@ public class ChainedConverterTest {
     }
     
     @Test
-    public void testSimpleRoute() {
+    void testSimpleRoute() {
         target = String.class;
         source = 1L;
         testSubject = ChainedConverter.calculateChain(Number.class, target, candidates);
@@ -119,37 +119,37 @@ public class ChainedConverterTest {
         verify(stringToByteConverter, never()).convert(any());
     }
 
-    @Test(expected = CannotConvertBetweenTypesException.class)
-    public void testInexistentRoute() {
+    @Test
+    void testInexistentRoute() {
         target = InputStream.class;
         source = new StringReader("hello");
-        testSubject = ChainedConverter.calculateChain(Reader.class, target, candidates);
+        assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(Reader.class, target, candidates));
     }
 
     // Detects an issue where the ChainedConverter hangs as it evaluates a recursive route
-    @Test(expected = CannotConvertBetweenTypesException.class)
-    public void testAnotherInexistentRoute() {
+    @Test
+    void testAnotherInexistentRoute() {
         target = Number.class;
         source = "hello";
         assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
-        testSubject = ChainedConverter.calculateChain(String.class, target, candidates);
-    }
-
-    @Test(expected = CannotConvertBetweenTypesException.class)
-    public void testAThirdInexistentRoute() {
-        target = Documented.class;
-        source = "hello".getBytes();
-        testSubject = ChainedConverter.calculateChain(byte[].class, target, candidates);
+        assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(String.class, target, candidates));
     }
 
     @Test
-    public void testDiscontinuousChainIsRejected() {
+    void testAThirdInexistentRoute() {
+        target = Documented.class;
+        source = "hello".getBytes();
+        assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(byte[].class, target, candidates));
+    }
+
+    @Test
+    void testDiscontinuousChainIsRejected() {
         try {
             testSubject = new ChainedConverter(Arrays.<ContentTypeConverter>asList(numberToStringConverter,
                                                                                    bytesToInputStreamConverter));
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("continuous chain"));
+            assertTrue(e.getMessage().contains("continuous chain"), "Wrong message: " + e.getMessage());
         }
     }
 }

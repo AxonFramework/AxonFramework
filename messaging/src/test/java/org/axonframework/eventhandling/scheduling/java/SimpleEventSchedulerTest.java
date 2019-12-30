@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.io.ByteArrayInputStream;
@@ -34,21 +34,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  * @author Nakul Mishra
  */
-public class SimpleEventSchedulerTest {
+class SimpleEventSchedulerTest {
 
     private SimpleEventScheduler testSubject;
     private EventBus eventBus;
     private ScheduledExecutorService scheduledExecutorService;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         eventBus = mock(EventBus.class);
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         testSubject = SimpleEventScheduler.builder()
@@ -57,15 +57,15 @@ public class SimpleEventSchedulerTest {
                                           .build();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (scheduledExecutorService != null) {
             scheduledExecutorService.shutdownNow();
         }
     }
 
     @Test
-    public void testScheduleJob() throws InterruptedException {
+    void testScheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -77,7 +77,7 @@ public class SimpleEventSchedulerTest {
     }
 
     @Test
-    public void testScheduleTokenIsSerializable() throws IOException, ClassNotFoundException {
+    void testScheduleTokenIsSerializable() throws IOException, ClassNotFoundException {
         ScheduleToken token = testSubject.schedule(Duration.ZERO, new Object());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -89,7 +89,7 @@ public class SimpleEventSchedulerTest {
     }
 
     @Test
-    public void testCancelJob() throws InterruptedException {
+    void testCancelJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -106,8 +106,8 @@ public class SimpleEventSchedulerTest {
                 && event2.getPayload().equals(item.getPayload())
                 && event2.getMetaData().equals(item.getMetaData())));
         scheduledExecutorService.shutdown();
-        assertTrue("Executor refused to shutdown within a second",
-                   scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue(scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS),
+                "Executor refused to shutdown within a second");
     }
 
     private EventMessage<Object> createEvent() {

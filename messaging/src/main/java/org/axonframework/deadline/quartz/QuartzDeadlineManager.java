@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -115,7 +116,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                            String deadlineName,
                            Object messageOrPayload,
                            ScopeDescriptor deadlineScope) {
-        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
 
         runOnPrepareCommitOrNow(() -> {
@@ -158,6 +159,23 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         });
     }
 
+    @Override
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
+        try {
+            Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
+            for (JobKey jobKey : jobKeys) {
+                JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+                ScopeDescriptor jobScope = DeadlineJob.DeadlineJobDataBinder
+                        .deadlineScope(serializer, jobDetail.getJobDataMap());
+                if (scope.equals(jobScope)) {
+                    cancelSchedule(jobKey);
+                }
+            }
+        } catch (SchedulerException e) {
+            throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
+        }
+    }
+
     private void cancelSchedule(JobKey jobKey) {
         try {
             if (!scheduler.deleteJob(jobKey)) {
@@ -182,6 +200,15 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                              .forJob(key)
                              .startAt(Date.from(triggerDateTime))
                              .build();
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            scheduler.shutdown(true);
+        } catch (SchedulerException e) {
+            throw new DeadlineException("An error occurred while trying to shutdown the deadline manager", e);
+        }
     }
 
     /**

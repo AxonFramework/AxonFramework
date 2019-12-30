@@ -16,36 +16,38 @@
 
 package org.axonframework.common.property;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public abstract class AbstractPropertyAccessStrategyTest<T> {
 
     @Test
-    public void testGetValue() {
+    void testGetValue() {
         final Property<T> actualProperty = getProperty(regularPropertyName());
         assertNotNull(actualProperty);
         assertNotNull(actualProperty.<String>getValue(propertyHoldingInstance()));
     }
 
     @Test
-    public void testGetValue_BogusProperty() {
+    void testGetValue_BogusProperty() {
         assertNull(getProperty(unknownPropertyName()));
     }
 
-    @Test(expected = PropertyAccessException.class)
-    public void testGetValue_ExceptionOnAccess() {
-        getProperty(exceptionPropertyName()).getValue(propertyHoldingInstance());
+    @Test
+    void testGetValue_ExceptionOnAccess() {
+        Property<T> property = getProperty(exceptionPropertyName());
+
+        assertThrows(PropertyAccessException.class, () -> property.getValue(propertyHoldingInstance()));
     }
 
     @Test
-    public void testVoidReturnTypeRejected() {
+    void testVoidReturnTypeRejected() {
         Property property = getProperty(voidPropertyName());
-        Assert.assertNull("void methods should not be accepted as property", property);
+        assertNull(property, "void methods should not be accepted as property");
     }
 
     protected abstract String voidPropertyName();

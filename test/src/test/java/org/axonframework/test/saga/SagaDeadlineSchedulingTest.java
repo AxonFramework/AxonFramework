@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,8 @@ import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,19 +34,19 @@ import java.time.Instant;
  * @author Milan Savic
  * @author Steven van Beelen
  */
-public class SagaDeadlineSchedulingTest {
+class SagaDeadlineSchedulingTest {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
 
     private SagaTestFixture<MySaga> fixture;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         fixture = new SagaTestFixture<>(MySaga.class);
     }
 
     @Test
-    public void testDeadlineScheduling() {
+    void testDeadlineScheduling() {
         fixture.givenNoPriorActivity()
                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
                .expectActiveSagas(1)
@@ -54,7 +55,7 @@ public class SagaDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineSchedulingTypeMatching() {
+    void testDeadlineSchedulingTypeMatching() {
         fixture.givenNoPriorActivity()
                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
                .expectActiveSagas(1)
@@ -63,7 +64,7 @@ public class SagaDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineMet() {
+    void testDeadlineMet() {
         fixture.givenAggregate("id").published(new TriggerSagaStartEvent("id"))
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
@@ -72,7 +73,7 @@ public class SagaDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineCancelled() {
+    void testDeadlineCancelled() {
         fixture.givenAggregate("id")
                .published(new TriggerSagaStartEvent("id"))
                .whenPublishingA(new ResetTriggerEvent("id"))
@@ -82,7 +83,7 @@ public class SagaDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineWhichCancelsAll() {
+    void testDeadlineWhichCancelsAll() {
         fixture.givenAggregate("id")
                .published(new TriggerSagaStartEvent("id"))
                .whenPublishingA(new ResetAllTriggeredEvent("id"))
@@ -92,10 +93,10 @@ public class SagaDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineDispatchInterceptor() {
+    void testDeadlineDispatchInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
                 messages -> (i, m) -> GenericDeadlineMessage
-                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails"))
+                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
                .givenAggregate("id").published(new TriggerSagaStartEvent("id"))
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
@@ -104,10 +105,10 @@ public class SagaDeadlineSchedulingTest {
     }
 
     @Test
-    public void testDeadlineHandlerInterceptor() {
+    void testDeadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
                     uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails"));
+                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp()));
                     return chain.proceed();
                 })
                .givenAggregate("id").published(new TriggerSagaStartEvent("id"))

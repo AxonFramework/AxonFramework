@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,11 +27,11 @@ import static org.mockito.Mockito.*;
 /**
  * @author Rene de Waele
  */
-public class DirectEventProcessingStrategyTest {
+class DirectEventProcessingStrategyTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testEventsPassedToProcessor() {
+    void testEventsPassedToProcessor() {
         List<? extends EventMessage<?>> events = createEvents(10);
         Consumer<List<? extends EventMessage<?>>> mockProcessor = mock(Consumer.class);
         DirectEventProcessingStrategy.INSTANCE.handle(events, mockProcessor);

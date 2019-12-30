@@ -18,8 +18,6 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,8 +32,6 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  * @since 2.0
  */
 public class IntervalRetryScheduler extends AbstractRetryScheduler {
-
-    private static final Logger logger = LoggerFactory.getLogger(IntervalRetryScheduler.class);
 
     private static final long DEFAULT_RETRY_INTERVAL = 100L;
 
@@ -67,8 +63,7 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
      * Instantiate a Builder to be able to create a {@link IntervalRetryScheduler}.
      * <p>
      * The default for {@code retryInterval} is set to 100ms, while {@code maxRetryCount} gets a single retry.
-     * The {@code retryInterval}, {@code maxRetryCount} and {@link ScheduledExecutorService} are
-     * <b>hard requirements</b> and as such should be provided.
+     * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link IntervalRetryScheduler}
      */
@@ -80,15 +75,15 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
      * Builder class to instantiate a {@link IntervalRetryScheduler}.
      * <p>
      * The default for {@code retryInterval} is set to 100ms, while {@code maxRetryCount} gets a single retry.
-     * The {@code retryInterval}, {@code maxRetryCount} and {@link ScheduledExecutorService} are
-     * <b>hard requirements</b> and as such should be provided.
+     * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder extends AbstractRetryScheduler.Builder<Builder> {
 
         private long retryInterval = DEFAULT_RETRY_INTERVAL;
 
         /**
-         * Sets the retry interval in milliseconds at which to schedule a retry, defaulted to 100ms.
+         * Sets the retry interval in milliseconds at which to schedule a retry. This field defaults to 100ms and is
+         * required to be a positive number.
          *
          * @param retryInterval an {@code int} specifying the retry interval in milliseconds at which to schedule a
          *                      retry
@@ -107,16 +102,6 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
          */
         public IntervalRetryScheduler build() {
             return new IntervalRetryScheduler(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            assertPositive(retryInterval, "The retryInterval is a hard requirement and should be provided");
         }
     }
 }

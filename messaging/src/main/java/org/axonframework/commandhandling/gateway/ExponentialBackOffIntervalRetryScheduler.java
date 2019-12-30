@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandMessage;
 
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
@@ -51,7 +52,8 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
     /**
      * Instantiate a Builder to be able to create a {@link ExponentialBackOffIntervalRetryScheduler}.
      * <p>
-     * The default for {@link Builder#backoffFactor} is set to 100ms, and must be at least 1.
+     * The default for {@code maxRetryCount} is set to a single retry and the {@code backoffFactor} defaults to 100ms.
+     * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link ExponentialBackOffIntervalRetryScheduler}
      */
@@ -68,21 +70,24 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
     }
 
     /**
-     * A builder class for an exponential backoff retry scheduler.
+     * Builder class to instantiate an {@link ExponentialBackOffIntervalRetryScheduler}.
      * <p>
-     * The default for {@link Builder#backoffFactor} is set to 100ms, and must be at least 1.
+     * The default for the {@code backoffFactor} is set to 100ms, and must be at least 1.
+     * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder extends AbstractRetryScheduler.Builder<Builder> {
 
         private long backoffFactor = DEFAULT_BACKOFF_FACTOR;
 
         /**
-         * Sets the backoff factor in milliseconds at which to schedule a retry, defaulted to 100ms.
+         * Sets the backoff factor in milliseconds at which to schedule a retry. This field defaults to 100ms and is
+         * required to be a positive number.
          *
-         * @param backoffFactor an {@code int} specifying the interval in milliseconds at which to schedule a retry.
-         * @return the current Builder instance, for fluent interfacing.
+         * @param backoffFactor an {@code int} specifying the interval in milliseconds at which to schedule a retry
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder backoffFactor(long backoffFactor) {
+            assertStrictPositive(backoffFactor, "The backoffFactor must be a positive number");
             this.backoffFactor = backoffFactor;
             return this;
         }
@@ -94,13 +99,6 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
          */
         public ExponentialBackOffIntervalRetryScheduler build() {
             return new ExponentialBackOffIntervalRetryScheduler(this);
-        }
-
-        /**
-         * Validate the input, in this case asserting that the backoff factor is strictly positive (>= 1).
-         */
-        protected void validate() {
-            assertStrictPositive(backoffFactor, "The backoff factor is a hard requirement and must be at least 1.");
         }
     }
 }

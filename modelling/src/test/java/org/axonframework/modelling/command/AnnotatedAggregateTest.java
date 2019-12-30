@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 
@@ -32,7 +32,7 @@ import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -43,15 +43,31 @@ public class AnnotatedAggregateTest {
     private Repository<AggregateRoot> repository;
     private EventBus eventBus;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         eventBus = mock(EventBus.class);
         repository = StubRepository.builder().eventBus(eventBus).build();
     }
 
+    // Tests for issue #1248 - https://github.com/AxonFramework/AxonFramework/issues/1248
     @Test
-    public void testApplyingEventInHandlerPublishesInRightOrder() {
-        Command command = new Command(ID);
+    void applyingMultipleEventsInAndThenPublishesWithRightState() {
+        Command command = new Command(ID, 2);
+        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
+        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
+                .newInstance(() -> new AggregateRoot(command))).getPayload();
+        assertNotNull(aggregate);
+
+        InOrder inOrder = inOrder(eventBus);
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
+                .equals(x.getPayloadType()) && ((Event_1) x.getPayload()).value == 1));
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
+                .equals(x.getPayloadType()) && ((Event_1) x.getPayload()).value == 2));
+    }
+
+    @Test
+    void testApplyingEventInHandlerPublishesInRightOrder() {
+        Command command = new Command(ID, 0);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
                 .newInstance(() -> new AggregateRoot(command))).getPayload();
@@ -67,34 +83,47 @@ public class AnnotatedAggregateTest {
     private static class Command {
 
         private final String id;
+        private final int value;
 
-        private Command(String id) {
+        private Command(String id, int value) {
             this.id = id;
+            this.value = value;
         }
 
         public String getId() {
             return id;
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 
     private static class Event_1 {
 
         private final String id;
+        private final int value;
 
-        private Event_1(String id) {
+        private Event_1(String id, int value) {
             this.id = id;
+            this.value = value;
         }
 
         public String getId() {
             return id;
         }
+
+        public int getValue() {
+            return value;
+        }
     }
 
+    @SuppressWarnings("WeakerAccess")
     private static class Event_2 {
 
         private final String id;
 
-        public Event_2(String id) {
+        Event_2(String id) {
             this.id = id;
         }
 
@@ -103,22 +132,29 @@ public class AnnotatedAggregateTest {
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class AggregateRoot {
 
         @AggregateIdentifier
         private String id;
+
+        private int value;
 
         public AggregateRoot() {
         }
 
         @CommandHandler
         public AggregateRoot(Command command) {
-            apply(new Event_1(command.getId()));
+            ApplyMore andThen = apply(new Event_1(command.getId(), 0));
+            for (int i = 0; i < command.value; i++) {
+                andThen = andThen.andThenApply(() -> new Event_1(id, value + 1));
+            }
         }
 
         @EventHandler
         public void on(Event_1 event) {
             this.id = event.getId();
+            this.value = event.value;
             apply(new Event_2(event.getId()));
         }
 
@@ -131,13 +167,13 @@ public class AnnotatedAggregateTest {
 
         private final EventBus eventBus;
 
+        public static Builder builder() {
+            return new Builder();
+        }
+
         private StubRepository(Builder builder) {
             super(builder);
             this.eventBus = builder.eventBus;
-        }
-
-        public static Builder builder() {
-            return new Builder();
         }
 
         @Override

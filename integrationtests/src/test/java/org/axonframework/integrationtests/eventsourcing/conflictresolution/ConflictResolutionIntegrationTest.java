@@ -28,20 +28,20 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolver;
 import org.axonframework.eventsourcing.conflictresolution.Conflicts;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ConflictResolutionIntegrationTest {
 
     private CommandGateway commandGateway;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .configureAggregate(StubAggregate.class)
@@ -51,38 +51,34 @@ public class ConflictResolutionIntegrationTest {
     }
 
     @Test
-    public void testNonConflictingEventsAllowed() {
+    void testNonConflictingEventsAllowed() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update2", 0L));
     }
 
     @Test
-    public void testUnresolvedConflictCausesException() {
+    void testUnresolvedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
-        try {
-            commandGateway.sendAndWait(new UpdateWithoutConflictDetectionCommand("1234", "update2", 0L));
-            fail("Expected exception");
-        } catch (ConflictingAggregateVersionException exception) {
-            // success...
-        }
+        assertThrows(
+                ConflictingAggregateVersionException.class,
+                () -> commandGateway.sendAndWait(new UpdateWithoutConflictDetectionCommand("1234", "update2", 0L))
+        );
     }
 
     @Test
-    public void testExpressedConflictCausesException() {
+    void testExpressedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
-        try {
-            commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
-            fail("Expected exception");
-        } catch (ConflictingAggregateVersionException exception) {
-            // success...
-        }
+        assertThrows(
+                ConflictingAggregateVersionException.class,
+                () -> commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L))
+        );
     }
 
     @Test
-    public void testNoExpectedVersionIgnoresConflicts() {
+    void testNoExpectedVersionIgnoresConflicts() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", null));

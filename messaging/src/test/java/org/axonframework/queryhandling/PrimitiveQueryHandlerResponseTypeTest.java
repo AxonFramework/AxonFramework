@@ -18,63 +18,63 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests resolving query handlers which return primitive types.
  */
-public class PrimitiveQueryHandlerResponseTypeTest {
+class PrimitiveQueryHandlerResponseTypeTest {
 
     private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
     private final PrimitiveQueryHandler queryHandler = new PrimitiveQueryHandler();
     private final AnnotationQueryHandlerAdapter<PrimitiveQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             queryHandler);
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         annotationQueryHandlerAdapter.subscribe(queryBus);
     }
 
     @Test
-    public void testInt() {
+    void testInt() {
         test(0, Integer.class, int.class);
     }
 
     @Test
-    public void testLong() {
+    void testLong() {
         test(0L, Long.class, long.class);
     }
 
     @Test
-    public void testShort() {
+    void testShort() {
         test((short) 0, Short.class, short.class);
     }
 
     @Test
-    public void testFloat() {
+    void testFloat() {
         test(0.0F, Float.class, float.class);
     }
 
     @Test
-    public void testDouble() {
+    void testDouble() {
         test(0.0, Double.class, double.class);
     }
 
     @Test
-    public void testBoolean() {
+    void testBoolean() {
         test(false, Boolean.class, boolean.class);
     }
 
     @Test
-    public void testByte() {
+    void testByte() {
         test((byte) 0, Byte.class, byte.class);
     }
 
     @Test
-    public void testChar() {
+    void testChar() {
         test('0', Character.class, Character.TYPE);
     }
 

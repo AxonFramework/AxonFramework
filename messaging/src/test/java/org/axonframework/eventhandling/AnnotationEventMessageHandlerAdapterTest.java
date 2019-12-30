@@ -19,18 +19,18 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AnnotationEventMessageHandlerAdapterTest {
+class AnnotationEventMessageHandlerAdapterTest {
 
     @Test
-    public void testInvokeResetHandler() {
+    void testInvokeResetHandler() {
         SomeHandler annotatedEventListener = new SomeHandler();
         new AnnotationEventHandlerAdapter(annotatedEventListener,
                                           MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),

@@ -19,27 +19,27 @@ package org.axonframework.test.deadline;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class StubDeadlineManagerTest {
+class StubDeadlineManagerTest {
 
     private StubDeadlineManager testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new StubDeadlineManager();
     }
 
     @Test
-    public void testMessagesCarryTriggerTimestamp() throws Exception {
+    void testMessagesCarryTriggerTimestamp() throws Exception {
         Instant triggerTime = Instant.now().plusSeconds(60);
         MockScope.execute(() ->
                                   testSubject.schedule(triggerTime, "gone")

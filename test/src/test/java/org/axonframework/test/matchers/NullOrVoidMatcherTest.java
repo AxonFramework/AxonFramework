@@ -16,19 +16,19 @@
 
 package org.axonframework.test.matchers;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.axonframework.test.matchers.Matchers.nothing;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class NullOrVoidMatcherTest {
+class NullOrVoidMatcherTest {
 
     @Test
-    public void testMatcherMatchesVoidAndNull() {
+    void testMatcherMatchesVoidAndNull() {
         assertTrue(nothing().matches(Void.class));
         assertTrue(nothing().matches(null));
         assertFalse(nothing().matches(new Object()));

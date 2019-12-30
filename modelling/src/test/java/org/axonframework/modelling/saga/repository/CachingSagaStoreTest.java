@@ -21,20 +21,19 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class CachingSagaStoreTest {
+class CachingSagaStoreTest {
 
     private Cache associationsCache;
     private org.axonframework.common.caching.Cache sagaCache;
@@ -44,8 +43,8 @@ public class CachingSagaStoreTest {
     private SagaStore<StubSaga> mockSagaStore;
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         ehCache = new net.sf.ehcache.Cache("test", 100, false, false, 10, 10);
         cacheManager = CacheManager.create();
         cacheManager.addCache(ehCache);
@@ -62,13 +61,13 @@ public class CachingSagaStoreTest {
                 .build();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         cacheManager.shutdown();
     }
 
     @Test
-    public void testSagaAddedToCacheOnAdd() {
+    void testSagaAddedToCacheOnAdd() {
 
         testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), singleton(new AssociationValue("key", "value")));
 
@@ -77,7 +76,7 @@ public class CachingSagaStoreTest {
     }
 
     @Test
-    public void testAssociationsAddedToCacheOnLoad() {
+    void testAssociationsAddedToCacheOnLoad() {
         testSubject.insertSaga(StubSaga.class, "id", new StubSaga(), singleton(new AssociationValue("key", "value")));
 
         verify(associationsCache, never()).put(any(), any());
@@ -88,14 +87,14 @@ public class CachingSagaStoreTest {
         final AssociationValue associationValue = new AssociationValue("key", "value");
 
         Set<String> actual = testSubject.findSagas(StubSaga.class, associationValue);
-        assertEquals(actual, singleton("id"));
+        assertEquals(singleton("id"), actual);
         verify(associationsCache, atLeast(1)).get("org.axonframework.modelling.saga.repository.StubSaga/key=value");
         verify(associationsCache).put("org.axonframework.modelling.saga.repository.StubSaga/key=value",
                                       Collections.singleton("id"));
     }
 
     @Test
-    public void testSagaAddedToCacheOnLoad() {
+    void testSagaAddedToCacheOnLoad() {
         StubSaga saga = new StubSaga();
         testSubject.insertSaga(StubSaga.class, "id", saga, singleton(new AssociationValue("key", "value")));
 
@@ -111,7 +110,7 @@ public class CachingSagaStoreTest {
     }
 
     @Test
-    public void testSagaNotAddedToCacheWhenLoadReturnsNull() {
+    void testSagaNotAddedToCacheWhenLoadReturnsNull() {
 
         ehCache.removeAll();
         reset(sagaCache, associationsCache);
@@ -126,7 +125,7 @@ public class CachingSagaStoreTest {
 
 
     @Test
-    public void testCommitDelegatedAfterAddingToCache() {
+    void testCommitDelegatedAfterAddingToCache() {
         StubSaga saga = new StubSaga();
         AssociationValue associationValue = new AssociationValue("key", "value");
         testSubject.insertSaga(StubSaga.class, "123", saga, singleton(associationValue));

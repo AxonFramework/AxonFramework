@@ -16,31 +16,31 @@
 
 package org.axonframework.common.property;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class DirectPropertyAccessStrategyTest {
+class DirectPropertyAccessStrategyTest {
 
 	@Test
-	public void testGetValue() {
+	void testGetValue() {
 		final Property<TestMessage> actualProperty = getProperty(regularPropertyName());
 		assertNotNull(actualProperty);
 		assertNotNull(actualProperty.<String>getValue(propertyHoldingInstance()));
 	}
 
 	@Test
-	public void testGetValue_BogusProperty() {
+	void testGetValue_BogusProperty() {
 		assertNull(getProperty(unknownPropertyName()));
 	}
 
-	@Test(expected = NullPointerException.class)
-	public void testGetValue_NullExceptionOnAccess() {
-		getProperty(privatePropertyName()).getValue(propertyHoldingInstance());
+	@Test
+	void testGetValue_NullForPrivateProperty() {
+		assertNull(getProperty(privatePropertyName()));
 	}
 
 	@Test
-	public void testOverriddenPropertyValue() {
+	void testOverriddenPropertyValue() {
 		assertEquals("realValue", getProperty(overriddenPropertyName()).getValue(propertyHoldingInstance()));
 	}
 

@@ -16,32 +16,40 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.utils.MockException;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class DefaultQueryGatewayTest {
+/**
+ * Test class verifying correct workings of the {@link DefaultQueryGateway}.
+ *
+ * @author Allard Buijze
+ */
+class DefaultQueryGatewayTest {
 
     private QueryBus mockBus;
     private DefaultQueryGateway testSubject;
     private QueryResponseMessage<String> answer;
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         answer = new GenericQueryResponseMessage<>("answer");
         MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
@@ -53,9 +61,8 @@ public class DefaultQueryGatewayTest {
     }
 
     @Test
-    public void testDispatchSingleResultQuery() throws Exception {
-        when(mockBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(CompletableFuture.completedFuture(answer));
+    void testDispatchSingleResultQuery() throws Exception {
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
         CompletableFuture<String> actual = testSubject.query("query", String.class);
         assertEquals("answer", actual.get());
@@ -66,12 +73,29 @@ public class DefaultQueryGatewayTest {
     }
 
     @Test
-    public void testDispatchSingleResultQueryWhenBusReportsAnError() throws Exception {
+    void testDispatchMessageWithMetaData() {
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
+
+        String expectedMetaDataKey = "key";
+        String expectedMetaDataValue = "value";
+
+        testSubject.query(
+                new GenericMessage<>("Query", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)),
+                instanceOf(String.class)
+        );
+
+        verify(mockBus).query(
+                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "Query".equals(x.getPayload())
+                        && expectedMetaDataValue.equals(x.getMetaData().get(expectedMetaDataKey)))
+        );
+    }
+
+    @Test
+    void testDispatchSingleResultQueryWhenBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
-        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(CompletableFuture
-                                                                                       .completedFuture(new GenericQueryResponseMessage<>(
-                                                                                               String.class,
-                                                                                               expected)));
+        when(mockBus.query(anyMessage(String.class, String.class)))
+                .thenReturn(completedFuture(new GenericQueryResponseMessage<>(String.class, expected)));
+
         CompletableFuture<String> result = testSubject.query("query", String.class);
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
@@ -79,7 +103,7 @@ public class DefaultQueryGatewayTest {
     }
 
     @Test
-    public void testDispatchSingleResultQueryWhenBusThrowsException() throws Exception {
+    void testDispatchSingleResultQueryWhenBusThrowsException() throws Exception {
         Throwable expected = new Throwable("oops");
         CompletableFuture<QueryResponseMessage<String>> queryResponseMessageCompletableFuture = new CompletableFuture<>();
         queryResponseMessageCompletableFuture.completeExceptionally(expected);
@@ -90,16 +114,17 @@ public class DefaultQueryGatewayTest {
         assertEquals(expected.getMessage(), result.exceptionally(Throwable::getMessage).get());
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
-    public void testDispatchMultiResultQuery() {
+    void testDispatchMultiResultQuery() {
         when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
                 .thenReturn(Stream.of(answer));
 
         Stream<String> actual = testSubject.scatterGather(
                 "query", instanceOf(String.class), 1, TimeUnit.SECONDS
         );
-        assertEquals("answer", actual.findFirst().get());
+        Optional<String> firstResult = actual.findFirst();
+        assertTrue(firstResult.isPresent());
+        assertEquals("answer", firstResult.get());
         verify(mockBus).scatterGather(
                 argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
                 eq(1L),
@@ -108,7 +133,7 @@ public class DefaultQueryGatewayTest {
     }
 
     @Test
-    public void testDispatchSubscriptionQuery() {
+    void testDispatchSubscriptionQuery() {
         when(mockBus.subscriptionQuery(any(), any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
@@ -121,9 +146,8 @@ public class DefaultQueryGatewayTest {
     }
 
     @Test
-    public void testDispatchInterceptor() {
-        when(mockBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(CompletableFuture.completedFuture(answer));
+    void testDispatchInterceptor() {
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
         testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
                 "dispatch-" + queryMessage.getPayload(),
                 queryMessage.getQueryName(),
@@ -137,39 +161,58 @@ public class DefaultQueryGatewayTest {
     }
 
     @Test
-    public void testExceptionInInitialResultOfSubscriptionQueryReportedInMono() {
+    void testExceptionInInitialResultOfSubscriptionQueryReportedInMono() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.just(new GenericQueryResponseMessage<>(String.class, new MockException())), Flux.empty(), () -> true));
+                .thenReturn(new DefaultSubscriptionQueryResult<>(
+                        Mono.just(new GenericQueryResponseMessage<>(String.class, new MockException())),
+                        Flux.empty(),
+                        () -> true
+                ));
 
-        SubscriptionQueryResult<String, String> actual = testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
-        assertEquals(MockException.class, actual.initialResult().map(i -> null).onErrorResume(e -> Mono.just(e.getClass())).block());
+        SubscriptionQueryResult<String, String> actual =
+                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+        //noinspection NullableInLambdaInTransform
+        assertEquals(
+                MockException.class,
+                actual.initialResult().map(i -> null).onErrorResume(e -> Mono.just(e.getClass())).block()
+        );
     }
 
     @Test
-    public void testNullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
+    void testNullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.just(new GenericQueryResponseMessage<>(String.class, (String) null)), Flux.empty(), () -> true));
+                .thenReturn(new DefaultSubscriptionQueryResult<>(
+                        Mono.just(new GenericQueryResponseMessage<>(String.class, (String) null)),
+                        Flux.empty(),
+                        () -> true
+                ));
 
-        SubscriptionQueryResult<String, String> actual = testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+        SubscriptionQueryResult<String, String> actual =
+                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+
         assertNull(actual.initialResult().block());
     }
 
     @Test
-    public void testNullUpdatesOfSubscriptionQuerySkipped() {
+    void testNullUpdatesOfSubscriptionQuerySkipped() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(),
-                                                                 Flux.just(new GenericSubscriptionQueryUpdateMessage<>(String.class, null)),
-                                                                 () -> true));
+                .thenReturn(new DefaultSubscriptionQueryResult<>(
+                        Mono.empty(),
+                        Flux.just(new GenericSubscriptionQueryUpdateMessage<>(String.class, null)),
+                        () -> true
+                ));
 
-        SubscriptionQueryResult<String, String> actual = testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+        SubscriptionQueryResult<String, String> actual =
+                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+
         assertNull(actual.initialResult().block());
         assertEquals((Long) 0L, actual.updates().count().block());
     }
 
     @Test
-    public void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
+    void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(CompletableFuture.completedFuture(new GenericQueryResponseMessage<String>("test") {
+                .thenReturn(completedFuture(new GenericQueryResponseMessage<String>("test") {
                     @Override
                     public String getPayload() {
                         throw new MockException("Faking serialization problem");
@@ -182,11 +225,12 @@ public class DefaultQueryGatewayTest {
         assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "SameParameterValue"})
     private <Q, R> QueryMessage<Q, R> anyMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
     }
 
+    @SuppressWarnings({"SameParameterValue", "unused"})
     private <Q, R> SubscriptionQueryMessage<Q, R, R> anySubscriptionMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
     }

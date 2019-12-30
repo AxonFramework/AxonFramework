@@ -1,11 +1,11 @@
 package org.axonframework.test.matchers;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class NonStaticFieldsFilterTest {
+class NonStaticFieldsFilterTest {
 
     @SuppressWarnings("unused")
     private static String staticField;
@@ -13,13 +13,13 @@ public class NonStaticFieldsFilterTest {
     private String nonStaticField;
 
     @Test
-    public void testAcceptNonTransientField() throws Exception {
+    void testAcceptNonTransientField() throws Exception {
         assertTrue(NonStaticFieldsFilter.instance()
                            .accept(getClass().getDeclaredField("nonStaticField")));
     }
 
     @Test
-    public void testRejectTransientField() throws Exception {
+    void testRejectTransientField() throws Exception {
         assertFalse(NonStaticFieldsFilter.instance()
                             .accept(getClass().getDeclaredField("staticField")));
     }

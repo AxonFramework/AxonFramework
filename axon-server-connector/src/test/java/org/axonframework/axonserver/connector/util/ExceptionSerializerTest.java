@@ -1,16 +1,16 @@
 package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Author: marc
  */
-public class ExceptionSerializerTest {
+class ExceptionSerializerTest {
     @Test
-    public void serializeNullClient() {
+    void serializeNullClient() {
         ErrorMessage result = ExceptionSerializer.serialize(null,
                                                             new RuntimeException(
                                                                     "Something went wrong"));
@@ -18,7 +18,7 @@ public class ExceptionSerializerTest {
     }
 
     @Test
-    public void serializeNonNullClient() {
+    void serializeNonNullClient() {
         ErrorMessage result = ExceptionSerializer.serialize("Client",
                                                             new RuntimeException(
                                                                     "Something went wrong"));

@@ -25,7 +25,7 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 
 /**
- * Wrapper around standard Axon Framework serializer that can deserialize Metadata from AxonDB events.
+ * Wrapper around standard Axon Framework serializer that can deserialize Metadata from AxonServer events.
  */
 class GrpcMetaDataAwareSerializer implements Serializer {
 

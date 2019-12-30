@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
@@ -72,8 +72,8 @@ public class DisruptorCommandBusBenchmark {
         eventStore.countDownLatch.await(5, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
         try {
-            assertEquals("Seems that some events are not stored", COMMAND_COUNT,
-                         eventStore.readEvents(aggregateIdentifier).asStream().count());
+            assertEquals(COMMAND_COUNT,
+                         eventStore.readEvents(aggregateIdentifier).asStream().count(), "Seems that some events are not stored");
             System.out.println("Did " + ((COMMAND_COUNT * 1000L) / (end - start)) + " commands per second");
         } finally {
             commandBus.stop();

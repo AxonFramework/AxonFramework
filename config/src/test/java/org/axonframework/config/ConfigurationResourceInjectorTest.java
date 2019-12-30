@@ -20,21 +20,21 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import javax.inject.Inject;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class ConfigurationResourceInjectorTest {
 
     private Configuration configuration;
     private ConfigurationResourceInjector testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         configuration = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .buildConfiguration();
@@ -42,7 +42,7 @@ public class ConfigurationResourceInjectorTest {
     }
 
     @Test
-    public void testInjectorHasResource() {
+    void testInjectorHasResource() {
         Saga saga = new Saga();
         testSubject.injectResources(saga);
 

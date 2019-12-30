@@ -24,15 +24,15 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
-public class TransactionManagingInterceptorTest {
+class TransactionManagingInterceptorTest {
 
     private Message<?> message;
     private InterceptorChain interceptorChain;
@@ -41,9 +41,8 @@ public class TransactionManagingInterceptorTest {
     private Transaction transaction;
     private TransactionManagingInterceptor<Message<?>> subject;
 
-    @Before
-    @SuppressWarnings("unchecked")
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -57,7 +56,7 @@ public class TransactionManagingInterceptorTest {
     }
 
     @Test
-    public void testStartTransaction() throws Exception {
+    void testStartTransaction() throws Exception {
         UnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
 
         subject.handle(unitOfWork, interceptorChain);
@@ -69,7 +68,7 @@ public class TransactionManagingInterceptorTest {
     }
 
     @Test
-    public void testUnitOfWorkCommit() throws Exception {
+    void testUnitOfWorkCommit() throws Exception {
         subject.handle(unitOfWork, interceptorChain);
         unitOfWork.commit();
 

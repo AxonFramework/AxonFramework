@@ -18,13 +18,13 @@ package org.axonframework.config;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.function.BiFunction;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MessageMonitorFactoryBuilderTest {
+class MessageMonitorFactoryBuilderTest {
 
     private MessageMonitor<Message<?>> defaultMonitor = (message) -> null;
 
@@ -34,7 +34,7 @@ public class MessageMonitorFactoryBuilderTest {
     private static class D {}
 
     @Test
-    public void validateRulesWithoutTypeHierarchy() {
+    void validateRulesWithoutTypeHierarchy() {
         MessageMonitor<Message<?>> aMonitor = (message) -> null;
         MessageMonitor<Message<?>> bMonitor = (message) -> null;
         MessageMonitor<Message<?>> cMonitor = (message) -> null;
@@ -67,12 +67,12 @@ public class MessageMonitorFactoryBuilderTest {
     private static class M extends L {}
     private static class N extends M implements I {}
 
-    MessageMonitor<Message<?>> kMonitor = (message) -> null;
-    MessageMonitor<Message<?>> mMonitor = (message) -> null;
-    MessageMonitor<Message<?>> iMonitor = (message) -> null;
+    private MessageMonitor<Message<?>> kMonitor = (message) -> null;
+    private MessageMonitor<Message<?>> mMonitor = (message) -> null;
+    private MessageMonitor<Message<?>> iMonitor = (message) -> null;
 
     @Test
-    public void validateTypeHierarchy() {
+    void validateTypeHierarchy() {
         BiFunction<Class<?>, String, MessageMonitor<Message<?>>> factory = new MessageMonitorFactoryBuilder()
                 .add((conf, type, name) -> defaultMonitor)
                 .add(K.class, (conf, type, name) -> kMonitor)
@@ -109,7 +109,7 @@ public class MessageMonitorFactoryBuilderTest {
     }
 
     @Test
-    public void validateMultipleClassesForSameName() {
+    void validateMultipleClassesForSameName() {
         BiFunction<Class<?>, String, MessageMonitor<Message<?>>> factory = new MessageMonitorFactoryBuilder()
                 .add((conf, type, name) -> defaultMonitor)
                 .add(K.class, "name", (conf, type, name) -> kMonitor)

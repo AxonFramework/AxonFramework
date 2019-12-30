@@ -19,27 +19,27 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngineTest;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Rene de Waele
  */
-public class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
+class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     private InMemoryEventStorageEngine testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new InMemoryEventStorageEngine();
         setTestSubject(testSubject);
     }
 
     @Test
-    public void testPublishedEventsEmittedToExistingStreams() {
+    void testPublishedEventsEmittedToExistingStreams() {
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
         testSubject.appendEvents(GenericEventMessage.asEventMessage("test"));
 

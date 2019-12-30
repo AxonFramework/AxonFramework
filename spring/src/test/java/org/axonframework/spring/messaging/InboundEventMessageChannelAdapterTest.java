@@ -19,8 +19,8 @@ package org.axonframework.spring.messaging;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.spring.utils.StubDomainEvent;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -29,19 +29,19 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class InboundEventMessageChannelAdapterTest {
+class InboundEventMessageChannelAdapterTest {
 
     private EventBus mockEventBus;
     private InboundEventMessageChannelAdapter testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockEventBus = mock(EventBus.class);
         testSubject = new InboundEventMessageChannelAdapter(mockEventBus);
     }
 
     @Test
-    public void testMessagePayloadIsPublished() {
+    void testMessagePayloadIsPublished() {
         testSubject = new InboundEventMessageChannelAdapter();
         StubDomainEvent event = new StubDomainEvent();
         testSubject.handleMessage(new GenericMessage<Object>(event));

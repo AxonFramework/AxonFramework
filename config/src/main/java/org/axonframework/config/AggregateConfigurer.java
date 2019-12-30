@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2019. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package org.axonframework.config;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -28,6 +30,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
@@ -46,17 +49,20 @@ import static java.lang.String.format;
 import static org.axonframework.common.Assert.state;
 
 /**
- * Axon Configuration API extension that allows the definition of an Aggregate. This component will automatically
- * setup all components required for the Aggregate to operate.
+ * Axon Configuration API extension that allows the definition of an Aggregate. This component will automatically setup
+ * all components required for the Aggregate to operate.
  *
  * @param <A> The type of Aggregate configured
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
     private final Class<A> aggregate;
 
-    private final Component<AggregateAnnotationCommandHandler> commandHandler;
+    private final Component<AggregateAnnotationCommandHandler<A>> commandHandler;
     private final Component<Repository<A>> repository;
+    private final Component<Cache> cache;
     private final Component<AggregateFactory<A>> aggregateFactory;
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private final Component<CommandTargetResolver> commandTargetResolver;
@@ -66,74 +72,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<Cache> cache;
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
-
-    /**
-     * Creates a default configuration as described in {@link #defaultConfiguration(Class)}. This constructor is
-     * available for subclasses that provide additional configuration possibilities.
-     *
-     * @param aggregate The type of aggregate to configure
-     */
-    protected AggregateConfigurer(Class<A> aggregate) {
-        this.aggregate = aggregate;
-
-        metaModel = new Component<>(() -> parent,
-                                    "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
-                                    c -> c.getComponent(
-                                            AggregateMetaModelFactory.class,
-                                            () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
-                                                                                         c.handlerDefinition(aggregate))
-                                    ).createModel(aggregate));
-        commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
-                                                c -> c.getComponent(CommandTargetResolver.class,
-                                                        () -> AnnotationCommandTargetResolver.builder().build()));
-        snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
-                                                    c -> NoSnapshotTriggerDefinition.INSTANCE);
-        cache = new Component<>(() -> parent, name("cache"), c -> null);
-        aggregateFactory =
-                new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
-        eventStreamFilter =
-                new Component<>(() -> parent, "eventStreamFilter<" + aggregate.getSimpleName() + ">", c -> null);
-        filterEventsByType =
-                new Component<>(() -> parent, "filterByAggregateType<" + aggregate.getSimpleName() + ">", c -> false);
-        repository = new Component<>(
-                () -> parent,
-                "Repository<" + aggregate.getSimpleName() + ">",
-                c -> {
-                    state(c.eventBus() instanceof EventStore,
-                          () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
-                                  "Store to use, or configure a specific repository implementation for " +
-                                  aggregate.toString());
-
-                    if (c.commandBus() instanceof DisruptorCommandBus) {
-                        return ((DisruptorCommandBus) c.commandBus()).createRepository(c.eventStore(),
-                                                                                       aggregateFactory.get(),
-                                                                                       snapshotTriggerDefinition.get(),
-                                                                                       c.parameterResolverFactory(),
-                                                                                       c.handlerDefinition(aggregate),
-                                                                                       c::repository);
-                    }
-
-                    EventSourcingRepository.Builder<A> builder = EventSourcingRepository.builder(aggregate)
-                            .aggregateModel(metaModel.get())
-                            .aggregateFactory(aggregateFactory.get())
-                            .eventStore(c.eventStore())
-                            .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
-                            .repositoryProvider(c::repository)
-                            .cache(cache.get());
-                    if (eventStreamFilter.get() != null) {
-                        builder = builder.eventStreamFilter(eventStreamFilter.get());
-                    } else if (filterEventsByType.get()) {
-                        builder = builder.filterByAggregateType();
-                    }
-                    return builder.build();
-                });
-        commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
-                                         c -> AggregateAnnotationCommandHandler.<A>builder()
-                                                 .repository(repository.get())
-                                                 .commandTargetResolver(commandTargetResolver.get())
-                                                 .aggregateModel(metaModel.get())
-                                                 .build());
-    }
 
     /**
      * Creates a default Configuration for an aggregate of the given {@code aggregateType}. This required either a
@@ -149,9 +87,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational
-     * database using an EntityManager obtained from the main configuration. The given {@code aggregateType}
-     * is expected to be a proper JPA Entity.
+     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational database
+     * using an EntityManager obtained from the main configuration. The given {@code aggregateType} is expected to be a
+     * proper JPA Entity.
      * <p>
      * The EntityManagerProvider is expected to have been registered with the Configurer (which would be the case when
      * using {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider)}. If that is not the case, consider using
@@ -177,18 +115,18 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                 ));
                             });
                     return GenericJpaRepository.builder(aggregateType)
-                            .aggregateModel(configurer.metaModel.get())
-                            .entityManagerProvider(entityManagerProvider)
-                            .eventBus(c.eventBus())
-                            .repositoryProvider(c::repository)
-                            .build();
+                                               .aggregateModel(configurer.metaModel.get())
+                                               .entityManagerProvider(entityManagerProvider)
+                                               .eventBus(c.eventBus())
+                                               .repositoryProvider(c::repository)
+                                               .build();
                 });
     }
 
     /**
-     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational
-     * database using an EntityManager provided by given {@code entityManagerProvider}. The given {@code aggregateType}
-     * is expected to be a proper JPA Entity.
+     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational database
+     * using an EntityManager provided by given {@code entityManagerProvider}. The given {@code aggregateType} is
+     * expected to be a proper JPA Entity.
      *
      * @param aggregateType         The type of Aggregate to configure
      * @param entityManagerProvider The provider for Axon to retrieve the EntityManager from
@@ -200,12 +138,105 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
         return configurer.configureRepository(
                 c -> GenericJpaRepository.builder(aggregateType)
-                        .aggregateModel(configurer.metaModel.get())
-                        .entityManagerProvider(entityManagerProvider)
-                        .eventBus(c.eventBus())
-                        .repositoryProvider(c::repository)
-                        .build()
+                                         .aggregateModel(configurer.metaModel.get())
+                                         .entityManagerProvider(entityManagerProvider)
+                                         .eventBus(c.eventBus())
+                                         .repositoryProvider(c::repository)
+                                         .build()
         );
+    }
+
+    /**
+     * Creates a default configuration as described in {@link #defaultConfiguration(Class)}. This constructor is
+     * available for subclasses that provide additional configuration possibilities.
+     *
+     * @param aggregate The type of aggregate to configure
+     */
+    protected AggregateConfigurer(Class<A> aggregate) {
+        this.aggregate = aggregate;
+
+        metaModel = new Component<>(() -> parent,
+                                    "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
+                                    c -> c.getComponent(
+                                            AggregateMetaModelFactory.class,
+                                            () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
+                                                                                         c.handlerDefinition(aggregate))
+                                    ).createModel(aggregate));
+        commandTargetResolver = new Component<>(
+                () -> parent, name("commandTargetResolver"),
+                c -> c.getComponent(
+                        CommandTargetResolver.class,
+                        () -> AnnotationCommandTargetResolver.builder().build()
+                )
+        );
+        snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
+                                                    c -> NoSnapshotTriggerDefinition.INSTANCE);
+        aggregateFactory =
+                new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
+        cache =
+                new Component<>(() -> parent, name("aggregateCache"), c -> null);
+        eventStreamFilter =
+                new Component<>(() -> parent, "eventStreamFilter<" + aggregate.getSimpleName() + ">", c -> null);
+        filterEventsByType =
+                new Component<>(() -> parent, "filterByAggregateType<" + aggregate.getSimpleName() + ">", c -> false);
+        repository = new Component<>(
+                () -> parent,
+                "Repository<" + aggregate.getSimpleName() + ">",
+                c -> {
+                    state(c.eventBus() instanceof EventStore,
+                          () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
+                                  "Store to use, or configure a specific repository implementation for " +
+                                  aggregate.toString());
+
+                    CommandBus commandBus = c.commandBus();
+                    if (commandBus instanceof DisruptorCommandBus) {
+                        return buildDisruptorRepository((DisruptorCommandBus) commandBus, c, aggregate);
+                    } else if (commandBusHasDisruptorLocalSegment(commandBus)) {
+                        //noinspection unchecked
+                        Distributed<CommandBus> distributedCommandBus = (Distributed<CommandBus>) commandBus;
+                        return buildDisruptorRepository(
+                                (DisruptorCommandBus) distributedCommandBus.localSegment(), c, aggregate
+                        );
+                    }
+
+                    EventSourcingRepository.Builder<A> builder =
+                            EventSourcingRepository.builder(aggregate)
+                                                   .aggregateModel(metaModel.get())
+                                                   .aggregateFactory(aggregateFactory.get())
+                                                   .eventStore(c.eventStore())
+                                                   .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
+                                                   .cache(cache.get())
+                                                   .repositoryProvider(c::repository);
+                    if (eventStreamFilter.get() != null) {
+                        builder = builder.eventStreamFilter(eventStreamFilter.get());
+                    } else if (filterEventsByType.get()) {
+                        builder = builder.filterByAggregateType();
+                    }
+                    return builder.build();
+                });
+        commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
+                                         c -> AggregateAnnotationCommandHandler.<A>builder()
+                                                 .repository(repository.get())
+                                                 .commandTargetResolver(commandTargetResolver.get())
+                                                 .aggregateModel(metaModel.get())
+                                                 .build());
+    }
+
+    private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {
+        //noinspection unchecked
+        return commandBus instanceof Distributed
+                && ((Distributed<CommandBus>) commandBus).localSegment() instanceof DisruptorCommandBus;
+    }
+
+    private Repository<A> buildDisruptorRepository(DisruptorCommandBus commandBus,
+                                                   Configuration parentConfiguration,
+                                                   Class<A> aggregate) {
+        return commandBus.createRepository(parentConfiguration.eventStore(),
+                                           aggregateFactory.get(),
+                                           snapshotTriggerDefinition.get(),
+                                           parentConfiguration.parameterResolverFactory(),
+                                           parentConfiguration.handlerDefinition(aggregate),
+                                           parentConfiguration::repository);
     }
 
     private String name(String prefix) {
@@ -213,8 +244,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Defines the repository to use to load and store Aggregates of this type. The builder function receives the
-     * global configuration object from which it can retrieve components the repository depends on.
+     * Defines the repository to use to load and store Aggregates of this type. The builder function receives the global
+     * configuration object from which it can retrieve components the repository depends on.
      *
      * @param repositoryBuilder The builder function for the repository
      * @return this configurer instance for chaining
@@ -243,7 +274,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return this configurer instance for chaining
      */
     public AggregateConfigurer<A> configureCommandHandler(
-            Function<Configuration, AggregateAnnotationCommandHandler> aggregateCommandHandlerBuilder) {
+            Function<Configuration, AggregateAnnotationCommandHandler<A>> aggregateCommandHandlerBuilder) {
         commandHandler.update(aggregateCommandHandlerBuilder);
         return this;
     }
@@ -276,14 +307,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Configures an event stream filter for the EventSourcingRepository for the Aggregate type under configuration.
-     * By default, no filter is applied to the event stream.
+     * Configures an event stream filter for the EventSourcingRepository for the Aggregate type under configuration. By
+     * default, no filter is applied to the event stream.
      * <p>
      * Note that this configuration is ignored if a custom repository instance is configured.
      *
-     * @see EventSourcingRepository.Builder#eventStreamFilter(Predicate)
      * @param filterBuilder The function creating the filter.
      * @return this configurer instance for chaining
+     * @see EventSourcingRepository.Builder#eventStreamFilter(Predicate)
      */
     public AggregateConfigurer<A> configureEventStreamFilter(
             Function<Configuration, Predicate<? super DomainEventMessage<?>>> filterBuilder) {
@@ -292,16 +323,38 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Configures a function that determines whether or not the EventSourcingRepository for the Aggregate type
-     * under configuration should filter out events with non-matching types. This may be used to support installations
-     * where multiple Aggregate types share overlapping Aggregate IDs.
-     * <p>
-     * Note that this configuration is ignored if a custom repository instance is configured, and that
-     * {@link #configureEventStreamFilter(Function)} overrides this.
+     * Configures the Cache to use for the repository created for this Aggregate type. Note that this setting is ignored
+     * when explicitly configuring a Repository using {@link #configureRepository(Function)}.
      *
-     * @see EventSourcingRepository.Builder#filterByAggregateType()
+     * @param cache the function that defines the Cache to use
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureCache(Function<Configuration, Cache> cache) {
+        this.cache.update(cache);
+        return this;
+    }
+
+    /**
+     * Configures a WeakReferenceCache to be used for the repository created for this Aggregate type. Note that this
+     * setting is ignored when explicitly configuring a Repository using {@link #configureRepository(Function)}.
+     *
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureWeakReferenceCache() {
+        return configureCache(c -> new WeakReferenceCache());
+    }
+
+    /**
+     * Configures a function that determines whether or not the EventSourcingRepository for the Aggregate type under
+     * configuration should filter out events with non-matching types. This may be used to support installations where
+     * multiple Aggregate types share overlapping Aggregate IDs.
+     * <p>
+     * Note that this configuration is ignored if a custom repository instance is configured, and that {@link
+     * #configureEventStreamFilter(Function)} overrides this.
+     *
      * @param filterConfigurationPredicate The function determining whether or not to filter events by Aggregate type.
      * @return this configurer instance for chaining
+     * @see EventSourcingRepository.Builder#filterByAggregateType()
      */
     public AggregateConfigurer<A> configureFilterEventsByType(
             Function<Configuration, Boolean> filterConfigurationPredicate) {

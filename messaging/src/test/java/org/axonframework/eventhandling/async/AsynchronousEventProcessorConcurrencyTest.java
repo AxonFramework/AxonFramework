@@ -18,8 +18,9 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -30,25 +31,26 @@ import java.util.function.Consumer;
 
 import static java.util.Collections.singletonList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class AsynchronousEventProcessorConcurrencyTest {
+class AsynchronousEventProcessorConcurrencyTest {
 
     private ExecutorService executor;
     private AsynchronousEventProcessingStrategy testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         executor = Executors.newCachedThreadPool();
         testSubject = new AsynchronousEventProcessingStrategy(executor, Message::getPayload);
     }
 
-    @Test(timeout = EventsPublisher.EVENTS_COUNT)
-    public void testHandleEvents() throws InterruptedException {
+    @Test
+    @Timeout(value = EventsPublisher.EVENTS_COUNT, unit = TimeUnit.MILLISECONDS)
+    void testHandleEvents() throws InterruptedException {
         final AtomicInteger counter = new AtomicInteger();
         Consumer<List<? extends EventMessage<?>>> processor = eventMessages -> counter.addAndGet(eventMessages.size());
 
@@ -61,8 +63,7 @@ public class AsynchronousEventProcessorConcurrencyTest {
         }
 
         executor.shutdown();
-        assertTrue("Executor not closed within a reasonable timeframe", executor.awaitTermination(10,
-                                                                                                  TimeUnit.SECONDS));
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS), "Executor not closed within a reasonable timeframe");
 
         assertEquals(threadCount * EventsPublisher.EVENTS_COUNT, counter.get());
     }

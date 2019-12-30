@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
 
@@ -42,13 +42,13 @@ import javax.persistence.LockModeType;
 import javax.persistence.Version;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class GenericJpaRepositoryTest {
+class GenericJpaRepositoryTest {
 
     private EntityManager mockEntityManager;
     private GenericJpaRepository<StubJpaAggregate> testSubject;
@@ -57,8 +57,8 @@ public class GenericJpaRepositoryTest {
     private Function<String, ?> identifierConverter;
     private EventBus eventBus;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
@@ -76,15 +76,15 @@ public class GenericJpaRepositoryTest {
                 .thenReturn(aggregate);
     }
 
-    @After
-    public void cleanUp() {
+    @AfterEach
+    void cleanUp() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
     }
 
     @Test
-    public void testAggregateStoredBeforeEventsPublished() throws Exception {
+    void testAggregateStoredBeforeEventsPublished() throws Exception {
         //noinspection unchecked
         Consumer<List<? extends EventMessage<?>>> mockConsumer = mock(Consumer.class);
         eventBus.subscribe(mockConsumer);
@@ -98,20 +98,20 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testLoadAggregate() {
+    void testLoadAggregate() {
         Aggregate<StubJpaAggregate> actualResult = testSubject.load(aggregateId);
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    public void testLoadAggregateWithConverter() {
+    void testLoadAggregateWithConverter() {
         when(identifierConverter.apply("original")).thenAnswer(new Returns(aggregateId));
         Aggregate<StubJpaAggregate> actualResult = testSubject.load("original");
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    public void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
+    void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -154,7 +154,7 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testAggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
+    void testAggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
         SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -185,7 +185,7 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testLoadAggregate_NotFound() {
+    void testLoadAggregate_NotFound() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         try {
             testSubject.load(aggregateIdentifier);
@@ -196,7 +196,7 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testLoadAggregate_WrongVersion() {
+    void testLoadAggregate_WrongVersion() {
         try {
             testSubject.load(aggregateId, 2L);
             fail("Expected ConflictingAggregateVersionException");
@@ -207,14 +207,14 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testPersistAggregate_DefaultFlushMode() {
+    void testPersistAggregate_DefaultFlushMode() {
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
 
     @Test
-    public void testPersistAggregate_ExplicitFlushModeOn() {
+    void testPersistAggregate_ExplicitFlushModeOn() {
         testSubject.setForceFlushOnSave(true);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
@@ -222,7 +222,7 @@ public class GenericJpaRepositoryTest {
     }
 
     @Test
-    public void testPersistAggregate_ExplicitFlushModeOff() {
+    void testPersistAggregate_ExplicitFlushModeOff() {
         testSubject.setForceFlushOnSave(false);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
@@ -264,7 +264,7 @@ public class GenericJpaRepositoryTest {
         private List<EventMessage> publishedEvents = new ArrayList<>();
         private Map<String, Long> sequencePerAggregate = new HashMap<>();
 
-        protected DomainSequenceAwareEventBus() {
+        DomainSequenceAwareEventBus() {
             super(SimpleEventBus.builder());
         }
 
@@ -274,7 +274,7 @@ public class GenericJpaRepositoryTest {
             super.publish(events);
         }
 
-        public List<EventMessage> getPublishedEvents() {
+        List<EventMessage> getPublishedEvents() {
             return publishedEvents;
         }
 

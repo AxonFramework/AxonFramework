@@ -26,7 +26,7 @@ import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.modelling.utils.StubDomainEvent;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -35,9 +35,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.fail;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -49,8 +48,8 @@ public class AnnotatedSagaManagerTest {
     private AnnotatedSagaManager<MyTestSaga> manager;
     private InMemorySagaStore sagaStore;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         sagaStore = new InMemorySagaStore();
         sagaRepository = spy(
                 AnnotatedSagaRepository.<MyTestSaga>builder()
@@ -66,26 +65,26 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testCreationPolicy_NoneExists() throws Exception {
+    void testCreationPolicy_NoneExists() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
-    public void testCreationPolicy_OneAlreadyExists() throws Exception {
+    void testCreationPolicy_OneAlreadyExists() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("123")));
         handle(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
-    public void testHandleUnrelatedEvent() throws Exception {
+    void testHandleUnrelatedEvent() throws Exception {
         handle(new GenericEventMessage<>("Unrelated"));
         verify(sagaRepository, never()).find(isNull());
     }
 
     @Test
-    public void testCreationPolicy_CreationForced() throws Exception {
+    void testCreationPolicy_CreationForced() throws Exception {
         StartingEvent startingEvent = new StartingEvent("123");
         handle(new GenericEventMessage<>(startingEvent));
         handle(new GenericEventMessage<>(new ForcingStartEvent("123")));
@@ -100,13 +99,13 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testCreationPolicy_SagaNotCreated() throws Exception {
+    void testCreationPolicy_SagaNotCreated() throws Exception {
         handle(new GenericEventMessage<>(new MiddleEvent("123")));
         assertEquals(0, repositoryContents("123").size());
     }
 
     @Test
-    public void testMostSpecificHandlerEvaluatedFirst() throws Exception {
+    void testMostSpecificHandlerEvaluatedFirst() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("12")));
         handle(new GenericEventMessage<>(new StartingEvent("23")));
         assertEquals(1, repositoryContents("12").size());
@@ -119,14 +118,14 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testNullAssociationValueIsIgnored() throws Exception {
+    void testNullAssociationValueIsIgnored() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent(null)));
 
         verify(sagaRepository, never()).find(null);
     }
 
     @Test
-    public void testLifecycle_DestroyedOnEnd() throws Exception {
+    void testLifecycle_DestroyedOnEnd() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("12")));
         handle(new GenericEventMessage<>(new StartingEvent("23")));
         handle(new GenericEventMessage<>(new MiddleEvent("12")));
@@ -145,12 +144,12 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testNullAssociationValueDoesNotThrowNullPointer() throws Exception {
+    void testNullAssociationValueDoesNotThrowNullPointer() throws Exception {
         handle(asEventMessage(new StartingEvent(null)));
     }
 
     @Test
-    public void testLifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
+    void testLifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("12")));
         handle(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(1, repositoryContents("12").size());
@@ -158,7 +157,7 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testLifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
+    void testLifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
         handle(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
     }
@@ -237,7 +236,7 @@ public class AnnotatedSagaManagerTest {
 
         private String myIdentifier;
 
-        protected MyIdentifierEvent(String myIdentifier) {
+        public MyIdentifierEvent(String myIdentifier) {
             this.myIdentifier = myIdentifier;
         }
 
@@ -248,7 +247,7 @@ public class AnnotatedSagaManagerTest {
 
     public static class StartingEvent extends MyIdentifierEvent {
 
-        protected StartingEvent(String myIdentifier) {
+        public StartingEvent(String myIdentifier) {
             super(myIdentifier);
         }
     }
@@ -290,21 +289,21 @@ public class AnnotatedSagaManagerTest {
 
     public static class ForcingStartEvent extends MyIdentifierEvent {
 
-        protected ForcingStartEvent(String myIdentifier) {
+        public ForcingStartEvent(String myIdentifier) {
             super(myIdentifier);
         }
     }
 
     public static class EndingEvent extends MyIdentifierEvent {
 
-        protected EndingEvent(String myIdentifier) {
+        public EndingEvent(String myIdentifier) {
             super(myIdentifier);
         }
     }
 
     public static class MiddleEvent extends MyIdentifierEvent {
 
-        protected MiddleEvent(String myIdentifier) {
+        public MiddleEvent(String myIdentifier) {
             super(myIdentifier);
         }
     }

@@ -25,8 +25,8 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,18 +34,18 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test ensures that any handler interceptor registered via {@link EventProcessingModule} is triggered.
  *
  * @author Milan Savic
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class EventProcessingModuleWithInterceptorsTest {
 
@@ -55,7 +55,7 @@ public class EventProcessingModuleWithInterceptorsTest {
     private Context.MyEventHandler myEventHandler;
 
     @Test
-    public void testInterceptorRegistration() {
+    void testInterceptorRegistration() {
         eventBus.publish(GenericEventMessage.asEventMessage("myEvent"));
         assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
     }

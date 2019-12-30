@@ -26,44 +26,58 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.stubbing.*;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isA;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-public class EventBufferTest {
+/**
+ * Test class to verify the implementation of the {@link EventBuffer} class.
+ *
+ * @author Marc Gathier
+ * @author Steven van Beelen
+ */
+class EventBufferTest {
+
     private EventUpcaster stubUpcaster;
+    private XStreamSerializer serializer;
+
     private EventBuffer testSubject;
 
-    private XStreamSerializer serializer;
     private org.axonframework.serialization.SerializedObject<byte[]> serializedObject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         stubUpcaster = mock(EventUpcaster.class);
-        when(stubUpcaster.upcast(any())).thenAnswer((Answer<Stream<IntermediateEventRepresentation>>) invocationOnMock -> (Stream<IntermediateEventRepresentation>) invocationOnMock.getArguments()[0]);
-        serializer = XStreamSerializer.builder().build();
+        //noinspection unchecked
+        when(stubUpcaster.upcast(any()))
+                .thenAnswer((Answer<Stream<IntermediateEventRepresentation>>) invocationOnMock ->
+                        (Stream<IntermediateEventRepresentation>) invocationOnMock.getArguments()[0]
+                );
 
+        serializer = XStreamSerializer.defaultSerializer();
         serializedObject = serializer.serialize("some object", byte[].class);
+
+        testSubject = new EventBuffer(stubUpcaster, serializer);
     }
 
     @Test
-    public void testDataUpcastAndDeserialized() throws InterruptedException {
-        testSubject = new EventBuffer(stubUpcaster, serializer);
-
+    void testDataUpcastAndDeserialized() throws InterruptedException {
         assertFalse(testSubject.hasNextAvailable());
         testSubject.push(createEventData(1L));
         assertTrue(testSubject.hasNextAvailable());
 
-        TrackedEventMessage<?> peeked = testSubject.peek().orElseThrow(() -> new AssertionError("Expected value to be available"));
+        TrackedEventMessage<?> peeked =
+                testSubject.peek().orElseThrow(() -> new AssertionError("Expected value to be available"));
         assertEquals(new GlobalSequenceTrackingToken(1L), peeked.trackingToken());
         assertTrue(peeked instanceof DomainEventMessage<?>);
 
@@ -73,13 +87,13 @@ public class EventBufferTest {
         assertFalse(testSubject.hasNextAvailable());
         assertFalse(testSubject.hasNextAvailable(10, TimeUnit.MILLISECONDS));
 
+        //noinspection unchecked
         verify(stubUpcaster).upcast(isA(Stream.class));
     }
 
     @Test
-    public void testConsumptionIsRecorded() {
-        stubUpcaster = stream -> stream.filter(i -> false);
-        testSubject = new EventBuffer(stubUpcaster, serializer);
+    void testConsumptionIsRecorded() {
+        testSubject = new EventBuffer(stream -> stream.filter(i -> false), serializer);
 
         testSubject.push(createEventData(1));
         testSubject.push(createEventData(2));
@@ -92,20 +106,50 @@ public class EventBufferTest {
         assertEquals(3, consumed.get());
     }
 
-    private EventWithToken createEventData(long sequence) {
-        return EventWithToken.newBuilder()
-                             .setToken(sequence)
-                             .setEvent(Event.newBuilder()
-                                            .setPayload(SerializedObject.newBuilder()
-                                                                        .setData(ByteString.copyFrom(serializedObject.getData()))
-                                                                        .setType(serializedObject.getType().getName()))
-                                            .setMessageIdentifier(UUID.randomUUID().toString())
-                                            .setAggregateType("Test")
-                                            .setAggregateSequenceNumber(sequence)
-                                            .setTimestamp(System.currentTimeMillis())
-                                            .setAggregateIdentifier("1235"))
-                             .build();
+    @Test
+    @Timeout(value = 2)
+    void testNextAvailableDoesNotBlockIndefinitelyIfTheStreamIsClosedExceptionally()
+            throws InterruptedException {
+        RuntimeException expected = new RuntimeException("Some Exception");
+        AtomicReference<Exception> result = new AtomicReference<>();
+
+        // Create and start "nextAvailable" thread
+        Thread pollingThread = new Thread(() -> {
+            try {
+                testSubject.nextAvailable();
+            } catch (Exception e) {
+                result.set(e);
+            }
+        });
+        pollingThread.start();
+        // Sleep to give "pollingThread" time to enter event polling operation
+        Thread.sleep(50);
+        // Fail the EventBuffer, which should close the stream
+        testSubject.fail(expected);
+        // Wait for the pollingThread to be resolved due to the thrown RuntimeException
+        pollingThread.join();
+
+        assertEquals(expected, result.get());
     }
 
+    private EventWithToken createEventData(long sequence) {
+        SerializedObject payload = SerializedObject.newBuilder()
+                                                   .setData(ByteString.copyFrom(serializedObject.getData()))
+                                                   .setType(serializedObject.getType().getName())
+                                                   .build();
 
+        Event event = Event.newBuilder()
+                           .setPayload(payload)
+                           .setMessageIdentifier(UUID.randomUUID().toString())
+                           .setAggregateType("Test")
+                           .setAggregateSequenceNumber(sequence)
+                           .setTimestamp(System.currentTimeMillis())
+                           .setAggregateIdentifier("1235")
+                           .build();
+
+        return EventWithToken.newBuilder()
+                             .setToken(sequence)
+                             .setEvent(event)
+                             .build();
+    }
 }

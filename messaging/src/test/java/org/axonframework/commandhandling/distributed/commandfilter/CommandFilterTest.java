@@ -19,14 +19,14 @@ package org.axonframework.commandhandling.distributed.commandfilter;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.GenericMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CommandFilterTest {
+class CommandFilterTest {
     @Test
-    public void testAcceptAll() {
+    void testAcceptAll() {
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(new Object());
 
         assertTrue(AcceptAll.INSTANCE.matches(testCommand));
@@ -36,7 +36,7 @@ public class CommandFilterTest {
     }
 
     @Test
-    public void testDenyAll() {
+    void testDenyAll() {
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(new Object());
 
         assertFalse(DenyAll.INSTANCE.matches(testCommand));
@@ -46,7 +46,7 @@ public class CommandFilterTest {
     }
 
     @Test
-    public void testCommandNameFilter() {
+    void testCommandNameFilter() {
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
 
         CommandNameFilter filterAcceptable = new CommandNameFilter("acceptable");
@@ -75,7 +75,7 @@ public class CommandFilterTest {
     }
 
     @Test
-    public void testDenyCommandNameFilter() {
+    void testDenyCommandNameFilter() {
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
 
         DenyCommandNameFilter filterAcceptable = new DenyCommandNameFilter("acceptable");

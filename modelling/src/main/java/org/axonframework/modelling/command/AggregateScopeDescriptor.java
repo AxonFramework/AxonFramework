@@ -111,7 +111,7 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, identifierSupplier);
+        return Objects.hash(type, getIdentifier());
     }
 
     @Override
@@ -124,14 +124,14 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
         }
         final AggregateScopeDescriptor other = (AggregateScopeDescriptor) obj;
         return Objects.equals(this.type, other.type)
-                && Objects.equals(this.identifier, other.identifier);
+                && Objects.equals(this.getIdentifier(), other.getIdentifier());
     }
 
     @Override
     public String toString() {
         return "AggregateScopeDescriptor{" +
                 "type=" + type +
-                ", identifier='" + identifier + '\'' +
+                ", identifier='" + getIdentifier() + '\'' +
                 '}';
     }
 }

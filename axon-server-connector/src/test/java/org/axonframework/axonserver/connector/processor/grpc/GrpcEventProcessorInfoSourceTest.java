@@ -6,7 +6,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-public class GrpcEventProcessorInfoSourceTest {
+class GrpcEventProcessorInfoSourceTest {
 
     private static final String BOUNDED_CONTEXT = "some-context";
 
@@ -29,7 +29,7 @@ public class GrpcEventProcessorInfoSourceTest {
     );
 
     @Test
-    public void testNotifyInformation() {
+    void testNotifyInformation() {
         EventProcessor mockEventProcessor = mock(TrackingEventProcessor.class);
         when(mockEventProcessor.getName()).thenReturn("eventProcessor");
         Map<String, EventProcessor> testEventProcessors = ImmutableMap.of("eventProcessor", mockEventProcessor);

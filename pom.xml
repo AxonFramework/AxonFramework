@@ -123,14 +123,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- dependency versions -->
-        <slf4j.version>1.7.26</slf4j.version>
+        <slf4j.version>1.7.28</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
-        <spring.version>5.1.5.RELEASE</spring.version>
+        <spring.version>5.1.9.RELEASE</spring.version>
         <spring-security.version>5.1.4.RELEASE</spring-security.version>
-        <spring.boot.version>2.1.3.RELEASE</spring.boot.version>
+        <spring.boot.version>2.1.8.RELEASE</spring.boot.version>
         <mockito.version>3.0.0</mockito.version>
         <projectreactor.version>3.2.6.RELEASE</projectreactor.version>
-        <micrometer.version>1.1.3</micrometer.version>
+        <micrometer.version>1.3.0</micrometer.version>
         <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
         <jackson.version>2.9.8</jackson.version>
         <!--
@@ -140,7 +140,7 @@
         -->
         <grpc.version>1.22.1</grpc.version>
         <netty.tcnative.version>2.0.25.Final</netty.tcnative.version>
-        <axonserver.api.version>4.2</axonserver.api.version>
+        <axonserver.api.version>4.3-SNAPSHOT</axonserver.api.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.0.0</javax.cache-api.version>
         <javax.el-api.version>2.2.4</javax.el-api.version>
@@ -153,7 +153,7 @@
         <ehcache.version>2.10.6</ehcache.version>
         <quartz.version>2.3.0</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
-        <hsqldb.version>2.3.4</hsqldb.version>
+        <hsqldb.version>2.5.0</hsqldb.version>
         <hibernate-validator.version>5.2.4.Final</hibernate-validator.version>
         <hibernate-entitymanager.version>5.4.1.Final</hibernate-entitymanager.version>
         <byte-buddy.version>1.9.16</byte-buddy.version>
@@ -163,8 +163,9 @@
         <el-impl.version>2.2</el-impl.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.1</dom4j.version>
-        <postgresql.version>42.2.5</postgresql.version>
+        <postgresql.version>42.2.8</postgresql.version>
         <junit4.version>4.12</junit4.version>
+        <junit.jupiter.version>5.5.2</junit.jupiter.version>
 
         <!-- plugin versions -->
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
@@ -173,14 +174,28 @@
     <dependencies>
         <!-- test dependencies -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit4.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -285,6 +300,11 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${mockito.version}</version>
             </dependency>
             <dependency>
@@ -431,6 +451,31 @@
                 <artifactId>jaxb-api</artifactId>
                 <version>${javax.jaxb-api.version}</version>
             </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>1.3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -439,7 +484,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
@@ -455,7 +500,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.0.2</version>
+                <version>3.1.0</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                 </configuration>
@@ -498,7 +543,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>2.22.2</version>
                 <configuration>
                     <includes>
                         <include>**/*Test.java</include>
@@ -545,7 +590,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
+                <version>3.1.2</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -556,7 +601,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>

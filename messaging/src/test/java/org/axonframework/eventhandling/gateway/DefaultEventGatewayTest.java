@@ -20,8 +20,8 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.*;
@@ -29,15 +29,15 @@ import static org.mockito.Mockito.*;
 /**
  * @author Bert Laverman
  */
-public class DefaultEventGatewayTest {
+class DefaultEventGatewayTest {
 
     private DefaultEventGateway testSubject;
     private EventBus mockEventBus;
     private MessageDispatchInterceptor mockEventMessageTransformer;
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mockEventBus = mock(EventBus.class);
         mockEventMessageTransformer = mock(MessageDispatchInterceptor.class);
 
@@ -51,7 +51,7 @@ public class DefaultEventGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    public void testPublish() {
+    void testPublish() {
         testSubject.publish("Event1");
         verify(mockEventBus).publish(
                 argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event1")));

@@ -26,17 +26,23 @@ public class StubServer {
 
     private final Server server;
     private final PlatformService platformService;
+    private int port;
 
     public StubServer(int port) {
         this(port, port);
     }
 
     public StubServer(int port, int redirectPort) {
-        platformService = new PlatformService(redirectPort);
+        this(port, new PlatformService(redirectPort));
+    }
+
+    public StubServer(int port, PlatformService platformService) {
+        this.port = port;
         server = NettyServerBuilder.forPort(port)
-                                   .addService(new EventStoreImpl())
-                                   .addService(platformService)
-                                   .build();
+                .addService(new EventStoreImpl())
+                .addService(platformService)
+                .build();
+        this.platformService = platformService;
     }
 
     public void start() throws IOException {
@@ -46,6 +52,10 @@ public class StubServer {
     public void shutdown() throws InterruptedException {
         server.shutdown();
         server.awaitTermination(1, TimeUnit.SECONDS);
+    }
+
+    public int getPort() {
+        return port;
     }
 
     public PlatformService getPlatformService() {

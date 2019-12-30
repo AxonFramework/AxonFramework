@@ -20,18 +20,19 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -39,8 +40,8 @@ import static org.mockito.Mockito.*;
  *
  * @author Rob van der Linden Vooren
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigurationScopeAwareProviderTest {
+@ExtendWith(MockitoExtension.class)
+class ConfigurationScopeAwareProviderTest {
 
     @Mock
     private Configuration configuration;
@@ -62,14 +63,14 @@ public class ConfigurationScopeAwareProviderTest {
 
     private ConfigurationScopeAwareProvider scopeAwareProvider;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         when(configuration.eventProcessingConfiguration()).thenReturn(eventProcessingConfiguration);
         scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
     }
 
     @Test
-    public void providesScopeAwareAggregatesFromModuleConfiguration() {
+    void providesScopeAwareAggregatesFromModuleConfiguration() {
         when(configuration.findModules(AggregateConfiguration.class)).thenCallRealMethod();
         when(configuration.getModules())
                 .thenReturn(singletonList(new WrappingModuleConfiguration(aggregateConfiguration)));
@@ -78,11 +79,11 @@ public class ConfigurationScopeAwareProviderTest {
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                                                         .collect(toList());
 
-        assertThat(components, equalTo(singletonList(aggregateRepository)));
+        assertEquals(singletonList(aggregateRepository), components);
     }
 
     @Test
-    public void providesScopeAwareSagasFromModuleConfiguration() {
+    void providesScopeAwareSagasFromModuleConfiguration() {
         when(eventProcessingConfiguration.sagaConfigurations())
                 .thenReturn(singletonList(sagaConfiguration));
         when(sagaConfiguration.manager()).thenReturn(sagaManager);
@@ -90,18 +91,19 @@ public class ConfigurationScopeAwareProviderTest {
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                                                         .collect(toList());
 
-        assertThat(components, equalTo(singletonList(sagaManager)));
+        assertEquals(singletonList(sagaManager), components);
     }
 
+    @MockitoSettings(strictness = Strictness.LENIENT)
     @Test
-    public void lazilyInitializes() {
+    void lazilyInitializes() {
         new ConfigurationScopeAwareProvider(configuration);
 
         verifyZeroInteractions(configuration);
     }
 
     @Test
-    public void cachesScopeAwareComponentsOnceProvisioned() {
+    void cachesScopeAwareComponentsOnceProvisioned() {
         when(configuration.findModules(AggregateConfiguration.class)).thenCallRealMethod();
         when(configuration.getModules())
                 .thenReturn(singletonList(new WrappingModuleConfiguration(aggregateConfiguration)));
@@ -116,7 +118,7 @@ public class ConfigurationScopeAwareProviderTest {
         List<ScopeAware> second = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor()).collect(toList());
         verifyZeroInteractions(configuration);
         verifyZeroInteractions(aggregateConfiguration);
-        assertThat(second, equalTo(first));
+        assertEquals(first, second);
     }
 
     private static ScopeDescriptor anyScopeDescriptor() {

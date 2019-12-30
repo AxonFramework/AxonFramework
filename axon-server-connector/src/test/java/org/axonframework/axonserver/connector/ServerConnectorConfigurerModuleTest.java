@@ -24,14 +24,14 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ServerConnectorConfigurerModuleTest {
+class ServerConnectorConfigurerModuleTest {
 
     @Test
-    public void testAxonServerConfiguredInDefaultConfiguration() {
+    void testAxonServerConfiguredInDefaultConfiguration() {
         Configuration testSubject = DefaultConfigurer.defaultConfiguration()
                                                      .buildConfiguration();
 
@@ -60,7 +60,7 @@ public class ServerConnectorConfigurerModuleTest {
     }
 
     @Test
-    public void testQueryUpdateEmitterIsTakenFromConfiguration() {
+    void testQueryUpdateEmitterIsTakenFromConfiguration() {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .buildConfiguration();
 

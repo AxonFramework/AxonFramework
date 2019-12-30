@@ -19,7 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
 import java.util.Arrays;
@@ -33,14 +33,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for different types of queries hitting query handlers with Future as a response type.
  *
  * @author Milan Savic
  */
-public class FutureAsResponseTypeToQueryHandlersTest {
+class FutureAsResponseTypeToQueryHandlersTest {
 
     private static final int FUTURE_RESOLVING_TIMEOUT = 500;
 
@@ -49,13 +49,13 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             myQueryHandler);
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         annotationQueryHandlerAdapter.subscribe(queryBus);
     }
 
     @Test
-    public void testQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
+    void testQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
         QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
                 "criteria", "myQueryWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class));
 
@@ -65,7 +65,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    public void testQueryWithSingleResponse() throws ExecutionException, InterruptedException {
+    void testQueryWithSingleResponse() throws ExecutionException, InterruptedException {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>(
                 "criteria", "myQueryWithSingleResponse", ResponseTypes.instanceOf(String.class));
 
@@ -75,7 +75,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    public void testScatterGatherQueryWithMultipleResponses() {
+    void testScatterGatherQueryWithMultipleResponses() {
         QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
                 "criteria", "myQueryWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class));
 
@@ -89,7 +89,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    public void testScatterGatherQueryWithSingleResponse() {
+    void testScatterGatherQueryWithSingleResponse() {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>(
                 "criteria", "myQueryWithSingleResponse", ResponseTypes.instanceOf(String.class));
 
@@ -103,7 +103,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    public void testSubscriptionQueryWithMultipleResponses() {
+    void testSubscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "criteria",
                 "myQueryWithMultipleResponses",
@@ -116,7 +116,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    public void testSubscriptionQueryWithSingleResponse() {
+    void testSubscriptionQueryWithSingleResponse() {
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "criteria",
                 "myQueryWithSingleResponse",

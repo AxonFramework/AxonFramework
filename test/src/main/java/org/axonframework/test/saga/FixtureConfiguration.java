@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -166,6 +167,19 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback);
+
+    /**
+     * Registers a {@link ListenerInvocationErrorHandler} to be set for the Saga to deal with exceptions being thrown
+     * from within Saga Event Handlers. Will be given to the
+     * {@link org.axonframework.modelling.saga.AnnotatedSagaManager} for the defined Saga type. Defaults to a
+     * {@link org.axonframework.eventhandling.LoggingErrorHandler}.
+     *
+     * @param listenerInvocationErrorHandler to be set for the Saga to deal with exceptions being thrown from within
+     *                                       Saga Event Handlers
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerListenerInvocationErrorHandler(
+            ListenerInvocationErrorHandler listenerInvocationErrorHandler);
 
     /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.

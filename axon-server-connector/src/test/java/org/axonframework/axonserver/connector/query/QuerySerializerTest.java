@@ -24,21 +24,21 @@ import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Created by Sara Pellegrini on 28/06/2018.
  * sara.pellegrini@gmail.com
  */
-public class QuerySerializerTest {
+class QuerySerializerTest {
 
     private final Serializer xStreamSerializer = XStreamSerializer.builder().build();
 
@@ -52,7 +52,7 @@ public class QuerySerializerTest {
     private final QuerySerializer testSubject = new QuerySerializer(jacksonSerializer, xStreamSerializer, configuration);
 
     @Test
-    public void testSerializeRequest() {
+    void testSerializeRequest() {
         QueryMessage<String, Integer> message = new GenericQueryMessage<>("Test", "MyQueryName", instanceOf(int.class));
         QueryRequest queryRequest = testSubject.serializeRequest(message, 5, 10, 1);
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
@@ -66,14 +66,14 @@ public class QuerySerializerTest {
     }
 
     @Test
-    public void testSerializeResponse() {
+    void testSerializeResponse() {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
         }};
         QueryResponseMessage message = new GenericQueryResponseMessage<>(BigDecimal.class, BigDecimal.ONE, metadata);
         QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
-        QueryResponseMessage<Object> deserialized = testSubject.deserializeResponse(grpcMessage);
+        QueryResponseMessage<BigDecimal> deserialized = testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
 
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
@@ -82,7 +82,7 @@ public class QuerySerializerTest {
     }
 
     @Test
-    public void testSerializeExceptionalResponse() {
+    void testSerializeExceptionalResponse() {
         RuntimeException exception = new RuntimeException("oops");
         GenericQueryResponseMessage responseMessage = new GenericQueryResponseMessage<>(
                 String.class,
@@ -90,7 +90,7 @@ public class QuerySerializerTest {
                 MetaData.with("test", "testValue"));
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
-        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound);
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
         assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
@@ -100,7 +100,7 @@ public class QuerySerializerTest {
     }
 
     @Test
-    public void testSerializeExceptionalResponseWithDetails() {
+    void testSerializeExceptionalResponseWithDetails() {
         Exception exception = new QueryExecutionException("oops", null, "Details");
         GenericQueryResponseMessage responseMessage = new GenericQueryResponseMessage<>(
                 String.class,
@@ -108,7 +108,7 @@ public class QuerySerializerTest {
                 MetaData.with("test", "testValue"));
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
-        QueryResponseMessage<?> deserialize = testSubject.deserializeResponse(outbound);
+        QueryResponseMessage<?> deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
         assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());

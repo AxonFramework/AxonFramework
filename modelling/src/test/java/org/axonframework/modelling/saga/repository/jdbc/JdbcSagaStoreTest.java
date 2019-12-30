@@ -22,20 +22,20 @@ import org.axonframework.modelling.saga.AssociationValuesImpl;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.StubSaga;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Kristian Rosenvold
  */
-public class JdbcSagaStoreTest {
+class JdbcSagaStoreTest {
 
     private Connection connection;
 
@@ -43,8 +43,8 @@ public class JdbcSagaStoreTest {
 
     private JDBCDataSource dataSource;
 
-    @Before
-    public void setUp() throws SQLException {
+    @BeforeEach
+    void setUp() throws SQLException {
         dataSource = spy(new JDBCDataSource());
         dataSource.setUrl("jdbc:hsqldb:mem:test");
 
@@ -55,14 +55,14 @@ public class JdbcSagaStoreTest {
         reset(dataSource);
     }
 
-    @After
-    public void shutDown() throws SQLException {
+    @AfterEach
+    void shutDown() throws SQLException {
         connection.createStatement().execute("SHUTDOWN");
         connection.close();
     }
 
     @Test
-    public void testInsertUpdateAndLoadSaga() {
+    void testInsertUpdateAndLoadSaga() {
         StubSaga saga = new StubSaga();
         Set<AssociationValue> associationValues = singleton(new AssociationValue("key", "value"));
         testSubject.insertSaga(StubSaga.class, "123", saga, associationValues);
@@ -75,12 +75,12 @@ public class JdbcSagaStoreTest {
     }
 
     @Test
-    public void testLoadSaga_NotFound() {
+    void testLoadSaga_NotFound() {
         assertNull(testSubject.loadSaga(StubSaga.class, "123456"));
     }
 
     @Test
-    public void testLoadSagaByAssociationValue() {
+    void testLoadSagaByAssociationValue() {
         AssociationValues associationsValues =
                 new AssociationValuesImpl(singleton(new AssociationValue("key", "value")));
         testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), associationsValues.asSet());

@@ -16,23 +16,23 @@
 
 package org.axonframework.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoField;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DateTimeUtilsTest {
+class DateTimeUtilsTest {
 
     @Test
-    public void testFormattedDateAlwaysContainsMillis() {
+    void testFormattedDateAlwaysContainsMillis() {
         Instant now = Instant.now();
         Instant nowAtZeroMillis = now.minusNanos(now.get(ChronoField.NANO_OF_SECOND));
 
         String formatted = DateTimeUtils.formatInstant(nowAtZeroMillis);
-        assertTrue("Time doesn't seem to contain explicit millis: " + formatted, formatted.matches(".*\\.0{3,}Z"));
+        assertTrue(formatted.matches(".*\\.0{3,}Z"), "Time doesn't seem to contain explicit millis: " + formatted);
 
         assertEquals(nowAtZeroMillis, DateTimeUtils.parseInstant(formatted));
     }

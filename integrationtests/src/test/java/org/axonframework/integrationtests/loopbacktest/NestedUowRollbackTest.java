@@ -24,14 +24,14 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
-public class NestedUowRollbackTest {
+class NestedUowRollbackTest {
 
     @Test
-    public void testDispatchCommand() {
+    void testDispatchCommand() {
         Configuration c = DefaultConfigurer.defaultConfiguration()
                 .configureAggregate(TestAggregate.class)
                 .registerCommandHandler(x -> new Handler())

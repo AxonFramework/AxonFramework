@@ -26,15 +26,15 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.integrationtests.utils.EventTestUtils;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class SubscribingEventProcessorTest {
+class SubscribingEventProcessorTest {
 
     private SubscribingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;
@@ -42,8 +42,8 @@ public class SubscribingEventProcessorTest {
     private EventMessageHandler mockHandler;
     private TestingTransactionManager transactionManager;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         mockHandler = mock(EventMessageHandler.class);
         eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build();
         eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
@@ -56,14 +56,14 @@ public class SubscribingEventProcessorTest {
                                                .build();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
     }
 
     @Test
-    public void testRestartSubscribingEventProcessor() throws Exception {
+    void testRestartSubscribingEventProcessor() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
             countDownLatch.countDown();
@@ -75,15 +75,15 @@ public class SubscribingEventProcessorTest {
         testSubject.start();
 
         eventBus.publish(EventTestUtils.createEvents(2));
-        assertTrue("Expected Handler to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
     }
 
     @Test
-    public void testStartTransactionManager() throws Exception {
+    void testStartTransactionManager() throws Exception {
         testSubject.start();
         eventBus.publish(EventTestUtils.createEvents(1));
 
-        assertTrue("Expected Transaction to be started", transactionManager.started);
+        assertTrue(transactionManager.started, "Expected Transaction to be started");
     }
 
     static class TestingTransactionManager implements TransactionManager {

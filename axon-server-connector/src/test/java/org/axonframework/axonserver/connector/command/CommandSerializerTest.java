@@ -23,41 +23,34 @@ import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.*;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Author: marc
  */
-@RunWith(Parameterized.class)
-public class CommandSerializerTest {
+class CommandSerializerTest {
 
-    private final CommandSerializer testSubject;
-
-    @Parameterized.Parameters(name = "{0}")
-    public static Collection<?> data() {
-        return Arrays.asList(new Object[]{"JacksonSerializer", JacksonSerializer.defaultSerializer()},
-                             new Object[]{"XStreamSerializer", XStreamSerializer.defaultSerializer()});
-    }
-
-    public CommandSerializerTest(@SuppressWarnings("unused") String name, Serializer serializer) {
+    public static Stream<CommandSerializer> data() {
         AxonServerConfiguration configuration = new AxonServerConfiguration() {{
             this.setClientId("client");
             this.setComponentName("component");
         }};
-        testSubject = new CommandSerializer(serializer, configuration);
+        return Stream.of(JacksonSerializer.defaultSerializer(),
+                         XStreamSerializer.defaultSerializer())
+                .map(serializer -> new CommandSerializer(serializer, configuration));
     }
 
-    @Test
-    public void testSerializeRequest() {
+    @MethodSource("data")
+    @ParameterizedTest
+    void testSerializeRequest(CommandSerializer testSubject) {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
@@ -73,8 +66,9 @@ public class CommandSerializerTest {
         assertEquals(message.getPayload(), deserialize.getPayload());
     }
 
-    @Test
-    public void testSerializeResponse() {
+    @MethodSource("data")
+    @ParameterizedTest
+    void testSerializeResponse(CommandSerializer testSubject) {
         CommandResultMessage response = new GenericCommandResultMessage<>("response",
                                                                           MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
@@ -87,8 +81,9 @@ public class CommandSerializerTest {
         assertFalse(response.optionalExceptionResult().isPresent());
     }
 
-    @Test
-    public void testSerializeExceptionalResponse() {
+    @MethodSource("data")
+    @ParameterizedTest
+    void testSerializeExceptionalResponse(CommandSerializer testSubject) {
         RuntimeException exception = new RuntimeException("oops");
         CommandResultMessage response = new GenericCommandResultMessage<>(exception,
                                                                           MetaData.with("test", "testValue"));
@@ -102,8 +97,9 @@ public class CommandSerializerTest {
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
     }
 
-    @Test
-    public void testSerializeExceptionalResponseWithDetails() {
+    @MethodSource("data")
+    @ParameterizedTest
+    void testSerializeExceptionalResponseWithDetails(CommandSerializer testSubject) {
         Exception exception = new CommandExecutionException("oops", null, "Details");
         CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
                                                                              MetaData.with("test", "testValue"));
@@ -121,8 +117,9 @@ public class CommandSerializerTest {
         assertEquals("Details", ((CommandExecutionException) actual).getDetails().orElse("None"));
     }
 
-    @Test
-    public void testDeserializeResponseWithoutPayload() {
+    @MethodSource("data")
+    @ParameterizedTest
+    void testDeserializeResponseWithoutPayload(CommandSerializer testSubject) {
         CommandResponse response = CommandResponse.newBuilder()
                                                   .setRequestIdentifier("requestId")
                                                   .putAllMetaData(Collections.singletonMap("meta-key", MetaDataValue.newBuilder().setTextValue("meta-value").build()))

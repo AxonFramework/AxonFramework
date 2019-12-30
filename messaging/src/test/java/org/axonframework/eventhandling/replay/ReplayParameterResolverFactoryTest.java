@@ -19,8 +19,8 @@ package org.axonframework.eventhandling.replay;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,17 +28,17 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ReplayParameterResolverFactoryTest {
+class ReplayParameterResolverFactoryTest {
 
     private SomeHandler handler;
     private AnnotationEventHandlerAdapter testSubject;
     private ReplayToken replayToken;
     private GlobalSequenceTrackingToken regularToken;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         handler = new SomeHandler();
         testSubject = new AnnotationEventHandlerAdapter(handler);
         regularToken = new GlobalSequenceTrackingToken(1L);
@@ -46,7 +46,7 @@ public class ReplayParameterResolverFactoryTest {
     }
 
     @Test
-    public void testInvokeWithReplayTokens() throws Exception {
+    void testInvokeWithReplayTokens() throws Exception {
         GenericTrackedEventMessage<Object> replayEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
         GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken, asEventMessage(2L));
         assertTrue(testSubject.canHandle(replayEvent));

@@ -29,15 +29,15 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.UUID;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -53,13 +53,12 @@ public class SynchronousLoopbackTest {
     private CommandCallback<Object, Object> reportErrorCallback;
     private CommandCallback<Object, Object> expectErrorCallback;
 
-    @SuppressWarnings("unchecked")
     private static List<DomainEventMessage<?>> anyEventList() {
         return anyList();
     }
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         aggregateIdentifier = UUID.randomUUID().toString();
         commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
@@ -95,7 +94,7 @@ public class SynchronousLoopbackTest {
     }
 
     @Test
-    public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
+    void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
         initializeRepository(PessimisticLockFactory.usingDefaults());
         EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
@@ -139,7 +138,7 @@ public class SynchronousLoopbackTest {
     }
 
     @Test
-    public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
+    void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
         initializeRepository(PessimisticLockFactory.usingDefaults());
         EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
@@ -194,7 +193,6 @@ public class SynchronousLoopbackTest {
         }
 
         @CommandHandler
-        @SuppressWarnings("unchecked")
         public void changeCounter(ChangeCounterCommand command) {
             repository.load(command.getAggregateId()).execute(r -> r.setCounter(command.getNewValue()));
         }

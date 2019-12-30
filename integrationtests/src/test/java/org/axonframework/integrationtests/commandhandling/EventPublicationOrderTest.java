@@ -27,8 +27,8 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 
@@ -41,13 +41,13 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Nakul Mishra
  */
-public class EventPublicationOrderTest {
+class EventPublicationOrderTest {
 
     private CommandBus commandBus;
     private EventStore eventStore;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         this.commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         EventSourcingRepository<StubAggregate> repository = EventSourcingRepository.builder(StubAggregate.class)
@@ -60,7 +60,7 @@ public class EventPublicationOrderTest {
     }
 
     @Test
-    public void testPublicationOrderIsMaintained_AggregateAdded() {
+    void testPublicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
         GenericDomainEventMessage<StubAggregateCreatedEvent> event =
                 new GenericDomainEventMessage<>("test", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));

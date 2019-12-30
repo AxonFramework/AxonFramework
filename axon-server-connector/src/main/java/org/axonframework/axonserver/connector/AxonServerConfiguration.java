@@ -40,7 +40,7 @@ public class AxonServerConfiguration {
     private static final String DEFAULT_CONTEXT = "default";
 
     /**
-     * Comma separated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
+     * Comma separated list of AxonServer servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
      * specified, default port 8123 is used.
      */
     private String servers = DEFAULT_SERVERS;
@@ -170,6 +170,19 @@ public class AxonServerConfiguration {
      * be acknowledged before the next message may be sent. Defaults to 500.
      */
     private int maxGrpcBufferedMessages = 500;
+
+
+    /**
+     * It represents the fixed value of load factor sent to Axon Server for any command's subscription if
+     * no specific implementation of CommandLoadFactorProvider is configured. The default value is 100.
+     */
+    private int commandLoadFactor = 100;
+
+    /**
+     * Represents the maximum time in milliseconds a request for the initial Axon Server connection may last.
+     * Defaults to 5000 (5 seconds).
+     */
+    private long connectTimeout = 5000;
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -401,6 +414,22 @@ public class AxonServerConfiguration {
         this.maxGrpcBufferedMessages = maxGrpcBufferedMessages;
     }
 
+    public int getCommandLoadFactor() {
+        return commandLoadFactor;
+    }
+
+    public void setCommandLoadFactor(int commandLoadFactor) {
+        this.commandLoadFactor = commandLoadFactor;
+    }
+
+    public long getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(long connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
 
@@ -456,6 +485,11 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        public Builder commandLoadFactor(int commandLoadFactor) {
+            instance.commandLoadFactor = commandLoadFactor;
+            return this;
+        }
+
         /**
          * Initializes a {@link AxonServerConfiguration} as specified through this Builder.
          *
@@ -482,6 +516,11 @@ public class AxonServerConfiguration {
 
         public Builder clientId(String clientId) {
             instance.setClientId(clientId);
+            return this;
+        }
+
+        public Builder connectTimeout(long timeout) {
+            instance.setConnectTimeout(timeout);
             return this;
         }
     }

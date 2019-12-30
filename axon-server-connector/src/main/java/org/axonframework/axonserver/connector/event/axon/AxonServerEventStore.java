@@ -49,6 +49,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -314,6 +315,8 @@ public class AxonServerEventStore extends AbstractEventStore {
         private final AxonServerEventStoreClient eventStoreClient;
         private final GrpcMetaDataConverter converter;
         private final boolean snapshotFilterSet;
+        private final Serializer snapshotSerializer;
+        private final Serializer eventSerializer;
 
         private final Builder builder;
         private final String context;
@@ -335,6 +338,9 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             this.builder = builder;
             this.context = context;
+
+            this.snapshotSerializer = new GrpcMetaDataAwareSerializer(getSnapshotSerializer());
+            this.eventSerializer = new GrpcMetaDataAwareSerializer(getEventSerializer());
         }
 
         /**
@@ -546,24 +552,27 @@ public class AxonServerEventStore extends AbstractEventStore {
             return consumer;
         }
 
-
         @Override
         public DomainEventStream readEvents(String aggregateIdentifier) {
+            AtomicLong lastSequenceNumber = new AtomicLong();
             Stream<? extends DomainEventData<?>> input =
-                    this.readEventData(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE);
-            return DomainEventStream.of(input.map(this::upcastAndDeserializeDomainEvent).filter(Objects::nonNull));
+                    this.readEventData(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE)
+                        .peek(i -> lastSequenceNumber.getAndUpdate(seq -> Math.max(seq, i.getSequenceNumber())));
+
+            return DomainEventStream.of(
+                    input.flatMap(ded -> upcastAndDeserializeDomainEvent(ded, isSnapshot(ded) ? snapshotSerializer : eventSerializer))
+                         .filter(Objects::nonNull), lastSequenceNumber::get);
         }
 
-        private DomainEventMessage<?> upcastAndDeserializeDomainEvent(DomainEventData<?> domainEventData) {
+        private Stream<? extends DomainEventMessage<?>> upcastAndDeserializeDomainEvent(DomainEventData<?> domainEventData,
+                                                                                        Serializer serializer) {
             DomainEventStream upcastedStream = EventStreamUtils.upcastAndDeserializeDomainEvents(
                     Stream.of(domainEventData),
-                    new GrpcMetaDataAwareSerializer(isSnapshot(domainEventData)
-                                                            ? getSnapshotSerializer()
-                                                            : getEventSerializer()),
+                    serializer,
                     upcasterChain
 
             );
-            return upcastedStream.hasNext() ? upcastedStream.next() : null;
+            return upcastedStream.asStream();
         }
 
         private boolean isSnapshot(DomainEventData<?> domainEventData) {

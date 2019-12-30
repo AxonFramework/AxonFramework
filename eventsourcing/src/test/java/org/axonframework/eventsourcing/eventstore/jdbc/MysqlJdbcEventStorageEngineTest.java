@@ -20,7 +20,8 @@ import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.opentest4j.TestAbortedException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -28,20 +29,20 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the JdbcEventStorageEngine using the MySQL database.
  *
  * @author Albert Attard (JavaCreed)
  */
-public class MysqlJdbcEventStorageEngineTest {
+class MysqlJdbcEventStorageEngineTest {
 
     private MysqlDataSource dataSource;
     private JdbcEventStorageEngine testSubject;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         /* Load the DB properties */
         final Properties properties = new Properties();
         properties.load(getClass().getResourceAsStream("/mysql.test.database.properties"));
@@ -53,7 +54,7 @@ public class MysqlJdbcEventStorageEngineTest {
         try {
             testSubject = createEngine(new SQLErrorCodesResolver(dataSource));
         } catch (Exception e) {
-            Assume.assumeNoException("Ignoring this test, as no valid MySQL instance is configured", e);
+            throw new TestAbortedException("Ignoring this test, as no valid MySQL instance is configured", e);
         }
     }
 
@@ -64,7 +65,7 @@ public class MysqlJdbcEventStorageEngineTest {
      * problem.
      */
     @Test
-    public void testLoadLastSequenceNumber() {
+    void testLoadLastSequenceNumber() {
         final String aggregateId = UUID.randomUUID().toString();
         testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));

@@ -16,39 +16,39 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Collection;
 
 /**
- * Class copied from Axon 3 to be able to restore Axon 3 Tokens from Axon 4 applications.
+ * Implementation of the {@link org.axonframework.eventhandling.GapAwareTrackingToken} used to bridge serialized
+ * versions of this descriptor when migrating from Axon 3.x to Axon 4.x.
  *
- * @deprecated this class is available for backward compatibility with instances that were serialized with Axon 3. Use
- * {@link org.axonframework.eventhandling.GapAwareTrackingToken} instead.
+ * @author Steven van Beelen
+ * @since 4.0.1
+ * @deprecated in favor of the {@link org.axonframework.eventhandling.GapAwareTrackingToken}
  */
 @Deprecated
-public class GapAwareTrackingToken implements Serializable {
+public class GapAwareTrackingToken
+        extends org.axonframework.eventhandling.GapAwareTrackingToken
+        implements Serializable {
 
     private static final long serialVersionUID = -4691964346972539244L;
 
-    private int index;
+    // Fields {@code index} and {@code gaps} are used during Java and XStream de-/serialization through method
+    // {@link #readResolve()}
+    @SuppressWarnings("unused")
+    private long index;
+    @SuppressWarnings("unused")
     private Collection<Long> gaps;
 
-    /**
-     * Get the highest global sequence of events seen up until the point of this tracking token.
-     *
-     * @return the highest global event sequence number seen so far
-     */
-    public long getIndex() {
-        return index;
-    }
-
-    /**
-     * Get a {@link Collection} of this token's gaps.
-     *
-     * @return the gaps of this token
-     */
-    public Collection<Long> getGaps() {
-        return gaps;
+    @JsonCreator
+    @ConstructorProperties({"index", "gaps"})
+    public GapAwareTrackingToken(@JsonProperty("index") long index, @JsonProperty("gaps") Collection<Long> gaps) {
+        super(index, createSortedSetOf(gaps, index));
     }
 
     private Object readResolve() {

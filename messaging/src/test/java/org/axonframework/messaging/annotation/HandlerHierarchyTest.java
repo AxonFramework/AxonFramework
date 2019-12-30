@@ -18,19 +18,19 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests sorting of handlers using {@link HandlerComparator}. Event types have complex hierarchical inheritance.
  *
  * @author Milan Savic
  */
-public class HandlerHierarchyTest {
+class HandlerHierarchyTest {
 
     private interface C {}
     private interface D extends C {}
@@ -53,7 +53,7 @@ public class HandlerHierarchyTest {
     }
 
     @Test
-    public void testHierarchySort() throws NoSuchMethodException {
+    void testHierarchySort() throws NoSuchMethodException {
         MultiParameterResolverFactory multiParameterResolverFactory = MultiParameterResolverFactory.ordered(new DefaultParameterResolverFactory());
 
         MessageHandlingMember<?> bHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", B.class),

@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.lang.annotation.ElementType;
@@ -29,25 +29,25 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
  */
-public class AnnotationCommandHandlerBeanPostProcessorTest {
+class AnnotationCommandHandlerBeanPostProcessorTest {
 
     private AnnotationCommandHandlerBeanPostProcessor testSubject;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AnnotationCommandHandlerBeanPostProcessor();
     }
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testCommandHandlerCallsRedirectToAdapter() throws Exception {
+    void testCommandHandlerCallsRedirectToAdapter() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
@@ -65,7 +65,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
     }
 
     @Test
-    public void testCommandHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
+    void testCommandHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new CustomAnnotatedCommandHandler(), "beanName");

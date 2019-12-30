@@ -24,36 +24,36 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.utils.MockException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
-public class AnnotationQueryHandlerAdapterTest {
+@ExtendWith(MockitoExtension.class)
+class AnnotationQueryHandlerAdapterTest {
 
     private AnnotationQueryHandlerAdapter<?> testSubject;
 
     @Mock
     private QueryBus queryBus;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         testSubject = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler());
-        when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
     }
 
     @Test
-    public void subscribe() {
+    void subscribe() {
+        when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
         Registration registration = testSubject.subscribe(queryBus);
 
         verify(queryBus, times(1)).subscribe(eq(String.class.getName()), eq(String.class), any());
@@ -62,18 +62,20 @@ public class AnnotationQueryHandlerAdapterTest {
         assertTrue(registration.cancel());
     }
 
-    @Test(expected = UnsupportedHandlerException.class)
-    public void subscribeFailsForHandlerWithInvalidParameters() {
-        new AnnotationQueryHandlerAdapter<>(new MySecondQueryHandler());
-    }
-
-    @Test(expected = UnsupportedHandlerException.class)
-    public void subscribeFailsForHandlerWithVoidReturnType() {
-        new AnnotationQueryHandlerAdapter<>(new MyThirdQueryHandler());
+    @Test
+    void subscribeFailsForHandlerWithInvalidParameters() {
+        assertThrows(UnsupportedHandlerException.class,
+                () -> new AnnotationQueryHandlerAdapter<>(new MySecondQueryHandler()));
     }
 
     @Test
-    public void testRunQuery() throws Exception {
+    void subscribeFailsForHandlerWithVoidReturnType() {
+        assertThrows(UnsupportedHandlerException.class,
+                () -> new AnnotationQueryHandlerAdapter<>(new MyThirdQueryHandler()));
+    }
+
+    @Test
+    void testRunQuery() throws Exception {
         String testResponse = "hello";
         QueryMessage<String, String> testQueryMessage =
                 new GenericQueryMessage<>(testResponse, ResponseTypes.instanceOf(String.class));
@@ -82,26 +84,27 @@ public class AnnotationQueryHandlerAdapterTest {
         assertEquals(testResponse, result);
     }
 
-    @Test(expected = MockException.class)
-    public void testRunQueryWithException() throws Exception {
-        testSubject.handle(new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class)));
+    @Test
+    void testRunQueryWithException() throws Exception {
+        GenericQueryMessage<String, Integer> message = new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
+        assertThrows(MockException.class, () -> testSubject.handle(message));
     }
 
     @Test
-    public void testRunQueryWithEmptyOptional() throws Exception {
+    void testRunQueryWithEmptyOptional() throws Exception {
         Object actual = testSubject.handle(new GenericQueryMessage<>("hello", "noEcho", ResponseTypes.instanceOf(String.class)));
         assertNull(actual);
     }
 
     @Test
-    public void testRunQueryWithProvidedOptional() throws Exception {
+    void testRunQueryWithProvidedOptional() throws Exception {
         Object actual = testSubject.handle(new GenericQueryMessage<>("hello", "Hello", ResponseTypes.instanceOf(String.class)));
         assertEquals("hello", actual);
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testRunQueryForCollection() throws Exception {
+    void testRunQueryForCollection() throws Exception {
         int testResponse = 5;
         QueryMessage<Integer, List<String>> testQueryMessage =
                 new GenericQueryMessage<>(testResponse, ResponseTypes.multipleInstancesOf(String.class));

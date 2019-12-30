@@ -27,8 +27,7 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -41,14 +40,12 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @TestPropertySource("classpath:test-processors.application.properties")
@@ -57,7 +54,6 @@ import static org.junit.Assert.*;
         WebClientAutoConfiguration.class,
         DataSourceAutoConfiguration.class
 })
-@RunWith(SpringRunner.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class EventProcessorConfigurationTest {
 
@@ -68,14 +64,14 @@ public class EventProcessorConfigurationTest {
     private SequencingPolicy expectedPolicy;
 
     @Test
-    public void testPublishSomeEvents() throws Exception {
+    void testPublishSomeEvents() throws Exception {
         Map<String, EventProcessor> processors = eventProcessingConfiguration.eventProcessors();
         assertEquals(3, processors.size());
         EventProcessor eventProcessor = processors.get("first");
         assertNotNull(eventProcessor);
         assertEquals(TrackingEventProcessor.class, eventProcessor.getClass());
         long tokenClaimInterval = ReflectionUtils.getFieldValue(TrackingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor);
-        assertEquals("Must be 5000 ms by default", tokenClaimInterval, 5000L);
+        assertEquals(5000L, tokenClaimInterval, "Must be 5000 ms by default");
         MultiEventHandlerInvoker invoker = (MultiEventHandlerInvoker) ensureAccessible(
                 AbstractEventProcessor.class.getDeclaredMethod("eventHandlerInvoker")
         ).invoke(eventProcessor);
@@ -88,15 +84,14 @@ public class EventProcessorConfigurationTest {
     }
 
     @Test
-    public void verifyTokenClaimIntervalCanBeSetViaSpringConfiguration() throws Exception {
+    void verifyTokenClaimIntervalCanBeSetViaSpringConfiguration() throws Exception {
         Map<String, EventProcessor> processors = eventProcessingConfiguration.eventProcessors();
         assertEquals(3, processors.size());
         EventProcessor eventProcessor = processors.get("non_default_token_claim_interval");
         assertNotNull(eventProcessor);
         assertEquals(TrackingEventProcessor.class, eventProcessor.getClass());
         long tokenClaimInterval = ReflectionUtils.getFieldValue(TrackingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor);
-        assertEquals("It must be possible to override token claim interval via Spring Configuration",
-                tokenClaimInterval, 60000000L);
+        assertEquals(60000000L, tokenClaimInterval, "It must be possible to override token claim interval via Spring Configuration");
     }
 
     @Configuration

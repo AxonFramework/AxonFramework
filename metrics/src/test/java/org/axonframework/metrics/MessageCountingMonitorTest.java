@@ -5,18 +5,18 @@ import com.codahale.metrics.Metric;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.Map;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MessageCountingMonitorTest {
+class MessageCountingMonitorTest {
 
     @Test
-    public void testMessages(){
+    void testMessages(){
         MessageCountingMonitor testSubject = new MessageCountingMonitor();
         EventMessage<Object> foo = asEventMessage("foo");
         EventMessage<Object> bar = asEventMessage("bar");
