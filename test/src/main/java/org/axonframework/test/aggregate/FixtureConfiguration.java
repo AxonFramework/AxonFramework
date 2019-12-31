@@ -31,6 +31,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -248,6 +249,17 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers a {@link HandlerEnhancerDefinition} within this fixture. This given {@code handlerEnhancerDefinition}
+     * is added to the handler enhancer definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition#forClass(Class)}.
+     * The generic {@code T} is used as input for the {@code ClasspathHandlerEnhancerDefinition#forClass(Class)}
+     * operation.
+     *
+     * @param handlerEnhancerDefinition the {@link HandlerEnhancerDefinition} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition);
 
     /**
      * Registers the {@link CommandTargetResolver} within this fixture. The {@code commandTargetResolver} will replace
