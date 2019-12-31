@@ -19,7 +19,6 @@
  */
 package org.axonframework.extensions.kotlin
 
-import org.axonframework.commandhandling.CommandCallback
 import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.MetaData
@@ -28,29 +27,20 @@ import java.util.concurrent.TimeUnit
 /**
  * Callback-style send with dedicated on-success and on-error functions (defaults do nothing)
  */
-inline fun <reified C : Any, reified R : Any?> CommandGateway.send(
+fun <C : Any, R : Any?> CommandGateway.send(
     command: C,
-    crossinline onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
-    crossinline onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
-) {
-    this.send(command, CommandCallback<C, R> { commandMessage, callBack ->
-        val metaData = callBack.metaData ?: MetaData.emptyInstance()
-        if (callBack.isExceptional) {
-            onError(commandMessage, callBack.exceptionResult(), metaData)
-        } else {
-            onSuccess(commandMessage, callBack.payload, metaData)
-        }
-    })
-}
+    onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
+    onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
+): Unit = this.send(command, CombiningCommandCallback<C, R>(onError, onSuccess))
 
 /**
  * Reified version of send and wait.
  */
-inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any) =
+inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any): R =
     this.sendAndWait<R>(command)
 
 /**
  * Reified version of send and wait with a timeout (defaulting to {@link TimeUnit.MILLISECONDS} unit)
  */
-inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any, timeout: Long, unit: TimeUnit = TimeUnit.MILLISECONDS) =
+inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any, timeout: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): R =
     this.sendAndWait<R>(command, timeout, unit)
