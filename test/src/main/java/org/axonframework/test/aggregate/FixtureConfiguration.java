@@ -25,7 +25,11 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.Repository;
@@ -170,7 +174,7 @@ public interface FixtureConfiguration<T> {
      * command bus to perform a task specified in the interceptor. For example by adding
      * {@link MetaData} or throwing an exception based on the command.
      *
-     * @param commandDispatchInterceptor the command dispatch interceptor to be added to the commandbus
+     * @param commandDispatchInterceptor the command dispatch interceptor to be added to the command bus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandDispatchInterceptor(
@@ -181,7 +185,7 @@ public interface FixtureConfiguration<T> {
      * the command bus to perform a task specified in the interceptor. It could for example block the command for
      * security reasons or add auditing to the command bus
      *
-     * @param commandHandlerInterceptor the command handler interceptor to be added to the commandbus
+     * @param commandHandlerInterceptor the command handler interceptor to be added to the command bus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandHandlerInterceptor(
@@ -236,8 +240,9 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
-     * Registers handler definition within this fixture. This {@code handlerDefinition} will replace existing one within
-     * this fixture.
+     * Registers a {@link HandlerDefinition} within this fixture. The given {@code handlerDefinition} is added to the
+     * handler definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerDefinition#forClass(Class)}.
+     * The generic {@code T} is used as input for the {@code ClasspathHandlerDefinition#forClass(Class)} operation.
      *
      * @param handlerDefinition used to create concrete handlers
      * @return the current FixtureConfiguration, for fluent interfacing
@@ -245,7 +250,9 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
 
     /**
-     * Registers the {@link CommandTargetResolver} within this fixture. The {@code commandTargetResolver} will replace the default implementation (defined by the {@link org.axonframework.modelling.command.AggregateAnnotationCommandHandler}  within this fixture.
+     * Registers the {@link CommandTargetResolver} within this fixture. The {@code commandTargetResolver} will replace
+     * the default implementation (defined by the {@link org.axonframework.modelling.command.AggregateAnnotationCommandHandler}
+     * within this fixture.
      *
      * @param commandTargetResolver the {@link CommandTargetResolver} used to resolve an Aggregate for a given command
      * @return the current FixtureConfiguration, for fluent interfacing
