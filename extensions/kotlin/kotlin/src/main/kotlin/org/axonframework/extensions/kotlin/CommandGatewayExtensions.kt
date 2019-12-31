@@ -34,13 +34,13 @@ fun <C : Any, R : Any?> CommandGateway.send(
 ): Unit = this.send(command, CombiningCommandCallback<C, R>(onError, onSuccess))
 
 /**
- * Reified version of send and wait.
+ * Reified version of [CommandGateway.sendAndWait].
  */
 inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any): R =
     this.sendAndWait<R>(command)
 
 /**
- * Reified version of send and wait with a timeout (defaulting to {@link TimeUnit.MILLISECONDS} unit)
+ * Reified version of [CommandGateway.sendAndWait] with a timeout (defaulting to [TimeUnit.MILLISECONDS] unit)
  */
 inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any, timeout: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): R =
     this.sendAndWait<R>(command, timeout, unit)

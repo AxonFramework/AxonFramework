@@ -6,7 +6,7 @@ import org.axonframework.commandhandling.CommandResultMessage
 import org.axonframework.messaging.MetaData
 
 /**
- * Implementation of the [CommandCallback] that is appropriate for dedicated onError and onSuccess callbacks
+ * Implementation of the [CommandCallback] that is appropriate for dedicated [onError] and [onSuccess] callbacks
  */
 internal class CombiningCommandCallback<C, R>(
     val onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit,

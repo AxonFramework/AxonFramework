@@ -25,21 +25,21 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 /**
- * Reified version of queryForMultiple.
+ * Reified version of [QueryGateway.queryForMultiple].
  */
 inline fun <reified R, reified Q> QueryGateway.queryForMultiple(queryName: String, query: Q): CompletableFuture<List<R>> {
     return this.query(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
 
 /**
- * Reified version of queryForSingle.
+ * Reified version of [QueryGateway.queryForSingle].
  */
 inline fun <reified R, reified Q> QueryGateway.queryForSingle(queryName: String, query: Q): CompletableFuture<R> {
     return this.query(queryName, query, ResponseTypes.instanceOf(R::class.java))
 }
 
 /**
- * Reified version of queryForOptional.
+ * Reified version of [QueryGateway.queryForOptional].
  */
 inline fun <reified R, reified Q> QueryGateway.queryForOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
     return this.query(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java))

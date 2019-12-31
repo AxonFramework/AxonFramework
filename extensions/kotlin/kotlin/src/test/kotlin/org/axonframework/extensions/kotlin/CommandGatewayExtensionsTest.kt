@@ -44,7 +44,7 @@ class CommandGatewayExtensionsTest {
 
     @Test
     fun `SendAndWaitWithResponse extension should invoke correct method on the gateway`() {
-        every { subjectGateway.sendAndWait<Any>(exampleCommand) } returns " "
+        every { subjectGateway.sendAndWait<Any>(exampleCommand) } returns Unit
 
         subjectGateway.sendAndWaitWithResponse<Any>(exampleCommand)
 
@@ -53,7 +53,7 @@ class CommandGatewayExtensionsTest {
 
     @Test
     fun `SendAndWaitWithResponse extension should invoke correct method on the gateway without explicit generic parameter`() {
-        every { subjectGateway.sendAndWait<Any>(exampleCommand) } returns " "
+        every { subjectGateway.sendAndWait<Any>(exampleCommand) } returns Unit
 
         fun methodWithExplicitReturnValue(): Unit = subjectGateway.sendAndWaitWithResponse(exampleCommand)
 
