@@ -35,8 +35,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -88,6 +102,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final String lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
+    private final AtomicReference<String> eventStoreIdentifier = new AtomicReference<>();
+
 
     private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
     private final boolean storeTokenBeforeProcessing;
@@ -205,6 +221,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
                          .add(new SplitSegmentInstruction(result, segmentId));
         return result;
+    }
+
+    /**
+     * Returns the unique identifier of the TokenStore used by this EventProcessor.
+     *
+     * @return
+     * @throws org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException if the tokenStore was
+     *                                                                                        unable to retrieve it
+     */
+    public String getTokenStoreIdentifier() {
+        return eventStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
+    }
+
+    private String calculateIdentifier() {
+        return transactionManager.fetchInTransaction(
+                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        );
     }
 
     /**

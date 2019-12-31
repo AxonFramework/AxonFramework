@@ -20,7 +20,13 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.tokenstore.*;
+import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
+import org.axonframework.eventhandling.tokenstore.ConfigToken;
+import org.axonframework.eventhandling.tokenstore.GenericTokenEntry;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
+import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +38,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.common.jdbc.JdbcUtils.*;
+import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
+import static org.axonframework.common.jdbc.JdbcUtils.executeQuery;
+import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
+import static org.axonframework.common.jdbc.JdbcUtils.listResults;
 
 /**
  * Implementation of a token store that uses JDBC to save and load tokens. Before using this store make sure the
@@ -51,6 +63,8 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
 public class JdbcTokenStore implements TokenStore {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcTokenStore.class);
+    private static final String CONFIG_TOKEN_ID = "__config";
+    private static final int CONFIG_SEGMENT = 0;
 
     private final ConnectionProvider connectionProvider;
     private final Serializer serializer;
@@ -155,6 +169,40 @@ public class JdbcTokenStore implements TokenStore {
     @Override
     public boolean requiresExplicitSegmentInitialization() {
         return true;
+    }
+
+    @Override
+    public Optional<String> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
+        return Optional.of(loadConfigurationToken()).map(i -> i.get("id"));
+    }
+
+    private ConfigToken loadConfigurationToken() throws UnableToRetrieveIdentifierException {
+        Connection connection = getConnection();
+        TrackingToken token;
+        try {
+            token = executeQuery(connection, c -> select(connection, CONFIG_TOKEN_ID, CONFIG_SEGMENT, false),
+                                 resultSet -> {
+                                     if (resultSet.next()) {
+                                         return readTokenEntry(resultSet).getToken(serializer);
+                                     } else {
+                                         return null;
+                                     }
+                                 }, e -> new UnableToRetrieveIdentifierException("Exception while attempting to retrieve the config token", e));
+            try {
+                if (token == null) {
+                    token = insertTokenEntry(connection, new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())), CONFIG_TOKEN_ID, CONFIG_SEGMENT);
+                }
+            } catch (SQLException e) {
+                throw new UnableToRetrieveIdentifierException("Exception while attempting to initialize the config token. It may have been concurrently initialized.", e);
+            }
+        } finally {
+            closeQuietly(connection);
+        }
+        return (ConfigToken) token;
+    }
+
+    public Serializer serializer() {
+        return serializer;
     }
 
     @Override
@@ -274,16 +322,34 @@ public class JdbcTokenStore implements TokenStore {
      */
     protected PreparedStatement selectForUpdate(Connection connection, String processorName,
                                                 int segment) throws SQLException {
+        return select(connection, processorName, segment, true);
+    }
+
+    /**
+     * Returns a {@link PreparedStatement} to select a token entry from the underlying storage, either for updating
+     * or just for reading.
+     *
+     * @param connection    the connection to the underlying database
+     * @param processorName the name of the processor to fetch the entry for
+     * @param segment       the segment of the processor to fetch the entry for
+     * @param forUpdate     whether the returned token should be updatable
+     *
+     * @return a {@link PreparedStatement} that will fetch an updatable token entry when executed
+     * @throws SQLException when an exception occurs while creating the prepared statement
+     */
+    protected PreparedStatement select(Connection connection, String processorName,
+                                       int segment, boolean forUpdate) throws SQLException {
         final String sql = "SELECT " +
                 String.join(", ", schema.processorNameColumn(), schema.segmentColumn(), schema.tokenColumn(),
                             schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColum()) + " FROM " +
                 schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() +
-                " = ? FOR UPDATE";
+                " = ? " + (forUpdate ? "FOR UPDATE" : "");
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, processorName);
         preparedStatement.setInt(2, segment);
         return preparedStatement;
     }
+
 
     /**
      * If the given {@code resultSet} has an entry, attempts to replace the token in the entry with the given

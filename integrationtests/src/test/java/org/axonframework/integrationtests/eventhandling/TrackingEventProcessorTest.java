@@ -1236,6 +1236,20 @@ class TrackingEventProcessorTest {
         assertFalse(actual.join(), "Expected merge to be rejected");
     }
 
+    @Test
+    void retrievingStorageIdentifierWillCacheResults() {
+        String id = testSubject.getTokenStoreIdentifier();
+        InOrder inOrder = inOrder(mockTransactionManager, tokenStore);
+        inOrder.verify(mockTransactionManager).fetchInTransaction(any());
+        inOrder.verify(tokenStore, times(1)).retrieveStorageIdentifier();
+
+        String id2 = testSubject.getTokenStoreIdentifier();
+        // expect no extra invocations
+        verify(tokenStore, times(1)).retrieveStorageIdentifier();
+
+        assertEquals(id, id2);
+    }
+
     private void waitForStatus(String description, long time, TimeUnit unit, Predicate<Map<Integer, EventTrackerStatus>> status) throws InterruptedException {
         long deadline = System.currentTimeMillis() + unit.toMillis(time);
         while (!status.test(testSubject.processingStatus())) {
