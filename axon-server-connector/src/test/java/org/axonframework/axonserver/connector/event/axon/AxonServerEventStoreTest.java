@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.event.axon;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.event.StubServer;
+import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
@@ -41,31 +42,37 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 class AxonServerEventStoreTest {
 
     private StubServer server;
     private AxonServerEventStore testSubject;
     private EventUpcaster upcasterChain;
+    private AxonServerConnectionManager axonServerConnectionManager;
 
     @BeforeEach
     void setUp() throws Exception {
-        server = new StubServer(6123);
+        server = new StubServer(TcpUtil.findFreePort());
         server.start();
         upcasterChain = mock(EventUpcaster.class);
         when(upcasterChain.upcast(any())).thenAnswer(i -> i.getArgument(0));
         AxonServerConfiguration config = AxonServerConfiguration.builder()
-                                                                .servers("localhost:6123")
+                                                                .servers("localhost:" + server.getPort())
                                                                 .componentName("JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
-        AxonServerConnectionManager axonServerConnectionManager =
-                AxonServerConnectionManager.builder()
-                                           .axonServerConfiguration(config)
-                                           .build();
+        axonServerConnectionManager = AxonServerConnectionManager.builder()
+                                   .axonServerConfiguration(config)
+                                   .build();
         testSubject = AxonServerEventStore.builder()
                                           .configuration(config)
                                           .platformConnectionManager(axonServerConnectionManager)
@@ -77,6 +84,7 @@ class AxonServerEventStoreTest {
 
     @AfterEach
     void tearDown() throws Exception {
+        axonServerConnectionManager.shutdown();
         server.shutdown();
     }
 

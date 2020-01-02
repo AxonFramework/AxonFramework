@@ -22,6 +22,7 @@ import io.axoniq.axonserver.grpc.control.PlatformInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
+import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.config.TagsConfiguration;
 import org.junit.jupiter.api.*;
 
@@ -44,11 +45,15 @@ import static org.mockito.Mockito.*;
  */
 class AxonServerConnectionManagerTest {
 
-    private StubServer stubServer = new StubServer(18124, 9657);
-    private StubServer secondNode = new StubServer(9657, 9657);
+    private StubServer stubServer;
+    private StubServer secondNode;
 
     @BeforeEach
     void setUp() throws IOException {
+        int port1 = TcpUtil.findFreePort();
+        int port2 = TcpUtil.findFreePort();
+        stubServer = new StubServer(port1, port2);
+        secondNode = new StubServer(port2, port2);
         stubServer.start();
         secondNode.start();
     }

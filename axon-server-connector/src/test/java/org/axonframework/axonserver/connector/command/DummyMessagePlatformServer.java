@@ -29,6 +29,7 @@ import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.PlatformService;
+import org.axonframework.axonserver.connector.util.TcpUtil;
 
 import java.io.IOException;
 import java.util.Map;
@@ -44,16 +45,12 @@ public class DummyMessagePlatformServer {
     private Map<String, StreamObserver> subscriptions = new ConcurrentHashMap<>();
     private Map<String, CommandSubscription> commandSubscriptions = new ConcurrentHashMap<>();
 
-    public DummyMessagePlatformServer(int port) {
-        this.port = port;
+    public DummyMessagePlatformServer() {
+        this(TcpUtil.findFreePort());
     }
 
-    public void start() throws IOException {
-        server = ServerBuilder.forPort(port)
-                .addService(new CommandHandler())
-                .addService(new PlatformService(port))
-                .build();
-        server.start();
+    public DummyMessagePlatformServer(int port) {
+        this.port = port;
     }
 
     public void stop() {
@@ -76,6 +73,22 @@ public class DummyMessagePlatformServer {
     public void simulateError(String command) {
         StreamObserver subscription = subscriptions.remove(command);
         subscription.onError(new RuntimeException());
+    }
+
+    public void start() throws IOException {
+        server = ServerBuilder.forPort(port)
+                              .addService(new CommandHandler())
+                              .addService(new PlatformService(port))
+                              .build();
+        server.start();
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getAddress() {
+        return "localhost:" + port;
     }
 
     class CommandHandler extends CommandServiceGrpc.CommandServiceImplBase {
@@ -146,14 +159,13 @@ public class DummyMessagePlatformServer {
                 responseObserver.onNext(CommandResponse.newBuilder()
                         .setMessageIdentifier(request.getMessageIdentifier())
                         .setPayload(SerializedObject.newBuilder()
-                                .setData(request.getPayload().getData())
-                                .setType(String.class.getName())
-                                .build())
-                        .build());
+                                                    .setData(request.getPayload().getData())
+                                                    .setType(String.class.getName())
+                                                    .build())
+                                                       .build());
             }
             responseObserver.onCompleted();
         }
 
     }
-
 }

@@ -34,11 +34,11 @@ class AxonServerEventStoreClientTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);
+        dummyMessagePlatformServer = new DummyMessagePlatformServer();
         dummyMessagePlatformServer.start();
 
         AxonServerConfiguration configuration = new AxonServerConfiguration();
-        configuration.setServers("localhost:4344");
+        configuration.setServers(dummyMessagePlatformServer.getAddress());
         configuration.setClientId("JUnit");
         configuration.setComponentName("JUnit");
         configuration.setInitialNrOfPermits(100);
@@ -54,8 +54,8 @@ class AxonServerEventStoreClientTest {
 
     @AfterEach
     void tearDown() {
-        dummyMessagePlatformServer.stop();
         axonServerConnectionManager.shutdown();
+        dummyMessagePlatformServer.stop();
     }
 
     @Test
