@@ -57,7 +57,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    void testCreateHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
+    void testWrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
         AtomicBoolean handlerEnhancerReached = new AtomicBoolean(false);
 
         testSubject.registerHandlerEnhancerDefinition(new TestHandlerEnhancerDefinition(handlerEnhancerReached))
