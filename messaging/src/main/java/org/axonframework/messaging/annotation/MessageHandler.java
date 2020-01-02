@@ -18,13 +18,20 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Annotation indicating that a member method should be able to respond to {@link Message}s.
  * <p>
- * It is not recommended to put this annotation on methods or constructors directly. Instead, put this annotation
- * on another annotation that expresses the type of message handled.
+ * It is not recommended to put this annotation on methods or constructors directly. Instead, put this annotation on
+ * another annotation that expresses the type of message handled.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
