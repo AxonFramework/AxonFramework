@@ -34,8 +34,12 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -84,7 +88,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private EventBus eventBus;
     private final StubEventScheduler eventScheduler;
     private final StubDeadlineManager deadlineManager;
-    private HandlerDefinition handlerDefinition;
+    private final List<HandlerDefinition> registeredHandlerDefinitions = new ArrayList<>();
+    private final List<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new ArrayList<>();
     private ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     private final Class<T> sagaType;
@@ -104,13 +109,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      *
      * @param sagaType The type of saga under test
      */
-    @SuppressWarnings({"unchecked"})
     public SagaTestFixture(Class<T> sagaType) {
         commandBus = new RecordingCommandBus();
         eventBus = SimpleEventBus.builder().build();
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        handlerDefinition = ClasspathHandlerDefinition.forClass(sagaType);
+        registeredHandlerDefinitions.add(ClasspathHandlerDefinition.forClass(sagaType));
+        registeredHandlerEnhancerDefinitions.add(ClasspathHandlerEnhancerDefinition.forClass(sagaType));
         listenerInvocationErrorHandler = new LoggingErrorHandler();
 
         this.sagaType = sagaType;
@@ -175,7 +180,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             SagaRepository<T> sagaRepository = AnnotatedSagaRepository.<T>builder()
                     .sagaType(sagaType)
                     .parameterResolverFactory(parameterResolverFactory)
-                    .handlerDefinition(handlerDefinition)
+                    .handlerDefinition(getHandlerDefinition())
                     .sagaStore(sagaStore)
                     .resourceInjector(new TransienceValidatingResourceInjector())
                     .build();
@@ -183,11 +188,17 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                     .sagaRepository(sagaRepository)
                     .sagaType(sagaType)
                     .parameterResolverFactory(parameterResolverFactory)
-                    .handlerDefinition(handlerDefinition)
+                    .handlerDefinition(getHandlerDefinition())
                     .listenerInvocationErrorHandler(listenerInvocationErrorHandler)
                     .build();
             resourcesInitialized = true;
         }
+    }
+
+    private HandlerDefinition getHandlerDefinition() {
+        HandlerEnhancerDefinition handlerEnhancerDefinition =
+                MultiHandlerEnhancerDefinition.ordered(registeredHandlerEnhancerDefinitions);
+        return MultiHandlerDefinition.ordered(registeredHandlerDefinitions, handlerEnhancerDefinition);
     }
 
     @Override
@@ -262,14 +273,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) throws Exception {
+    public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) {
         eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return this;
     }
 
     @Override
-    public ContinuedGivenState andThenTimeAdvancesTo(final Instant newDateTime) throws Exception {
+    public ContinuedGivenState andThenTimeAdvancesTo(final Instant newDateTime) {
         eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
         deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
         return this;
@@ -350,7 +361,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
-        this.handlerDefinition = handlerDefinition;
+        this.registeredHandlerDefinitions.add(handlerDefinition);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition) {
+        this.registeredHandlerEnhancerDefinitions.add(handlerEnhancerDefinition);
         return this;
     }
 
@@ -527,7 +544,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         }
     }
 
-    private class MutableFieldFilter implements FieldFilter {
+    private static class MutableFieldFilter implements FieldFilter {
 
         private final List<FieldFilter> filters = new ArrayList<>();
 

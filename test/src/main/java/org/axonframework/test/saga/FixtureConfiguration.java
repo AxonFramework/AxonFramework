@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
@@ -127,13 +128,26 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
-     * Registers handler definition within this fixture. This {@code handlerDefinition} will replace existing one within
-     * this fixture.
+     * Registers a {@link HandlerDefinition} within this fixture. The given {@code handlerDefinition} is added to the
+     * handler definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerDefinition#forClass(Class)}.
+     * The type of the saga under test is used as input for the {@code ClasspathHandlerDefinition#forClass(Class)}
+     * operation.
      *
      * @param handlerDefinition used to create concrete handlers
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers a {@link HandlerEnhancerDefinition} within this fixture. This given {@code handlerEnhancerDefinition}
+     * is added to the handler enhancer definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition#forClass(Class)}.
+     * The type of the saga under test is used as input for the {@code ClasspathHandlerEnhancerDefinition#forClass(Class)}
+     * operation.
+     *
+     * @param handlerEnhancerDefinition the {@link HandlerEnhancerDefinition} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition);
 
     /**
      * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
