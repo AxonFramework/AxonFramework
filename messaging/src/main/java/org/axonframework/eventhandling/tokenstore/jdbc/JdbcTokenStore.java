@@ -173,7 +173,7 @@ public class JdbcTokenStore implements TokenStore {
 
     @Override
     public Optional<String> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
-        return Optional.of(loadConfigurationToken()).map(i -> i.get("id"));
+        return Optional.of(loadConfigurationToken()).map(configToken -> configToken.get("id"));
     }
 
     private ConfigToken loadConfigurationToken() throws UnableToRetrieveIdentifierException {
@@ -201,6 +201,11 @@ public class JdbcTokenStore implements TokenStore {
         return (ConfigToken) token;
     }
 
+    /**
+     * Returns the serialized used by the Token Store to serialize tokens.
+     *
+     * @return the serialized used by the Token Store to serialize tokens
+     */
     public Serializer serializer() {
         return serializer;
     }
@@ -349,7 +354,6 @@ public class JdbcTokenStore implements TokenStore {
         preparedStatement.setInt(2, segment);
         return preparedStatement;
     }
-
 
     /**
      * If the given {@code resultSet} has an entry, attempts to replace the token in the entry with the given

@@ -20,16 +20,33 @@ public class ConfigToken implements TrackingToken {
 
     private final Map<String, String> config;
 
+    /**
+     * Initialize a ConfigToken instance using the given {@code config} properties
+     *
+     * @param config the properties to store as part of this ConfigToken
+     */
     @JsonCreator
     public ConfigToken(Map<String, String> config) {
         this.config = config;
     }
 
+    /**
+     * Returns the properties contained in this token as a Map.
+     *
+     * @return the configuration elements in this token
+     */
     @JsonValue
     public Map<String, String> getConfig() {
         return config;
     }
 
+    /**
+     * Retrieves the value of the configuration element for the given {@code key}.
+     *
+     * @param key The key for which to retrieve the configuration element
+     *
+     * @return The configuration element registered under the given key, or {@code null} if no such key was present.
+     */
     public String get(String key) {
         return config.get(key);
     }

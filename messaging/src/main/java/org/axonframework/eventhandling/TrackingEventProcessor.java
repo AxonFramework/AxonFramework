@@ -102,7 +102,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final String lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
-    private final AtomicReference<String> eventStoreIdentifier = new AtomicReference<>();
+    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
 
 
     private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
@@ -231,7 +231,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      *                                                                                        unable to retrieve it
      */
     public String getTokenStoreIdentifier() {
-        return eventStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
+        return tokenStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
     }
 
     private String calculateIdentifier() {

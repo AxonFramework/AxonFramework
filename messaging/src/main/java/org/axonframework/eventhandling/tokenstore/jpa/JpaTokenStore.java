@@ -258,6 +258,11 @@ public class JpaTokenStore implements TokenStore {
         return (ConfigToken) token.getToken(serializer);
     }
 
+    /**
+     * Returns the serialized used by the Token Store to serialize tokens.
+     *
+     * @return the serialized used by the Token Store to serialize tokens
+     */
     public Serializer serializer() {
         return serializer;
     }
