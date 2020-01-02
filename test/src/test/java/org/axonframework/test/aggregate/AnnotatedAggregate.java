@@ -17,32 +17,38 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Stub aggregate used to test various scenarios of the {@link FixtureConfiguration}.
+ *
  * @author Allard Buijze
  */
+@SuppressWarnings("unused")
 class AnnotatedAggregate implements AnnotatedAggregateInterface {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @SuppressWarnings("UnusedDeclaration")
     private transient int counter;
     private Integer lastNumber;
+    @SuppressWarnings("FieldCanBeLocal")
     @AggregateIdentifier
     private String identifier;
     private MyEntity entity;
-
-    public AnnotatedAggregate(Object identifier) {
-        this.identifier = identifier.toString();
-    }
 
     public AnnotatedAggregate() {
     }
@@ -51,8 +57,10 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
     public AnnotatedAggregate(CreateAggregateCommand command, EventBus eventBus, HardToCreateResource resource) {
         assertNotNull(resource, "resource should not be null");
         assertNotNull(eventBus, "Expected EventBus to be injected as resource");
-        apply(new MyEvent(command.getAggregateIdentifier() == null ?
-                                  UUID.randomUUID() : command.getAggregateIdentifier(), 0));
+
+        apply(new MyEvent(
+                command.getAggregateIdentifier() == null ? UUID.randomUUID() : command.getAggregateIdentifier(), 0
+        ));
     }
 
     @CommandHandler
@@ -67,6 +75,13 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
     public void doSomethingIllegal(IllegalStateChangeCommand command) {
         apply(new MyEvent(command.getAggregateIdentifier(), lastNumber + 1));
         lastNumber = command.getNewIllegalValue();
+    }
+
+    @CommandHandler
+    public void handle(ResolveParameterCommand command, AtomicBoolean assertion) {
+        assertFalse(assertion.get());
+        assertion.set(true);
+        apply(new ParameterResolvedEvent(identifier, assertion));
     }
 
     @EventSourcingHandler
@@ -86,14 +101,14 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
     }
 
     @EventSourcingHandler
-    public void handleAll(DomainEventMessage event) {
-        System.out.println("Invoked with payload: " + event.getPayloadType().getName());
-        // we don't care about events
+    public void handleAll(DomainEventMessage<?> event) {
+        // We don't care about events
+        logger.info("Invoked with payload: " + event.getPayloadType().getName());
     }
 
     @Override
     public void doSomething(TestCommand command) {
-        // this state change should be accepted, since it happens on a transient value
+        // This state change should be accepted, since it happens on a transient value
         counter++;
         apply(new MyEvent(command.getAggregateIdentifier(), lastNumber + 1));
     }

@@ -16,13 +16,16 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,12 +34,14 @@ import static org.axonframework.test.matchers.Matchers.predicate;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This test class is intended to test whether the registration of a {@link org.axonframework.messaging.annotation.HandlerDefinition}
- * and a {@link org.axonframework.messaging.annotation.HandlerEnhancerDefinition} go according to plan.
+ * This test class is intended to test whether the registration of a {@link ParameterResolverFactory}, a {@link
+ * HandlerDefinition} and a {@link HandlerEnhancerDefinition} go according to plan.
  *
  * @author Steven van Beelen
  */
 public class FixtureTest_RegisteringMethodEnhancements {
+
+    private static final String TEST_AGGREGATE_IDENTIFIER = "aggregate-identifier";
 
     private FixtureConfiguration<AnnotatedAggregate> testSubject;
 
@@ -47,12 +52,25 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
+    void testRegisterParameterResolverFactory() {
+        testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
+                   .given(new MyEvent(TEST_AGGREGATE_IDENTIFIER, 42))
+                   .when(new ResolveParameterCommand(TEST_AGGREGATE_IDENTIFIER))
+                   .expectEventsMatching(exactSequenceOf(predicate(eventMessage -> {
+                       Object payload = eventMessage.getPayload();
+                       assertTrue(payload instanceof ParameterResolvedEvent);
+                       AtomicBoolean assertion = ((ParameterResolvedEvent) payload).getAssertion();
+                       return assertion.get();
+                   })));
+    }
+
+    @Test
     void testCreateHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
         AtomicBoolean handlerDefinitionReached = new AtomicBoolean(false);
 
         testSubject.registerHandlerDefinition(new TestHandlerDefinition(handlerDefinitionReached))
                    .givenNoPriorActivity()
-                   .when(new CreateAggregateCommand("aggregate-identifier"))
+                   .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER))
                    .expectEventsMatching(exactSequenceOf(predicate(
                            eventMessage -> eventMessage.getPayloadType().isAssignableFrom(MyEvent.class)
                    )));
@@ -66,12 +84,39 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         testSubject.registerHandlerEnhancerDefinition(new TestHandlerEnhancerDefinition(handlerEnhancerReached))
                    .givenNoPriorActivity()
-                   .when(new CreateAggregateCommand("aggregate-identifier"))
+                   .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER))
                    .expectEventsMatching(exactSequenceOf(predicate(
                            eventMessage -> eventMessage.getPayloadType().isAssignableFrom(MyEvent.class)
                    )));
 
         assertTrue(handlerEnhancerReached.get());
+    }
+
+    private static class TestParameterResolverFactory
+            implements ParameterResolverFactory, ParameterResolver<AtomicBoolean> {
+
+        private final AtomicBoolean assertion;
+
+        private TestParameterResolverFactory(AtomicBoolean assertion) {
+            this.assertion = assertion;
+        }
+
+        @Override
+        public ParameterResolver<AtomicBoolean> createInstance(Executable executable,
+                                                               Parameter[] parameters,
+                                                               int parameterIndex) {
+            return AtomicBoolean.class.equals(parameters[parameterIndex].getType()) ? this : null;
+        }
+
+        @Override
+        public AtomicBoolean resolveParameterValue(Message<?> message) {
+            return assertion;
+        }
+
+        @Override
+        public boolean matches(Message<?> message) {
+            return message.getPayloadType().isAssignableFrom(ResolveParameterCommand.class);
+        }
     }
 
     private static class TestHandlerDefinition implements HandlerDefinition {
