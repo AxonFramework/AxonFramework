@@ -40,7 +40,9 @@ import org.axonframework.common.Registration;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -54,10 +56,20 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test class to cover all the operations performed by the {@link AxonServerCommandBus}.
@@ -78,11 +90,11 @@ class AxonServerCommandBusTest {
 
     @BeforeEach
     void setup() throws Exception {
-        dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);
+        dummyMessagePlatformServer = new DummyMessagePlatformServer();
         dummyMessagePlatformServer.start();
 
         configuration = new AxonServerConfiguration();
-        configuration.setServers("localhost:4344");
+        configuration.setServers(dummyMessagePlatformServer.getAddress());
         configuration.setClientId("JUnit");
         configuration.setComponentName("JUnit");
         configuration.setInitialNrOfPermits(100);
