@@ -78,4 +78,10 @@ public @interface Aggregate {
      * Aggregates.
      */
     boolean filterEventsByType() default false;
+
+    /**
+     * Sets the name of the bean providing the caching. If none is provided, no cache is
+     * created, unless explicitly configured on the referenced repository.
+     */
+    String cache() default "";
 }
