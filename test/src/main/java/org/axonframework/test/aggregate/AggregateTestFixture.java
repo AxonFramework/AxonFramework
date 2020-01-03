@@ -134,8 +134,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private MultiParameterResolverFactory parameterResolverFactory;
-    private final List<HandlerDefinition> registeredHandlerDefinitions = new ArrayList<>();
-    private final List<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new ArrayList<>();
+    private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
+    private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
     private CommandTargetResolver commandTargetResolver;
 
     /**
@@ -268,14 +268,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
-        this.registeredHandlerDefinitions.add(handlerDefinition);
+        this.registeredHandlerDefinitions.addFirst(handlerDefinition);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerHandlerEnhancerDefinition(
             HandlerEnhancerDefinition handlerEnhancerDefinition) {
-        this.registeredHandlerEnhancerDefinitions.add(handlerEnhancerDefinition);
+        this.registeredHandlerEnhancerDefinitions.addFirst(handlerEnhancerDefinition);
         return this;
     }
 
