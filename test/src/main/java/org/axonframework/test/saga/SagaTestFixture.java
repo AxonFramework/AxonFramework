@@ -45,6 +45,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.SimpleResourceInjector;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
@@ -97,6 +98,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final InMemorySagaStore sagaStore;
     private AnnotatedSagaManager<T> sagaManager;
     private final LinkedList<Object> registeredResources = new LinkedList<>();
+    private ResourceInjector resourceInjector;
 
     private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
     private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
@@ -179,7 +181,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                     .parameterResolverFactory(getParameterResolverFactory())
                     .handlerDefinition(getHandlerDefinition())
                     .sagaStore(sagaStore)
-                    .resourceInjector(new TransienceValidatingResourceInjector())
+                    .resourceInjector(getResourceInjector())
                     .build();
             sagaManager = AnnotatedSagaManager.<T>builder()
                     .sagaRepository(sagaRepository)
@@ -200,6 +202,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         HandlerEnhancerDefinition handlerEnhancerDefinition =
                 MultiHandlerEnhancerDefinition.ordered(registeredHandlerEnhancerDefinitions);
         return MultiHandlerDefinition.ordered(registeredHandlerDefinitions, handlerEnhancerDefinition);
+    }
+
+    private ResourceInjector getResourceInjector() {
+        TransienceValidatingResourceInjector defaultResourceInjector = new TransienceValidatingResourceInjector();
+        return resourceInjector != null
+                ? new WrappingResourceInjector(resourceInjector, defaultResourceInjector)
+                : defaultResourceInjector;
     }
 
     @Override
@@ -405,6 +414,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return this;
     }
 
+    @Override
+    public FixtureConfiguration registerResourceInjector(ResourceInjector resourceInjector) {
+        this.resourceInjector = resourceInjector;
+        return this;
+    }
+
     private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
@@ -585,15 +600,44 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                              .filter(f -> registeredResources.contains(ReflectionUtils.getFieldValue(f, saga)))
                              .findFirst()
                              .ifPresent(field -> {
-                                 throw new AssertionError(format("Field %s.%s is injected with a resource, " +
-                                                                         "but it doesn't have the 'transient' modifier.\n"
-                                                                         +
-                                                                         "Mark field as 'transient' or disable this check using:\n"
-                                                                         +
-                                                                         "fixture.withTransienceCheckDisabled()",
-                                                                 field.getDeclaringClass(), field.getName()));
+                                 throw new AssertionError(format(
+                                         "Field %s.%s is injected with a resource,"
+                                                 + " but it doesn't have the 'transient' modifier."
+                                                 + "\nMark field as 'transient' or disable this check using:"
+                                                 + "\nfixture.withTransienceCheckDisabled()",
+                                         field.getDeclaringClass(),
+                                         field.getName()
+                                 ));
                              });
             }
+        }
+    }
+
+    /**
+     * Wrapping {@link ResourceInjector} instance. Will first call the {@link TransienceValidatingResourceInjector}, to
+     * ensure the fixture's approach of injecting the default classes (like the {@link EventBus} and {@link CommandBus}
+     * for example) is maintained. Afterward, the custom {@code ResourceInjector} provided through the {@link
+     * #registerResourceInjector(ResourceInjector)} is called. This will (depending on the implementation) inject more
+     * resources, as well as potentially override resources already injected by the {@code
+     * TransienceValidatingResourceInjector}.
+     */
+    private class WrappingResourceInjector implements ResourceInjector {
+
+        private final ResourceInjector customResourceInjector;
+        private final TransienceValidatingResourceInjector defaultResourceInjector;
+
+        public WrappingResourceInjector(ResourceInjector customResourceInjector,
+                                        TransienceValidatingResourceInjector defaultResourceInjector) {
+            this.customResourceInjector = customResourceInjector;
+            this.defaultResourceInjector = defaultResourceInjector;
+        }
+
+        @Override
+        public void injectResources(Object saga) {
+            // First call the default, transience checking injector to ensure correct fixture workings
+            defaultResourceInjector.injectResources(saga);
+            // Then, call the custom injector, to add other resource or override injection by the default injector
+            customResourceInjector.injectResources(saga);
         }
     }
 }

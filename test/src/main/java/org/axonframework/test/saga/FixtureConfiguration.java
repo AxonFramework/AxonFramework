@@ -27,6 +27,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
@@ -210,6 +211,22 @@ public interface FixtureConfiguration {
      */
     FixtureConfiguration registerListenerInvocationErrorHandler(
             ListenerInvocationErrorHandler listenerInvocationErrorHandler);
+
+    /**
+     * Registers a {@link ResourceInjector} within this fixture. This approach can be used if a custom {@code
+     * ResourceInjector} has been built for a project which the user wants to take into account when testing it's
+     * sagas.
+     * <p>
+     * The provided {@code resourceInjector} will be paired with the fixture's default {@code ResourceInjector} to keep
+     * supporting the {@link #registerResource(Object)} and {@link #withTransienceCheckDisabled()} methods. Note that
+     * <b>first</b> the default injector is called, and after that the given {@code resourceInjector}. This approach
+     * ensures the fixture's correct workings for default provided resources, like the {@link EventBus} and {@link
+     * CommandBus}}.
+     *
+     * @param resourceInjector the {@link ResourceInjector} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerResourceInjector(ResourceInjector resourceInjector);
 
     /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.
