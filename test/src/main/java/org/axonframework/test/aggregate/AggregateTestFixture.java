@@ -134,7 +134,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private long sequenceNumber = 0;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
-    private final List<ParameterResolverFactory> registeredParameterResolverFactories = new ArrayList<>();
+    private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
     private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
     private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
     private CommandTargetResolver commandTargetResolver;
@@ -224,7 +224,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
-        this.registeredParameterResolverFactories.add(parameterResolverFactory);
+        this.registeredParameterResolverFactories.addFirst(parameterResolverFactory);
         return this;
     }
 
