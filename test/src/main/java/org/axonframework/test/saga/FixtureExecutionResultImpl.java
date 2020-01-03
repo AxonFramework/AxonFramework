@@ -35,8 +35,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.axonframework.test.matchers.Matchers.equalTo;
-import static org.axonframework.test.matchers.Matchers.messageWithPayload;
+import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
 
 /**
@@ -121,7 +120,8 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
 
     @Override
-    public FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? super EventMessage<?>> matcher) {
+    public FixtureExecutionResult expectScheduledEventMatching(Duration duration,
+                                                               Matcher<? super EventMessage<?>> matcher) {
         eventSchedulerValidator.assertScheduledEventMatching(duration, matcher);
         return this;
     }
@@ -154,7 +154,16 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime, Matcher<? super EventMessage<?>> matcher) {
+    public FixtureExecutionResult expectScheduledDeadlineWithName(Duration duration, String deadlineName) {
+        return expectScheduledDeadlineMatching(
+                duration,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime,
+                                                               Matcher<? super EventMessage<?>> matcher) {
         eventSchedulerValidator.assertScheduledEventMatching(scheduledTime, matcher);
         return this;
     }
@@ -184,6 +193,14 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     @Override
     public FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
         return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+        return expectScheduledDeadlineMatching(
+                scheduledTime,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
     }
 
     @Override

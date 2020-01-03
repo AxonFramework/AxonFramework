@@ -128,6 +128,15 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
 
     /**
+     * Asserts that a deadline with the given {@code deadlineName} has been scheduled after the given {@code duration}.
+     *
+     * @param duration     the time to wait before the deadline is met
+     * @param deadlineName the name of the expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineWithName(Duration duration, String deadlineName);
+
+    /**
      * Asserts that an event matching the given {@code matcher} has been scheduled to be published at the given
      * {@code scheduledTime}.
      * <p/>
@@ -208,6 +217,15 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+
+    /**
+     * Asserts that a deadline with the given {@code deadlineName} has been scheduled after the given {@code duration}.
+     *
+     * @param scheduledTime the time at which the deadline is scheduled
+     * @param deadlineName the name of the expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that the given commands have been dispatched in exactly the order given. The command objects are
