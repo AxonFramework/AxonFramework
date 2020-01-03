@@ -17,25 +17,27 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.Instant;
 
+import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
+
 /**
- * Tests for scheduling deadlines on {@link SagaTestFixture}.
+ * Test class intended to validate all methods in regards to scheduling and validating deadlines.
  *
  * @author Milan Savic
  * @author Steven van Beelen
  */
-class SagaDeadlineSchedulingTest {
+class FixtureTest_Deadlines {
 
+    private static final String AGGREGATE_ID = "id";
+    private static final TriggerSagaStartEvent START_SAGA_EVENT = new TriggerSagaStartEvent(AGGREGATE_ID);
     private static final int TRIGGER_DURATION_MINUTES = 10;
 
     private SagaTestFixture<MySaga> fixture;
@@ -48,7 +50,8 @@ class SagaDeadlineSchedulingTest {
     @Test
     void testDeadlineScheduling() {
         fixture.givenNoPriorActivity()
-               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
+               .whenAggregate(AGGREGATE_ID)
+               .publishes(START_SAGA_EVENT)
                .expectActiveSagas(1)
                .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails")
                .expectNoScheduledEvents();
@@ -57,15 +60,26 @@ class SagaDeadlineSchedulingTest {
     @Test
     void testDeadlineSchedulingTypeMatching() {
         fixture.givenNoPriorActivity()
-               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
+               .whenAggregate(AGGREGATE_ID)
+               .publishes(START_SAGA_EVENT)
                .expectActiveSagas(1)
                .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class)
                .expectNoScheduledEvents();
     }
 
     @Test
+    void testDeadlineSchedulingNameMatching() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenAggregate(AGGREGATE_ID)
+               .publishes(new PayloadlessDeadlineShouldBeSetEvent(AGGREGATE_ID))
+               .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
+    }
+
+    @Test
     void testDeadlineMet() {
-        fixture.givenAggregate("id").published(new TriggerSagaStartEvent("id"))
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
                .expectDeadlinesMet("deadlineDetails")
@@ -74,9 +88,9 @@ class SagaDeadlineSchedulingTest {
 
     @Test
     void testDeadlineCancelled() {
-        fixture.givenAggregate("id")
-               .published(new TriggerSagaStartEvent("id"))
-               .whenPublishingA(new ResetTriggerEvent("id"))
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
                .expectActiveSagas(1)
                .expectNoScheduledDeadlines()
                .expectNoScheduledEvents();
@@ -84,9 +98,9 @@ class SagaDeadlineSchedulingTest {
 
     @Test
     void testDeadlineWhichCancelsAll() {
-        fixture.givenAggregate("id")
-               .published(new TriggerSagaStartEvent("id"))
-               .whenPublishingA(new ResetAllTriggeredEvent("id"))
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetAllTriggeredEvent(AGGREGATE_ID))
                .expectActiveSagas(1)
                .expectNoScheduledDeadlines()
                .expectNoScheduledEvents();
@@ -95,9 +109,10 @@ class SagaDeadlineSchedulingTest {
     @Test
     void testDeadlineDispatchInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
-                messages -> (i, m) -> GenericDeadlineMessage
-                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
-               .givenAggregate("id").published(new TriggerSagaStartEvent("id"))
+                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp())
+        )
+               .givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
                .expectDeadlinesMet("fakeDeadlineDetails")
@@ -107,11 +122,13 @@ class SagaDeadlineSchedulingTest {
     @Test
     void testDeadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
-                    uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp()));
-                    return chain.proceed();
-                })
-               .givenAggregate("id").published(new TriggerSagaStartEvent("id"))
+            uow.transformMessage(deadlineMessage -> asDeadlineMessage(
+                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())
+            );
+            return chain.proceed();
+        })
+               .givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
                .expectDeadlinesMet("fakeDeadlineDetails")
@@ -123,6 +140,19 @@ class SagaDeadlineSchedulingTest {
         private final String identifier;
 
         private ResetAllTriggeredEvent(String identifier) {
+            this.identifier = identifier;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+    }
+
+    private static class PayloadlessDeadlineShouldBeSetEvent {
+
+        private final String identifier;
+
+        private PayloadlessDeadlineShouldBeSetEvent(String identifier) {
             this.identifier = identifier;
         }
 
@@ -156,8 +186,18 @@ class SagaDeadlineSchedulingTest {
             deadlineManager.cancelAll(deadlineName);
         }
 
+        @SagaEventHandler(associationProperty = "identifier")
+        public void on(PayloadlessDeadlineShouldBeSetEvent event, DeadlineManager deadlineManager) {
+            deadlineManager.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
+        }
+
         @DeadlineHandler
         public void handleDeadline(String deadlineInfo) {
+            // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
+        }
+
+        @DeadlineHandler(deadlineName = "payloadless-deadline")
+        public void handle() {
             // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
         }
     }
