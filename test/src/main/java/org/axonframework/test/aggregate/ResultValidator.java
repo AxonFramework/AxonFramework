@@ -28,11 +28,9 @@ import java.util.function.Consumer;
 
 /**
  * Interface describing the operations available on the "validate result" (a.k.a. "then") stage of the test execution.
- * The underlying fixture expects a test to have been executed succesfully using a {@link
- * TestExecutor}.
+ * The underlying fixture expects a test to have been executed successfully using a {@link TestExecutor}.
  * <p>
- * There are several things to validate:<ul><li>the published events,<li>the stored events, and<li>the command
- * handler's
+ * There are several things to validate:<ul><li>the published events,<li>the stored events, and<li>the command handler's
  * execution result, which is one of <ul><li>a regular return value,<li>a {@code void} return value, or<li>an
  * exception.</ul></ul>
  *
@@ -67,7 +65,7 @@ public interface ResultValidator<T> {
      * @param expectedEvents The expected events, in the exact order they are expected to be dispatched and stored.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectEvents(EventMessage... expectedEvents);
+    ResultValidator<T> expectEvents(EventMessage<?>... expectedEvents);
 
     /**
      * Expect no events to have been published from the command.
@@ -115,7 +113,7 @@ public interface ResultValidator<T> {
      * @param expectedResultMessage The expected result message of the command execution
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectResultMessage(CommandResultMessage expectedResultMessage);
+    ResultValidator<T> expectResultMessage(CommandResultMessage<?> expectedResultMessage);
 
     /**
      * Expect the command handler to return a value that matches the given {@code matcher} after execution.

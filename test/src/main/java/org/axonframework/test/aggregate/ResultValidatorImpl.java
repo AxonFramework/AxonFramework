@@ -90,7 +90,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
-            EventMessage actualEvent = iterator.next();
+            EventMessage<?> actualEvent = iterator.next();
             if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
@@ -99,12 +99,12 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectEvents(EventMessage... expectedEvents) {
+    public ResultValidator<T> expectEvents(EventMessage<?>... expectedEvents) {
         this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
-        for (EventMessage expectedEvent : expectedEvents) {
-            EventMessage actualEvent = iterator.next();
+        for (EventMessage<?> expectedEvent : expectedEvents) {
+            EventMessage<?> actualEvent = iterator.next();
             if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
                                         expectedEvent.getMetaData(),
                                         actualEvent.getMetaData())) {
@@ -245,7 +245,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectResultMessage(CommandResultMessage expectedResultMessage) {
+    public ResultValidator<T> expectResultMessage(CommandResultMessage<?> expectedResultMessage) {
         expectResultMessagePayload(expectedResultMessage.getPayload());
 
         StringDescription expectedDescription = new StringDescription();
@@ -299,7 +299,6 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         return expectExceptionMessage(equalTo(exceptionMessage));
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator<T> expectException(Class<? extends Throwable> expectedException) {
         return expectException(instanceOf(expectedException));
