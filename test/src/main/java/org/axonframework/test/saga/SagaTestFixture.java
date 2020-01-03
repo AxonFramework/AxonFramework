@@ -88,9 +88,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private EventBus eventBus;
     private final StubEventScheduler eventScheduler;
     private final StubDeadlineManager deadlineManager;
-    private final List<ParameterResolverFactory> registeredParameterResolverFactories = new ArrayList<>();
-    private final List<HandlerDefinition> registeredHandlerDefinitions = new ArrayList<>();
-    private final List<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new ArrayList<>();
+    private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
+    private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
+    private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
     private ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     private final Class<T> sagaType;
@@ -242,7 +242,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
-        this.registeredParameterResolverFactories.add(parameterResolverFactory);
+        this.registeredParameterResolverFactories.addFirst(parameterResolverFactory);
         return this;
     }
 
@@ -368,13 +368,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
-        this.registeredHandlerDefinitions.add(handlerDefinition);
+        this.registeredHandlerDefinitions.addFirst(handlerDefinition);
         return this;
     }
 
     @Override
     public FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition) {
-        this.registeredHandlerEnhancerDefinitions.add(handlerEnhancerDefinition);
+        this.registeredHandlerEnhancerDefinitions.addFirst(handlerEnhancerDefinition);
         return this;
     }
 
