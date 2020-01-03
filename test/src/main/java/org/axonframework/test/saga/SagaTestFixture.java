@@ -46,6 +46,7 @@ import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFac
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
 import org.axonframework.modelling.saga.SagaRepository;
+import org.axonframework.modelling.saga.SimpleResourceInjector;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.FixtureExecutionException;
@@ -53,7 +54,6 @@ import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
-import org.axonframework.test.utils.AutowiredResourceInjector;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.axonframework.test.utils.RecordingCommandBus;
 
@@ -570,7 +570,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         }
     }
 
-    private class TransienceValidatingResourceInjector extends AutowiredResourceInjector {
+    private class TransienceValidatingResourceInjector extends SimpleResourceInjector {
 
         public TransienceValidatingResourceInjector() {
             super(registeredResources);
