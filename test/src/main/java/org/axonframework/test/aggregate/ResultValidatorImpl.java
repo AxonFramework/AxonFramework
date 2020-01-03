@@ -27,17 +27,26 @@ import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
-import org.axonframework.test.matchers.*;
+import org.axonframework.test.matchers.EqualFieldsMatcher;
+import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.MapEntryMatcher;
+import org.axonframework.test.matchers.Matchers;
+import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.axonframework.test.matchers.Matchers.matches;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
 import static org.hamcrest.CoreMatchers.*;
 
@@ -153,6 +162,14 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
+    public ResultValidator<T> expectScheduledDeadlineWithName(Duration duration, String deadlineName) {
+        return expectScheduledDeadlineMatching(
+                duration,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
+    }
+
+    @Override
     public ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime,
                                                               Matcher<? super DeadlineMessage<?>> matcher) {
         deadlineManagerValidator.assertScheduledDeadlineMatching(scheduledTime, matcher);
@@ -168,6 +185,14 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     @Override
     public ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
         return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator<T> expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+        return expectScheduledDeadlineMatching(
+                scheduledTime,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
     }
 
     @Override
