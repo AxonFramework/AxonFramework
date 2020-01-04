@@ -563,18 +563,18 @@ public class AxonServerConfiguration {
             return this;
         }
 
-        public Builder commandFlowControl(FlowControlConfiguration flowControlConfiguration) {
-            instance.setCommandFlowControl(flowControlConfiguration);
+        public Builder commandFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setCommandFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
             return this;
         }
 
-        public Builder queryFlowControl(FlowControlConfiguration flowControlConfiguration) {
-            instance.setQueryFlowControl(flowControlConfiguration);
+        public Builder queryFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setQueryFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
             return this;
         }
 
-        public Builder eventFlowControl(FlowControlConfiguration flowControlConfiguration) {
-            instance.setEventFlowControl(flowControlConfiguration);
+        public Builder eventFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setEventFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
             return this;
         }
 
