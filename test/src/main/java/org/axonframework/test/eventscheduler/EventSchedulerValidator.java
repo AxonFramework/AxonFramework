@@ -17,8 +17,6 @@
 package org.axonframework.test.eventscheduler;
 
 import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.eventscheduler.ScheduledItem;
-import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -27,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import static java.lang.String.format;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
@@ -49,8 +48,8 @@ public class EventSchedulerValidator {
     }
 
     /**
-     * Asserts that an event matching the given {@code matcher} is scheduled for publication after the given
-     * {@code duration}.
+     * Asserts that an event matching the given {@code matcher} is scheduled for publication after the given {@code
+     * duration}.
      *
      * @param duration The delay expected before the event is published
      * @param matcher  The matcher that must match with the event scheduled at the given time
@@ -61,14 +60,13 @@ public class EventSchedulerValidator {
     }
 
     /**
-     * Asserts that an event matching the given {@code matcher} is scheduled for publication at the given
-     * {@code scheduledTime}.
+     * Asserts that an event matching the given {@code matcher} is scheduled for publication at the given {@code
+     * scheduledTime}.
      *
      * @param scheduledTime the time at which the event should be published
      * @param matcher       The matcher that must match with the event scheduled at the given time
      */
     public void assertScheduledEventMatching(Instant scheduledTime, Matcher<?> matcher) {
-
         List<ScheduledItem> schedule = eventScheduler.getScheduledItems();
         for (ScheduledItem item : schedule) {
             if (item.getScheduleTime().equals(scheduledTime) && matcher.matches(item.getEvent())) {
@@ -81,7 +79,8 @@ public class EventSchedulerValidator {
         describe(eventScheduler.getScheduledItems(), actual);
         throw new AxonAssertionError(String.format(
                 "Did not find an event at the given schedule. \nExpected:\n<%s> at <%s>\nGot:%s\n",
-                expected, scheduledTime, actual));
+                expected, scheduledTime, actual
+        ));
     }
 
     private void describe(List<ScheduledItem> scheduledItems, Description description) {
@@ -90,10 +89,44 @@ public class EventSchedulerValidator {
         }
         for (ScheduledItem item : scheduledItems) {
             description.appendText("\n<")
-                    .appendText(item.getEvent().toString())
-                    .appendText("> at <")
-                    .appendText(formatInstant(item.getScheduleTime()))
-                    .appendText(">");
+                       .appendText(item.getEvent().toString())
+                       .appendText("> at <")
+                       .appendText(formatInstant(item.getScheduleTime()))
+                       .appendText(">");
+        }
+    }
+
+    /**
+     * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled after the given {@code
+     * duration}.
+     *
+     * @param duration the delay within which no event matching the given {@code matcher} is expected
+     * @param matcher  the matcher defining the event which should not be scheduled after the given {@code duration}
+     */
+    public void assertNoScheduledEventMatching(Duration duration, Matcher<?> matcher) {
+        Instant targetTime = eventScheduler.getCurrentDateTime().plus(duration);
+        assertNoScheduledEventMatching(targetTime, matcher);
+    }
+
+    /**
+     * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled at the given {@code
+     * scheduledTime}.
+     *
+     * @param scheduledTime the time at which no event matching the given {@code matcher} is expected
+     * @param matcher       the matcher defining the event which should not be scheduled at the given {@code
+     *                      scheduledTime}
+     */
+    public void assertNoScheduledEventMatching(Instant scheduledTime, Matcher<?> matcher) {
+        for (ScheduledItem scheduledItem : eventScheduler.getScheduledItems()) {
+            if (scheduledItem.getScheduleTime().equals(scheduledTime) &&
+                    matcher.matches(scheduledItem.getEvent())) {
+                Description unexpected = new StringDescription();
+                matcher.describeTo(unexpected);
+                throw new AxonAssertionError(format(
+                        "Unexpected matching event found at the given schedule. \nGot:%s\n",
+                        unexpected
+                ));
+            }
         }
     }
 
