@@ -77,6 +77,36 @@ class FixtureTest_Deadlines {
     }
 
     @Test
+    void testNoScheduledDeadline() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails")
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testNoScheduledDeadlineOfType() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class)
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testNoScheduledDeadlineOfName() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineName")
+               .expectNoScheduledEvents();
+    }
+
+    @Test
     void testDeadlineMet() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)

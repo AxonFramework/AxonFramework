@@ -210,7 +210,8 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<? extends List<? super CommandMessage<?>>> matcher) {
+    public FixtureExecutionResult expectDispatchedCommandsMatching(
+            Matcher<? extends List<? super CommandMessage<?>>> matcher) {
         commandValidator.assertDispatchedMatching(matcher);
         return this;
     }
@@ -234,7 +235,61 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher) {
+    public FixtureExecutionResult expectNoScheduledDeadlineMatching(Duration duration,
+                                                                    Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertNoScheduledDeadlineMatching(duration, matcher);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadline(Duration duration, Object deadline) {
+        return expectNoScheduledDeadlineMatching(duration, messageWithPayload(equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration duration, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(duration, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration duration, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(
+                duration,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant scheduledTime,
+                                                                    Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertNoScheduledDeadlineMatching(scheduledTime, matcher);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadline(Instant scheduledTime, Object deadline) {
+        return expectNoScheduledDeadlineMatching(
+                scheduledTime,
+                messageWithPayload(equalTo(deadline, fieldFilter))
+        );
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(
+                scheduledTime,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
+    }
+
+    @Override
+    public FixtureExecutionResult expectPublishedEventsMatching(
+            Matcher<? extends List<? super EventMessage<?>>> matcher) {
         eventValidator.assertPublishedEventsMatching(matcher);
         return this;
     }
