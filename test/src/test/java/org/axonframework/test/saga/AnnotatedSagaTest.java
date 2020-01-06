@@ -349,5 +349,4 @@ class AnnotatedSagaTest {
                        payloadsMatching(exactSequenceOf(any(SagaWasTriggeredEvent.class), andNoMore()))
                );
     }
-
 }

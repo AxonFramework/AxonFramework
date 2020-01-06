@@ -446,5 +446,4 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         }
         return true;
     }
-
 }

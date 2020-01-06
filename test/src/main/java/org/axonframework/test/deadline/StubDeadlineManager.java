@@ -250,5 +250,4 @@ public class StubDeadlineManager implements DeadlineManager {
         }
         return (DeadlineMessage<?>) resultMessage.getPayload();
     }
-
 }

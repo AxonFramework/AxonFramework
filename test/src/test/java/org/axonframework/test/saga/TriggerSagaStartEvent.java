@@ -32,5 +32,4 @@ public class TriggerSagaStartEvent {
     public String getIdentifier() {
         return identifier;
     }
-
 }

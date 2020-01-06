@@ -289,8 +289,7 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectNoScheduledEvent(Duration duration, Object event);
 
     /**
-     * Asserts that <b>no</b> event of the given {@code eventType} has been scheduled after the given {@code
-     * duration}.
+     * Asserts that <b>no</b> event of the given {@code eventType} has been scheduled after the given {@code duration}.
      *
      * @param duration  the time at which no event of {@code eventType} should be scheduled
      * @param eventType the type of the event which should not be scheduled
@@ -475,5 +474,4 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectDeadlinesMet(Object... expected);
-
 }

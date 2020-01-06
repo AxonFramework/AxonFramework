@@ -87,8 +87,8 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
 
     /**
-     * Expect the command handler to return the given {@code expectedPayload} after execution. The actual and
-     * expected values are compared using their equals methods.
+     * Expect the command handler to return the given {@code expectedPayload} after execution. The actual and expected
+     * values are compared using their equals methods.
      *
      * @param expectedPayload The expected result message payload of the command execution
      * @return the current ResultValidator, for fluent interfacing
@@ -133,8 +133,8 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectExceptionMessage(Matcher<?> matcher);
 
     /**
-     * Expect the given {@code exceptionMessage} to occur during command handler execution. The actual exception
-     * message should be exactly the same as {@code exceptionMessage}.
+     * Expect the given {@code exceptionMessage} to occur during command handler execution. The actual exception message
+     * should be exactly the same as {@code exceptionMessage}.
      *
      * @param exceptionMessage The exception message expected from the command handler execution
      * @return the current ResultValidator, for fluent interfacing
@@ -142,8 +142,8 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectExceptionMessage(String exceptionMessage);
 
     /**
-     * Expect the given {@code expectedException} to occur during command handler execution. The actual exception
-     * should be exactly of that type, subclasses are not accepted.
+     * Expect the given {@code expectedException} to occur during command handler execution. The actual exception should
+     * be exactly of that type, subclasses are not accepted.
      *
      * @param expectedException The type of exception expected from the command handler execution
      * @return the current ResultValidator, for fluent interfacing
@@ -398,5 +398,4 @@ public interface ResultValidator<T> {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectNotMarkedDeleted();
-
 }

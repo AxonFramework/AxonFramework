@@ -248,5 +248,4 @@ class FixtureTest_Deadlines {
             this.deadlineId = event.deadlineId;
         }
     }
-
 }

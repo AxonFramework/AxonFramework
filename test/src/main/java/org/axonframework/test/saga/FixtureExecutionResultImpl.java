@@ -347,5 +347,4 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
         deadlineManagerValidator.assertDeadlinesMet(expected);
         return this;
     }
-
 }

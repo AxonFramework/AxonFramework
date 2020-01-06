@@ -231,5 +231,4 @@ class FixtureTest_Deadlines {
             // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
         }
     }
-
 }
