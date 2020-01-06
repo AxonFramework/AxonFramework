@@ -21,7 +21,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,11 +32,12 @@ import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating numerous operations from the {@link SagaTestFixture}.
+ *
  * @author Allard Buijze
  */
 class AnnotatedSagaTest {
@@ -106,7 +107,7 @@ class AnnotatedSagaTest {
                        .publishes(new TriggerSagaStartEvent("id"))
                        .expectNoScheduledDeadlines());
         assertTrue(e.getMessage().contains("StubSaga.nonTransientResource"),
-                "Got unexpected error: " + e.getMessage());
+                   "Got unexpected error: " + e.getMessage());
         assertTrue(e.getMessage().contains("transient"), "Got unexpected error: " + e.getMessage());
     }
 
@@ -121,7 +122,7 @@ class AnnotatedSagaTest {
                .expectNoScheduledDeadlines();
     }
 
-    @Test // testing issue AXON-279
+    @Test// testing issue AXON-279
     void testFixtureApi_PublishedEvent_NoHistoricActivity() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
@@ -147,7 +148,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_WithApplicationEvents() throws Exception {
+    void testFixtureApi_WithApplicationEvents() {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -233,56 +234,6 @@ class AnnotatedSagaTest {
 
         verify(gateway).send("Say hi!");
         verify(gateway).send("Hi again!");
-    }
-
-    @Test
-    void testSchedulingEventsAsMessage() {
-        UUID identifier = UUID.randomUUID();
-        SagaTestFixture fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerCommandGateway(StubGateway.class);
-
-        fixture.givenNoPriorActivity()
-                // this will create a message with a timestamp from the real time. It should be converted to fixture-time
-                .whenPublishingA(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(identifier.toString())))
-                .expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class)
-                .expectNoScheduledDeadlines();
-    }
-
-    @Test
-    void testSchedulingEventsAsDomainEventMessage() {
-        UUID identifier = UUID.randomUUID();
-        SagaTestFixture fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerCommandGateway(StubGateway.class);
-
-        fixture.givenNoPriorActivity()
-                // this will create a message with a timestamp from the real time. It should be converted to fixture-time
-                .whenAggregate(UUID.randomUUID().toString()).publishes(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(identifier.toString())))
-                .expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class)
-                .expectNoScheduledDeadlines();
-    }
-
-    @Test
-    void testScheduledEventsInPastAsDomainEventMessage() {
-        UUID identifier = UUID.randomUUID();
-        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerCommandGateway(StubGateway.class);
-
-        fixture.givenAggregate(UUID.randomUUID().toString()).published(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(identifier.toString())))
-                .whenTimeElapses(Duration.ofMinutes(1))
-                .expectScheduledEventOfType(Duration.ofMinutes(9), TimerTriggeredEvent.class)
-                .expectNoScheduledDeadlines();
-    }
-
-    @Test
-    void testScheduledEventsInPastAsEventMessage() {
-        UUID identifier = UUID.randomUUID();
-        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerCommandGateway(StubGateway.class);
-
-        fixture.givenAPublished(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(identifier.toString())))
-                .whenTimeElapses(Duration.ofMinutes(1))
-                .expectScheduledEventOfType(Duration.ofMinutes(9), TimerTriggeredEvent.class)
-                .expectNoScheduledDeadlines();
     }
 
     @Test
@@ -388,13 +339,14 @@ class AnnotatedSagaTest {
         String identifier = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.whenAggregate(identifier).publishes(new TriggerSagaStartEvent(identifier))
-                .expectActiveSagas(1)
-                .expectAssociationWith("identifier", identifier)
-                .expectPublishedEvents();
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", identifier)
+               .expectPublishedEvents();
         fixture.whenAggregate(identifier).publishes(new TriggerExistingSagaEvent(identifier))
-                .expectActiveSagas(1)
-                .expectAssociationWith("identifier", identifier)
-                .expectPublishedEventsMatching(
-                        payloadsMatching(exactSequenceOf(any(SagaWasTriggeredEvent.class), andNoMore())));
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", identifier)
+               .expectPublishedEventsMatching(
+                       payloadsMatching(exactSequenceOf(any(SagaWasTriggeredEvent.class), andNoMore()))
+               );
     }
 }

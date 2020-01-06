@@ -17,6 +17,8 @@
 package org.axonframework.test.saga;
 
 /**
+ * Event signaling the start of a saga.
+ *
  * @author Allard Buijze
  */
 public class TriggerSagaStartEvent {
