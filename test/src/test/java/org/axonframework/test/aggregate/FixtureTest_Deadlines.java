@@ -69,6 +69,27 @@ class FixtureTest_Deadlines {
     }
 
     @Test
+    void testNoScheduledDeadline() {
+        fixture.givenCommands(CREATE_COMMAND)
+               .when(new ResetTriggerCommand(AGGREGATE_ID))
+               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
+    }
+
+    @Test
+    void testNoScheduledDeadlineOfType() {
+        fixture.givenCommands(CREATE_COMMAND)
+               .when(new ResetTriggerCommand(AGGREGATE_ID))
+               .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
+    }
+
+    @Test
+    void testNoScheduledDeadlineWithName() {
+        fixture.givenCommands(CREATE_COMMAND)
+               .when(new ResetTriggerCommand(AGGREGATE_ID))
+               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineName");
+    }
+
+    @Test
     void testDeadlineMet() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)

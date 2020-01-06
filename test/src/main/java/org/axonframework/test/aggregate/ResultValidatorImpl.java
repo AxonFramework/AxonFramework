@@ -30,8 +30,8 @@ import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapEntryMatcher;
-import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.matchers.PayloadMatcher;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -46,8 +46,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.axonframework.test.matchers.Matchers.matches;
-import static org.axonframework.test.matchers.Matchers.messageWithPayload;
+import static org.axonframework.test.matchers.Matchers.equalTo;
+import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.*;
 
 /**
@@ -153,7 +153,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline) {
-        return expectScheduledDeadlineMatching(duration, messageWithPayload(Matchers.equalTo(deadline, fieldFilter)));
+        return expectScheduledDeadlineMatching(duration, messageWithPayload(equalTo(deadline, fieldFilter)));
     }
 
     @Override
@@ -178,8 +178,10 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline) {
-        return expectScheduledDeadlineMatching(scheduledTime,
-                                               messageWithPayload(Matchers.equalTo(deadline, fieldFilter)));
+        return expectScheduledDeadlineMatching(
+                scheduledTime,
+                messageWithPayload(equalTo(deadline, fieldFilter))
+        );
     }
 
     @Override
@@ -202,6 +204,59 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Duration duration,
+                                                                Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertNoScheduledDeadlineMatching(duration, matcher);
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadline(Duration duration, Object deadline) {
+        return expectNoScheduledDeadlineMatching(duration, messageWithPayload(equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineOfType(Duration duration, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(duration, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineWithName(Duration duration, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(
+                duration,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
+                                                                Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertNoScheduledDeadlineMatching(scheduledTime, matcher);
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadline(Instant scheduledTime, Object deadline) {
+        return expectNoScheduledDeadlineMatching(
+                scheduledTime,
+                messageWithPayload(equalTo(deadline, fieldFilter))
+        );
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(
+                scheduledTime,
+                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        );
+    }
+
+    @Override
     public ResultValidator<T> expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher) {
         deadlineManagerValidator.assertDeadlinesMetMatching(matcher);
         return this;
@@ -217,8 +272,10 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     public ResultValidator<T> expectResultMessagePayload(Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        PayloadMatcher<CommandResultMessage<?>> expectedMatcher = new PayloadMatcher<>(equalTo(expectedPayload));
-        PayloadMatcher<CommandResultMessage<?>> actualMatcher = new PayloadMatcher<>(equalTo(actualReturnValue.getPayload()));
+        PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
+                new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
+        PayloadMatcher<CommandResultMessage<?>> actualMatcher =
+                new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.getPayload()));
         expectedMatcher.describeTo(expectedDescription);
         actualMatcher.describeTo(actualDescription);
         if (actualException != null) {
@@ -296,7 +353,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectExceptionMessage(String exceptionMessage) {
-        return expectExceptionMessage(equalTo(exceptionMessage));
+        return expectExceptionMessage(CoreMatchers.equalTo(exceptionMessage));
     }
 
     @Override
@@ -356,6 +413,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         }
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
         if (Objects.equals(expectedPayload, actualPayload)) {
             return true;
@@ -379,6 +437,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         return true;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
                                            Map<String, Object> actualMetaData) {
         MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
