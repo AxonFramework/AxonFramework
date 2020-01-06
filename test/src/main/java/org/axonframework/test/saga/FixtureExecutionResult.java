@@ -220,7 +220,8 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
-     * Asserts that a deadline with the given {@code deadlineName} has been scheduled after the given {@code duration}.
+     * Asserts that a deadline with the given {@code deadlineName} has been scheduled at the given {@code
+     * scheduledTime}.
      *
      * @param scheduledTime the time at which the deadline is scheduled
      * @param deadlineName  the name of the expected deadline
