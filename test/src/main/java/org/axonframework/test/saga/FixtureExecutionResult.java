@@ -85,11 +85,11 @@ public interface FixtureExecutionResult {
                                                            Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
-     * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication after the given
-     * {@code duration}.
+     * Asserts that an event equal to the given {@code event} has been scheduled for publication after the given {@code
+     * duration}.
      * <p/>
-     * Note that the source attribute of the application event is ignored when comparing events. Events are compared
-     * using an "equals" check on all fields in the events.
+     * Note that the source attribute of the event is ignored when comparing events. Events are compared using an
+     * "equals" check on all fields in the events.
      *
      * @param duration The time to wait before the event should be published
      * @param event    The expected event
@@ -166,14 +166,14 @@ public interface FixtureExecutionResult {
                                                            Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
-     * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication at the given {@code
+     * Asserts that an event equal to the given {@code event} has been scheduled for publication at the given {@code
      * scheduledTime}.
      * <p/>
      * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * org.axonframework.test.saga.FixtureConfiguration#currentTime()} to get the time to use as "current time".
      * <p/>
-     * Note that the source attribute of the application event is ignored when comparing events. Events are compared
-     * using an "equals" check on all fields in the events.
+     * Note that the source attribute of the event is ignored when comparing events. Events are compared using an
+     * "equals" check on all fields in the events.
      *
      * @param scheduledTime The time at which the event should be published
      * @param event         The expected event
@@ -264,6 +264,79 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectNoScheduledEvents();
+
+    /**
+     * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled to be published after the
+     * given {@code duration}.
+     *
+     * @param duration the time at which no event matching the given {@code matcher} should be scheduled
+     * @param matcher  the matcher defining the event which should not be scheduled
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoScheduledEventMatching(Duration duration, Matcher<? super EventMessage<?>> matcher);
+
+    /**
+     * Asserts that <b>no</b> event equal to the given {@code event} has been scheduled after the given {@code
+     * duration}.
+     * <p/>
+     * Note that the source attribute of the event is ignored when comparing events. Events are compared using an
+     * "equals" check on all fields in the events.
+     *
+     * @param duration the time at which no event equal to the given {@code event} should be scheduled
+     * @param event    the event which should not be scheduled
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoScheduledEvent(Duration duration, Object event);
+
+    /**
+     * Asserts that <b>no</b> event of the given {@code eventType} has been scheduled after the given {@code
+     * duration}.
+     *
+     * @param duration  the time at which no event of {@code eventType} should be scheduled
+     * @param eventType the type of the event which should not be scheduled
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoScheduledEventOfType(Duration duration, Class<?> eventType);
+
+    /**
+     * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled at the given {@code
+     * scheduledTime}.
+     * <p/>
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
+     * TestExecutor#currentTime()} to get the time to use as "current time".
+     *
+     * @param scheduledTime the time at which no event matching the given {@code matcher} should be scheduled
+     * @param matcher       the matcher defining the event which should not be scheduled
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoScheduledEventMatching(Instant scheduledTime,
+                                                          Matcher<? super EventMessage<?>> matcher);
+
+    /**
+     * Asserts that <b>no</b> event equal to the given {@code event} has been scheduled at the given {@code
+     * scheduledTime}.
+     * <p/>
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
+     * TestExecutor#currentTime()} to get the time to use as "current time".
+     * <p/>
+     * Note that the source attribute of the event is ignored when comparing events. Events are compared using an
+     * "equals" check on all fields in the events.
+     *
+     * @param scheduledTime the time at which no event equal to the given {@code event} should be scheduled
+     * @param event         the event which should not be scheduled
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event);
+
+    /**
+     * Asserts that <b>no</b> event with the given {@code eventType} has been scheduled at the given {@code
+     * scheduledTime}.
+     *
+     * @param scheduledTime the time at which no event of {@code eventType} should be scheduled
+     * @param eventType     the type of the event which should not be scheduled
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
 
     /**
      * Asserts that no deadlines are scheduled. This means that either no deadlines were scheduled at all, all schedules
@@ -386,8 +459,8 @@ public interface FixtureExecutionResult {
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given {@code expected} events.
-     * Events are compared comparing their type and fields using equals. Sequence number, aggregate identifier (for
-     * domain events) and source (for application events) are ignored in the comparison.
+     * Events are compared comparing their type and fields using equals. Sequence number and aggregate identifier (for
+     * domain events) are ignored in the comparison.
      *
      * @param expected The sequence of events expected to be published by the Saga
      * @return the FixtureExecutionResult for method chaining

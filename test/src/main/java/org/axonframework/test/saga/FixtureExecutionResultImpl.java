@@ -230,6 +230,40 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
+    public FixtureExecutionResult expectNoScheduledEventMatching(Duration duration,
+                                                                 Matcher<? super EventMessage<?>> matcher) {
+        eventSchedulerValidator.assertNoScheduledEventMatching(duration, matcher);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEvent(Duration duration, Object event) {
+        return expectNoScheduledEventMatching(duration, messageWithPayload(equalTo(event, fieldFilter)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEventOfType(Duration duration, Class<?> eventType) {
+        return expectNoScheduledEventMatching(duration, messageWithPayload(any(eventType)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEventMatching(Instant scheduledTime,
+                                                                 Matcher<? super EventMessage<?>> matcher) {
+        eventSchedulerValidator.assertNoScheduledEventMatching(scheduledTime, matcher);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event) {
+        return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(equalTo(event, fieldFilter)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType) {
+        return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(any(eventType)));
+    }
+
+    @Override
     public FixtureExecutionResult expectNoScheduledDeadlines() {
         deadlineManagerValidator.assertNoScheduledDeadlines();
         return this;
