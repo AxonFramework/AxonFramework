@@ -48,7 +48,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineScheduling() {
+    void testExpectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .whenAggregate(AGGREGATE_ID)
                .publishes(START_SAGA_EVENT)
@@ -58,7 +58,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineSchedulingTypeMatching() {
+    void testExpectScheduledDeadlineOfType() {
         fixture.givenNoPriorActivity()
                .whenAggregate(AGGREGATE_ID)
                .publishes(START_SAGA_EVENT)
@@ -68,7 +68,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineSchedulingNameMatching() {
+    void testExpectScheduledDeadlineWithName() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenAggregate(AGGREGATE_ID)
@@ -77,7 +77,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testNoScheduledDeadline() {
+    void testExpectNoScheduledDeadline() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
@@ -87,7 +87,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testNoScheduledDeadlineOfType() {
+    void testExpectNoScheduledDeadlineOfType() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
@@ -97,7 +97,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testNoScheduledDeadlineOfName() {
+    void testExpectNoScheduledDeadlineWithName() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))

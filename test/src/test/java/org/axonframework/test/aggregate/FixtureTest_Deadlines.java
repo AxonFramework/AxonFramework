@@ -48,42 +48,42 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineScheduling() {
+    void testExpectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
                .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
     }
 
     @Test
-    void testDeadlineSchedulingTypeMatching() {
+    void testExpectScheduledDeadlineOfType() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
                .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
     }
 
     @Test
-    void testDeadlineSchedulingNameMatching() {
+    void testExpectScheduledDeadlineWithName() {
         fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, "deadlineName", "deadlineId"))
                .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))
                .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
     }
 
     @Test
-    void testNoScheduledDeadline() {
+    void testExpectNoScheduledDeadline() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
     }
 
     @Test
-    void testNoScheduledDeadlineOfType() {
+    void testExpectNoScheduledDeadlineOfType() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
     }
 
     @Test
-    void testNoScheduledDeadlineWithName() {
+    void testExpectNoScheduledDeadlineWithName() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineName");
