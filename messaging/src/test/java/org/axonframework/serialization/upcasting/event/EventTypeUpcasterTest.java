@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2010-2020. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.serialization.upcasting.event;
+
+import org.axonframework.eventhandling.AbstractEventEntry;
+import org.axonframework.eventhandling.EventData;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+
+/**
+ * Test class to validate the {@link EventTypeUpcaster} which for testing purposes creates a stub implementation of the
+ * {@code EventTypeUpcaster}.
+ *
+ * @author Steven van Beelen
+ */
+class EventTypeUpcasterTest {
+
+    public static final String EXPECTED_PAYLOAD_TYPE = "expected-payload-type";
+    public static final String EXPECTED_REVISION = "1";
+    public static final String UPCASTED_PAYLOAD_TYPE = "upcasted-payload-type";
+    public static final String UPCASTED_REVISION = "2";
+
+    private final TestEventTypeUpcaster testSubject = new TestEventTypeUpcaster();
+
+    private final Serializer serializer = XStreamSerializer.defaultSerializer();
+
+    @Test
+    void testExpectedPayloadType() {
+        assertEquals(EXPECTED_PAYLOAD_TYPE, testSubject.expectedPayloadType());
+    }
+
+    @Test
+    void testExpectedRevision() {
+        assertEquals(EXPECTED_REVISION, testSubject.expectedRevision());
+    }
+
+    @Test
+    void testUpcastedPayloadType() {
+        assertEquals(UPCASTED_PAYLOAD_TYPE, testSubject.upcastedPayloadType());
+    }
+
+    @Test
+    void testUpcastedRevision() {
+        assertEquals(UPCASTED_REVISION, testSubject.upcastedRevision());
+    }
+
+    @Test
+    void testCanUpcastReturnsTrueForMatchingPayloadTypeAndRevision() {
+        EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
+        InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
+
+        assertTrue(testSubject.canUpcast(testRepresentation));
+    }
+
+    @Test
+    void testCanUpcastReturnsFalseForIncorrectPayloadType() {
+        EventData<?> testEventData = new TestEventEntry("some-non-matching-payload-type", EXPECTED_REVISION);
+        InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
+
+        assertFalse(testSubject.canUpcast(testRepresentation));
+    }
+
+    @Test
+    void testCanUpcastReturnsFalseForIncorrectRevision() {
+        EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, "some-non-matching-revision");
+        InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
+
+        assertFalse(testSubject.canUpcast(testRepresentation));
+    }
+
+    @Test
+    void testIsExpectedPayloadType() {
+        assertTrue(testSubject.isExpectedPayloadType(EXPECTED_PAYLOAD_TYPE));
+        assertFalse(testSubject.isExpectedPayloadType(UPCASTED_PAYLOAD_TYPE));
+    }
+
+    @Test
+    void testIsExpectedRevision() {
+        assertTrue(testSubject.isExpectedRevision(EXPECTED_REVISION));
+        assertFalse(testSubject.isExpectedRevision(UPCASTED_REVISION));
+    }
+
+    @Test
+    void testDoUpcast() {
+        EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
+        InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
+
+        IntermediateEventRepresentation result = testSubject.doUpcast(testRepresentation);
+        SerializedType resultType = result.getType();
+        assertEquals(UPCASTED_PAYLOAD_TYPE, resultType.getName());
+        assertEquals(UPCASTED_REVISION, resultType.getRevision());
+    }
+
+    @Test
+    void testUpcastedType() {
+        SerializedType expectedType = new SimpleSerializedType(UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
+        assertEquals(expectedType, testSubject.upcastedType());
+    }
+
+    private static class TestEventTypeUpcaster extends EventTypeUpcaster {
+
+        @Override
+        public String expectedPayloadType() {
+            return EXPECTED_PAYLOAD_TYPE;
+        }
+
+        @Override
+        public String expectedRevision() {
+            return EXPECTED_REVISION;
+        }
+
+        @Override
+        public String upcastedPayloadType() {
+            return UPCASTED_PAYLOAD_TYPE;
+        }
+
+        @Override
+        public String upcastedRevision() {
+            return UPCASTED_REVISION;
+        }
+    }
+
+    /**
+     * Test {@link AbstractEventEntry} implementation which only allows adjusting the {@code payloadType} and {@code
+     * payloadRevision}. All other {@code AbstractEventEntry} parameters are defaulted.
+     */
+    private static class TestEventEntry extends AbstractEventEntry<String> {
+
+        public TestEventEntry(String payloadType, String payloadRevision) {
+            super("eventIdentifier", "timestamp", payloadType, payloadRevision, "payload", "metaData");
+        }
+    }
+}
