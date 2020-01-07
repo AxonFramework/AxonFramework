@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ import java.util.function.Supplier;
 
 /**
  * Implementation of an {@link IntermediateEventRepresentation} that contains the original serialized payload and
- * metadata before these have been upcast. Usually there is one {@link InitialEventRepresentation} per event entry
- * from the data store.
+ * metadata before these have been upcast. Usually there is one {@link InitialEventRepresentation} per event entry from
+ * the data store.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -60,8 +60,8 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     /**
      * Initializes an {@link InitialEventRepresentation} from the given {@code eventData}. The provided {@code
      * serializer} is used to deserialize metadata if the metadata is required during upcasting. The serializer also
-     * provides the {@link Converter} used to convert serialized data from one format to another if required
-     * by any upcaster.
+     * provides the {@link Converter} used to convert serialized data from one format to another if required by any
+     * upcaster.
      *
      * @param eventData  the serialized event data
      * @param serializer the serializer to deserialize metadata and provide the converter factory
@@ -84,7 +84,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
             sequenceNumber = null;
         }
         if (eventData instanceof TrackedEventData<?>) {
-            trackingToken = ((TrackedEventData) eventData).trackingToken();
+            trackingToken = ((TrackedEventData<?>) eventData).trackingToken();
         } else {
             trackingToken = null;
         }
@@ -110,7 +110,6 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <D> SerializedObject<D> getData(Class<D> requiredType) {
         return serializer.getConverter().convert(data, requiredType);
     }

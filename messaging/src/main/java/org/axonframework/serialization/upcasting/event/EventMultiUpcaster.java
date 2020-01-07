@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import org.axonframework.serialization.upcasting.SingleEntryMultiUpcaster;
 
 /**
  * Abstract implementation of a {@link SingleEntryMultiUpcaster} and an {@link EventUpcaster} that eases the common
- * process of
- * upcasting one intermediate event representation to several other representations by applying a flat mapping function
- * to the input stream of intermediate representations.
+ * process of upcasting one intermediate event representation to several other representations by applying a flat
+ * mapping function to the input stream of intermediate representations.
  *
  * @author Steven van Beelen
  * @since 3.0.6

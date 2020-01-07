@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,18 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link EventUpcasterChain}.
+ *
+ * @author Rene de Waele
+ */
 class EventUpcasterChainTest {
 
     @Test
@@ -30,6 +35,7 @@ class EventUpcasterChainTest {
         EventUpcasterChain eventUpcasterChain = new EventUpcasterChain(new SomeEventUpcaster(),
                                                                        new SomeOtherEventUpcaster());
         IntermediateEventRepresentation mockRepresentation = mock(IntermediateEventRepresentation.class);
+        //noinspection OptionalGetWithoutIsPresent
         assertSame(mockRepresentation, eventUpcasterChain.upcast(Stream.of(mockRepresentation)).findFirst().get());
     }
 
@@ -58,5 +64,4 @@ class EventUpcasterChainTest {
             return intermediateRepresentation;
         }
     }
-
 }
