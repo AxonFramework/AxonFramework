@@ -50,6 +50,7 @@ public enum ErrorCode {
     AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", (code, error, details) -> new AxonServerException(code, error)),
     UNSUPPORTED_INSTRUCTION("AXONIQ-1002", (code, error, details) -> new AxonServerException(code, error)),
     INSTRUCTION_ACK_ERROR("AXONIQ-1003", (code, error, details) -> new AxonServerException(code, error)),
+    INSTRUCTION_EXECUTION_ERROR("AXONIQ-1004", (code, error, details) -> new AxonServerException(code, error)),
 
     //Event publishing errors
     INVALID_EVENT_SEQUENCE(

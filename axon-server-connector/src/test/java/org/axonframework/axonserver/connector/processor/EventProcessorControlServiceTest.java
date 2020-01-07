@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.processor;
 
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.junit.jupiter.api.*;
 
@@ -35,7 +36,9 @@ class EventProcessorControlServiceTest {
         when(axonServerConnectionManager.getDefaultContext()).thenReturn(BOUNDED_CONTEXT);
 
         EventProcessorControlService testSubject =
-                new EventProcessorControlService(axonServerConnectionManager, eventProcessorController);
+                new EventProcessorControlService(axonServerConnectionManager,
+                                                 eventProcessorController,
+                                                 new AxonServerConfiguration());
         testSubject.start();
     }
 

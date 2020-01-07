@@ -19,7 +19,10 @@ package org.axonframework.axonserver.connector.processor;
 import io.axoniq.axonserver.grpc.control.EventProcessorReference;
 import io.axoniq.axonserver.grpc.control.EventProcessorSegmentReference;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.GrpcInstructionResultPublisher;
+import org.axonframework.axonserver.connector.InstructionResultPublisher;
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
 import org.axonframework.axonserver.connector.processor.grpc.PlatformInboundMessage;
 import org.axonframework.eventhandling.EventProcessor;
@@ -46,6 +49,7 @@ public class EventProcessorControlService {
     private final EventProcessorController eventProcessorController;
     private final String context;
     private final Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper;
+    private final InstructionResultPublisher resultPublisher;
 
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
@@ -58,10 +62,15 @@ public class EventProcessorControlService {
      *                                    {@link PlatformOutboundInstruction} have been received
      * @param eventProcessorController    the {@link EventProcessorController} used to perform operations on the
      *                                    {@link EventProcessor}s
+     * @param axonServerConfiguration     the {@link AxonServerConfiguration} used to retrieve the client identifier
      */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        EventProcessorController eventProcessorController) {
-        this(axonServerConnectionManager, eventProcessorController, axonServerConnectionManager.getDefaultContext());
+                                        EventProcessorController eventProcessorController,
+                                        AxonServerConfiguration axonServerConfiguration) {
+        this(axonServerConnectionManager,
+             eventProcessorController,
+             new GrpcInstructionResultPublisher(axonServerConnectionManager, axonServerConfiguration),
+             axonServerConfiguration.getContext());
     }
 
     /**
@@ -80,9 +89,11 @@ public class EventProcessorControlService {
      */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
                                         EventProcessorController eventProcessorController,
+                                        InstructionResultPublisher instructionResultPublisher,
                                         String context) {
         this.axonServerConnectionManager = axonServerConnectionManager;
         this.eventProcessorController = eventProcessorController;
+        this.resultPublisher = instructionResultPublisher;
         this.context = context;
         this.platformInboundMessageMapper = new GrpcEventProcessorMapping();
     }
@@ -143,8 +154,10 @@ public class EventProcessorControlService {
         String processorName = splitSegment.getProcessorName();
         try {
             eventProcessorController.splitSegment(processorName, segmentId);
+            resultPublisher.publishSuccessFor(platformOutboundInstruction.getInstructionId());
         } catch (Exception e) {
             logger.error("Failed to split segment [{}] for processor [{}]", segmentId, processorName, e);
+            resultPublisher.publishFailureFor(platformOutboundInstruction.getInstructionId(), e);
         }
     }
 
@@ -154,8 +167,10 @@ public class EventProcessorControlService {
         int segmentId = mergeSegment.getSegmentIdentifier();
         try {
             eventProcessorController.mergeSegment(processorName, segmentId);
+            resultPublisher.publishSuccessFor(platformOutboundInstruction.getInstructionId());
         } catch (Exception e) {
             logger.error("Failed to merge segment [{}] for processor [{}]", segmentId, processorName, e);
+            resultPublisher.publishFailureFor(platformOutboundInstruction.getInstructionId(), e);
         }
     }
 }
