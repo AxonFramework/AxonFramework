@@ -28,17 +28,18 @@ import static org.mockito.Mockito.*;
 
 class EventProcessorControlServiceTest {
 
+    private final AxonServerConfiguration configuration = mock(AxonServerConfiguration.class);
     private final AxonServerConnectionManager axonServerConnectionManager = mock(AxonServerConnectionManager.class);
     private final EventProcessorController eventProcessorController = mock(EventProcessorController.class);
 
     @BeforeEach
     void setUp() {
-        when(axonServerConnectionManager.getDefaultContext()).thenReturn(BOUNDED_CONTEXT);
+        when(configuration.getContext()).thenReturn(BOUNDED_CONTEXT);
 
         EventProcessorControlService testSubject =
                 new EventProcessorControlService(axonServerConnectionManager,
                                                  eventProcessorController,
-                                                 new AxonServerConfiguration());
+                                                 configuration);
         testSubject.start();
     }
 
@@ -63,7 +64,7 @@ class EventProcessorControlServiceTest {
         verify(axonServerConnectionManager).onOutboundInstruction(
                 eq(BOUNDED_CONTEXT), eq(MERGE_EVENT_PROCESSOR_SEGMENT), any(Consumer.class)
         );
-        verify(axonServerConnectionManager, atLeastOnce()).getDefaultContext();
+        verify(configuration, atLeastOnce()).getContext();
         verifyNoMoreInteractions(axonServerConnectionManager);
     }
 }
