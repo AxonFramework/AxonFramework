@@ -67,7 +67,7 @@ class EventTypeUpcasterTest {
     @Test
     void testCanUpcastReturnsTrueForMatchingPayloadTypeAndRevision() {
         EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
-        InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
+        IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         assertTrue(testSubject.canUpcast(testRepresentation));
     }
@@ -75,7 +75,7 @@ class EventTypeUpcasterTest {
     @Test
     void testCanUpcastReturnsFalseForIncorrectPayloadType() {
         EventData<?> testEventData = new TestEventEntry("some-non-matching-payload-type", EXPECTED_REVISION);
-        InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
+        IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         assertFalse(testSubject.canUpcast(testRepresentation));
     }
@@ -83,7 +83,7 @@ class EventTypeUpcasterTest {
     @Test
     void testCanUpcastReturnsFalseForIncorrectRevision() {
         EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, "some-non-matching-revision");
-        InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
+        IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         assertFalse(testSubject.canUpcast(testRepresentation));
     }
