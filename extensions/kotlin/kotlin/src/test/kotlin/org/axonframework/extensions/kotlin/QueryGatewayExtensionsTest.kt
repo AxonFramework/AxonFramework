@@ -41,9 +41,9 @@ class QueryGatewayExtensionsTest {
 
     @Before
     fun before() {
-        every { subjectGateway.query(queryName, exampleQuery, instanceResponseTypeMatcher<String>()) } returns instanceReturnValue
-        every { subjectGateway.query(queryName, exampleQuery, optionalResponseTypeMatcher<String>()) } returns optionalReturnValue
-        every { subjectGateway.query(queryName, exampleQuery, multipleInstancesResponseTypeMatcher<String>()) } returns listReturnValue
+        every { subjectGateway.query(queryName, exampleQuery, matchInstanceResponseType<String>()) } returns instanceReturnValue
+        every { subjectGateway.query(queryName, exampleQuery, matchOptionalResponseType<String>()) } returns optionalReturnValue
+        every { subjectGateway.query(queryName, exampleQuery, matchMultipleInstancesResponseType<String>()) } returns listReturnValue
     }
 
     @After
@@ -56,7 +56,7 @@ class QueryGatewayExtensionsTest {
         val queryResult = subjectGateway.queryForSingle<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, instanceReturnValue)
-        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, responseTypeOfMatcher(String::class.java)) }
+        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
     @Test
@@ -64,7 +64,7 @@ class QueryGatewayExtensionsTest {
         val queryResult: CompletableFuture<String> = subjectGateway.queryForSingle(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, instanceReturnValue)
-        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, responseTypeOfMatcher(String::class.java)) }
+        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
     @Test
@@ -72,7 +72,7 @@ class QueryGatewayExtensionsTest {
         val queryResult = subjectGateway.queryForOptional<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, optionalReturnValue)
-        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, responseTypeOfMatcher(String::class.java)) }
+        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
     @Test
@@ -80,7 +80,7 @@ class QueryGatewayExtensionsTest {
         val queryResult: CompletableFuture<Optional<String>> = subjectGateway.queryForOptional(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, optionalReturnValue)
-        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, responseTypeOfMatcher(String::class.java)) }
+        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
     @Test
@@ -88,7 +88,7 @@ class QueryGatewayExtensionsTest {
         val queryResult = subjectGateway.queryForMultiple<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, listReturnValue)
-        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, responseTypeOfMatcher(String::class.java)) }
+        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
     @Test
@@ -96,7 +96,7 @@ class QueryGatewayExtensionsTest {
         val queryResult: CompletableFuture<List<String>> = subjectGateway.queryForMultiple(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, listReturnValue)
-        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, responseTypeOfMatcher(String::class.java)) }
+        verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
     @Test
@@ -110,7 +110,7 @@ class QueryGatewayExtensionsTest {
 
         assertSame(queryResult, nullInstanceReturnValue)
         assertTrue(nullInstanceReturnValue.get() == null)
-        verify(exactly = 1) { nullableQueryGateway.query(queryName, exampleQuery, responseTypeOfMatcher(String::class.java)) }
+        verify(exactly = 1) { nullableQueryGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
 }

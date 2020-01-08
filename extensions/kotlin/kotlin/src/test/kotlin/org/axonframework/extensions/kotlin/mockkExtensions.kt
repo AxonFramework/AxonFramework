@@ -24,7 +24,27 @@ import org.axonframework.messaging.responsetypes.OptionalResponseType
 import org.axonframework.messaging.responsetypes.ResponseType
 import java.util.*
 
-internal fun <T> MockKVerificationScope.responseTypeOfMatcher(clazz: Class<T>) = match { type: ResponseType<T> -> type.expectedResponseType == clazz }
-internal fun <T> MockKMatcherScope.instanceResponseTypeMatcher() = match { type: AbstractResponseType<T> -> type is InstanceResponseType }
-internal fun <T> MockKMatcherScope.optionalResponseTypeMatcher() = match { type: AbstractResponseType<Optional<T>> -> type is OptionalResponseType<*> }
-internal fun <T> MockKMatcherScope.multipleInstancesResponseTypeMatcher() = match { type: AbstractResponseType<List<T>> -> type is MultipleInstancesResponseType<*> }
+/**
+ * Matches wrapped type of given [ResponseType] instead of entire [ResponseType] object
+ * @param clazz Class object of the type to match
+ * @param T Type wrapped by [ResponseType]
+ */
+internal fun <T> MockKVerificationScope.matchExpectedResponseType(clazz: Class<T>) = match { type: ResponseType<T> -> type.expectedResponseType == clazz }
+
+/**
+ * Matches that given [ResponseType] is [InstanceResponseType]
+ * @param T Type wrapped by given [ResponseType] instance. Required for Mockk but will not be explicitly matched
+ */
+internal fun <T> MockKMatcherScope.matchInstanceResponseType() = match { type: AbstractResponseType<T> -> type is InstanceResponseType }
+
+/**
+ * Matches that given [ResponseType] is [OptionalResponseType]. Will not check type wrapped by the [Optional] instance
+ * @param T Type wrapped by given [ResponseType] instance. Required for Mockk but will not be explicitly matched
+ */
+internal fun <T> MockKMatcherScope.matchOptionalResponseType() = match { type: AbstractResponseType<Optional<T>> -> type is OptionalResponseType }
+
+/**
+ * Matches that given [ResponseType] is [MultipleInstancesResponseType]. Will not check type wrapped by the [List] instance
+ * @param T Type wrapped by given [ResponseType] instance. Required for Mockk but will not be explicitly matched
+ */
+internal fun <T> MockKMatcherScope.matchMultipleInstancesResponseType() = match { type: AbstractResponseType<List<T>> -> type is MultipleInstancesResponseType<*> }
