@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Values are Weakly referenced, which means they are not eligible for removal as long as any other references to the
  * value exist.
  * <p/>
- * Items expire once the garbage collector has removed them. Some time after they have been removed, the entry
- * listeners are being notified thereof. Note that notification are emitted when the cache is being accessed (either
- * for reading or writing). If the cache is not being accessed for a longer period of time, it may occur that listeners
- * are not notified.
+ * Items expire once the garbage collector has removed them. Some time after they have been removed, the entry listeners
+ * are being notified thereof. Note that notification are emitted when the cache is being accessed (either for reading
+ * or writing). If the cache is not being accessed for a longer period of time, it may occur that listeners are not
+ * notified.
  *
  * @author Allard Buijze
  * @author Henrique Sena
@@ -72,7 +72,7 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    public <K, V> void put(K key, V value) {
+    public void put(Object key, Object value) {
         if (value == null) {
             throw new IllegalArgumentException("Null values not supported");
         }
@@ -90,7 +90,7 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    public <K, V> boolean putIfAbsent(K key, V value) {
+    public boolean putIfAbsent(Object key, Object value) {
         if (value == null) {
             throw new IllegalArgumentException("Null values not supported");
         }
@@ -105,7 +105,7 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    public <K> boolean remove(K key) {
+    public boolean remove(Object key) {
         if (cache.remove(key) != null) {
             for (EntryListener adapter : adapters) {
                 adapter.onEntryRemoved(key);
@@ -116,7 +116,7 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    public <K> boolean containsKey(K key) {
+    public boolean containsKey(Object key) {
         Assert.nonNull(key, () -> "Key may not be null");
         purgeItems();
         final Reference<Object> entry = cache.get(key);
