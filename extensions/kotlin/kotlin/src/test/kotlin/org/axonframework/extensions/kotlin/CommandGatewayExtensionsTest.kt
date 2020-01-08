@@ -28,7 +28,6 @@ import org.axonframework.commandhandling.CommandCallback
 import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.MetaData
-import org.axonframework.modelling.command.AggregateIdentifier
 import org.junit.Test
 import java.util.concurrent.TimeUnit
 
@@ -116,4 +115,4 @@ class CommandGatewayExtensionsTest {
     }
 }
 
-data class ExampleCommand(@AggregateIdentifier val id: String)
+internal data class ExampleCommand(val id: String)
