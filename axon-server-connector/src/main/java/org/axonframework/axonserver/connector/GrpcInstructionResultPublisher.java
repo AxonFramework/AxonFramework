@@ -11,7 +11,7 @@ import static io.axoniq.axonserver.grpc.ErrorMessage.newBuilder;
 import static org.axonframework.axonserver.connector.ErrorCode.INSTRUCTION_EXECUTION_ERROR;
 
 /**
- * Responsible to publish through gRPC call the {@link InstructionResult} messages to Axon Server.
+ * Responsible for publishing the {@link InstructionResult} messages through a gRPC call to Axon Server.
  *
  * @author Sara Pellegrini
  * @since 4.4
