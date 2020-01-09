@@ -49,9 +49,14 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -111,6 +116,7 @@ import static org.axonframework.common.ReflectionUtils.*;
 public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExecutor<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateTestFixture.class);
+
     private final Class<T> aggregateType;
     private final SimpleCommandBus commandBus;
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
@@ -128,14 +134,15 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private long sequenceNumber = 0;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
-    private MultiParameterResolverFactory parameterResolverFactory;
-    private HandlerDefinition handlerDefinition;
+    private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
+    private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
+    private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
     private CommandTargetResolver commandTargetResolver;
 
     /**
      * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
      *
-     * @param aggregateType The aggregate to initialize the test fixture for
+     * @param aggregateType the aggregate to initialize the test fixture for
      */
     public AggregateTestFixture(Class<T> aggregateType) {
         deadlineManager = new StubDeadlineManager();
@@ -146,10 +153,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         resources.add(deadlineManager);
         this.aggregateType = aggregateType;
         clearGivenWhenState();
-        parameterResolverFactory = MultiParameterResolverFactory.ordered(
-                new SimpleResourceParameterResolverFactory(resources),
-                ClasspathParameterResolverFactory.forClass(aggregateType));
-        handlerDefinition = ClasspathHandlerDefinition.forClass(aggregateType);
+
+        registeredParameterResolverFactories.add(new SimpleResourceParameterResolverFactory(resources));
+        registeredParameterResolverFactories.add(ClasspathParameterResolverFactory.forClass(aggregateType));
+        registeredHandlerDefinitions.add(ClasspathHandlerDefinition.forClass(aggregateType));
+        registeredHandlerEnhancerDefinitions.add(ClasspathHandlerEnhancerDefinition.forClass(aggregateType));
     }
 
     @Override
@@ -166,16 +174,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        MultiParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
-                new SimpleResourceParameterResolverFactory(resources),
-                ClasspathParameterResolverFactory.forClass(aggregateType)
-        );
-
         return registerRepository(EventSourcingRepository.builder(aggregateFactory.getAggregateType())
                                                          .aggregateFactory(aggregateFactory)
                                                          .eventStore(eventStore)
-                                                         .parameterResolverFactory(parameterResolverFactory)
-                                                         .handlerDefinition(handlerDefinition)
+                                                         .parameterResolverFactory(getParameterResolverFactory())
+                                                         .handlerDefinition(getHandlerDefinition())
                                                          .repositoryProvider(getRepositoryProvider())
                                                          .build());
     }
@@ -184,8 +187,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter<>(
-                annotatedCommandHandler, parameterResolverFactory, handlerDefinition);
+        AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
+                annotatedCommandHandler, getParameterResolverFactory(), getHandlerDefinition()
+        );
         adapter.subscribe(commandBus);
         return this;
     }
@@ -197,7 +201,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    @SuppressWarnings({"unchecked"})
     public FixtureConfiguration<T> registerCommandHandler(String commandName,
                                                           MessageHandler<CommandMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
@@ -215,35 +218,41 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                         "registerCommandHandler() or " +
                                                         "registerAnnotatedCommandHandler()");
         }
-        resources.add(resource);
+        this.resources.add(resource);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.registeredParameterResolverFactories.addFirst(parameterResolverFactory);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
             MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor) {
-        commandDispatchInterceptors.add(commandDispatchInterceptor);
+        this.commandDispatchInterceptors.add(commandDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
             MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor) {
-        commandHandlerInterceptors.add(commandHandlerInterceptor);
+        this.commandHandlerInterceptors.add(commandHandlerInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
             MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor) {
-        deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
+        this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
             MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
-        deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
+        this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
 
@@ -260,7 +269,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
-        this.handlerDefinition = handlerDefinition;
+        this.registeredHandlerDefinitions.addFirst(handlerDefinition);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerHandlerEnhancerDefinition(
+            HandlerEnhancerDefinition handlerEnhancerDefinition) {
+        this.registeredHandlerEnhancerDefinitions.addFirst(handlerEnhancerDefinition);
         return this;
     }
 
@@ -316,8 +332,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             Object payload = event;
             MetaData metaData = null;
             if (event instanceof Message) {
-                payload = ((Message) event).getPayload();
-                metaData = ((Message) event).getMetaData();
+                payload = ((Message<?>) event).getPayload();
+                metaData = ((Message<?>) event).getMetaData();
             }
             GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
                     aggregateType.getSimpleName(),
@@ -389,13 +405,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public ResultValidator whenThenTimeElapses(Duration elapsedTime) {
+    public ResultValidator<T> whenThenTimeElapses(Duration elapsedTime) {
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return buildResultValidator();
     }
 
     @Override
-    public ResultValidator whenThenTimeAdvancesTo(Instant newPointInTime) {
+    public ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime) {
         deadlineManager.advanceTimeTo(newPointInTime, this::handleDeadline);
         return buildResultValidator();
     }
@@ -439,33 +455,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         repository.send(deadlineMessage, aggregateDescriptor);
     }
 
-    private ResultValidator buildResultValidator() {
+    private ResultValidator<T> buildResultValidator() {
         MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
-        ResultValidatorImpl resultValidator = new ResultValidatorImpl<>(publishedEvents,
-                                                                        fieldFilter,
-                                                                        () -> repository.getAggregate(),
-                                                                        deadlineManager);
+        ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
+                                                                           fieldFilter,
+                                                                           () -> repository.getAggregate(),
+                                                                           deadlineManager);
         resultValidator.assertValidRecording();
         return resultValidator;
-    }
-
-    private void ensureRepositoryConfiguration() {
-        if (repository == null) {
-            registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateType))
-                                                      .eventStore(eventStore)
-                                                      .parameterResolverFactory(parameterResolverFactory)
-                                                      .handlerDefinition(handlerDefinition)
-                                                      .repositoryProvider(getRepositoryProvider())
-                                                      .build());
-        }
-    }
-
-    private RepositoryProvider getRepositoryProvider() {
-        if (repositoryProvider == null) {
-            registerRepositoryProvider(new DefaultRepositoryProvider());
-        }
-        return repositoryProvider;
     }
 
     private void finalizeConfiguration() {
@@ -479,7 +476,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         if (!explicitCommandHandlersSet) {
             AggregateAnnotationCommandHandler.Builder<T> builder = AggregateAnnotationCommandHandler.<T>builder()
                     .aggregateType(aggregateType)
-                    .parameterResolverFactory(parameterResolverFactory)
+                    .parameterResolverFactory(getParameterResolverFactory())
                     .repository(this.repository);
 
             if (commandTargetResolver != null) {
@@ -489,6 +486,35 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             AggregateAnnotationCommandHandler<T> handler = builder.build();
             handler.subscribe(commandBus);
         }
+    }
+
+    private void ensureRepositoryConfiguration() {
+        if (repository == null) {
+            registerRepository(EventSourcingRepository.builder(aggregateType)
+                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateType))
+                                                      .eventStore(eventStore)
+                                                      .parameterResolverFactory(getParameterResolverFactory())
+                                                      .handlerDefinition(getHandlerDefinition())
+                                                      .repositoryProvider(getRepositoryProvider())
+                                                      .build());
+        }
+    }
+
+    private ParameterResolverFactory getParameterResolverFactory() {
+        return MultiParameterResolverFactory.ordered(registeredParameterResolverFactories);
+    }
+
+    private HandlerDefinition getHandlerDefinition() {
+        HandlerEnhancerDefinition handlerEnhancerDefinition =
+                MultiHandlerEnhancerDefinition.ordered(registeredHandlerEnhancerDefinitions);
+        return MultiHandlerDefinition.ordered(registeredHandlerDefinitions, handlerEnhancerDefinition);
+    }
+
+    private RepositoryProvider getRepositoryProvider() {
+        if (repositoryProvider == null) {
+            registerRepositoryProvider(new DefaultRepositoryProvider());
+        }
+        return repositoryProvider;
     }
 
     private void registerCommandInterceptors() {
@@ -797,7 +823,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                           injectAggregateIdentifier();
                       }
 
-                      DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+                      DomainEventMessage<?> lastEvent =
+                              (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
 
                       if (lastEvent != null) {
                           if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
@@ -816,9 +843,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         private void injectAggregateIdentifier() {
-            List<DomainEventMessage> oldEvents = new ArrayList<>(givenEvents);
+            List<DomainEventMessage<?>> oldEvents = new ArrayList<>(givenEvents);
             givenEvents.clear();
-            for (DomainEventMessage oldEvent : oldEvents) {
+            for (DomainEventMessage<?> oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
                     givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(), aggregateIdentifier,
                                                                     oldEvent.getSequenceNumber(), oldEvent.getPayload(),
@@ -851,7 +878,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private class ExecutionExceptionAwareCallback implements CommandCallback<Object, Object> {
+    private static class ExecutionExceptionAwareCallback implements CommandCallback<Object, Object> {
 
         private FixtureExecutionException exception;
 

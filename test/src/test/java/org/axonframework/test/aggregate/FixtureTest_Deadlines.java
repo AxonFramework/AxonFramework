@@ -18,20 +18,26 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 
+import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
-class AggregateDeadlineSchedulingTest {
+/**
+ * Test class intended to validate all methods in regards to scheduling and validating deadlines.
+ *
+ * @author Milan Savic
+ */
+class FixtureTest_Deadlines {
 
+    private static final String AGGREGATE_ID = "id";
+    private static final CreateMyAggregateCommand CREATE_COMMAND = new CreateMyAggregateCommand(AGGREGATE_ID);
     private static final int TRIGGER_DURATION_MINUTES = 10;
 
     private AggregateTestFixture<MyAggregate> fixture;
@@ -44,21 +50,28 @@ class AggregateDeadlineSchedulingTest {
     @Test
     void testDeadlineScheduling() {
         fixture.givenNoPriorActivity()
-               .when(new CreateMyAggregateCommand("id"))
+               .when(CREATE_COMMAND)
                .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
     }
 
     @Test
     void testDeadlineSchedulingTypeMatching() {
         fixture.givenNoPriorActivity()
-               .when(new CreateMyAggregateCommand("id"))
+               .when(CREATE_COMMAND)
                .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
+    }
+
+    @Test
+    void testDeadlineSchedulingNameMatching() {
+        fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, "deadlineName", "deadlineId"))
+               .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))
+               .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
     }
 
     @Test
     void testDeadlineMet() {
         fixture.givenNoPriorActivity()
-               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .andGivenCommands(CREATE_COMMAND)
                .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMet("deadlineDetails");
     }
@@ -66,26 +79,25 @@ class AggregateDeadlineSchedulingTest {
     @Test
     void testDeadlineWhichCancelsSchedule() {
         fixture.givenNoPriorActivity()
-               .andGivenCommands(new CreateMyAggregateCommand("id"))
-               .when(new ResetTriggerCommand("id"))
+               .andGivenCommands(CREATE_COMMAND)
+               .when(new ResetTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadlines();
     }
 
     @Test
     void testDeadlineWhichCancelsAll() {
         fixture.givenNoPriorActivity()
-               .andGivenCommands(new CreateMyAggregateCommand("id"))
-               .when(new ResetAllTriggerCommand("id"))
+               .andGivenCommands(CREATE_COMMAND)
+               .when(new ResetAllTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadlines();
     }
 
     @Test
     void testDeadlineDispatcherInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
-                messages -> (i, m) -> GenericDeadlineMessage
-                        .asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
+                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
                .givenNoPriorActivity()
-               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .andGivenCommands(CREATE_COMMAND)
                .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMet("fakeDeadlineDetails");
     }
@@ -93,12 +105,13 @@ class AggregateDeadlineSchedulingTest {
     @Test
     void testDeadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
-                    uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp()));
-                    return chain.proceed();
-                })
+            uow.transformMessage(deadlineMessage -> asDeadlineMessage(
+                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())
+            );
+            return chain.proceed();
+        })
                .givenNoPriorActivity()
-               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .andGivenCommands(CREATE_COMMAND)
                .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMet("fakeDeadlineDetails");
     }
@@ -129,6 +142,7 @@ class AggregateDeadlineSchedulingTest {
     @SuppressWarnings("unused")
     private static class ResetTriggerCommand {
 
+        @SuppressWarnings("FieldCanBeLocal")
         @TargetAggregateIdentifier
         private final String aggregateId;
 
@@ -140,6 +154,7 @@ class AggregateDeadlineSchedulingTest {
     @SuppressWarnings("unused")
     private static class ResetAllTriggerCommand {
 
+        @SuppressWarnings("FieldCanBeLocal")
         @TargetAggregateIdentifier
         private final String aggregateId;
 
@@ -148,9 +163,21 @@ class AggregateDeadlineSchedulingTest {
         }
     }
 
+    private static class SetPayloadlessDeadlineCommand {
+
+        @SuppressWarnings({"FieldCanBeLocal", "unused"})
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private SetPayloadlessDeadlineCommand(String aggregateId) {
+            this.aggregateId = aggregateId;
+        }
+    }
+
     @SuppressWarnings("unused")
     private static class MyAggregate {
 
+        @SuppressWarnings("FieldCanBeLocal")
         @AggregateIdentifier
         private String id;
         private String deadlineName;
@@ -168,13 +195,6 @@ class AggregateDeadlineSchedulingTest {
             apply(new MyAggregateCreatedEvent(command.aggregateId, deadlineName, deadlineId));
         }
 
-        @EventSourcingHandler
-        public void on(MyAggregateCreatedEvent event) {
-            this.id = event.aggregateId;
-            this.deadlineName = event.deadlineName;
-            this.deadlineId = event.deadlineId;
-        }
-
         @CommandHandler
         public void handle(ResetTriggerCommand command, DeadlineManager deadlineManager) {
             deadlineManager.cancelSchedule(deadlineName, deadlineId);
@@ -185,9 +205,26 @@ class AggregateDeadlineSchedulingTest {
             deadlineManager.cancelAll(deadlineName);
         }
 
+        @CommandHandler
+        public void handle(SetPayloadlessDeadlineCommand command, DeadlineManager deadlineManager) {
+            deadlineManager.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
+        }
+
         @DeadlineHandler
         public void handleDeadline(String deadlineInfo) {
             // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
+        }
+
+        @DeadlineHandler(deadlineName = "payloadless-deadline")
+        public void handle() {
+            // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
+        }
+
+        @EventSourcingHandler
+        public void on(MyAggregateCreatedEvent event) {
+            this.id = event.aggregateId;
+            this.deadlineName = event.deadlineName;
+            this.deadlineId = event.deadlineId;
         }
     }
 }

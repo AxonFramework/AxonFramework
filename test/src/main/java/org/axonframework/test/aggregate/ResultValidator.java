@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,11 +28,9 @@ import java.util.function.Consumer;
 
 /**
  * Interface describing the operations available on the "validate result" (a.k.a. "then") stage of the test execution.
- * The underlying fixture expects a test to have been executed succesfully using a {@link
- * TestExecutor}.
+ * The underlying fixture expects a test to have been executed successfully using a {@link TestExecutor}.
  * <p>
- * There are several things to validate:<ul><li>the published events,<li>the stored events, and<li>the command
- * handler's
+ * There are several things to validate:<ul><li>the published events,<li>the stored events, and<li>the command handler's
  * execution result, which is one of <ul><li>a regular return value,<li>a {@code void} return value, or<li>an
  * exception.</ul></ul>
  *
@@ -67,7 +65,7 @@ public interface ResultValidator<T> {
      * @param expectedEvents The expected events, in the exact order they are expected to be dispatched and stored.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectEvents(EventMessage... expectedEvents);
+    ResultValidator<T> expectEvents(EventMessage<?>... expectedEvents);
 
     /**
      * Expect no events to have been published from the command.
@@ -115,7 +113,7 @@ public interface ResultValidator<T> {
      * @param expectedResultMessage The expected result message of the command execution
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectResultMessage(CommandResultMessage expectedResultMessage);
+    ResultValidator<T> expectResultMessage(CommandResultMessage<?> expectedResultMessage);
 
     /**
      * Expect the command handler to return a value that matches the given {@code matcher} after execution.
@@ -212,6 +210,15 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
 
     /**
+     * Asserts that a deadline with the given {@code deadlineName} has been scheduled after the given {@code duration}.
+     *
+     * @param duration     the time to wait before the deadline is met
+     * @param deadlineName the name of the expected deadline
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadlineWithName(Duration duration, String deadlineName);
+
+    /**
      * Asserts that a deadline matching the given {@code matcher} has been scheduled at the given {@code
      * scheduledTime}.
      * <p/>
@@ -248,6 +255,16 @@ public interface ResultValidator<T> {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+
+    /**
+     * Asserts that a deadline with the given {@code deadlineName} has been scheduled at the given {@code
+     * scheduledTime}.
+     *
+     * @param scheduledTime the time at which the deadline is scheduled
+     * @param deadlineName  the name of the expected deadline
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that no deadlines are scheduled. This means that either no deadlines were scheduled at all, all schedules

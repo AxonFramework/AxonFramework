@@ -34,8 +34,13 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -69,7 +74,6 @@ import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.fieldsOf;
-import static org.axonframework.messaging.annotation.MultiParameterResolverFactory.ordered;
 
 /**
  * Fixture for testing Annotated Sagas based on events and time passing. This fixture allows resources to be configured
@@ -84,7 +88,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private EventBus eventBus;
     private final StubEventScheduler eventScheduler;
     private final StubDeadlineManager deadlineManager;
-    private HandlerDefinition handlerDefinition;
+    private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
+    private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
+    private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
     private ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     private final Class<T> sagaType;
@@ -104,13 +110,15 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      *
      * @param sagaType The type of saga under test
      */
-    @SuppressWarnings({"unchecked"})
     public SagaTestFixture(Class<T> sagaType) {
         commandBus = new RecordingCommandBus();
         eventBus = SimpleEventBus.builder().build();
         eventScheduler = new StubEventScheduler();
         deadlineManager = new StubDeadlineManager();
-        handlerDefinition = ClasspathHandlerDefinition.forClass(sagaType);
+        registeredParameterResolverFactories.add(new SimpleResourceParameterResolverFactory(registeredResources));
+        registeredParameterResolverFactories.add(ClasspathParameterResolverFactory.forClass(sagaType));
+        registeredHandlerDefinitions.add(ClasspathHandlerDefinition.forClass(sagaType));
+        registeredHandlerEnhancerDefinitions.add(ClasspathHandlerEnhancerDefinition.forClass(sagaType));
         listenerInvocationErrorHandler = new LoggingErrorHandler();
 
         this.sagaType = sagaType;
@@ -128,8 +136,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     /**
-     * Handles the given {@code event} in the scope of a Unit of Work. If handling the event results in an exception
-     * the exception will be wrapped in a {@link FixtureExecutionException}.
+     * Handles the given {@code event} in the scope of a Unit of Work. If handling the event results in an exception the
+     * exception will be wrapped in a {@link FixtureExecutionException}.
      *
      * @param event The event message to handle
      */
@@ -149,10 +157,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     /**
-     * Handles the given {@code deadlineMessage} in the saga described by the given {@code sagaDescriptor}.
-     * Deadline message is handled in the scope of a {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
-     * If handling the deadline results in an exception, the exception will be wrapped in a {@link
-     * FixtureExecutionException}.
+     * Handles the given {@code deadlineMessage} in the saga described by the given {@code sagaDescriptor}. Deadline
+     * message is handled in the scope of a {@link org.axonframework.messaging.unitofwork.UnitOfWork}. If handling the
+     * deadline results in an exception, the exception will be wrapped in a {@link FixtureExecutionException}.
      *
      * @param sagaDescriptor  A {@link ScopeDescriptor} describing the saga under test
      * @param deadlineMessage The {@link DeadlineMessage} to be handled
@@ -167,27 +174,32 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void ensureSagaResourcesInitialized() {
         if (!resourcesInitialized) {
-            ParameterResolverFactory parameterResolverFactory = ordered(
-                    new SimpleResourceParameterResolverFactory(registeredResources),
-                    ClasspathParameterResolverFactory.forClass(sagaType)
-            );
-
             SagaRepository<T> sagaRepository = AnnotatedSagaRepository.<T>builder()
                     .sagaType(sagaType)
-                    .parameterResolverFactory(parameterResolverFactory)
-                    .handlerDefinition(handlerDefinition)
+                    .parameterResolverFactory(getParameterResolverFactory())
+                    .handlerDefinition(getHandlerDefinition())
                     .sagaStore(sagaStore)
                     .resourceInjector(new TransienceValidatingResourceInjector())
                     .build();
             sagaManager = AnnotatedSagaManager.<T>builder()
                     .sagaRepository(sagaRepository)
                     .sagaType(sagaType)
-                    .parameterResolverFactory(parameterResolverFactory)
-                    .handlerDefinition(handlerDefinition)
+                    .parameterResolverFactory(getParameterResolverFactory())
+                    .handlerDefinition(getHandlerDefinition())
                     .listenerInvocationErrorHandler(listenerInvocationErrorHandler)
                     .build();
             resourcesInitialized = true;
         }
+    }
+
+    private ParameterResolverFactory getParameterResolverFactory() {
+        return MultiParameterResolverFactory.ordered(registeredParameterResolverFactories);
+    }
+
+    private HandlerDefinition getHandlerDefinition() {
+        HandlerEnhancerDefinition handlerEnhancerDefinition =
+                MultiHandlerEnhancerDefinition.ordered(registeredHandlerEnhancerDefinitions);
+        return MultiHandlerDefinition.ordered(registeredHandlerDefinitions, handlerEnhancerDefinition);
     }
 
     @Override
@@ -229,6 +241,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
+    public FixtureConfiguration registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.registeredParameterResolverFactories.addFirst(parameterResolverFactory);
+        return this;
+    }
+
+    @Override
     public void setCallbackBehavior(CallbackBehavior callbackBehavior) {
         commandBus.setCallbackBehavior(callbackBehavior);
     }
@@ -262,14 +280,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) throws Exception {
+    public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) {
         eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return this;
     }
 
     @Override
-    public ContinuedGivenState andThenTimeAdvancesTo(final Instant newDateTime) throws Exception {
+    public ContinuedGivenState andThenTimeAdvancesTo(final Instant newDateTime) {
         eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
         deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
         return this;
@@ -350,7 +368,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
-        this.handlerDefinition = handlerDefinition;
+        this.registeredHandlerDefinitions.addFirst(handlerDefinition);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition) {
+        this.registeredHandlerEnhancerDefinitions.addFirst(handlerEnhancerDefinition);
         return this;
     }
 
@@ -453,9 +477,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     /**
-     * Invocation handler that uses a stub implementation (of not {@code null}) to define the value to return from
-     * a handler invocation. If none is provided, the returned future is checked for a value. If that future is not
-     * "done" (for example because no callback behavior was provided), it returns {@code null}.
+     * Invocation handler that uses a stub implementation (of not {@code null}) to define the value to return from a
+     * handler invocation. If none is provided, the returned future is checked for a value. If that future is not "done"
+     * (for example because no callback behavior was provided), it returns {@code null}.
      *
      * @param <R> The return type of the method invocation
      */
@@ -527,7 +551,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         }
     }
 
-    private class MutableFieldFilter implements FieldFilter {
+    private static class MutableFieldFilter implements FieldFilter {
 
         private final List<FieldFilter> filters = new ArrayList<>();
 

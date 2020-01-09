@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -128,6 +128,15 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
 
     /**
+     * Asserts that a deadline with the given {@code deadlineName} has been scheduled after the given {@code duration}.
+     *
+     * @param duration     the time to wait before the deadline is met
+     * @param deadlineName the name of the expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineWithName(Duration duration, String deadlineName);
+
+    /**
      * Asserts that an event matching the given {@code matcher} has been scheduled to be published at the given
      * {@code scheduledTime}.
      * <p/>
@@ -208,6 +217,16 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+
+    /**
+     * Asserts that a deadline with the given {@code deadlineName} has been scheduled at the given {@code
+     * scheduledTime}.
+     *
+     * @param scheduledTime the time at which the deadline is scheduled
+     * @param deadlineName  the name of the expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that the given commands have been dispatched in exactly the order given. The command objects are
