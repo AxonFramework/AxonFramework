@@ -172,7 +172,7 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
-     * should be added to the other parameter resolver factories introduced through {@link
+     * will be added to the other parameter resolver factories introduced through {@link
      * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
      * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
      * (with {@link #registerInjectableResource(Object)}. The generic {@code T} is used as input for the {@code
