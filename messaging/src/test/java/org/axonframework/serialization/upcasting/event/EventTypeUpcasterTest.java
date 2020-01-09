@@ -40,29 +40,10 @@ class EventTypeUpcasterTest {
     public static final String UPCASTED_PAYLOAD_TYPE = "upcasted-payload-type";
     public static final String UPCASTED_REVISION = "2";
 
-    private final TestEventTypeUpcaster testSubject = new TestEventTypeUpcaster();
+    private final EventTypeUpcaster testSubject =
+            new EventTypeUpcaster(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
 
     private final Serializer serializer = XStreamSerializer.defaultSerializer();
-
-    @Test
-    void testExpectedPayloadType() {
-        assertEquals(EXPECTED_PAYLOAD_TYPE, testSubject.expectedPayloadType());
-    }
-
-    @Test
-    void testExpectedRevision() {
-        assertEquals(EXPECTED_REVISION, testSubject.expectedRevision());
-    }
-
-    @Test
-    void testUpcastedPayloadType() {
-        assertEquals(UPCASTED_PAYLOAD_TYPE, testSubject.upcastedPayloadType());
-    }
-
-    @Test
-    void testUpcastedRevision() {
-        assertEquals(UPCASTED_REVISION, testSubject.upcastedRevision());
-    }
 
     @Test
     void testCanUpcastReturnsTrueForMatchingPayloadTypeAndRevision() {
@@ -115,29 +96,6 @@ class EventTypeUpcasterTest {
     void testUpcastedType() {
         SerializedType expectedType = new SimpleSerializedType(UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
         assertEquals(expectedType, testSubject.upcastedType());
-    }
-
-    private static class TestEventTypeUpcaster extends EventTypeUpcaster {
-
-        @Override
-        public String expectedPayloadType() {
-            return EXPECTED_PAYLOAD_TYPE;
-        }
-
-        @Override
-        public String expectedRevision() {
-            return EXPECTED_REVISION;
-        }
-
-        @Override
-        public String upcastedPayloadType() {
-            return UPCASTED_PAYLOAD_TYPE;
-        }
-
-        @Override
-        public String upcastedRevision() {
-            return UPCASTED_REVISION;
-        }
     }
 
     /**

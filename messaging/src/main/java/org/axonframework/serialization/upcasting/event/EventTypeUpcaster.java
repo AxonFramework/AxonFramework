@@ -32,35 +32,31 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 4.3
  */
-public abstract class EventTypeUpcaster extends SingleEventUpcaster {
+public class EventTypeUpcaster extends SingleEventUpcaster {
+
+    private final String expectedPayloadType;
+    private final String expectedRevision;
+    private final String upcastedPayloadType;
+    private final String upcastedRevision;
 
     /**
-     * Retrieve the expected event payload type this upcaster should react on.
+     * Instantiate an {@link EventTypeUpcaster} using the given expected and upcasted payload types and revisions.
+     * <b>Note</b> that the payload type normally represents the fully qualified class name of the event to upcast.
      *
-     * @return the expected event payload type this upcaster should react on
+     * @param expectedPayloadType the expected event payload type this upcaster should react on
+     * @param expectedRevision    the expected event revision this upcaster should react on
+     * @param upcastedPayloadType the event payload type to upcast towards
+     * @param upcastedRevision    the event revision to upcast towards
      */
-    public abstract String expectedPayloadType();
-
-    /**
-     * Retrieve the expected event revision this upcaster should react on.
-     *
-     * @return the expected event revision this upcaster should react on
-     */
-    public abstract String expectedRevision();
-
-    /**
-     * Retrieve the event payload type to upcast towards.
-     *
-     * @return the event payload type to upcast towards
-     */
-    public abstract String upcastedPayloadType();
-
-    /**
-     * Retrieve the event revision to upcast towards.
-     *
-     * @return the event revision to upcast towards
-     */
-    public abstract String upcastedRevision();
+    public EventTypeUpcaster(String expectedPayloadType,
+                             String expectedRevision,
+                             String upcastedPayloadType,
+                             String upcastedRevision) {
+        this.expectedPayloadType = expectedPayloadType;
+        this.expectedRevision = expectedRevision;
+        this.upcastedPayloadType = upcastedPayloadType;
+        this.upcastedRevision = upcastedRevision;
+    }
 
     @Override
     protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
@@ -69,27 +65,27 @@ public abstract class EventTypeUpcaster extends SingleEventUpcaster {
     }
 
     /**
-     * Check whether the given {@code payloadType} matches the outcome of {@link #expectedPayloadType()}.
+     * Check whether the given {@code payloadType} matches the outcome of {@code expectedPayloadType}.
      *
      * @param payloadType the event payload type received by this upcaster in the {@link #canUpcast(IntermediateEventRepresentation)}
      *                    method
-     * @return {@code true} if the given {@code payloadType} matches the result of {@link #expectedPayloadType()},
-     * {@code false} otherwise
+     * @return {@code true} if the given {@code payloadType} matches the result of {@code expectedPayloadType}, {@code
+     * false} otherwise
      */
     protected boolean isExpectedPayloadType(String payloadType) {
-        return Objects.equals(payloadType, expectedPayloadType());
+        return Objects.equals(payloadType, expectedPayloadType);
     }
 
     /**
-     * Check whether the given {@code revision} matches the outcome of {@link #expectedRevision()}.
+     * Check whether the given {@code revision} matches the outcome of {@code expectedRevision}.
      *
      * @param revision the event payload type received by this upcaster in the {@link #canUpcast(IntermediateEventRepresentation)}
      *                 method
-     * @return {@code true} if the given {@code revision} matches the result of {@link #expectedRevision()}, {@code
-     * false} otherwise
+     * @return {@code true} if the given {@code revision} matches the result of {@code expectedRevision}, {@code false}
+     * otherwise
      */
     protected boolean isExpectedRevision(String revision) {
-        return Objects.equals(revision, expectedRevision());
+        return Objects.equals(revision, expectedRevision);
     }
 
     @Override
@@ -98,12 +94,12 @@ public abstract class EventTypeUpcaster extends SingleEventUpcaster {
     }
 
     /**
-     * Retrieve the upcasted event {@link SerializedType}. Returns a {@link SimpleSerializedType} using {@link
-     * #upcastedPayloadType()} and {@link #upcastedRevision()} as constructor inputs
+     * Retrieve the upcasted event {@link SerializedType}. Returns a {@link SimpleSerializedType} using {@code
+     * upcastedPayloadType} and {@code upcastedRevision} as constructor inputs
      *
      * @return the event {@link SerializedType} to upcast to
      */
     protected SerializedType upcastedType() {
-        return new SimpleSerializedType(upcastedPayloadType(), upcastedRevision());
+        return new SimpleSerializedType(upcastedPayloadType, upcastedRevision);
     }
 }
