@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,19 @@ import javax.persistence.Index;
 import javax.persistence.Table;
 
 /**
+ * Stub {@link AbstractSequencedDomainEventEntry}, used for testing purposes.
+ *
  * @author Steven van Beelen
  */
 @Entity
 @Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber,type", unique = true))
 public class TestDomainEventEntry extends AbstractSequencedDomainEventEntry<String> {
 
-    public TestDomainEventEntry(DomainEventMessage event, Serializer serializer) {
+    public TestDomainEventEntry(DomainEventMessage<?> event, Serializer serializer) {
         super(event, serializer, String.class);
     }
 
+    @SuppressWarnings("unused")
     protected TestDomainEventEntry() {
     }
 }

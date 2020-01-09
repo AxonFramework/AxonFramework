@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,8 @@ import org.axonframework.serialization.upcasting.SingleEntryMultiUpcaster;
 /**
  * Abstract implementation of a {@link SingleEntryMultiUpcaster} and an {@link EventUpcaster} that eases the common
  * process of upcasting one intermediate event representation to several other representations by applying a flat
- * mapping function to the input stream of intermediate representations.
- * Additionally, it's a context aware implementation, which enables it to store and reuse context information from one
- * entry to another during upcasting.
+ * mapping function to the input stream of intermediate representations. Additionally, it's a context aware
+ * implementation, which enables it to store and reuse context information from one entry to another during upcasting.
  *
  * @param <C> the type of context used as {@code C}
  * @author Steven van Beelen

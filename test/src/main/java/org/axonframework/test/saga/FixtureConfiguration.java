@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -72,7 +72,7 @@ public interface FixtureConfiguration {
 
     /**
      * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
-     * should be added to the other parameter resolver factories introduced through {@link
+     * will be added to the other parameter resolver factories introduced through {@link
      * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
      * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
      * (with {@link #registerResource(Object)}. The type of the saga under test is used as input for the {@code

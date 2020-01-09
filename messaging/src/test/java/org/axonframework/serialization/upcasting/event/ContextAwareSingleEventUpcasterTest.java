@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,15 +41,16 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-/*
- This test class should only assert whether the context map is created, filled with data and if that data is used to
- upcast an event.
- The other upcaster regularities are already asserted by the SingleEventUpcasterTest and can thus be skipped.
+/**
+ * This test class only asserts whether the context map is created, filled with data and if that data is used to upcast
+ * an event. The other upcaster regularities are already asserted by the {@link SingleEventUpcasterTest} and can
+ * thus be skipped.
+ *
+ * @author Steven van Beelen
  */
-class AbstractContextAwareSingleEventUpcasterTest {
+class ContextAwareSingleEventUpcasterTest {
 
     private Upcaster<IntermediateEventRepresentation> upcaster;
     private Serializer serializer;
@@ -115,7 +116,8 @@ class AbstractContextAwareSingleEventUpcasterTest {
         assertEquals(expectedNewString, upcastedEvent.getName());
     }
 
-    private static class StubContextAwareSingleEventUpcaster extends ContextAwareSingleEventUpcaster<Map<Object, Object>> {
+    private static class StubContextAwareSingleEventUpcaster
+            extends ContextAwareSingleEventUpcaster<Map<Object, Object>> {
 
         private static final String CONTEXT_FIELD_KEY = "ContextField";
         static final String CONTEXT_FIELD_VALUE = "ContextAdded";
@@ -171,7 +173,5 @@ class AbstractContextAwareSingleEventUpcasterTest {
 
             return eventObjectNode;
         }
-
     }
-
 }
