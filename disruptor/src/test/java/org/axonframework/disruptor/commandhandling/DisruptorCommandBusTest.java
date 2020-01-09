@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.*;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.Test;
@@ -91,7 +92,7 @@ class DisruptorCommandBusTest {
         stubHandler = new StubHandler();
         eventStore = new InMemoryEventStore();
         eventStore.publish(singletonList(
-                new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>("StubAggregate", aggregateIdentifier, 0, new StubDomainEvent())));
         parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(DisruptorCommandBusTest.class));
         messageHandlingCounter = new AtomicInteger(0);
     }
@@ -195,9 +196,11 @@ class DisruptorCommandBusTest {
         SnapshotTrigger snapshotTrigger = mock(SnapshotTrigger.class);
         when(snapshotTriggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
 
-        stubHandler.setRepository(
-                testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class),
-                                             snapshotTriggerDefinition));
+        stubHandler.setRepository(testSubject.createRepository(eventStore,
+                                                               new GenericAggregateFactory<>(
+                                                                       AnnotatedAggregateMetaModelFactory
+                                                                               .inspectAggregate(StubAggregate.class)),
+                                                               snapshotTriggerDefinition));
 
         CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
         CommandCallback mockCallback = mock(CommandCallback.class);
