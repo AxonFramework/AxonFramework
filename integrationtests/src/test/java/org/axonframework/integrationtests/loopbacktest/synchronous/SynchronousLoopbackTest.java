@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class SynchronousLoopbackTest {
         aggregateIdentifier = UUID.randomUUID().toString();
         commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
-        eventStore.publish(new GenericDomainEventMessage<>("test", aggregateIdentifier, 0,
+        eventStore.publish(new GenericDomainEventMessage<>(CountingAggregate.class.getSimpleName(), aggregateIdentifier, 0,
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
 

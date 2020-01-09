@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ class EventPublicationOrderTest {
     void testPublicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
         GenericDomainEventMessage<StubAggregateCreatedEvent> event =
-                new GenericDomainEventMessage<>("test", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));
+                new GenericDomainEventMessage<>("StubAggregate", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> {
             System.out.println("Published event: " + invocation.getArguments()[0].toString());
