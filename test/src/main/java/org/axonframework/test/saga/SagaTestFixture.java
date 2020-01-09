@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,7 +205,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     private ResourceInjector getResourceInjector() {
-        TransienceValidatingResourceInjector defaultResourceInjector = new TransienceValidatingResourceInjector();
+        TransienceValidatingResourceInjector defaultResourceInjector =
+                new TransienceValidatingResourceInjector(registeredResources, transienceCheckEnabled);
         return resourceInjector != null
                 ? new WrappingResourceInjector(resourceInjector, defaultResourceInjector)
                 : defaultResourceInjector;
@@ -585,10 +586,15 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         }
     }
 
-    private class TransienceValidatingResourceInjector extends SimpleResourceInjector {
+    private static class TransienceValidatingResourceInjector extends SimpleResourceInjector {
 
-        public TransienceValidatingResourceInjector() {
+        private final List<Object> registeredResources;
+        private final boolean transienceCheckEnabled;
+
+        public TransienceValidatingResourceInjector(List<Object> registeredResources, boolean transienceCheckEnabled) {
             super(registeredResources);
+            this.registeredResources = registeredResources;
+            this.transienceCheckEnabled = transienceCheckEnabled;
         }
 
         @Override
@@ -621,7 +627,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      * resources, as well as potentially override resources already injected by the {@code
      * TransienceValidatingResourceInjector}.
      */
-    private class WrappingResourceInjector implements ResourceInjector {
+    private static class WrappingResourceInjector implements ResourceInjector {
 
         private final ResourceInjector customResourceInjector;
         private final TransienceValidatingResourceInjector defaultResourceInjector;
