@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<AggregateModel<A>> metaModel;
     private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
+    private final List<Class<? extends A>> subtypes = new ArrayList<>();
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
 
@@ -160,7 +161,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                             AggregateMetaModelFactory.class,
                                             () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
                                                                                          c.handlerDefinition(aggregate))
-                                    ).createModel(aggregate));
+                                    ).createModel(aggregate, subtypes));
         commandTargetResolver = new Component<>(
                 () -> parent, name("commandTargetResolver"),
                 c -> c.getComponent(
@@ -170,8 +171,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         );
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
-        aggregateFactory =
-                new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
+        aggregateFactory = new Component<>(() -> parent,
+                                           name("aggregateFactory"),
+                                           c -> new GenericAggregateFactory<>(metaModel.get()));
         cache =
                 new Component<>(() -> parent, name("aggregateCache"), c -> null);
         eventStreamFilter =
@@ -385,5 +387,15 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     @Override
     public Class<A> aggregateType() {
         return aggregate;
+    }
+
+    /**
+     * Registers a subtype of this aggregate. Supports aggregate polymorphism. This aggregate will be able to handle
+     * commands of provided {@code subtype} as well.
+     *
+     * @param subtype a subtype in this polymorphic hierarchy
+     */
+    public void registerSubtype(Class<? extends A> subtype) {
+        subtypes.add(subtype);
     }
 }
