@@ -218,10 +218,14 @@ public interface FixtureConfiguration {
      * sagas.
      * <p>
      * The provided {@code resourceInjector} will be paired with the fixture's default {@code ResourceInjector} to keep
-     * supporting the {@link #registerResource(Object)} and {@link #withTransienceCheckDisabled()} methods. Note that
+     * support for the {@link #registerResource(Object)} and {@link #withTransienceCheckDisabled()} methods. Note that
      * <b>first</b> the default injector is called, and after that the given {@code resourceInjector}. This approach
      * ensures the fixture's correct workings for default provided resources, like the {@link EventBus} and {@link
-     * CommandBus}}.
+     * CommandBus}}, whilst allowing the capability to append and/or override with the given {@code resourceInjector}.
+     * <p>
+     * Care should be taken if the custom {@code resourceInjector} overrides default resources like the {@code EventBus}
+     * and {@code CommandBus}, as the fixture uses specialized versions of the default sources to support all testing
+     * functionality.
      *
      * @param resourceInjector the {@link ResourceInjector} to register within this fixture
      * @return the current FixtureConfiguration, for fluent interfacing
