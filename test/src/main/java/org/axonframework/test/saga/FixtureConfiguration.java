@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,8 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
@@ -66,6 +68,20 @@ public interface FixtureConfiguration {
      * @param resource the resource to register.
      */
     void registerResource(Object resource);
+
+    /**
+     * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
+     * will be added to the other parameter resolver factories introduced through {@link
+     * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
+     * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
+     * (with {@link #registerResource(Object)}. The type of the saga under test is used as input for the {@code
+     * ClasspathParameterResolverFactory#forClass(Class)} operation.
+     *
+     * @param parameterResolverFactory the {@link ParameterResolver} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     * @see #registerResource(Object)
+     */
+    FixtureConfiguration registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory);
 
     /**
      * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The

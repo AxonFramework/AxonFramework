@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,6 +32,8 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -160,15 +162,27 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Registers a resource that is eligible for injection in handler method (e.g. methods annotated with {@link
-     * CommandHandler @CommandHandler}, {@link
-     * EventSourcingHandler @EventSourcingHandler} and {@link
-     * EventHandler @EventHandler}. These resource must be
-     * registered <em>before</em> registering any command handler.
+     * CommandHandler @CommandHandler}, {@link EventSourcingHandler @EventSourcingHandler} and {@link EventHandler}.
+     * These resource must be registered <em>before</em> registering any command handler.
      *
-     * @param resource The resource eligible for injection
+     * @param resource the resource eligible for injection
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerInjectableResource(Object resource);
+
+    /**
+     * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
+     * will be added to the other parameter resolver factories introduced through {@link
+     * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
+     * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
+     * (with {@link #registerInjectableResource(Object)}. The generic {@code T} is used as input for the {@code
+     * ClasspathParameterResolverFactory#forClass(Class)} operation.
+     *
+     * @param parameterResolverFactory the {@link ParameterResolver} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     * @see #registerInjectableResource(Object)
+     */
+    FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory);
 
     /**
      * Register a command dispatch interceptor which will always be invoked before a command is dispatched on the

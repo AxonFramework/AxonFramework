@@ -16,29 +16,36 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
+import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.inject.Inject;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Stub saga used to test various scenarios of the {@link FixtureConfiguration}.
+ *
  * @author Allard Buijze
  */
+@SuppressWarnings("unused")
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
@@ -48,13 +55,17 @@ public class StubSaga {
     private transient EventScheduler scheduler;
     @Inject
     private NonTransientResource nonTransientResource;
+    @Inject
+    private transient CommandGateway commandGateway;
 
     private List<Object> handledEvents = new ArrayList<>();
     private ScheduleToken timer;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message, @MetaDataValue("extraIdentifier") String extraIdentifier) {
+    public void handleSagaStart(TriggerSagaStartEvent event,
+                                EventMessage<TriggerSagaStartEvent> message,
+                                @MetaDataValue("extraIdentifier") String extraIdentifier) {
         handledEvents.add(event);
 
         if (extraIdentifier != null) {
@@ -77,6 +88,14 @@ public class StubSaga {
     public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
         eventBus.publish(new GenericEventMessage<>(new SagaWasTriggeredEvent(this)));
+    }
+
+    @SagaEventHandler(associationProperty = "identifier")
+    public void handle(ParameterResolvedEvent event, AtomicBoolean assertion) {
+        handledEvents.add(event);
+        assertFalse(assertion.get());
+        assertion.set(true);
+        commandGateway.send(new ResolveParameterCommand(event.getIdentifier(), assertion));
     }
 
     @EndSaga
