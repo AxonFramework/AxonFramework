@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,22 +18,19 @@ package org.axonframework.metrics;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.junit.jupiter.*;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> & MetricSet> {
@@ -45,20 +42,10 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
 
     private Class<CapacityMonitor> expectedMonitorClass;
 
-    private final Appender appender = mock(Appender.class);
-    private final Logger logger = Logger.getRootLogger();
-
     @BeforeEach
     void setUp() {
-        logger.addAppender(appender);
-
         expectedMonitorClass = CapacityMonitor.class;
         testSubject = new PayloadTypeMessageMonitorWrapper<>(CapacityMonitor::new);
-    }
-
-    @AfterEach
-    void tearDown() {
-        logger.removeAppender(appender);
     }
 
     @Test
@@ -124,5 +111,4 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
         assertEquals(1, resultMetrics.size());
         assertNotNull(resultMetrics.get(expectedMonitorName));
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,12 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class AbstractEventMultiUpcasterTest {
+/**
+ * Test class validating the {@link EventMultiUpcaster}.
+ *
+ * @author Steven van Beelen
+ */
+class EventMultiUpcasterTest {
 
     private String expectedNewString;
     private Integer expectedNewInteger;
@@ -83,7 +88,7 @@ class AbstractEventMultiUpcasterTest {
                 spy(new InitialEventRepresentation(testEventData, serializer));
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                .collect(toList());
+                                                               .collect(toList());
 
         assertEquals(1, result.size());
         IntermediateEventRepresentation resultRepresentation = result.get(0);
@@ -101,13 +106,14 @@ class AbstractEventMultiUpcasterTest {
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                .collect(toList());
+                                                               .collect(toList());
 
         testRepresentation = spy(result.get(0));
-        assertEquals(expectedRevisionNumber, testRepresentation.getType().getRevision()); //initial upcast was successful
+        // Initial upcast was successful
+        assertEquals(expectedRevisionNumber, testRepresentation.getType().getRevision());
 
         result = upcaster.upcast(Stream.of(testRepresentation))
-                .collect(toList());
+                         .collect(toList());
 
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation resultRepresentation = result.get(0);
@@ -115,7 +121,7 @@ class AbstractEventMultiUpcasterTest {
         verify(testRepresentation, never()).getData();
     }
 
-    @SuppressWarnings("ConstantConditions")
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void testUpcastingDomainEventData() {
         String testAggregateType = "test";
@@ -124,15 +130,15 @@ class AbstractEventMultiUpcasterTest {
         long testSequenceNumber = 100;
         SerializedObject<String> testPayload = serializer.serialize(new StubDomainEvent("oldName"), String.class);
         EventData<?> testEventData = new TrackedDomainEventData<>(
-                testTrackingToken,
-                new GenericDomainEventEntry<>(testAggregateType, testAggregateId, testSequenceNumber, "eventId", Instant.now(),
-                                              testPayload.getType().getName(), testPayload.getType().getRevision(), testPayload,
-                                              serializer.serialize(MetaData.emptyInstance(), String.class))
-        );
+                testTrackingToken, new GenericDomainEventEntry<>(
+                testAggregateType, testAggregateId, testSequenceNumber, "eventId", Instant.now(),
+                testPayload.getType().getName(), testPayload.getType().getRevision(), testPayload,
+                serializer.serialize(MetaData.emptyInstance(), String.class)
+        ));
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                .collect(toList());
+                                                               .collect(toList());
 
         assertFalse(result.isEmpty());
 
@@ -168,7 +174,7 @@ class AbstractEventMultiUpcasterTest {
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                .collect(toList());
+                                                               .collect(toList());
 
         assertFalse(result.isEmpty());
 
@@ -216,8 +222,7 @@ class AbstractEventMultiUpcasterTest {
 
         @Override
         protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
-            return intermediateRepresentation.getType()
-                    .equals(targetType);
+            return intermediateRepresentation.getType().equals(targetType);
         }
 
         @Override
@@ -271,7 +276,5 @@ class AbstractEventMultiUpcasterTest {
 
             return eventJsonNode;
         }
-
     }
-
 }
