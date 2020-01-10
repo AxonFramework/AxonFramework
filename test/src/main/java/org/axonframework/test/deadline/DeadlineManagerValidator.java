@@ -58,13 +58,22 @@ public class DeadlineManagerValidator {
     }
 
     /**
+     * The current date time as stated by the configured {@link StubDeadlineManager}.
+     *
+     * @return current date time as stated by the configured {@link StubDeadlineManager}
+     */
+    public Instant currentDateTime() {
+        return deadlineManager.getCurrentDateTime();
+    }
+
+    /**
      * Asserts that a deadline scheduled after given {@code duration} matches the given {@code matcher}.
      *
      * @param duration the delay expected before the deadline is met
      * @param matcher  the matcher that must match with the deadline scheduled at the given time
      */
     public void assertScheduledDeadlineMatching(Duration duration, Matcher<?> matcher) {
-        Instant targetTime = deadlineManager.getCurrentDateTime().plus(duration);
+        Instant targetTime = currentDateTime().plus(duration);
         assertScheduledDeadlineMatching(targetTime, matcher);
     }
 
@@ -93,29 +102,13 @@ public class DeadlineManagerValidator {
     }
 
     /**
-     * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled after the given {@code
-     * duration}.
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled.
      *
-     * @param duration the delay within which no deadline matching the given {@code matcher} is expected
-     * @param matcher  the matcher defining the deadline which should not be scheduled after the given {@code duration}
+     * @param matcher the matcher defining the deadline which should not be scheduled
      */
-    public void assertNoScheduledDeadlineMatching(Duration duration, Matcher<?> matcher) {
-        Instant targetTime = deadlineManager.getCurrentDateTime().plus(duration);
-        assertNoScheduledDeadlineMatching(targetTime, matcher);
-    }
-
-    /**
-     * Asserts that <b>no</b> deadline matching the given {@code matcher}  has been scheduled at the given {@code
-     * scheduledTime}.
-     *
-     * @param scheduledTime the time at which no deadline matching the given {@code matcher} is expected
-     * @param matcher       the matcher defining the deadline which should not be scheduled at the given {@code
-     *                      scheduledTime}
-     */
-    public void assertNoScheduledDeadlineMatching(Instant scheduledTime, Matcher<?> matcher) {
+    public void assertNoScheduledDeadlineMatching(Matcher<?> matcher) {
         for (ScheduledDeadlineInfo scheduledDeadline : deadlineManager.getScheduledDeadlines()) {
-            if (scheduledDeadline.getScheduleTime().equals(scheduledTime) &&
-                    matcher.matches(scheduledDeadline.deadlineMessage())) {
+            if (matcher.matches(scheduledDeadline.deadlineMessage())) {
                 Description unexpected = new StringDescription();
                 matcher.describeTo(unexpected);
                 throw new AxonAssertionError(format(

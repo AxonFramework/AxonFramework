@@ -347,6 +347,14 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectNoScheduledDeadlines();
 
     /**
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} should have been scheduled.
+     *
+     * @param matcher the matcher defining the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage<?>> matcher);
+
+    /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} should be scheduled after the given {@code
      * duration}.
      *

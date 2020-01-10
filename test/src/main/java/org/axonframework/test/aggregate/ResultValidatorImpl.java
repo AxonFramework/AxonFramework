@@ -204,10 +204,16 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertNoScheduledDeadlineMatching(matcher);
+        return this;
+    }
+
+    @Override
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Duration duration,
                                                                 Matcher<? super DeadlineMessage<?>> matcher) {
-        deadlineManagerValidator.assertNoScheduledDeadlineMatching(duration, matcher);
-        return this;
+        Instant scheduledTime = deadlineManagerValidator.currentDateTime().plus(duration);
+        return expectNoScheduledDeadlineMatching(scheduledTime, matcher);
     }
 
     @Override
@@ -231,8 +237,10 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     @Override
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
                                                                 Matcher<? super DeadlineMessage<?>> matcher) {
-        deadlineManagerValidator.assertNoScheduledDeadlineMatching(scheduledTime, matcher);
-        return this;
+        return expectNoScheduledDeadlineMatching(matches(
+                deadlineMessage -> matcher.matches(deadlineMessage)
+                        && deadlineMessage.getTimestamp().equals(scheduledTime)
+        ));
     }
 
     @Override

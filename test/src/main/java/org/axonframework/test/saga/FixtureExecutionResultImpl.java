@@ -270,10 +270,16 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertNoScheduledDeadlineMatching(matcher);
+        return this;
+    }
+
+    @Override
     public FixtureExecutionResult expectNoScheduledDeadlineMatching(Duration duration,
                                                                     Matcher<? super DeadlineMessage<?>> matcher) {
-        deadlineManagerValidator.assertNoScheduledDeadlineMatching(duration, matcher);
-        return this;
+        Instant scheduledTime = deadlineManagerValidator.currentDateTime().plus(duration);
+        return expectNoScheduledDeadlineMatching(scheduledTime, matcher);
     }
 
     @Override
@@ -297,8 +303,10 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     @Override
     public FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant scheduledTime,
                                                                     Matcher<? super DeadlineMessage<?>> matcher) {
-        deadlineManagerValidator.assertNoScheduledDeadlineMatching(scheduledTime, matcher);
-        return this;
+        return expectNoScheduledDeadlineMatching(matches(
+                deadlineMessage -> matcher.matches(deadlineMessage)
+                        && deadlineMessage.getTimestamp().equals(scheduledTime)
+        ));
     }
 
     @Override
