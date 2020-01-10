@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization.upcasting.event;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.AbstractEventEntry;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.serialization.SerializedType;
@@ -44,6 +45,51 @@ class EventTypeUpcasterTest {
             new EventTypeUpcaster(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
 
     private final Serializer serializer = XStreamSerializer.defaultSerializer();
+
+    @Test
+    void testUpcasterBuilderFailsForNullExpectedPayloadTypeClass() {
+        assertThrows(
+                AxonConfigurationException.class, () -> EventTypeUpcaster.from((Class<?>) null, EXPECTED_REVISION)
+        );
+    }
+
+    @Test
+    void testUpcasterBuilderFailsForNullExpectedPayloadType() {
+        assertThrows(
+                AxonConfigurationException.class, () -> EventTypeUpcaster.from((String) null, EXPECTED_REVISION)
+        );
+    }
+
+    @Test
+    void testUpcasterBuilderFailsForEmptyExpectedPayloadType() {
+        assertThrows(
+                AxonConfigurationException.class, () -> EventTypeUpcaster.from("", EXPECTED_REVISION)
+        );
+    }
+
+    @Test
+    void testUpcasterBuilderFailsForNullUpcastedPayloadTypeClass() {
+        EventTypeUpcaster.Builder testSubject = EventTypeUpcaster.from(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
+        assertThrows(
+                AxonConfigurationException.class, () -> testSubject.to((Class<?>) null, UPCASTED_REVISION)
+        );
+    }
+
+    @Test
+    void testUpcasterBuilderFailsForNullUpcastedPayloadType() {
+        EventTypeUpcaster.Builder testSubject = EventTypeUpcaster.from(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
+        assertThrows(
+                AxonConfigurationException.class, () -> testSubject.to((String) null, UPCASTED_REVISION)
+        );
+    }
+
+    @Test
+    void testUpcasterBuilderFailsForEmptyUpcastedPayloadType() {
+        EventTypeUpcaster.Builder testSubject = EventTypeUpcaster.from(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
+        assertThrows(
+                AxonConfigurationException.class, () -> testSubject.to("", UPCASTED_REVISION)
+        );
+    }
 
     @Test
     void testCanUpcastReturnsTrueForMatchingPayloadTypeAndRevision() {
