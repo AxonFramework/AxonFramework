@@ -238,8 +238,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
                                                                 Matcher<? super DeadlineMessage<?>> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> matcher.matches(deadlineMessage)
-                        && deadlineMessage.getTimestamp().equals(scheduledTime)
+                deadlineMessage -> deadlineMessage.getTimestamp().equals(scheduledTime)
+                        && matcher.matches(deadlineMessage)
         ));
     }
 
