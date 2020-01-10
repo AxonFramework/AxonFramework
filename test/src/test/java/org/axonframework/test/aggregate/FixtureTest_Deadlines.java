@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,24 +48,45 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineScheduling() {
+    void testExpectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
                .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
     }
 
     @Test
-    void testDeadlineSchedulingTypeMatching() {
+    void testExpectScheduledDeadlineOfType() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
                .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
     }
 
     @Test
-    void testDeadlineSchedulingNameMatching() {
+    void testExpectScheduledDeadlineWithName() {
         fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, "deadlineName", "deadlineId"))
                .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))
                .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
+    }
+
+    @Test
+    void testExpectNoScheduledDeadline() {
+        fixture.givenCommands(CREATE_COMMAND)
+               .when(new ResetTriggerCommand(AGGREGATE_ID))
+               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
+    }
+
+    @Test
+    void testExpectNoScheduledDeadlineOfType() {
+        fixture.givenCommands(CREATE_COMMAND)
+               .when(new ResetTriggerCommand(AGGREGATE_ID))
+               .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
+    }
+
+    @Test
+    void testExpectNoScheduledDeadlineWithName() {
+        fixture.givenCommands(CREATE_COMMAND)
+               .when(new ResetTriggerCommand(AGGREGATE_ID))
+               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineName");
     }
 
     @Test

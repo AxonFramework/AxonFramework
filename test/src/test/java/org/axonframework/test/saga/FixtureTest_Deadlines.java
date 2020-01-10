@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,7 +48,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineScheduling() {
+    void testExpectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .whenAggregate(AGGREGATE_ID)
                .publishes(START_SAGA_EVENT)
@@ -58,7 +58,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineSchedulingTypeMatching() {
+    void testExpectScheduledDeadlineOfType() {
         fixture.givenNoPriorActivity()
                .whenAggregate(AGGREGATE_ID)
                .publishes(START_SAGA_EVENT)
@@ -68,12 +68,42 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineSchedulingNameMatching() {
+    void testExpectScheduledDeadlineWithName() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenAggregate(AGGREGATE_ID)
                .publishes(new PayloadlessDeadlineShouldBeSetEvent(AGGREGATE_ID))
                .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
+    }
+
+    @Test
+    void testExpectNoScheduledDeadline() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails")
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testExpectNoScheduledDeadlineOfType() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class)
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testExpectNoScheduledDeadlineWithName() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineName")
+               .expectNoScheduledEvents();
     }
 
     @Test
