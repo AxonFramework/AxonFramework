@@ -450,7 +450,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getEventFlowControl() {
         if (eventFlowControl == null) {
-            eventFlowControl = new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return eventFlowControl;
     }
@@ -461,7 +461,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getQueryFlowControl() {
         if (queryFlowControl == null) {
-            queryFlowControl = new FlowControlConfiguration(getInitialNrOfPermits(),getNrOfNewPermits(), getNewPermitsThreshold());
+            return new FlowControlConfiguration(getInitialNrOfPermits(),getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return queryFlowControl;
     }
@@ -472,7 +472,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getCommandFlowControl() {
         if (commandFlowControl == null) {
-            commandFlowControl = new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return commandFlowControl;
     }
