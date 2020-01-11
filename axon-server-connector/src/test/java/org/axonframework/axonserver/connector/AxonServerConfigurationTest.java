@@ -5,17 +5,13 @@ import org.junit.jupiter.api.Test;
 import static org.axonframework.axonserver.connector.AxonServerConfiguration.builder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Test Axon Server Configuration
+ * Testing falling back to defaults for Flow Control per message type
+ *
+ */
 class AxonServerConfigurationTest {
 
-    @Test
-    void testDefaultFlowControl() {
-
-        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
-        axonServerConfiguration.setInitialNrOfPermits(1000);
-
-        assertEquals(500, axonServerConfiguration.getNrOfNewPermits());
-        assertEquals(500, axonServerConfiguration.getNewPermitsThreshold());
-    }
 
     @Test
     void testEventsFlowControl() {

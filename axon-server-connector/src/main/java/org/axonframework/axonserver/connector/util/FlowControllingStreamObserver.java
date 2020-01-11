@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.util;
 import io.axoniq.axonserver.grpc.FlowControl;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConfiguration.FlowControlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,26 +57,21 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
      */
     public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, AxonServerConfiguration configuration,
                                          Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
-        this.wrappedStreamObserver = wrappedStreamObserver;
-        this.clientId = configuration.getClientId();
-        this.remainingPermits = new AtomicLong(
-                configuration.getInitialNrOfPermits().longValue() - configuration.getNewPermitsThreshold().longValue()
-        );
-        this.newPermits = configuration.getNrOfNewPermits();
-        this.initialNrofPermits=configuration.getInitialNrOfPermits();
-        this.newPermitsRequest = requestWrapper.apply(createRequest(newPermits));
-        this.isConfirmationMessage = isConfirmationMessage;
-        this.requestWrapper = requestWrapper;
+        this(wrappedStreamObserver,
+                configuration.getClientId(),
+                configuration.getDefaultFlowControlConfiguration(),
+                requestWrapper,
+                isConfirmationMessage);
     }
 
     /**
-     * @param wrappedStreamObserver     stream observer to send messages to AxonServer
-     * @param clientId                  ClientId in AxonServer configuration
-     * @param flowControlConfiguration  Flow control configuration
-     * @param requestWrapper            Function to create a new permits request
-     * @param isConfirmationMessage predicate to test if the message sent to AxonServer is a confirmation message
+     * @param wrappedStreamObserver    stream observer to send messages to AxonServer
+     * @param clientId                 ClientId in AxonServer configuration
+     * @param flowControlConfiguration Flow control configuration
+     * @param requestWrapper           Function to create a new permits request
+     * @param isConfirmationMessage    predicate to test if the message sent to AxonServer is a confirmation message
      */
-    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, String clientId, AxonServerConfiguration.FlowControlConfiguration flowControlConfiguration,
+    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, String clientId, FlowControlConfiguration flowControlConfiguration,
                                          Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
         this.wrappedStreamObserver = wrappedStreamObserver;
         this.clientId = clientId;
@@ -96,9 +92,9 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
 
     private FlowControl createRequest(long initialNrOfPermits) {
         return FlowControl.newBuilder()
-                          .setClientId(clientId)
-                          .setPermits(initialNrOfPermits)
-                          .build();
+                .setClientId(clientId)
+                .setPermits(initialNrOfPermits)
+                .build();
     }
 
     @Override

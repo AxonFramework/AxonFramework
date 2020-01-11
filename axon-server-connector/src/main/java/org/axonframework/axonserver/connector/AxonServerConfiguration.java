@@ -39,7 +39,6 @@ public class AxonServerConfiguration {
     private static final String DEFAULT_SERVERS = "localhost";
     private static final String DEFAULT_CONTEXT = "default";
 
-
     /**
      * Comma separated list of AxonServer servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
      * specified, default port 8123 is used.
@@ -78,14 +77,32 @@ public class AxonServerConfiguration {
      */
     private boolean sslEnabled;
 
-
     /**
-     * Default flow control settings.
+     * Initial number of permits send for message streams (events, commands, queries)
      */
-    private FlowControlConfiguration defaultFlowControl = new FlowControlConfiguration();
+    private Integer initialNrOfPermits = 5000;
 
     /**
-     * Specific flow control settings for the event message stream
+     * Additional number of permits send for message streams (events, commands, queries) when application
+     * is ready for more messages.
+     * <p>
+     * A value of {@code null}, 0, and negative values will have the client request the number of permits
+     * required to get from the "new-permits-threshold" to "initial-nr-of-permits".
+     */
+    private Integer nrOfNewPermits = null;
+
+    /**
+     * Threshold at which application sends new permits to server
+     * <p>
+     * A value of {@code null}, 0, and negative values will have the threshold set to 50% of "initial-nr-of-permits".
+     */
+    private Integer newPermitsThreshold = null;
+
+    /**
+     * Specific flow control settings for the event message stream.
+     * <p>
+     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits en newPermitsThreshold
+     * will be used.
      */
     private FlowControlConfiguration eventFlowControl;
 
@@ -98,7 +115,6 @@ public class AxonServerConfiguration {
      * Specific flow control settings for the command message stream
      */
     private FlowControlConfiguration commandFlowControl;
-
 
     /**
      * Number of threads executing commands
@@ -257,31 +273,35 @@ public class AxonServerConfiguration {
         this.sslEnabled = sslEnabled;
     }
 
-
     public Integer getInitialNrOfPermits() {
-        return defaultFlowControl.getInitialNrOfPermits();
+        return initialNrOfPermits;
     }
 
     public void setInitialNrOfPermits(Integer initialNrOfPermits) {
-        this.defaultFlowControl.setInitialNrOfPermits(initialNrOfPermits);
+        this.initialNrOfPermits = initialNrOfPermits;
     }
 
     public Integer getNrOfNewPermits() {
-        return defaultFlowControl.getNrOfNewPermits();
+        if (nrOfNewPermits == null || nrOfNewPermits <= 0) {
+            return getInitialNrOfPermits() - getNewPermitsThreshold();
+        }
+        return nrOfNewPermits;
     }
 
     public void setNrOfNewPermits(Integer nrOfNewPermits) {
-        this.defaultFlowControl.setInitialNrOfPermits(nrOfNewPermits);
+        this.nrOfNewPermits = nrOfNewPermits;
     }
 
     public Integer getNewPermitsThreshold() {
-        return this.defaultFlowControl.getNewPermitsThreshold();
+        if (newPermitsThreshold == null || newPermitsThreshold <= 0) {
+            return initialNrOfPermits / 2;
+        }
+        return newPermitsThreshold;
     }
 
     public void setNewPermitsThreshold(Integer newPermitsThreshold) {
-        this.defaultFlowControl.setNewPermitsThreshold(newPermitsThreshold);
+        this.newPermitsThreshold = newPermitsThreshold;
     }
-
 
     public String getContext() {
         return context;
@@ -428,17 +448,9 @@ public class AxonServerConfiguration {
         this.connectTimeout = connectTimeout;
     }
 
-    public FlowControlConfiguration getDefaultFlowControl() {
-        return defaultFlowControl;
-    }
-
-    public void setDefaultFlowControl(FlowControlConfiguration defaultFlowControl) {
-        this.defaultFlowControl = defaultFlowControl;
-    }
-
     public FlowControlConfiguration getEventFlowControl() {
         if (eventFlowControl == null) {
-            eventFlowControl = new FlowControlConfiguration(defaultFlowControl.getInitialNrOfPermits(), defaultFlowControl.getNrOfNewPermits(), defaultFlowControl.getNewPermitsThreshold());
+            eventFlowControl = new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return eventFlowControl;
     }
@@ -449,7 +461,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getQueryFlowControl() {
         if (queryFlowControl == null) {
-            queryFlowControl = new FlowControlConfiguration(defaultFlowControl.getInitialNrOfPermits(), defaultFlowControl.getNrOfNewPermits(), defaultFlowControl.getNewPermitsThreshold());
+            queryFlowControl = new FlowControlConfiguration(getInitialNrOfPermits(),getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return queryFlowControl;
     }
@@ -460,7 +472,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getCommandFlowControl() {
         if (commandFlowControl == null) {
-            commandFlowControl = new FlowControlConfiguration(defaultFlowControl.getInitialNrOfPermits(), defaultFlowControl.getNrOfNewPermits(), defaultFlowControl.getNewPermitsThreshold());
+            commandFlowControl = new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return commandFlowControl;
     }
@@ -469,6 +481,16 @@ public class AxonServerConfiguration {
         this.commandFlowControl = commandFlowControl;
     }
 
+    public FlowControlConfiguration getDefaultFlowControlConfiguration() {
+        return new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold);
+    }
+
+    /**
+     * Configuration class for Flow Control of specific message types.
+     *
+     * @author Gerlo Hesselink
+     * @since 4.3
+     */
     public static class FlowControlConfiguration {
 
         /**
@@ -495,6 +517,9 @@ public class AxonServerConfiguration {
         public FlowControlConfiguration() {
         }
 
+        /**
+         * initialize flow control with initialNrOfPermits, nrOfNewPermits en newPermitsThreshold
+         */
         public FlowControlConfiguration(Integer initialNrOfPermits, Integer nrOfNewPermits, Integer newPermitsThreshold) {
             this.initialNrOfPermits = initialNrOfPermits;
             this.nrOfNewPermits = nrOfNewPermits;
@@ -539,7 +564,9 @@ public class AxonServerConfiguration {
 
         public Builder() {
             instance = new AxonServerConfiguration();
-            instance.defaultFlowControl = new FlowControlConfiguration(1000, 500, 500);
+            instance.initialNrOfPermits = 1000;
+            instance.nrOfNewPermits = 500;
+            instance.newPermitsThreshold = 500;
         }
 
         public Builder ssl(String certFile) {
@@ -559,7 +586,9 @@ public class AxonServerConfiguration {
         }
 
         public Builder flowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.defaultFlowControl = new FlowControlConfiguration(initialNrOfPermits, nrOfNewPermits, newPermitsThreshold);
+            instance.initialNrOfPermits = initialNrOfPermits;
+            instance.nrOfNewPermits = nrOfNewPermits;
+            instance.newPermitsThreshold = newPermitsThreshold;
             return this;
         }
 
@@ -636,7 +665,5 @@ public class AxonServerConfiguration {
             instance.setConnectTimeout(timeout);
             return this;
         }
-
-
     }
 }
