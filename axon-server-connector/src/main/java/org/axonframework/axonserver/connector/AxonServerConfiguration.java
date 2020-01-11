@@ -518,7 +518,7 @@ public class AxonServerConfiguration {
         }
 
         /**
-         * initialize flow control with initialNrOfPermits, nrOfNewPermits en newPermitsThreshold
+         * Initialize flow control with initialNrOfPermits, nrOfNewPermits en newPermitsThreshold
          */
         public FlowControlConfiguration(Integer initialNrOfPermits, Integer nrOfNewPermits, Integer newPermitsThreshold) {
             this.initialNrOfPermits = initialNrOfPermits;
