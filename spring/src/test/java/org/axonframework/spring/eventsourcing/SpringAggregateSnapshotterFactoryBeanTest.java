@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
-        String type = "testAggregate";
+        String type = "StubAggregate";
         DomainEventMessage event1 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 0L, "Mock contents",
                                                                     MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 1L, "Mock contents",

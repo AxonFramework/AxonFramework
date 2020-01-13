@@ -18,12 +18,10 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.util.Optional;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
@@ -82,30 +80,11 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
     @SuppressWarnings({"unchecked"})
     @Override
     protected T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
-        return createByAggregateRootAnnotation(firstEvent.getType())
-                .orElse(createBySimpleType(firstEvent.getType())
-                                .orElseThrow(() -> new IncompatibleAggregateException(format(
-                                        "The [%s] aggregate does not exist.",
-                                        firstEvent.getType()))));
-    }
-
-    private Optional<T> createByAggregateRootAnnotation(String firstEventType) {
-        return aggregateModel.allEventHandlers()
-                             .keySet()
-                             .stream()
-                             .filter(t -> t.isAnnotationPresent(AggregateRoot.class))
-                             .filter(t -> t.getAnnotation(AggregateRoot.class).type().equals(firstEventType))
+        return aggregateModel.type(firstEvent.getType())
                              .map(this::newInstance)
-                             .findFirst();
-    }
-
-    private Optional<T> createBySimpleType(String firstEventType) {
-        return aggregateModel.allEventHandlers()
-                             .keySet()
-                             .stream()
-                             .filter(t -> t.getSimpleName().equals(firstEventType))
-                             .map(this::newInstance)
-                             .findFirst();
+                             .orElseThrow(() -> new IncompatibleAggregateException(format(
+                                     "The [%s] aggregate does not exist.",
+                                     firstEvent.getType())));
     }
 
     @SuppressWarnings("unchecked")

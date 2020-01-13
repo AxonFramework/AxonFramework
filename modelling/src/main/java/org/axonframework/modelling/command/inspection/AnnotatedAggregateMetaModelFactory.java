@@ -61,6 +61,18 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
     }
 
     /**
+     * Shorthand to create a factory instance and inspect the model for the given {@code aggregateType} and its {@code subtypes}.
+     *
+     * @param aggregateType The class of the aggregate to create the model for
+     * @param subtypes      Subtypes of this aggregate class
+     * @param <T>           The type of aggregate described in the model
+     * @return The model describing the structure of the aggregate
+     */
+    public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType, List<Class<? extends T>> subtypes) {
+        return new AnnotatedAggregateMetaModelFactory().createModel(aggregateType, subtypes);
+    }
+
+    /**
      * Shorthand to create a factory instance and inspect the model for the given {@code aggregateType}, using given
      * {@code parameterResolverFactory} to resolve parameter values for annotated handlers.
      *
@@ -89,6 +101,26 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                                                          HandlerDefinition handlerDefinition) {
         return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory, handlerDefinition)
                 .createModel(aggregateType);
+    }
+
+    /**
+     * Shorthand to create a factory instance and inspect the model for the given {@code aggregateType} and its {@code
+     * subytpes}, using given {@code parameterResolverFactory} to resolve parameter values for annotated handlers and
+     * {@code handlerDefinition} to create concrete handlers.
+     *
+     * @param aggregateType            The class of the aggregate to create the model for
+     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     * @param subtypes                 Subtypes of this aggregate class
+     * @param <T>                      The type of aggregate described in the model
+     * @return The model describing the structure of the aggregate
+     */
+    public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType,
+                                                         ParameterResolverFactory parameterResolverFactory,
+                                                         HandlerDefinition handlerDefinition,
+                                                         List<Class<? extends T>> subtypes) {
+        return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory, handlerDefinition)
+                .createModel(aggregateType, subtypes);
     }
 
     /**
@@ -151,7 +183,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private final Map<Class<?>, List<MessageHandlingMember<? super T>>> allCommandHandlers;
         private final Map<Class<?>, List<MessageHandlingMember<? super T>>> allEventHandlers;
 
-        private String aggregateType;
+        private final Map<String, Class<?>> types;
+        private final Map<Class<?>, String> declaredTypes;
         private Field identifierField;
         private Field versionField;
         private String routingKey;
@@ -160,6 +193,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         public AnnotatedAggregateModel(Class<? extends T> aggregateType, AnnotatedHandlerInspector<T> handlerInspector) {
             this.inspectedType = aggregateType;
+            this.types = new HashMap<>();
+            this.declaredTypes = new HashMap<>();
             this.allCommandHandlerInterceptors = new HashMap<>();
             this.allCommandHandlers = new HashMap<>();
             this.allEventHandlers = new HashMap<>();
@@ -169,9 +204,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         private void initialize() {
             initializing.set(Boolean.TRUE);
-            inspectAggregateType();
             inspectFields();
             prepareHandlers();
+            inspectAggregateTypes();
             initialized = true;
             initializing.remove();
         }
@@ -248,9 +283,17 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                            .collect(Collectors.toList());
         }
 
-        private void inspectAggregateType() {
-            aggregateType = AnnotationUtils.findAnnotationAttributes(inspectedType, AggregateRoot.class)
-                                           .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(inspectedType.getSimpleName());
+        private void inspectAggregateTypes() {
+            for (Class<?> type : handlerInspector.getAllHandlers().keySet()) {
+                String declaredType = findDeclaredType(type);
+                types.put(declaredType, type);
+                declaredTypes.put(type, declaredType);
+            }
+        }
+
+        private String findDeclaredType(Class<?> type) {
+            return AnnotationUtils.findAnnotationAttributes(type, AggregateRoot.class)
+                                  .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(type.getSimpleName());
         }
 
         private void inspectFields() {
@@ -340,7 +383,17 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         @Override
         public String type() {
-            return aggregateType;
+            return declaredTypes.get(inspectedType);
+        }
+
+        @Override
+        public Optional<Class<?>> type(String declaredType) {
+            return Optional.ofNullable(types.getOrDefault(declaredType, null));
+        }
+
+        @Override
+        public Optional<String> declaredType(Class<?> type) {
+            return Optional.ofNullable(declaredTypes.getOrDefault(type, null));
         }
 
         @Override

@@ -18,11 +18,9 @@ package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateInvocationException;
 import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -480,9 +478,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      */
     protected <P> EventMessage<P> createMessage(P payload, MetaData metaData) {
         if (lastKnownSequence != null) {
-            String type = AnnotationUtils.findAnnotationAttributes(rootType(), AggregateRoot.class)
-                                         .map(map -> (String) map.get("type")).filter(i -> i.length() > 0)
-                                         .orElse(rootType().getSimpleName());
+            String type = inspector.declaredType(rootType())
+                                   .orElse(rootType().getSimpleName());
             long seq = lastKnownSequence + 1;
             String id = identifierAsString();
             if (id == null) {
