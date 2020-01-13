@@ -17,12 +17,7 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.FlowControl;
-import io.axoniq.axonserver.grpc.query.QueryResponse;
-import io.axoniq.axonserver.grpc.query.QueryUpdate;
-import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
-import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
-import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
+import io.axoniq.axonserver.grpc.query.*;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
@@ -90,10 +85,10 @@ public class AxonServerSubscriptionQueryResult implements Supplier<SubscriptionQ
         Function<FlowControl, SubscriptionQueryRequest> requestMapping =
                 flowControl -> newBuilder().setFlowControl(
                         SubscriptionQuery.newBuilder(this.subscriptionQuery)
-                                         .setNumberOfPermits(flowControl.getPermits())
+                                .setNumberOfPermits(flowControl.getPermits())
                 ).build();
         requestObserver = new FlowControllingStreamObserver<>(
-                subscriptionStreamObserver, configuration, requestMapping, t -> false
+                subscriptionStreamObserver, configuration.getClientId(), configuration.getQueryFlowControl(), requestMapping, t -> false
         );
         requestObserver.sendInitialPermits();
         requestObserver.onNext(newBuilder().setSubscribe(this.subscriptionQuery).build());

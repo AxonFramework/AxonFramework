@@ -778,7 +778,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
             subscriberStreamObserver = new FlowControllingStreamObserver<>(
                     streamObserver,
-                    configuration,
+                    configuration.getClientId(),
+                    configuration.getCommandFlowControl(),
                     flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
                     t -> t.getRequestCase().equals(CommandProviderOutbound.RequestCase.COMMAND_RESPONSE)
             ).sendInitialPermits();
