@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.common;
 
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * Utility class containing reusable functionality for implementing the Builder Pattern in (infrastructure) components.
@@ -27,6 +26,8 @@ import java.util.function.Supplier;
  * @since 4.0
  */
 public abstract class BuilderUtils {
+
+    private static final String EMPTY_STRING = "";
 
     private BuilderUtils() {
         // Utility class
@@ -39,8 +40,8 @@ public abstract class BuilderUtils {
      * @param value            a {@code T} specifying the value to assert
      * @param assertion        a {@link Predicate} to test {@code value} against
      * @param exceptionMessage The message for the exception.
-     * @param <T>              a generic specifying the type of the {@code value}, which is the input for the
-     *                         {@code assertion}
+     * @param <T>              a generic specifying the type of the {@code value}, which is the input for the {@code
+     *                         assertion}
      * @throws AxonConfigurationException if the {@code value} asserts to {@code false} by the {@code assertion}
      */
     public static <T> void assertThat(T value,
@@ -55,8 +56,8 @@ public abstract class BuilderUtils {
      *
      * @param value            a {@code T} specifying the value to assert
      * @param exceptionMessage The message for the exception.
-     * @param <T>              a generic specifying the type of the {@code value}, which is the input for the
-     *                         {@code assertion}
+     * @param <T>              a generic specifying the type of the {@code value}, which is the input for the {@code
+     *                         assertion}
      * @throws AxonConfigurationException if the {@code value} equals {@code null}
      */
     public static <T> void assertNonNull(T value, String exceptionMessage) throws AxonConfigurationException {
@@ -64,8 +65,8 @@ public abstract class BuilderUtils {
     }
 
     /**
-     * Assert that the given {@code value} is positive, meaning greater than, or equal to, zero. If not, an
-     * {@link AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
+     * Assert that the given {@code value} is positive, meaning greater than, or equal to, zero. If not, an {@link
+     * AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
      *
      * @param i                the value to assert
      * @param exceptionMessage the message for the exception
@@ -75,8 +76,8 @@ public abstract class BuilderUtils {
     }
 
     /**
-     * Assert that the given {@code value} is positive, meaning greater than, or equal to, zero. If not, an
-     * {@link AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
+     * Assert that the given {@code value} is positive, meaning greater than, or equal to, zero. If not, an {@link
+     * AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
      *
      * @param l                the value to assert
      * @param exceptionMessage the message for the exception
@@ -86,8 +87,8 @@ public abstract class BuilderUtils {
     }
 
     /**
-     * Assert that the given {@code value} is strictly positive, meaning greater than zero. If not, an
-     * {@link AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
+     * Assert that the given {@code value} is strictly positive, meaning greater than zero. If not, an {@link
+     * AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
      *
      * @param i                the value to assert
      * @param exceptionMessage the message for the exception.
@@ -97,13 +98,24 @@ public abstract class BuilderUtils {
     }
 
     /**
-     * Assert that the given {@code value} is strictly positive, meaning greater than zero. If not, an
-     * {@link AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
+     * Assert that the given {@code value} is strictly positive, meaning greater than zero. If not, an {@link
+     * AxonConfigurationException} is thrown containing the provided {code exceptionMessage}.
      *
      * @param l                the value to assert
      * @param exceptionMessage the message for the exception.
      */
     public static void assertStrictPositive(long l, String exceptionMessage) {
         assertThat(l, number -> number > 0L, exceptionMessage);
+    }
+
+    /**
+     * Assert that the given {@code string} is not null and does not equal an empty String. If not, an {@link
+     * AxonConfigurationException} is thrown containing the provided {@code exceptionMessage}.
+     *
+     * @param string           the value to assert
+     * @param exceptionMessage the message for the exception.
+     */
+    public static void assertNonEmpty(String string, String exceptionMessage) {
+        assertThat(string, s -> Objects.nonNull(s) && !EMPTY_STRING.equals(s), exceptionMessage);
     }
 }
