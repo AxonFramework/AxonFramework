@@ -99,6 +99,24 @@ public class AxonServerConfiguration {
     private Integer newPermitsThreshold = null;
 
     /**
+     * Specific flow control settings for the event message stream.
+     * <p>
+     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits en newPermitsThreshold
+     * will be used.
+     */
+    private FlowControlConfiguration eventFlowControl;
+
+    /**
+     * Specific flow control settings for the queue message stream
+     */
+    private FlowControlConfiguration queryFlowControl;
+
+    /**
+     * Specific flow control settings for the command message stream
+     */
+    private FlowControlConfiguration commandFlowControl;
+
+    /**
      * Number of threads executing commands
      */
     private int commandThreads = 10;
@@ -430,6 +448,117 @@ public class AxonServerConfiguration {
         this.connectTimeout = connectTimeout;
     }
 
+    public FlowControlConfiguration getEventFlowControl() {
+        if (eventFlowControl == null) {
+            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+        }
+        return eventFlowControl;
+    }
+
+    public void setEventFlowControl(FlowControlConfiguration eventFlowControl) {
+        this.eventFlowControl = eventFlowControl;
+    }
+
+    public FlowControlConfiguration getQueryFlowControl() {
+        if (queryFlowControl == null) {
+            return new FlowControlConfiguration(getInitialNrOfPermits(),getNrOfNewPermits(), getNewPermitsThreshold());
+        }
+        return queryFlowControl;
+    }
+
+    public void setQueryFlowControl(FlowControlConfiguration queryFlowControl) {
+        this.queryFlowControl = queryFlowControl;
+    }
+
+    public FlowControlConfiguration getCommandFlowControl() {
+        if (commandFlowControl == null) {
+            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+        }
+        return commandFlowControl;
+    }
+
+    public void setCommandFlowControl(FlowControlConfiguration commandFlowControl) {
+        this.commandFlowControl = commandFlowControl;
+    }
+
+    public FlowControlConfiguration getDefaultFlowControlConfiguration() {
+        return new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold);
+    }
+
+    /**
+     * Configuration class for Flow Control of specific message types.
+     *
+     * @author Gerlo Hesselink
+     * @since 4.3
+     */
+    public static class FlowControlConfiguration {
+
+        /**
+         * Initial number of permits send for message streams (events, commands, queries)
+         */
+        private Integer initialNrOfPermits = 5000;
+
+        /**
+         * Additional number of permits send for message streams (events, commands, queries) when application
+         * is ready for more messages.
+         * <p>
+         * A value of {@code null}, 0, and negative values will have the client request the number of permits
+         * required to get from the "new-permits-threshold" to "initial-nr-of-permits".
+         */
+        private Integer nrOfNewPermits = null;
+
+        /**
+         * Threshold at which application sends new permits to server
+         * <p>
+         * A value of {@code null}, 0, and negative values will have the threshold set to 50% of "initial-nr-of-permits".
+         */
+        private Integer newPermitsThreshold = null;
+
+        public FlowControlConfiguration() {
+        }
+
+        /**
+         * @param initialNrOfPermits    Initial nr of new permits
+         * @param nrOfNewPermits        Additional number of permits when applictation is ready for message
+         * @param newPermitsThreshold   Threshold at which application sends new permits to server
+         */
+        public FlowControlConfiguration(Integer initialNrOfPermits, Integer nrOfNewPermits, Integer newPermitsThreshold) {
+            this.initialNrOfPermits = initialNrOfPermits;
+            this.nrOfNewPermits = nrOfNewPermits;
+            this.newPermitsThreshold = newPermitsThreshold;
+        }
+
+        public Integer getInitialNrOfPermits() {
+            return this.initialNrOfPermits;
+        }
+
+        public void setInitialNrOfPermits(Integer initialNrOfPermits) {
+            this.initialNrOfPermits = initialNrOfPermits;
+        }
+
+        public Integer getNrOfNewPermits() {
+            if (this.nrOfNewPermits == null || this.nrOfNewPermits <= 0) {
+                return getInitialNrOfPermits() - getNewPermitsThreshold();
+            }
+            return this.nrOfNewPermits;
+        }
+
+        public void setNrOfNewPermits(Integer nrOfNewPermits) {
+            this.nrOfNewPermits = nrOfNewPermits;
+        }
+
+        public Integer getNewPermitsThreshold() {
+            if (this.newPermitsThreshold == null || this.newPermitsThreshold <= 0) {
+                return this.initialNrOfPermits / 2;
+            }
+            return this.newPermitsThreshold;
+        }
+
+        public void setNewPermitsThreshold(Integer newPermitsThreshold) {
+            this.newPermitsThreshold = newPermitsThreshold;
+        }
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
 
@@ -462,6 +591,21 @@ public class AxonServerConfiguration {
             instance.initialNrOfPermits = initialNrOfPermits;
             instance.nrOfNewPermits = nrOfNewPermits;
             instance.newPermitsThreshold = newPermitsThreshold;
+            return this;
+        }
+
+        public Builder commandFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setCommandFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
+            return this;
+        }
+
+        public Builder queryFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setQueryFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
+            return this;
+        }
+
+        public Builder eventFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setEventFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
             return this;
         }
 

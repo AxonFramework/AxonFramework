@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.messaging.GenericMessage.asMessage;
 import static org.axonframework.queryhandling.GenericQueryResponseMessage.asResponseMessage;
 
 /**
@@ -72,11 +73,10 @@ public class DefaultQueryGateway implements QueryGateway {
         return new Builder();
     }
 
-
     @Override
     public <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType) {
         CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus
-                .query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)));
+                .query(processInterceptors(new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
         CompletableFuture<R> result = new CompletableFuture<>();
         queryResponse.exceptionally(cause -> asResponseMessage(responseType.responseMessagePayloadType(), cause))
                      .thenAccept(queryResponseMessage -> {

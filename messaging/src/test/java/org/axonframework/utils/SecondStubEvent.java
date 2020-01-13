@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,18 @@
 
 package org.axonframework.utils;
 
+/**
+ * Stub Domain Event, used for testing purposes.
+ *
+ * @author Steven van Beelen
+ */
 public class SecondStubEvent {
 
     private final String name;
     private final Integer number;
 
     // No-arg constructor required for JacksonSerializer
+    @SuppressWarnings("unused")
     private SecondStubEvent() {
         name = null;
         number = null;
@@ -39,5 +45,4 @@ public class SecondStubEvent {
     public Integer getNumber() {
         return number;
     }
-
 }

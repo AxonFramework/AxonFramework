@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.upcasting;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,9 +26,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link GenericUpcasterChain}.
+ *
  * @author Rene de Waele
  */
 class GenericUpcasterChainTest {
@@ -84,6 +86,7 @@ class GenericUpcasterChainTest {
     }
 
     private static class AToBUpcaster extends SingleEntryUpcaster<Object> {
+
         private final Object a, b;
 
         private AToBUpcaster(Object a, Object b) {
@@ -136,16 +139,17 @@ class GenericUpcasterChainTest {
                                                  return Stream.of(replacement);
                                              }
                                              return Optional.ofNullable(previous.getAndSet(null))
-                                                     .map(cached -> Stream.of(cached, entry)).orElse(Stream.of(entry));
+                                                            .map(cached -> Stream.of(cached, entry)).orElse(Stream.of(
+                                                             entry));
                                          }), Stream.generate(previous::get).limit(1).filter(Objects::nonNull));
         }
     }
 
     private static class MultipleTypesUpcaster implements Upcaster<Object> {
+
         @Override
         public Stream<Object> upcast(Stream<Object> intermediateRepresentations) {
             return intermediateRepresentations.flatMap(entry -> Stream.of(entry, entry));
         }
     }
-
 }

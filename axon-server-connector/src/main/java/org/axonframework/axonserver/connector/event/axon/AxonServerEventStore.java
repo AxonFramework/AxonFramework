@@ -479,7 +479,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                     });
             FlowControllingStreamObserver<GetEventsRequest> observer = new FlowControllingStreamObserver<>(
                     requestStream,
-                    configuration,
+                    configuration.getClientId(),
+                    configuration.getEventFlowControl(),
                     t -> GetEventsRequest.newBuilder().setNumberOfPermits(t.getPermits()).build(),
                     t -> false
             );
@@ -536,7 +537,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                     });
             FlowControllingStreamObserver<QueryEventsRequest> observer = new FlowControllingStreamObserver<>(
                     requestStream,
-                    configuration,
+                    configuration.getClientId(),
+                    configuration.getEventFlowControl(),
                     t -> QueryEventsRequest.newBuilder().setNumberOfPermits(t.getPermits()).build(),
                     t -> false
             );

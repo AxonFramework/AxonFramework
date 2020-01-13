@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Implementation of an {@link IntermediateEventRepresentation} that contains upcast functions for the payload
- * and metadata of a previous representation. Note that the upcast functions are to go from one representation to
- * another (never to more than one). In other words, the upcast functions stored in the UpcastedEventRepresentation are
- * not mapping one to one to the upcast method of an upcaster.
+ * Implementation of an {@link IntermediateEventRepresentation} that contains upcast functions for the payload and
+ * metadata of a previous representation. Note that the upcast functions are to go from one representation to another
+ * (never to more than one). In other words, the upcast functions stored in the UpcastedEventRepresentation are not
+ * mapping one to one to the upcast method of an upcaster.
  *
  * @param <T> the required type of the serialized data. If the data is not of this type the representation uses a {@link
  *            Converter} to convert to the required type.
@@ -51,8 +51,8 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
 
     /**
      * Initializes an {@link UpcastedEventRepresentation} from source data and given upcast functions for payload and
-     * metadata. The given {@code converter} is used to convert to the serialized data format required by the
-     * upcast functions.
+     * metadata. The given {@code converter} is used to convert to the serialized data format required by the upcast
+     * functions.
      *
      * @param outputType             the output type of the payload data after upcasting
      * @param source                 the intermediate representation that will be upcast

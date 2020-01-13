@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.caching.Cache;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
@@ -375,6 +376,10 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     if (!"".equals(triggerDefinition)) {
                         aggregateConf.configureSnapshotTrigger(
                                 c -> beanFactory.getBean(triggerDefinition, SnapshotTriggerDefinition.class));
+                    }
+                    String cache = aggregateAnnotation.cache();
+                    if (!"".equals(cache)) {
+                        aggregateConf.configureCache(c -> beanFactory.getBean(cache, Cache.class));
                     }
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
                         aggregateConf.configureRepository(

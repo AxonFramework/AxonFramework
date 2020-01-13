@@ -5,6 +5,7 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.junit.jupiter.api.*;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.time.Duration.ofSeconds;
@@ -14,44 +15,50 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class dedicated to validating custom registered components on a {@link SagaTestFixture} instance.
+ * Test class dedicated to validating custom, saga specific, registered components on {@link SagaTestFixture}.
+ *
+ * @author Steven van Beelen
  */
-class SagaTestFixtureRegistrationTest {
+class FixtureTest_RegisteringSagaEnhancements {
 
-    private SagaTestFixture<SomeTestSaga> fixture;
+    private SagaTestFixture<SomeTestSaga> testSubject;
+
     private AtomicInteger startRecordingCount;
 
     @BeforeEach
     void setUp() {
-        fixture = new SagaTestFixture<>(SomeTestSaga.class);
         startRecordingCount = new AtomicInteger();
-        fixture.registerStartRecordingCallback(startRecordingCount::getAndIncrement);
+
+        testSubject = new SagaTestFixture<>(SomeTestSaga.class);
     }
 
     @Test
-    void startRecordingCallbackIsInvokedOnWhenPublishingAnEvent() {
-        fixture.givenAPublished(new SomeTestSaga.SomeEvent());
+    void testStartRecordingCallbackIsInvokedOnWhenPublishingAnEvent() {
+        testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
+                   .givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
 
-        fixture.whenPublishingA(new SomeTestSaga.SomeEvent());
+        testSubject.whenPublishingA(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(1));
     }
 
     @Test
-    void startRecordingCallbackIsInvokedOnWhenTimeAdvances() {
-        fixture.givenAPublished(new SomeTestSaga.SomeEvent());
+    void testStartRecordingCallbackIsInvokedOnWhenTimeAdvances() {
+        testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
+                   .givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
 
-        fixture.whenTimeAdvancesTo(now());
+        testSubject.whenTimeAdvancesTo(now());
         assertThat(startRecordingCount.get(), equalTo(1));
     }
 
     @Test
-    void startRecordingCallbackIsInvokedOnWhenTimeElapses() {
-        fixture.givenAPublished(new SomeTestSaga.SomeEvent());
+    void testStartRecordingCallbackIsInvokedOnWhenTimeElapses() {
+        testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
+                   .givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
 
-        fixture.whenTimeElapses(ofSeconds(5));
+        testSubject.whenTimeElapses(ofSeconds(5));
         assertThat(startRecordingCount.get(), equalTo(1));
     }
 
@@ -62,9 +69,19 @@ class SagaTestFixtureRegistrationTest {
         ListenerInvocationErrorHandler testSubject = (exception, event, eventHandler) ->
                 assertEquals(testEvent.getException().getMessage(), exception.getMessage());
 
-        fixture.registerListenerInvocationErrorHandler(testSubject);
+        this.testSubject.registerListenerInvocationErrorHandler(testSubject);
         // This will trigger the test subject due to how the event is configured
-        fixture.givenAPublished(testEvent);
+        this.testSubject.givenAPublished(testEvent);
+    }
+
+    @Test
+    void testRegisteredResourceInjectorIsCalledUponFirstEventPublication() {
+        AtomicBoolean assertion = new AtomicBoolean(false);
+        testSubject.registerResourceInjector(saga -> assertion.set(true))
+                   // Publishing a single event should trigger the creation and injection of resources
+                   .givenAPublished(new SomeTestSaga.SomeEvent());
+
+        assertTrue(assertion.get());
     }
 
     public static class SomeTestSaga {

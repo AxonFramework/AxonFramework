@@ -26,6 +26,8 @@ import java.util.Optional;
  * Interface describing a handler for specific messages targeting entities of a specific type.
  *
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the message
+ * @author Allard Buijze
+ * @since 3.0
  */
 public interface MessageHandlingMember<T> {
 
@@ -42,8 +44,8 @@ public interface MessageHandlingMember<T> {
      * <p>
      * In general, a handler with a higher priority will receive the message before (or instead of) handlers with a
      * lower priority. However, the priority value may not be the only indicator that is used to determine the order of
-     * invocation. For instance, a message processor may decide to ignore the priority value if one message handler is
-     * a more specific handler of the message than another handler.
+     * invocation. For instance, a message processor may decide to ignore the priority value if one message handler is a
+     * more specific handler of the message than another handler.
      *
      * @return Number indicating the priority of this handler over other handlers
      */
@@ -110,5 +112,4 @@ public interface MessageHandlingMember<T> {
      * is missing on the method
      */
     Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType);
-
 }
