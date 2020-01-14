@@ -23,8 +23,8 @@ import org.axonframework.commandhandling.GenericCommandMessage
 import org.axonframework.commandhandling.GenericCommandResultMessage
 import org.axonframework.commandhandling.distributed.CommandDispatchException
 import org.axonframework.messaging.MetaData
-import org.junit.Test
 import java.util.*
+import kotlin.test.Test
 import kotlin.test.fail
 
 class CombiningCommandCallbackTest {

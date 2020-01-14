@@ -38,6 +38,7 @@
     <kotlin-logging.version>1.7.7</kotlin-logging.version>
     <jackson-kotlin.version>2.10.0</jackson-kotlin.version>
     <mockk.version>1.9.3</mockk.version>
+    <junit.jupiter.version>5.5.2</junit.jupiter.version>
   </properties>
 
   <dependencyManagement>
@@ -79,8 +80,23 @@
       </dependency>
 
       <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-test-junit</artifactId>
+        <artifactId>kotlin-test-junit5</artifactId>
         <version>${kotlin.version}</version>
         <scope>test</scope>
       </dependency>
@@ -118,20 +134,28 @@
 
     <!-- Test dependencies -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-test-junit</artifactId>
+      <artifactId>kotlin-test-junit5</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.mockk</groupId>
       <artifactId>mockk</artifactId>
-      <version>${mockk.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

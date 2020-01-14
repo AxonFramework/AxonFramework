@@ -22,11 +22,11 @@ import io.mockk.verify
 import org.axonframework.messaging.responsetypes.AbstractResponseType
 import org.axonframework.messaging.responsetypes.InstanceResponseType
 import org.axonframework.queryhandling.QueryGateway
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -39,14 +39,14 @@ class QueryGatewayExtensionsTest {
     private val listReturnValue: CompletableFuture<List<String>> = CompletableFuture.completedFuture(listOf("Value", "Second value"))
     private val subjectGateway = mockk<QueryGateway>()
 
-    @Before
+    @BeforeTest
     fun before() {
         every { subjectGateway.query(queryName, exampleQuery, matchInstanceResponseType<String>()) } returns instanceReturnValue
         every { subjectGateway.query(queryName, exampleQuery, matchOptionalResponseType<String>()) } returns optionalReturnValue
         every { subjectGateway.query(queryName, exampleQuery, matchMultipleInstancesResponseType<String>()) } returns listReturnValue
     }
 
-    @After
+    @AfterTest
     fun after() {
         clearMocks(subjectGateway)
     }

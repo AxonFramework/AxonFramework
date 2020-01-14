@@ -24,8 +24,8 @@ import org.axonframework.commandhandling.CommandCallback
 import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.MetaData
-import org.junit.Test
 import java.util.concurrent.TimeUnit
+import kotlin.test.Test
 
 class CommandGatewayExtensionsTest {
     private val subjectGateway = mockk<CommandGateway>()
