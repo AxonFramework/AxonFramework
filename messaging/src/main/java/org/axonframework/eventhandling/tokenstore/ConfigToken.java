@@ -63,7 +63,7 @@ public class ConfigToken implements TrackingToken {
 
     @Override
     public boolean covers(TrackingToken other) {
-        return false;
+        throw new UnsupportedOperationException("ConfigTokens don't support comparing to other tokens");
     }
 
 }
