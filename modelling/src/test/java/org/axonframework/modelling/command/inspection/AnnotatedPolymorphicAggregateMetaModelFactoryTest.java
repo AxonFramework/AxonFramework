@@ -21,17 +21,20 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.annotation.DefaultParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import javax.persistence.Id;
+
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,11 +44,10 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
-public class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
+class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
 
     @Test
-    public void testPolymorphicHierarchy() throws NoSuchMethodException {
-        ParameterResolverFactory parameterResolverFactory = new DefaultParameterResolverFactory();
+    void testPolymorphicHierarchy() throws NoSuchMethodException {
         Executable aHandle = A.class.getMethod("handle", String.class);
         Executable bHandle = B.class.getMethod("handle", Boolean.class);
         Executable cHandle = C.class.getMethod("handle", Boolean.class);
@@ -84,6 +86,19 @@ public class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
         assertEquals(asList(aIntercept, cIntercept), executables(allCommandHandlerInterceptors.get(C.class)));
         assertEquals(asList(aIntercept, cIntercept), executables(model.commandHandlerInterceptors(C.class)));
         assertEquals(asList(aOn, cOn), executables(allEventHandlers.get(C.class)));
+    }
+
+    @Test
+    void testUniqueAggregateIdentifierField() {
+        assertThrows(AggregateModellingException.class,
+                     () -> AnnotatedAggregateMetaModelFactory
+                             .inspectAggregate(D.class, new HashSet<>(singleton(E.class))));
+    }
+
+    @Test
+    void testUniqueAggregateIdentifierFieldShouldIgnorePersistenceId() {
+        // should not throw an exception
+        AnnotatedAggregateMetaModelFactory.inspectAggregate(D.class, new HashSet<>(singleton(F.class)));
     }
 
     private <T> List<Executable> executables(List<MessageHandlingMember<? super T>> members) {
@@ -137,6 +152,36 @@ public class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
 
         @EventHandler
         public void on(Integer a) {
+        }
+    }
+
+    private static class D {
+
+        @AggregateIdentifier
+        private String id;
+
+        @CommandHandler
+        public void handle(String a) {
+        }
+    }
+
+    private static class E extends D {
+
+        @AggregateIdentifier
+        private String id1;
+
+        @CommandHandler
+        public void handle(Integer a) {
+        }
+    }
+
+    private static class F extends D {
+
+        @Id
+        private String id1;
+
+        @CommandHandler
+        public void handle(Integer a) {
         }
     }
 }

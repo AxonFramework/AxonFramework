@@ -305,6 +305,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private void inspectFields() {
             ServiceLoader<ChildEntityDefinition> childEntityDefinitions =
                     ServiceLoader.load(ChildEntityDefinition.class, inspectedType.getClassLoader());
+            boolean persistenceId = false;
             for (Class<?> type : handlerInspector.getAllHandlers().keySet()) {
                 for (Field field : ReflectionUtils.fieldsOf(type)) {
                     childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
@@ -314,30 +315,50 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                                                                               handler));
                     }));
 
-                    AnnotationUtils.findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> {
+                    if (AnnotationUtils.findAnnotationAttributes(field, EntityId.class).isPresent()) {
+                        if (identifierField != null && !field.equals(identifierField) && !persistenceId) {
+                            throw new AggregateModellingException(format(
+                                    "Aggregate [%s] has two identifier fields [%s] and [%s].",
+                                    inspectedType,
+                                    identifierField,
+                                    field));
+                        }
+                        persistenceId = false;
                         identifierField = field;
+                        Map<String, Object> attributes =
+                                AnnotationUtils.findAnnotationAttributes(field, EntityId.class).get();
                         if (!"".equals(attributes.get("routingKey"))) {
                             routingKey = (String) attributes.get("routingKey");
                         } else {
                             routingKey = field.getName();
                         }
-                    });
-                    if (identifierField == null) {
-                        AnnotationUtils.findAnnotationAttributes(field, "javax.persistence.Id").ifPresent(a -> {
+                    }
+                    if (identifierField == null
+                            && AnnotationUtils.findAnnotationAttributes(field, "javax.persistence.Id")
+                                              .isPresent()) {
+                            persistenceId = true;
                             identifierField = field;
                             routingKey = field.getName();
-                        });
-                    }
-                    if (identifierField != null) {
-                        final Class<?> idClazz = identifierField.getType();
-                        if (!IdentifierValidator.getInstance().isValidIdentifier(idClazz)) {
-                            throw new AxonConfigurationException(format(
-                                    "Aggregate identifier type [%s] should override Object.toString()",
-                                    idClazz.getName()));
-                        }
                     }
                     AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
-                                   .ifPresent(attributes -> versionField = field);
+                                   .ifPresent(attributes -> {
+                                       if (versionField != null && !field.equals(versionField)) {
+                                           throw new AggregateModellingException(format(
+                                                   "Aggregate [%s] has two version fields [%s] and [%s].",
+                                                   inspectedType,
+                                                   versionField,
+                                                   field));
+                                       }
+                                       versionField = field;
+                                   });
+                }
+            }
+            if (identifierField != null) {
+                final Class<?> idClazz = identifierField.getType();
+                if (!IdentifierValidator.getInstance().isValidIdentifier(idClazz)) {
+                    throw new AggregateModellingException(format(
+                            "Aggregate identifier type [%s] should override Object.toString()",
+                            idClazz.getName()));
                 }
             }
         }
