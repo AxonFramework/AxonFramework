@@ -259,16 +259,18 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 List<CommandMessageHandlingMember<? super T>> factoryCommands2 = factoryCommands(handlers.get(i + 1));
                 for (CommandMessageHandlingMember<? super T> handler1 : factoryCommands1) {
                     for (CommandMessageHandlingMember<? super T> handler2 : factoryCommands2) {
-                        Class<?> declaringClass1 = handler1.unwrap(Executable.class).get().getDeclaringClass(); // TODO: 1/6/2020 move this logic to MessageHandlingMember?
-                        Class<?> declaringClass2 = handler2.unwrap(Executable.class).get().getDeclaringClass();
                         String commandName1 = handler1.commandName();
                         String commandName2 = handler2.commandName();
-                        if (commandName1.equals(commandName2) && !declaringClass1.equals(declaringClass2)) {
-                            throw new AggregateModellingException(format(
-                                    "Aggregates %s and %s have the same creation @CommandHandler %s",
-                                    declaringClass1,
-                                    declaringClass2,
-                                    commandName1));
+                        if (commandName1.equals(commandName2)) {
+                            Class<?> declaringClass1 = handler1.unwrap(Executable.class).get().getDeclaringClass();
+                            Class<?> declaringClass2 = handler2.unwrap(Executable.class).get().getDeclaringClass();
+                            if (!declaringClass1.equals(declaringClass2)) {
+                                throw new AggregateModellingException(format(
+                                        "Aggregates %s and %s have the same creation @CommandHandler %s",
+                                        declaringClass1,
+                                        declaringClass2,
+                                        commandName1));
+                            }
                         }
                     }
                 }
@@ -440,7 +442,6 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         //backwards compatibility - if you don't specify a designated child,
         //you should at least get handlers of its first registered parent (if any)
-        // TODO: 12/25/2019 maybe move to Inspector???
         private Stream<MessageHandlingMember<? super T>> handlers(
                 Map<Class<?>, List<MessageHandlingMember<? super T>>> handlers, Class<?> subtype) {
             Class<?> type = subtype;

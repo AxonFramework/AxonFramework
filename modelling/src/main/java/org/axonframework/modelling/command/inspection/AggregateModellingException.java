@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.AxonConfigurationException;
 
 /**
  * Thrown if Aggregate model is not valid.
@@ -24,7 +24,7 @@ import org.axonframework.common.AxonNonTransientException;
  * @author Milan Savic
  * @since 4.3
  */
-public class AggregateModellingException extends AxonNonTransientException {
+public class AggregateModellingException extends AxonConfigurationException {
 
     private static final long serialVersionUID = 4058550238776573504L;
 
