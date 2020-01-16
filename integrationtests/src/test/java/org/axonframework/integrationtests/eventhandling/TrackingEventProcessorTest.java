@@ -1296,8 +1296,8 @@ public class TrackingEventProcessorTest {
 
         assertWithin(2, TimeUnit.SECONDS, () -> assertTrue(testSubject.isError()));
         assertWithin(
-                2, TimeUnit.SECONDS,
-                () -> assertTrue(thrownException.get().getClass().isAssignableFrom(TestError.class))
+                15, TimeUnit.SECONDS,
+                () -> assertTrue(thrownException.get() instanceof TestError)
         );
     }
 
