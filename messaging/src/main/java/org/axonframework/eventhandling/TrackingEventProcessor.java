@@ -1093,6 +1093,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             } catch (Throwable e) {
                 logger.error("Processing loop ended due to uncaught exception. Pausing processor in Error State.", e);
                 state.set(State.PAUSED_ERROR);
+                throw e;
             } finally {
                 activeSegments.remove(segment.getSegmentId());
                 logger.info("Worker for segment {} stopped.", segment);

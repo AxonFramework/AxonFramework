@@ -65,6 +65,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -187,6 +188,10 @@ public class TrackingEventProcessorTest {
                                                          .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS));
     }
 
+    private void initProcessor(TrackingEventProcessorConfiguration config) {
+        initProcessor(config, UnaryOperator.identity());
+    }
+
     private void initProcessor(TrackingEventProcessorConfiguration config,
                                UnaryOperator<TrackingEventProcessor.Builder> customization) {
         TrackingEventProcessor.Builder eventProcessorBuilder =
@@ -206,10 +211,6 @@ public class TrackingEventProcessorTest {
                 }
             }
         };
-    }
-
-    private void initProcessor(TrackingEventProcessorConfiguration config) {
-        initProcessor(config, UnaryOperator.identity());
     }
 
     @After
@@ -1268,6 +1269,38 @@ public class TrackingEventProcessorTest {
         assertFalse("Expected merge to be rejected", actual.join());
     }
 
+    /**
+     * This test is a follow up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
+     */
+    @Test
+    public void testThrownErrorBubblesUp() {
+        AtomicReference<Throwable> thrownException = new AtomicReference<>();
+
+        EventHandlerInvoker eventHandlerInvoker = mock(EventHandlerInvoker.class);
+        when(eventHandlerInvoker.canHandle(any(), any())).thenThrow(new TestError());
+
+        initProcessor(
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                   .andThreadFactory(name -> runnableForThread -> new Thread(() -> {
+                                                       try {
+                                                           runnableForThread.run();
+                                                       } catch (Throwable t) {
+                                                           thrownException.set(t);
+                                                       }
+                                                   })),
+                builder -> builder.eventHandlerInvoker(eventHandlerInvoker)
+        );
+
+        eventBus.publish(createEvents(1));
+        testSubject.start();
+
+        assertWithin(2, TimeUnit.SECONDS, () -> assertTrue(testSubject.isError()));
+        assertWithin(
+                15, TimeUnit.SECONDS,
+                () -> assertTrue(thrownException.get() instanceof TestError)
+        );
+    }
+
     private void waitForStatus(String description,
                                long time,
                                TimeUnit unit,
@@ -1352,5 +1385,9 @@ public class TrackingEventProcessorTest {
         public void close() {
 
         }
+    }
+
+    private static class TestError extends Error {
+
     }
 }
