@@ -262,8 +262,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                         String commandName1 = handler1.commandName();
                         String commandName2 = handler2.commandName();
                         if (commandName1.equals(commandName2)) {
-                            Class<?> declaringClass1 = handler1.unwrap(Executable.class).get().getDeclaringClass();
-                            Class<?> declaringClass2 = handler2.unwrap(Executable.class).get().getDeclaringClass();
+                            Class<?> declaringClass1 = handler1.declaringClass();
+                            Class<?> declaringClass2 = handler2.declaringClass();
                             if (!declaringClass1.equals(declaringClass2)) {
                                 throw new AggregateModellingException(format(
                                         "Aggregates %s and %s have the same creation @CommandHandler %s",
