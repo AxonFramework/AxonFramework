@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.SortedSet;
 
@@ -44,37 +45,23 @@ public class AnnotatedHandlerInspectorTest {
                 AnnotatedHandlerInspector.inspectType(A.class,
                                                       parameterResolverFactory,
                                                       new AnnotatedMessageHandlingMemberDefinition(),
-                                                      asList(D.class, C.class));
+                                                      new HashSet<>(asList(D.class, C.class)));
         AnnotatedMessageHandlingMember<pA> paHandle = new AnnotatedMessageHandlingMember<>(pA.class.getMethod(
-                "paHandle",
-                String.class), CommandMessage.class, String.class, parameterResolverFactory);
+                "paHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
         AnnotatedMessageHandlingMember<A> aHandle = new AnnotatedMessageHandlingMember<>(A.class.getMethod(
-                "aHandle",
-                String.class), CommandMessage.class, String.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<A> aOn = new AnnotatedMessageHandlingMember<>(A.class.getMethod("aOn",
-                                                                                                       Integer.class),
-                                                                                     EventMessage.class,
-                                                                                     Integer.class,
-                                                                                     parameterResolverFactory);
+                "aHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
+        AnnotatedMessageHandlingMember<A> aOn = new AnnotatedMessageHandlingMember<>(A.class.getMethod(
+                "aOn", Integer.class), EventMessage.class, Integer.class, parameterResolverFactory);
         AnnotatedMessageHandlingMember<B> bHandle = new AnnotatedMessageHandlingMember<>(B.class.getMethod(
-                "bHandle",
-                Boolean.class), CommandMessage.class, Boolean.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<B> bOn = new AnnotatedMessageHandlingMember<>(B.class.getMethod("bOn",
-                                                                                                       Long.class),
-                                                                                     EventMessage.class,
-                                                                                     Long.class,
-                                                                                     parameterResolverFactory);
+                "bHandle", Boolean.class), CommandMessage.class, Boolean.class, parameterResolverFactory);
+        AnnotatedMessageHandlingMember<B> bOn = new AnnotatedMessageHandlingMember<>(B.class.getMethod(
+                "bOn", Long.class), EventMessage.class, Long.class, parameterResolverFactory);
         AnnotatedMessageHandlingMember<C> cHandle = new AnnotatedMessageHandlingMember<>(C.class.getMethod(
-                "cHandle",
-                Boolean.class), CommandMessage.class, Boolean.class, parameterResolverFactory);
-        AnnotatedMessageHandlingMember<C> cOn = new AnnotatedMessageHandlingMember<>(C.class.getMethod("cOn",
-                                                                                                       Integer.class),
-                                                                                     EventMessage.class,
-                                                                                     Integer.class,
-                                                                                     parameterResolverFactory);
+                "cHandle", Boolean.class), CommandMessage.class, Boolean.class, parameterResolverFactory);
+        AnnotatedMessageHandlingMember<C> cOn = new AnnotatedMessageHandlingMember<>(C.class.getMethod(
+                "cOn", Integer.class), EventMessage.class, Integer.class, parameterResolverFactory);
         AnnotatedMessageHandlingMember<D> dHandle = new AnnotatedMessageHandlingMember<>(D.class.getMethod(
-                "dHandle",
-                String.class), CommandMessage.class, String.class, parameterResolverFactory);
+                "dHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
 
         Map<Class<?>, SortedSet<MessageHandlingMember<? super A>>> allHandlers = inspector.getAllHandlers();
         assertEquals(5, allHandlers.size());

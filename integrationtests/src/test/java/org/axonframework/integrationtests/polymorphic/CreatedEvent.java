@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.polymorphic;
 
 /**
- * Test event.
+ * The event triggered when on of two children is created.
  *
  * @author Milan Savic
  */

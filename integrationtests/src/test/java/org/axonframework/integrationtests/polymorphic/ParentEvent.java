@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.polymorphic;
 
 /**
- * Test event.
+ * The event handled by the parent aggregate and fired by the child one aggregate.
  *
  * @author Milan Savic
  */

@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.polymorphic;
 
 /**
- * Test command.
+ * The command that creates the first child aggregate in this polymorphic aggregate hierarchy.
  *
  * @author Milan Savic
  */

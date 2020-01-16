@@ -17,7 +17,8 @@
 package org.axonframework.integrationtests.polymorphic;
 
 /**
- * Test command.
+ * The creational command that creates either child one or child two based on {@link #child} field. The command handler
+ * is placed on abstract parent aggregate.
  *
  * @author Milan Savic
  */

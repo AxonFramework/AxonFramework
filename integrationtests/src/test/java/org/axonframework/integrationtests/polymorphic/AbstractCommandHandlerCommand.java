@@ -19,6 +19,8 @@ package org.axonframework.integrationtests.polymorphic;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**
+ * The command sent to the abstract command handler of parent aggregate in polymorphic aggregate hierarchy.
+ *
  * @author Milan Savic
  */
 public class AbstractCommandHandlerCommand {

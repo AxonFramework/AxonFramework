@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.polymorphic;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**
- * Test command.
+ * The command indicating the child one aggregate to fire a {@link ParentEvent} handled by the parent aggregate.
  *
  * @author Milan Savic
  */

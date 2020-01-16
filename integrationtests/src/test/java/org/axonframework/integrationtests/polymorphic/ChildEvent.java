@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.polymorphic;
 
 /**
- * Test event.
+ * The event handled by first level children in this polymorphic aggregate hierarchy.
  *
  * @author Milan Savic
  */

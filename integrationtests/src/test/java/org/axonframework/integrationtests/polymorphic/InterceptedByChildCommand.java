@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.polymorphic;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**
- * Test command.
+ * The command intercepted by the one of children's command handler interceptor and handled by parent aggregate.
  *
  * @author Milan Savic
  */

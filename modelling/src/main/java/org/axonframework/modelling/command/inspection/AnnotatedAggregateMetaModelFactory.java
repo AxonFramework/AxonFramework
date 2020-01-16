@@ -68,7 +68,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
      * @param <T>           The type of aggregate described in the model
      * @return The model describing the structure of the aggregate
      */
-    public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType, List<Class<? extends T>> subtypes) {
+    public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType, Set<Class<? extends T>> subtypes) {
         return new AnnotatedAggregateMetaModelFactory().createModel(aggregateType, subtypes);
     }
 
@@ -118,7 +118,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
     public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType,
                                                          ParameterResolverFactory parameterResolverFactory,
                                                          HandlerDefinition handlerDefinition,
-                                                         List<Class<? extends T>> subtypes) {
+                                                         Set<Class<? extends T>> subtypes) {
         return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory, handlerDefinition)
                 .createModel(aggregateType, subtypes);
     }
@@ -158,7 +158,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
     @Override
     public <T> AnnotatedAggregateModel<T> createModel(Class<? extends T> aggregateType,
-                                                      List<Class<? extends T>> subtypes) {
+                                                      Set<Class<? extends T>> subtypes) {
         if (!registry.containsKey(aggregateType)) {
             AnnotatedHandlerInspector<T> inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
                                                                                            parameterResolverFactory,
@@ -213,10 +213,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         @SuppressWarnings("unchecked")
         private void prepareHandlers() {
-            for (Map.Entry<Class<?>, SortedSet<MessageHandlingMember<? super T>>> typeHandlers
+            for (Map.Entry<Class<?>, SortedSet<MessageHandlingMember<? super T>>> handlersPerType
                     : handlerInspector.getAllHandlers().entrySet()) {
-                for (MessageHandlingMember<? super T> handler : typeHandlers.getValue()) {
-                    Class<?> type = typeHandlers.getKey();
+                Class<?> type = handlersPerType.getKey();
+                for (MessageHandlingMember<? super T> handler : handlersPerType.getValue()) {
                     if (handler.unwrap(CommandMessageHandlingMember.class).isPresent()) {
                         if (Modifier.isAbstract(type.getModifiers()) && handler.unwrap(Constructor.class).isPresent()) {
                             throw new AggregateModellingException(format(
@@ -248,6 +248,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             });
         }
 
+        /**
+         * In polymorphic aggregate hierarchy there must not be more than one creational (factory) command handler (of
+         * the same command name) in more than one aggregate.
+         */
         private void validateCommandHandlers() {
             List<List<MessageHandlingMember<? super T>>> handlers = new ArrayList<>(allCommandHandlers.values());
             for (int i = 0; i < handlers.size() - 1; i++) {
@@ -352,9 +356,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         @Override
-        public <C> AnnotatedAggregateModel<C> modelOf(Class<? extends C> entityType) {
+        public <C> AnnotatedAggregateModel<C> modelOf(Class<? extends C> childEntityType) {
             // using empty list subtypes because this model is already in the registry, so it doesn't matter
-            return AnnotatedAggregateMetaModelFactory.this.createModel(entityType, Collections.emptyList());
+            return AnnotatedAggregateMetaModelFactory.this.createModel(childEntityType, Collections.emptySet());
         }
 
         @Override
@@ -370,7 +374,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         private void doPublish(EventMessage<?> message, T target) {
-            getHandler(message, target).ifPresent(h -> {
+            getHandler(message, target.getClass()).ifPresent(h -> {
                 try {
                     h.handle(message, target);
                 } catch (Exception e) {
@@ -415,16 +419,16 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         /**
-         * Returns the {@link MessageHandlingMember} that is capable of handling the given {@code message}. If no member is
-         * found an empty optional is returned.
+         * Returns the {@link MessageHandlingMember} that is capable of handling the given {@code message}. If no member
+         * is found an empty optional is returned.
          *
-         * @param message the message to find a handler for
-         * @param target  the target that handler should be executed on
+         * @param message     the message to find a handler for
+         * @param targetClass the target class that handler should be executed on
          * @return the handler of the message if present on the model
          */
         @SuppressWarnings("unchecked")
-        protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, T target) {
-            return handlers(allEventHandlers, target.getClass())
+        protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, Class<?> targetClass) {
+            return handlers(allEventHandlers, targetClass)
                     .filter(handler -> handler.canHandle(message))
                     .findAny();
         }

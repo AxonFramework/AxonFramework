@@ -26,7 +26,7 @@ import javax.persistence.Entity;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 /**
- * Test aggregate.
+ * The first level child aggregate in polymorphic aggregate hierarchy.
  *
  * @author Milan Savic
  */

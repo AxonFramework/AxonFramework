@@ -70,7 +70,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    public void testConfiguredDisruptorCommandBusCreatesTheRepository() {
+    void testConfiguredDisruptorCommandBusCreatesTheRepository() {
         //noinspection unchecked
         Repository<Object> expectedRepository = mock(Repository.class);
 
@@ -92,7 +92,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    public void testConfiguredDisruptorCommandBusAsLocalSegmentCreatesTheRepository() {
+    void testConfiguredDisruptorCommandBusAsLocalSegmentCreatesTheRepository() {
         //noinspection unchecked
         Repository<Object> expectedRepository = mock(Repository.class);
 
@@ -116,7 +116,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    public void testPolymorphicConfig() {
+    void testPolymorphicConfig() {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class);
         aggregateConfigurer.registerSubtype(B.class);
 

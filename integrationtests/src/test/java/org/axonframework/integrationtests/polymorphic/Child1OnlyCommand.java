@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.polymorphic;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**
- * Test command.
+ * The command command sent only to the first child in polymorphic aggregate hierarchy.
  *
  * @author Milan Savic
  */

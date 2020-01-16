@@ -94,7 +94,7 @@ public class AnnotatedHandlerInspector<T> {
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition) {
-        return inspectType(handlerType, parameterResolverFactory, handlerDefinition, Collections.emptyList());
+        return inspectType(handlerType, parameterResolverFactory, handlerDefinition, Collections.emptySet());
     }
 
     /**
@@ -111,7 +111,7 @@ public class AnnotatedHandlerInspector<T> {
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,
-                                                               List<Class<? extends T>> designatedSubtypes) {
+                                                               Set<Class<? extends T>> designatedSubtypes) {
         return createInspector(handlerType,
                                parameterResolverFactory,
                                handlerDefinition,
@@ -123,7 +123,7 @@ public class AnnotatedHandlerInspector<T> {
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     HandlerDefinition handlerDefinition,
                                                                     Map<Class<?>, AnnotatedHandlerInspector> registry,
-                                                                    List<Class<? extends T>> designatedSubtypes) {
+                                                                    Set<Class<? extends T>> designatedSubtypes) {
         if (!registry.containsKey(inspectedType)) {
             registry.put(inspectedType,
                          AnnotatedHandlerInspector.initialize((Class<T>) inspectedType,
@@ -140,7 +140,7 @@ public class AnnotatedHandlerInspector<T> {
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,
                                                                Map<Class<?>, AnnotatedHandlerInspector> registry,
-                                                               List<Class<? extends T>> designatedSubtypes) {
+                                                               Set<Class<? extends T>> designatedSubtypes) {
         List<AnnotatedHandlerInspector<? super T>> parents = new ArrayList<>();
         for (Class<?> iFace : inspectedType.getInterfaces()) {
             //noinspection unchecked
@@ -148,14 +148,14 @@ public class AnnotatedHandlerInspector<T> {
                                         parameterResolverFactory,
                                         handlerDefinition,
                                         registry,
-                                        Collections.emptyList()));
+                                        Collections.emptySet()));
         }
         if (inspectedType.getSuperclass() != null && !Object.class.equals(inspectedType.getSuperclass())) {
             parents.add(createInspector(inspectedType.getSuperclass(),
                                         parameterResolverFactory,
                                         handlerDefinition,
                                         registry,
-                                        Collections.emptyList()));
+                                        Collections.emptySet()));
         }
         List<AnnotatedHandlerInspector<? extends T>> children =
                 designatedSubtypes.stream()
@@ -163,7 +163,7 @@ public class AnnotatedHandlerInspector<T> {
                                                                    parameterResolverFactory,
                                                                    handlerDefinition,
                                                                    registry,
-                                                                   Collections.emptyList()))
+                                                                   Collections.emptySet()))
                                   .collect(Collectors.toList());
         AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<>(inspectedType,
                                                                                  parents,
@@ -223,7 +223,7 @@ public class AnnotatedHandlerInspector<T> {
                                                          parameterResolverFactory,
                                                          handlerDefinition,
                                                          registry,
-                                                         Collections.emptyList());
+                                                         Collections.emptySet());
     }
 
     /**

@@ -34,6 +34,7 @@ import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaMode
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.persistence.EntityManager;
@@ -74,7 +75,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
                                               .build();
 
         AggregateModel<ParentAggregate> model = new AnnotatedAggregateMetaModelFactory()
-                .createModel(ParentAggregate.class, asList(Child1Aggregate.class, Child2Aggregate.class));
+                .createModel(ParentAggregate.class, new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class)));
 
         repository = repository(model, entityManager);
 
@@ -186,7 +187,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
     void inspectionOfPolymorphicAggregateWithSameCreationalCommandHandlers() {
         assertThrows(AggregateModellingException.class,
                      () -> new AnnotatedAggregateMetaModelFactory()
-                             .createModel(A.class, asList(B.class, C.class)));
+                             .createModel(A.class, new HashSet<>(asList(B.class, C.class))));
     }
 
     private void assertAggregateState(String aggregateId, String expectedState) {

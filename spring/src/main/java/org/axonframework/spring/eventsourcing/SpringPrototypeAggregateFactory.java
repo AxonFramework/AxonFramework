@@ -118,10 +118,10 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
                                                                         configuration.parameterResolverFactory(),
                                                                         configuration
                                                                                 .handlerDefinition(getAggregateType()),
-                                                                        new ArrayList<>(subtypes.keySet()));
+                                                                        subtypes.keySet());
         } else {
             model = AnnotatedAggregateMetaModelFactory.inspectAggregate(getAggregateType(),
-                                                                        new ArrayList<>(subtypes.keySet()));
+                                                                        subtypes.keySet());
         }
         this.delegate = new AbstractAggregateFactory<T>(model) {
             @Override

@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.polymorphic;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**
- * Test command.
+ * The common command for both first level children. Command handler for it is placed on abstract parent.
  *
  * @author Milan Savic
  */

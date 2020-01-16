@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command.inspection;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Interface of a factory for an {@link AggregateModel} for any given type defining an aggregate.
@@ -33,7 +33,7 @@ public interface AggregateMetaModelFactory {
      * @return Model describing the capabilities and characteristics of the inspected Aggregate class
      */
     default <T> AggregateModel<T> createModel(Class<? extends T> aggregateType) {
-        return createModel(aggregateType, Collections.emptyList());
+        return createModel(aggregateType, Collections.emptySet());
     }
 
     /**
@@ -45,5 +45,5 @@ public interface AggregateMetaModelFactory {
      * @param <T>           The Aggregate type
      * @return Model describing the capabilities and characteristics of the inspected Aggregate class and its subtypes
      */
-    <T> AggregateModel<T> createModel(Class<? extends T> aggregateType, List<Class<? extends T>> subtypes);
+    <T> AggregateModel<T> createModel(Class<? extends T> aggregateType, Set<Class<? extends T>> subtypes);
 }

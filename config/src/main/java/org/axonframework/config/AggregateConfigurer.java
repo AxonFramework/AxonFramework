@@ -41,7 +41,9 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -69,7 +71,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<AggregateModel<A>> metaModel;
     private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
-    private final List<Class<? extends A>> subtypes = new ArrayList<>();
+    private final Set<Class<? extends A>> subtypes = new HashSet<>();
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
 
@@ -390,7 +392,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Registers a subtype of this aggregate. Supports aggregate polymorphism. This aggregate will be able to handle
+     * Registers a subtype of this aggregate to support aggregate polymorphism. This aggregate will be able to handle
      * commands of provided {@code subtype} as well.
      *
      * @param subtype a subtype in this polymorphic hierarchy

@@ -29,7 +29,8 @@ import javax.persistence.InheritanceType;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 /**
- * Test aggregate.
+ * The abstract parent aggregate in this polymorphic aggregate hierarchy. It represents the type of the aggregate as a
+ * whole.
  *
  * @author Milan Savic
  */

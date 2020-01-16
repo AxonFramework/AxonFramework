@@ -26,6 +26,7 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -36,6 +37,8 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Tests for polymorphic aggregate model.
+ *
  * @author Milan Savic
  */
 public class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
@@ -54,7 +57,7 @@ public class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
         Executable cIntercept = C.class.getMethod("intercept", String.class);
 
         AnnotatedAggregateMetaModelFactory factory = new AnnotatedAggregateMetaModelFactory();
-        AggregateModel<A> model = factory.createModel(A.class, asList(B.class, C.class));
+        AggregateModel<A> model = factory.createModel(A.class, new HashSet<>(asList(B.class, C.class)));
         Map<Class<?>, List<MessageHandlingMember<? super A>>> allCommandHandlers = model.allCommandHandlers();
         Map<Class<?>, List<MessageHandlingMember<? super A>>> allEventHandlers = model.allEventHandlers();
         Map<Class<?>, List<MessageHandlingMember<? super A>>> allCommandHandlerInterceptors = model
