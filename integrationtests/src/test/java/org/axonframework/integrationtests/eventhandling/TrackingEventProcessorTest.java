@@ -45,12 +45,8 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
@@ -80,12 +76,12 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -388,8 +384,10 @@ class TrackingEventProcessorTest {
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
-        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS),
-                "Expected Unit of Work to have reached clean up phase for 2 messages");
+        assertTrue(
+                countDownLatch.await(5, TimeUnit.SECONDS),
+                "Expected Unit of Work to have reached clean up phase for 2 messages"
+        );
         InOrder inOrder = inOrder(tokenStore);
         inOrder.verify(tokenStore, times(1)).extendClaim(eq(testSubject.getName()), anyInt());
         inOrder.verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
@@ -430,8 +428,10 @@ class TrackingEventProcessorTest {
         }));
         testSubject.start();
         eventBus.publish(createEvents(2));
-        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS),
-                "Expected Unit of Work to have reached clean up phase for 2 messages");
+        assertTrue(
+                countDownLatch.await(5, TimeUnit.SECONDS),
+                "Expected Unit of Work to have reached clean up phase for 2 messages"
+        );
 
         verify(tokenStore, times(1)).storeToken(any(), any(), anyInt());
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
@@ -493,10 +493,9 @@ class TrackingEventProcessorTest {
 
         eventBus.publish(createEvent());
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
-
         assertThat(
                 tokenStore.fetchToken(testSubject.getName(), 0),
-                anyOf(nullValue(), equalTo(eventBus.createTailToken()))
+                CoreMatchers.anyOf(CoreMatchers.nullValue(), CoreMatchers.equalTo(eventBus.createTailToken()))
         );
     }
 
