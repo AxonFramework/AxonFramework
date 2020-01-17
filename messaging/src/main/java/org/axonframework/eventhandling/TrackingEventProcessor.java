@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,8 +35,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -75,7 +89,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
-    private final Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder;
+    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder;
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final int segmentsSize;
@@ -96,12 +110,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     /**
      * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
-     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a
-     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
-     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
-     * are <b>hard requirements</b> and as such should be provided.
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the {@link
+     * ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a {@link
+     * NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a {@link
+     * TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name}, {@link
+     * EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
+     * <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link TrackingEventProcessor}
      */
@@ -113,8 +127,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Instantiate a {@link TrackingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker}, {@link StreamableMessageSource},
-     * {@link TokenStore} and {@link TransactionManager} are not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if any of them is {@code null}.
+     * {@link TokenStore} and {@link TransactionManager} are not {@code null}, and will throw an {@link
+     * AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link TrackingEventProcessor} instance
      */
@@ -139,7 +153,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
-            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
+            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
                 Instant startTime = now();
                 TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey);
                 if (storeTokenBeforeProcessing) {
@@ -185,8 +199,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * additional thread to start processing events concurrently.
      * <p>
      * To be able to split segments, the {@link TokenStore} configured with this processor must use explicitly
-     * initialized tokens. See {@link TokenStore#requiresExplicitSegmentInitialization()}. Also, the given {@code segmentId}
-     * must be currently processed by a thread owned by this processor instance.
+     * initialized tokens. See {@link TokenStore#requiresExplicitSegmentInitialization()}. Also, the given {@code
+     * segmentId} must be currently processed by a thread owned by this processor instance.
      *
      * @param segmentId The identifier of the segment to split
      * @return a CompletableFuture providing the result of the split operation
@@ -194,7 +208,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            result.completeExceptionally(new UnsupportedOperationException("TokenStore must require explicit initialization to safely split tokens"));
+            result.completeExceptionally(new UnsupportedOperationException(
+                    "TokenStore must require explicit initialization to safely split tokens"
+            ));
             return result;
         }
 
@@ -214,8 +230,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * <p>
      * The Processor must currently be actively processing the segment with given {@code segmentId}.
      * <p>
-     * Use {@link #releaseSegment(int)} to force this processor to release any claims with tokens required to merge
-     * the segments.
+     * Use {@link #releaseSegment(int)} to force this processor to release any claims with tokens required to merge the
+     * segments.
      * <p>
      * To find out which segment a given {@code segmentId} should be merged with, use the following procedure:
      * <pre>
@@ -233,7 +249,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
             result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely merge tokens"));
+                    "TokenStore must require explicit initialization to safely merge tokens"
+            ));
             return result;
         }
 
@@ -257,8 +274,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Fetch and process event batches continuously for as long as the processor is not shutting down. The processor
      * will process events in batches. The maximum size of size of each event batch is configurable.
      * <p>
-     * Events with the same tracking token (which is possible as result of upcasting) should always be processed in
-     * the same batch. In those cases the batch size may be larger than the one configured.
+     * Events with the same tracking token (which is possible as result of upcasting) should always be processed in the
+     * same batch. In those cases the batch size may be larger than the one configured.
      *
      * @param segment The {@link Segment} of the Stream that should be processed.
      */
@@ -419,15 +436,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private void canBlacklist(BlockingStream<TrackedEventMessage<?>> eventStream, TrackedEventMessage<?> trackedEventMessage) {
+    private void canBlacklist(BlockingStream<TrackedEventMessage<?>> eventStream,
+                              TrackedEventMessage<?> trackedEventMessage) {
         if (!canHandleType(trackedEventMessage.getPayloadType())) {
             eventStream.blacklist(trackedEventMessage);
         }
     }
 
     /**
-     * Indicates whether any of the components handling events for this Processor are able to handle the given
-     * {@code eventMessage} for any of the given {@code segments}.
+     * Indicates whether any of the components handling events for this Processor are able to handle the given {@code
+     * eventMessage} for any of the given {@code segments}.
      *
      * @param eventMessage The message to handle
      * @param segments     The segments to handle the message in
@@ -444,12 +462,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private boolean isRegularProcessing(Segment segment, TrackedEventMessage<?> nextMessage) {
-        return nextMessage != null && isRegularProcessing(segment, processingSegments(nextMessage.trackingToken(), segment));
+        return nextMessage != null
+                && isRegularProcessing(segment, processingSegments(nextMessage.trackingToken(), segment));
     }
 
     /**
-     * Indicates if the given {@code processingSegments} should be considered normal processing for the given
-     * {@code segment}. This is the case if only given {@code segment} is included in the {@code processingSegments}.
+     * Indicates if the given {@code processingSegments} should be considered normal processing for the given {@code
+     * segment}. This is the case if only given {@code segment} is included in the {@code processingSegments}.
      *
      * @param segment            The segment assigned to this thread for processing
      * @param processingSegments The segments for which a received event should be processed
@@ -482,7 +501,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private BlockingStream<TrackedEventMessage<?>> doOpenStream(TrackingToken trackingToken) {
         if (trackingToken instanceof WrappedToken) {
-            return new WrappedMessageStream((WrappedToken) trackingToken, messageSource.openStream(WrappedToken.unwrapLowerBound(trackingToken)));
+            return new WrappedMessageStream(
+                    (WrappedToken) trackingToken,
+                    messageSource.openStream(WrappedToken.unwrapLowerBound(trackingToken))
+            );
         }
         return messageSource.openStream(WrappedToken.unwrapLowerBound(trackingToken));
     }
@@ -501,8 +523,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     /**
      * Instructs the processor to release the segment with given {@code segmentId}. This will also blacklist this
      * segment for the given {@code blacklistDuration}, to ensure it is not immediately reclaimed. Note that this will
-     * override any previous blacklist duration that existed for this segment. Providing a negative value will allow
-     * the segment to be immediately claimed.
+     * override any previous blacklist duration that existed for this segment. Providing a negative value will allow the
+     * segment to be immediately claimed.
      * <p>
      * If the processor is not actively processing the segment with given {@code segmentId}, it will be blacklisted
      * nonetheless.
@@ -522,9 +544,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     /**
      * Resets tokens to their initial state. This effectively causes a replay.
      * <p>
-     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
-     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
-     * as a processor can only reset the tokens if it is able to claim them all.
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the same
+     * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
+     * processor can only reset the tokens if it is able to claim them all.
      */
     public void resetTokens() {
         resetTokens(initialTrackingTokenBuilder);
@@ -536,24 +558,26 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * <p>
      * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
      * <p>
-     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
-     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
-     * as a processor can only reset the tokens if it is able to claim them all.
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the same
+     * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
+     * processor can only reset the tokens if it is able to claim them all.
      *
      * @param initialTrackingTokenSupplier A function returning the token representing the position to reset to
      */
-    public void resetTokens(Function<StreamableMessageSource, TrackingToken> initialTrackingTokenSupplier) {
+    public void resetTokens(
+            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
         resetTokens(initialTrackingTokenSupplier.apply(messageSource));
     }
 
     /**
-     * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that position.
+     * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that
+     * position.
      * <p>
      * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
      * <p>
-     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
-     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
-     * as a processor can only reset the tokens if it is able to claim them all.
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the same
+     * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
+     * processor can only reset the tokens if it is able to claim them all.
      *
      * @param startPosition The token representing the position to reset the processor to.
      */
@@ -577,8 +601,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Indicates whether this tracking processor supports a "reset". Generally, a reset is supported if at least one
-     * of the event handlers assigned to this processor supports it, and no handlers explicitly prevent the resets.
+     * Indicates whether this tracking processor supports a "reset". Generally, a reset is supported if at least one of
+     * the event handlers assigned to this processor supports it, and no handlers explicitly prevent the resets.
      *
      * @return {@code true} if resets are supported, {@code false} otherwise
      */
@@ -646,8 +670,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Begins shutting down. Does not block until shutdown is complete. Calling {@link #shutDown()} after this
-     * method will block until the shutdown is complete.
+     * Begins shutting down. Does not block until shutdown is complete. Calling {@link #shutDown()} after this method
+     * will block until the shutdown is complete.
      */
     @Override
     public CompletableFuture<Void> shutdownAsync() {
@@ -675,12 +699,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Returns the status for each of the Segments processed by the current processor. The key of the map represents
-     * the SegmentID processed by this instance. The values of the returned Map represent the last known status of that
+     * Returns the status for each of the Segments processed by the current processor. The key of the map represents the
+     * SegmentID processed by this instance. The values of the returned Map represent the last known status of that
      * Segment.
      * <p>
-     * Note that the returned Map is unmodifiable, but does reflect any changes made to the status as the processor
-     * is processing Events.
+     * Note that the returned Map is unmodifiable, but does reflect any changes made to the status as the processor is
+     * processing Events.
      *
      * @return the status for each of the Segments processed by the current processor
      */
@@ -699,23 +723,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Starts workers for a number of segments. When only the {@link Segment#ROOT_SEGMENT root } segment
-     * {@link TokenStore#fetchSegments(String) exists} in the  TokenStore, it will be split in multiple segments as
-     * configured by the {@link TrackingEventProcessorConfiguration#andInitialSegmentsCount(int)}, otherwise the
-     * existing segments in the TokenStore will be used.
+     * Starts workers for a number of segments. When only the {@link Segment#ROOT_SEGMENT root } segment {@link
+     * TokenStore#fetchSegments(String) exists} in the  TokenStore, it will be split in multiple segments as configured
+     * by the {@link TrackingEventProcessorConfiguration#andInitialSegmentsCount(int)}, otherwise the existing segments
+     * in the TokenStore will be used.
      * <p/>
      * An attempt will be made to instantiate a worker for each segment. This will succeed when the number of threads
-     * matches the requested segments. The number of active threads can be configured with
-     * {@link TrackingEventProcessorConfiguration#forParallelProcessing(int)}. When insufficient threads are available
-     * to serve the number of segments, it will result in some segments not being processed.
+     * matches the requested segments. The number of active threads can be configured with {@link
+     * TrackingEventProcessorConfiguration#forParallelProcessing(int)}. When insufficient threads are available to serve
+     * the number of segments, it will result in some segments not being processed.
      */
     protected void startSegmentWorkers() {
         threadFactory.newThread(new WorkerLauncher()).start();
     }
 
     /**
-     * Instructs the current Thread to sleep until the given deadline. This method may be overridden to check for
-     * flags that have been set to return earlier than the given deadline.
+     * Instructs the current Thread to sleep until the given deadline. This method may be overridden to check for flags
+     * that have been set to return earlier than the given deadline.
      * <p>
      * The default implementation will sleep in blocks of 100ms, intermittently checking for the processor's state. Once
      * the processor stops running, this method will return immediately (after detecting the state change).
@@ -845,8 +869,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
 
         /**
-         * Splits the current status object to reflect the status of their underlying segments
-         * being split.
+         * Splits the current status object to reflect the status of their underlying segments being split.
          *
          * @return an array with two status object, representing the status of the split segments.
          */
@@ -882,12 +905,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     /**
      * Builder class to instantiate a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
-     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a
-     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
-     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
-     * are <b>hard requirements</b> and as such should be provided.
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the {@link
+     * ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a {@link
+     * NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a {@link
+     * TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name}, {@link
+     * EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
+     * <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder extends AbstractEventProcessor.Builder {
 
@@ -977,12 +1000,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         /**
          * Sets the {@link TrackingEventProcessorConfiguration} containing the fine grained configuration options for a
-         * {@link TrackingEventProcessor}. Defaults to a
-         * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call.
+         * {@link TrackingEventProcessor}. Defaults to a {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()}
+         * call.
          *
          * @param trackingEventProcessorConfiguration the {@link TrackingEventProcessorConfiguration} containing the
-         *                                            fine grained configuration options for a
-         *                                            {@link TrackingEventProcessor}
+         *                                            fine grained configuration options for a {@link
+         *                                            TrackingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder trackingEventProcessorConfiguration(
@@ -1001,9 +1024,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
          * are desired.
          * <p>
          * The default behavior is to store the last token of the Batch to the Token Store before processing of events
-         * begins. A Token Claim extension is only sent when processing of the batch took longer than the
-         * {@link TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit)
-         * tokenClaimUpdateInterval}.
+         * begins. A Token Claim extension is only sent when processing of the batch took longer than the {@link
+         * TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit) tokenClaimUpdateInterval}.
          *
          * @return the current Builder instance, for fluent interfacing
          */
@@ -1072,6 +1094,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             } catch (Throwable e) {
                 logger.error("Processing loop ended due to uncaught exception. Pausing processor in Error State.", e);
                 state.set(State.PAUSED_ERROR);
+                throw e;
             } finally {
                 activeSegments.remove(segment.getSegmentId());
                 logger.info("Worker for segment {} stopped.", segment);
@@ -1166,7 +1189,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                             break;
                         }
 
-                        TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(activeSegments.get(segmentId).getSegment());
+                        TrackingSegmentWorker trackingSegmentWorker =
+                                new TrackingSegmentWorker(activeSegments.get(segmentId).getSegment());
                         if (availableThreads.decrementAndGet() > 0) {
                             logger.info("Dispatching new tracking segment worker: {}", trackingSegmentWorker);
                             threadFactory.newThread(trackingSegmentWorker).start();
@@ -1188,7 +1212,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private class WrappedMessageStream implements BlockingStream<TrackedEventMessage<?>> {
+    private static class WrappedMessageStream implements BlockingStream<TrackedEventMessage<?>> {
 
         private final BlockingStream<TrackedEventMessage<?>> delegate;
         private WrappedToken lastToken;
@@ -1227,7 +1251,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             return delegate.hasNextAvailable();
         }
 
-        @SuppressWarnings("unchecked")
         public <T> TrackedEventMessage<T> alterToken(TrackedEventMessage<T> message) {
             if (lastToken == null) {
                 return message;
@@ -1237,6 +1260,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private class SplitSegmentInstruction extends Instruction {
+
         private final int segmentId;
 
         public SplitSegmentInstruction(CompletableFuture<Boolean> result, int segmentId) {
@@ -1257,6 +1281,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private class MergeSegmentInstruction extends Instruction {
+
         private final int segmentId;
         private final int otherSegment;
 
