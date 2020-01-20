@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 /**
@@ -61,7 +62,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
 
         List<String> response = queryBus.query(queryMessage).get().getPayload();
 
-        assertEquals(Arrays.asList("Response1", "Response2"), response);
+        assertEquals(asList("Response1", "Response2"), response);
     }
 
     @Test
@@ -85,7 +86,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        assertEquals(Arrays.asList("Response1", "Response2"), response);
+        assertEquals(asList("Response1", "Response2"), response);
     }
 
     @Test
@@ -111,7 +112,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
                 ResponseTypes.instanceOf(String.class));
 
         StepVerifier.create(queryBus.subscriptionQuery(queryMessage).initialResult().map(Message::getPayload))
-                    .expectNext(Arrays.asList("Response1", "Response2"))
+                    .expectNext(asList("Response1", "Response2"))
                     .verifyComplete();
     }
 
@@ -128,6 +129,43 @@ public class FutureAsResponseTypeToQueryHandlersTest {
                     .verifyComplete();
     }
 
+    @Test
+    public void testFutureQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
+        QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
+                "criteria", "myQueryFutureWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class));
+
+        List<String> result = queryBus.query(queryMessage).get().getPayload();
+
+        assertEquals(asList("Response1", "Response2"), result);
+    }
+
+    @Test
+    public void testFutureScatterGatherQueryWithMultipleResponses() {
+        QueryMessage<String, List<String>> queryMessage = new GenericQueryMessage<>(
+                "criteria", "myQueryFutureWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class));
+
+        List<String> result = queryBus
+                .scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
+                .map(Message::getPayload)
+                .findFirst()
+                .orElse(null);
+
+        assertEquals(asList("Response1", "Response2"), result);
+    }
+
+    @Test
+    public void testFutureSubscriptionQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "criteria",
+                "myQueryFutureWithMultipleResponses",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        StepVerifier.create(queryBus.subscriptionQuery(queryMessage).initialResult().map(Message::getPayload))
+                    .expectNext(asList("Response1", "Response2"))
+                    .verifyComplete();
+    }
+
     @SuppressWarnings("unused")
     private static class MyQueryHandler {
 
@@ -136,7 +174,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
         @QueryHandler(queryName = "myQueryWithMultipleResponses")
         public CompletableFuture<List<String>> queryHandler1(String criteria) {
             CompletableFuture<List<String>> completableFuture = new CompletableFuture<>();
-            executor.schedule(() -> completableFuture.complete(Arrays.asList("Response1", "Response2")),
+            executor.schedule(() -> completableFuture.complete(asList("Response1", "Response2")),
                               FUTURE_RESOLVING_TIMEOUT,
                               TimeUnit.MILLISECONDS);
             return completableFuture;
@@ -144,11 +182,16 @@ public class FutureAsResponseTypeToQueryHandlersTest {
 
         @QueryHandler(queryName = "myQueryWithSingleResponse")
         public Future<String> queryHandler2(String criteria) {
-            CompletableFuture<String> completableFuture = new CompletableFuture<>();
-            executor.schedule(() -> completableFuture.complete("Response"),
-                              FUTURE_RESOLVING_TIMEOUT,
-                              TimeUnit.MILLISECONDS);
-            return completableFuture;
+            return executor.schedule(() -> "Response",
+                                     FUTURE_RESOLVING_TIMEOUT,
+                                     TimeUnit.MILLISECONDS);
+        }
+
+        @QueryHandler(queryName = "myQueryFutureWithMultipleResponses")
+        public Future<List<String>> queryHandler3(String criteria) {
+            return executor.schedule(() -> asList("Response1", "Response2"),
+                                     FUTURE_RESOLVING_TIMEOUT,
+                                     TimeUnit.MILLISECONDS);
         }
     }
 }
