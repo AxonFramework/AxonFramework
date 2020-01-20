@@ -1139,6 +1139,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 } catch (Exception e) {
                     logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
                                 processorName, e.getMessage(), waitTime);
+                    logger.debug("Fetch Segments failed because:", e);
                     doSleepFor(SECONDS.toMillis(waitTime));
                     waitTime = Math.min(waitTime * 2, 60);
 
