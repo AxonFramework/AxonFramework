@@ -29,9 +29,9 @@ import org.axonframework.messaging.MetaData
  * @see CommandCallback
  * @author Stefan Andjelkovic
  */
-internal class CombiningCommandCallback<C, R>(
-    val onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit,
-    val onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit
+internal class ResultDiscriminatorCommandCallback<C, R>(
+    val onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit,
+    val onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit
 ) : CommandCallback<C, R> {
     override fun onResult(commandMessage: CommandMessage<out C>, commandResultMessage: CommandResultMessage<out R>) {
         val metaData = commandResultMessage.metaData ?: MetaData.emptyInstance()

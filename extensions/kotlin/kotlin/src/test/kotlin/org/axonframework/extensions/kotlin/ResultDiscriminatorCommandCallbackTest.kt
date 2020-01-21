@@ -28,11 +28,11 @@ import kotlin.test.Test
 import kotlin.test.fail
 
 /**
- * Tests [CombiningCommandCallback] to verify that it correctly invokes given callbacks.
+ * Tests [ResultDiscriminatorCommandCallback] to verify that it correctly invokes given callbacks.
  *
  * @author Stefan Andjelkovic
  */
-class CombiningCommandCallbackTest {
+class ResultDiscriminatorCommandCallbackTest {
     private val command = ExampleCommand("1")
     private val commandMessage: CommandMessage<ExampleCommand> = GenericCommandMessage.asCommandMessage(command)
     private val responsePayloadUUID = UUID.randomUUID().toString()
@@ -45,7 +45,7 @@ class CombiningCommandCallbackTest {
         val onSuccessMock = mockk<(commandMessage: CommandMessage<out ExampleCommand>, result: String, metaData: MetaData) -> Unit>()
         every { onSuccessMock.invoke(commandMessage, responsePayloadUUID, any()) } returns Unit
 
-        val subject = CombiningCommandCallback<ExampleCommand, String>(
+        val subject = ResultDiscriminatorCommandCallback<ExampleCommand, String>(
             onError = { _, _, _ -> fail("onError should not be called") },
             onSuccess = onSuccessMock
         )
@@ -60,7 +60,7 @@ class CombiningCommandCallbackTest {
         val onSuccessMock = mockk<(commandMessage: CommandMessage<out ExampleCommand>, result: String, metaData: MetaData) -> Unit>()
         every { onSuccessMock.invoke(commandMessage, responsePayloadUUID, any()) } returns Unit
 
-        val subject = CombiningCommandCallback(
+        val subject = ResultDiscriminatorCommandCallback(
             onError = { _, _, _ -> fail("onError should not be called") },
             onSuccess = onSuccessMock
         )
@@ -75,7 +75,7 @@ class CombiningCommandCallbackTest {
         val onError = mockk<(commandMessage: CommandMessage<out ExampleCommand>, exception: Throwable, metaData: MetaData) -> Unit>()
         every { onError.invoke(commandMessage, exceptionalCommandResultMessage.exceptionResult(), any()) } returns Unit
 
-        val subject = CombiningCommandCallback<ExampleCommand, String>(
+        val subject = ResultDiscriminatorCommandCallback<ExampleCommand, String>(
             onError = onError,
             onSuccess = { _, _, _ -> fail("onSuccess should not be called") }
         )
@@ -91,7 +91,7 @@ class CombiningCommandCallbackTest {
         val onError = mockk<(commandMessage: CommandMessage<out ExampleCommand>, exception: Throwable, metaData: MetaData) -> Unit>()
         every { onError.invoke(commandMessage, exceptionalCommandResultMessage.exceptionResult(), any()) } returns Unit
 
-        val subject = CombiningCommandCallback<ExampleCommand, String>(
+        val subject = ResultDiscriminatorCommandCallback<ExampleCommand, String>(
             onError = onError,
             onSuccess = { _, _, _ -> fail("onSuccess should not be called") }
         )

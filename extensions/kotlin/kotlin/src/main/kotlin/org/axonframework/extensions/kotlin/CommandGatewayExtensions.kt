@@ -33,7 +33,7 @@ fun <C : Any, R : Any?> CommandGateway.send(
     command: C,
     onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
     onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
-): Unit = this.send(command, CombiningCommandCallback<C, R>(onError, onSuccess))
+): Unit = this.send(command, ResultDiscriminatorCommandCallback<C, R>(onSuccess, onError))
 
 /**
  * Reified version of [CommandGateway.sendAndWait]
