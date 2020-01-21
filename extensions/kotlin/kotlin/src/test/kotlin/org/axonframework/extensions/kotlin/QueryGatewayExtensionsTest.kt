@@ -119,5 +119,3 @@ class QueryGatewayExtensionsTest {
     }
 
 }
-
-private data class ExampleQuery(val value: Number)

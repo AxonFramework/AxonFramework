@@ -115,5 +115,3 @@ class CommandGatewayExtensionsTest {
         verify { subjectGateway.sendAndWait<Any>(exampleCommand, timeoutInterval, defaultTimeUnit) }
     }
 }
-
-internal data class ExampleCommand(val id: String)
