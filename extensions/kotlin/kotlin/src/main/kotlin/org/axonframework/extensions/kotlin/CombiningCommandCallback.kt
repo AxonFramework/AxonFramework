@@ -27,6 +27,7 @@ import org.axonframework.messaging.MetaData
  * @param [R] the type of result of the command handling
  * @param [C] the type of payload of the command
  * @see CommandCallback
+ * @author Stefan Andjelkovic
  */
 internal class CombiningCommandCallback<C, R>(
     val onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit,

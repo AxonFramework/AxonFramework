@@ -27,6 +27,11 @@ import java.util.*
 import kotlin.test.Test
 import kotlin.test.fail
 
+/**
+ * Tests [CombiningCommandCallback] to verify that it correctly invokes given callbacks.
+ *
+ * @author Stefan Andjelkovic
+ */
 class CombiningCommandCallbackTest {
     private val command = ExampleCommand("1")
     private val commandMessage: CommandMessage<ExampleCommand> = GenericCommandMessage.asCommandMessage(command)

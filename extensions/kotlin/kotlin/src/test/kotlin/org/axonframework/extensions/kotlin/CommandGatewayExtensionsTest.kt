@@ -27,6 +27,11 @@ import org.axonframework.messaging.MetaData
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 
+/**
+ * Tests Command Gateway extensions.
+ *
+ * @author Stefan Andjelkovic
+ */
 class CommandGatewayExtensionsTest {
     private val subjectGateway = mockk<CommandGateway>()
 

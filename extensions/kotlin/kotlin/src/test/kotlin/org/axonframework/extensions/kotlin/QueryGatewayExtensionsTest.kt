@@ -30,6 +30,11 @@ import kotlin.test.Test
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
+/**
+ * Tests Query Gateway extensions.
+ *
+ * @author Stefan Andjelkovic
+ */
 class QueryGatewayExtensionsTest {
 
     private val queryName = ExampleQuery::class.qualifiedName.toString()
