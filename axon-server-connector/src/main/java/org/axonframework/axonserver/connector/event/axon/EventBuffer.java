@@ -125,6 +125,8 @@ public class EventBuffer implements TrackingEventStream {
             peekData = events.poll(Math.min(deadline - now, pollingTimeMillis), TimeUnit.MILLISECONDS);
             if (peekData != null) {
                 consumeListener.accept(1);
+            } else {
+                checkExceptionState();
             }
         }
     }
