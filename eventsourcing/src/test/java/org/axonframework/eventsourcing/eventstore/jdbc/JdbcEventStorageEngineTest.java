@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -122,7 +123,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE sequenceNumber < 0").executeUpdate();
         }
 
-        testSubject.fetchTrackedEvents(null, 100).stream()
+        testSubject.fetchTrackedEvents((TrackingToken) null, 100).stream()
                    .map(i -> (GapAwareTrackingToken) i.trackingToken())
                    .forEach(i -> assertTrue(i.getGaps().size() <= 2));
     }
