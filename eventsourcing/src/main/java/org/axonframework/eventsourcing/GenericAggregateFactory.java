@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 
@@ -46,9 +47,7 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
      *                                        settings prevent the GenericAggregateFactory from calling the
      *                                        constructor.
-     * @deprecated use {@link #GenericAggregateFactory(AggregateModel)} instead
      */
-    @Deprecated
     public GenericAggregateFactory(Class<T> aggregateType) {
         super(aggregateType);
         Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), () -> "Given aggregateType may not be abstract");
@@ -80,17 +79,21 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
     @SuppressWarnings({"unchecked"})
     @Override
     protected T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
-        return aggregateModel.type(firstEvent.getType())
-                             .map(this::newInstance)
-                             .orElseThrow(() -> new IncompatibleAggregateException(format(
-                                     "The [%s] aggregate does not exist.",
-                                     firstEvent.getType())));
+        return aggregateModel().type(firstEvent.getType())
+                               .map(this::newInstance)
+                               // backwards compatibility in cases firstEvent does not contain the aggregate type
+                               .orElseGet(() -> aggregateModel().defaultConstructor(getAggregateType())
+                                                                .map(c -> newInstance(getAggregateType(), c))
+                                                                .orElseThrow(() -> new IncompatibleAggregateException(
+                                                                        format(
+                                                                                "The [%s] aggregate does not exist.",
+                                                                                firstEvent.getType()))));
     }
 
     @SuppressWarnings("unchecked")
-    private T newInstance(Class<?> type) {
+    private T newInstance(Class<?> type, Constructor<?> constructor) {
         try {
-            return (T) ensureAccessible(type.getDeclaredConstructor()).newInstance();
+            return (T) constructor.newInstance();
         } catch (InstantiationException e) {
             throw new IncompatibleAggregateException(format(
                     "The aggregate [%s] does not have a suitable no-arg constructor.",
@@ -104,9 +107,14 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
             throw new IncompatibleAggregateException(format(
                     "The no-arg constructor of [%s] threw an exception on invocation.",
                     type.getSimpleName()), e);
-        } catch (NoSuchMethodException e) {
-            throw new IncompatibleAggregateException(format("The aggregate [%s] doesn't provide a no-arg constructor.",
-                                                            type.getSimpleName()), e);
         }
+    }
+
+    private T newInstance(Class<?> type) {
+        return aggregateModel().defaultConstructor(type)
+                               .map(c -> newInstance(type, c))
+                               .orElseThrow(() -> new IncompatibleAggregateException(format(
+                                       "Aggregate type [%s] does not have a default constructor.",
+                                       type.getSimpleName())));
     }
 }

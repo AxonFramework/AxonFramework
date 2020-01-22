@@ -102,7 +102,7 @@ public interface MessageHandlingMember<T> {
      */
     default Class<?> declaringClass() {
         return unwrap(Member.class).map(Member::getDeclaringClass)
-                                   .orElseThrow(() -> new IllegalStateException(
+                                   .orElseThrow(() -> new UnsupportedOperationException(
                                            "This implementation of MessageHandlingMember does not wrap a "
                                                    + "java.lang.reflect.Member. Please provide a different way of "
                                                    + "getting 'declaringClass' of this MessageHandlingMember."));

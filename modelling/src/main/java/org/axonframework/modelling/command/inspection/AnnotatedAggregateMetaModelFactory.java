@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
  * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the
@@ -185,6 +186,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         private final Map<String, Class<?>> types;
         private final Map<Class<?>, String> declaredTypes;
+        private Map<Class<?>, Constructor<?>> defaultConstructorsPerType;
         private Field identifierField;
         private Field versionField;
         private String routingKey;
@@ -207,6 +209,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             inspectFields();
             prepareHandlers();
             inspectAggregateTypes();
+            initializeDefaultConstructors();
             initialized = true;
             initializing.remove();
         }
@@ -363,6 +366,18 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             }
         }
 
+        private void initializeDefaultConstructors() {
+            defaultConstructorsPerType = new HashMap<>();
+            for (Class<?> type : handlerInspector.getAllHandlers().keySet()) {
+                try {
+                    Constructor<?> constructor = ensureAccessible(type.getDeclaredConstructor());
+                    defaultConstructorsPerType.put(type, constructor);
+                } catch (NoSuchMethodException e) {
+                    // it's fine, not all aggregates are required to have default constructors
+                }
+            }
+        }
+
         @SuppressWarnings("unchecked")
         private AnnotatedAggregateModel<T> runtimeModelOf(T target) {
             return modelOf((Class<? extends T>) target.getClass());
@@ -421,6 +436,11 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         @Override
         public Optional<String> declaredType(Class<?> type) {
             return Optional.ofNullable(declaredTypes.getOrDefault(type, null));
+        }
+
+        @Override
+        public Optional<Constructor<?>> defaultConstructor(Class<?> type) {
+            return Optional.ofNullable(defaultConstructorsPerType.getOrDefault(type, null));
         }
 
         @Override

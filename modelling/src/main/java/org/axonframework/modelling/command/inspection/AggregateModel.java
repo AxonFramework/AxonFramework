@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import java.lang.reflect.Constructor;
 import java.util.Optional;
 
 /**
@@ -53,12 +54,22 @@ public interface AggregateModel<T> extends EntityModel<T> {
     }
 
     /**
-     * Gets the declared type based on given {@code type}.
+     * Gets the declared aggregate type based on given class {@code type}.
      *
      * @param type the type of the aggregate
      * @return the declared aggregate type represented by {@link String}, if exists
      */
     default Optional<String> declaredType(Class<?> type) {
+        return Optional.empty();
+    }
+
+    /**
+     * Gets a default constructor for a given class {@code type}.
+     *
+     * @param type the type of the aggregate
+     * @return the default constructor of this {@code type}, if exists
+     */
+    default Optional<Constructor<?>> defaultConstructor(Class<?> type) {
         return Optional.empty();
     }
 }

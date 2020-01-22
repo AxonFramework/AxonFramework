@@ -76,7 +76,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
-        String type = "StubAggregate";
+        String type = "testAggregate";
         DomainEventMessage event1 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 0L, "Mock contents",
                                                                     MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 1L, "Mock contents",

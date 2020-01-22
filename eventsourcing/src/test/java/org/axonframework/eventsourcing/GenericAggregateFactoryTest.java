@@ -51,7 +51,7 @@ class GenericAggregateFactoryTest {
     @Test
     void testInitializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
-        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>("StubAggregate", aggregate.getIdentifier(),
+        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>("type", aggregate.getIdentifier(),
                                                                                             2, aggregate);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
         assertSame(aggregate, factory.createAggregateRoot(aggregate.getIdentifier(), snapshotMessage));

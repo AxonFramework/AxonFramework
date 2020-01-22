@@ -350,7 +350,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             Class<A> aggregateType = (Class<A>) aggregate.getKey();
             Aggregate aggregateAnnotation = aggregateType.getAnnotation(Aggregate.class);
             AggregateConfigurer<A> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
-            aggregate.getValue().keySet().forEach(aggregateConf::registerSubtype);
+            aggregate.getValue().keySet().forEach(aggregateConf::withSubtype);
             if ("".equals(aggregateAnnotation.repository())) {
                 String repositoryName = lcFirst(aggregateType.getSimpleName()) + "Repository";
                 String factoryName =

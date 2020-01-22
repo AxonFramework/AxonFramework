@@ -129,12 +129,12 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
                 return (T) applicationContext.getBean(prototype(firstEvent.getType()));
             }
 
-            private String prototype(String firstEventType) {
-                return aggregateModel.type(firstEventType)
-                                     .map(subtypes::get)
-                                     .orElseThrow(() -> new IncompatibleAggregateException(format(
-                                             "The [%s] aggregate does not exist.",
-                                             firstEventType)));
+            private String prototype(String aggregateType) {
+                return aggregateModel().type(aggregateType)
+                                       .map(subtypes::get)
+                                       // for backwards compatibility, in cases where firstEvent does not contain
+                                       // the aggregate type
+                                       .orElse(prototypeBeanName);
             }
 
             @Override

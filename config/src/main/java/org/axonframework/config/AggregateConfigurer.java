@@ -392,12 +392,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Registers a subtype of this aggregate to support aggregate polymorphism. This aggregate will be able to handle
-     * commands of provided {@code subtype} as well.
+     * Registers a subtype of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
+     * will be considered part of this aggregate's handlers.
      *
      * @param subtype a subtype in this polymorphic hierarchy
      */
-    public void registerSubtype(Class<? extends A> subtype) {
+    public AggregateConfigurer<A> withSubtype(Class<? extends A> subtype) {
         subtypes.add(subtype);
+        return this;
     }
 }

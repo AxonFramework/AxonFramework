@@ -42,7 +42,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.*;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.Test;
@@ -196,11 +195,9 @@ class DisruptorCommandBusTest {
         SnapshotTrigger snapshotTrigger = mock(SnapshotTrigger.class);
         when(snapshotTriggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
 
-        stubHandler.setRepository(testSubject.createRepository(eventStore,
-                                                               new GenericAggregateFactory<>(
-                                                                       AnnotatedAggregateMetaModelFactory
-                                                                               .inspectAggregate(StubAggregate.class)),
-                                                               snapshotTriggerDefinition));
+        stubHandler.setRepository(
+                testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition));
 
         CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
         CommandCallback mockCallback = mock(CommandCallback.class);

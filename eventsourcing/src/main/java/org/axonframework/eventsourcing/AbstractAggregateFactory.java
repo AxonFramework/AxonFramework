@@ -33,7 +33,7 @@ import java.util.Optional;
 public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T> {
 
     private final Class<T> aggregateBaseType;
-    protected final AggregateModel<T> aggregateModel;
+    private final AggregateModel<T> aggregateModel;
 
     /**
      * Initialize an Aggregate Factory for the given {@code aggregateBaseType}. If a first event is an instance of this
@@ -41,9 +41,7 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
      * a new aggregate root instance based on the first event.
      *
      * @param aggregateBaseType The base type of the aggregate roots created by this instance.
-     * @deprecated use {@link #AbstractAggregateFactory(AggregateModel)} instead
      */
-    @Deprecated
     protected AbstractAggregateFactory(Class<T> aggregateBaseType) {
         this.aggregateBaseType = aggregateBaseType;
         this.aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateBaseType);
@@ -59,6 +57,15 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
     protected AbstractAggregateFactory(AggregateModel<T> aggregateModel) {
         this.aggregateBaseType = (Class<T>) aggregateModel.entityClass();
         this.aggregateModel = aggregateModel;
+    }
+
+    /**
+     * Gets the aggregate model.
+     *
+     * @return the aggregate model
+     */
+    protected AggregateModel<T> aggregateModel() {
+        return aggregateModel;
     }
 
     @Override
