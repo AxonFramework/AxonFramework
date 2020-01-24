@@ -40,15 +40,15 @@ class ConcatenatingDomainEventStreamTest {
     @BeforeEach
     void setUp() {
         event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 0,
-                "Mock contents 1", MetaData.emptyInstance());
+                                                 "Mock contents 1", MetaData.emptyInstance());
         event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 1,
-                "Mock contents 2", MetaData.emptyInstance());
+                                                 "Mock contents 2", MetaData.emptyInstance());
         event3 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 2,
-                "Mock contents 3", MetaData.emptyInstance());
+                                                 "Mock contents 3", MetaData.emptyInstance());
         event4 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 3,
-                "Mock contents 4", MetaData.emptyInstance());
+                                                 "Mock contents 4", MetaData.emptyInstance());
         event5 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 4,
-                "Mock contents 5", MetaData.emptyInstance());
+                                                 "Mock contents 5", MetaData.emptyInstance());
     }
 
     @Test
@@ -91,8 +91,8 @@ class ConcatenatingDomainEventStreamTest {
     @Test
     void testConcatSkipsDuplicateEvents() {
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event2),
-                DomainEventStream.of(event2, event3),
-                DomainEventStream.of(event3, event4));
+                                                                      DomainEventStream.of(event2, event3),
+                                                                      DomainEventStream.of(event3, event4));
 
         assertTrue(concat.hasNext());
         assertSame(event1.getPayload(), concat.next().getPayload());
@@ -110,8 +110,8 @@ class ConcatenatingDomainEventStreamTest {
     @Test
     public void testConcatDoesNotSkipDuplicateSequencesInSameStream() {
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event1, event2),
-                DomainEventStream.of(event2, event2, event3),
-                DomainEventStream.of(event3, event4));
+                                                                      DomainEventStream.of(event2, event2, event3),
+                                                                      DomainEventStream.of(event3, event4));
 
         assertTrue(concat.hasNext());
         assertSame(event1.getPayload(), concat.next().getPayload());
@@ -127,47 +127,46 @@ class ConcatenatingDomainEventStreamTest {
     void testLastKnownSequenceReturnsTheLastEventItsSequence() {
         DomainEventStream lastStream = DomainEventStream.of(event4, event5);
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1),
-                DomainEventStream.of(event2, event3),
-                lastStream);
-        // This is still null if we have not traversed the stream yet.
-        // assertNull(concat.getLastSequenceNumber());
+                                                                      DomainEventStream.of(event2, event3),
+                                                                      lastStream);
 
         assertTrue(concat.hasNext());
+
         assertSame(event1.getPayload(), concat.next().getPayload());
-        assertEquals(lastStream.getLastSequenceNumber(), concat.getLastSequenceNumber());
         assertSame(event2.getPayload(), concat.next().getPayload());
         assertSame(event3.getPayload(), concat.next().getPayload());
         assertSame(event4.getPayload(), concat.next().getPayload());
         assertSame(event5.getPayload(), concat.next().getPayload());
 
         assertFalse(concat.hasNext());
+
+        assertEquals(lastStream.getLastSequenceNumber(), concat.getLastSequenceNumber());
     }
 
     @Test
     void testLastKnownSequenceReturnsTheLastEventItsSequenceEventIfEventsHaveGaps() {
         DomainEventStream lastStream = DomainEventStream.of(event4, event5);
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event3),
-                lastStream);
+                                                                      lastStream);
 
         assertTrue(concat.hasNext());
+
         assertSame(event1.getPayload(), concat.next().getPayload());
-
-        // delegates to the streams
-        assertEquals(lastStream.getLastSequenceNumber(), concat.getLastSequenceNumber());
-
         assertSame(event3.getPayload(), concat.next().getPayload());
-
         assertSame(event4.getPayload(), concat.next().getPayload());
-
         assertSame(event5.getPayload(), concat.next().getPayload());
 
         assertFalse(concat.hasNext());
+
+        assertEquals(lastStream.getLastSequenceNumber(), concat.getLastSequenceNumber());
     }
 
     @Test
-    void testLastSequenceNumberFromDelegates() {
+    void testLastSequenceNumberWhenLastEventIsFilteredOut() {
+        // the last sequence number is the one from the event that is filtered out, e.g. when using upcasters
         DomainEventStream concat = new ConcatenatingDomainEventStream(
-                DomainEventStream.of(Stream.of(event1, event2).filter(x -> x != event2),
+                DomainEventStream.of(
+                        Stream.of(event1, event2).filter(x -> x != event2),
                         () -> event2.getSequenceNumber()));
 
         assertSame(event1, concat.next());
@@ -178,14 +177,14 @@ class ConcatenatingDomainEventStreamTest {
     @Test
     void testMaxLastSequenceNumberFromDelegates() {
         DomainEventStream concat = new ConcatenatingDomainEventStream(
-                DomainEventStream.of(event1),
+                DomainEventStream.of(event1, event3),
                 DomainEventStream.of(event2));
 
         assertSame(event1, concat.next());
-        assertSame(event2, concat.next());
+        assertSame(event3, concat.next());
         assertFalse(concat.hasNext());
 
-        assertEquals(event2.getSequenceNumber(), concat.getLastSequenceNumber());
+        assertEquals(event3.getSequenceNumber(), concat.getLastSequenceNumber());
     }
 
     @Test
