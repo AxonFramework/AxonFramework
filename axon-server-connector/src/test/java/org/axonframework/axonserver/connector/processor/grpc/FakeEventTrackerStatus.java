@@ -17,8 +17,11 @@
 package org.axonframework.axonserver.connector.processor.grpc;
 
 import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
+
+import java.util.OptionalLong;
 
 /**
  * Created by Sara Pellegrini on 01/08/2018.
@@ -70,4 +73,15 @@ public class FakeEventTrackerStatus implements EventTrackerStatus {
     public Throwable getError() {
         return exception;
     }
+
+    @Override
+    public OptionalLong getReplayPosition() {
+        return (replaying) ? trackingToken.position() : OptionalLong.empty();
+    }
+
+    @Override
+    public OptionalLong getResetTokenPosition() {
+        return ReplayToken.getTokenAtReset(trackingToken);
+    }
+
 }

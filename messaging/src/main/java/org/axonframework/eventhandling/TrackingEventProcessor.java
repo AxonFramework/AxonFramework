@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -862,6 +863,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public Throwable getError() {
             return errorState;
+        }
+
+        @Override
+        public OptionalLong getReplayPosition() {
+            return trackingToken.position();
+        }
+
+        @Override
+        public OptionalLong getResetTokenPosition() {
+            return ReplayToken.getTokenAtReset(trackingToken);
         }
 
         private TrackingToken getInternalTrackingToken() {

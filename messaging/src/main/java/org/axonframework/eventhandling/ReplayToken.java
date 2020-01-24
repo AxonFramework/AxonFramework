@@ -100,6 +100,18 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     /**
+     * Return the relative position at which a reset was triggered whether this Segment is still replaying.
+     * In case of a replay ended or no replay an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return the relative position at which a reset was triggered whether this Segment is still replaying
+     */
+    public static OptionalLong getTokenAtReset(TrackingToken trackingToken) {
+        return WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                           .map(rt -> rt.getTokenAtReset().position())
+                .orElse(OptionalLong.empty());
+    }
+
+    /**
      * Initialize a ReplayToken, using the given {@code tokenAtReset} to represent the position at which a reset was
      * triggered. The current token is reset to the initial position.
      * <p>
@@ -253,4 +265,5 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         }
         return OptionalLong.empty();
     }
+
 }
