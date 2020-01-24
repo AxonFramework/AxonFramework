@@ -37,7 +37,8 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.eventhandling.EventUtils.asDomainEventMessage;
 
 /**
- * Class which holds the defaults PreparedStatement for use on {@link JdbcEventStorageEngine}.
+ * Class which holds the default {@link PreparedStatement} builder methods for use in the {@link
+ * JdbcEventStorageEngine}.
  *
  * @author Lucas Campos
  * @since 4.3

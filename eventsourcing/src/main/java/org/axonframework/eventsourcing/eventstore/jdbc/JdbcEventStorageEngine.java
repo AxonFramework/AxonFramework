@@ -174,19 +174,19 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * <li>The {@code extendedGapCheckEnabled} defaults to {@code true}.</li>
-     * <li>The {@code createTokenAt} defaults to {@link Builder#createTokenAt}.</li>
-     * <li>The {@code appendEvents} defaults to {@link Builder#appendEvents}.</li>
-     * <li>The {@code lastSequenceNumberFor} defaults to {@link Builder#lastSequenceNumberFor}.</li>
-     * <li>The {@code createTailToken} defaults to {@link Builder#createTailToken}.</li>
-     * <li>The {@code createHeadToken} defaults to {@link Builder#createHeadToken}.</li>
-     * <li>The {@code appendSnapshot} defaults to {@link Builder#appendSnapshot}.</li>
-     * <li>The {@code deleteSnapshots} defaults to {@link Builder#deleteSnapshots}.</li>
-     * <li>The {@code fetchTrackedEvents} defaults to {@link Builder#fetchTrackedEvents}.</li>
-     * <li>The {@code cleanGaps} defaults to {@link Builder#cleanGaps}.</li>
-     * <li>The {@code readEventDataForAggregate} defaults to {@link Builder#readEventDataForAggregate}.</li>
-     * <li>The {@code readSnapshotData} defaults to {@link Builder#readSnapshotData}.</li>
-     * <li>The {@code readEventDataWithoutGaps} defaults to {@link Builder#readEventDataWithoutGaps}.</li>
-     * <li>The {@code readEventDataWithGaps} defaults to {@link Builder#readEventDataWithGaps}.</li>
+     * <li>The {@code createTokenAt} defaults to {@link JdbcEventStorageEngineStatements#createTokenAt}.</li>
+     * <li>The {@code appendEvents} defaults to {@link JdbcEventStorageEngineStatements#appendEvents}.</li>
+     * <li>The {@code lastSequenceNumberFor} defaults to {@link JdbcEventStorageEngineStatements#lastSequenceNumberFor}.</li>
+     * <li>The {@code createTailToken} defaults to {@link JdbcEventStorageEngineStatements#createTailToken}.</li>
+     * <li>The {@code createHeadToken} defaults to {@link JdbcEventStorageEngineStatements#createHeadToken}.</li>
+     * <li>The {@code appendSnapshot} defaults to {@link JdbcEventStorageEngineStatements#appendSnapshot}.</li>
+     * <li>The {@code deleteSnapshots} defaults to {@link JdbcEventStorageEngineStatements#deleteSnapshots}.</li>
+     * <li>The {@code fetchTrackedEvents} defaults to {@link JdbcEventStorageEngineStatements#fetchTrackedEvents}.</li>
+     * <li>The {@code cleanGaps} defaults to {@link JdbcEventStorageEngineStatements#cleanGaps}.</li>
+     * <li>The {@code readEventDataForAggregate} defaults to {@link JdbcEventStorageEngineStatements#readEventDataForAggregate}.</li>
+     * <li>The {@code readSnapshotData} defaults to {@link JdbcEventStorageEngineStatements#readSnapshotData}.</li>
+     * <li>The {@code readEventDataWithoutGaps} defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithoutGaps}.</li>
+     * <li>The {@code readEventDataWithGaps} defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithGaps}.</li>
      * </ul>
      * <p>
      * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should
@@ -834,6 +834,19 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * <li>The {@code extendedGapCheckEnabled} defaults to {@code true}.</li>
+     * <li>The {@code createTokenAt} defaults to {@link JdbcEventStorageEngineStatements#createTokenAt}.</li>
+     * <li>The {@code appendEvents} defaults to {@link JdbcEventStorageEngineStatements#appendEvents}.</li>
+     * <li>The {@code lastSequenceNumberFor} defaults to {@link JdbcEventStorageEngineStatements#lastSequenceNumberFor}.</li>
+     * <li>The {@code createTailToken} defaults to {@link JdbcEventStorageEngineStatements#createTailToken}.</li>
+     * <li>The {@code createHeadToken} defaults to {@link JdbcEventStorageEngineStatements#createHeadToken}.</li>
+     * <li>The {@code appendSnapshot} defaults to {@link JdbcEventStorageEngineStatements#appendSnapshot}.</li>
+     * <li>The {@code deleteSnapshots} defaults to {@link JdbcEventStorageEngineStatements#deleteSnapshots}.</li>
+     * <li>The {@code fetchTrackedEvents} defaults to {@link JdbcEventStorageEngineStatements#fetchTrackedEvents}.</li>
+     * <li>The {@code cleanGaps} defaults to {@link JdbcEventStorageEngineStatements#cleanGaps}.</li>
+     * <li>The {@code readEventDataForAggregate} defaults to {@link JdbcEventStorageEngineStatements#readEventDataForAggregate}.</li>
+     * <li>The {@code readSnapshotData} defaults to {@link JdbcEventStorageEngineStatements#readSnapshotData}.</li>
+     * <li>The {@code readEventDataWithoutGaps} defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithoutGaps}.</li>
+     * <li>The {@code readEventDataWithGaps} defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithGaps}.</li>
      * </ul>
      * <p>
      * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should
@@ -869,9 +882,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#createTokenAt}. Defaults to {@link
          * JdbcEventStorageEngineStatements#createTokenAt(Connection, EventSchema, Instant)}.
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder createTokenAt(CreateTokenAtStatementBuilder createTokenAt) {
+            assertNonNull(createTokenAt, "createTokenAt may not be null");
             this.createTokenAt = createTokenAt;
             return this;
         }
@@ -881,9 +895,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Serializer)} en}. Defaults to {@link JdbcEventStorageEngineStatements#appendEvents(Connection, EventSchema,
          * Class, List, Serializer)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder appendEvents(AppendEventsStatementBuilder appendEvents) {
+            assertNonNull(appendEvents, "appendEvents may not be null");
             this.appendEvents = appendEvents;
             return this;
         }
@@ -893,9 +908,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * String)}. Defaults to {@link JdbcEventStorageEngineStatements#lastSequenceNumberFor(Connection, EventSchema,
          * String)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder lastSequenceNumberFor(LastSequenceNumberForStatementBuilder lastSequenceNumberFor) {
+            assertNonNull(lastSequenceNumberFor, "lastSequenceNumberFor may not be null");
             this.lastSequenceNumberFor = lastSequenceNumberFor;
             return this;
         }
@@ -904,9 +920,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#createTailToken(Connection)}. Defaults
          * to {@link JdbcEventStorageEngineStatements#createTailToken(Connection, EventSchema)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder createTailToken(CreateTailTokenStatementBuilder createTailToken) {
+            assertNonNull(createTailToken, "createTailToken may not be null");
             this.createTailToken = createTailToken;
             return this;
         }
@@ -915,9 +932,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#createHeadToken(Connection)}. Defaults
          * to {@link JdbcEventStorageEngineStatements#createHeadToken(Connection, EventSchema)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder createHeadToken(CreateHeadTokenStatementBuilder createHeadToken) {
+            assertNonNull(createHeadToken, "createHeadToken may not be null");
             this.createHeadToken = createHeadToken;
             return this;
         }
@@ -927,9 +945,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * DomainEventMessage, Serializer)}. Defaults to {@link JdbcEventStorageEngineStatements#appendSnapshot(Connection,
          * EventSchema, Class, DomainEventMessage, Serializer)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder appendSnapshot(AppendSnapshotStatementBuilder appendSnapshot) {
+            assertNonNull(appendSnapshot, "appendSnapshot may not be null");
             this.appendSnapshot = appendSnapshot;
             return this;
         }
@@ -939,9 +958,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * long)}. Defaults to {@link JdbcEventStorageEngineStatements#deleteSnapshots(Connection, EventSchema, String,
          * long)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder deleteSnapshots(DeleteSnapshotsStatementBuilder deleteSnapshots) {
+            assertNonNull(deleteSnapshots, "deleteSnapshots may not be null");
             this.deleteSnapshots = deleteSnapshots;
             return this;
         }
@@ -950,9 +970,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#fetchTrackedEvents(Connection, long)}.
          * Defaults to {@link JdbcEventStorageEngineStatements#fetchTrackedEvents(Connection, EventSchema, long)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder fetchTrackedEvents(FetchTrackedEventsStatementBuilder fetchTrackedEvents) {
+            assertNonNull(fetchTrackedEvents, "fetchTrackedEvents may not be null");
             this.fetchTrackedEvents = fetchTrackedEvents;
             return this;
         }
@@ -961,9 +982,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#cleanGaps(Connection, SortedSet)}.
          * Defaults to {@link JdbcEventStorageEngineStatements#cleanGaps(Connection, EventSchema, SortedSet)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder cleanGaps(CleanGapsStatementBuilder cleanGaps) {
+            assertNonNull(cleanGaps, "cleanGaps may not be null");
             this.cleanGaps = cleanGaps;
             return this;
         }
@@ -973,9 +995,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * int)}. Defaults to {@link JdbcEventStorageEngineStatements#readEventDataForAggregate(Connection, EventSchema,
          * String, long, int)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder readEventDataForAggregate(ReadEventDataForAggregateStatementBuilder readEventDataForAggregate) {
+            assertNonNull(readEventDataForAggregate, "readEventDataForAggregate may not be null");
             this.readEventDataForAggregate = readEventDataForAggregate;
             return this;
         }
@@ -984,9 +1007,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#readSnapshotData(Connection, String)}.
          * Defaults to {@link JdbcEventStorageEngineStatements#readSnapshotData(Connection, EventSchema, String)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder readSnapshotData(ReadSnapshotDataStatementBuilder readSnapshotData) {
+            assertNonNull(readSnapshotData, "readSnapshotData may not be null");
             this.readSnapshotData = readSnapshotData;
             return this;
         }
@@ -996,9 +1020,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * long, int)}. Defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithoutGaps(Connection,
          * EventSchema, long, int)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder readEventDataWithoutGaps(ReadEventDataWithoutGapsStatementBuilder readEventDataWithoutGaps) {
+            assertNonNull(readEventDataWithoutGaps, "readEventDataWithoutGaps may not be null");
             this.readEventDataWithoutGaps = readEventDataWithoutGaps;
             return this;
         }
@@ -1008,9 +1033,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * int, List)}. Defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithGaps(Connection,
          * EventSchema, long, int, List)}
          *
-         * @return the modified Builder instance
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder readEventDataWithGaps(ReadEventDataWithGapsStatementBuilder readEventDataWithGaps) {
+            assertNonNull(readEventDataWithGaps, "readEventDataWithGaps may not be null");
             this.readEventDataWithGaps = readEventDataWithGaps;
             return this;
         }
