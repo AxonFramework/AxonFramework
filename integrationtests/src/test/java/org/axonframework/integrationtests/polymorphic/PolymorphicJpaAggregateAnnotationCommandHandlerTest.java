@@ -19,8 +19,11 @@ package org.axonframework.integrationtests.polymorphic;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 
+import java.util.HashMap;
+import java.util.Map;
 import javax.persistence.EntityManager;
 
 import static org.mockito.Mockito.*;
@@ -33,13 +36,25 @@ import static org.mockito.Mockito.*;
 public class PolymorphicJpaAggregateAnnotationCommandHandlerTest
         extends AbstractPolymorphicAggregateAnnotationCommandHandlerTestSuite {
 
+    private static final Map<Class<?>, Repository<?>> repositories = new HashMap<>();
+
     @Override
-    public Repository<ParentAggregate> repository(AggregateModel<ParentAggregate> model,
-                                                  EntityManager entityManager) {
-        return GenericJpaRepository.builder(ParentAggregate.class)
-                                   .entityManagerProvider(() -> entityManager)
-                                   .eventBus(mock(EventBus.class))
-                                   .aggregateModel(model)
-                                   .build();
+    public <T> Repository<T> repository(Class<T> aggregateType,
+                                        AggregateModel<T> model,
+                                        EntityManager entityManager) {
+        GenericJpaRepository<T> repository = GenericJpaRepository
+                .builder(aggregateType)
+                .entityManagerProvider(() -> entityManager)
+                .repositoryProvider(new RepositoryProvider() {
+                    @Override
+                    public <R> Repository<R> repositoryFor(Class<R> aggregateType) {
+                        return (Repository<R>) repositories.get(aggregateType);
+                    }
+                })
+                .eventBus(mock(EventBus.class))
+                .aggregateModel(model)
+                .build();
+        repositories.put(aggregateType, repository);
+        return repository;
     }
 }

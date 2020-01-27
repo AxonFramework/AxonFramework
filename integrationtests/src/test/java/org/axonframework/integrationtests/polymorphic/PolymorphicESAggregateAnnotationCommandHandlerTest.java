@@ -20,8 +20,11 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 
+import java.util.HashMap;
+import java.util.Map;
 import javax.persistence.EntityManager;
 
 /**
@@ -32,14 +35,26 @@ import javax.persistence.EntityManager;
 public class PolymorphicESAggregateAnnotationCommandHandlerTest
         extends AbstractPolymorphicAggregateAnnotationCommandHandlerTestSuite {
 
+    private static final Map<Class<?>, Repository<?>> repositories = new HashMap<>();
+
     @Override
-    public Repository<ParentAggregate> repository(AggregateModel<ParentAggregate> model,
-                                                  EntityManager entityManager) {
-        return EventSourcingRepository.builder(ParentAggregate.class)
-                                      .eventStore(EmbeddedEventStore.builder()
-                                                                    .storageEngine(new InMemoryEventStorageEngine())
-                                                                    .build())
-                                      .aggregateModel(model)
-                                      .build();
+    public <T> Repository<T> repository(Class<T> aggregateType,
+                                        AggregateModel<T> model,
+                                        EntityManager entityManager) {
+        EventSourcingRepository<T> repository = EventSourcingRepository
+                .builder(aggregateType)
+                .eventStore(EmbeddedEventStore.builder()
+                                              .storageEngine(new InMemoryEventStorageEngine())
+                                              .build())
+                .repositoryProvider(new RepositoryProvider() {
+                    @Override
+                    public <R> Repository<R> repositoryFor(Class<R> aggregateType) {
+                        return (Repository<R>) repositories.get(aggregateType);
+                    }
+                })
+                .aggregateModel(model)
+                .build();
+        repositories.put(aggregateType, repository);
+        return repository;
     }
 }

@@ -30,5 +30,6 @@
         <class>org.axonframework.integrationtests.polymorphic.ParentAggregate</class>
         <class>org.axonframework.integrationtests.polymorphic.Child1Aggregate</class>
         <class>org.axonframework.integrationtests.polymorphic.Child2Aggregate</class>
+        <class>org.axonframework.integrationtests.polymorphic.SimpleAggregate</class>
     </persistence-unit>
 </persistence>

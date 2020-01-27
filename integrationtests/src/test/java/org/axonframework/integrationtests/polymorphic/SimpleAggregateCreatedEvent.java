@@ -17,15 +17,15 @@
 package org.axonframework.integrationtests.polymorphic;
 
 /**
- * The event triggered when one of two children is created.
+ * The event triggered when {@link SimpleAggregate} is created.
  *
  * @author Milan Savic
  */
-public class CreatedEvent {
+public class SimpleAggregateCreatedEvent {
 
     private final String id;
 
-    public CreatedEvent(String id) {
+    public SimpleAggregateCreatedEvent(String id) {
         this.id = id;
     }
 

@@ -28,6 +28,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AggregateModellingException;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -52,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSuite {
 
+    private CommandBus commandBus;
     private CommandGateway commandGateway;
     private Repository<ParentAggregate> repository;
     private EntityManager entityManager;
@@ -67,28 +69,30 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
         transactionManager = new EntityManagerTransactionManager(entityManager);
 
-        CommandBus commandBus = SimpleCommandBus.builder()
-                                                .transactionManager(transactionManager)
-                                                .build();
+        commandBus = SimpleCommandBus.builder()
+                                     .transactionManager(transactionManager)
+                                     .build();
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)
                                               .build();
 
         AggregateModel<ParentAggregate> model = new AnnotatedAggregateMetaModelFactory()
-                .createModel(ParentAggregate.class, new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class)));
+                .createModel(ParentAggregate.class,
+                             new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class)));
 
-        repository = repository(model, entityManager);
+        repository = repository(ParentAggregate.class, model, entityManager);
 
-        AggregateAnnotationCommandHandler<ParentAggregate> testSubject = AggregateAnnotationCommandHandler.<ParentAggregate>builder()
+        AggregateAnnotationCommandHandler<ParentAggregate> ch = AggregateAnnotationCommandHandler.<ParentAggregate>builder()
                 .aggregateType(ParentAggregate.class)
                 .aggregateModel(model)
                 .repository(repository)
                 .build();
-        testSubject.subscribe(commandBus);
+        ch.subscribe(commandBus);
     }
 
-    public abstract Repository<ParentAggregate> repository(AggregateModel<ParentAggregate> model,
-                                                           EntityManager entityManager);
+    public abstract <T> Repository<T> repository(Class<T> aggregateType,
+                                                 AggregateModel<T> model,
+                                                 EntityManager entityManager);
 
     @AfterEach
     void tearDown() {
@@ -188,6 +192,27 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
         assertThrows(AggregateModellingException.class,
                      () -> new AnnotatedAggregateMetaModelFactory()
                              .createModel(A.class, new HashSet<>(asList(B.class, C.class))));
+    }
+
+    @Test
+    void creationOfPolymorphicAggregate() {
+        AggregateModel<SimpleAggregate> model = new AnnotatedAggregateMetaModelFactory()
+                .createModel(SimpleAggregate.class);
+
+        Repository<SimpleAggregate> repository = repository(SimpleAggregate.class, model, entityManager);
+
+        AggregateAnnotationCommandHandler<SimpleAggregate> ch = AggregateAnnotationCommandHandler.<SimpleAggregate>builder()
+                .aggregateType(SimpleAggregate.class)
+                .aggregateModel(model)
+                .repository(repository)
+                .build();
+        ch.subscribe(commandBus);
+
+        String simpleAggregateId = "id";
+        String child1AggregateId = "child1" + simpleAggregateId;
+        commandGateway.sendAndWait(new CreateSimpleAggregateCommand(simpleAggregateId));
+        String result = commandGateway.sendAndWait(new CommonCommand(child1AggregateId));
+        assertEquals("Child1Aggregate" + child1AggregateId, result);
     }
 
     private void assertAggregateState(String aggregateId, String expectedState) {

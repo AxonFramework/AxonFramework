@@ -17,15 +17,15 @@
 package org.axonframework.integrationtests.polymorphic;
 
 /**
- * The event triggered when one of two children is created.
+ * The command that creates a {@link SimpleAggregate}.
  *
  * @author Milan Savic
  */
-public class CreatedEvent {
+public class CreateSimpleAggregateCommand {
 
     private final String id;
 
-    public CreatedEvent(String id) {
+    public CreateSimpleAggregateCommand(String id) {
         this.id = id;
     }
 

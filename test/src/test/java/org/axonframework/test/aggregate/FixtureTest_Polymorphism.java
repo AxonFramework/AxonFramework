@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
 
 /**
  * Tests {@link AggregateTestFixture} in polymorphic scenarios.
@@ -82,6 +83,16 @@ class FixtureTest_Polymorphism {
                .expectResultMessagePayload(aggregateType + id);
     }
 
+    @Test
+    void testCreatingNewPolymorphicAggregate() {
+        AggregateTestFixture<AggregateD> fixture = new AggregateTestFixture<>(AggregateD.class);
+        String id = "id";
+        fixture.givenNoPriorActivity()
+               .when(new CreateDCommand(id))
+               .expectEvents(new CreatedEvent(id), new DCreatedEvent(id))
+               .expectSuccessfulHandlerExecution();
+    }
+
     private static class CreateBCommand {
 
         @TargetAggregateIdentifier
@@ -98,6 +109,16 @@ class FixtureTest_Polymorphism {
         private final String id;
 
         private CreateCCommand(String id) {
+            this.id = id;
+        }
+    }
+
+    private static class CreateDCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+
+        private CreateDCommand(String id) {
             this.id = id;
         }
     }
@@ -119,6 +140,32 @@ class FixtureTest_Polymorphism {
                 return false;
             }
             CreatedEvent that = (CreatedEvent) o;
+            return Objects.equals(id, that.id);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
+        }
+    }
+
+    private static class DCreatedEvent {
+
+        private final String id;
+
+        private DCreatedEvent(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            DCreatedEvent that = (DCreatedEvent) o;
             return Objects.equals(id, that.id);
         }
 
@@ -173,6 +220,26 @@ class FixtureTest_Polymorphism {
         @CommandHandler
         public AggregateC(CreateCCommand cmd) {
             apply(new CreatedEvent(cmd.id));
+        }
+    }
+
+    private static class AggregateD {
+
+        @AggregateIdentifier
+        private String id;
+
+        public AggregateD() {
+        }
+
+        @CommandHandler
+        public AggregateD(CreateDCommand cmd) throws Exception {
+            apply(new DCreatedEvent(cmd.id));
+            createNew(AggregateA.class, () -> new AggregateB(new CreateBCommand(cmd.id)));
+        }
+
+        @EventSourcingHandler
+        public void on(DCreatedEvent evt) {
+            this.id = evt.id;
         }
     }
 }
