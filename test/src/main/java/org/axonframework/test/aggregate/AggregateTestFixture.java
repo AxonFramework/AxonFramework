@@ -118,6 +118,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private static final Logger logger = LoggerFactory.getLogger(AggregateTestFixture.class);
 
     private final Class<T> aggregateType;
+    private final Set<Class<? extends T>> subtypes = new HashSet<>();
     private final SimpleCommandBus commandBus;
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
     private final List<MessageHandlerInterceptor<CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
@@ -158,6 +159,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         registeredParameterResolverFactories.add(ClasspathParameterResolverFactory.forClass(aggregateType));
         registeredHandlerDefinitions.add(ClasspathHandlerDefinition.forClass(aggregateType));
         registeredHandlerEnhancerDefinitions.add(ClasspathHandlerEnhancerDefinition.forClass(aggregateType));
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerSubtype(Class<? extends T> subtype) {
+        this.subtypes.add(subtype);
+        return this;
     }
 
     @Override
@@ -307,6 +314,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         DefaultUnitOfWork.startAndGet(null).execute(() -> {
             if (repository == null) {
                 registerRepository(new InMemoryRepository<>(aggregateType,
+                                                            subtypes,
                                                             eventStore,
                                                             getParameterResolverFactory(),
                                                             getHandlerDefinition(),
@@ -335,12 +343,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         for (Object event : domainEvents) {
             Object payload = event;
             MetaData metaData = null;
+            String type = aggregateType.getSimpleName();
             if (event instanceof Message) {
                 payload = ((Message<?>) event).getPayload();
                 metaData = ((Message<?>) event).getMetaData();
             }
+            if (event instanceof DomainEventMessage) {
+                type = ((DomainEventMessage<?>) event).getType();
+            }
             GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
-                    aggregateType.getSimpleName(),
+                    type,
                     aggregateIdentifier,
                     sequenceNumber++,
                     new GenericMessage<>(payload, metaData),
@@ -480,6 +492,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         if (!explicitCommandHandlersSet) {
             AggregateAnnotationCommandHandler.Builder<T> builder = AggregateAnnotationCommandHandler.<T>builder()
                     .aggregateType(aggregateType)
+                    .aggregateModel(aggregateModel())
                     .parameterResolverFactory(getParameterResolverFactory())
                     .repository(this.repository);
 
@@ -495,13 +508,21 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
             registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateType))
+                                                      .aggregateModel(aggregateModel())
+                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateModel()))
                                                       .eventStore(eventStore)
                                                       .parameterResolverFactory(getParameterResolverFactory())
                                                       .handlerDefinition(getHandlerDefinition())
                                                       .repositoryProvider(getRepositoryProvider())
                                                       .build());
         }
+    }
+
+    private AggregateModel<T> aggregateModel() {
+        return AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType,
+                                                                   getParameterResolverFactory(),
+                                                                   getHandlerDefinition(),
+                                                                   subtypes);
     }
 
     private ParameterResolverFactory getParameterResolverFactory() {
@@ -730,12 +751,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         private AnnotatedAggregate<T> storedAggregate;
 
         protected InMemoryRepository(Class<T> aggregateType,
+                                     Set<Class<? extends T>> subtypes,
                                      EventBus eventBus,
                                      ParameterResolverFactory parameterResolverFactory,
                                      HandlerDefinition handlerDefinition,
                                      RepositoryProvider repositoryProvider) {
             this.aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(
-                    aggregateType, parameterResolverFactory, handlerDefinition
+                    aggregateType, parameterResolverFactory, handlerDefinition, subtypes
             );
             this.eventBus = eventBus;
             this.repositoryProvider = repositoryProvider;

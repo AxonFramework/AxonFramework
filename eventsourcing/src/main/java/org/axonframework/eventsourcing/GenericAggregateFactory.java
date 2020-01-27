@@ -66,6 +66,11 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
      */
     public GenericAggregateFactory(AggregateModel<T> aggregateModel) {
         super(aggregateModel);
+        if (!aggregateModel.allTypesHaveDefaultConstructor()) {
+            throw new IncompatibleAggregateException(format(
+                    "The aggregate (or some of its subtypes) [%s] doesn't provide a no-arg constructor.",
+                    aggregateModel.entityClass().getSimpleName()));
+        }
     }
 
     /**

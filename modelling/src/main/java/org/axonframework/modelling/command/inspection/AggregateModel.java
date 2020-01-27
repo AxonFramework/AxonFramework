@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,5 +71,15 @@ public interface AggregateModel<T> extends EntityModel<T> {
      */
     default Optional<Constructor<?>> defaultConstructor(Class<?> type) {
         return Optional.empty();
+    }
+
+    /**
+     * Checks whether all types in this aggregate have a default constructor (aggregate types defined by an interface
+     * are excluded from this check).
+     *
+     * @return whether all types in this aggregate have a default constructor
+     */
+    default boolean allTypesHaveDefaultConstructor() {
+        return false;
     }
 }

@@ -29,15 +29,14 @@ import org.axonframework.modelling.command.AggregateVersion;
 import org.axonframework.modelling.command.EntityId;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
@@ -289,7 +288,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                            .map(Optional::get)
                            .filter(CommandMessageHandlingMember::isFactoryHandler)
                            .map(h -> (CommandMessageHandlingMember<? super T>) h)
-                           .collect(Collectors.toList());
+                           .collect(toList());
         }
 
         private void inspectAggregateTypes() {
@@ -441,6 +440,16 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         @Override
         public Optional<Constructor<?>> defaultConstructor(Class<?> type) {
             return Optional.ofNullable(defaultConstructorsPerType.getOrDefault(type, null));
+        }
+
+        @Override
+        public boolean allTypesHaveDefaultConstructor() {
+            return defaultConstructorsPerType.size() == handlerInspector.getAllHandlers()
+                                                                        .keySet()
+                                                                        .stream()
+                                                                        .filter(c -> !Modifier
+                                                                                .isInterface(c.getModifiers()))
+                                                                        .count();
         }
 
         @Override
