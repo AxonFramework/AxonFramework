@@ -18,7 +18,6 @@ package org.axonframework.extensions.kotlin
 import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.MetaData
-import java.util.concurrent.TimeUnit
 
 /**
  * Callback-style [CommandGateway.send] with dedicated on-success and on-error functions
@@ -34,25 +33,3 @@ fun <C : Any, R : Any?> CommandGateway.send(
     onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
     onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
 ): Unit = this.send(command, ResultDiscriminatorCommandCallback<C, R>(onSuccess, onError))
-
-/**
- * Reified version of [CommandGateway.sendAndWait]
- * @param command The command to send
- * @param [R] The expected type of return value
- * @return The result of the command handler execution
- * @throws org.axonframework.commandhandling.CommandExecutionException when command execution threw a checked exception
- */
-inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any): R =
-    this.sendAndWait<R>(command)
-
-/**
- * Reified version of [CommandGateway.sendAndWait] with a timeout (defaulting to [TimeUnit.MILLISECONDS] unit)
- * @param command The command to send
- * @param timeout The maximum time to wait
- * @param unit The time unit of the timeout argument. Defaults to [TimeUnit.MILLISECONDS]
- * @param [R] The expected type of return value
- * @return The result of the command handler execution
- * @throws org.axonframework.commandhandling.CommandExecutionException when command execution threw a checked exception
- */
-inline fun <reified R : Any?> CommandGateway.sendAndWaitWithResponse(command: Any, timeout: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): R =
-    this.sendAndWait<R>(command, timeout, unit)
