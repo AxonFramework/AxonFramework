@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,10 +100,10 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     /**
-     * Return the relative position at which a reset was triggered whether this Segment is still replaying.
-     * In case of a replay ended or no replay an {@code OptionalLong.empty()} will be returned.
+     * Return the relative position at which a reset was triggered for this Segment.
+     * In case a replay finished or no replay is active, an {@code OptionalLong.empty()} will be returned.
      *
-     * @return the relative position at which a reset was triggered whether this Segment is still replaying
+     * @return the relative position at which a reset was triggered for this Segment
      */
     public static OptionalLong getTokenAtReset(TrackingToken trackingToken) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)

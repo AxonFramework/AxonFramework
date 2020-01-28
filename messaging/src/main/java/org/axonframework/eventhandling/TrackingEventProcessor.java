@@ -867,11 +867,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         @Override
         public OptionalLong getReplayPosition() {
-            return trackingToken.position();
+            return WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                               .map(ReplayToken::position)
+                               .orElse(OptionalLong.empty());
         }
 
         @Override
-        public OptionalLong getResetTokenPosition() {
+        public OptionalLong getResetPosition() {
             return ReplayToken.getTokenAtReset(trackingToken);
         }
 

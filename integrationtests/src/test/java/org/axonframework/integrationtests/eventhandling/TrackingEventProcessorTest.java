@@ -701,11 +701,11 @@ class TrackingEventProcessorTest {
         assertEquals(handled.subList(4, 8), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         assertTrue(testSubject.processingStatus().get(0).getReplayPosition().isPresent());
-        assertTrue(testSubject.processingStatus().get(0).getResetTokenPosition().isPresent());
+        assertTrue(testSubject.processingStatus().get(0).getResetPosition().isPresent());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(0).getReplayPosition().isPresent()));
-        assertWithin(5, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getResetTokenPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getReplayPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getResetPosition().isPresent()));
     }
 
     @Test
@@ -737,11 +737,11 @@ class TrackingEventProcessorTest {
         assertEquals(handled.subList(4, 6), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         assertTrue(testSubject.processingStatus().get(0).getReplayPosition().isPresent());
-        assertTrue(testSubject.processingStatus().get(0).getResetTokenPosition().isPresent());
+        assertTrue(testSubject.processingStatus().get(0).getResetPosition().isPresent());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(0).getReplayPosition().isPresent()));
-        assertWithin(5, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getResetTokenPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getReplayPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getResetPosition().isPresent()));
     }
 
     @Test
@@ -790,11 +790,11 @@ class TrackingEventProcessorTest {
         assertEquals(handled.subList(2, 4), handledInRedelivery);
         assertTrue(testSubject.processingStatus().get(0).isReplaying());
         assertTrue(testSubject.processingStatus().get(0).getReplayPosition().isPresent());
-        assertTrue(testSubject.processingStatus().get(0).getResetTokenPosition().isPresent());
+        assertTrue(testSubject.processingStatus().get(0).getResetPosition().isPresent());
         eventBus.publish(createEvents(1));
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(0).getReplayPosition().isPresent()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getResetTokenPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getReplayPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).getResetPosition().isPresent()));
     }
 
     @Test
@@ -818,8 +818,8 @@ class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         assertEquals(0, handledInRedelivery.size());
         assertFalse(testSubject.processingStatus().get(0).isReplaying());
-        assertTrue(testSubject.processingStatus().get(0).getReplayPosition().isPresent());
-        assertFalse(testSubject.processingStatus().get(0).getResetTokenPosition().isPresent());
+        assertFalse(testSubject.processingStatus().get(0).getReplayPosition().isPresent());
+        assertFalse(testSubject.processingStatus().get(0).getResetPosition().isPresent());
     }
 
     @SuppressWarnings("unchecked")
