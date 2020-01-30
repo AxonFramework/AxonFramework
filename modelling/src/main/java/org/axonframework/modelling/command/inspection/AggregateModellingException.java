@@ -19,7 +19,7 @@ package org.axonframework.modelling.command.inspection;
 import org.axonframework.common.AxonConfigurationException;
 
 /**
- * Thrown if Aggregate model is not valid.
+ * Thrown if an aggregate model is invalid.
  *
  * @author Milan Savic
  * @since 4.3
