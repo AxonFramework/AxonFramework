@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.modelling.command.AggregateAlreadyExistsException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.junit.jupiter.api.Test;
@@ -46,10 +47,19 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @DirtiesContext
     @Test
+    public void testUniqueKeyConstraintOnFirstEventIdentifier() {
+        assertThrows(
+                AggregateAlreadyExistsException.class,
+                () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0))
+        );
+    }
+
+    @DirtiesContext
+    @Test
     public void testUniqueKeyConstraintOnEventIdentifier() {
         assertThrows(
                 ConcurrencyException.class,
-                () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0))
+                () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 1), createEvent("id", "otherAggregate", 1))
         );
     }
 
@@ -80,10 +90,19 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @DirtiesContext
     @Test
+    public void testStoreDuplicateFirstEventWithExceptionTranslator() {
+        assertThrows(
+                AggregateAlreadyExistsException.class,
+                () -> testSubject.appendEvents(createEvent(0), createEvent(0))
+        );
+    }
+
+    @DirtiesContext
+    @Test
     public void testStoreDuplicateEventWithExceptionTranslator() {
         assertThrows(
                 ConcurrencyException.class,
-                () -> testSubject.appendEvents(createEvent(0), createEvent(0))
+                () -> testSubject.appendEvents(createEvent(1), createEvent(1))
         );
     }
 
