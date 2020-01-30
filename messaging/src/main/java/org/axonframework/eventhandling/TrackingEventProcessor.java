@@ -850,6 +850,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
 
         @Override
+        public boolean isMerging() {
+            return MergedTrackingToken.isMergeInProgress(trackingToken);
+        }
+
+        @Override
         public TrackingToken getTrackingToken() {
             return WrappedToken.unwrapLowerBound(trackingToken);
         }

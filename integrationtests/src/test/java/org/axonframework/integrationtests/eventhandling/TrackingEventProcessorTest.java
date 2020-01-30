@@ -966,7 +966,10 @@ class TrackingEventProcessorTest {
         }
 
         assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed");
+        waitForProcessingStatus(0, EventTrackerStatus::isMerging);
+
         waitForSegmentStart(0);
+
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
     }
 
@@ -983,10 +986,15 @@ class TrackingEventProcessorTest {
         testSubject.start();
         waitForActiveThreads(2);
 
+        assertFalse(testSubject.processingStatus().get(0).isMerging());
+
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
                 () -> assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed")
         );
+
+        waitForProcessingStatus(0, EventTrackerStatus::isMerging);
+
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
 
@@ -997,6 +1005,7 @@ class TrackingEventProcessorTest {
                         "Expected all 10 messages to be handled"
                 )
         );
+
         Thread.sleep(100);
         assertEquals(10, handledEvents.size(), "Number of handler invocations doesn't match number of unique events");
     }
@@ -1025,6 +1034,8 @@ class TrackingEventProcessorTest {
         );
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForSegmentStart(0);
+
+        assertTrue(testSubject.processingStatus().get(0).isMerging());
 
         while (!Optional.ofNullable(testSubject.processingStatus().get(0))
                         .map(EventTrackerStatus::isCaughtUp)
@@ -1064,6 +1075,8 @@ class TrackingEventProcessorTest {
         publishEvents(20);
 
         waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
+
+        assertFalse(testSubject.processingStatus().get(0).isMerging());
 
         assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed");
         assertArrayEquals(new int[]{0, 1}, tokenStore.fetchSegments(testSubject.getName()));
@@ -1256,6 +1269,9 @@ class TrackingEventProcessorTest {
         testSubject.releaseSegment(0);
         testSubject.releaseSegment(2);
 
+        testSubject.processingStatus().values().forEach(status -> assertFalse(status::isMerging));
+
+
         while (testSubject.processingStatus().size() > 1) {
             Thread.sleep(10);
         }
@@ -1277,6 +1293,8 @@ class TrackingEventProcessorTest {
         CompletableFuture<Boolean> actual = testSubject.mergeSegment(0);
 
         assertFalse(actual.join(), "Expected merge to be rejected");
+        waitForProcessingNotInStatus(0, EventTrackerStatus::isMerging);
+
     }
 
     /**
@@ -1352,6 +1370,12 @@ class TrackingEventProcessorTest {
                         .orElse(false)) {
             Thread.sleep(10);
         }
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void waitForProcessingNotInStatus(int segmentId,
+                                              Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
+        waitForProcessingStatus(segmentId, expectedStatus.negate());
     }
 
     private void publishEvents(int nrOfEvents) {

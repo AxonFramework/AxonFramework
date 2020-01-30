@@ -76,6 +76,16 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
         this.upperSegmentAdvanced = upperSegmentAdvanced;
     }
 
+    /**
+     * Indicates whether the given {@code trackingToken} represents a position that is part of a merge.
+     *
+     * @param trackingToken The token to verify
+     * @return {@code true} if the token indicates a merge
+     */
+    public static boolean isMergeInProgress(TrackingToken trackingToken) {
+        return WrappedToken.unwrap(trackingToken, MergedTrackingToken.class).isPresent();
+    }
+
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
         TrackingToken newLowerSegmentToken = lowerSegmentToken == null ? null : lowerSegmentToken.lowerBound(other);

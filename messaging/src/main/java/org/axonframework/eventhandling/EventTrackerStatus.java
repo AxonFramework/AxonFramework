@@ -50,6 +50,13 @@ public interface EventTrackerStatus {
     boolean isReplaying();
 
     /**
+     * Indicates whether this Segment is still merging events.
+     *
+     * @return {@code true} if this segment is merging events, otherwise {@code false}
+     */
+    boolean isMerging();
+
+    /**
      * The tracking token of the last event that has been seen by this Segment.
      * <p>
      * The returned tracking token represents the position of this segment in the event stream. In case of a recent
