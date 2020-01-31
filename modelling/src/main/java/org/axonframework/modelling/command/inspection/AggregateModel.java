@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import java.lang.reflect.Constructor;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Specialized EntityModel that describes the capabilities and properties of an aggregate root of type {@code T}.
@@ -64,22 +64,11 @@ public interface AggregateModel<T> extends EntityModel<T> {
     }
 
     /**
-     * Gets a default constructor for a given class {@code type}.
+     * Gets all types (concrete aggregate classes) of this aggregate.
      *
-     * @param type the type of the aggregate
-     * @return the default constructor of this {@code type}, if exists
+     * @return all types (concrete aggregate classes) of this aggregate
      */
-    default Optional<Constructor<?>> defaultConstructor(Class<?> type) {
-        return Optional.empty();
-    }
-
-    /**
-     * Checks whether all types in this aggregate have a default constructor (aggregate types defined by an interface
-     * are excluded from this check).
-     *
-     * @return whether all types in this aggregate have a default constructor
-     */
-    default boolean allTypesHaveDefaultConstructor() {
-        return false;
+    default Stream<Class<?>> types() {
+        return Stream.empty();
     }
 }

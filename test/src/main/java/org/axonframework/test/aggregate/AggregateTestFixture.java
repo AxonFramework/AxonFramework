@@ -161,9 +161,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         registeredHandlerEnhancerDefinitions.add(ClasspathHandlerEnhancerDefinition.forClass(aggregateType));
     }
 
+    @SafeVarargs
     @Override
-    public FixtureConfiguration<T> registerSubtype(Class<? extends T> subtype) {
-        this.subtypes.add(subtype);
+    public final FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes) {
+        this.subtypes.addAll(Arrays.asList(subtypes));
         return this;
     }
 
@@ -507,9 +508,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
+            AggregateModel<T> aggregateModel = aggregateModel();
             registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                      .aggregateModel(aggregateModel())
-                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateModel()))
+                                                      .aggregateModel(aggregateModel)
+                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateModel))
                                                       .eventStore(eventStore)
                                                       .parameterResolverFactory(getParameterResolverFactory())
                                                       .handlerDefinition(getHandlerDefinition())

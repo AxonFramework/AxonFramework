@@ -41,6 +41,8 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -392,13 +394,26 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Registers a subtype of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
-     * will be considered part of this aggregate's handlers.
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this
+     * subtypes will be considered part of this aggregate's handlers.
      *
-     * @param subtype a subtype in this polymorphic hierarchy
+     * @param subtypes subtypes in this polymorphic hierarchy
+     * @return this configurer for fluent interfacing
      */
-    public AggregateConfigurer<A> withSubtype(Class<? extends A> subtype) {
-        subtypes.add(subtype);
+    @SafeVarargs
+    public final AggregateConfigurer<A> withSubtype(Class<? extends A>... subtypes) {
+        return withSubtype(Arrays.asList(subtypes));
+    }
+
+    /**
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this
+     * subtypes will be considered part of this aggregate's handlers.
+     *
+     * @param subtypes subtypes in this polymorphic hierarchy
+     * @return this configurer for fluent interfacing
+     */
+    public AggregateConfigurer<A> withSubtype(Collection<Class<? extends A>> subtypes) {
+        this.subtypes.addAll(subtypes);
         return this;
     }
 }

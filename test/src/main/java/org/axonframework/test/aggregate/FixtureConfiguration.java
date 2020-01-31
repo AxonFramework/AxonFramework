@@ -100,10 +100,10 @@ public interface FixtureConfiguration<T> {
      * Registers a subtype of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
      * will be considered part of this aggregate's handlers.
      *
-     * @param subtype a subtype in this polymorphic hierarchy
+     * @param subtypes subtypes in this polymorphic hierarchy
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerSubtype(Class<? extends T> subtype);
+    FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes);
 
     /**
      * Registers an arbitrary {@code repository} with the fixture. The repository must be wired

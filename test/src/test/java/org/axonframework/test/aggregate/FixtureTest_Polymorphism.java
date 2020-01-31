@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.test.matchers.PredicateMatcher;
+import org.axonframework.test.matchers.Matchers;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -45,8 +45,7 @@ class FixtureTest_Polymorphism {
 
     @BeforeEach
     void setUp() {
-        fixture = new AggregateTestFixture<>(AggregateA.class).registerSubtype(AggregateB.class)
-                                                              .registerSubtype(AggregateC.class);
+        fixture = new AggregateTestFixture<>(AggregateA.class).withSubtypes(AggregateB.class, AggregateC.class);
     }
 
     private static Stream<Arguments> provideForCreationalTest() {
@@ -62,7 +61,7 @@ class FixtureTest_Polymorphism {
         String id = "id";
         fixture.givenNoPriorActivity()
                .when(commandBuilder.apply(id))
-               .expectEventsMatching(new PredicateMatcher<>(events -> {
+               .expectEventsMatching(Matchers.predicate(events -> {
                    DomainEventMessage<CreatedEvent> evt = (DomainEventMessage<CreatedEvent>) events.get(0);
                    return evt.getType().equals(aggregateType)
                            && events.size() == 1
