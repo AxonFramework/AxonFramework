@@ -20,6 +20,8 @@ import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 
+import java.util.OptionalLong;
+
 /**
  * Created by Sara Pellegrini on 01/08/2018.
  * sara.pellegrini@gmail.com
@@ -29,14 +31,16 @@ public class FakeEventTrackerStatus implements EventTrackerStatus {
     private final Segment segment;
     private final boolean caughtUp;
     private final boolean replaying;
+    private final boolean merging;
     private final TrackingToken trackingToken;
     private final Throwable exception;
 
     public FakeEventTrackerStatus(Segment segment, boolean caughtUp, boolean replaying,
-                                  TrackingToken trackingToken, Throwable exception) {
+                                  boolean merging, TrackingToken trackingToken, Throwable exception) {
         this.segment = segment;
         this.caughtUp = caughtUp;
         this.replaying = replaying;
+        this.merging = merging;
         this.trackingToken = trackingToken;
         this.exception = exception;
     }
@@ -54,6 +58,16 @@ public class FakeEventTrackerStatus implements EventTrackerStatus {
     @Override
     public boolean isReplaying() {
         return replaying;
+    }
+
+    @Override
+    public boolean isMerging() {
+        return merging;
+    }
+
+    @Override
+    public OptionalLong mergeCompletedPosition() {
+        return OptionalLong.empty();
     }
 
     @Override

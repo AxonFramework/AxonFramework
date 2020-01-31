@@ -39,8 +39,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TrackingEventProcessorInfoMessageTest {
     private Map<Integer, EventTrackerStatus> processingStatus = new HashMap<Integer, EventTrackerStatus>(){{
-        this.put(0, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[0], true, false, new GlobalSequenceTrackingToken(100), null));
-        this.put(1, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[1], true, false, new GlobalSequenceTrackingToken(100), new RuntimeException("Testing")));
+        this.put(0, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[0], true, false,
+                                               false,
+                                               new GlobalSequenceTrackingToken(100), null));
+        this.put(1, new FakeEventTrackerStatus(ROOT_SEGMENT.split()[1], true, false,
+                                               false,
+                                               new GlobalSequenceTrackingToken(100), new RuntimeException("Testing")));
     }};
 
     @Test
