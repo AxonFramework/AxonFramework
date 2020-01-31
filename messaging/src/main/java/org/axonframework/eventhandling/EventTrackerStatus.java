@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+
+import java.util.OptionalLong;
 
 /**
  * Interface describing the status of a Segment of a TrackingProcessor.
@@ -55,6 +57,14 @@ public interface EventTrackerStatus {
      * @return {@code true} if this segment is merging events, otherwise {@code false}
      */
     boolean isMerging();
+
+    /**
+     * Return the estimated relative token position this Segment will have after a merge operation is complete.
+     * In case no estimation can be given or no merge in progress, an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return return the estimated relative position this Segment will reach after a merge operation is complete.
+     */
+    OptionalLong mergeCompletedPosition();
 
     /**
      * The tracking token of the last event that has been seen by this Segment.

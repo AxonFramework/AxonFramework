@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,28 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
      */
     public static boolean isMergeInProgress(TrackingToken trackingToken) {
         return WrappedToken.unwrap(trackingToken, MergedTrackingToken.class).isPresent();
+    }
+
+    /**
+     * Return the estimated relative token position this Segment will have after a merge operation is complete.
+     * In case no estimation can be given or no merge in progress, an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return return the estimated relative position this Segment will reach after a merge operation is complete.
+     */
+    public static OptionalLong mergePosition(TrackingToken trackingToken) {
+        return WrappedToken.unwrap(trackingToken, MergedTrackingToken.class)
+                           .map(m -> m.mergePosition())
+                           .filter(p -> p != Long.MIN_VALUE)
+                           .map(OptionalLong::of)
+                           .orElse(OptionalLong.empty());
+    }
+
+    private long mergePosition() {
+        if (lowerSegmentToken.position().isPresent() && upperSegmentToken.position().isPresent()) {
+            return Math.max(mergePosition(lowerSegmentToken).orElse(lowerSegmentToken.position().getAsLong()),
+                            mergePosition(upperSegmentToken).orElse(upperSegmentToken.position().getAsLong()));
+        }
+        return Long.MIN_VALUE;
     }
 
     @Override

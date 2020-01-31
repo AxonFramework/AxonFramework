@@ -971,6 +971,9 @@ class TrackingEventProcessorTest {
         waitForSegmentStart(0);
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
+
+        publishEvents(1);
+        waitForProcessingNotInStatus(0, EventTrackerStatus::isMerging);
     }
 
     @Test
@@ -987,6 +990,7 @@ class TrackingEventProcessorTest {
         waitForActiveThreads(2);
 
         assertFalse(testSubject.processingStatus().get(0).isMerging());
+        assertFalse(testSubject.processingStatus().get(0).mergeCompletedPosition().isPresent());
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
@@ -994,6 +998,7 @@ class TrackingEventProcessorTest {
         );
 
         waitForProcessingStatus(0, EventTrackerStatus::isMerging);
+        assertTrue(testSubject.processingStatus().get(0).mergeCompletedPosition().isPresent());
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
@@ -1008,6 +1013,10 @@ class TrackingEventProcessorTest {
 
         Thread.sleep(100);
         assertEquals(10, handledEvents.size(), "Number of handler invocations doesn't match number of unique events");
+
+        publishEvents(1);
+        waitForProcessingNotInStatus(0, EventTrackerStatus::isMerging);
+        assertFalse(testSubject.processingStatus().get(0).mergeCompletedPosition().isPresent());
     }
 
     @Test
@@ -1034,8 +1043,6 @@ class TrackingEventProcessorTest {
         );
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForSegmentStart(0);
-
-        assertTrue(testSubject.processingStatus().get(0).isMerging());
 
         while (!Optional.ofNullable(testSubject.processingStatus().get(0))
                         .map(EventTrackerStatus::isCaughtUp)
@@ -1270,7 +1277,6 @@ class TrackingEventProcessorTest {
         testSubject.releaseSegment(2);
 
         testSubject.processingStatus().values().forEach(status -> assertFalse(status::isMerging));
-
 
         while (testSubject.processingStatus().size() > 1) {
             Thread.sleep(10);
