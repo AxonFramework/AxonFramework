@@ -40,6 +40,14 @@ public class AxonServerConfiguration {
     private static final String DEFAULT_CONTEXT = "default";
 
     /**
+     * Whether (automatic) configuration of the AxonServer Connector is enabled. When {@code false}, the connector will
+     * not be implicitly be configured. Defaults to {@code true}.
+     * <p>
+     * Note that this setting will only affect automatic configuration by Application Containers (such as Spring).
+     */
+    private boolean enabled = true;
+
+    /**
      * Comma separated list of AxonServer servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
      * specified, default port 8123 is used.
      */
@@ -222,6 +230,14 @@ public class AxonServerConfiguration {
     public AxonServerConfiguration() {
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public String getServers() {
         return servers;
     }
@@ -316,7 +332,7 @@ public class AxonServerConfiguration {
         return Arrays.stream(serverArr).map(server -> {
             String[] s = server.trim().split(":");
             if (s.length > 1) {
-                return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(Integer.valueOf(s[1])).build();
+                return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(Integer.parseInt(s[1])).build();
             }
             return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(DEFAULT_GRPC_PORT).build();
         }).collect(Collectors.toList());
