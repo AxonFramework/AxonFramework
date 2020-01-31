@@ -3,13 +3,13 @@ package org.axonframework.modelling.command;
 import org.axonframework.common.AxonNonTransientException;
 
 /**
- * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were creating the
- * same aggregate.
+ * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were using the
+ * same aggregate identifier to create an aggregate.
  *
  * @author Lucas Campos
  * @since 4.3
  */
-public class AggregateAlreadyExistsException extends AxonNonTransientException {
+public class AggregateIdentifierAlreadyExistsException extends AxonNonTransientException {
 
     private static final long serialVersionUID = -4514732518167514479L;
 
@@ -18,7 +18,7 @@ public class AggregateAlreadyExistsException extends AxonNonTransientException {
      *
      * @param message a detailed message of the cause of the exception
      */
-    public AggregateAlreadyExistsException(String message) {
+    public AggregateIdentifierAlreadyExistsException(String message) {
         super(message);
     }
 
@@ -28,7 +28,7 @@ public class AggregateAlreadyExistsException extends AxonNonTransientException {
      * @param message a detailed message of the cause of the exception
      * @param cause   the original cause of this exception
      */
-    public AggregateAlreadyExistsException(String message, Throwable cause) {
+    public AggregateIdentifierAlreadyExistsException(String message, Throwable cause) {
         super(message, cause);
     }
 }

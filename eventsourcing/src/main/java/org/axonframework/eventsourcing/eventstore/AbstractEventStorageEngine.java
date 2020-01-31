@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.modelling.command.AggregateAlreadyExistsException;
+import org.axonframework.modelling.command.AggregateIdentifierAlreadyExistsException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -115,7 +115,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         String eventDescription = buildExceptionMessage(failedEvent);
         if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
             if (isFirstDomainEvent(failedEvent)) {
-                throw new AggregateAlreadyExistsException(eventDescription, exception);
+                throw new AggregateIdentifierAlreadyExistsException(eventDescription, exception);
             }
             throw new ConcurrencyException(eventDescription, exception);
         } else {
@@ -124,7 +124,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     }
 
     /**
-     * Check whether or not this is the first event, which means we are trying to create the aggregate.
+     * Check whether or not this is the first event, which means we tried to create an aggregate through the given
+     * {@code failedEvent}.
      *
      * @param failedEvent the event to be checked
      * @return true in case of first event, false otherwise
@@ -139,7 +140,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     /**
      * Build an exception message based on an EventMessage.
      *
-     * @param failedEvent
+     * @param failedEvent the event to be used for the exception message
      * @return the created exception message
      */
     private String buildExceptionMessage(EventMessage failedEvent) {
@@ -147,9 +148,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
                                          failedEvent.getIdentifier());
         if (isFirstDomainEvent(failedEvent)) {
             DomainEventMessage failedDomainEvent = (DomainEventMessage) failedEvent;
-            eventDescription = format("An aggregate of type [%s] with id [%s] was already created.",
-                                      failedDomainEvent.getType(),
-                                      failedDomainEvent.getAggregateIdentifier());
+            eventDescription = format(
+                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
+                    failedDomainEvent.getAggregateIdentifier(),
+                    failedDomainEvent.getType());
         } else if (failedEvent instanceof DomainEventMessage<?>) {
             DomainEventMessage failedDomainEvent = (DomainEventMessage) failedEvent;
             eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
