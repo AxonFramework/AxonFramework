@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.modelling.command.AggregateIdentifierAlreadyExistsException;
+import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -115,7 +115,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         String eventDescription = buildExceptionMessage(failedEvent);
         if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
             if (isFirstDomainEvent(failedEvent)) {
-                throw new AggregateIdentifierAlreadyExistsException(eventDescription, exception);
+                throw new AggregateStreamCreationException(eventDescription, exception);
             }
             throw new ConcurrencyException(eventDescription, exception);
         } else {

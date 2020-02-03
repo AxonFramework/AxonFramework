@@ -1,6 +1,6 @@
 package org.axonframework.modelling.command;
 
-import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.AxonException;
 
 /**
  * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were using the
@@ -9,7 +9,7 @@ import org.axonframework.common.AxonNonTransientException;
  * @author Lucas Campos
  * @since 4.3
  */
-public class AggregateIdentifierAlreadyExistsException extends AxonNonTransientException {
+public class AggregateStreamCreationException extends AxonException {
 
     private static final long serialVersionUID = -4514732518167514479L;
 
@@ -18,7 +18,7 @@ public class AggregateIdentifierAlreadyExistsException extends AxonNonTransientE
      *
      * @param message a detailed message of the cause of the exception
      */
-    public AggregateIdentifierAlreadyExistsException(String message) {
+    public AggregateStreamCreationException(String message) {
         super(message);
     }
 
@@ -28,7 +28,7 @@ public class AggregateIdentifierAlreadyExistsException extends AxonNonTransientE
      * @param message a detailed message of the cause of the exception
      * @param cause   the original cause of this exception
      */
-    public AggregateIdentifierAlreadyExistsException(String message, Throwable cause) {
+    public AggregateStreamCreationException(String message, Throwable cause) {
         super(message, cause);
     }
 }

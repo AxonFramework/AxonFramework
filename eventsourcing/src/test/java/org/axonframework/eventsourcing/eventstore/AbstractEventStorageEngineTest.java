@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.modelling.command.AggregateIdentifierAlreadyExistsException;
+import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.junit.jupiter.api.*;
@@ -47,7 +47,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
     @Test
     public void testUniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
-                AggregateIdentifierAlreadyExistsException.class,
+                AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0))
         );
     }
@@ -90,7 +90,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
     @Test
     public void testStoreDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
-                AggregateIdentifierAlreadyExistsException.class,
+                AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent(0), createEvent(0))
         );
     }
