@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -107,6 +107,9 @@ import static java.util.stream.Collectors.toList;
  * blocks, such as the {@link CommandBus} and {@link EventBus}.
  * <p>
  * Note that this Configurer implementation is not thread-safe.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class DefaultConfigurer implements Configurer {
 
@@ -471,8 +474,6 @@ public class DefaultConfigurer implements Configurer {
     public Configurer registerModule(ModuleConfiguration module) {
         if (initialized) {
             module.initialize(config);
-            startHandlers.add(new RunnableHandler(module.phase(), module::start));
-            shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
         }
         this.modules.add(module);
         return this;
@@ -581,11 +582,7 @@ public class DefaultConfigurer implements Configurer {
      * Prepare the registered modules for initialization. This ensures all lifecycle handlers are registered.
      */
     protected void prepareModules() {
-        modules.forEach(module -> {
-            initHandlers.add(new ConsumerHandler(module.phase(), module::initialize));
-            startHandlers.add(new RunnableHandler(module.phase(), module::start));
-            shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
-        });
+        modules.forEach(module -> initHandlers.add(module::initialize));
     }
 
     /**
@@ -709,9 +706,11 @@ public class DefaultConfigurer implements Configurer {
 
         @Override
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
-            return componentType.cast(components.computeIfAbsent(
-                    componentType, k -> new Component<>(config, componentType.getSimpleName(), c -> defaultImpl.get())
-            ).get());
+            Object component = components.computeIfAbsent(
+                    componentType,
+                    k -> new Component<>(config, componentType.getSimpleName(), c -> defaultImpl.get())
+            ).get();
+            return componentType.cast(component);
         }
 
         @Override
