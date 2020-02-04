@@ -95,7 +95,7 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
                 HeartbeatMonitor.class.getSimpleName(),
                 c -> new HeartbeatMonitor(connectionManager, context)
         ));
-        config.onStart(Phase.OUTBOUND_EVENT_CONNECTORS, () -> heartbeatMonitor().get());
+        config.onStart(Phase.INBOUND_EVENT_CONNECTORS, () -> heartbeatMonitor().get());
     }
 
     private Component<HeartbeatMonitor> heartbeatMonitor() {

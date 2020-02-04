@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,8 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
 import org.axonframework.axonserver.connector.processor.grpc.PlatformInboundMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.StartHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,10 +90,12 @@ public class EventProcessorControlService {
     }
 
     /**
-     * Add {@link java.util.function.Consumer}s to the {@link AxonServerConnectionManager} for several
-     * {@link PlatformOutboundInstruction}s.
+     * Add {@link java.util.function.Consumer}s to the {@link AxonServerConnectionManager} for several {@link
+     * PlatformOutboundInstruction}s. Will be started in phase {@link Phase#INBOUND_EVENT_CONNECTORS} + 1, to ensure
+     * the event processors this service provides control over have been started.
      */
     @SuppressWarnings("Duplicates")
+    @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS + 1)
     public void start() {
         this.axonServerConnectionManager.onOutboundInstruction(context, PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
         this.axonServerConnectionManager.onOutboundInstruction(context, START_EVENT_PROCESSOR, this::startProcessor);

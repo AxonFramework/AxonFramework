@@ -103,7 +103,7 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
     @Override
     public void initialize(Configuration config) {
         this.config = config;
-        this.config.onStart(Phase.OUTBOUND_EVENT_CONNECTORS, () -> {
+        this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, () -> {
             processorInfoSource.get();
             eventProcessorControlService.get();
         });
