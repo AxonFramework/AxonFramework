@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +35,9 @@ import java.util.List;
  *         return new EventProcessingModule();
  *     }
  * </pre>
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
@@ -45,11 +49,10 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
     private volatile boolean initialized;
 
     /**
-     * Initialize the registrar to register beans discovered with the given {@code eventProcessing}.
-     * The registrar will also initialize the EventHandlerConfiguration using the given {@code axonConfiguration}
-     * and start it.
+     * Initialize the registrar to register beans discovered with the given {@code eventProcessing}. The registrar will
+     * also initialize the EventHandlerConfiguration using the given {@code axonConfiguration} and start it.
      *
-     * @param axonConfiguration          The main Axon Configuration instance
+     * @param axonConfiguration         The main Axon Configuration instance
      * @param eventProcessingConfigurer The main Axon Configuration
      */
     public EventHandlerRegistrar(AxonConfiguration axonConfiguration,
@@ -84,13 +87,11 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
     @Override
     public void start() {
-        eventProcessingConfiguration.start();
         running = true;
     }
 
     @Override
     public void stop() {
-        eventProcessingConfiguration.shutdown();
         running = false;
     }
 
