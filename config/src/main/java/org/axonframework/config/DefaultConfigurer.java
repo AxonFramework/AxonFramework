@@ -16,13 +16,15 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -39,8 +41,13 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -49,7 +56,15 @@ import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -57,14 +72,25 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -83,6 +109,8 @@ import static java.util.stream.Collectors.toList;
  * Note that this Configurer implementation is not thread-safe.
  */
 public class DefaultConfigurer implements Configurer {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -109,14 +137,13 @@ public class DefaultConfigurer implements Configurer {
             config, "handlerDefinition",
             c -> this::defaultHandlerDefinition);
 
-    private final Map<Class<?>, AggregateConfiguration<?>> aggregateConfigurations = new HashMap<>();
-
-    private final List<ConsumerHandler> initHandlers = new ArrayList<>();
-    private final List<RunnableHandler> startHandlers = new ArrayList<>();
-    private final List<RunnableHandler> shutdownHandlers = new ArrayList<>();
+    private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
+    private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
+    private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
+    private Integer currentLifecyclePhase = null;
 
     /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
@@ -576,21 +603,61 @@ public class DefaultConfigurer implements Configurer {
      */
     protected void invokeInitHandlers() {
         initialized = true;
-        initHandlers.stream().sorted(comparingInt(ConsumerHandler::phase)).forEach(h -> h.accept(config));
+        initHandlers.forEach(h -> h.accept(config));
     }
 
     /**
      * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
-        startHandlers.stream().sorted(comparingInt(RunnableHandler::phase)).forEach(RunnableHandler::run);
+        invokeLifecycleHandlers(
+                startHandlers,
+                e -> {
+                    invokeShutdownHandlers();
+                    throw new LifecycleHandlerInvocationException(
+                            String.format(
+                                    "One of the start handlers in phase [%d] failed with the following exception:",
+                                    currentLifecyclePhase
+                            ),
+                            e.getCause()
+                    );
+                }
+        );
     }
 
     /**
      * Invokes all registered shutdown handlers.
      */
     protected void invokeShutdownHandlers() {
-        shutdownHandlers.stream().sorted(comparingInt(RunnableHandler::phase).reversed()).forEach(RunnableHandler::run);
+        invokeLifecycleHandlers(
+                shutdownHandlers,
+                e -> logger.warn(
+                        "One of the shutdown handlers in phase [{}] failed with the following exception: {}",
+                        currentLifecyclePhase, e.getCause()
+                )
+        );
+    }
+
+    private void invokeLifecycleHandlers(TreeMap<Integer, List<LifecycleHandler>> lifecycleHandlerMap,
+                                         Consumer<Exception> exceptionHandler) {
+        Map.Entry<Integer, List<LifecycleHandler>> phasedHandlers = lifecycleHandlerMap.firstEntry();
+        if (phasedHandlers == null) {
+            return;
+        }
+
+        do {
+            currentLifecyclePhase = phasedHandlers.getKey();
+            List<LifecycleHandler> handlers = phasedHandlers.getValue();
+            try {
+                handlers.stream()
+                        .map(LifecycleHandler::run)
+                        .reduce((cf1, cf2) -> CompletableFuture.allOf(cf1, cf2))
+                        .ifPresent(CompletableFuture::join);
+            } catch (CompletionException e) {
+                exceptionHandler.accept(e);
+            }
+        } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);
+        currentLifecyclePhase = null;
     }
 
     /**
@@ -612,44 +679,6 @@ public class DefaultConfigurer implements Configurer {
      */
     public Map<Class<?>, Component<?>> getComponents() {
         return components;
-    }
-
-    private static class ConsumerHandler {
-
-        private final int phase;
-        private final Consumer<Configuration> handler;
-
-        private ConsumerHandler(int phase, Consumer<Configuration> handler) {
-            this.phase = phase;
-            this.handler = handler;
-        }
-
-        public int phase() {
-            return phase;
-        }
-
-        public void accept(Configuration configuration) {
-            handler.accept(configuration);
-        }
-    }
-
-    private static class RunnableHandler {
-
-        private final int phase;
-        private final Runnable handler;
-
-        private RunnableHandler(int phase, Runnable handler) {
-            this.phase = phase;
-            this.handler = handler;
-        }
-
-        public int phase() {
-            return phase;
-        }
-
-        public void run() {
-            handler.run();
-        }
     }
 
     private class ConfigurationImpl implements Configuration {
@@ -710,18 +739,46 @@ public class DefaultConfigurer implements Configurer {
         }
 
         @Override
-        public void onShutdown(int phase, Runnable shutdownHandler) {
-            shutdownHandlers.add(new RunnableHandler(phase, shutdownHandler));
+        public void onStart(int phase, LifecycleHandler startHandler) {
+            if (currentLifecyclePhase != null && phase <= currentLifecyclePhase) {
+                logger.info(
+                        "A start handler is being registered for phase [{}] whilst phase [{}] is in progress. "
+                                + "Will run provided handler immediately instead.",
+                        phase, currentLifecyclePhase
+                );
+                startHandler.run().join();
+            }
+            registerLifecycleHandler(startHandlers, phase, startHandler);
+        }
+
+        @Override
+        public void onShutdown(int phase, LifecycleHandler shutdownHandler) {
+            if (currentLifecyclePhase != null && phase >= currentLifecyclePhase) {
+                logger.info(
+                        "A shutdown handler is being registered for phase [{}] whilst phase [{}] is in progress. "
+                                + "Will run provided handler immediately instead.",
+                        phase, currentLifecyclePhase
+                );
+                shutdownHandler.run().join();
+            }
+            registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
+        }
+
+        private void registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
+                                              int phase,
+                                              LifecycleHandler lifecycleHandler) {
+            lifecycleHandlers.compute(phase, (p, handlers) -> {
+                if (handlers == null) {
+                    handlers = new ArrayList<>();
+                }
+                handlers.add(lifecycleHandler);
+                return handlers;
+            });
         }
 
         @Override
         public EventUpcasterChain upcasterChain() {
             return upcasterChain.get();
-        }
-
-        @Override
-        public void onStart(int phase, Runnable startHandler) {
-            startHandlers.add(new RunnableHandler(phase, startHandler));
         }
 
         @Override
