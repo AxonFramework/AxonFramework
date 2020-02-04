@@ -24,6 +24,9 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
+import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -185,8 +188,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Start this processor. The processor will open an event stream on its message source in a new thread using {@link
      * StreamableMessageSource#openStream(TrackingToken)}. The {@link TrackingToken} used to open the stream will be
      * fetched from the {@link TokenStore}.
+     * <p>
+     * Upon start up of an application, this method will be invoked in the {@link Phase#INBOUND_EVENT_CONNECTORS}
+     * phase.
      */
     @Override
+    @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     public void start() {
         State previousState = state.getAndSet(State.STARTED);
         if (!previousState.isRunning()) {
@@ -649,6 +656,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         awaitTermination();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Will be shutdown on the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
+     */
+    @Override
+    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public CompletableFuture<Void> shutdownAsync() {
+        return super.shutdownAsync();
+    }
+
     private void setShutdownState() {
         if (state.getAndSet(State.SHUT_DOWN).isRunning()) {
             logger.info("Shutdown state set for Processor '{}'.", getName());
@@ -667,16 +685,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 Thread.currentThread().interrupt();
             }
         }
-    }
-
-    /**
-     * Begins shutting down. Does not block until shutdown is complete. Calling {@link #shutDown()} after this method
-     * will block until the shutdown is complete.
-     */
-    @Override
-    public CompletableFuture<Void> shutdownAsync() {
-        setShutdownState();
-        return CompletableFuture.runAsync(this::awaitTermination);
     }
 
     /**

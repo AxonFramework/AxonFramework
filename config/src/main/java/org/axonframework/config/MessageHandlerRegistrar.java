@@ -69,10 +69,10 @@ public class MessageHandlerRegistrar {
 
     /**
      * Start the message handler registration process by building the message handler in the {@link
-     * Phase#LOCAL_COMMAND_OR_QUERY_REGISTRATIONS} phase. The specified {@code messageHandlerBuilder} is used for
+     * Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase. The specified {@code messageHandlerBuilder} is used for
      * creation and registration is performed through the {@code messageHandlerSubscriber}.
      */
-    @StartHandler(phase = Phase.LOCAL_COMMAND_OR_QUERY_REGISTRATIONS)
+    @StartHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void start() {
         Configuration config = configurationSupplier.get();
         Object annotatedHandler = messageHandlerBuilder.apply(config);
@@ -81,10 +81,10 @@ public class MessageHandlerRegistrar {
     }
 
     /**
-     * Close the message handler registration initialized in phase {@link Phase#LOCAL_COMMAND_OR_QUERY_REGISTRATIONS}
+     * Close the message handler registration initialized in phase {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS}
      * through the {@link #start()} method.
      */
-    @ShutdownHandler(phase = Phase.LOCAL_COMMAND_OR_QUERY_REGISTRATIONS)
+    @ShutdownHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void shutdown() {
         handlerRegistration.cancel();
     }

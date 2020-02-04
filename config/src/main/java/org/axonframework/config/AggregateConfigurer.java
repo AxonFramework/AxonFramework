@@ -366,11 +366,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public void initialize(Configuration config) {
         parent = config;
         parent.onStart(
-                Phase.LOCAL_COMMAND_OR_QUERY_REGISTRATIONS,
+                Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
                 () -> registrations.add(commandHandler.get().subscribe(parent.commandBus()))
         );
         parent.onShutdown(
-                Phase.LOCAL_COMMAND_OR_QUERY_REGISTRATIONS,
+                Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
                 () -> {
                     registrations.forEach(Registration::cancel);
                     registrations.clear();
