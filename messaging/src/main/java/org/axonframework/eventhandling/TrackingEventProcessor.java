@@ -875,6 +875,29 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             return errorState;
         }
 
+        /**
+         * Return the estimated relative replay position this Segment represents.
+         * In case no estimation can be given or no replay is active, an {@code OptionalLong.empty()} will be returned.
+         *
+         * @return return the estimated relative replay position this Segment represents
+         */
+        @Override
+        public OptionalLong getCurrentPosition() {
+            if (isReplaying()) {
+                return  WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                                    .map(ReplayToken::position)
+                                    .orElse(OptionalLong.empty());
+            }
+
+            if (isMerging()) {
+                return  WrappedToken.unwrap(trackingToken, MergedTrackingToken.class)
+                                    .map(MergedTrackingToken::position)
+                                    .orElse(OptionalLong.empty());
+            }
+
+            return (trackingToken == null) ? OptionalLong.empty() : trackingToken.position();
+        }
+
         private TrackingToken getInternalTrackingToken() {
             return trackingToken;
         }

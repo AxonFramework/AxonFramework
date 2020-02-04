@@ -84,4 +84,9 @@ public class FakeEventTrackerStatus implements EventTrackerStatus {
     public Throwable getError() {
         return exception;
     }
+
+    @Override
+    public OptionalLong getCurrentPosition() {
+        return (trackingToken!=null) ? trackingToken.position() : OptionalLong.empty();
+    }
 }

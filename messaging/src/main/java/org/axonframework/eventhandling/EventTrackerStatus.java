@@ -91,4 +91,14 @@ public interface EventTrackerStatus {
      * @return the exception that caused processing to fail, or {@code null} when processing normally
      */
     Throwable getError();
+
+    /**
+     * Return the estimated relative current token position this Segment represents.
+     * In case of replay is active, return the estimated relative position reached by merge operation.
+     * In case of merge is active, return the estimated relative position reached by merge operation.
+     * In case no estimation can be given, or no replay or merge in progress, an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return return the estimated relative current token position this Segment represents
+     */
+    OptionalLong getCurrentPosition();
 }

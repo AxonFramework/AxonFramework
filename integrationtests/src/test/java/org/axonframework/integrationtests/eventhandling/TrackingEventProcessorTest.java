@@ -964,16 +964,17 @@ class TrackingEventProcessorTest {
         while (testSubject.processingStatus().isEmpty()) {
             Thread.sleep(10);
         }
+        int segmentId = 0;
 
-        assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed");
-        waitForProcessingStatus(0, EventTrackerStatus::isMerging);
+        assertTrue(testSubject.mergeSegment(segmentId).join(), "Expected merge to succeed");
+        waitForProcessingStatus(segmentId, EventTrackerStatus::isMerging);
 
-        waitForSegmentStart(0);
+        waitForSegmentStart(segmentId);
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
 
         publishEvents(1);
-        waitForProcessingNotInStatus(0, EventTrackerStatus::isMerging);
+        waitForProcessingNotInStatus(segmentId, EventTrackerStatus::isMerging);
     }
 
     @Test
@@ -982,6 +983,8 @@ class TrackingEventProcessorTest {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
+        int segmentId = 0;
+
         when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
 
         publishEvents(10);
@@ -994,14 +997,15 @@ class TrackingEventProcessorTest {
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
-                () -> assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed")
+                () -> assertTrue(testSubject.mergeSegment(segmentId).join(), "Expected merge to succeed")
         );
 
-        waitForProcessingStatus(0, EventTrackerStatus::isMerging);
+        waitForProcessingStatus(segmentId, EventTrackerStatus::isMerging);
         assertTrue(testSubject.processingStatus().get(0).mergeCompletedPosition().isPresent());
+        long mergeCompletedPosition = testSubject.processingStatus().get(0).mergeCompletedPosition().getAsLong();
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
+        waitForProcessingStatus(segmentId, EventTrackerStatus::isCaughtUp);
 
         assertWithin(
                 5, TimeUnit.SECONDS,
@@ -1015,8 +1019,10 @@ class TrackingEventProcessorTest {
         assertEquals(10, handledEvents.size(), "Number of handler invocations doesn't match number of unique events");
 
         publishEvents(1);
-        waitForProcessingNotInStatus(0, EventTrackerStatus::isMerging);
+        waitForProcessingNotInStatus(segmentId, EventTrackerStatus::isMerging);
         assertFalse(testSubject.processingStatus().get(0).mergeCompletedPosition().isPresent());
+        assertTrue(testSubject.processingStatus().get(0).getCurrentPosition().isPresent());
+        assertTrue(testSubject.processingStatus().get(0).getCurrentPosition().getAsLong() > mergeCompletedPosition);
     }
 
     @Test
@@ -1026,6 +1032,7 @@ class TrackingEventProcessorTest {
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         List<EventMessage<?>> events = new ArrayList<>();
+        int segmentId = 0;
         for (int i = 0; i < 10; i++) {
             events.add(createEvent(UUID.randomUUID().toString(), 0));
         }
@@ -1039,10 +1046,10 @@ class TrackingEventProcessorTest {
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
-                () -> assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed")
+                () -> assertTrue(testSubject.mergeSegment(segmentId).join(), "Expected merge to succeed")
         );
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(0);
+        waitForSegmentStart(segmentId);
 
         while (!Optional.ofNullable(testSubject.processingStatus().get(0))
                         .map(EventTrackerStatus::isCaughtUp)
@@ -1058,6 +1065,7 @@ class TrackingEventProcessorTest {
     void testDoubleSplitAndMerge() throws Exception {
         tokenStore.initializeTokenSegments(testSubject.getName(), 1);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
+        int segmentId = 0;
         when(mockHandler.handle(any())).thenAnswer(i -> handledEvents.add(i.getArgument(0)));
 
         publishEvents(10);
@@ -1067,13 +1075,13 @@ class TrackingEventProcessorTest {
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
-                () -> assertTrue(testSubject.splitSegment(0).join(), "Expected split to succeed")
+                () -> assertTrue(testSubject.splitSegment(segmentId).join(), "Expected split to succeed")
         );
         waitForActiveThreads(1);
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
-                () -> assertTrue(testSubject.splitSegment(0).join(), "Expected split to succeed")
+                () -> assertTrue(testSubject.splitSegment(segmentId).join(), "Expected split to succeed")
         );
         waitForActiveThreads(1);
 
@@ -1081,19 +1089,19 @@ class TrackingEventProcessorTest {
 
         publishEvents(20);
 
-        waitForProcessingStatus(0, EventTrackerStatus::isCaughtUp);
+        waitForProcessingStatus(segmentId, EventTrackerStatus::isCaughtUp);
 
         assertFalse(testSubject.processingStatus().get(0).isMerging());
 
-        assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed");
+        assertTrue(testSubject.mergeSegment(segmentId).join(), "Expected merge to succeed");
         assertArrayEquals(new int[]{0, 1}, tokenStore.fetchSegments(testSubject.getName()));
 
         publishEvents(10);
 
-        waitForSegmentStart(0);
-        waitForProcessingStatus(0, est -> est.getSegment().getMask() == 1 && est.isCaughtUp());
+        waitForSegmentStart(segmentId);
+        waitForProcessingStatus(segmentId, est -> est.getSegment().getMask() == 1 && est.isCaughtUp());
 
-        assertTrue(testSubject.mergeSegment(0).join(), "Expected merge to succeed");
+        assertTrue(testSubject.mergeSegment(segmentId).join(), "Expected merge to succeed");
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
 
         assertWithin(3, TimeUnit.SECONDS, () -> assertEquals(40, handledEvents.size()));
@@ -1105,6 +1113,7 @@ class TrackingEventProcessorTest {
         EventMessageHandler otherHandler = mock(EventMessageHandler.class);
         when(otherHandler.canHandle(any())).thenReturn(true);
         when(otherHandler.supportsReset()).thenReturn(true);
+        int segmentId = 0;
         EventHandlerInvoker mockInvoker = SimpleEventHandlerInvoker.builder()
                                                                    .eventHandlers(singleton(otherHandler))
                                                                    .sequencingPolicy(m -> 0)
@@ -1137,7 +1146,7 @@ class TrackingEventProcessorTest {
 
         publishEvents(10);
 
-        testSubject.mergeSegment(0);
+        testSubject.mergeSegment(segmentId);
 
         publishEvents(10);
 
@@ -1159,6 +1168,7 @@ class TrackingEventProcessorTest {
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         List<EventMessage<?>> replayedEvents = new CopyOnWriteArrayList<>();
+        int segmentId = 0;
         when(mockHandler.handle(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
@@ -1185,13 +1195,13 @@ class TrackingEventProcessorTest {
         waitForActiveThreads(1);
         Thread.yield();
 
-        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(0);
+        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentId);
 
         publishEvents(20);
 
         assertTrue(mergeResult.join(), "Expected merge to succeed");
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(0);
+        waitForSegmentStart(segmentId);
 
         assertWithin(10, TimeUnit.SECONDS, () -> assertEquals(30, handledEvents.size()));
         Thread.sleep(100);
@@ -1210,6 +1220,7 @@ class TrackingEventProcessorTest {
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         List<EventMessage<?>> events = new ArrayList<>();
+        int segmentId = 0;
         for (int i = 0; i < 10; i++) {
             events.add(createEvent(UUID.randomUUID().toString(), 0));
         }
@@ -1236,7 +1247,7 @@ class TrackingEventProcessorTest {
 
         publishEvents(10);
 
-        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(0);
+        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentId);
         assertTrue(mergeResult.join(), "Expected split to succeed");
 
         waitForActiveThreads(1);
@@ -1250,7 +1261,7 @@ class TrackingEventProcessorTest {
         waitForActiveThreads(1);
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(0);
+        waitForSegmentStart(segmentId);
 
         while (!testSubject.processingStatus().get(0).isCaughtUp()) {
             Thread.sleep(10);
@@ -1292,15 +1303,15 @@ class TrackingEventProcessorTest {
     void testMergeWithSingleSegmentRejected() throws InterruptedException {
         int numberOfSegments = 1;
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(numberOfSegments));
+        int segmentId = 0;
 
         testSubject.start();
         waitForActiveThreads(1);
 
-        CompletableFuture<Boolean> actual = testSubject.mergeSegment(0);
+        CompletableFuture<Boolean> actual = testSubject.mergeSegment(segmentId);
 
         assertFalse(actual.join(), "Expected merge to be rejected");
-        waitForProcessingNotInStatus(0, EventTrackerStatus::isMerging);
-
+        assertFalse(testSubject.processingStatus().get(0).isMerging());
     }
 
     /**
