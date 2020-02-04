@@ -32,6 +32,10 @@ public abstract class Phase {
     }
 
     /**
+     * Phase to register or cancel the registration of local command and/or query handlers.
+     */
+    public static final int LOCAL_COMMAND_OR_QUERY_REGISTRATIONS = 0;
+    /**
      * Phase to start or shutdown inbound command and/or query connectors. It is targeted towards connectors which
      * receive commands and/or queries from external applications.
      */

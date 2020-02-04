@@ -117,12 +117,12 @@ public class DefaultConfigurer implements Configurer {
     private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
             new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
-
-    private final Component<List<CorrelationDataProvider>> correlationProviders =
-            new Component<>(config, "correlationProviders",
-                            c -> Collections.singletonList(new MessageOriginProvider()));
-
-    private final Map<Class<?>, Component<?>> components = new HashMap<>();
+    private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(
+            config, "correlationProviders",
+            c -> Collections.singletonList(new MessageOriginProvider())
+    );
+    private final Map<Class<?>, Component<?>> components = new ConcurrentHashMap<>();
+    private final List<Component<MessageHandlerRegistrar>> messageHandlerRegistrars = new ArrayList<>();
     private final Component<Serializer> eventSerializer =
             new Component<>(config, "eventSerializer", Configuration::messageSerializer);
     private final Component<Serializer> messageSerializer =
@@ -132,10 +132,10 @@ public class DefaultConfigurer implements Configurer {
             config, "eventUpcasterChain",
             c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()))
     );
-
     private final Component<Function<Class<?>, HandlerDefinition>> handlerDefinition = new Component<>(
             config, "handlerDefinition",
-            c -> this::defaultHandlerDefinition);
+            c -> this::defaultHandlerDefinition
+    );
 
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
@@ -479,41 +479,45 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerCommandHandler(int phase,
-                                             Function<Configuration, Object> annotatedCommandHandlerBuilder) {
-        startHandlers.add(new RunnableHandler(phase, () -> {
-            Object handler = annotatedCommandHandlerBuilder.apply(config);
-            Assert.notNull(handler, () -> "annotatedCommandHandler may not be null");
-            Registration registration =
-                    new AnnotationCommandHandlerAdapter<>(handler,
-                                                        config.parameterResolverFactory(),
-                                                        config.handlerDefinition(handler.getClass()))
-                            .subscribe(config.commandBus());
-            shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
-        }));
-        return this;
-    }
-
-    @Override
-    public Configurer registerQueryHandler(int phase, Function<Configuration, Object> annotatedQueryHandlerBuilder) {
-        startHandlers.add(new RunnableHandler(phase, () -> {
-            Object annotatedHandler = annotatedQueryHandlerBuilder.apply(config);
-            Assert.notNull(annotatedHandler, () -> "annotatedQueryHandler may not be null");
-
-            Registration registration = new AnnotationQueryHandlerAdapter<>(annotatedHandler,
-                                                                          config.parameterResolverFactory(),
-                                                                          config.handlerDefinition(annotatedHandler
-                                                                                                           .getClass()))
-                    .subscribe(config.queryBus());
-            shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
-        }));
-        return this;
-    }
-
-    @Override
     public <C> Configurer registerComponent(Class<C> componentType,
                                             Function<Configuration, ? extends C> componentBuilder) {
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
+        return this;
+    }
+
+    @Override
+    public Configurer registerCommandHandler(Function<Configuration, Object> commandHandlerBuilder) {
+        messageHandlerRegistrars.add(new Component<>(
+                () -> config,
+                "CommandHandlerRegistrar",
+                configuration -> new MessageHandlerRegistrar(
+                        () -> configuration,
+                        commandHandlerBuilder,
+                        (config, commandHandler) -> new AnnotationCommandHandlerAdapter<>(
+                                commandHandler,
+                                config.parameterResolverFactory(),
+                                config.handlerDefinition(commandHandler.getClass())
+                        ).subscribe(config.commandBus())
+                )
+        ));
+        return this;
+    }
+
+    @Override
+    public Configurer registerQueryHandler(Function<Configuration, Object> queryHandlerBuilder) {
+        messageHandlerRegistrars.add(new Component<>(
+                () -> config,
+                "QueryHandlerRegistrar",
+                configuration -> new MessageHandlerRegistrar(
+                        () -> configuration,
+                        queryHandlerBuilder,
+                        (config, queryHandler) -> new AnnotationQueryHandlerAdapter<>(
+                                queryHandler,
+                                config.parameterResolverFactory(),
+                                config.handlerDefinition(queryHandler.getClass())
+                        ).subscribe(config.queryBus())
+                )
+        ));
         return this;
     }
 
@@ -567,7 +571,7 @@ public class DefaultConfigurer implements Configurer {
         if (!initialized) {
             verifyIdentifierFactory();
             prepareModules();
-            shutdownHandlers.add(new RunnableHandler(0, () -> config.deadlineManager().shutdown()));
+            prepareMessageHandlerRegistrars();
             invokeInitHandlers();
         }
         return config;
@@ -595,6 +599,14 @@ public class DefaultConfigurer implements Configurer {
         } catch (Exception e) {
             throw new IllegalArgumentException("The configured IdentifierFactory could not be instantiated.", e);
         }
+    }
+
+    /**
+     * Prepare the registered message handlers {@link MessageHandlerRegistrar} for initialization. This ensures their
+     * lifecycle handlers are registered.
+     */
+    protected void prepareMessageHandlerRegistrars() {
+        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(config -> registrar.get()));
     }
 
     /**
