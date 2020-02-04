@@ -550,14 +550,7 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration) {
-        this.modules.add(aggregateConfiguration);
-        this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
-        this.initHandlers.add(new ConsumerHandler(aggregateConfiguration.phase(), aggregateConfiguration::initialize));
-        this.startHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::start));
-        this.shutdownHandlers.add(
-                new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown)
-        );
-        return this;
+        return registerModule(aggregateConfiguration);
     }
 
     @Override
@@ -695,13 +688,17 @@ public class DefaultConfigurer implements Configurer {
         @Override
         @SuppressWarnings("unchecked")
         public <T> Repository<T> repository(Class<T> aggregateType) {
-            AggregateConfiguration<T> aggregateConfigurer =
-                    (AggregateConfiguration<T>) DefaultConfigurer.this.aggregateConfigurations.get(aggregateType);
-            if (aggregateConfigurer == null) {
-                throw new IllegalArgumentException(
-                        "Aggregate " + aggregateType.getSimpleName() + " has not been configured");
-            }
-            return aggregateConfigurer.repository();
+            return DefaultConfigurer.this.modules
+                    .stream()
+                    .filter(moduleConfig -> AggregateConfigurer.class.isAssignableFrom(moduleConfig.getClass()))
+                    .map(moduleConfig -> (AggregateConfiguration<T>) moduleConfig)
+                    .findFirst()
+                    .map(AggregateConfiguration::repository)
+                    .orElseThrow(() -> {
+                        throw new IllegalArgumentException(
+                                "Aggregate " + aggregateType.getSimpleName() + " has not been configured"
+                        );
+                    });
         }
 
         @Override
