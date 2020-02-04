@@ -77,7 +77,7 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
     }
 
     /**
-     * Indicates whether the given {@code trackingToken} represents a position that is part of a merge.
+     * Indicates whether the given {@code trackingToken} represents a token that is part of a merge.
      *
      * @param trackingToken The token to verify
      * @return {@code true} if the token indicates a merge

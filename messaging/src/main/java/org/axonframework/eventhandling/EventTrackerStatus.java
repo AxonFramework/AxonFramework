@@ -54,7 +54,7 @@ public interface EventTrackerStatus {
     /**
      * Indicates whether this Segment is still merging events.
      *
-     * @return {@code true} if this segment is merging events, otherwise {@code false}
+     * @return {@code true} if this segment is merging Segments, otherwise {@code false}
      */
     boolean isMerging();
 
