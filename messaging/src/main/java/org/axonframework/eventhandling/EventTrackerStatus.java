@@ -78,12 +78,13 @@ public interface EventTrackerStatus {
     Throwable getError();
 
     /**
-     * Return the estimated relative replay position this Segment represents.
-     * In case no estimation can be given or no replay is active, an {@code OptionalLong.empty()} will be returned.
+     * Return the estimated relative current token position this Segment represents.
+     * In case no estimation can be given an {@code OptionalLong.empty()} will be returned.
+     * In case of replay is active, return the estimated relative replay position.
      *
-     * @return return the estimated relative replay position this Segment represents
+     * @return return the estimated relative current token position this Segment represents
      */
-    OptionalLong getReplayPosition();
+    OptionalLong getCurrentPosition();
 
     /**
      * Return the relative position at which a reset was triggered for this Segment.
