@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+
+import java.util.OptionalLong;
 
 /**
  * Interface describing the status of a Segment of a TrackingProcessor.
@@ -74,4 +76,22 @@ public interface EventTrackerStatus {
      * @return the exception that caused processing to fail, or {@code null} when processing normally
      */
     Throwable getError();
+
+    /**
+     * Return the estimated relative current token position this Segment represents.
+     * In case no estimation can be given an {@code OptionalLong.empty()} will be returned.
+     * In case of replay is active, return the estimated relative replay position.
+     *
+     * @return return the estimated relative current token position this Segment represents
+     */
+    OptionalLong getCurrentPosition();
+
+    /**
+     * Return the relative position at which a reset was triggered for this Segment.
+     * In case a replay finished or no replay is active, an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return the relative position at which a reset was triggered for this Segment
+     */
+    OptionalLong getResetPosition();
+
 }
