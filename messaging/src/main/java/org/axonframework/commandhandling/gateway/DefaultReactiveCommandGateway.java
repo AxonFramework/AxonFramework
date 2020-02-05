@@ -16,8 +16,6 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 /**
@@ -27,8 +25,6 @@ import reactor.core.publisher.Mono;
  * @since 4.4
  */
 public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultReactiveCommandGateway.class);
 
     private final CommandGateway delegate;
 
