@@ -159,7 +159,7 @@ public interface ReactiveQueryGateway {
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
      * <p>
-     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
      * the {@link QueryBus} instead.
      *
