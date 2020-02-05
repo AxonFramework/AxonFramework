@@ -76,12 +76,11 @@ public class FakeEventTrackerStatus implements EventTrackerStatus {
 
     @Override
     public OptionalLong getCurrentPosition() {
-        return (trackingToken!=null) ? trackingToken.position() : OptionalLong.empty();
+        return (trackingToken != null) ? trackingToken.position() : OptionalLong.empty();
     }
 
     @Override
     public OptionalLong getResetPosition() {
         return ReplayToken.getTokenAtReset(trackingToken);
     }
-
 }
