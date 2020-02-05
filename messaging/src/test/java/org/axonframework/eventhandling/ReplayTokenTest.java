@@ -73,4 +73,12 @@ class ReplayTokenTest {
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
         assertFalse(replayToken.position().isPresent());
     }
+
+    @Test
+    void testGetTokenAtReset() {
+        ReplayToken testSubject = new ReplayToken(innerToken);
+        TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(6, emptySet()));
+        assertTrue(actual instanceof ReplayToken);
+        assertEquals(testSubject.getTokenAtReset(), innerToken);
+    }
 }

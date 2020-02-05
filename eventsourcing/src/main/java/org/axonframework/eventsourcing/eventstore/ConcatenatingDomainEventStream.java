@@ -18,9 +18,13 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * DomainEventStream implementation that concatenates multiple streams, taking into account that some sequence
@@ -35,7 +39,8 @@ import java.util.LinkedList;
  */
 public class ConcatenatingDomainEventStream implements DomainEventStream {
     private final LinkedList<DomainEventStream> streams;
-    private Long lastSequenceNumber;
+    private final List<DomainEventStream> consumedStreams;
+    private Long lastSeenSequenceNumber;
 
     /**
      * Initialize the stream, concatenating the given {@code streams}.
@@ -54,6 +59,7 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
      */
     public ConcatenatingDomainEventStream(Collection<DomainEventStream> streams) {
         this.streams = new LinkedList<>(streams);
+        this.consumedStreams = new ArrayList<>();
     }
 
     @Override
@@ -73,7 +79,7 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
 
         // consume any empty streams
         while (!streams.isEmpty() && !streams.peekFirst().hasNext()) {
-            streams.pollFirst();
+            consumedStreams.add(streams.pollFirst());
         }
 
         // quick exit if we have emptied the streams
@@ -83,10 +89,10 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
 
         // potentially switch to a next stream, taking sequence numbers into account
         DomainEventMessage<?> peeked = streams.peekFirst().peek();
-        while (lastSequenceNumber != null && peeked.getSequenceNumber() <= lastSequenceNumber) {
+        while (lastSeenSequenceNumber != null && peeked.getSequenceNumber() <= lastSeenSequenceNumber) {
             // consume
             while (!streams.peekFirst().hasNext()) {
-                streams.pollFirst();
+                consumedStreams.add(streams.pollFirst());
                 if (streams.isEmpty()) {
                     return false;
                 }
@@ -105,12 +111,16 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
             return null;
         }
         DomainEventMessage<?> next = streams.peekFirst().next();
-        lastSequenceNumber = next.getSequenceNumber();
+        lastSeenSequenceNumber = next.getSequenceNumber();
         return next;
     }
 
     @Override
     public Long getLastSequenceNumber() {
-        return lastSequenceNumber;
+        return Stream.concat(consumedStreams.stream(), streams.stream())
+                .map(DomainEventStream::getLastSequenceNumber)
+                .filter(x -> !Objects.isNull(x))
+                .reduce(Math::max)
+                .orElse(null);
     }
 }

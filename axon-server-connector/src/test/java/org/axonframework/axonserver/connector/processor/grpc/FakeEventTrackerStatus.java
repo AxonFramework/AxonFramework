@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.processor.grpc;
 
 import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 
@@ -87,6 +88,11 @@ public class FakeEventTrackerStatus implements EventTrackerStatus {
 
     @Override
     public OptionalLong getCurrentPosition() {
-        return (trackingToken!=null) ? trackingToken.position() : OptionalLong.empty();
+        return (trackingToken != null) ? trackingToken.position() : OptionalLong.empty();
+    }
+
+    @Override
+    public OptionalLong getResetPosition() {
+        return ReplayToken.getTokenAtReset(trackingToken);
     }
 }

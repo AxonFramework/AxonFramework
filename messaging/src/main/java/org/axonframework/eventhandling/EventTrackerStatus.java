@@ -101,4 +101,12 @@ public interface EventTrackerStatus {
      * @return return the estimated relative current token position this Segment represents
      */
     OptionalLong getCurrentPosition();
+
+    /**
+     * Return the relative position at which a reset was triggered for this Segment.
+     * In case a replay finished or no replay is active, an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return the relative position at which a reset was triggered for this Segment
+     */
+    OptionalLong getResetPosition();
 }

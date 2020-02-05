@@ -876,10 +876,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
 
         /**
-         * Return the estimated relative replay position this Segment represents.
-         * In case no estimation can be given or no replay is active, an {@code OptionalLong.empty()} will be returned.
-         *
-         * @return return the estimated relative replay position this Segment represents
+         * {@inheritDoc}
          */
         @Override
         public OptionalLong getCurrentPosition() {
@@ -896,6 +893,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
 
             return (trackingToken == null) ? OptionalLong.empty() : trackingToken.position();
+        }
+
+        @Override
+        public OptionalLong getResetPosition() {
+            return ReplayToken.getTokenAtReset(trackingToken);
         }
 
         private TrackingToken getInternalTrackingToken() {
