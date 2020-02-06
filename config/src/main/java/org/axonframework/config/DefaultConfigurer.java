@@ -147,6 +147,7 @@ public class DefaultConfigurer implements Configurer {
 
     private boolean initialized = false;
     private Integer currentLifecyclePhase = null;
+    private LifecycleState lifecycleState = LifecycleState.DOWN;
 
     /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
@@ -612,6 +613,7 @@ public class DefaultConfigurer implements Configurer {
      * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
+        lifecycleState = LifecycleState.STARTING_UP;
         invokeLifecycleHandlers(
                 startHandlers,
                 e -> {
@@ -625,12 +627,14 @@ public class DefaultConfigurer implements Configurer {
                     );
                 }
         );
+        lifecycleState = LifecycleState.LIFE;
     }
 
     /**
      * Invokes all registered shutdown handlers.
      */
     protected void invokeShutdownHandlers() {
+        lifecycleState = LifecycleState.SHUTTING_DOWN;
         invokeLifecycleHandlers(
                 shutdownHandlers,
                 e -> logger.warn(
@@ -638,6 +642,7 @@ public class DefaultConfigurer implements Configurer {
                         currentLifecyclePhase, e.getCause()
                 )
         );
+        lifecycleState = LifecycleState.DOWN;
     }
 
     private void invokeLifecycleHandlers(TreeMap<Integer, List<LifecycleHandler>> lifecycleHandlerMap,
@@ -748,7 +753,7 @@ public class DefaultConfigurer implements Configurer {
 
         @Override
         public void onStart(int phase, LifecycleHandler startHandler) {
-            if (currentLifecyclePhase != null && phase <= currentLifecyclePhase) {
+            if (isEarlierPhaseDuringStartUp(phase)) {
                 logger.info(
                         "A start handler is being registered for phase [{}] whilst phase [{}] is in progress. "
                                 + "Will run provided handler immediately instead.",
@@ -759,9 +764,14 @@ public class DefaultConfigurer implements Configurer {
             registerLifecycleHandler(startHandlers, phase, startHandler);
         }
 
+        private boolean isEarlierPhaseDuringStartUp(int phase) {
+            return lifecycleState == LifecycleState.STARTING_UP
+                    && currentLifecyclePhase != null && phase <= currentLifecyclePhase;
+        }
+
         @Override
         public void onShutdown(int phase, LifecycleHandler shutdownHandler) {
-            if (currentLifecyclePhase != null && phase >= currentLifecyclePhase) {
+            if (isEarlierPhaseDuringShutdown(phase)) {
                 logger.info(
                         "A shutdown handler is being registered for phase [{}] whilst phase [{}] is in progress. "
                                 + "Will run provided handler immediately instead.",
@@ -770,6 +780,11 @@ public class DefaultConfigurer implements Configurer {
                 shutdownHandler.run().join();
             }
             registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
+        }
+
+        private boolean isEarlierPhaseDuringShutdown(int phase) {
+            return lifecycleState == LifecycleState.SHUTTING_DOWN
+                    && currentLifecyclePhase != null && phase >= currentLifecyclePhase;
         }
 
         private void registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
@@ -793,5 +808,12 @@ public class DefaultConfigurer implements Configurer {
         public HandlerDefinition handlerDefinition(Class<?> inspectedType) {
             return handlerDefinition.get().apply(inspectedType);
         }
+    }
+
+    private enum LifecycleState {
+        DOWN,
+        STARTING_UP,
+        LIFE,
+        SHUTTING_DOWN
     }
 }

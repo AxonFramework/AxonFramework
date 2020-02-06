@@ -132,6 +132,34 @@ class DefaultConfigurerLifecycleOperationsTest {
     }
 
     @Test
+    void testOutOfOrderAddedShutdownHandlerDuringStartUpIsNotCalledImmediately() {
+        Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
+
+        LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandlerAdder = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance addedPhaseTwoShutdownHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
+
+        testSubject.onStart(0, phaseZeroHandler::start);
+        testSubject.onStart(1, phaseOneHandler::start);
+        testSubject.onStart(1, () -> phaseOneHandlerAdder.addLifecycleHandler(
+                Configuration::onShutdown, testSubject, 2, addedPhaseTwoShutdownHandler::shutdown
+        ));
+        testSubject.onStart(2, phaseTwoHandler::start);
+
+        testSubject.start();
+
+        InOrder lifecycleOrder = inOrder(phaseZeroHandler, phaseOneHandler, phaseOneHandlerAdder, phaseTwoHandler);
+        lifecycleOrder.verify(phaseZeroHandler).start();
+        lifecycleOrder.verify(phaseOneHandler).start();
+        lifecycleOrder.verify(phaseOneHandlerAdder).addLifecycleHandler(any(), eq(testSubject), eq(2), any());
+        lifecycleOrder.verify(phaseTwoHandler).start();
+
+        verifyZeroInteractions(addedPhaseTwoShutdownHandler);
+    }
+
+    @Test
     void testShutdownLifecycleHandlersAreInvokedInDescendingPhaseOrder() {
         Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
 
@@ -227,6 +255,39 @@ class DefaultConfigurerLifecycleOperationsTest {
         lifecycleOrder.verify(addedPhaseTwoHandler).shutdown();
         lifecycleOrder.verify(phaseOneHandler).shutdown();
         lifecycleOrder.verify(phaseZeroHandler).shutdown();
+    }
+
+    /**
+     * To be honest, I don't know why somebody would add a start handler during shutdown, but since the validation is
+     * there through the lifecycle state I wanted to test it regardless.
+     */
+    @Test
+    void testOutOfOrderAddedStartHandlerDuringShutdownIsNotCalledImmediately() {
+        Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
+
+        LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandlerAdder = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance addedPhaseOneStartHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
+
+        testSubject.onShutdown(2, phaseTwoHandler::shutdown);
+        testSubject.onShutdown(1, () -> phaseOneHandlerAdder.addLifecycleHandler(
+                Configuration::onStart, testSubject, 1, addedPhaseOneStartHandler::start
+        ));
+        testSubject.onShutdown(1, phaseOneHandler::shutdown);
+        testSubject.onShutdown(0, phaseZeroHandler::shutdown);
+        testSubject.start();
+
+        testSubject.shutdown();
+
+        InOrder lifecycleOrder = inOrder(phaseTwoHandler, phaseOneHandlerAdder, phaseOneHandler, phaseZeroHandler);
+        lifecycleOrder.verify(phaseTwoHandler).shutdown();
+        lifecycleOrder.verify(phaseOneHandlerAdder).addLifecycleHandler(any(), eq(testSubject), eq(1), any());
+        lifecycleOrder.verify(phaseOneHandler).shutdown();
+        lifecycleOrder.verify(phaseZeroHandler).shutdown();
+
+        verifyZeroInteractions(addedPhaseOneStartHandler);
     }
 
     @Test
