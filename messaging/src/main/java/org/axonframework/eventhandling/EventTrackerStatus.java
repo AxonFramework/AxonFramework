@@ -52,7 +52,7 @@ public interface EventTrackerStatus {
     boolean isReplaying();
 
     /**
-     * Indicates whether this Segment is still merging events.
+     * Indicates whether this Segment is still merging two (or more) Segments. The merging process will be done once all Segments have reached the same position.
      *
      * @return {@code true} if this segment is merging Segments, otherwise {@code false}
      */
