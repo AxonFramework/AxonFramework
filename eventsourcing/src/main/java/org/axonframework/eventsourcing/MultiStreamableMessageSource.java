@@ -328,12 +328,17 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             this.messageStreams = new ArrayList<>();
             this.trackingToken = trackingToken;
             this.streamBySourceId = new HashMap<>();
-            messageSources.forEach(src -> {
-                SourceIdAwareBlockingStream stream = new SourceIdAwareBlockingStream(src.sourceId(),
-                                                                                     src.openStream(trackingToken.getTokenForStream(src.sourceId())));
-                this.messageStreams.add(stream);
-                this.streamBySourceId.put(src.sourceId(), stream);
-            });
+            try {
+                messageSources.forEach(src -> {
+                    SourceIdAwareBlockingStream stream = new SourceIdAwareBlockingStream(src.sourceId(),
+                                                                                         src.openStream(trackingToken.getTokenForStream(src.sourceId())));
+                    this.messageStreams.add(stream);
+                    this.streamBySourceId.put(src.sourceId(), stream);
+                });
+            } catch (Exception e) {
+                messageStreams.forEach(SourceIdAwareBlockingStream::close);
+                throw e;
+            }
         }
 
         /**

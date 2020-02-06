@@ -125,6 +125,8 @@ public class EventBuffer implements TrackingEventStream {
             peekData = events.poll(Math.min(deadline - now, pollingTimeMillis), TimeUnit.MILLISECONDS);
             if (peekData != null) {
                 consumeListener.accept(1);
+            } else {
+                checkExceptionState();
             }
         }
     }
@@ -188,14 +190,10 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) throws InterruptedException {
+        checkExceptionState();
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
             while (peekEvent == null && !eventStream.hasNext() && System.currentTimeMillis() < deadline) {
-                if (exception != null) {
-                    RuntimeException runtimeException = exception;
-                    this.exception = null;
-                    throw runtimeException;
-                }
                 waitForData(deadline);
             }
             return peekEvent != null || eventStream.hasNext();
@@ -203,6 +201,12 @@ public class EventBuffer implements TrackingEventStream {
             logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
             Thread.currentThread().interrupt();
             return false;
+        }
+    }
+
+    private void checkExceptionState() {
+        if (exception != null) {
+            throw exception;
         }
     }
 

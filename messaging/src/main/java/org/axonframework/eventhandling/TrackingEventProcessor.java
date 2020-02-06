@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -872,6 +873,25 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             return errorState;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public OptionalLong getCurrentPosition() {
+            if (isReplaying()) {
+                return  WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                                   .map(ReplayToken::position)
+                                   .orElse(OptionalLong.empty());
+            }
+
+            return (trackingToken == null) ? OptionalLong.empty() : trackingToken.position();
+        }
+
+        @Override
+        public OptionalLong getResetPosition() {
+            return ReplayToken.getTokenAtReset(trackingToken);
+        }
+
         private TrackingToken getInternalTrackingToken() {
             return trackingToken;
         }
@@ -1147,6 +1167,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 } catch (Exception e) {
                     logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
                                 processorName, e.getMessage(), waitTime);
+                    logger.debug("Fetch Segments failed because:", e);
                     doSleepFor(SECONDS.toMillis(waitTime));
                     waitTime = Math.min(waitTime * 2, 60);
 
