@@ -33,6 +33,8 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.EventStreamUtils;
 import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -46,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -127,6 +130,26 @@ public class AxonServerEventStore extends AbstractEventStore {
      */
     public StreamableMessageSource<TrackedEventMessage<?>> createStreamableMessageSourceForContext(String context) {
         return new AxonServerMessageSource(storageEngine().createInstanceForContext(context));
+    }
+
+    /**
+     * Stops all activities in regard to reading events from Axon Server.
+     */
+    @SuppressWarnings("unused")
+    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void stopReadingEvents() {
+        storageEngine().stopReadingEvents();
+    }
+
+    /**
+     * Stops all activities in regard to sending events to Axon Server asynchronously.
+     *
+     * @return a completable future which is resolved once all activities are completed
+     */
+    @SuppressWarnings("unused")
+    @ShutdownHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
+    public CompletableFuture<Void> stopSendingEvents() {
+        return storageEngine().stopSendingEvents();
     }
 
     /**
@@ -353,6 +376,14 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         private AxonIQEventStorageEngine createInstanceForContext(String context) {
             return new AxonIQEventStorageEngine(this.builder, context);
+        }
+
+        public void stopReadingEvents() {
+            eventStoreClient.stopReadingEvents();
+        }
+
+        public CompletableFuture<Void> stopSendingEvents() {
+            return eventStoreClient.stopSendingEvents();
         }
 
         @Override

@@ -699,11 +699,9 @@ public class DefaultConfigurer implements Configurer {
                     .map(moduleConfig -> (AggregateConfiguration<T>) moduleConfig)
                     .findFirst()
                     .map(AggregateConfiguration::repository)
-                    .orElseThrow(() -> {
-                        throw new IllegalArgumentException(
-                                "Aggregate " + aggregateType.getSimpleName() + " has not been configured"
-                        );
-                    });
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Aggregate " + aggregateType.getSimpleName() + " has not been configured"
+                    ));
         }
 
         @Override

@@ -47,6 +47,8 @@ import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.TagsConfiguration;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -720,6 +722,7 @@ public class AxonServerConnectionManager {
     /**
      * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
      */
+    @ShutdownHandler(phase = Phase.EXTERNAL_EVENT_CONNECTIONS)
     public void shutdown() {
         shutdown = true;
         disconnect();

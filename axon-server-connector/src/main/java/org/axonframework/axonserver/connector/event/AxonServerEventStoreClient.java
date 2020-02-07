@@ -46,7 +46,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -65,6 +67,9 @@ public class AxonServerEventStoreClient {
     private final int timeout;
     private final String defaultContext;
     private final int bufferCapacity;
+    private volatile boolean shuttingDown = false;
+    private final List<StreamObserver<?>> listeningStreamObservers = new CopyOnWriteArrayList<>();
+    private final List<CompletableFuture<Void>> pendingTransactions = new CopyOnWriteArrayList<>();
 
     /**
      * Initialize the Event Store Client using given {@code eventStoreConfiguration} and given {@code
@@ -125,9 +130,13 @@ public class AxonServerEventStoreClient {
      */
     public Stream<Event> listAggregateEvents(String context, GetAggregateEventsRequest request) {
         BufferingSpliterator<Event> queue = new BufferingSpliterator<>();
+        StreamingEventStreamObserver responseObserver = new StreamingEventStreamObserver(queue,
+                                                                                         context,
+                                                                                         request.getAggregateId());
+        listeningStreamObservers.add(responseObserver);
         eventStoreStub(context).listAggregateEvents(
                 request,
-                new StreamingEventStreamObserver(queue, context, request.getAggregateId())
+                responseObserver
         );
         return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
@@ -172,6 +181,7 @@ public class AxonServerEventStoreClient {
                 responseStreamObserver.onCompleted();
             }
         };
+        listeningStreamObservers.add(wrappedStreamObserver);
         return eventStoreStub(context).listEvents(wrappedStreamObserver);
     }
 
@@ -203,6 +213,29 @@ public class AxonServerEventStoreClient {
                 new SingleResultStreamObserver<>(context, confirmationFuture)
         );
         return confirmationFuture;
+    }
+
+    /**
+     * Stops all activities in regard to reading events from Axon Server.
+     */
+    public void stopReadingEvents() {
+        listeningStreamObservers.forEach(so -> {
+            try {
+                so.onCompleted();
+            } catch (Exception e) {
+                logger.warn("Error happened while stopping stream observer.", e);
+            }
+        });
+    }
+
+    /**
+     * Stops all activities in regard to sending events to Axon Server asynchronously.
+     *
+     * @return a completable future which is resolved once all activities are completed
+     */
+    public CompletableFuture<Void> stopSendingEvents() {
+        shuttingDown = true;
+        return CompletableFuture.allOf(pendingTransactions.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -307,8 +340,12 @@ public class AxonServerEventStoreClient {
      * @return a transaction to append events with.
      */
     public AppendEventTransaction createAppendEventConnection(String context) {
+        if (shuttingDown) {
+            throw new IllegalStateException("Cannot create new event transaction. Shutting down...");
+        }
+        CompletableFuture<Void> pendingTransaction = new CompletableFuture<>();
         CompletableFuture<Confirmation> futureConfirmation = new CompletableFuture<>();
-        return new AppendEventTransaction(
+        AppendEventTransaction transaction = new AppendEventTransaction(
                 timeout,
                 eventStoreStub(context).appendEvent(new StreamObserver<Confirmation>() {
                     @Override
@@ -320,16 +357,19 @@ public class AxonServerEventStoreClient {
                     public void onError(Throwable throwable) {
                         checkConnectionException(throwable, context);
                         futureConfirmation.completeExceptionally(GrpcExceptionParser.parse(throwable));
+                        pendingTransaction.completeExceptionally(throwable);
                     }
 
                     @Override
                     public void onCompleted() {
-                        // No-op - the operation has already been completed in the `onNext(Confirmation)`
+                        pendingTransaction.complete(null);
                     }
                 }),
                 futureConfirmation,
                 eventCipher
         );
+        pendingTransactions.add(pendingTransaction);
+        return transaction;
     }
 
     /**

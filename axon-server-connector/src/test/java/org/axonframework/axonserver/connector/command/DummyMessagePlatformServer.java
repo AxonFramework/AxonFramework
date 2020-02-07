@@ -29,6 +29,7 @@ import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.PlatformService;
+import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 
 import java.io.IOException;
@@ -44,6 +45,7 @@ public class DummyMessagePlatformServer {
     private Server server;
     private Map<String, StreamObserver> subscriptions = new ConcurrentHashMap<>();
     private Map<String, CommandSubscription> commandSubscriptions = new ConcurrentHashMap<>();
+    private final EventStoreImpl eventStore = new EventStoreImpl();
 
     public DummyMessagePlatformServer() {
         this(TcpUtil.findFreePort());
@@ -75,9 +77,14 @@ public class DummyMessagePlatformServer {
         subscription.onError(new RuntimeException());
     }
 
+    public EventStoreImpl eventStore() {
+        return eventStore;
+    }
+
     public void start() throws IOException {
         server = ServerBuilder.forPort(port)
                               .addService(new CommandHandler())
+                              .addService(eventStore)
                               .addService(new PlatformService(port))
                               .build();
         server.start();

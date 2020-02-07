@@ -41,10 +41,14 @@ public abstract class Phase {
      */
     public static final int INBOUND_COMMAND_OR_QUERY_CONNECTOR = 0;
     /**
+     * Phase to start or shutdown external connections for sending/receiving events.
+     */
+    public static final int EXTERNAL_EVENT_CONNECTIONS = Integer.MAX_VALUE >> 4;
+    /**
      * Phase to start or shutdown outbound event connectors. It is targeted towards connectors which can send events out
      * to external applications.
      */
-    public static final int OUTBOUND_EVENT_CONNECTORS = 0;
+    public static final int OUTBOUND_EVENT_CONNECTORS = Integer.MAX_VALUE >> 3;
     /**
      * Phase to start or shutdown outbound command and/or query connectors. It is targeted towards connectors which send
      * commands and/or queries out to external applications.

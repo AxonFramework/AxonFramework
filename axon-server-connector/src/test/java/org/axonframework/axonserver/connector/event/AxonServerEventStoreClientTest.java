@@ -4,6 +4,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
 import io.axoniq.axonserver.grpc.event.GetAggregateSnapshotsRequest;
+import io.axoniq.axonserver.grpc.event.GetEventsRequest;
 import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
@@ -13,7 +14,13 @@ import org.axonframework.axonserver.connector.command.DummyMessagePlatformServer
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -56,6 +63,45 @@ class AxonServerEventStoreClientTest {
     void tearDown() {
         axonServerConnectionManager.shutdown();
         dummyMessagePlatformServer.stop();
+    }
+
+    @Test
+    void testStopReadingEvents() throws InterruptedException {
+        TestStreamObserver<EventWithToken> receivingStreamObserver = new TestStreamObserver<>();
+        StreamObserver<Event> sendingStreamObserver = dummyMessagePlatformServer.eventStore()
+                                                                                .appendEvent(new TestStreamObserver<>());
+        StreamObserver<GetEventsRequest> requestEvents = testSubject.listEvents(BOUNDED_CONTEXT,
+                                                                                receivingStreamObserver);
+        sendingStreamObserver.onNext(Event.getDefaultInstance());
+        sendingStreamObserver.onCompleted();
+        requestEvents.onNext(GetEventsRequest.newBuilder().setNumberOfPermits(10).build());
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> assertEquals(1, receivingStreamObserver.sentMessages().size()));
+
+        testSubject.stopReadingEvents();
+
+        sendingStreamObserver.onNext(Event.getDefaultInstance());
+        sendingStreamObserver.onCompleted();
+        requestEvents.onNext(GetEventsRequest.newBuilder().setNumberOfPermits(10).build());
+        Thread.sleep(100);
+        assertEquals(1, receivingStreamObserver.sentMessages().size());
+    }
+
+    @Test
+    void testStopSendingEvents() throws InterruptedException, ExecutionException, TimeoutException {
+        AppendEventTransaction appendEventConnection = testSubject.createAppendEventConnection(BOUNDED_CONTEXT);
+        appendEventConnection.append(Event.getDefaultInstance());
+        Executors.newScheduledThreadPool(1)
+                 .schedule(() -> {
+                     try {
+                         appendEventConnection.commit();
+                     } catch (Exception e) {
+                         fail(e);
+                     }
+                 }, 100, TimeUnit.MILLISECONDS);
+        testSubject.stopSendingEvents()
+                   .get(1, TimeUnit.SECONDS);
+        assertThrows(IllegalStateException.class, () -> appendEventConnection.append(Event.getDefaultInstance()));
+        assertThrows(IllegalStateException.class, () -> testSubject.createAppendEventConnection(BOUNDED_CONTEXT));
     }
 
     @Test
