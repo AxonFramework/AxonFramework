@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ class MergedTrackingTokenTest {
     }
 
     @Test
-    void testUnwrapPrefersLastAdvancedToken_LowerSegmenAdvanced() {
+    void testUnwrapPrefersLastAdvancedToken_LowerSegmentAdvanced() {
         TrackingToken merged = new MergedTrackingToken(token(1), token(3)).advancedTo(token(2));
         assertTrue(merged instanceof MergedTrackingToken);
         assertEquals(token(2), WrappedToken.unwrap(merged, GlobalSequenceTrackingToken.class).orElse(null));
@@ -132,6 +132,20 @@ class MergedTrackingTokenTest {
     void testPositionIsNotPresent() {
         MergedTrackingToken merged = new MergedTrackingToken(mock(TrackingToken.class), token(3));
         assertFalse(merged.position().isPresent());
+    }
+
+    @Test
+    void testIsMergeInProgress() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(token(1), token(3));
+        assertTrue(MergedTrackingToken.isMergeInProgress(testSubject));
+    }
+
+    @Test
+    void testMergePosition() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(3)), token(5));
+
+        assertTrue(MergedTrackingToken.mergePosition(testSubject).isPresent());
+        assertEquals(MergedTrackingToken.mergePosition(testSubject).getAsLong(), 5);
     }
 
     private GlobalSequenceTrackingToken token(int sequence) {
