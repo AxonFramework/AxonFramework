@@ -851,6 +851,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
 
         @Override
+        public boolean isMerging() {
+            return MergedTrackingToken.isMergeInProgress(trackingToken);
+        }
+
+        @Override
+        public OptionalLong mergeCompletedPosition() {
+            return MergedTrackingToken.mergePosition(trackingToken);
+        }
+
+        @Override
         public TrackingToken getTrackingToken() {
             return WrappedToken.unwrapLowerBound(trackingToken);
         }
@@ -872,8 +882,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         public OptionalLong getCurrentPosition() {
             if (isReplaying()) {
                 return  WrappedToken.unwrap(trackingToken, ReplayToken.class)
-                                   .map(ReplayToken::position)
-                                   .orElse(OptionalLong.empty());
+                                    .map(ReplayToken::position)
+                                    .orElse(OptionalLong.empty());
+            }
+
+            if (isMerging()) {
+                return  WrappedToken.unwrap(trackingToken, MergedTrackingToken.class)
+                                    .map(MergedTrackingToken::position)
+                                    .orElse(OptionalLong.empty());
             }
 
             return (trackingToken == null) ? OptionalLong.empty() : trackingToken.position();
