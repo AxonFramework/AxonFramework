@@ -82,6 +82,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -627,7 +628,7 @@ public class DefaultConfigurer implements Configurer {
                     );
                 }
         );
-        lifecycleState = LifecycleState.LIFE;
+        lifecycleState = LifecycleState.UP;
     }
 
     /**
@@ -811,7 +812,7 @@ public class DefaultConfigurer implements Configurer {
     private enum LifecycleState {
         DOWN,
         STARTING_UP,
-        LIFE,
+        UP,
         SHUTTING_DOWN
     }
 }
