@@ -60,6 +60,7 @@ public interface EventTrackerStatus {
 
     /**
      * Return the estimated relative token position this Segment will have after a merge operation is complete.
+     * Will return a non-empty result as long as {@link EventTrackerStatus#isMerging()} } returns true.
      * In case no estimation can be given or no merge in progress, an {@code OptionalLong.empty()} will be returned.
      *
      * @return return the estimated relative position this Segment will reach after a merge operation is complete.
