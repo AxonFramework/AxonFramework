@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
 import org.axonframework.common.stream.BlockingStream;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
@@ -955,7 +956,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         private TransactionManager transactionManager;
         private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
-        private boolean storeTokenBeforeProcessing = true;
+        private Boolean storeTokenBeforeProcessing;
 
         public Builder() {
             super.rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
@@ -1024,13 +1025,30 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         /**
          * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
+         * <p/>
+         * Note that setting this value influences the behavior for storing tokens either at the start or at the end of
+         * a batch.
+         * If a TransactionManager other than a {@link NoTransactionManager} is configured, the default behavior is to
+         * store the last token of the Batch to the Token Store before processing of events begins. If the
+         * {@link NoTransactionManager} is provided, the default is to extend the claim at the start of the unit of
+         * work, and update the token after processing Events.
+         * When tokens are stored at the start of a batch, a claim extension will be sent at the end of the batch if
+         * processing that batch took longer than the {@link
+         * TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit) tokenClaimUpdateInterval}.
+         * <p>
+         * Use {@link #storingTokensAfterProcessing()} to force storage of tokens at the end of a batch.
          *
          * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
+         *
          * @return the current Builder instance, for fluent interfacing
+         * @see #storingTokensAfterProcessing()
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
+            if (storeTokenBeforeProcessing == null) {
+                storeTokenBeforeProcessing = transactionManager != NoTransactionManager.instance();
+            }
             return this;
         }
 
@@ -1060,7 +1078,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
          * are desired.
          * <p>
          * The default behavior is to store the last token of the Batch to the Token Store before processing of events
-         * begins. A Token Claim extension is only sent when processing of the batch took longer than the {@link
+         * begins, if a TransactionManager is configured. If the {@link NoTransactionManager} is provided, the default
+         * is to extend the claim at the start of the unit of work, and update the token after processing Events.
+         * When tokens are stored at the start of a batch, a claim extension will be sent at the end of the batch if
+         * processing that batch took longer than the {@link
          * TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit) tokenClaimUpdateInterval}.
          *
          * @return the current Builder instance, for fluent interfacing
@@ -1088,6 +1109,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         protected void validate() throws AxonConfigurationException {
             super.validate();
+            if (storeTokenBeforeProcessing == null) {
+                storeTokenBeforeProcessing = false;
+            }
             assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
