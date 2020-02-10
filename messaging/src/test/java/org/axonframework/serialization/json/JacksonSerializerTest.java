@@ -269,7 +269,7 @@ class JacksonSerializerTest {
     }
 
     @Test
-    void testDeserializeLienientIgnoresUnknownValues() {
+    void testDeserializeLenientIgnoresUnknownValues() {
         testSubject = JacksonSerializer.builder().lenientDeserialization().objectMapper(objectMapper).build();
         SerializedObject<JsonNode> serialized = testSubject.serialize(new ComplexObject("one", "two", 3), JsonNode.class);
         ObjectNode data = (ObjectNode) serialized.getData();
