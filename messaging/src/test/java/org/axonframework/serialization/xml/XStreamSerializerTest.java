@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,13 @@
 
 package org.axonframework.serialization.xml;
 
+import com.thoughtworks.xstream.converters.reflection.AbstractReflectionConverter;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.utils.StubDomainEvent;
+import org.dom4j.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +35,13 @@ import java.time.Period;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -200,6 +208,32 @@ class XStreamSerializerTest {
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
         TestEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
+    }
+
+    @Test
+    void testUnknownPropertiesAreIgnoredWhenConfiguringLenientDeserialization() {
+        testSubject = XStreamSerializer.builder()
+                                       .lenientDeserialization()
+                                       .build();
+        SerializedObject<Document> serialized = testSubject.serialize(testEvent, Document.class);
+        Document data = serialized.getData();
+        data.getRootElement().addElement("unknown").setText("Ignored");
+
+        TestEvent actual = testSubject.deserialize(new SimpleSerializedObject<>(data, Document.class, serialized.getType()));
+        assertEquals(testEvent, actual);
+    }
+
+    @Test
+    void testUnknownPropertiesFailDeserializationByDefault() {
+        testSubject = XStreamSerializer.builder()
+                                       .build();
+        SerializedObject<Document> serialized = testSubject.serialize(testEvent, Document.class);
+        Document data = serialized.getData();
+        data.getRootElement().addElement("unknown").setText("Ignored");
+
+        assertThrows(AbstractReflectionConverter.UnknownFieldException.class, () -> {
+            testSubject.deserialize(new SimpleSerializedObject<>(data, Document.class, serialized.getType()));
+        });
     }
 
     @Revision("2")

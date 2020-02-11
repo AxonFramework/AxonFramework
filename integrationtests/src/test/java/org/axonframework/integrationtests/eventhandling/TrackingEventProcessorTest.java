@@ -45,8 +45,11 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
@@ -81,8 +84,30 @@ import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}.
@@ -401,7 +426,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testTokenStoredAtEndOfEventBatchAndNotExtended() throws Exception {
+    void testTokenStoredAtEndOfEventBatchAndNotExtendedWhenUsingANoTransactionManager() throws Exception {
         TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing().andBatchSize(100);
         testSubject = TrackingEventProcessor.builder()
@@ -411,6 +436,48 @@ class TrackingEventProcessorTest {
                                             .messageSource(eventBus)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.INSTANCE)
+                                            .build();
+
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        AtomicInteger invocationsInUnitOfWork = new AtomicInteger();
+        doAnswer(i -> {
+            if (CurrentUnitOfWork.isStarted()) {
+                invocationsInUnitOfWork.incrementAndGet();
+            }
+            return i.callRealMethod();
+        }).when(tokenStore).extendClaim(anyString(), anyInt());
+
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        testSubject.start();
+        eventBus.publish(createEvents(2));
+        assertTrue(
+                countDownLatch.await(5, TimeUnit.SECONDS),
+                "Expected Unit of Work to have reached clean up phase for 2 messages"
+        );
+
+        verify(tokenStore, times(1)).storeToken(any(), any(), anyInt());
+        assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
+
+        assertEquals(
+                1, invocationsInUnitOfWork.get(),
+                "Unexpected number of invocations of token extension in unit of work"
+        );
+    }
+
+    @Test
+    void testTokenStoredAtEndOfEventBatchAndNotExtendedWhenTransactionManagerIsConfigured() throws Exception {
+        TrackingEventProcessorConfiguration tepConfig =
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing().andBatchSize(100);
+        testSubject = TrackingEventProcessor.builder()
+                                            .name("test")
+                                            .eventHandlerInvoker(eventHandlerInvoker)
+                                            .trackingEventProcessorConfiguration(tepConfig)
+                                            .messageSource(eventBus)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(() -> mock(Transaction.class))
                                             .build();
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
@@ -1035,8 +1102,9 @@ class TrackingEventProcessorTest {
         );
 
         waitForProcessingStatus(segmentId, EventTrackerStatus::isMerging);
-        assertTrue(testSubject.processingStatus().get(segmentId).mergeCompletedPosition().isPresent());
-        long mergeCompletedPosition = testSubject.processingStatus().get(segmentId).mergeCompletedPosition().getAsLong();
+        EventTrackerStatus status = testSubject.processingStatus().get(segmentId);
+        assertTrue(status.mergeCompletedPosition().isPresent());
+        long mergeCompletedPosition = status.mergeCompletedPosition().getAsLong();
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForProcessingStatus(segmentId, EventTrackerStatus::isCaughtUp);
@@ -1054,9 +1122,10 @@ class TrackingEventProcessorTest {
 
         publishEvents(1);
         waitForProcessingNotInStatus(segmentId, EventTrackerStatus::isMerging);
-        assertFalse(testSubject.processingStatus().get(segmentId).mergeCompletedPosition().isPresent());
-        assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
-        assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > mergeCompletedPosition);
+        status = testSubject.processingStatus().get(segmentId);
+        assertFalse(status.mergeCompletedPosition().isPresent());
+        assertTrue(status.getCurrentPosition().isPresent());
+        assertTrue(status.getCurrentPosition().getAsLong() > mergeCompletedPosition);
     }
 
     @Test
