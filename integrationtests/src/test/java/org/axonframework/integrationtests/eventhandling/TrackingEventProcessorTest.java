@@ -1075,7 +1075,7 @@ class TrackingEventProcessorTest {
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
 
         publishEvents(1);
-        waitForProcessingNotInStatus(segmentId, EventTrackerStatus::isMerging);
+        waitForProcessingStatus(segmentId, s -> !s.isMerging());
     }
 
     @Test
@@ -1101,8 +1101,7 @@ class TrackingEventProcessorTest {
                 () -> assertTrue(testSubject.mergeSegment(segmentId).join(), "Expected merge to succeed")
         );
 
-        waitForProcessingStatus(segmentId, EventTrackerStatus::isMerging);
-        EventTrackerStatus status = testSubject.processingStatus().get(segmentId);
+        EventTrackerStatus status = waitForProcessingStatus(segmentId, EventTrackerStatus::isMerging);
         assertTrue(status.mergeCompletedPosition().isPresent());
         long mergeCompletedPosition = status.mergeCompletedPosition().getAsLong();
 
@@ -1121,8 +1120,7 @@ class TrackingEventProcessorTest {
         assertEquals(10, handledEvents.size(), "Number of handler invocations doesn't match number of unique events");
 
         publishEvents(1);
-        waitForProcessingNotInStatus(segmentId, EventTrackerStatus::isMerging);
-        status = testSubject.processingStatus().get(segmentId);
+        status = waitForProcessingStatus(segmentId, s -> !s.isMerging());
         assertFalse(status.mergeCompletedPosition().isPresent());
         assertTrue(status.getCurrentPosition().isPresent());
         assertTrue(status.getCurrentPosition().getAsLong() > mergeCompletedPosition);
@@ -1482,19 +1480,16 @@ class TrackingEventProcessorTest {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private void waitForProcessingStatus(int segmentId,
-                                         Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
-        while (!Optional.ofNullable(testSubject.processingStatus().get(segmentId))
+    private EventTrackerStatus waitForProcessingStatus(int segmentId,
+                                                       Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
+        EventTrackerStatus status = testSubject.processingStatus().get(segmentId);
+        while (!Optional.ofNullable(status)
                         .map(expectedStatus::test)
                         .orElse(false)) {
             Thread.sleep(10);
+            status = testSubject.processingStatus().get(segmentId);
         }
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private void waitForProcessingNotInStatus(int segmentId,
-                                              Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
-        waitForProcessingStatus(segmentId, expectedStatus.negate());
+        return status;
     }
 
     private void publishEvents(int nrOfEvents) {
