@@ -1102,8 +1102,9 @@ class TrackingEventProcessorTest {
         );
 
         waitForProcessingStatus(segmentId, EventTrackerStatus::isMerging);
-        assertTrue(testSubject.processingStatus().get(segmentId).mergeCompletedPosition().isPresent());
-        long mergeCompletedPosition = testSubject.processingStatus().get(segmentId).mergeCompletedPosition().getAsLong();
+        EventTrackerStatus status = testSubject.processingStatus().get(segmentId);
+        assertTrue(status.mergeCompletedPosition().isPresent());
+        long mergeCompletedPosition = status.mergeCompletedPosition().getAsLong();
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         waitForProcessingStatus(segmentId, EventTrackerStatus::isCaughtUp);
@@ -1121,9 +1122,10 @@ class TrackingEventProcessorTest {
 
         publishEvents(1);
         waitForProcessingNotInStatus(segmentId, EventTrackerStatus::isMerging);
-        assertFalse(testSubject.processingStatus().get(segmentId).mergeCompletedPosition().isPresent());
-        assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
-        assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > mergeCompletedPosition);
+        status = testSubject.processingStatus().get(segmentId);
+        assertFalse(status.mergeCompletedPosition().isPresent());
+        assertTrue(status.getCurrentPosition().isPresent());
+        assertTrue(status.getCurrentPosition().getAsLong() > mergeCompletedPosition);
     }
 
     @Test
