@@ -26,6 +26,7 @@ import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.RemoteHandlingException;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -95,5 +96,14 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
      */
     default Optional<CommandBus> localSegment() {
         return Optional.empty();
+    }
+
+    /**
+     * Stops sending new commands.
+     *
+     * @return a Completable Future indicating that all previously sent commands are completed
+     */
+    default CompletableFuture<Void> stopSendingCommands() {
+        return CompletableFuture.completedFuture(null);
     }
 }

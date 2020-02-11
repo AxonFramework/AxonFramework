@@ -27,6 +27,8 @@ import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -36,6 +38,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -99,6 +102,24 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         this.connector = builder.connector;
         this.messageMonitor = builder.messageMonitor;
         this.defaultCommandCallback = builder.defaultCommandCallback;
+    }
+
+    /**
+     * Shutdown handler that unsubscribes all command handlers subscribed via this Distributed Command Bus.
+     */
+    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_OR_QUERY_CONNECTORS)
+    public void unsubscribeCommandHandlers() {
+        commandRouter.updateMembership(loadFactor, DenyAll.INSTANCE);
+    }
+
+    /**
+     * Shutdown handler that stops sending new commands.
+     *
+     * @return a Completable Future indicating that all previously sent commands are completed
+     */
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_OR_QUERY_CONNECTOR)
+    public CompletableFuture<Void> stopSendingCommands() {
+        return connector.stopSendingCommands();
     }
 
     @Override
