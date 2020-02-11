@@ -1,7 +1,5 @@
 language: java
 
-sudo: required
-
 services:
   - docker
   - mysql
