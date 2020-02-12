@@ -519,7 +519,9 @@ class AxonServerQueryBusTest {
 
         CompletableFuture<Void> dispatchingHasShutdown = testSubject.shutdownDispatching();
 
-        assertFalse(queryHandled.get());
+        if (!dispatchingHasShutdown.isDone()) {
+            assertFalse(queryHandled.get());
+        }
 
         // Wait until the shutdownDispatching-thread and queryResponse-thread have finished prior to validating
         dispatchingHasShutdown.join();
