@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.distributed;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
@@ -29,6 +30,23 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
  */
 public class CommandCallbackRepository<A> {
     private final Map<String, CommandCallbackWrapper> callbacks = new ConcurrentHashMap<>();
+    private final Consumer<CommandCallbackWrapper> onCallbackRemoved;
+
+    /**
+     * Instantiates this Command Callback Repository.
+     */
+    public CommandCallbackRepository(){
+        this(callback -> {});
+    }
+
+    /**
+     * Instantiates this Command Callback Repository.
+     *
+     * @param onCallbackRemoved invoked whenever a callback is removed from this repository
+     */
+    public CommandCallbackRepository(Consumer<CommandCallbackWrapper> onCallbackRemoved) {
+        this.onCallbackRemoved = onCallbackRemoved;
+    }
 
     /**
      * Removes all callbacks for a given channel. Registered callbacks will receive a failure response containing a
@@ -45,6 +63,7 @@ public class CommandCallbackRepository<A> {
                         String.format("Connection error while waiting for a response on command %s",
                                       wrapper.getMessage().getCommandName()))));
                 callbacks.remove();
+                onCallbackRemoved.accept(wrapper);
             }
         }
     }
@@ -60,7 +79,9 @@ public class CommandCallbackRepository<A> {
      */
     @SuppressWarnings("unchecked")
     public <E, C, R> CommandCallbackWrapper<E, C, R> fetchAndRemove(String callbackId) {
-        return callbacks.remove(callbackId);
+        CommandCallbackWrapper callback = callbacks.remove(callbackId);
+        onCallbackRemoved.accept(callback);
+        return callback;
     }
 
     /**
