@@ -329,7 +329,7 @@ public class JacksonSerializer implements Serializer {
 
         /**
          * Configures the underlying ObjectMapper to be lenient when deserializing JSON into Java objects. Specifically,
-         * enables the {@link DeserializationFeature#FAIL_ON_UNKNOWN_PROPERTIES} and
+         * enables the {@link DeserializationFeature#ACCEPT_SINGLE_VALUE_AS_ARRAY} and
          * {@link DeserializationFeature#UNWRAP_SINGLE_VALUE_ARRAYS}, and disables
          * {@link DeserializationFeature#FAIL_ON_UNKNOWN_PROPERTIES}.
          *
