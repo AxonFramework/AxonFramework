@@ -82,7 +82,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -474,6 +473,7 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configurer registerModule(ModuleConfiguration module) {
+        logger.debug("Registering module [{}]", module.getClass().getSimpleName());
         if (initialized) {
             module.initialize(config);
         }
@@ -484,6 +484,7 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public <C> Configurer registerComponent(Class<C> componentType,
                                             Function<Configuration, ? extends C> componentBuilder) {
+        logger.debug("Registering component [{}]", componentType.getSimpleName());
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
         return this;
     }
@@ -614,10 +615,13 @@ public class DefaultConfigurer implements Configurer {
      * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
+        logger.debug("Initiating phased start up");
         lifecycleState = LifecycleState.STARTING_UP;
+
         invokeLifecycleHandlers(
                 startHandlers,
                 e -> {
+                    logger.debug("Start up is being ended prematurely due to an exception");
                     invokeShutdownHandlers();
                     throw new LifecycleHandlerInvocationException(
                             String.format(
@@ -628,14 +632,18 @@ public class DefaultConfigurer implements Configurer {
                     );
                 }
         );
+
         lifecycleState = LifecycleState.UP;
+        logger.debug("Finalized start sequence");
     }
 
     /**
      * Invokes all registered shutdown handlers.
      */
     protected void invokeShutdownHandlers() {
+        logger.debug("Initiating phased shutdown");
         lifecycleState = LifecycleState.SHUTTING_DOWN;
+
         invokeLifecycleHandlers(
                 shutdownHandlers,
                 e -> logger.warn(
@@ -643,7 +651,9 @@ public class DefaultConfigurer implements Configurer {
                         currentLifecyclePhase, e.getCause()
                 )
         );
+
         lifecycleState = LifecycleState.DOWN;
+        logger.debug("Finalized shutdown sequence");
     }
 
     private void invokeLifecycleHandlers(TreeMap<Integer, List<LifecycleHandler>> lifecycleHandlerMap,
@@ -655,6 +665,8 @@ public class DefaultConfigurer implements Configurer {
 
         do {
             currentLifecyclePhase = phasedHandlers.getKey();
+            logger.debug("Entered {} handler lifecycle phase [{}]", lifecycleState.description, currentLifecyclePhase);
+
             List<LifecycleHandler> handlers = phasedHandlers.getValue();
             try {
                 handlers.stream()
@@ -810,9 +822,15 @@ public class DefaultConfigurer implements Configurer {
     }
 
     private enum LifecycleState {
-        DOWN,
-        STARTING_UP,
-        UP,
-        SHUTTING_DOWN
+        DOWN("down"),
+        STARTING_UP("start"),
+        UP("up"),
+        SHUTTING_DOWN("shutdown");
+
+        private String description;
+
+        LifecycleState(String description) {
+            this.description = description;
+        }
     }
 }

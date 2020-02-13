@@ -65,7 +65,7 @@ public abstract class LifecycleHandlerInspector {
      */
     public static void registerLifecycleHandlers(Configuration configuration, Object component) {
         if (component == null) {
-            logger.debug("Ignoring [null] component as it wont participate in the lifecycle");
+            logger.debug("Ignoring [null] component for inspection as it wont participate in the lifecycle");
             return;
         }
         registerLifecycleHandlers(configuration, component, StartHandler.class, Configuration::onStart);
@@ -88,7 +88,9 @@ public abstract class LifecycleHandlerInspector {
                                }
                                method.setAccessible(true);
                                int phase = (int) lifecycleAnnotationAttributes.get(LIFECYCLE_PHASE_ATTRIBUTE_NAME);
-                               LifecycleHandler lifecycleHandler = () -> invokeAndReturn(component, method);
+                               LifecycleHandler lifecycleHandler = () -> invokeAndReturn(
+                                       component, method, lifecycleAnnotation.getSimpleName(), phase
+                               );
                                registrationMethod.registerLifecycleHandler(configuration, phase, lifecycleHandler);
 
                                logger.debug(
@@ -106,8 +108,16 @@ public abstract class LifecycleHandlerInspector {
      * returned. If invoking the given method fails, an {@link LifecycleHandlerInvocationException} is added to an
      * exceptionally completed {@code CompletableFuture}.
      */
-    private static CompletableFuture<?> invokeAndReturn(Object lifecycleComponent, Method lifecycleHandler) {
+    private static CompletableFuture<?> invokeAndReturn(Object lifecycleComponent,
+                                                        Method lifecycleHandler,
+                                                        String handlerType,
+                                                        int phase) {
         try {
+            logger.debug(
+                    "Invoking {} from [{}] in phase [{}]",
+                    handlerType, lifecycleComponent.getClass().getSimpleName(), phase
+            );
+
             Object result = lifecycleHandler.invoke(lifecycleComponent);
 
             return result instanceof CompletableFuture
