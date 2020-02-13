@@ -94,7 +94,7 @@ public abstract class LifecycleHandlerInspector {
                                registrationMethod.registerLifecycleHandler(configuration, phase, lifecycleHandler);
 
                                logger.debug(
-                                       "Found and registered a {} with phase [{}] on [{}]",
+                                       "Found and registered a {} with phase [{}] from component [{}]",
                                        lifecycleAnnotation.getSimpleName(), phase, component.getClass().getSimpleName()
                                );
                            });
@@ -114,7 +114,7 @@ public abstract class LifecycleHandlerInspector {
                                                         int phase) {
         try {
             logger.debug(
-                    "Invoking {} from [{}] in phase [{}]",
+                    "Invoking {} from component [{}] in phase [{}]",
                     handlerType, lifecycleComponent.getClass().getSimpleName(), phase
             );
 

@@ -615,7 +615,7 @@ public class DefaultConfigurer implements Configurer {
      * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
-        logger.debug("Initiating phased start up");
+        logger.debug("Initiating start up");
         lifecycleState = LifecycleState.STARTING_UP;
 
         invokeLifecycleHandlers(
@@ -641,7 +641,7 @@ public class DefaultConfigurer implements Configurer {
      * Invokes all registered shutdown handlers.
      */
     protected void invokeShutdownHandlers() {
-        logger.debug("Initiating phased shutdown");
+        logger.debug("Initiating shutdown");
         lifecycleState = LifecycleState.SHUTTING_DOWN;
 
         invokeLifecycleHandlers(
