@@ -521,7 +521,9 @@ class AxonServerCommandBusTest {
         testSubject.dispatch(testCommand, (commandMessage, result) -> commandHandled.set(true));
         CompletableFuture<Void> dispatchingHasShutdown = testSubject.shutdownDispatching();
 
-        assertFalse(commandHandled.get());
+        if (!dispatchingHasShutdown.isDone()) {
+            assertFalse(commandHandled.get());
+        }
 
         // Wait on the shutdownDispatching-thread, after which the command should have been handled
         dispatchingHasShutdown.join();
