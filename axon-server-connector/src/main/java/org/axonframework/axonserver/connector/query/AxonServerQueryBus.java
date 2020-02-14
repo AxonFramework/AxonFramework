@@ -55,6 +55,7 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
+import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -76,7 +77,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -87,7 +87,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -99,9 +98,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.ACK;
-import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.QUERY;
-import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
+import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.*;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.numberOfResults;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -135,9 +132,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private final Handlers<QueryProviderInbound.RequestCase, BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> queryHandlers = new DefaultHandlers<>();
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
     private final InstructionAckSource<QueryProviderOutbound> instructionAckSource;
-
-    private volatile boolean shuttingDown = false;
-    private final List<CompletableFuture<?>> queriesInTransit = new CopyOnWriteArrayList<>();
+    private final ShutdownLatch shutdownLatch = new ShutdownLatch();
 
     /**
      * Creates an instance of the Axon Server {@link QueryBus} client. Will connect to an Axon Server instance to submit
@@ -346,7 +341,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                    configuration.getClientId(), throwable
                                            )
                                    );
-                                   queriesInTransit.remove(queryTransaction);
+                                   shutdownLatch.decrement();
                                }
 
                                @Override
@@ -360,9 +355,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                )
                                        );
                                    }
-                                   queriesInTransit.remove(queryTransaction);
+                                   shutdownLatch.decrement();
                                }
                            });
+            shutdownLatch.increment();
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             queryTransaction.completeExceptionally(
@@ -370,7 +366,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             );
         }
 
-        queriesInTransit.add(queryTransaction);
         return queryTransaction;
     }
 
@@ -388,7 +383,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                 priorityCalculator.determinePriority(interceptedQuery));
         BufferingSpliterator<QueryResponseMessage<R>> resultSpliterator =
                 new BufferingSpliterator<>(Instant.now().plusMillis(timeUnit.toMillis(timeout)));
-        CompletableFuture<Void> scatterGatherTransaction = new CompletableFuture<>();
 
         queryService(context)
                 .withDeadlineAfter(timeout, timeUnit)
@@ -415,19 +409,17 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                    logger.info("Received error while waiting for responses", throwable);
                                }
                                resultSpliterator.cancel(throwable);
-                               scatterGatherTransaction.completeExceptionally(throwable);
-                               queriesInTransit.remove(scatterGatherTransaction);
+                               shutdownLatch.decrement();
                            }
 
                            @Override
                            public void onCompleted() {
                                resultSpliterator.cancel(null);
-                               scatterGatherTransaction.complete(null);
-                               queriesInTransit.remove(scatterGatherTransaction);
+                               shutdownLatch.decrement();
                            }
                        });
+        shutdownLatch.increment();
 
-        queriesInTransit.add(scatterGatherTransaction);
         return StreamSupport.stream(resultSpliterator, false).onClose(() -> resultSpliterator.cancel(null));
     }
 
@@ -496,11 +488,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     private void validateShutdown(String queryType) {
-        if (shuttingDown) {
-            throw new IllegalStateException(
-                    String.format("Cannot dispatch new %s as this bus is being shut down", queryType)
-            );
-        }
+        shutdownLatch.isShuttingDown(() -> new IllegalStateException(String.format(
+                "Cannot dispatch new %s as this bus is being shut down", queryType
+        )));
     }
 
     QueryServiceGrpc.QueryServiceStub queryService(String context) {
@@ -530,23 +520,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     /**
      * Disconnect the query bus from Axon Server, by unsubscribing all known query handlers. After this the connection
-     * will be closed, waiting nicely until all query processing tasks have been resolved.
+     * will be closed, waiting nicely until all query processing tasks have been resolved. This shutdown operation is
+     * performed in the {@link Phase#INBOUND_COMMAND_OR_QUERY_CONNECTOR} phase.
      */
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_OR_QUERY_CONNECTOR)
     public void disconnect() {
         queryProcessor.unsubscribeAndRemoveAll();
         queryProcessor.disconnect();
-    }
-
-    /**
-     * Disconnect the query bus for receiving queries from Axon Server, by unsubscribing all registered query handlers.
-     * After this the connection will be closed, waiting nicely until all query processing tasks have been resolved.
-     * This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_OR_QUERY_CONNECTOR} phase.
-     *
-     * @return a {@link Void} {@link CompletableFuture}, making for an asynchronous {@link #disconnect()} invocation
-     */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_OR_QUERY_CONNECTOR)
-    public CompletableFuture<Void> disconnectAsync() {
-        return CompletableFuture.runAsync(this::disconnect);
     }
 
     /**
@@ -558,8 +538,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_OR_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        shuttingDown = true;
-        return CompletableFuture.allOf(queriesInTransit.toArray(new CompletableFuture[0]));
+        return shutdownLatch.await();
     }
 
     private class QueryProcessor {
@@ -807,24 +786,17 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         void disconnect() {
             running = false;
 
-            int timeOutSeconds = 5;
             queryExecutor.shutdown();
             try {
-                while (!queryExecutor.awaitTermination(timeOutSeconds, TimeUnit.SECONDS) && timeOutSeconds < 40) {
-                    if (timeOutSeconds == 5) {
-                        logger.warn("Axon Server Query Bus is waiting termination of active queries");
-                    }
-                    timeOutSeconds = Math.min(timeOutSeconds * 2, 60);
+                if (!queryExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    logger.warn("Awaited Query Bus termination for 5 seconds. Wait period extended by 30 seconds.");
                 }
-                if (timeOutSeconds == 40) {
-                    logger.warn("Axon Server Query Bus waited 40 seconds for active queries to terminate, "
-                                        + "hence will forcefully shutdown");
+                if (!queryExecutor.awaitTermination(20, TimeUnit.SECONDS)) {
+                    logger.warn("Awaited Query Bus termination for 35 seconds. Will shutdown forcefully.");
                     queryExecutor.shutdownNow();
                 }
             } catch (InterruptedException e) {
-                logger.error(
-                        "Awaiting termination of Axon Server Query Bus got interrupted. Will shutdown immediately", e
-                );
+                logger.warn("Awaiting termination of Query Bus got interrupted. Will shutdown immediately", e);
                 queryExecutor.shutdownNow();
                 Thread.currentThread().interrupt();
             }

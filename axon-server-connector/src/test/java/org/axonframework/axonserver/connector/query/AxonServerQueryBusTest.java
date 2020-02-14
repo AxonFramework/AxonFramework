@@ -467,7 +467,7 @@ class AxonServerQueryBusTest {
         try {
             inboundStreamObserver.get().onNext(testQueryMessage);
         } finally {
-            disconnected = testSubject.disconnectAsync();
+            disconnected = CompletableFuture.runAsync(testSubject::disconnect);
             slowHandlerLock.unlock();
         }
 
