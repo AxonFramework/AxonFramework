@@ -74,8 +74,7 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
                 constructors.put(type, constructor);
             } catch (NoSuchMethodException e) {
                 throw new IncompatibleAggregateException(format(
-                        "The aggregate (or some of its subtypes) [%s] doesn't provide a no-arg constructor.",
-                        aggregateModel.entityClass().getSimpleName()));
+                        "The aggregate [%s] doesn't provide a no-arg constructor.", type.getName()));
             }
         });
     }

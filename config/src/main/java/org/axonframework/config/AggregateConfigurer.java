@@ -401,8 +401,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return this configurer for fluent interfacing
      */
     @SafeVarargs
-    public final AggregateConfigurer<A> withSubtype(Class<? extends A>... subtypes) {
-        return withSubtype(Arrays.asList(subtypes));
+    public final AggregateConfigurer<A> withSubtypes(Class<? extends A>... subtypes) {
+        return withSubtypes(Arrays.asList(subtypes));
     }
 
     /**
@@ -412,7 +412,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param subtypes subtypes in this polymorphic hierarchy
      * @return this configurer for fluent interfacing
      */
-    public AggregateConfigurer<A> withSubtype(Collection<Class<? extends A>> subtypes) {
+    public AggregateConfigurer<A> withSubtypes(Collection<Class<? extends A>> subtypes) {
         this.subtypes.addAll(subtypes);
         return this;
     }

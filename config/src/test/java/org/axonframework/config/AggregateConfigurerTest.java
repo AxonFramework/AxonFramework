@@ -118,7 +118,7 @@ public class AggregateConfigurerTest {
     @Test
     void testPolymorphicConfig() {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
-                                                                        .withSubtype(B.class);
+                                                                        .withSubtypes(B.class);
 
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureAggregate(aggregateConfigurer)

@@ -34,6 +34,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,7 +46,8 @@ class ComplexAggregateStructureTest {
         AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
         EventBus mockEventBus = SimpleEventBus.builder().build();
         mockEventBus.subscribe(m -> m.forEach(i -> System.out.println(i.getPayloadType().getName())));
-        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize(new Book(),
+        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Callable<Book>) () ->
+                                                                                       new Book(new CreateBookCommand("book1")),
                                                                                bookAggregateModel,
                                                                                mockEventBus);
         bookAggregate.handle(command(new CreateBookCommand("book1")));

@@ -62,7 +62,7 @@ public class SynchronousLoopbackTest {
         aggregateIdentifier = UUID.randomUUID().toString();
         commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
-        eventStore.publish(new GenericDomainEventMessage<>(CountingAggregate.class.getSimpleName(), aggregateIdentifier, 0,
+        eventStore.publish(new GenericDomainEventMessage<>("test", aggregateIdentifier, 0,
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
 
