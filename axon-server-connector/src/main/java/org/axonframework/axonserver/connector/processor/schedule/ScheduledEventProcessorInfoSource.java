@@ -59,10 +59,10 @@ public class ScheduledEventProcessorInfoSource implements EventProcessorInfoSour
     /**
      * Start an {@link java.util.concurrent.Executor} using the given {@code initialDelay} and {@code schedulingPeriod}
      * as milliseconds to notify event processor information. Will be started in phase {@link
-     * Phase#INBOUND_EVENT_CONNECTORS} plus 1, to ensure the event processors this source shares information about have
-     * been started.
+     * Phase#INSTRUCTION_COMPONENTS}, to ensure the event processors this source shares information about have been
+     * started.
      */
-    @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS + 1)
+    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         scheduler.scheduleAtFixedRate(this::notifyInformation, initialDelay, schedulingPeriod, TimeUnit.MILLISECONDS);
     }
@@ -71,16 +71,16 @@ public class ScheduledEventProcessorInfoSource implements EventProcessorInfoSour
     public void notifyInformation() {
         try {
             delegate.notifyInformation();
-        } catch (Throwable t) {
+        } catch (Exception e) {
             // Do nothing
         }
     }
 
     /**
      * Shuts down the {@link java.util.concurrent.Executor} started through the {@link #start()} method. Will be invoked
-     * in phase {@link Phase#INBOUND_EVENT_CONNECTORS} + 1.
+     * in phase {@link Phase#INSTRUCTION_COMPONENTS} .
      */
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS + 1)
+    @ShutdownHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void shutdown() {
         scheduler.shutdown();
     }

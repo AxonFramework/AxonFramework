@@ -59,4 +59,8 @@ public abstract class Phase {
      * from external sources.
      */
     public static final int INBOUND_EVENT_CONNECTORS = Integer.MAX_VALUE >> 1;
+    /**
+     * Phase to start or shutdown components which send/receive/handle instructions for/to other connectors.
+     */
+    public static final int INSTRUCTION_COMPONENTS = INBOUND_EVENT_CONNECTORS + 10;
 }

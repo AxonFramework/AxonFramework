@@ -91,11 +91,11 @@ public class EventProcessorControlService {
 
     /**
      * Add {@link java.util.function.Consumer}s to the {@link AxonServerConnectionManager} for several {@link
-     * PlatformOutboundInstruction}s. Will be started in phase {@link Phase#INBOUND_EVENT_CONNECTORS} + 1, to ensure
-     * the event processors this service provides control over have been started.
+     * PlatformOutboundInstruction}s. Will be started in phase {@link Phase#INBOUND_EVENT_CONNECTORS}, to ensure the
+     * event processors this service provides control over have been started.
      */
     @SuppressWarnings("Duplicates")
-    @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS + 1)
+    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         this.axonServerConnectionManager.onOutboundInstruction(context, PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
         this.axonServerConnectionManager.onOutboundInstruction(context, START_EVENT_PROCESSOR, this::startProcessor);

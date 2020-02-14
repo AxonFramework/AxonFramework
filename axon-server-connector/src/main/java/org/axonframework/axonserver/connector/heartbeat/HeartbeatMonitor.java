@@ -102,19 +102,19 @@ public class HeartbeatMonitor {
 
     /**
      * Schedule a task that verifies that the connection is still alive and, if it is not, invoke a callback in order to
-     * react to the disconnection. Started in phase {@link Phase#INBOUND_EVENT_CONNECTORS} + 1, as this means all
-     * inbound and outbound connections have been started.
+     * react to the disconnection. Started in phase {@link Phase#INSTRUCTION_COMPONENTS}, as this means all inbound and
+     * outbound connections have been started.
      */
-    @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS + 1)
+    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         this.scheduler.scheduleWithFixedDelay(this::run, initialDelay, delay, TimeUnit.MILLISECONDS);
     }
 
     /**
      * Stops the scheduled task and shutdown the monitor, that cannot be restarted again. Shuts down in phase {@link
-     * Phase#INBOUND_EVENT_CONNECTORS} + 1.
+     * Phase#INSTRUCTION_COMPONENTS}.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS + 1)
+    @ShutdownHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void shutdown() {
         this.scheduler.shutdownNow();
     }
