@@ -722,7 +722,7 @@ public class AxonServerConnectionManager {
     /**
      * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
      */
-    @ShutdownHandler(phase = Phase.EXTERNAL_EVENT_CONNECTIONS)
+    @ShutdownHandler(phase = Phase.EXTERNAL_CONNECTIONS)
     public void shutdown() {
         shutdown = true;
         disconnect();

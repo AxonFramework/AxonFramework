@@ -32,6 +32,10 @@ public abstract class Phase {
     }
 
     /**
+     * Phase to start or shutdown all external connections.
+     */
+    public static final int EXTERNAL_CONNECTIONS = Integer.MIN_VALUE >> 4;
+    /**
      * Phase to register or cancel the registration of any local message handler.
      */
     public static final int LOCAL_MESSAGE_HANDLER_REGISTRATIONS = 0;
@@ -40,10 +44,6 @@ public abstract class Phase {
      * receive commands and/or queries from external applications.
      */
     public static final int INBOUND_COMMAND_OR_QUERY_CONNECTOR = 0;
-    /**
-     * Phase to start or shutdown external connections for sending/receiving events.
-     */
-    public static final int EXTERNAL_EVENT_CONNECTIONS = Integer.MAX_VALUE >> 4;
     /**
      * Phase to start or shutdown outbound event connectors. It is targeted towards connectors which can send events out
      * to external applications.
