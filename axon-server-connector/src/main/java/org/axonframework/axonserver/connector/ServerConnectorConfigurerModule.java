@@ -71,13 +71,12 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     }
 
     private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
-        AxonServerConnectionManager axonServerConnectionManager =
-                AxonServerConnectionManager.builder()
-                                           .axonServerConfiguration(c.getComponent(AxonServerConfiguration.class))
-                                           .tagsConfiguration(c.getComponent(TagsConfiguration.class, TagsConfiguration::new))
-                                           .build();
-        c.onShutdown(axonServerConnectionManager::shutdown);
-        return axonServerConnectionManager;
+        return AxonServerConnectionManager.builder()
+                                          .axonServerConfiguration(c.getComponent(AxonServerConfiguration.class))
+                                          .tagsConfiguration(
+                                                  c.getComponent(TagsConfiguration.class, TagsConfiguration::new)
+                                          )
+                                          .build();
     }
 
     private AxonServerEventStore buildEventStore(Configuration c) {
