@@ -46,10 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -68,9 +65,6 @@ public class AxonServerEventStoreClient {
     private final int timeout;
     private final String defaultContext;
     private final int bufferCapacity;
-    private volatile boolean shuttingDown = false;
-    private final List<StreamObserver<?>> listeningStreamObservers = new CopyOnWriteArrayList<>();
-    private final List<CompletableFuture<Void>> pendingTransactions = new CopyOnWriteArrayList<>();
 
     /**
      * Initialize the Event Store Client using given {@code eventStoreConfiguration} and given {@code
@@ -131,15 +125,9 @@ public class AxonServerEventStoreClient {
      */
     public Stream<Event> listAggregateEvents(String context, GetAggregateEventsRequest request) {
         BufferingSpliterator<Event> queue = new BufferingSpliterator<>();
-        StreamingEventStreamObserver responseObserver = new StreamingEventStreamObserver(queue,
-                                                                                         context,
-                                                                                         request.getAggregateId(),
-                                                                                         listeningStreamObservers::remove);
-        listeningStreamObservers.add(responseObserver);
-        eventStoreStub(context).listAggregateEvents(
-                request,
-                responseObserver
-        );
+        StreamingEventStreamObserver responseObserver =
+                new StreamingEventStreamObserver(queue, context, request.getAggregateId());
+        eventStoreStub(context).listAggregateEvents(request, responseObserver);
         return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
@@ -176,16 +164,13 @@ public class AxonServerEventStoreClient {
             public void onError(Throwable throwable) {
                 checkConnectionException(throwable, context);
                 responseStreamObserver.onError(GrpcExceptionParser.parse(throwable));
-                listeningStreamObservers.remove(this);
             }
 
             @Override
             public void onCompleted() {
                 responseStreamObserver.onCompleted();
-                listeningStreamObservers.remove(this);
             }
         };
-        listeningStreamObservers.add(wrappedStreamObserver);
         return eventStoreStub(context).listEvents(wrappedStreamObserver);
     }
 
@@ -217,29 +202,6 @@ public class AxonServerEventStoreClient {
                 new SingleResultStreamObserver<>(context, confirmationFuture)
         );
         return confirmationFuture;
-    }
-
-    /**
-     * Stops all activities in regard to reading events from Axon Server.
-     */
-    public void stopReadingEvents() {
-        listeningStreamObservers.forEach(so -> {
-            try {
-                so.onCompleted();
-            } catch (Exception e) {
-                logger.warn("Error happened while stopping stream observer.", e);
-            }
-        });
-    }
-
-    /**
-     * Stops all activities in regard to sending events to Axon Server asynchronously.
-     *
-     * @return a completable future which is resolved once all activities are completed
-     */
-    public CompletableFuture<Void> stopSendingEvents() {
-        shuttingDown = true;
-        return CompletableFuture.allOf(pendingTransactions.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -344,12 +306,8 @@ public class AxonServerEventStoreClient {
      * @return a transaction to append events with.
      */
     public AppendEventTransaction createAppendEventConnection(String context) {
-        if (shuttingDown) {
-            throw new IllegalStateException("Cannot create new event transaction. Shutting down...");
-        }
-        CompletableFuture<Void> pendingTransaction = new CompletableFuture<>();
         CompletableFuture<Confirmation> futureConfirmation = new CompletableFuture<>();
-        AppendEventTransaction transaction = new AppendEventTransaction(
+        return new AppendEventTransaction(
                 timeout,
                 eventStoreStub(context).appendEvent(new StreamObserver<Confirmation>() {
                     @Override
@@ -361,21 +319,15 @@ public class AxonServerEventStoreClient {
                     public void onError(Throwable throwable) {
                         checkConnectionException(throwable, context);
                         futureConfirmation.completeExceptionally(GrpcExceptionParser.parse(throwable));
-                        pendingTransaction.completeExceptionally(throwable);
-                        pendingTransactions.remove(pendingTransaction);
                     }
 
                     @Override
                     public void onCompleted() {
-                        pendingTransaction.complete(null);
-                        pendingTransactions.remove(pendingTransaction);
                     }
                 }),
                 futureConfirmation,
                 eventCipher
         );
-        pendingTransactions.add(pendingTransaction);
-        return transaction;
     }
 
     /**
@@ -493,15 +445,9 @@ public class AxonServerEventStoreClient {
      */
     public Stream<Event> listAggregateSnapshots(String context, GetAggregateSnapshotsRequest request) {
         BufferingSpliterator<Event> queue = new BufferingSpliterator<>(bufferCapacity);
-        StreamingEventStreamObserver responseObserver = new StreamingEventStreamObserver(queue,
-                                                                                         context,
-                                                                                         request.getAggregateId(),
-                                                                                         listeningStreamObservers::remove);
-        eventStoreStub(context).listAggregateSnapshots(
-                request,
-                responseObserver
-        );
-        listeningStreamObservers.add(responseObserver);
+        StreamingEventStreamObserver responseObserver =
+                new StreamingEventStreamObserver(queue, context, request.getAggregateId());
+        eventStoreStub(context).listAggregateSnapshots(request, responseObserver);
         return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
@@ -553,14 +499,11 @@ public class AxonServerEventStoreClient {
         private final BufferingSpliterator<Event> events;
         private final String context;
         private int count;
-        private final Consumer<StreamingEventStreamObserver> onTermination;
 
         private StreamingEventStreamObserver(BufferingSpliterator<Event> queue,
                                              String context,
-                                             String aggregateId,
-                                             Consumer<StreamingEventStreamObserver> onTermination) {
+                                             String aggregateId) {
             this.context = context;
-            this.onTermination = onTermination;
             this.before = System.currentTimeMillis();
             this.events = queue;
             this.aggregateId = aggregateId;
@@ -578,7 +521,6 @@ public class AxonServerEventStoreClient {
         public void onError(Throwable throwable) {
             checkConnectionException(throwable, context);
             events.cancel(throwable);
-            onTermination.accept(this);
         }
 
         @Override
@@ -588,7 +530,6 @@ public class AxonServerEventStoreClient {
                 logger.debug("Done request for {}: {}ms, {} events",
                              aggregateId, System.currentTimeMillis() - before, count);
             }
-            onTermination.accept(this);
         }
     }
 }
