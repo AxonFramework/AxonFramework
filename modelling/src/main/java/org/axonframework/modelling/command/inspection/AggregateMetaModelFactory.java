@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Interface of a factory for an {@link AggregateModel} for any given type defining an aggregate.
  */
@@ -29,5 +32,18 @@ public interface AggregateMetaModelFactory {
      * @param <T>           The Aggregate type
      * @return Model describing the capabilities and characteristics of the inspected Aggregate class
      */
-    <T> AggregateModel<T> createModel(Class<? extends T> aggregateType);
+    default <T> AggregateModel<T> createModel(Class<? extends T> aggregateType) {
+        return createModel(aggregateType, Collections.emptySet());
+    }
+
+    /**
+     * Create an Aggregate meta model for the given {@code aggregateType} and provided {@code subtypes}. The meta model
+     * will inspect the capabilities and characteristics of the given {@code aggregateType} and its {@code subtypes}.
+     *
+     * @param aggregateType The Aggregate class to be inspected
+     * @param subtypes      Subtypes of this Aggregate class
+     * @param <T>           The Aggregate type
+     * @return Model describing the capabilities and characteristics of the inspected Aggregate class and its subtypes
+     */
+    <T> AggregateModel<T> createModel(Class<? extends T> aggregateType, Set<Class<? extends T>> subtypes);
 }
