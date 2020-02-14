@@ -492,7 +492,7 @@ class AxonServerCommandBusTest {
         try {
             inboundStreamObserverRef.get().onNext(testCommandMessage);
         } finally {
-            disconnected = testSubject.disconnectAsync();
+            disconnected = CompletableFuture.runAsync(testSubject::disconnect);
             slowHandlerLock.unlock();
         }
 
