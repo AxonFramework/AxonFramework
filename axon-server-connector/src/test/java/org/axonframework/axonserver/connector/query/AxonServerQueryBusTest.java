@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,7 +41,9 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -59,10 +61,20 @@ import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWit
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test suite to verify the {@link AxonServerQueryBus}.
@@ -83,11 +95,11 @@ class AxonServerQueryBusTest {
 
     @BeforeEach
     void setup() throws Exception {
-        dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
+        dummyMessagePlatformServer = new DummyMessagePlatformServer();
         dummyMessagePlatformServer.start();
 
         configuration = new AxonServerConfiguration();
-        configuration.setServers("localhost:4343");
+        configuration.setServers(dummyMessagePlatformServer.getAddress());
         configuration.setClientId("JUnit");
         configuration.setComponentName("JUnit");
         configuration.setInitialNrOfPermits(100);
@@ -422,7 +434,6 @@ class AxonServerQueryBusTest {
                                                             .setType(String.class.getName())
                                                             .build();
         return QueryProviderInbound.newBuilder()
-                                   .setInstructionId("instructionId")
                                    .setQuery(QueryRequest.newBuilder()
                                                          .setQuery("testQuery")
                                                          .setResponseType(testResponseType)

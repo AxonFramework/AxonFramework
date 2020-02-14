@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -265,6 +266,7 @@ public class JacksonSerializer implements Serializer {
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
+        private boolean lenientDeserialization = false;
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
@@ -326,11 +328,29 @@ public class JacksonSerializer implements Serializer {
         }
 
         /**
+         * Configures the underlying ObjectMapper to be lenient when deserializing JSON into Java objects. Specifically,
+         * enables the {@link DeserializationFeature#ACCEPT_SINGLE_VALUE_AS_ARRAY} and
+         * {@link DeserializationFeature#UNWRAP_SINGLE_VALUE_ARRAYS}, and disables
+         * {@link DeserializationFeature#FAIL_ON_UNKNOWN_PROPERTIES}.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder lenientDeserialization() {
+            lenientDeserialization = true;
+            return this;
+        }
+
+        /**
          * Initializes a {@link JacksonSerializer} as specified through this Builder.
          *
          * @return a {@link JacksonSerializer} as specified through this Builder
          */
         public JacksonSerializer build() {
+            if (lenientDeserialization) {
+                objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+                objectMapper.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS);
+                objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            }
             return new JacksonSerializer(this);
         }
 
