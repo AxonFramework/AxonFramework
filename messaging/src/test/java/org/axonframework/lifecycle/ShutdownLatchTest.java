@@ -2,9 +2,7 @@ package org.axonframework.lifecycle;
 
 import org.junit.jupiter.api.*;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,21 +16,21 @@ class ShutdownLatchTest {
     private final ShutdownLatch testSubject = new ShutdownLatch();
 
     @Test
-    void testIncrementThrowsIllegalStateExceptionIfShuttingDown() {
-        testSubject.await();
+    void testIncrementThrowsShutdownInProgressExceptionIfShuttingDown() {
+        testSubject.initiateShutdown();
 
-        assertThrows(IllegalStateException.class, testSubject::increment);
+        assertThrows(ShutdownInProgressException.class, testSubject::registerActivity);
     }
 
     @Test
     void testDecrementCompletesWaitProcess() {
-        testSubject.increment();
+        ShutdownLatch.ActivityHandle activityHandle = testSubject.registerActivity();
 
-        CompletableFuture<Void> latch = testSubject.await();
+        CompletableFuture<Void> latch = testSubject.initiateShutdown();
 
         assertFalse(latch.isDone());
 
-        testSubject.decrement();
+        activityHandle.end();
 
         assertTrue(latch.isDone());
     }
@@ -44,27 +42,25 @@ class ShutdownLatchTest {
 
     @Test
     void testIsShuttingDownIsTrueForAwaitedLatch() {
-        testSubject.await();
+        testSubject.initiateShutdown();
 
         assertTrue(testSubject.isShuttingDown());
     }
 
     @Test
     void testIsShuttingDownThrowsSuppliedExceptionForAwaitedLatch() {
-        testSubject.await();
+        testSubject.initiateShutdown();
 
-        assertThrows(SomeException.class, () -> testSubject.isShuttingDown(SomeException::new));
+        assertThrows(SomeException.class, () -> testSubject.ifShuttingDown(SomeException::new));
     }
 
     @Test
-    void testLatchCompletesExceptionallyAfterDuration() {
-        CompletableFuture<Void> latch = testSubject.await(Duration.ofMillis(50));
+    void testActivityHandleEndReturnsTrueForFirstInvocationAndFalseForSubsequent() {
+        ShutdownLatch.ActivityHandle subject = testSubject.registerActivity();
 
-        assertFalse(latch.isDone());
+        assertTrue(subject.end());
 
-        assertThrows(ExecutionException.class, latch::get);
-
-        assertTrue(latch.isCompletedExceptionally());
+        assertFalse(subject.end());
     }
 
     private static class SomeException extends RuntimeException {

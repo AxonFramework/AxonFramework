@@ -20,7 +20,6 @@ import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ModuleConfiguration;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.SmartLifecycle;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 
 import java.util.List;
@@ -39,13 +38,11 @@ import java.util.List;
  * @author Allard Buijze
  * @since 3.0
  */
-public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
+public class EventHandlerRegistrar implements InitializingBean {
 
-    private static final int EARLY_PHASE = Integer.MIN_VALUE + 1000;
     private final AxonConfiguration axonConfiguration;
     private final EventProcessingConfigurer eventProcessingConfigurer;
     private final ModuleConfiguration eventProcessingConfiguration;
-    private volatile boolean running = false;
     private volatile boolean initialized;
 
     /**
@@ -72,37 +69,6 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
     public void setEventHandlers(List<Object> beans) {
         AnnotationAwareOrderComparator.sort(beans);
         beans.forEach(b -> eventProcessingConfigurer.registerEventHandler(c -> b));
-    }
-
-    @Override
-    public boolean isAutoStartup() {
-        return true;
-    }
-
-    @Override
-    public void stop(Runnable callback) {
-        stop();
-        callback.run();
-    }
-
-    @Override
-    public void start() {
-        running = true;
-    }
-
-    @Override
-    public void stop() {
-        running = false;
-    }
-
-    @Override
-    public boolean isRunning() {
-        return running;
-    }
-
-    @Override
-    public int getPhase() {
-        return EARLY_PHASE;
     }
 
     @Override

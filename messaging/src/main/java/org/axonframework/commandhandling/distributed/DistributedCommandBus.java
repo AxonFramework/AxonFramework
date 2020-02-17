@@ -105,21 +105,24 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     }
 
     /**
-     * Shutdown handler that unsubscribes all command handlers subscribed via this Distributed Command Bus.
+     * Disconnect the command bus for receiving new commands, by unsubscribing all registered command handlers. This
+     * shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_OR_QUERY_CONNECTORS)
-    public void unsubscribeCommandHandlers() {
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
+    public void disconnect() {
         commandRouter.updateMembership(loadFactor, DenyAll.INSTANCE);
     }
 
     /**
-     * Shutdown handler that stops sending new commands.
+     * Shutdown the command bus asynchronously for dispatching commands to other instances. This process will wait for
+     * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
+     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
      *
-     * @return a Completable Future indicating that all previously sent commands are completed
+     * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_OR_QUERY_CONNECTOR)
-    public CompletableFuture<Void> stopSendingCommands() {
-        return connector.stopSendingCommands();
+    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
+    public CompletableFuture<Void> shutdownDispatching() {
+        return connector.initiateShutdown();
     }
 
     @Override

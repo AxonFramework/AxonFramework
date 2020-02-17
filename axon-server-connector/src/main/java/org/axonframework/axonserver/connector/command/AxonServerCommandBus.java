@@ -283,71 +283,67 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
-        shutdownLatch.isShuttingDown(
+        shutdownLatch.ifShuttingDown(
                 () -> new IllegalStateException("Cannot dispatch new commands as this bus is being shutdown")
         );
 
+        ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         AtomicBoolean serverResponded = new AtomicBoolean(false);
         try {
             String context = targetContextResolver.resolveContext(commandMessage);
             Command command = serializer.serialize(commandMessage,
                                                    routingStrategy.getRoutingKey(commandMessage),
                                                    priorityCalculator.determinePriority(commandMessage));
+            CommandServiceGrpc.CommandServiceStub commandService =
+                    CommandServiceGrpc.newStub(axonServerConnectionManager.getChannel(context));
 
-            CommandServiceGrpc
-                    .newStub(axonServerConnectionManager.getChannel(context))
-                    .dispatch(command,
-                              new StreamObserver<CommandResponse>() {
-                                  @Override
-                                  public void onNext(CommandResponse commandResponse) {
-                                      serverResponded.set(true);
-                                      logger.debug("Received command response [{}]", commandResponse);
+            commandService.dispatch(command, new StreamObserver<CommandResponse>() {
+                @Override
+                public void onNext(CommandResponse commandResponse) {
+                    serverResponded.set(true);
+                    logger.debug("Received command response [{}]", commandResponse);
 
-                                      try {
-                                          CommandResultMessage<R> resultMessage =
-                                                  serializer.deserialize(commandResponse);
-                                          commandCallback.onResult(commandMessage, resultMessage);
-                                      } catch (Exception ex) {
-                                          commandCallback.onResult(commandMessage, asCommandResultMessage(ex));
-                                          logger.info("Failed to deserialize payload [{}] - Cause: {}",
-                                                      commandResponse.getPayload().getData(),
-                                                      ex.getCause().getMessage());
-                                      }
-                                  }
+                    try {
+                        CommandResultMessage<R> resultMessage = serializer.deserialize(commandResponse);
+                        commandCallback.onResult(commandMessage, resultMessage);
+                    } catch (Exception ex) {
+                        commandCallback.onResult(commandMessage, asCommandResultMessage(ex));
+                        logger.info("Failed to deserialize payload [{}] - Cause: {}",
+                                    commandResponse.getPayload().getData(),
+                                    ex.getCause().getMessage());
+                    }
+                }
 
-                                  @Override
-                                  public void onError(Throwable throwable) {
-                                      serverResponded.set(true);
-                                      commandCallback.onResult(commandMessage, asCommandResultMessage(
-                                              ErrorCode.COMMAND_DISPATCH_ERROR.convert(
-                                                      configuration.getClientId(), throwable
-                                              )
-                                      ));
-                                      shutdownLatch.decrement();
-                                  }
+                @Override
+                public void onError(Throwable throwable) {
+                    serverResponded.set(true);
+                    commandCallback.onResult(commandMessage, asCommandResultMessage(
+                            ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), throwable)
+                    ));
+                    commandInTransit.end();
+                }
 
-                                  @Override
-                                  public void onCompleted() {
-                                      if (!serverResponded.get()) {
-                                          ErrorMessage errorMessage =
-                                                  ErrorMessage.newBuilder()
-                                                              .setMessage("No result from command executor")
-                                                              .build();
-                                          commandCallback.onResult(commandMessage, asCommandResultMessage(
-                                                  ErrorCode.COMMAND_DISPATCH_ERROR.convert(errorMessage))
-                                          );
-                                      }
-                                      shutdownLatch.decrement();
-                                  }
-                              }
-                    );
-            shutdownLatch.increment();
+                @Override
+                public void onCompleted() {
+                    if (!serverResponded.get()) {
+                        ErrorMessage errorMessage = ErrorMessage.newBuilder()
+                                                                .setMessage("No result from command executor")
+                                                                .build();
+                        commandCallback.onResult(
+                                commandMessage,
+                                asCommandResultMessage(ErrorCode.COMMAND_DISPATCH_ERROR.convert(errorMessage))
+                        );
+                    }
+                    commandInTransit.end();
+                }
+            });
         } catch (Exception e) {
             logger.debug("There was a problem dispatching command [{}].", commandMessage, e);
             commandCallback.onResult(
                     commandMessage,
                     asCommandResultMessage(ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), e))
             );
+            commandInTransit.end();
         }
     }
 
@@ -382,24 +378,25 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     /**
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
      * handlers. After this the connection will be closed, waiting until all command processing tasks have been
-     * resolved. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_OR_QUERY_CONNECTOR} phase.
+     * resolved. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_OR_QUERY_CONNECTOR)
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public void disconnect() {
-        commandProcessor.unsubscribeAndRemoveAll();
+        commandProcessor.unsubscribeAll();
         commandProcessor.disconnect();
     }
 
     /**
      * Shutdown the command bus asynchronously for dispatching commands to Axon Server. This process will wait for
      * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
-     * Phase#OUTBOUND_COMMAND_OR_QUERY_CONNECTORS} phase.
+     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_OR_QUERY_CONNECTORS)
+    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        return shutdownLatch.await();
+        commandProcessor.removeLocalSubscriptions();
+        return shutdownLatch.initiateShutdown();
     }
 
     /**
@@ -815,11 +812,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             return subscriberStreamObserver;
         }
 
-        private void unsubscribeAndRemoveAll() {
-            subscribedCommands.forEach(this::unsubscribeAndRemove);
-            subscriberStreamObserver = null;
-        }
-
         private void unsubscribeAll() {
             subscribedCommands.forEach(this::unsubscribe);
             subscriberStreamObserver = null;
@@ -828,7 +820,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         public void unsubscribeAndRemove(String command) {
             subscribedCommands.remove(command);
             unsubscribe(command);
-
         }
 
         private void unsubscribe(String command) {
@@ -843,6 +834,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             } catch (Exception ignored) {
                 // This exception is ignored
             }
+        }
+
+        private void removeLocalSubscriptions() {
+            subscribedCommands.clear();
         }
 
         private <C> void dispatchLocal(CommandMessage<C> command,
@@ -865,7 +860,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                 if (!commandExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
                     logger.warn("Awaited Command Bus termination for 5 seconds. Wait period extended by 30 seconds.");
                 }
-                if (!commandExecutor.awaitTermination(20, TimeUnit.SECONDS)) {
+                if (!commandExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
                     logger.warn("Awaited Command Bus termination for 35 seconds. Will shutdown forcefully.");
                     commandExecutor.shutdownNow();
                 }

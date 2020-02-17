@@ -221,16 +221,16 @@ class DistributedCommandBusTest {
 
     @Test
     @MockitoSettings(strictness = Strictness.LENIENT)
-    void testUnsubscribeCommandHandlers() {
-        testSubject.unsubscribeCommandHandlers();
+    void testDisconnectRemovesAllSubscribedCommandHandlers() {
+        testSubject.disconnect();
         verify(mockCommandRouter).updateMembership(INITIAL_LOAD_FACTOR, DenyAll.INSTANCE);
     }
 
     @Test
     @MockitoSettings(strictness = Strictness.LENIENT)
-    void testStopSendingCommands() {
-        testSubject.stopSendingCommands();
-        verify(mockConnector).stopSendingCommands();
+    void testShutdownDispatchingInitiatesShutdownOfCommandBusConnector() {
+        testSubject.shutdownDispatching();
+        verify(mockConnector).initiateShutdown();
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {

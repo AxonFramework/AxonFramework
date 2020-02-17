@@ -99,11 +99,12 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
     }
 
     /**
-     * Stops sending new commands.
+     * Initiate the shutdown of a {@link CommandBusConnector}. {@link CommandMessage}s should no longer be dispatched
+     * after this method has been invoked.
      *
-     * @return a Completable Future indicating that all previously sent commands are completed
+     * @return a {@link CompletableFuture} indicating when all previously sent commands are completed
      */
-    default CompletableFuture<Void> stopSendingCommands() {
+    default CompletableFuture<Void> initiateShutdown() {
         return CompletableFuture.completedFuture(null);
     }
 }
