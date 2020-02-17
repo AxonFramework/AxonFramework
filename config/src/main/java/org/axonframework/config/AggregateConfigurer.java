@@ -42,7 +42,11 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -70,6 +74,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<AggregateModel<A>> metaModel;
     private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
+    private final Set<Class<? extends A>> subtypes = new HashSet<>();
     private final List<Registration> registrations = new ArrayList<>();
     private Configuration parent;
 
@@ -161,7 +166,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                             AggregateMetaModelFactory.class,
                                             () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
                                                                                          c.handlerDefinition(aggregate))
-                                    ).createModel(aggregate));
+                                    ).createModel(aggregate, subtypes));
         commandTargetResolver = new Component<>(
                 () -> parent, name("commandTargetResolver"),
                 c -> c.getComponent(
@@ -171,8 +176,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         );
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
-        aggregateFactory =
-                new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
+        aggregateFactory = new Component<>(() -> parent,
+                                           name("aggregateFactory"),
+                                           c -> new GenericAggregateFactory<>(metaModel.get()));
         cache =
                 new Component<>(() -> parent, name("aggregateCache"), c -> null);
         eventStreamFilter =
@@ -386,5 +392,29 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     @Override
     public Class<A> aggregateType() {
         return aggregate;
+    }
+
+    /**
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this
+     * subtypes will be considered part of this aggregate's handlers.
+     *
+     * @param subtypes subtypes in this polymorphic hierarchy
+     * @return this configurer for fluent interfacing
+     */
+    @SafeVarargs
+    public final AggregateConfigurer<A> withSubtypes(Class<? extends A>... subtypes) {
+        return withSubtypes(Arrays.asList(subtypes));
+    }
+
+    /**
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this
+     * subtypes will be considered part of this aggregate's handlers.
+     *
+     * @param subtypes subtypes in this polymorphic hierarchy
+     * @return this configurer for fluent interfacing
+     */
+    public AggregateConfigurer<A> withSubtypes(Collection<Class<? extends A>> subtypes) {
+        this.subtypes.addAll(subtypes);
+        return this;
     }
 }

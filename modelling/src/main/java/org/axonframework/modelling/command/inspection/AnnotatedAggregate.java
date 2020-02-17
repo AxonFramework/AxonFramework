@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -409,14 +409,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @SuppressWarnings("unchecked")
     private Object handle(CommandMessage<?> commandMessage) throws Exception {
         List<AnnotatedCommandHandlerInterceptor<? super T>> interceptors =
-                inspector.commandHandlerInterceptors()
-                         .stream()
+                inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .filter(chi -> chi.canHandle(commandMessage))
                          .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        MessageHandlingMember<? super T> handler = inspector.commandHandlers()
-                                                            .stream()
+        MessageHandlingMember<? super T> handler = inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
                                                             .filter(mh -> mh.canHandle(commandMessage))
                                                             .findFirst()
                                                             .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandMessage.getCommandName())));
@@ -480,14 +478,16 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      */
     protected <P> EventMessage<P> createMessage(P payload, MetaData metaData) {
         if (lastKnownSequence != null) {
+            String type = inspector.declaredType(rootType())
+                                   .orElse(rootType().getSimpleName());
             long seq = lastKnownSequence + 1;
             String id = identifierAsString();
             if (id == null) {
                 Assert.state(seq == 0,
                              () -> "The aggregate identifier has not been set. It must be set at the latest when applying the creation event");
-                return new LazyIdentifierDomainEventMessage<>(type(), seq, payload, metaData);
+                return new LazyIdentifierDomainEventMessage<>(type, seq, payload, metaData);
             }
-            return new GenericDomainEventMessage<>(type(), identifierAsString(), seq, payload, metaData);
+            return new GenericDomainEventMessage<>(type, identifierAsString(), seq, payload, metaData);
         }
         return new GenericEventMessage<>(payload, metaData);
     }

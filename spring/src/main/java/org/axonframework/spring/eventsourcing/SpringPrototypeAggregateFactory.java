@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,21 @@
 
 package org.axonframework.spring.eventsourcing;
 
+import org.axonframework.config.Configuration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.String.format;
 
@@ -42,6 +49,7 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
     private ApplicationContext applicationContext;
     private String beanName;
     private Class<T> aggregateType;
+    private final Map<Class<? extends T>, String> subtypes;
     private AggregateFactory<T> delegate;
 
     /**
@@ -52,7 +60,21 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
      * @param prototypeBeanName the name of the prototype bean this repository serves.
      */
     public SpringPrototypeAggregateFactory(String prototypeBeanName) {
+        this(prototypeBeanName, new HashMap<>());
+    }
+
+    /**
+     * Initializes the factory to create beans instances for the bean with given {@code prototypeBeanName} and its
+     * {@code subtypes}.
+     * <p>
+     * Note that the the bean should have the prototype scope.
+     *
+     * @param prototypeBeanName the name of the prototype bean this repository serves.
+     * @param subtypes          the map of subtype of this aggregate to its spring prototype name
+     */
+    public SpringPrototypeAggregateFactory(String prototypeBeanName, Map<Class<? extends T>, String> subtypes) {
         this.prototypeBeanName = prototypeBeanName;
+        this.subtypes = subtypes;
     }
 
     @Override
@@ -72,6 +94,7 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+        this.subtypes.put(getAggregateType(), prototypeBeanName);
     }
 
     @Override
@@ -88,15 +111,36 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
                                    + "The bean with name '%s' does not have the 'prototype' scope.",
                            beanName, prototypeBeanName));
         }
-        this.delegate = new AbstractAggregateFactory<T>(getAggregateType()) {
+        AggregateModel<T> model;
+        if (applicationContext.getBeanNamesForType(Configuration.class).length > 0) {
+            Configuration configuration = applicationContext.getBean(Configuration.class);
+            model = AnnotatedAggregateMetaModelFactory.inspectAggregate(getAggregateType(),
+                                                                        configuration.parameterResolverFactory(),
+                                                                        configuration
+                                                                                .handlerDefinition(getAggregateType()),
+                                                                        subtypes.keySet());
+        } else {
+            model = AnnotatedAggregateMetaModelFactory.inspectAggregate(getAggregateType(),
+                                                                        subtypes.keySet());
+        }
+        this.delegate = new AbstractAggregateFactory<T>(model) {
             @Override
             protected T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
-                return (T) applicationContext.getBean(prototypeBeanName);
+                return (T) applicationContext.getBean(prototype(firstEvent.getType()));
+            }
+
+            private String prototype(String aggregateType) {
+                return aggregateModel().type(aggregateType)
+                                       .map(subtypes::get)
+                                       // for backwards compatibility, in cases where firstEvent does not contain
+                                       // the aggregate type
+                                       .orElse(prototypeBeanName);
             }
 
             @Override
             protected T postProcessInstance(T aggregate) {
-                applicationContext.getAutowireCapableBeanFactory().configureBean(aggregate, prototypeBeanName);
+                applicationContext.getAutowireCapableBeanFactory()
+                                  .configureBean(aggregate, subtypes.get(aggregate.getClass()));
                 return aggregate;
             }
         };
