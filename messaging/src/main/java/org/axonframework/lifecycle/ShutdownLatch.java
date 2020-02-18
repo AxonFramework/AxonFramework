@@ -1,8 +1,13 @@
 package org.axonframework.lifecycle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
@@ -17,8 +22,22 @@ import java.util.function.Supplier;
  */
 public class ShutdownLatch {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private final AtomicInteger operationCounter = new AtomicInteger(0);
-    private volatile CompletableFuture<Void> latch;
+    private final AtomicReference<CompletableFuture<Void>> latch = new AtomicReference<>();
+
+    /**
+     * Initialize this {@link ShutdownLatch}.  If the latch was already closed through {@link #initiateShutdown()}, then
+     * that operation will be canceled.
+     */
+    public void initialize() {
+        CompletableFuture<Void> existingLatch = latch.getAndSet(null);
+        if (existingLatch != null) {
+            logger.warn("Latch is being initialized whilst already shutting down");
+            existingLatch.cancel(true);
+        }
+    }
 
     /**
      * Add an activity this latch should wait on before opening up. If this operation is invoked whilst {@link
@@ -29,7 +48,12 @@ public class ShutdownLatch {
      */
     public ActivityHandle registerActivity() {
         ifShuttingDown(ShutdownInProgressException::new);
-        operationCounter.incrementAndGet();
+        int counter = operationCounter.getAndIncrement();
+
+        if (counter == 0 && latch.get() != null) {
+            operationCounter.getAndDecrement();
+            throw new ShutdownInProgressException();
+        }
         return new ActivityHandle();
     }
 
@@ -62,18 +86,27 @@ public class ShutdownLatch {
      * @return {@code true} if the latch is waited on, {@code false} otherwise
      */
     public boolean isShuttingDown() {
-        return latch != null;
+        return latch.get() != null;
     }
 
     /**
      * Initiate the shutdown of this latch. The returned {@link CompletableFuture} will complete once all activities
-     * have been ended.
+     * have been ended or complete immediately if no activities are active.
      *
      * @return a {@link CompletableFuture} which completes once all activities are done
      */
     public CompletableFuture<Void> initiateShutdown() {
-        latch = new CompletableFuture<>();
-        return latch;
+        CompletableFuture<Void> newLatch = new CompletableFuture<>();
+        CompletableFuture<Void> existingLatch = latch.getAndUpdate(previous -> previous == null ? newLatch : previous);
+
+        if (existingLatch == null) {
+            if (operationCounter.get() == 0) {
+                newLatch.complete(null);
+            }
+            return newLatch;
+        }
+
+        return existingLatch;
     }
 
     /**
@@ -91,8 +124,11 @@ public class ShutdownLatch {
          */
         public void end() {
             boolean firstInvocation = ended.compareAndSet(false, true);
-            if (firstInvocation && operationCounter.decrementAndGet() <= 0 && isShuttingDown()) {
-                latch.complete(null);
+            if (firstInvocation && operationCounter.decrementAndGet() <= 0) {
+                CompletableFuture<Void> currentLatch = latch.get();
+                if (currentLatch != null) {
+                    currentLatch.complete(null);
+                }
             }
         }
 

@@ -16,6 +16,16 @@ class ShutdownLatchTest {
     private final ShutdownLatch testSubject = new ShutdownLatch();
 
     @Test
+    void testInitializeCancelsEarlierShutdown() {
+        testSubject.registerActivity();
+
+        CompletableFuture<Void> latch = testSubject.initiateShutdown();
+        testSubject.initialize();
+
+        assertTrue(latch.isCompletedExceptionally());
+    }
+
+    @Test
     void testIncrementThrowsShutdownInProgressExceptionIfShuttingDown() {
         testSubject.initiateShutdown();
 
@@ -41,17 +51,26 @@ class ShutdownLatchTest {
     }
 
     @Test
+    void testInitiateShutdownOnEmptyLatchOpensImmediately() {
+        CompletableFuture<Void> latch = testSubject.initiateShutdown();
+
+        assertTrue(latch.isDone());
+    }
+
+    @Test
     void testIsShuttingDownIsTrueForAwaitedLatch() {
-        testSubject.initiateShutdown();
+        CompletableFuture<Void> latch = testSubject.initiateShutdown();
 
         assertTrue(testSubject.isShuttingDown());
+        assertTrue(latch.isDone());
     }
 
     @Test
     void testIsShuttingDownThrowsSuppliedExceptionForAwaitedLatch() {
-        testSubject.initiateShutdown();
+        CompletableFuture<Void> latch = testSubject.initiateShutdown();
 
         assertThrows(SomeException.class, () -> testSubject.ifShuttingDown(SomeException::new));
+        assertTrue(latch.isDone());
     }
 
     @Test
@@ -63,11 +82,11 @@ class ShutdownLatchTest {
         handleOne.end();
         handleOne.end();
 
-        CompletableFuture<Void> result = testSubject.initiateShutdown();
-        assertFalse(result.isDone());
-
+        CompletableFuture<Void> latch = testSubject.initiateShutdown();
+        assertFalse(latch.isDone());
+        // Only ending to other activity handle will open the latch
         handleTwo.end();
-        assertTrue(result.isDone());
+        assertTrue(latch.isDone());
     }
 
     private static class SomeException extends RuntimeException {
