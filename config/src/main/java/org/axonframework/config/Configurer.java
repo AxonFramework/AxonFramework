@@ -488,6 +488,16 @@ public interface Configurer {
     }
 
     /**
+     * Register an initialization handler which should be invoked prior to starting this {@link Configurer}.
+     *
+     * @param initHandler a {@link Consumer} of the configuration, to be ran upon initialization of the {@link
+     *                    Configuration}
+     */
+    default void onInit(Consumer<Configuration> initHandler) {
+        registerModule(initHandler::accept);
+    }
+
+    /**
      * Returns the completely initialized Configuration built using this configurer. It is not recommended to change
      * any configuration on this Configurer once this method is called.
      *
