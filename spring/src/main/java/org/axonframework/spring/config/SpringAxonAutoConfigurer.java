@@ -316,7 +316,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             Class<A> aggregateType = (Class<A>) beanFactory.getType(prototype);
             SpringAggregate<A> springAggregate = new SpringAggregate<>(prototype, aggregateType);
             Class<? super A> topType = topAnnotatedAggregateType(aggregateType);
-            SpringAggregate<? super A> topSpringAggregate = new SpringAggregate<>(prototype(topType), topType);
+            SpringAggregate<? super A> topSpringAggregate = new SpringAggregate<>(beanName(topType), topType);
             hierarchy.compute(topSpringAggregate, (type, subtypes) -> {
                 if (subtypes == null) {
                     subtypes = new HashMap<>();
@@ -330,12 +330,12 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         return hierarchy;
     }
 
-    private <A> String prototype(Class<A> type) {
+    private <A> String beanName(Class<A> type) {
         String[] beanNamesForType = beanFactory.getBeanNamesForType(type);
         if (beanNamesForType.length == 0) {
             throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
         } else {
-            if (beanNamesForType.length == 1) {
+            if (beanNamesForType.length != 1) {
                 logger.warn("There are {} beans defined for '{}'.", beanNamesForType.length, type.getName());
             }
             return beanNamesForType[0];
@@ -363,7 +363,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = buildAggregateHierarchy(aggregates);
         for (Map.Entry<SpringAggregate<? super A>, Map<Class<? extends A>, String>> aggregate : hierarchy.entrySet()) {
             Class<A> aggregateType = (Class<A>) aggregate.getKey().getClassType();
-            String aggregatePrototype = aggregate.getKey().getPrototype();
+            String aggregatePrototype = aggregate.getKey().getBeanName();
             Aggregate aggregateAnnotation = aggregateType.getAnnotation(Aggregate.class);
             AggregateConfigurer<A> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
             aggregateConf.withSubtypes(aggregate.getValue().keySet());
@@ -545,16 +545,17 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private static class SpringAggregate<T> {
-        private final String prototype;
+
+        private final String beanName;
         private final Class<T> classType;
 
-        private SpringAggregate(String prototype, Class<T> classType) {
-            this.prototype = prototype;
+        private SpringAggregate(String beanName, Class<T> classType) {
+            this.beanName = beanName;
             this.classType = classType;
         }
 
-        public String getPrototype() {
-            return prototype;
+        public String getBeanName() {
+            return beanName;
         }
 
         public Class<T> getClassType() {
@@ -570,13 +571,13 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 return false;
             }
             SpringAggregate<?> that = (SpringAggregate<?>) o;
-            return Objects.equals(prototype, that.prototype) &&
+            return Objects.equals(beanName, that.beanName) &&
                     Objects.equals(classType, that.classType);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(prototype, classType);
+            return Objects.hash(beanName, classType);
         }
     }
 }
