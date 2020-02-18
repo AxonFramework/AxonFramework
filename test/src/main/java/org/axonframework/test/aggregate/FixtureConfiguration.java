@@ -97,7 +97,7 @@ import java.util.function.Supplier;
 public interface FixtureConfiguration<T> {
 
     /**
-     * Registers a subtype of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
      * will be considered part of this aggregate's handlers.
      *
      * @param subtypes subtypes in this polymorphic hierarchy
