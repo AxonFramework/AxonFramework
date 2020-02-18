@@ -761,6 +761,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             if (out != null) {
                 outboundStreamObserver = null;
                 subscribedQueries.keySet().forEach(this::unsubscribe);
+                out.onCompleted();
             }
         }
 
@@ -790,8 +791,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         void disconnect() {
-            running = false;
+            if (outboundStreamObserver != null) {
+                outboundStreamObserver.onCompleted();
+            }
 
+            running = false;
             queryExecutor.shutdown();
             try {
                 if (!queryExecutor.awaitTermination(5, TimeUnit.SECONDS)) {

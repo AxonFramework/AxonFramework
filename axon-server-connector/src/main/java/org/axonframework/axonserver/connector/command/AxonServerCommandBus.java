@@ -24,6 +24,7 @@ import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
 import io.axoniq.axonserver.grpc.command.CommandSubscription;
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
@@ -819,8 +820,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         private void unsubscribeAll() {
-            subscribedCommands.forEach(this::unsubscribe);
-            subscriberStreamObserver = null;
+            StreamObserver<CommandProviderOutbound> out = subscriberStreamObserver;
+            if (out != null) {
+                subscriberStreamObserver = null;
+                subscribedCommands.forEach(this::unsubscribe);
+                out.onCompleted();
+            }
         }
 
         public void unsubscribeAndRemove(String command) {
