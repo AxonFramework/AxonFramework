@@ -37,6 +37,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
@@ -503,11 +504,11 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnIllegalStateExceptionIsThrownOnDispatchInvocation() {
+    void testAfterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
         testSubject.shutdownDispatching();
 
         assertThrows(
-                IllegalStateException.class,
+                ShutdownInProgressException.class,
                 () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
         );
     }

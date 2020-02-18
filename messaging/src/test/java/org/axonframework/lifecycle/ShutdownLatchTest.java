@@ -55,12 +55,19 @@ class ShutdownLatchTest {
     }
 
     @Test
-    void testActivityHandleEndReturnsTrueForFirstInvocationAndFalseForSubsequent() {
-        ShutdownLatch.ActivityHandle subject = testSubject.registerActivity();
+    void testSubsequentActivityHandleEndCallsDoNotInfluenceOtherHandles() {
+        ShutdownLatch.ActivityHandle handleOne = testSubject.registerActivity();
+        ShutdownLatch.ActivityHandle handleTwo = testSubject.registerActivity();
 
-        assertTrue(subject.end());
+        // Calling end twice on the first handle should not make the latch closed
+        handleOne.end();
+        handleOne.end();
 
-        assertFalse(subject.end());
+        CompletableFuture<Void> result = testSubject.initiateShutdown();
+        assertFalse(result.isDone());
+
+        handleTwo.end();
+        assertTrue(result.isDone());
     }
 
     private static class SomeException extends RuntimeException {

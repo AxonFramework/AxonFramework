@@ -283,10 +283,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
-        shutdownLatch.ifShuttingDown(
-                () -> new IllegalStateException("Cannot dispatch new commands as this bus is being shutdown")
-        );
-
+        shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         AtomicBoolean serverResponded = new AtomicBoolean(false);
         try {

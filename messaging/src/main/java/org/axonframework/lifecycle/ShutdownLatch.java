@@ -7,9 +7,10 @@ import java.util.function.Supplier;
 
 /**
  * A latch implementation to be used in shutdown scenarios. Activities to wait for can be added by invoking {@link
- * #registerActivity()}. An registered activity should always shutdown through the returned {@link ActivityHandle}'s
+ * #registerActivity()}. A registered activity should always shutdown through the returned {@link ActivityHandle}'s
  * {@link ActivityHandle#end()} method once it has completed. Otherwise {@link #initiateShutdown()} will block
- * indefinitely. If the latch is waited on through {@link #initiateShutdown()}, new operations can no longer be added.
+ * indefinitely. If the latch is waited on through {@link #initiateShutdown()}, new operations can no longer be
+ * registered.
  *
  * @author Steven van Beelen
  * @since 4.3
@@ -33,8 +34,19 @@ public class ShutdownLatch {
     }
 
     /**
-     * Check whether this {@link ShutdownLatch} is waited on. The exception retrieved from the {@code exceptionSupplier}
-     * will be thrown if this latch is shutting down.
+     * Check whether this {@link ShutdownLatch} is shutting down. The given {@code exceptionMessage} is used in the
+     * thrown {@link ShutdownInProgressException}, if this latch is shutting down.
+     *
+     * @param exceptionMessage the message used for the {@link ShutdownInProgressException} to throw if this latch is
+     *                         shutting down
+     */
+    public void ifShuttingDown(String exceptionMessage) {
+        ifShuttingDown(() -> new ShutdownInProgressException(exceptionMessage));
+    }
+
+    /**
+     * Check whether this {@link ShutdownLatch} is shutting down. The exception retrieved from the {@code
+     * exceptionSupplier} will be thrown if this latch is shutting down.
      *
      * @param exceptionSupplier a {@link Supplier} of a {@link RuntimeException} to throw if this latch is waited on
      */
@@ -45,7 +57,7 @@ public class ShutdownLatch {
     }
 
     /**
-     * Check whether this {@link ShutdownLatch} is waited on.
+     * Check whether this {@link ShutdownLatch} is shutting down.
      *
      * @return {@code true} if the latch is waited on, {@code false} otherwise
      */
@@ -70,26 +82,18 @@ public class ShutdownLatch {
      */
     public class ActivityHandle implements AutoCloseable {
 
-        private AtomicBoolean ended = new AtomicBoolean(false);
+        private final AtomicBoolean ended = new AtomicBoolean(false);
 
         /**
          * Mark this activity as being finalized. This method should be invoked once the registered activity (through
          * {@link ShutdownLatch#registerActivity()}) has ended. This method will complete the {@link ShutdownLatch} if
          * {@link ShutdownLatch#initiateShutdown()} has been invoked and all activities have ended.
-         *
-         * @return {@code true} on the first call of this method and {@code false} for subsequent invocations
          */
-        public boolean end() {
-            boolean firstInvocation = !ended.get();
-            if (firstInvocation) {
-                ended.getAndSet(true);
-            }
-
-            if (operationCounter.decrementAndGet() <= 0 && isShuttingDown()) {
+        public void end() {
+            boolean firstInvocation = ended.compareAndSet(false, true);
+            if (firstInvocation && operationCounter.decrementAndGet() <= 0 && isShuttingDown()) {
                 latch.complete(null);
             }
-
-            return firstInvocation;
         }
 
         /**

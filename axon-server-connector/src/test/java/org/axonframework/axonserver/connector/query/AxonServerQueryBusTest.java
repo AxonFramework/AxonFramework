@@ -29,6 +29,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
@@ -478,32 +479,32 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnIllegalStateExceptionOnQueryInvocation() {
+    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
         testSubject.shutdownDispatching();
 
         assertThrows(
-                IllegalStateException.class,
+                ShutdownInProgressException.class,
                 () -> testSubject.query(new GenericQueryMessage<>("some-query", ResponseTypes.instanceOf(String.class)))
         );
     }
 
     @Test
-    void testAfterShutdownDispatchingAnIllegalStateExceptionOnScatterGatherInvocation() {
+    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
         testSubject.shutdownDispatching();
 
-        assertThrows(IllegalStateException.class, () -> testSubject.scatterGather(testQuery, 1, TimeUnit.SECONDS));
+        assertThrows(ShutdownInProgressException.class, () -> testSubject.scatterGather(testQuery, 1, TimeUnit.SECONDS));
     }
 
     @Test
-    void testAfterShutdownDispatchingAnIllegalStateExceptionOnSubscriptionQueryInvocation() {
+    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
         SubscriptionQueryMessage<String, String, String> testSubscriptionQuery =
                 new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
 
         testSubject.shutdownDispatching();
 
-        assertThrows(IllegalStateException.class, () -> testSubject.subscriptionQuery(testSubscriptionQuery));
+        assertThrows(ShutdownInProgressException.class, () -> testSubject.subscriptionQuery(testSubscriptionQuery));
     }
 
     @Test

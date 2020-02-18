@@ -312,7 +312,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
-        assertActive("queries");
+        shutdownLatch.ifShuttingDown(String.format("Cannot dispatch new %s as this bus is being shut down", "queries"));
 
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
@@ -370,7 +370,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 TimeUnit timeUnit) {
-        assertActive("scatter-gather queries");
+        shutdownLatch.ifShuttingDown(String.format(
+                "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
+        ));
 
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
@@ -463,7 +465,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backPressure,
             int updateBufferSize) {
-        assertActive("subscription queries");
+        shutdownLatch.ifShuttingDown(String.format(
+                "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
+        ));
 
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(query);
         String subscriptionId = interceptedQuery.getIdentifier();
@@ -488,12 +492,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 () -> contextSubscriptions.remove(subscriptionId)
         );
         return new DeserializedResult<>(result.get(), subscriptionSerializer);
-    }
-
-    private void assertActive(String queryType) {
-        shutdownLatch.ifShuttingDown(() -> new IllegalStateException(String.format(
-                "Cannot dispatch new %s as this bus is being shut down", queryType
-        )));
     }
 
     QueryServiceGrpc.QueryServiceStub queryService(String context) {
