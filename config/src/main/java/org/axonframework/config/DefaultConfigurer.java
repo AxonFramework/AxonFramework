@@ -86,6 +86,9 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -114,6 +117,8 @@ import static java.util.stream.Collectors.toList;
 public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private static final int LIFECYCLE_PHASE_TIMEOUT_SECONDS = 5;
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -672,9 +677,21 @@ public class DefaultConfigurer implements Configurer {
                 handlers.stream()
                         .map(LifecycleHandler::run)
                         .reduce((cf1, cf2) -> CompletableFuture.allOf(cf1, cf2))
-                        .ifPresent(CompletableFuture::join);
-            } catch (CompletionException e) {
+                        .orElse(CompletableFuture.completedFuture(null))
+                        .get(LIFECYCLE_PHASE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (CompletionException | ExecutionException e) {
                 exceptionHandler.accept(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn(String.format(
+                        "Completion interrupted during %s phase [%d]. Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase
+                ));
+            } catch (TimeoutException e) {
+                logger.warn(String.format(
+                        "Timed out during %s phase [%d] after 5 seconds. Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase
+                ));
             }
         } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);
         currentLifecyclePhase = null;

@@ -332,6 +332,52 @@ class DefaultConfigurerLifecycleOperationsTest {
         lifecycleOrder.verify(phaseZeroHandler).shutdown();
     }
 
+    @Test
+    void testLifecycleHandlersProceedToFollowingPhaseWhenTheThreadIsInterrupted() throws InterruptedException {
+        Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
+
+        LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
+
+        testSubject.onStart(0, phaseZeroHandler::start);
+        testSubject.onStart(1, phaseOneHandler::uncompletableStart);
+        testSubject.onStart(2, phaseTwoHandler::start);
+
+        // Start in a different thread to be able to interrupt the thread
+        Thread startThread = new Thread(testSubject::start);
+        startThread.start();
+        startThread.interrupt();
+
+        // Wait until the start thread is finished prior to validating the order.
+        startThread.join();
+
+        InOrder lifecycleOrder = inOrder(phaseZeroHandler, phaseOneHandler, phaseTwoHandler);
+        lifecycleOrder.verify(phaseZeroHandler).start();
+        lifecycleOrder.verify(phaseOneHandler).uncompletableStart();
+        lifecycleOrder.verify(phaseTwoHandler).start();
+    }
+
+    @Test
+    void testLifecycleHandlersProceedToFollowingPhaseForNeverEndingPhases() {
+        Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
+
+        LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance extremelySlowPhaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
+
+        testSubject.onStart(0, phaseZeroHandler::start);
+        testSubject.onStart(1, extremelySlowPhaseOneHandler::uncompletableStart);
+        testSubject.onStart(2, phaseTwoHandler::start);
+
+        testSubject.start();
+
+        InOrder lifecycleOrder = inOrder(phaseZeroHandler, extremelySlowPhaseOneHandler, phaseTwoHandler);
+        lifecycleOrder.verify(phaseZeroHandler).start();
+        lifecycleOrder.verify(extremelySlowPhaseOneHandler).uncompletableStart();
+        lifecycleOrder.verify(phaseTwoHandler).start();
+    }
+
     private static class LifecycleManagedInstance {
 
         private final ReentrantLock lock;
@@ -356,6 +402,10 @@ class DefaultConfigurerLifecycleOperationsTest {
                     lock.unlock();
                 }
             });
+        }
+
+        public CompletableFuture<Void> uncompletableStart() {
+            return new CompletableFuture<>();
         }
 
         public void addLifecycleHandler(LifecycleRegistration lifecycleRegistration,
