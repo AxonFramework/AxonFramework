@@ -52,6 +52,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -267,6 +268,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private void unsubscribe() {
         commandProcessor.unsubscribeAll();
+    }
+
+    /**
+     * Start the Axon Server {@link CommandBus} implementation.
+     */
+    @StartHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
+    public void start() {
+        shutdownLatch.initialize();
     }
 
     @Override

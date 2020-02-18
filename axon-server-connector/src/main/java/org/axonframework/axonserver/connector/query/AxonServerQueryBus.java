@@ -57,6 +57,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -288,7 +289,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return new Builder();
     }
 
-
     private Consumer<String> interceptReconnectRequest(Consumer<String> reconnect) {
         if (subscriptions.isEmpty()) {
             return reconnect;
@@ -298,6 +298,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private void onApplicationDisconnected(String context) {
         subscriptions.remove(context);
+    }
+
+    /**
+     * Start the Axon Server {@link QueryBus} implementation.
+     */
+    @StartHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
+    public void start() {
+        shutdownLatch.initialize();
     }
 
     @Override
