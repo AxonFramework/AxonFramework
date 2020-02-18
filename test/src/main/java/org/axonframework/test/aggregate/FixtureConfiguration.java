@@ -97,6 +97,15 @@ import java.util.function.Supplier;
 public interface FixtureConfiguration<T> {
 
     /**
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
+     * will be considered part of this aggregate's handlers.
+     *
+     * @param subtypes subtypes in this polymorphic hierarchy
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes);
+
+    /**
      * Registers an arbitrary {@code repository} with the fixture. The repository must be wired
      * with the Event Store of this test fixture.
      * <p/>

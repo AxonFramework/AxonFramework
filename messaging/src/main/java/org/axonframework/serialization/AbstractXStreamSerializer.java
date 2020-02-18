@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -267,9 +268,10 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     public abstract static class Builder {
 
         private XStream xStream;
-        private Charset charset = Charset.forName("UTF-8");
+        private Charset charset = StandardCharsets.UTF_8;
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
+        private boolean lenientDeserialization = false;
 
         /**
          * Sets the {@link XStream} used to perform the serialization of objects to XML, and vice versa.
@@ -327,6 +329,17 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         }
 
         /**
+         * Configures the underlying XStream instance to be lenient when deserializing data into Java objects.
+         * Specifically sets the {@link XStream#ignoreUnknownElements()}.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder lenientDeserialization() {
+            this.lenientDeserialization = true;
+            return this;
+        }
+
+        /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
@@ -334,6 +347,9 @@ public abstract class AbstractXStreamSerializer implements Serializer {
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(xStream, "The XStream is a hard requirement and should be provided");
+            if (lenientDeserialization) {
+                xStream.ignoreUnknownElements();
+            }
         }
     }
 

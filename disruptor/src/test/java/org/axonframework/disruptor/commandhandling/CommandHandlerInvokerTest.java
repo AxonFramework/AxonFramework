@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ class CommandHandlerInvokerTest {
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockEventStore.readEvents(any()))
                 .thenReturn(DomainEventStream.of(
-                        new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, aggregateIdentifier)
+                        new GenericDomainEventMessage<>("StubAggregate", aggregateIdentifier, 0, aggregateIdentifier)
                 ));
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
