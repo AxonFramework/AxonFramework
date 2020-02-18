@@ -86,6 +86,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -820,7 +821,7 @@ public class DefaultConfigurer implements Configurer {
                                               LifecycleHandler lifecycleHandler) {
             lifecycleHandlers.compute(phase, (p, handlers) -> {
                 if (handlers == null) {
-                    handlers = new ArrayList<>();
+                    handlers = new CopyOnWriteArrayList<>();
                 }
                 handlers.add(lifecycleHandler);
                 return handlers;
