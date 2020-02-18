@@ -82,6 +82,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.spring.SpringUtils.isQualifierMatch;
@@ -308,23 +309,37 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     @SuppressWarnings("unchecked")
-    private <A> Map<Class<? super A>, Map<Class<? extends A>, String>> buildAggregateHierarchy(
+    private <A> Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> buildAggregateHierarchy(
             String[] aggregatePrototypes) {
-        Map<Class<? super A>, Map<Class<? extends A>, String>> hierarchy = new HashMap<>();
+        Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = new HashMap<>();
         for (String prototype : aggregatePrototypes) {
             Class<A> aggregateType = (Class<A>) beanFactory.getType(prototype);
+            SpringAggregate<A> springAggregate = new SpringAggregate<>(prototype, aggregateType);
             Class<? super A> topType = topAnnotatedAggregateType(aggregateType);
-            hierarchy.compute(topType, (type, subtypes) -> {
+            SpringAggregate<? super A> topSpringAggregate = new SpringAggregate<>(prototype(topType), topType);
+            hierarchy.compute(topSpringAggregate, (type, subtypes) -> {
                 if (subtypes == null) {
                     subtypes = new HashMap<>();
                 }
-                if (!type.equals(aggregateType)) {
+                if (!type.equals(springAggregate)) {
                     subtypes.put(aggregateType, prototype);
                 }
                 return subtypes;
             });
         }
         return hierarchy;
+    }
+
+    private <A> String prototype(Class<A> type) {
+        String[] beanNamesForType = beanFactory.getBeanNamesForType(type);
+        if (beanNamesForType.length == 0) {
+            throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
+        } else {
+            if (beanNamesForType.length == 1) {
+                logger.warn("There are {} beans defined for '{}'.", beanNamesForType.length, type.getName());
+            }
+            return beanNamesForType[0];
+        }
     }
 
     private <A> Class<? super A> topAnnotatedAggregateType(Class<A> type) {
@@ -345,16 +360,18 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     @SuppressWarnings("unchecked")
     private <A> void registerAggregateBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
         String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
-        Map<Class<? super A>, Map<Class<? extends A>, String>> hierarchy = buildAggregateHierarchy(aggregates);
-        for (Map.Entry<Class<? super A>, Map<Class<? extends A>, String>> aggregate : hierarchy.entrySet()) {
-            Class<A> aggregateType = (Class<A>) aggregate.getKey();
+        Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = buildAggregateHierarchy(aggregates);
+        for (Map.Entry<SpringAggregate<? super A>, Map<Class<? extends A>, String>> aggregate : hierarchy.entrySet()) {
+            Class<A> aggregateType = (Class<A>) aggregate.getKey().getClassType();
+            String aggregatePrototype = aggregate.getKey().getPrototype();
             Aggregate aggregateAnnotation = aggregateType.getAnnotation(Aggregate.class);
             AggregateConfigurer<A> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
             aggregateConf.withSubtypes(aggregate.getValue().keySet());
             if ("".equals(aggregateAnnotation.repository())) {
                 String repositoryName = lcFirst(aggregateType.getSimpleName()) + "Repository";
                 String factoryName =
-                        aggregateType.getName().substring(0, 1).toLowerCase() + aggregateType.getName().substring(1) + "AggregateFactory";
+                        aggregatePrototype.substring(0, 1).toLowerCase()
+                                + aggregatePrototype.substring(1) + "AggregateFactory";
                 if (beanFactory.containsBean(repositoryName)) {
                     aggregateConf.configureRepository(c -> beanFactory.getBean(repositoryName, Repository.class));
                 } else {
@@ -366,7 +383,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     if (!registry.isBeanNameInUse(factoryName)) {
                         registry.registerBeanDefinition(factoryName,
                                                         genericBeanDefinition(SpringPrototypeAggregateFactory.class)
-                                                                .addConstructorArgValue(aggregate.getKey().getName())
+                                                                .addConstructorArgValue(aggregatePrototype)
                                                                 .addConstructorArgValue(aggregate.getValue())
                                                                 .getBeanDefinition());
                     }
@@ -524,6 +541,42 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 delegate = delegateSupplier.get();
             }
             return delegate;
+        }
+    }
+
+    private static class SpringAggregate<T> {
+        private final String prototype;
+        private final Class<T> classType;
+
+        private SpringAggregate(String prototype, Class<T> classType) {
+            this.prototype = prototype;
+            this.classType = classType;
+        }
+
+        public String getPrototype() {
+            return prototype;
+        }
+
+        public Class<T> getClassType() {
+            return classType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            SpringAggregate<?> that = (SpringAggregate<?>) o;
+            return Objects.equals(prototype, that.prototype) &&
+                    Objects.equals(classType, that.classType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(prototype, classType);
         }
     }
 }

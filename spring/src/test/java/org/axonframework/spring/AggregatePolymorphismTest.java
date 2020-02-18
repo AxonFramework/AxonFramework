@@ -30,10 +30,12 @@ import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Scope;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -178,6 +180,7 @@ public class AggregatePolymorphismTest {
     @Configuration
     public static class Context {
 
+        @Component("abc")
         @Aggregate
         public abstract static class A {
 
