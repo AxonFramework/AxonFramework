@@ -86,6 +86,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -158,50 +160,35 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         configurer.registerHandlerDefinition((c, clazz) -> beanFactory
                 .getBean(handlerDefinition.getBeanName(), HandlerDefinition.class));
 
-        findComponent(CommandBus.class)
-                .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
-        findComponent(QueryBus.class)
-                .ifPresent(queryBus -> configurer.configureQueryBus(c -> getBean(queryBus, c)));
-        findComponent(QueryUpdateEmitter.class)
-                .ifPresent(queryUpdateEmitter -> configurer.configureQueryUpdateEmitter(c -> getBean(queryUpdateEmitter, c)));
-        findComponent(EventStorageEngine.class)
-                .ifPresent(ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
-        findComponent(EventBus.class).ifPresent(eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));
-        findComponent(Serializer.class)
-                .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
-        findComponent(Serializer.class, "eventSerializer")
-                .ifPresent(eventSerializer -> configurer.configureEventSerializer(c -> getBean(eventSerializer, c)));
-        findComponent(Serializer.class, "messageSerializer").ifPresent(
-                messageSerializer -> configurer.configureMessageSerializer(c -> getBean(messageSerializer, c)));
-        findComponent(TokenStore.class)
-                .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
+        registerComponent(CommandBus.class, configurer::configureCommandBus, configurer, Configuration::commandBus);
+        registerComponent(QueryBus.class, configurer::configureQueryBus, configurer, Configuration::queryBus);
+        registerComponent(QueryUpdateEmitter.class, configurer::configureQueryUpdateEmitter);
+        registerComponent(
+                EventStorageEngine.class, configurer::configureEmbeddedEventStore, configurer, Configuration::eventBus
+        );
+        registerComponent(EventBus.class, configurer::configureEventBus);
+        registerComponent(Serializer.class, configurer::configureSerializer);
+        registerComponent(Serializer.class, "eventSerializer", configurer::configureEventSerializer);
+        registerComponent(Serializer.class, "messageSerializer", configurer::configureMessageSerializer);
+        registerComponent(TokenStore.class, configurer);
         try {
             findComponent(PlatformTransactionManager.class).ifPresent(
-                    ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
+                    ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c)))
+            );
         } catch (NoClassDefFoundError error) {
             // that's fine...
         }
-        findComponent(TransactionManager.class)
-                .ifPresent(tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
-        findComponent(SagaStore.class)
-                .ifPresent(sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
-        findComponent(ListenerInvocationErrorHandler.class).ifPresent(
-                handler -> configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c))
+        registerComponent(TransactionManager.class, configurer::configureTransactionManager);
+        registerComponent(SagaStore.class, configurer);
+        registerComponent(ListenerInvocationErrorHandler.class, configurer);
+        registerComponent(ErrorHandler.class, configurer);
+        registerComponent(TagsConfiguration.class, configurer);
+        String resourceInjector = findComponent(
+                ResourceInjector.class, registry,
+                () -> genericBeanDefinition(SpringResourceInjector.class).getBeanDefinition()
         );
-        findComponent(ErrorHandler.class).ifPresent(
-                handler -> configurer.registerComponent(ErrorHandler.class, c -> getBean(handler, c))
-        );
-        findComponent(TagsConfiguration.class).ifPresent(
-                tagsConfiguration -> configurer.configureTags(c -> getBean(tagsConfiguration, c))
-        );
-
-        String resourceInjector = findComponent(ResourceInjector.class, registry,
-                                                () -> genericBeanDefinition(SpringResourceInjector.class)
-                                                        .getBeanDefinition());
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
-
-        findComponent(DeadlineManager.class).ifPresent(deadlineManager -> configurer
-                .registerComponent(DeadlineManager.class, c -> getBean(deadlineManager, c)));
+        registerComponent(DeadlineManager.class, configurer, Configuration::deadlineManager);
 
         EventProcessingModule eventProcessingModule = new EventProcessingModule();
         Optional<String> eventProcessingConfigurerOptional = findComponent(EventProcessingConfigurer.class);
@@ -453,7 +440,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         return string.substring(0, 1).toLowerCase() + string.substring(1);
     }
 
-    private <T> String findComponent(Class<T> componentType, BeanDefinitionRegistry registry,
+    private <T> String findComponent(Class<T> componentType,
+                                     BeanDefinitionRegistry registry,
                                      Supplier<BeanDefinition> defaultBean) {
         return findComponent(componentType).orElseGet(() -> {
             BeanDefinition beanDefinition = defaultBean.get();
@@ -463,14 +451,106 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         });
     }
 
+    /**
+     * Register a component of {@code componentType} with {@code componentQualifier} through the given {@code
+     * registrationFunction}. The component to register will be a bean retrieved from the {@link ApplicationContext}
+     * tied to the {@link Configuration}.
+     *
+     * @param componentType        the type of the component to register
+     * @param componentQualifier   the qualifier of the component to register
+     * @param registrationFunction the function to register the component to the {@link Configuration}
+     * @param <T>                  the type of the component
+     */
+    private <T> void registerComponent(Class<T> componentType,
+                                       String componentQualifier,
+                                       Consumer<Function<Configuration, T>> registrationFunction) {
+        findComponent(componentType, componentQualifier).ifPresent(
+                componentName -> registrationFunction.accept(config -> getBean(componentName, config))
+        );
+    }
+
     private <T> Optional<String> findComponent(Class<T> componentType, String componentQualifier) {
         return Stream.of(beanNamesForTypeIncludingAncestors( beanFactory, componentType ))
                      .filter(bean -> isQualifierMatch(bean, beanFactory, componentQualifier))
                      .findFirst();
     }
 
+    /**
+     * Register a component of {@code componentType} through the given {@code registrationFunction}. The component to
+     * register will be a bean retrieved from the {@link ApplicationContext} tied to the {@link Configuration}.
+     *
+     * @param componentType        the type of the component to register
+     * @param registrationFunction the function to register the component to the {@link Configuration}
+     * @param <T>                  the type of the component
+     */
+    private <T> void registerComponent(Class<T> componentType,
+                                       Consumer<Function<Configuration, T>> registrationFunction) {
+        findComponent(componentType).ifPresent(
+                componentName -> registrationFunction.accept(config -> getBean(componentName, config))
+        );
+    }
+
+    /**
+     * Register a component of {@code componentType} with the given {@code configurer} through {@link
+     * Configurer#registerComponent(Class, Function)}. The component to register will be a bean retrieved from the
+     * {@link ApplicationContext} tied to the {@link Configuration}.
+     *
+     * @param componentType the type of the component to register
+     * @param configurer    the {@link Configurer} used to register the component with
+     * @param <T>           the type of the component
+     */
+    private <T> void registerComponent(Class<T> componentType, Configurer configurer) {
+        registerComponent(componentType,
+                          builder -> configurer.registerComponent(componentType, builder),
+                          configurer,
+                          null);
+    }
+
+    /**
+     * Register a component of {@code componentType} with the given {@code configurer}. through {@link
+     * Configurer#registerComponent(Class, Function)}. The {@code initHandler} is used to initialize the component at
+     * the right point in time. The component to register will be a bean retrieved from the {@link ApplicationContext}
+     * tied to the {@link Configuration}.
+     *
+     * @param componentType the type of the component to register
+     * @param configurer    the {@link Configurer} used to register the component with
+     * @param initHandler   the function used to initialize the registered component
+     * @param <T>           the type of the component
+     */
+    private <T> void registerComponent(Class<T> componentType,
+                                       Configurer configurer,
+                                       Consumer<Configuration> initHandler) {
+        registerComponent(componentType,
+                          builder -> configurer.registerComponent(componentType, builder),
+                          configurer,
+                          initHandler);
+    }
+
+    /**
+     * Register a component of {@code componentType} through the given {@code registrationFunction}. The {@code
+     * initHandler} is used to initialize the component at the right point in time. The component to register will be a
+     * bean retrieved from the {@link ApplicationContext} tied to the {@link Configuration}.
+     *
+     * @param componentType        the type of the component to register
+     * @param registrationFunction the function to register the component to the {@link Configuration}
+     * @param configurer           the {@link Configurer} used to register the component with
+     * @param initHandler          the function used to initialize the registered component
+     * @param <T>                  the type of the component
+     */
+    private <T> void registerComponent(Class<T> componentType,
+                                       Consumer<Function<Configuration, T>> registrationFunction,
+                                       Configurer configurer,
+                                       Consumer<Configuration> initHandler) {
+        findComponent(componentType).ifPresent(componentName -> {
+            registrationFunction.accept(config -> getBean(componentName, config));
+            if (initHandler != null) {
+                configurer.onInit(c -> c.onStart(Integer.MIN_VALUE, () -> initHandler.accept(c)));
+            }
+        });
+    }
+
     private <T> Optional<String> findComponent(Class<T> componentType) {
-        String[] beans = beanNamesForTypeIncludingAncestors( beanFactory, componentType );
+        String[] beans = beanNamesForTypeIncludingAncestors(beanFactory, componentType);
         if (beans.length == 1) {
             return Optional.of(beans[0]);
         } else if (beans.length > 1) {
