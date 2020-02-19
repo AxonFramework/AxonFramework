@@ -82,7 +82,7 @@ public class Component<B> {
         if (instance == null) {
             Configuration configuration = configSupplier.get();
             instance = builderFunction.apply(configuration);
-            logger.debug("Instantiated component [{}]", name);
+            logger.debug("Instantiated component [{}]: {}", name, instance);
             LifecycleHandlerInspector.registerLifecycleHandlers(configuration, instance);
         }
         return instance;
