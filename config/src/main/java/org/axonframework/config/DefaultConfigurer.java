@@ -726,8 +726,9 @@ public class DefaultConfigurer implements Configurer {
         public <T> Repository<T> repository(Class<T> aggregateType) {
             return DefaultConfigurer.this.modules
                     .stream()
-                    .filter(moduleConfig -> AggregateConfigurer.class.isAssignableFrom(moduleConfig.getClass()))
+                    .filter(AggregateConfiguration.class::isInstance)
                     .map(moduleConfig -> (AggregateConfiguration<T>) moduleConfig)
+                    .filter(aggregateConfig -> aggregateConfig.aggregateType().isAssignableFrom(aggregateType))
                     .findFirst()
                     .map(AggregateConfiguration::repository)
                     .orElseThrow(() -> new IllegalArgumentException(
