@@ -3,8 +3,8 @@
 *  !!! UNABLE TO CONNECT TO AXON SERVER !!!  *
 *                                            *
 * Are you sure it's running?                 *
-* If you haven't got Axon Server yet, visit  *
-*       https://axoniq.io/download           *
+* Don't have Axon Server yet?                *
+* Go to:  https://axoniq.io/go-axon          *
 *                                            *
 **********************************************
 
