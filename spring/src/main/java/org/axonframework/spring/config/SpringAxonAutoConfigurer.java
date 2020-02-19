@@ -544,7 +544,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(componentType).ifPresent(componentName -> {
             registrationFunction.accept(config -> getBean(componentName, config));
             if (initHandler != null) {
-                configurer.onInit(c -> c.onStart(Integer.MIN_VALUE, () -> initHandler.accept(c)));
+                configurer.onInitialize(c -> c.onStart(Integer.MIN_VALUE, () -> initHandler.accept(c)));
             }
         });
     }

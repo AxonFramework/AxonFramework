@@ -493,7 +493,7 @@ public interface Configurer {
      * @param initHandler a {@link Consumer} of the configuration, to be ran upon initialization of the {@link
      *                    Configuration}
      */
-    default void onInit(Consumer<Configuration> initHandler) {
+    default void onInitialize(Consumer<Configuration> initHandler) {
         registerModule(initHandler::accept);
     }
 
