@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,15 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -39,8 +41,13 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -49,7 +56,15 @@ import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -57,14 +72,29 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -81,20 +111,27 @@ import static java.util.stream.Collectors.toList;
  * blocks, such as the {@link CommandBus} and {@link EventBus}.
  * <p>
  * Note that this Configurer implementation is not thread-safe.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class DefaultConfigurer implements Configurer {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private static final int LIFECYCLE_PHASE_TIMEOUT_SECONDS = 5;
 
     private final Configuration config = new ConfigurationImpl();
 
     private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
             new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
-
-    private final Component<List<CorrelationDataProvider>> correlationProviders =
-            new Component<>(config, "correlationProviders",
-                            c -> Collections.singletonList(new MessageOriginProvider()));
-
-    private final Map<Class<?>, Component<?>> components = new HashMap<>();
+    private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(
+            config, "correlationProviders",
+            c -> Collections.singletonList(new MessageOriginProvider())
+    );
+    private final Map<Class<?>, Component<?>> components = new ConcurrentHashMap<>();
+    private final List<Component<MessageHandlerRegistrar>> messageHandlerRegistrars = new ArrayList<>();
     private final Component<Serializer> eventSerializer =
             new Component<>(config, "eventSerializer", Configuration::messageSerializer);
     private final Component<Serializer> messageSerializer =
@@ -104,19 +141,19 @@ public class DefaultConfigurer implements Configurer {
             config, "eventUpcasterChain",
             c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()))
     );
-
     private final Component<Function<Class<?>, HandlerDefinition>> handlerDefinition = new Component<>(
             config, "handlerDefinition",
-            c -> this::defaultHandlerDefinition);
+            c -> this::defaultHandlerDefinition
+    );
 
-    private final Map<Class<?>, AggregateConfiguration<?>> aggregateConfigurations = new HashMap<>();
-
-    private final List<ConsumerHandler> initHandlers = new ArrayList<>();
-    private final List<RunnableHandler> startHandlers = new ArrayList<>();
-    private final List<RunnableHandler> shutdownHandlers = new ArrayList<>();
+    private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
+    private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
+    private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
+    private Integer currentLifecyclePhase = null;
+    private LifecycleState lifecycleState = LifecycleState.DOWN;
 
     /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
@@ -442,51 +479,55 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configurer registerModule(ModuleConfiguration module) {
+        logger.debug("Registering module [{}]", module.getClass().getSimpleName());
         if (initialized) {
             module.initialize(config);
-            startHandlers.add(new RunnableHandler(module.phase(), module::start));
-            shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
         }
         this.modules.add(module);
         return this;
     }
 
     @Override
-    public Configurer registerCommandHandler(int phase,
-                                             Function<Configuration, Object> annotatedCommandHandlerBuilder) {
-        startHandlers.add(new RunnableHandler(phase, () -> {
-            Object handler = annotatedCommandHandlerBuilder.apply(config);
-            Assert.notNull(handler, () -> "annotatedCommandHandler may not be null");
-            Registration registration =
-                    new AnnotationCommandHandlerAdapter<>(handler,
-                                                        config.parameterResolverFactory(),
-                                                        config.handlerDefinition(handler.getClass()))
-                            .subscribe(config.commandBus());
-            shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
-        }));
-        return this;
-    }
-
-    @Override
-    public Configurer registerQueryHandler(int phase, Function<Configuration, Object> annotatedQueryHandlerBuilder) {
-        startHandlers.add(new RunnableHandler(phase, () -> {
-            Object annotatedHandler = annotatedQueryHandlerBuilder.apply(config);
-            Assert.notNull(annotatedHandler, () -> "annotatedQueryHandler may not be null");
-
-            Registration registration = new AnnotationQueryHandlerAdapter<>(annotatedHandler,
-                                                                          config.parameterResolverFactory(),
-                                                                          config.handlerDefinition(annotatedHandler
-                                                                                                           .getClass()))
-                    .subscribe(config.queryBus());
-            shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
-        }));
-        return this;
-    }
-
-    @Override
     public <C> Configurer registerComponent(Class<C> componentType,
                                             Function<Configuration, ? extends C> componentBuilder) {
+        logger.debug("Registering component [{}]", componentType.getSimpleName());
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
+        return this;
+    }
+
+    @Override
+    public Configurer registerCommandHandler(Function<Configuration, Object> commandHandlerBuilder) {
+        messageHandlerRegistrars.add(new Component<>(
+                () -> config,
+                "CommandHandlerRegistrar",
+                configuration -> new MessageHandlerRegistrar(
+                        () -> configuration,
+                        commandHandlerBuilder,
+                        (config, commandHandler) -> new AnnotationCommandHandlerAdapter<>(
+                                commandHandler,
+                                config.parameterResolverFactory(),
+                                config.handlerDefinition(commandHandler.getClass())
+                        ).subscribe(config.commandBus())
+                )
+        ));
+        return this;
+    }
+
+    @Override
+    public Configurer registerQueryHandler(Function<Configuration, Object> queryHandlerBuilder) {
+        messageHandlerRegistrars.add(new Component<>(
+                () -> config,
+                "QueryHandlerRegistrar",
+                configuration -> new MessageHandlerRegistrar(
+                        () -> configuration,
+                        queryHandlerBuilder,
+                        (config, queryHandler) -> new AnnotationQueryHandlerAdapter<>(
+                                queryHandler,
+                                config.parameterResolverFactory(),
+                                config.handlerDefinition(queryHandler.getClass())
+                        ).subscribe(config.queryBus())
+                )
+        ));
         return this;
     }
 
@@ -518,14 +559,7 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration) {
-        this.modules.add(aggregateConfiguration);
-        this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
-        this.initHandlers.add(new ConsumerHandler(aggregateConfiguration.phase(), aggregateConfiguration::initialize));
-        this.startHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::start));
-        this.shutdownHandlers.add(
-                new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown)
-        );
-        return this;
+        return registerModule(aggregateConfiguration);
     }
 
     @Override
@@ -540,7 +574,7 @@ public class DefaultConfigurer implements Configurer {
         if (!initialized) {
             verifyIdentifierFactory();
             prepareModules();
-            shutdownHandlers.add(new RunnableHandler(0, () -> config.deadlineManager().shutdown()));
+            prepareMessageHandlerRegistrars();
             invokeInitHandlers();
         }
         return config;
@@ -550,11 +584,7 @@ public class DefaultConfigurer implements Configurer {
      * Prepare the registered modules for initialization. This ensures all lifecycle handlers are registered.
      */
     protected void prepareModules() {
-        modules.forEach(module -> {
-            initHandlers.add(new ConsumerHandler(module.phase(), module::initialize));
-            startHandlers.add(new RunnableHandler(module.phase(), module::start));
-            shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
-        });
+        modules.forEach(module -> initHandlers.add(module::initialize));
     }
 
     /**
@@ -571,26 +601,101 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Prepare the registered message handlers {@link MessageHandlerRegistrar} for initialization. This ensures their
+     * lifecycle handlers are registered.
+     */
+    protected void prepareMessageHandlerRegistrars() {
+        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(config -> registrar.get()));
+    }
+
+    /**
      * Calls all registered init handlers. Registration of init handlers after this invocation will result in an
      * immediate invocation of that handler.
      */
     protected void invokeInitHandlers() {
         initialized = true;
-        initHandlers.stream().sorted(comparingInt(ConsumerHandler::phase)).forEach(h -> h.accept(config));
+        initHandlers.forEach(h -> h.accept(config));
     }
 
     /**
      * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
-        startHandlers.stream().sorted(comparingInt(RunnableHandler::phase)).forEach(RunnableHandler::run);
+        logger.debug("Initiating start up");
+        lifecycleState = LifecycleState.STARTING_UP;
+
+        invokeLifecycleHandlers(
+                startHandlers,
+                e -> {
+                    logger.debug("Start up is being ended prematurely due to an exception");
+                    invokeShutdownHandlers();
+                    throw new LifecycleHandlerInvocationException(
+                            String.format(
+                                    "One of the start handlers in phase [%d] failed with the following exception:",
+                                    currentLifecyclePhase
+                            ),
+                            e.getCause()
+                    );
+                }
+        );
+
+        lifecycleState = LifecycleState.UP;
+        logger.debug("Finalized start sequence");
     }
 
     /**
      * Invokes all registered shutdown handlers.
      */
     protected void invokeShutdownHandlers() {
-        shutdownHandlers.stream().sorted(comparingInt(RunnableHandler::phase).reversed()).forEach(RunnableHandler::run);
+        logger.debug("Initiating shutdown");
+        lifecycleState = LifecycleState.SHUTTING_DOWN;
+
+        invokeLifecycleHandlers(
+                shutdownHandlers,
+                e -> logger.warn(
+                        "One of the shutdown handlers in phase [{}] failed with the following exception: {}",
+                        currentLifecyclePhase, e.getCause()
+                )
+        );
+
+        lifecycleState = LifecycleState.DOWN;
+        logger.debug("Finalized shutdown sequence");
+    }
+
+    private void invokeLifecycleHandlers(TreeMap<Integer, List<LifecycleHandler>> lifecycleHandlerMap,
+                                         Consumer<Exception> exceptionHandler) {
+        Map.Entry<Integer, List<LifecycleHandler>> phasedHandlers = lifecycleHandlerMap.firstEntry();
+        if (phasedHandlers == null) {
+            return;
+        }
+
+        do {
+            currentLifecyclePhase = phasedHandlers.getKey();
+            logger.debug("Entered {} handler lifecycle phase [{}]", lifecycleState.description, currentLifecyclePhase);
+
+            List<LifecycleHandler> handlers = phasedHandlers.getValue();
+            try {
+                handlers.stream()
+                        .map(LifecycleHandler::run)
+                        .reduce((cf1, cf2) -> CompletableFuture.allOf(cf1, cf2))
+                        .orElse(CompletableFuture.completedFuture(null))
+                        .get(LIFECYCLE_PHASE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (CompletionException | ExecutionException e) {
+                exceptionHandler.accept(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn(String.format(
+                        "Completion interrupted during %s phase [%d]. Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase
+                ));
+            } catch (TimeoutException e) {
+                logger.warn(String.format(
+                        "Timed out during %s phase [%d] after 5 seconds. Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase
+                ));
+            }
+        } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);
+        currentLifecyclePhase = null;
     }
 
     /**
@@ -614,63 +719,30 @@ public class DefaultConfigurer implements Configurer {
         return components;
     }
 
-    private static class ConsumerHandler {
-
-        private final int phase;
-        private final Consumer<Configuration> handler;
-
-        private ConsumerHandler(int phase, Consumer<Configuration> handler) {
-            this.phase = phase;
-            this.handler = handler;
-        }
-
-        public int phase() {
-            return phase;
-        }
-
-        public void accept(Configuration configuration) {
-            handler.accept(configuration);
-        }
-    }
-
-    private static class RunnableHandler {
-
-        private final int phase;
-        private final Runnable handler;
-
-        private RunnableHandler(int phase, Runnable handler) {
-            this.phase = phase;
-            this.handler = handler;
-        }
-
-        public int phase() {
-            return phase;
-        }
-
-        public void run() {
-            handler.run();
-        }
-    }
-
     private class ConfigurationImpl implements Configuration {
 
         @Override
         @SuppressWarnings("unchecked")
         public <T> Repository<T> repository(Class<T> aggregateType) {
-            AggregateConfiguration<T> aggregateConfigurer =
-                    (AggregateConfiguration<T>) DefaultConfigurer.this.aggregateConfigurations.get(aggregateType);
-            if (aggregateConfigurer == null) {
-                throw new IllegalArgumentException(
-                        "Aggregate " + aggregateType.getSimpleName() + " has not been configured");
-            }
-            return aggregateConfigurer.repository();
+            return DefaultConfigurer.this.modules
+                    .stream()
+                    .filter(AggregateConfiguration.class::isInstance)
+                    .map(moduleConfig -> (AggregateConfiguration<T>) moduleConfig)
+                    .filter(aggregateConfig -> aggregateConfig.aggregateType().isAssignableFrom(aggregateType))
+                    .findFirst()
+                    .map(AggregateConfiguration::repository)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Aggregate " + aggregateType.getSimpleName() + " has not been configured"
+                    ));
         }
 
         @Override
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
-            return componentType.cast(components.computeIfAbsent(
-                    componentType, k -> new Component<>(config, componentType.getSimpleName(), c -> defaultImpl.get())
-            ).get());
+            Object component = components.computeIfAbsent(
+                    componentType,
+                    k -> new Component<>(config, componentType.getSimpleName(), c -> defaultImpl.get())
+            ).get();
+            return componentType.cast(component);
         }
 
         @Override
@@ -710,8 +782,51 @@ public class DefaultConfigurer implements Configurer {
         }
 
         @Override
-        public void onShutdown(int phase, Runnable shutdownHandler) {
-            shutdownHandlers.add(new RunnableHandler(phase, shutdownHandler));
+        public void onStart(int phase, LifecycleHandler startHandler) {
+            if (isEarlierPhaseDuringStartUp(phase)) {
+                logger.info(
+                        "A start handler is being registered for phase [{}] whilst phase [{}] is in progress. "
+                                + "Will run provided handler immediately instead.",
+                        phase, currentLifecyclePhase
+                );
+                startHandler.run().join();
+            }
+            registerLifecycleHandler(startHandlers, phase, startHandler);
+        }
+
+        private boolean isEarlierPhaseDuringStartUp(int phase) {
+            return lifecycleState == LifecycleState.STARTING_UP
+                    && currentLifecyclePhase != null && phase <= currentLifecyclePhase;
+        }
+
+        @Override
+        public void onShutdown(int phase, LifecycleHandler shutdownHandler) {
+            if (isEarlierPhaseDuringShutdown(phase)) {
+                logger.info(
+                        "A shutdown handler is being registered for phase [{}] whilst phase [{}] is in progress. "
+                                + "Will run provided handler immediately instead.",
+                        phase, currentLifecyclePhase
+                );
+                shutdownHandler.run().join();
+            }
+            registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
+        }
+
+        private boolean isEarlierPhaseDuringShutdown(int phase) {
+            return lifecycleState == LifecycleState.SHUTTING_DOWN
+                    && currentLifecyclePhase != null && phase >= currentLifecyclePhase;
+        }
+
+        private void registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
+                                              int phase,
+                                              LifecycleHandler lifecycleHandler) {
+            lifecycleHandlers.compute(phase, (p, handlers) -> {
+                if (handlers == null) {
+                    handlers = new CopyOnWriteArrayList<>();
+                }
+                handlers.add(lifecycleHandler);
+                return handlers;
+            });
         }
 
         @Override
@@ -720,13 +835,21 @@ public class DefaultConfigurer implements Configurer {
         }
 
         @Override
-        public void onStart(int phase, Runnable startHandler) {
-            startHandlers.add(new RunnableHandler(phase, startHandler));
-        }
-
-        @Override
         public HandlerDefinition handlerDefinition(Class<?> inspectedType) {
             return handlerDefinition.get().apply(inspectedType);
+        }
+    }
+
+    private enum LifecycleState {
+        DOWN("down"),
+        STARTING_UP("start"),
+        UP("up"),
+        SHUTTING_DOWN("shutdown");
+
+        private String description;
+
+        LifecycleState(String description) {
+            this.description = description;
         }
     }
 }

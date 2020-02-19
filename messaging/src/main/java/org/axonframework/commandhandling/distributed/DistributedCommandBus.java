@@ -27,6 +27,8 @@ import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -36,6 +38,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -99,6 +102,27 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
         this.connector = builder.connector;
         this.messageMonitor = builder.messageMonitor;
         this.defaultCommandCallback = builder.defaultCommandCallback;
+    }
+
+    /**
+     * Disconnect the command bus for receiving new commands, by unsubscribing all registered command handlers. This
+     * shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
+     */
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
+    public void disconnect() {
+        commandRouter.updateMembership(loadFactor, DenyAll.INSTANCE);
+    }
+
+    /**
+     * Shutdown the command bus asynchronously for dispatching commands to other instances. This process will wait for
+     * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
+     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
+     *
+     * @return a completable future which is resolved once all command dispatching activities are completed
+     */
+    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
+    public CompletableFuture<Void> shutdownDispatching() {
+        return connector.initiateShutdown();
     }
 
     @Override

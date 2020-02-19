@@ -30,6 +30,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
@@ -368,19 +369,19 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     @Override
-    public void initialize(Configuration parent) {
-        this.parent = parent;
-    }
-
-    @Override
-    public void start() {
-        registrations.add(commandHandler.get().subscribe(parent.commandBus()));
-    }
-
-    @Override
-    public void shutdown() {
-        registrations.forEach(Registration::cancel);
-        registrations.clear();
+    public void initialize(Configuration config) {
+        parent = config;
+        parent.onStart(
+                Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
+                () -> registrations.add(commandHandler.get().subscribe(parent.commandBus()))
+        );
+        parent.onShutdown(
+                Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
+                () -> {
+                    registrations.forEach(Registration::cancel);
+                    registrations.clear();
+                }
+        );
     }
 
     @Override
