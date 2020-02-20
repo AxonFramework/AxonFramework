@@ -120,8 +120,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final Class<T> aggregateType;
     private final Set<Class<? extends T>> subtypes = new HashSet<>();
     private final SimpleCommandBus commandBus;
-    private final List<MessageDispatchInterceptor<CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
-    private final List<MessageHandlerInterceptor<CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
     private final EventStore eventStore;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
@@ -238,28 +238,28 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
-            MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor) {
+            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor) {
         this.commandDispatchInterceptors.add(commandDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor) {
+            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor) {
         this.commandHandlerInterceptors.add(commandHandlerInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor) {
+            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor) {
         this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
+            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
