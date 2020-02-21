@@ -76,6 +76,7 @@ class QueryGatewayExtensionsTest {
             subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java))
         }
     }
+
     @Test
     fun `Query without queryName for Optional should invoke query method with correct generic parameters`() {
         val queryResult = subjectGateway.queryForOptional<String, ExampleQuery>(query = exampleQuery)
