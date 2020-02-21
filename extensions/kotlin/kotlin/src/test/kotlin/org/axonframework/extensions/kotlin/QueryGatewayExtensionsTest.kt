@@ -46,6 +46,9 @@ class QueryGatewayExtensionsTest {
 
     @BeforeTest
     fun before() {
+        every { subjectGateway.query(exampleQuery, matchInstanceResponseType<String>()) } returns instanceReturnValue
+        every { subjectGateway.query(exampleQuery, matchOptionalResponseType<String>()) } returns optionalReturnValue
+        every { subjectGateway.query(exampleQuery, matchMultipleInstancesResponseType<String>()) } returns listReturnValue
         every { subjectGateway.query(queryName, exampleQuery, matchInstanceResponseType<String>()) } returns instanceReturnValue
         every { subjectGateway.query(queryName, exampleQuery, matchOptionalResponseType<String>()) } returns optionalReturnValue
         every { subjectGateway.query(queryName, exampleQuery, matchMultipleInstancesResponseType<String>()) } returns listReturnValue
@@ -55,6 +58,70 @@ class QueryGatewayExtensionsTest {
     fun after() {
         clearMocks(subjectGateway)
     }
+
+    @Test
+    fun `Query without queryName for Single should invoke query method with correct generic parameters`() {
+        val queryResult = subjectGateway.queryForSingle<String, ExampleQuery>(query = exampleQuery)
+        assertSame(queryResult, instanceReturnValue)
+        verify(exactly = 1) {
+            subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java))
+        }
+    }
+
+    @Test
+    fun `Query without queryName for Single should invoke query method and not require explicit generic types`() {
+        val queryResult:CompletableFuture<String> = subjectGateway.queryForSingle(query = exampleQuery)
+        assertSame(queryResult, instanceReturnValue)
+        verify(exactly = 1) {
+            subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java))
+        }
+    }
+    @Test
+    fun `Query without queryName for Optional should invoke query method with correct generic parameters`() {
+        val queryResult = subjectGateway.queryForOptional<String, ExampleQuery>(query = exampleQuery)
+
+        assertSame(queryResult, optionalReturnValue)
+        verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
+    }
+
+    @Test
+    fun `Query without queryName for Optional should invoke query method and not require explicit generic types`() {
+        val queryResult: CompletableFuture<Optional<String>> = subjectGateway.queryForOptional(query = exampleQuery)
+
+        assertSame(queryResult, optionalReturnValue)
+        verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
+    }
+
+    @Test
+    fun `Query without queryName for Multiple should invoke query method with correct generic parameters`() {
+        val queryResult = subjectGateway.queryForMultiple<String, ExampleQuery>(query = exampleQuery)
+
+        assertSame(queryResult, listReturnValue)
+        verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
+    }
+
+    @Test
+    fun `Query without queryName for Multiple should invoke query method and not require explicit generic types`() {
+        val queryResult: CompletableFuture<List<String>> = subjectGateway.queryForMultiple(query = exampleQuery)
+
+        assertSame(queryResult, listReturnValue)
+        verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
+    }
+
+    @Test
+    fun `Query without queryName for Single should handle nullable responses`() {
+        val nullInstanceReturnValue: CompletableFuture<String?> = CompletableFuture.completedFuture(null)
+        val nullableQueryGateway = mockk<QueryGateway> {
+            every { query(exampleQuery, match { i: AbstractResponseType<String?> -> i is InstanceResponseType }) } returns nullInstanceReturnValue
+        }
+
+        val queryResult = nullableQueryGateway.queryForSingle<String?, ExampleQuery>(query = exampleQuery)
+
+        assertSame(queryResult, nullInstanceReturnValue)
+        assertTrue(nullInstanceReturnValue.get() == null)
+        verify(exactly = 1) { nullableQueryGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
+    }
+
 
     @Test
     fun `Query for Single should invoke query method with correct generic parameters`() {
