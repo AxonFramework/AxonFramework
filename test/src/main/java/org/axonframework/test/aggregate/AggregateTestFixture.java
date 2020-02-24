@@ -715,6 +715,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             return aggregate;
         }
 
+        @Override
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier,Callable<T> factoryMethod) throws Exception{
+            CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
+            aggregate = delegate.loadOrCreate(aggregateIdentifier,factoryMethod);
+            return aggregate;
+        }
+
         private void validateIdentifier(String aggregateIdentifier, Aggregate<T> aggregate) {
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.identifierAsString())) {
                 throw new AssertionError(String.format(
