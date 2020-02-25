@@ -18,8 +18,11 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.common.Registration;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
+
+import java.util.Collections;
 
 /**
  * Tests for {@link ReactiveCommandGateway}.
@@ -37,10 +40,10 @@ public class DefaultReactiveCommandGatewayTest {
         commandBus.subscribe(Integer.class.getName(), message -> {
             throw new RuntimeException();
         });
-        CommandGateway commandGateway = DefaultCommandGateway.builder()
-                                                             .commandBus(commandBus)
-                                                             .build();
-        reactiveCommandGateway = new DefaultReactiveCommandGateway(commandGateway);
+        commandBus.subscribe(Boolean.class.getName(),
+                             message -> "" + message.getMetaData().getOrDefault("key1", "")
+                                     + message.getMetaData().getOrDefault("key2", ""));
+        reactiveCommandGateway = new DefaultReactiveCommandGateway(commandBus);
     }
 
     @Test
@@ -53,6 +56,36 @@ public class DefaultReactiveCommandGatewayTest {
     @Test
     void testSendFails() {
         StepVerifier.create(reactiveCommandGateway.send(5))
+                    .verifyError(RuntimeException.class);
+    }
+
+    @Test
+    void testSendWithDispatchInterceptor() {
+        reactiveCommandGateway
+                .registerCommandDispatchInterceptor(() -> cmdMono -> cmdMono
+                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key1", "value1"))));
+        Registration registration2 = reactiveCommandGateway
+                .registerCommandDispatchInterceptor(() -> cmdMono -> cmdMono
+                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key2", "value2"))));
+
+        StepVerifier.create(reactiveCommandGateway.send(true))
+                    .expectNext("value1value2")
+                    .verifyComplete();
+
+        registration2.cancel();
+
+        StepVerifier.create(reactiveCommandGateway.send(true))
+                    .expectNext("value1")
+                    .verifyComplete();
+    }
+
+    @Test
+    void testDispatchInterceptorThrowingAnException() {
+        reactiveCommandGateway
+                .registerCommandDispatchInterceptor(() -> cmdMono -> {
+                    throw new RuntimeException();
+                });
+        StepVerifier.create(reactiveCommandGateway.send(true))
                     .verifyError(RuntimeException.class);
     }
 }

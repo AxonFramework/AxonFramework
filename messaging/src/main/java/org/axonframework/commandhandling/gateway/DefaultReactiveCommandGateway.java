@@ -16,7 +16,16 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.ReactiveMessageDispatchInterceptor;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Default implementation of {@link ReactiveCommandGateway}.
@@ -26,19 +35,58 @@ import reactor.core.publisher.Mono;
  */
 public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
 
-    private final CommandGateway delegate;
+    private final List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+
+    private final CommandBus commandBus;
 
     /**
      * Creates an instance of {@link DefaultReactiveCommandGateway}.
      *
-     * @param delegate the delegate {@link CommandGateway} used to perform the actual command dispatching
+     * @param commandBus used for command dispatching
      */
-    public DefaultReactiveCommandGateway(CommandGateway delegate) {
-        this.delegate = delegate;
+    public DefaultReactiveCommandGateway(CommandBus commandBus) {
+        this.commandBus = commandBus;
     }
 
     @Override
-    public <R> Mono<R> send(Object command) {
-        return Mono.fromFuture(delegate.send(command));
+    public <R> Mono<R> send(Mono<Object> command) {
+        return processInterceptors(command.map(GenericCommandMessage::asCommandMessage))
+                .flatMap(commandMessage -> Mono.create(
+                        sink -> commandBus.dispatch(commandMessage, (CommandCallback<Object, R>) (cm, result) -> {
+                            try {
+                                if (result.isExceptional()) {
+                                    sink.error(result.exceptionResult());
+                                } else {
+                                    sink.success(result.getPayload());
+                                }
+                            } catch (Exception e) {
+                                sink.error(e);
+                            }
+                        })));
+    }
+
+    /**
+     * Registers a {@link ReactiveMessageDispatchInterceptor} within this reactive gateway.
+     *
+     * @param interceptor intercepts a command message
+     * @return a registration which can be used to unregister this {@code interceptor}
+     */
+    public Registration registerCommandDispatchInterceptor(
+            ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Mono<CommandMessage<?>> processInterceptors(Mono<CommandMessage<?>> commandMessage) {
+        Mono<CommandMessage<?>> message = commandMessage;
+        for (ReactiveMessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor : dispatchInterceptors) {
+            try {
+                message = dispatchInterceptor.intercept(message);
+            } catch (Throwable t) {
+                return Mono.error(t);
+            }
+        }
+        return message;
     }
 }

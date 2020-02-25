@@ -29,14 +29,26 @@ import reactor.core.publisher.Mono;
 public interface ReactiveCommandGateway {
 
     /**
-     * Sends the given {@code command} and returns immediately, without waiting for the command to execute.
+     * Sends the given {@code command} once the caller subscribes to the command result. Returns immediately.
      * <p/>
      * The given {@code command} is wrapped as the payload of the CommandMessage that is eventually posted on the
      * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      *
-     * @param command The command to dispatch
+     * @param command the command to dispatch
+     * @param <R>     the type of the command result
      * @return a {@link Mono} which is resolved when the command is executed
      */
-    <R> Mono<R> send(Object command);
+    default <R> Mono<R> send(Object command) {
+        return send(Mono.just(command));
+    }
+
+    /**
+     * Sends the given {@code command} once the caller subscribes to the command result. Returns immediately.
+     *
+     * @param command a {@link Mono} which is resolved once the caller subscribes to the command result
+     * @param <R>     the type of the command result
+     * @return a {@link Mono} which is resolved when the command is executed
+     */
+    <R> Mono<R> send(Mono<Object> command);
 }
