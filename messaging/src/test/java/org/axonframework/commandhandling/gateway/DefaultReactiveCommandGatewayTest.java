@@ -38,10 +38,12 @@ public class DefaultReactiveCommandGatewayTest {
 
     private DefaultReactiveCommandGateway reactiveCommandGateway;
     private MessageHandler<CommandMessage<?>> commandMessageHandler;
+    private RetryScheduler mockRetryScheduler;
 
     @BeforeEach
     void setUp() {
         CommandBus commandBus = SimpleCommandBus.builder().build();
+        mockRetryScheduler = mock(RetryScheduler.class);
         commandMessageHandler = spy(new MessageHandler<CommandMessage<?>>() {
             @Override
             public Object handle(CommandMessage<?> message) {
@@ -57,6 +59,7 @@ public class DefaultReactiveCommandGatewayTest {
                                      + message.getMetaData().getOrDefault("key2", ""));
         reactiveCommandGateway = DefaultReactiveCommandGateway.builder()
                                                               .commandBus(commandBus)
+                                                              .retryScheduler(mockRetryScheduler)
                                                               .build();
     }
 
@@ -68,12 +71,14 @@ public class DefaultReactiveCommandGatewayTest {
                     .expectNext("handled")
                     .verifyComplete();
         verify(commandMessageHandler).handle(any());
+        verifyZeroInteractions(mockRetryScheduler);
     }
 
     @Test
     void testSendFails() {
         StepVerifier.create(reactiveCommandGateway.send(5))
                     .verifyError(RuntimeException.class);
+        verify(mockRetryScheduler).scheduleRetry(any(), any(), anyList(), any());
     }
 
     @Test

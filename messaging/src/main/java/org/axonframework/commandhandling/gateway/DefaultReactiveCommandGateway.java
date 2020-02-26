@@ -39,9 +39,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
 
-    private final List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
-
     private final CommandBus commandBus;
+    private final RetryScheduler retryScheduler;
+    private final List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
 
     /**
      * Creates an instance of {@link DefaultReactiveCommandGateway} based on the fields contained in the {@link
@@ -56,6 +56,7 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
     protected DefaultReactiveCommandGateway(Builder builder) {
         builder.validate();
         this.commandBus = builder.commandBus;
+        this.retryScheduler = builder.retryScheduler;
         this.dispatchInterceptors = builder.dispatchInterceptors;
     }
 
@@ -76,17 +77,23 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
     public <R> Mono<R> send(Mono<Object> command) {
         return processInterceptors(command.map(GenericCommandMessage::asCommandMessage))
                 .flatMap(commandMessage -> Mono.create(
-                        sink -> commandBus.dispatch(commandMessage, (CommandCallback<Object, R>) (cm, result) -> {
-                            try {
-                                if (result.isExceptional()) {
-                                    sink.error(result.exceptionResult());
-                                } else {
-                                    sink.success(result.getPayload());
+                        sink -> {
+                            CommandCallback<Object, R> commandCallback = (cm, result) -> {
+                                try {
+                                    if (result.isExceptional()) {
+                                        sink.error(result.exceptionResult());
+                                    } else {
+                                        sink.success(result.getPayload());
+                                    }
+                                } catch (Exception e) {
+                                    sink.error(e);
                                 }
-                            } catch (Exception e) {
-                                sink.error(e);
+                            };
+                            if (retryScheduler != null) {
+                                commandCallback = new RetryingCallback<>(commandCallback, retryScheduler, commandBus);
                             }
-                        })));
+                            commandBus.dispatch(commandMessage, commandCallback);
+                        }));
     }
 
     /**
@@ -123,6 +130,7 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
     public static class Builder {
 
         private CommandBus commandBus;
+        private RetryScheduler retryScheduler;
         private List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
         /**
@@ -134,6 +142,18 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
         public Builder commandBus(CommandBus commandBus) {
             assertNonNull(commandBus, "CommandBus may not be null");
             this.commandBus = commandBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RetryScheduler} capable of performing retries of failed commands. May be {@code null} when
+         * to prevent retries.
+         *
+         * @param retryScheduler a {@link RetryScheduler} capable of performing retries of failed commands
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder retryScheduler(RetryScheduler retryScheduler) {
+            this.retryScheduler = retryScheduler;
             return this;
         }
 
