@@ -55,7 +55,9 @@ public class DefaultReactiveCommandGatewayTest {
         commandBus.subscribe(Boolean.class.getName(),
                              message -> "" + message.getMetaData().getOrDefault("key1", "")
                                      + message.getMetaData().getOrDefault("key2", ""));
-        reactiveCommandGateway = new DefaultReactiveCommandGateway(commandBus);
+        reactiveCommandGateway = DefaultReactiveCommandGateway.builder()
+                                                              .commandBus(commandBus)
+                                                              .build();
     }
 
     @Test

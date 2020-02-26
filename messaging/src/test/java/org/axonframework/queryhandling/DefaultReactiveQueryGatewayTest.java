@@ -67,7 +67,9 @@ public class DefaultReactiveQueryGatewayTest {
                            String.class,
                            message -> "" + message.getMetaData().getOrDefault("key1", "")
                                    + message.getMetaData().getOrDefault("key2", ""));
-        reactiveQueryGateway = new DefaultReactiveQueryGateway(queryBus);
+        reactiveQueryGateway = DefaultReactiveQueryGateway.builder()
+                                                          .queryBus(queryBus)
+                                                          .build();
     }
 
     @Test

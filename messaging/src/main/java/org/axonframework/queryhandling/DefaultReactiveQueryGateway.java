@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
@@ -28,8 +29,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.Arrays.asList;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Default implementation of {@link ReactiveQueryGateway}.
@@ -39,17 +41,37 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
 
-    private final List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors;
 
     private final QueryBus queryBus;
 
     /**
-     * Creates an instance of {@link DefaultReactiveQueryGateway}.
+     * Creates an instance of {@link DefaultReactiveQueryGateway} based on the fields contained in the {@link
+     * Builder}.
+     * <p>
+     * Will assert that the {@link QueryBus} is not {@code null} and throws an {@link AxonConfigurationException} if
+     * it is.
+     * </p>
      *
-     * @param queryBus used for query dispatching
+     * @param builder the {@link Builder} used to instantiated a {@link DefaultReactiveQueryGateway} instance
      */
-    public DefaultReactiveQueryGateway(QueryBus queryBus) {
-        this.queryBus = queryBus;
+    protected DefaultReactiveQueryGateway(Builder builder) {
+        builder.validate();
+        this.queryBus = builder.queryBus;
+        this.dispatchInterceptors = builder.dispatchInterceptors;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link DefaultReactiveQueryGateway}.
+     * <p>
+     * The {@code dispatchInterceptors} are defaulted to an empty list.
+     * The {@link QueryBus} is a <b>hard requirements</b> and as such should be provided.
+     * </p>
+     *
+     * @return a Builder to be able to create a {@link DefaultReactiveQueryGateway}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -138,5 +160,77 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
                             data
                     ));
                 });
+    }
+
+    /**
+     * Builder class to instantiate {@link DefaultReactiveQueryGateway}.
+     * <p>
+     * The {@code dispatchInterceptors} are defaulted to an empty list.
+     * The {@link QueryBus} is a <b>hard requirement</b> and as such should be provided.
+     * </p>
+     */
+    public static class Builder {
+
+        private QueryBus queryBus;
+        private List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+
+        /**
+         * Sets the {@link QueryBus} used to dispatch queries.
+         *
+         * @param queryBus a {@link QueryBus} used to dispatch queries
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder queryBus(QueryBus queryBus) {
+            assertNonNull(queryBus, "QueryBus may not be null");
+            this.queryBus = queryBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link List} of {@link ReactiveMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
+         * when a query is being dispatched.
+         *
+         * @param dispatchInterceptors which are invoked when a query is being dispatched
+         * @return the current Builder instance, for fluent interfacing
+         */
+        @SafeVarargs
+        public final Builder dispatchInterceptors(
+                ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>... dispatchInterceptors) {
+            return dispatchInterceptors(asList(dispatchInterceptors));
+        }
+
+        /**
+         * Sets the {@link List} of {@link ReactiveMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
+         * when a query is being dispatched.
+         *
+         * @param dispatchInterceptors which are invoked when a query is being dispatched
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder dispatchInterceptors(
+                List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors) {
+            this.dispatchInterceptors = dispatchInterceptors != null && dispatchInterceptors.isEmpty()
+                    ? new CopyOnWriteArrayList<>(dispatchInterceptors)
+                    : new CopyOnWriteArrayList<>();
+            return this;
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
+            assertNonNull(queryBus, "The QueryBus is a hard requirement and should be provided");
+        }
+
+        /**
+         * Initializes a {@link DefaultReactiveQueryGateway} as specified through this Builder.
+         *
+         * @return a {@link DefaultReactiveQueryGateway} as specified through this Builder
+         */
+        public DefaultReactiveQueryGateway build() {
+            return new DefaultReactiveQueryGateway(this);
+        }
     }
 }
