@@ -49,6 +49,7 @@ public interface ReactiveCommandGateway {
      * @param command a {@link Mono} which is resolved once the caller subscribes to the command result
      * @param <R>     the type of the command result
      * @return a {@link Mono} which is resolved when the command is executed
+     * @see #send(Object)
      */
     <R> Mono<R> send(Mono<Object> command);
 }

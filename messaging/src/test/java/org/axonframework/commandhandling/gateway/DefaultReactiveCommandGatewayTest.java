@@ -17,12 +17,17 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
 import org.junit.jupiter.api.*;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.Collections;
+
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link ReactiveCommandGateway}.
@@ -32,11 +37,18 @@ import java.util.Collections;
 public class DefaultReactiveCommandGatewayTest {
 
     private DefaultReactiveCommandGateway reactiveCommandGateway;
+    private MessageHandler<CommandMessage<?>> commandMessageHandler;
 
     @BeforeEach
     void setUp() {
         CommandBus commandBus = SimpleCommandBus.builder().build();
-        commandBus.subscribe(String.class.getName(), message -> "handled");
+        commandMessageHandler = spy(new MessageHandler<CommandMessage<?>>() {
+            @Override
+            public Object handle(CommandMessage<?> message) {
+                return "handled";
+            }
+        });
+        commandBus.subscribe(String.class.getName(), commandMessageHandler);
         commandBus.subscribe(Integer.class.getName(), message -> {
             throw new RuntimeException();
         });
@@ -47,10 +59,13 @@ public class DefaultReactiveCommandGatewayTest {
     }
 
     @Test
-    void testSend() {
-        StepVerifier.create(reactiveCommandGateway.send("command"))
+    void testSend() throws Exception {
+        Mono<String> result = reactiveCommandGateway.send("command");
+        verifyZeroInteractions(commandMessageHandler);
+        StepVerifier.create(result)
                     .expectNext("handled")
                     .verifyComplete();
+        verify(commandMessageHandler).handle(any());
     }
 
     @Test
@@ -85,6 +100,14 @@ public class DefaultReactiveCommandGatewayTest {
                 .registerCommandDispatchInterceptor(() -> cmdMono -> {
                     throw new RuntimeException();
                 });
+        StepVerifier.create(reactiveCommandGateway.send(true))
+                    .verifyError(RuntimeException.class);
+    }
+
+    @Test
+    void testDispatchInterceptorReturningErrorMono() {
+        reactiveCommandGateway
+                .registerCommandDispatchInterceptor(() -> cmdMono -> Mono.error(new RuntimeException()));
         StepVerifier.create(reactiveCommandGateway.send(true))
                     .verifyError(RuntimeException.class);
     }

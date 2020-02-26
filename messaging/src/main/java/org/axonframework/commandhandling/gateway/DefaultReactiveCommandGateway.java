@@ -77,7 +77,6 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
         return () -> dispatchInterceptors.remove(interceptor);
     }
 
-    @SuppressWarnings("unchecked")
     private Mono<CommandMessage<?>> processInterceptors(Mono<CommandMessage<?>> commandMessage) {
         Mono<CommandMessage<?>> message = commandMessage;
         for (ReactiveMessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor : dispatchInterceptors) {

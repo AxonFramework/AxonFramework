@@ -215,8 +215,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(name = "reactor.core.publisher.Mono")
-    public ReactiveQueryGateway reactiveQueryGateway(QueryGateway queryGateway) {
-        return new DefaultReactiveQueryGateway(queryGateway);
+    public ReactiveQueryGateway reactiveQueryGateway(QueryBus queryBus) {
+        return new DefaultReactiveQueryGateway(queryBus);
     }
 
     @Bean

@@ -16,11 +16,20 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ReactiveMessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Default implementation of {@link ReactiveQueryGateway}.
@@ -30,39 +39,104 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
 
-    private final QueryGateway delegate;
+    private final List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+
+    private final QueryBus queryBus;
 
     /**
      * Creates an instance of {@link DefaultReactiveQueryGateway}.
      *
-     * @param delegate the delegate {@link QueryGateway} used to perform the actual query dispatching
+     * @param queryBus used for query dispatching
      */
-    public DefaultReactiveQueryGateway(QueryGateway delegate) {
-        this.delegate = delegate;
+    public DefaultReactiveQueryGateway(QueryBus queryBus) {
+        this.queryBus = queryBus;
+    }
+
+    /**
+     * Registers a {@link ReactiveMessageDispatchInterceptor} within this reactive gateway.
+     *
+     * @param interceptor intercepts a query message
+     * @return a registration which can be used to unregister this {@code interceptor}
+     */
+    public Registration registerQueryDispatchInterceptor(
+            ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
+    }
+
+    private Mono<QueryMessage<?, ?>> processInterceptors(Mono<QueryMessage<?, ?>> queryMessage) {
+        Mono<QueryMessage<?, ?>> message = queryMessage;
+        for (ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>> dispatchInterceptor : dispatchInterceptors) {
+            try {
+                message = dispatchInterceptor.intercept(message);
+            } catch (Throwable t) {
+                return Mono.error(t);
+            }
+        }
+        return message;
     }
 
     @Override
-    public <R, Q> Mono<R> query(String queryName, Q query, ResponseType<R> responseType) {
-        return Mono.fromFuture(delegate.query(queryName, query, responseType));
+    public <R, Q> Mono<R> query(String queryName, Mono<Q> query, ResponseType<R> responseType) {
+        return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
+                .flatMap(queryMessage -> Mono.create(
+                        sink -> queryBus.query(queryMessage).whenComplete((response, throwable) -> {
+                            try {
+                                if (throwable != null) {
+                                    sink.error(throwable);
+                                } else {
+                                    if (response.isExceptional()) {
+                                        sink.error(response.exceptionResult());
+                                    } else {
+                                        sink.success(((QueryResponseMessage<R>) response).getPayload());
+                                    }
+                                }
+                            } catch (Exception e) {
+                                sink.error(e);
+                            }
+                        })
+                ));
     }
 
     @Override
-    public <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
+    public <R, Q> Flux<R> scatterGather(String queryName, Mono<Q> query, ResponseType<R> responseType, long timeout,
                                         TimeUnit timeUnit) {
-        return Flux.fromStream(delegate.scatterGather(queryName, query, responseType, timeout, timeUnit));
+        return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
+                .flatMapMany(queryMessage -> Flux.create(
+                        sink -> {
+                            queryBus.scatterGather((QueryMessage<?, R>) queryMessage, timeout, timeUnit)
+                                    .map(Message::getPayload)
+                                    .forEach(sink::next);
+                            sink.complete();
+                        }
+                ));
     }
 
     @Override
-    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
-                                                                     ResponseType<I> initialResponseType,
-                                                                     ResponseType<U> updateResponseType,
-                                                                     SubscriptionQueryBackpressure backpressure,
-                                                                     int updateBufferSize) {
-        return delegate.subscriptionQuery(queryName,
-                                          query,
-                                          initialResponseType,
-                                          updateResponseType,
-                                          backpressure,
-                                          updateBufferSize);
+    public <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Mono<Q> query,
+                                                                           ResponseType<I> initialResponseType,
+                                                                           ResponseType<U> updateResponseType,
+                                                                           SubscriptionQueryBackpressure backpressure,
+                                                                           int updateBufferSize) {
+        return processInterceptors(query.map(q -> new GenericSubscriptionQueryMessage<>(q,
+                                                                                        queryName,
+                                                                                        initialResponseType,
+                                                                                        updateResponseType)))
+                .flatMap(queryMessage -> {
+                    SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> data = queryBus
+                            .subscriptionQuery((SubscriptionQueryMessage<Q, I, U>) queryMessage,
+                                               backpressure,
+                                               updateBufferSize);
+                    return Mono.just(new DefaultSubscriptionQueryResult<>(
+                            data.initialResult()
+                                .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
+                                .map(Message::getPayload)
+                                .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
+                            data.updates()
+                                .filter(update -> Objects.nonNull(update.getPayload()))
+                                .map(SubscriptionQueryUpdateMessage::getPayload),
+                            data
+                    ));
+                });
     }
 }
