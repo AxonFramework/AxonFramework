@@ -140,7 +140,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                                aggregateModel.type()
                                        + ": Static methods/constructors can only use creationPolicy ALWAYS");
                     aggregateCreationPolicy.set(AggregateCreationPolicy.ALWAYS);
+                }else if (!aggregateCreationPolicy.get().equals(AggregateCreationPolicy.NEVER)){
+                    aggregateCreationPolicy.set(AggregateCreationPolicy.CREATE_IF_MISSING);
                 }
+
                 switch (aggregateCreationPolicy.get()) {
                     case ALWAYS:
                         handlersFound.add(new AggregateConstructorCommandHandler(handler));
