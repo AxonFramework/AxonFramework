@@ -693,6 +693,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+            CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
+            aggregate = delegate.loadOrCreate(aggregateIdentifier, factoryMethod);
+            return aggregate;
+        }
+
+        @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.newInstance(factoryMethod);
@@ -815,6 +822,15 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         @Override
         public boolean canResolve(ScopeDescriptor scopeDescription) {
             return scopeDescription instanceof AggregateScopeDescriptor;
+        }
+
+        @Override
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+            if (storedAggregate == null) {
+                return newInstance(factoryMethod);
+            }
+
+            return load(aggregateIdentifier);
         }
     }
 
