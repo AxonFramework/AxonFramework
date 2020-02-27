@@ -128,11 +128,15 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
         return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
                 .flatMapMany(queryMessage -> Flux.create(
                         sink -> {
-                            queryBus.scatterGather((QueryMessage<?, R>) queryMessage, timeout, timeUnit)
-                                    .map(Message::getPayload)
-                                    .filter(Objects::nonNull)
-                                    .forEach(sink::next);
-                            sink.complete();
+                            try {
+                                queryBus.scatterGather((QueryMessage<?, R>) queryMessage, timeout, timeUnit)
+                                        .map(Message::getPayload)
+                                        .filter(Objects::nonNull)
+                                        .forEach(sink::next);
+                                sink.complete();
+                            } catch (Exception e){
+                                sink.error(e);
+                            }
                         }
                 ));
     }
