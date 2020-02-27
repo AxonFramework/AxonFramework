@@ -47,6 +47,8 @@ import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.TagsConfiguration;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +69,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.net.ssl.SSLException;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLException;
 
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -247,7 +249,7 @@ public class AxonServerConnectionManager {
                         logger.info("Reusing existing channel");
                         channels.put(context, candidate);
                     } else {
-                        shutdown(candidate);
+                        shutdownNow(candidate);
                         logger.info("Connecting to [{}] ({}:{})",
                                     clusterInfo.getPrimary().getNodeName(),
                                     clusterInfo.getPrimary().getHostName(),
@@ -266,7 +268,7 @@ public class AxonServerConnectionManager {
                     notifyConnectionChange(reconnectListeners, context);
                     break;
                 } catch (StatusRuntimeException sre) {
-                    shutdown(candidate);
+                    shutdownNow(candidate);
                     logger.warn(
                             "Connecting to AxonServer node [{}]:[{}] failed: {}",
                             nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage()
@@ -337,7 +339,7 @@ public class AxonServerConnectionManager {
         }
     }
 
-    private void shutdown(ManagedChannel managedChannel) {
+    private void shutdownNow(ManagedChannel managedChannel) {
         try {
             managedChannel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
@@ -719,7 +721,9 @@ public class AxonServerConnectionManager {
 
     /**
      * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
+     * This shutdown operation is performed in the {@link Phase#EXTERNAL_CONNECTIONS} phase.
      */
+    @ShutdownHandler(phase = Phase.EXTERNAL_CONNECTIONS)
     public void shutdown() {
         shutdown = true;
         disconnect();
@@ -735,7 +739,7 @@ public class AxonServerConnectionManager {
     public void disconnect(String context) {
         ManagedChannel channel = channels.remove(context);
         if (channel != null) {
-            shutdown(channel);
+            shutdownChannel(channel, context);
         }
     }
 
@@ -743,8 +747,20 @@ public class AxonServerConnectionManager {
      * Disconnects any active connections, forcing a new connection to be established when one is requested.
      */
     public void disconnect() {
-        channels.forEach((k, v) -> shutdown(v));
+        channels.forEach((context, channel) -> shutdownChannel(channel, context));
         channels.clear();
+    }
+
+    private void shutdownChannel(ManagedChannel channel, String context) {
+        try {
+            channel.shutdown();
+            if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                logger.warn("Awaited Context [{}] comm-channel for 5 seconds. Will shutdown forcefully.", context);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.debug("Interrupted during shutdown of context [{}]", context);
+        }
     }
 
     /**

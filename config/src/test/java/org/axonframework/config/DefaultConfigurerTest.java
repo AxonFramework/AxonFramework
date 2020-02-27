@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AsynchronousCommandBus;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.caching.WeakReferenceCache;
-import org.axonframework.eventsourcing.CachingEventSourcingRepository;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
@@ -33,34 +31,45 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.mockito.*;
+import org.junit.jupiter.api.*;
 
-import javax.persistence.*;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 
-import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
-import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
+import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating several {@link DefaultConfigurer} operations.
+ *
+ * @author Allard Buijze
+ */
 class DefaultConfigurerTest {
 
     private EntityManager em;
@@ -242,8 +251,8 @@ class DefaultConfigurerTest {
 
         try {
             config.start();
-            fail("Expected AxonConfigurationException");
-        } catch (AxonConfigurationException e) {
+            fail("Expected LifecycleHandlerInvocationException");
+        } catch (LifecycleHandlerInvocationException e) {
             // expected
         }
     }
@@ -316,62 +325,6 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testModuleHandlersOrdering() {
-        ModuleConfiguration module1 = mock(ModuleConfiguration.class);
-        ModuleConfiguration module2 = mock(ModuleConfiguration.class);
-        ModuleConfiguration module3 = mock(ModuleConfiguration.class);
-        when(module1.phase()).thenReturn(2);
-        when(module2.phase()).thenReturn(3);
-        when(module3.phase()).thenReturn(1);
-
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerModule(module1)
-                                                       .registerModule(module2)
-                                                       .registerModule(module3)
-                                                       .start();
-        assertNotNull(configuration);
-        configuration.shutdown();
-
-        InOrder inOrder = inOrder(module1, module2, module3);
-        inOrder.verify(module3).initialize(configuration);
-        inOrder.verify(module1).initialize(configuration);
-        inOrder.verify(module2).initialize(configuration);
-        inOrder.verify(module3).start();
-        inOrder.verify(module1).start();
-        inOrder.verify(module2).start();
-        inOrder.verify(module2).shutdown();
-        inOrder.verify(module1).shutdown();
-        inOrder.verify(module3).shutdown();
-    }
-
-    @Test
-    void testModuleHandlersOrderingAfterConfigIsInitialized() {
-        ModuleConfiguration module1 = mock(ModuleConfiguration.class);
-        ModuleConfiguration module2 = mock(ModuleConfiguration.class);
-        ModuleConfiguration module3 = mock(ModuleConfiguration.class);
-        when(module1.phase()).thenReturn(2);
-        when(module2.phase()).thenReturn(3);
-        when(module3.phase()).thenReturn(1);
-
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
-        Configuration configuration = configurer.buildConfiguration();
-        configurer.registerModule(module1)
-                  .registerModule(module2)
-                  .registerModule(module3);
-        configuration.start();
-        assertNotNull(configuration);
-        configuration.shutdown();
-
-        InOrder inOrder = inOrder(module1, module2, module3);
-        inOrder.verify(module3).start();
-        inOrder.verify(module1).start();
-        inOrder.verify(module2).start();
-        inOrder.verify(module2).shutdown();
-        inOrder.verify(module1).shutdown();
-        inOrder.verify(module3).shutdown();
-    }
-
-    @Test
     void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
         QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
@@ -399,9 +352,11 @@ class DefaultConfigurerTest {
         assertEquals(CachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
     }
 
+    @SuppressWarnings("unused")
     @Entity(name = "StubAggregate")
     private static class StubAggregate {
 
+        @SuppressWarnings("FieldCanBeLocal")
         @Id
         @AggregateIdentifier
         private String id;

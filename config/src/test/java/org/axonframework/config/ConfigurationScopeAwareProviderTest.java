@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,17 +138,7 @@ class ConfigurationScopeAwareProviderTest {
 
         @Override
         public void initialize(Configuration config) {
-            // No-op, only ipmlemented for test case
-        }
-
-        @Override
-        public void start() {
-            // No-op, only ipmlemented for test case
-        }
-
-        @Override
-        public void shutdown() {
-            // No-op, only ipmlemented for test case
+            // No-op, only implemented for test case
         }
 
         @Override

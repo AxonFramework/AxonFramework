@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>4.3-SNAPSHOT</version>
+    <version>4.4-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
         <module>modelling</module>
@@ -140,7 +140,7 @@
         -->
         <grpc.version>1.22.1</grpc.version>
         <netty.tcnative.version>2.0.25.Final</netty.tcnative.version>
-        <axonserver.api.version>4.3-SNAPSHOT</axonserver.api.version>
+        <axonserver.api.version>4.3</axonserver.api.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.0.0</javax.cache-api.version>
         <javax.el-api.version>2.2.4</javax.el-api.version>

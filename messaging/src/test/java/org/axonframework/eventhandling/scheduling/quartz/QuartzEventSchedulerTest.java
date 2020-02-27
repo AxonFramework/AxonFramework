@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,22 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.utils.AssertUtils;
-import org.axonframework.utils.MockException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.utils.AssertUtils;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
 
 import java.time.Duration;
@@ -40,21 +42,24 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Tests validating the {@link QuartzEventScheduler}.
+ *
  * @author Allard Buijze
  */
 class QuartzEventSchedulerTest {
 
     private static final String GROUP_ID = "TestGroup";
 
-    private QuartzEventScheduler testSubject;
-    private EventBus eventBus;
     private Scheduler scheduler;
+    private EventBus eventBus;
+
+    private QuartzEventScheduler testSubject;
 
     @BeforeEach
     void setUp() throws SchedulerException {
         eventBus = mock(EventBus.class);
         SchedulerFactory schedulerFactory = new org.quartz.impl.StdSchedulerFactory();
-        scheduler = schedulerFactory.getScheduler();
+        scheduler = spy(schedulerFactory.getScheduler());
         scheduler.getContext().put(EventBus.class.getName(), eventBus);
         scheduler.start();
         testSubject = QuartzEventScheduler.builder()
@@ -150,6 +155,27 @@ class QuartzEventSchedulerTest {
         assertEquals(0, scheduler.getJobKeys(GroupMatcher.groupEquals(GROUP_ID)).size());
         scheduler.shutdown(true);
         verify(eventBus, never()).publish(isA(EventMessage.class));
+    }
+
+    @Test
+    void testShutdownInvokesSchedulerShutdown() throws SchedulerException {
+        testSubject.shutdown();
+
+        verify(scheduler).shutdown(true);
+    }
+
+    @Test
+    void testShutdownFailureResultsInSchedulingException() throws SchedulerException {
+        Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
+        doAnswer(invocation -> {
+            throw new SchedulerException();
+        }).when(scheduler).shutdown(true);
+        QuartzEventScheduler testSubject = QuartzEventScheduler.builder()
+                                                               .scheduler(scheduler)
+                                                               .eventBus(eventBus)
+                                                               .build();
+
+        assertThrows(SchedulingException.class, testSubject::shutdown);
     }
 
     private EventMessage<Object> buildTestEvent() {

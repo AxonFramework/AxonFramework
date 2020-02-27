@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,24 @@ package org.axonframework.integrationtests.deadline.quartz;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.deadline.DeadlineException;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
-import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.messaging.ScopeAwareProvider;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-public class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Override
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
@@ -42,5 +52,33 @@ public class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite 
         } catch (SchedulerException e) {
             throw new AxonConfigurationException("Unable to configure quartz scheduler", e);
         }
+    }
+
+    @Test
+    void testShutdownInvokesSchedulerShutdown(@Mock ScopeAwareProvider scopeAwareProvider) throws SchedulerException {
+        Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
+        QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
+                                                                 .scopeAwareProvider(scopeAwareProvider)
+                                                                 .scheduler(scheduler)
+                                                                 .build();
+
+        testSubject.shutdown();
+
+        verify(scheduler).shutdown(true);
+    }
+
+    @Test
+    void testShutdownFailureResultsInDeadlineException(@Mock ScopeAwareProvider scopeAwareProvider)
+            throws SchedulerException {
+        Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
+        doAnswer(invocation -> {
+            throw new SchedulerException();
+        }).when(scheduler).shutdown(true);
+        QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
+                                                                 .scopeAwareProvider(scopeAwareProvider)
+                                                                 .scheduler(scheduler)
+                                                                 .build();
+
+        assertThrows(DeadlineException.class, testSubject::shutdown);
     }
 }
