@@ -67,6 +67,7 @@ public class DefaultReactiveQueryGatewayTest {
                            String.class,
                            message -> "" + message.getMetaData().getOrDefault("key1", "")
                                    + message.getMetaData().getOrDefault("key2", ""));
+        queryBus.subscribe(Long.class.getName(), String.class, message -> null);
         reactiveQueryGateway = DefaultReactiveQueryGateway.builder()
                                                           .queryBus(queryBus)
                                                           .build();
@@ -81,6 +82,14 @@ public class DefaultReactiveQueryGatewayTest {
                     .expectNext("handled")
                     .verifyComplete();
         verify(queryMessageHandler1).handle(any());
+    }
+
+    @Test
+    void testQueryReturningNull() {
+        assertNull(reactiveQueryGateway.query(0L, String.class).block());
+        StepVerifier.create(reactiveQueryGateway.query(0L, String.class))
+                    .expectNext()
+                    .verifyComplete();
     }
 
     @Test
@@ -140,6 +149,16 @@ public class DefaultReactiveQueryGatewayTest {
                     .verifyComplete();
         verify(queryMessageHandler1).handle(any());
         verify(queryMessageHandler2).handle(any());
+    }
+
+    @Test
+    void testScatterGatherReturningNull() {
+        assertNull(reactiveQueryGateway.scatterGather(0L, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS)
+                                       .blockFirst());
+        StepVerifier.create(reactiveQueryGateway
+                                    .scatterGather(0L, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS))
+                    .expectNext()
+                    .verifyComplete();
     }
 
     @Test
@@ -214,6 +233,26 @@ public class DefaultReactiveQueryGatewayTest {
                     .expectNext("update")
                     .verifyComplete();
         verify(queryMessageHandler1).handle(any());
+    }
+
+    @Test
+    void testSubscriptionQueryReturningNull() {
+        SubscriptionQueryResult<String, String> result = reactiveQueryGateway.subscriptionQuery(0L,
+                                                                                                String.class,
+                                                                                                String.class)
+                                                                             .block();
+        assertNotNull(result);
+        assertNull(result.initialResult().block());
+        StepVerifier.create(result.initialResult())
+                    .expectNext()
+                    .verifyComplete();
+        StepVerifier.create(result.updates()
+                                  .doOnSubscribe(s -> {
+                                      queryUpdateEmitter.emit(Long.class, q -> true, (String) null);
+                                      queryUpdateEmitter.complete(Long.class, q -> true);
+                                  }))
+                    .expectNext()
+                    .verifyComplete();
     }
 
     @Test

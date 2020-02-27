@@ -123,6 +123,8 @@ public interface ReactiveQueryGateway {
      * QueryBus implementation.
      * <p><b>Do note that query will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
+     * <b>Note</b>: Any {@code null} results will be filtered out by the QueryGateway. If you require the {@code null}
+     * to be returned, we suggest using {@link QueryBus} instead.
      *
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
@@ -142,6 +144,8 @@ public interface ReactiveQueryGateway {
      * Execution may be asynchronous, depending on the QueryBus implementation.
      * <p><b>Do note that query will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
+     * <b>Note</b>: Any {@code null} results will be filtered out by the QueryGateway. If you require the {@code null}
+     * to be returned, we suggest using {@link QueryBus} instead.
      *
      * @param queryName    A {@link String} describing the query to be executed
      * @param query        The {@code query} to be sent
@@ -163,6 +167,8 @@ public interface ReactiveQueryGateway {
      * Execution may be asynchronous, depending on the QueryBus implementation.
      * <p><b>Do note that query will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
+     * <b>Note</b>: Any {@code null} results will be filtered out by the QueryGateway. If you require the {@code null}
+     * to be returned, we suggest using {@link QueryBus} instead.
      *
      * @param queryName    A {@link String} describing the query to be executed
      * @param query        a {@link Mono} which is resolved once the caller subscribes to the query result

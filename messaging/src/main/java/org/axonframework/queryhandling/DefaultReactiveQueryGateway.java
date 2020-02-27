@@ -99,6 +99,7 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <R, Q> Mono<R> query(String queryName, Mono<Q> query, ResponseType<R> responseType) {
         return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
                 .flatMap(queryMessage -> Mono.create(
@@ -121,6 +122,7 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <R, Q> Flux<R> scatterGather(String queryName, Mono<Q> query, ResponseType<R> responseType, long timeout,
                                         TimeUnit timeUnit) {
         return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
@@ -128,6 +130,7 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
                         sink -> {
                             queryBus.scatterGather((QueryMessage<?, R>) queryMessage, timeout, timeUnit)
                                     .map(Message::getPayload)
+                                    .filter(Objects::nonNull)
                                     .forEach(sink::next);
                             sink.complete();
                         }
@@ -135,6 +138,7 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Mono<Q> query,
                                                                            ResponseType<I> initialResponseType,
                                                                            ResponseType<U> updateResponseType,
