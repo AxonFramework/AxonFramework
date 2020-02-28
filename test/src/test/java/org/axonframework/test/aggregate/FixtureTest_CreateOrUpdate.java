@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.*;
 import org.mockito.junit.jupiter.*;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
@@ -38,6 +39,8 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 @ExtendWith(MockitoExtension.class)
 class FixtureTest_CreateOrUpdate {
 
+    private static final ComplexAggregateId AGGREGATE_ID = new ComplexAggregateId(UUID.randomUUID(), 42);
+
     private FixtureConfiguration<Aggregate1> fixture;
 
     @BeforeEach
@@ -48,29 +51,29 @@ class FixtureTest_CreateOrUpdate {
     @Test
     void testFixtureWithoutPriorActivity() {
         fixture.givenNoPriorActivity()
-               .when(new CreateOrUpdateAggregate1Command("id"))
-               .expectEvents(new Aggregate1CreatedOrUpdatedEvent("id"))
+               .when(new CreateOrUpdateAggregate1Command(AGGREGATE_ID))
+               .expectEvents(new Aggregate1CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
     }
 
     @Test
     void testFixtureWithExistingAggregate() {
-        fixture.given(new Aggregate1CreatedEvent("id"))
-               .when(new CreateOrUpdateAggregate1Command("id"))
-               .expectEvents(new Aggregate1CreatedOrUpdatedEvent("id"))
+        fixture.given(new Aggregate1CreatedEvent(AGGREGATE_ID))
+               .when(new CreateOrUpdateAggregate1Command(AGGREGATE_ID))
+               .expectEvents(new Aggregate1CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
     }
 
-
     private static class CreateAggregate1Command {
 
-        private final String id;
+        @TargetAggregateIdentifier
+        private final ComplexAggregateId id;
 
-        private CreateAggregate1Command(String id) {
+        private CreateAggregate1Command(ComplexAggregateId id) {
             this.id = id;
         }
 
-        public String getId() {
+        public ComplexAggregateId getId() {
             return id;
         }
     }
@@ -78,26 +81,26 @@ class FixtureTest_CreateOrUpdate {
     private static class CreateOrUpdateAggregate1Command {
 
         @TargetAggregateIdentifier
-        private final String id;
+        private final ComplexAggregateId id;
 
-        private CreateOrUpdateAggregate1Command(String id) {
+        private CreateOrUpdateAggregate1Command(ComplexAggregateId id) {
             this.id = id;
         }
 
-        public String getId() {
+        public ComplexAggregateId getId() {
             return id;
         }
     }
 
     private static class Aggregate1CreatedEvent {
 
-        private final String id;
+        private final ComplexAggregateId id;
 
-        private Aggregate1CreatedEvent(String id) {
+        private Aggregate1CreatedEvent(ComplexAggregateId id) {
             this.id = id;
         }
 
-        public String getId() {
+        public ComplexAggregateId getId() {
             return id;
         }
 
@@ -121,13 +124,13 @@ class FixtureTest_CreateOrUpdate {
 
     private static class Aggregate1CreatedOrUpdatedEvent {
 
-        private final String id;
+        private final ComplexAggregateId id;
 
-        private Aggregate1CreatedOrUpdatedEvent(String id) {
+        private Aggregate1CreatedOrUpdatedEvent(ComplexAggregateId id) {
             this.id = id;
         }
 
-        public String getId() {
+        public ComplexAggregateId getId() {
             return id;
         }
 
@@ -154,30 +157,50 @@ class FixtureTest_CreateOrUpdate {
     public static class Aggregate1 {
 
         @AggregateIdentifier
-        private String id;
+        private ComplexAggregateId id;
 
         public Aggregate1() {
         }
 
         @CommandHandler
-        public Aggregate1(CreateAggregate1Command command) throws Exception {
+        public Aggregate1(CreateAggregate1Command command) {
             apply(new Aggregate1CreatedEvent(command.getId()));
         }
 
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
-        public void handle(CreateOrUpdateAggregate1Command command) throws Exception {
+        public void handle(CreateOrUpdateAggregate1Command command) {
             apply(new Aggregate1CreatedOrUpdatedEvent(command.getId()));
         }
 
         @EventSourcingHandler
-        public void on(Aggregate1CreatedEvent event) throws Exception {
+        public void on(Aggregate1CreatedEvent event) {
             this.id = event.getId();
         }
 
         @EventSourcingHandler
-        public void on(Aggregate1CreatedOrUpdatedEvent event) throws Exception {
+        public void on(Aggregate1CreatedOrUpdatedEvent event) {
             this.id = event.getId();
+        }
+    }
+
+    /**
+     * Test id introduces due too https://github.com/AxonFramework/AxonFramework/pull/1356
+     */
+    private static class ComplexAggregateId {
+
+        private final UUID actualId;
+        @SuppressWarnings({"FieldCanBeLocal", "unused"})
+        private final Integer someOtherField;
+
+        private ComplexAggregateId(UUID actualId, Integer someOtherField) {
+            this.actualId = actualId;
+            this.someOtherField = someOtherField;
+        }
+
+        @Override
+        public String toString() {
+            return actualId.toString();
         }
     }
 }
