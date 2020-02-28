@@ -389,15 +389,21 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             this.factoryMethod = factoryMethod;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
-            VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
-            Aggregate<T> inst = repository.loadOrCreate(iv.getIdentifier(), factoryMethod);
-            Object result = inst.handle(command);
-            assertThat(inst.identifier(), id -> id != null && id.equals(iv.getIdentifier()),
-                       "Identifier must be set after handling the message");
-            return result;
+            VersionedAggregateIdentifier commandMessageVersionedId = commandTargetResolver.resolveTarget(command);
+            String commandMessageAggregateId = commandMessageVersionedId.getIdentifier();
+
+            Aggregate<T> instance = repository.loadOrCreate(commandMessageAggregateId, factoryMethod);
+            Object commandResult = instance.handle(command);
+            Object aggregateId = instance.identifier();
+
+            assertThat(
+                    aggregateId,
+                    id -> id != null && id.toString() != null && id.toString().equals(commandMessageAggregateId),
+                    "Identifier must be set after handling the message"
+            );
+            return commandResult;
         }
 
         @Override
