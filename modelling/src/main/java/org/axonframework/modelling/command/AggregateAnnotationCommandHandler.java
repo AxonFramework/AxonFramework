@@ -395,7 +395,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
             Aggregate<T> inst = repository.loadOrCreate(iv.getIdentifier(), factoryMethod);
             Object result = inst.handle(command);
-            assertThat(inst.identifier(), id -> id != null && id.equals(iv.getIdentifier()),
+            assertThat(inst.identifier(), id -> id != null && String.valueOf(id).equals(iv.getIdentifier()),
                        "Identifier must be set after handling the message");
             return result;
         }
