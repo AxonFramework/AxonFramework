@@ -385,9 +385,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     /**
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
      * handlers. After this the connection will be closed, waiting until all command processing tasks have been
-     * resolved. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
+     * resolved. This shutdown operation is performed in the {@link Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
+    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public void disconnect() {
         commandProcessor.unsubscribeAll();
         commandProcessor.disconnect();
@@ -396,11 +396,11 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     /**
      * Shutdown the command bus asynchronously for dispatching commands to Axon Server. This process will wait for
      * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
-     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
+     * Phase#INBOUND_COMMAND_CONNECTOR} phase.
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public CompletableFuture<Void> shutdownDispatching() {
         commandProcessor.removeLocalSubscriptions();
         return shutdownLatch.initiateShutdown();

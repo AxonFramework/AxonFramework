@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,9 +106,9 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
 
     /**
      * Disconnect the command bus for receiving new commands, by unsubscribing all registered command handlers. This
-     * shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
+     * shutdown operation is performed in the {@link Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
+    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public void disconnect() {
         commandRouter.updateMembership(loadFactor, DenyAll.INSTANCE);
     }
@@ -116,11 +116,11 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     /**
      * Shutdown the command bus asynchronously for dispatching commands to other instances. This process will wait for
      * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
-     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
+     * Phase#INBOUND_COMMAND_CONNECTOR} phase.
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public CompletableFuture<Void> shutdownDispatching() {
         return connector.initiateShutdown();
     }
