@@ -63,6 +63,10 @@ import javax.persistence.PersistenceContext;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests customization of the event handlers on a Saga, updating the configuration through an autowired method.
+ * Ensures that if there are multiple threads and a logging interceptor events are still received once.
+ */
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
 @SpringBootConfiguration
