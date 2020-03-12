@@ -42,9 +42,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -60,21 +58,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit test class to cover all the operations performed by the {@link AxonServerCommandBus}.
@@ -506,7 +493,7 @@ class AxonServerCommandBusTest {
         try {
             inboundStreamObserverRef.get().onNext(testCommandMessage);
         } finally {
-            disconnected = CompletableFuture.runAsync(testSubject::disconnect);
+            disconnected = testSubject.shutdownDispatching();
             slowHandlerLock.unlock();
         }
 
