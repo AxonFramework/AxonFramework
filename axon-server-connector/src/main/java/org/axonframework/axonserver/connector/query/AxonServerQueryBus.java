@@ -313,7 +313,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         return new AxonServerRegistration(
                 queryProcessor.subscribe(queryName, responseType, configuration.getComponentName(), handler),
-                () -> queryProcessor.unsubscribeAndRemove(queryName, responseType, configuration.getComponentName())
+                () -> queryProcessor.removeAndUnsubscribe(queryName, responseType, configuration.getComponentName())
         );
     }
 
@@ -755,21 +755,19 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         private void unsubscribeAll() {
-            StreamObserver<QueryProviderOutbound> out = outboundStreamObserver;
-            if (out != null) {
-                outboundStreamObserver = null;
-                subscribedQueries.keySet().forEach(this::unsubscribe);
-                out.onCompleted();
+            if (outboundStreamObserver != null) {
+                subscribedQueries.keySet().forEach(this::removeAndUnsubscribe);
             }
         }
 
-        public void unsubscribeAndRemove(String queryName, Type responseType, String componentName) {
-            unsubscribeAndRemove(new QueryDefinition(queryName, responseType.getTypeName(), componentName));
+        public void removeAndUnsubscribe(String queryName, Type responseType, String componentName) {
+            removeAndUnsubscribe(new QueryDefinition(queryName, responseType.getTypeName(), componentName));
         }
 
-        private void unsubscribeAndRemove(QueryDefinition queryDefinition) {
-            subscribedQueries.remove(queryDefinition);
-            unsubscribe(queryDefinition);
+        private void removeAndUnsubscribe(QueryDefinition queryDefinition) {
+            if (subscribedQueries.remove(queryDefinition) != null) {
+                unsubscribe(queryDefinition);
+            }
         }
 
         private void unsubscribe(QueryDefinition queryDefinition) {

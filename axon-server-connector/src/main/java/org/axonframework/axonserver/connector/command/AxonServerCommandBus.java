@@ -360,7 +360,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         commandProcessor.subscribe(commandName);
         return new AxonServerRegistration(
                 registration,
-                () -> commandProcessor.unsubscribeAndRemove(commandName)
+                () -> commandProcessor.removeAndUnsubscribe(commandName)
         );
     }
 
@@ -818,17 +818,15 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         private void unsubscribeAll() {
-            StreamObserver<CommandProviderOutbound> out = subscriberStreamObserver;
-            if (out != null) {
-                subscriberStreamObserver = null;
-                subscribedCommands.forEach(this::unsubscribe);
-                out.onCompleted();
+            if (subscriberStreamObserver != null) {
+                subscribedCommands.forEach(this::removeAndUnsubscribe);
             }
         }
 
-        public void unsubscribeAndRemove(String command) {
-            subscribedCommands.remove(command);
-            unsubscribe(command);
+        public void removeAndUnsubscribe(String command) {
+            if (subscribedCommands.remove(command)) {
+                unsubscribe(command);
+            }
         }
 
         private void unsubscribe(String command) {
