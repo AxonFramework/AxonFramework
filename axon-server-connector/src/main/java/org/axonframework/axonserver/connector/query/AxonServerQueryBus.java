@@ -789,10 +789,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         void disconnect() {
-            if (outboundStreamObserver != null) {
-                outboundStreamObserver.onCompleted();
-            }
-
             running = false;
             queryExecutor.shutdown();
             try {
@@ -809,7 +805,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 Thread.currentThread().interrupt();
             }
 
-            Optional.ofNullable(this.outboundStreamObserver).ifPresent(StreamObserver::onCompleted);
+            if (outboundStreamObserver != null) {
+                outboundStreamObserver.onCompleted();
+            }
         }
 
         private QuerySubscription buildQuerySubscription(QueryDefinition queryDefinition, int nrHandlers) {

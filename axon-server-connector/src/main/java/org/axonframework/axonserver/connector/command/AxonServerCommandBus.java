@@ -860,10 +860,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         void disconnect() {
-            if (subscriberStreamObserver != null) {
-                subscriberStreamObserver.onCompleted();
-            }
-
+            running = false;
             commandExecutor.shutdown();
             try {
                 if (!commandExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -878,7 +875,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                 commandExecutor.shutdownNow();
                 Thread.currentThread().interrupt();
             }
-            running = false;
+
+            if (subscriberStreamObserver != null) {
+                subscriberStreamObserver.onCompleted();
+            }
         }
 
         /**
