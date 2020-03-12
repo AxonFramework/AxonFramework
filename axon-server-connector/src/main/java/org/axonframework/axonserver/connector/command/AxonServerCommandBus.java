@@ -819,7 +819,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
         private void unsubscribeAll() {
             if (subscriberStreamObserver != null) {
-                subscribedCommands.forEach(this::removeAndUnsubscribe);
+                subscribedCommands.forEach(this::unsubscribe);
             }
         }
 

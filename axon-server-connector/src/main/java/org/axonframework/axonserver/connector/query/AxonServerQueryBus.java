@@ -756,7 +756,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         private void unsubscribeAll() {
             if (outboundStreamObserver != null) {
-                subscribedQueries.keySet().forEach(this::removeAndUnsubscribe);
+                subscribedQueries.keySet().forEach(this::unsubscribe);
             }
         }
 
