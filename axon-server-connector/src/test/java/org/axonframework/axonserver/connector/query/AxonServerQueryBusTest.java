@@ -409,7 +409,7 @@ class AxonServerQueryBusTest {
         assertNotNull(dummyMessagePlatformServer.subscriptions(TEST_QUERY, String.class.getName()));
 
         //noinspection unchecked
-        verify(axonServerConnectionManager, times(2)).getQueryStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
+        verify(axonServerConnectionManager).getQueryStream(eq(BOUNDED_CONTEXT), any(StreamObserver.class));
     }
 
     @Test
