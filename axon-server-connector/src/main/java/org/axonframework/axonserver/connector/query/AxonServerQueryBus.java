@@ -530,9 +530,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     /**
      * Disconnect the query bus from Axon Server, by unsubscribing all known query handlers. After this the connection
      * will be closed, waiting nicely until all query processing tasks have been resolved. This shutdown operation is
-     * performed in the {@link Phase#OUTBOUND_QUERY_CONNECTORS} phase.
+     * performed in the {@link Phase#INBOUND_QUERY_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
+    @ShutdownHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
     public void disconnect() {
         queryProcessor.unsubscribeAll();
         queryProcessor.disconnect();
@@ -541,11 +541,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     /**
      * Shutdown the query bus asynchronously for dispatching queries to Axon Server. This process will wait for
      * dispatched queries which have not received a response yet and will close off running subscription queries. This
-     * shutdown operation is performed in the {@link Phase#INBOUND_QUERY_CONNECTOR} phase.
+     * shutdown operation is performed in the {@link Phase#OUTBOUND_QUERY_CONNECTORS} phase.
      *
      * @return a completable future which is resolved once all query dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
+    @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         queryProcessor.removeLocalSubscriptions();
         return shutdownLatch.initiateShutdown();
