@@ -122,43 +122,44 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                       .values()
                       .stream()
                       .flatMap(List::stream)
-                      .forEach(handler -> {
-            AtomicReference<AggregateCreationPolicy> aggregateCreationPolicy = new AtomicReference<>(
-                    AggregateCreationPolicy.NEVER);
-            AtomicBoolean creationPolicySet = new AtomicBoolean();
-            handler.unwrap(CreationPolicyMember.class).ifPresent(
-                    cmd -> {
-                        aggregateCreationPolicy.set(cmd.creationPolicy());
-                        creationPolicySet.set(true);
-                    });
+                      .forEach(handler -> initializeHandler(aggregateModel, handler, handlersFound));
+        return handlersFound;
+    }
 
+    private void initializeHandler(AggregateModel<T> aggregateModel,
+                                   MessageHandlingMember<? super T> handler,
+                                   List<MessageHandler<CommandMessage<?>>> handlersFound) {
+        AtomicReference<AggregateCreationPolicy> aggregateCreationPolicy =
+                new AtomicReference<>(AggregateCreationPolicy.NEVER);
+        AtomicBoolean creationPolicySet = new AtomicBoolean();
+        handler.unwrap(CreationPolicyMember.class).ifPresent(cmh -> {
+            aggregateCreationPolicy.set(cmh.creationPolicy());
+            creationPolicySet.set(true);
+        });
 
-            handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
-                if (cmh.isFactoryHandler()) {
-                    assertThat(aggregateCreationPolicy.get(),
-                               policy -> !creationPolicySet.get() || AggregateCreationPolicy.ALWAYS.equals(policy),
-                               aggregateModel.type()
-                                       + ": Static methods/constructors can only use creationPolicy ALWAYS");
-                    aggregateCreationPolicy.set(AggregateCreationPolicy.ALWAYS);
-                }
+        handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
+            if (cmh.isFactoryHandler()) {
+                assertThat(
+                        aggregateCreationPolicy.get(),
+                        policy -> !creationPolicySet.get() || AggregateCreationPolicy.ALWAYS == policy,
+                        aggregateModel.type() + ": Static methods/constructors can only use creationPolicy ALWAYS"
+                );
+                handlersFound.add(new AggregateConstructorCommandHandler(handler));
+            } else {
                 switch (aggregateCreationPolicy.get()) {
                     case ALWAYS:
-                        handlersFound.add(new AggregateConstructorCommandHandler(handler));
-                        break;
                     case CREATE_IF_MISSING:
-                        handlersFound.add(
-                                new AggregateCreateOrUpdateCommandHandler(handler,
-                                                                          aggregateModel.entityClass()::newInstance));
+                        handlersFound.add(new AggregateCreateOrUpdateCommandHandler(
+                                handler, aggregateModel.entityClass()::newInstance
+                        ));
                         break;
                     case NEVER:
                         handlersFound.add(new AggregateCommandHandler(handler));
                         break;
                 }
-
-                supportedCommandNames.add(cmh.commandName());
-            });
+            }
+            supportedCommandNames.add(cmh.commandName());
         });
-        return handlersFound;
     }
 
     @Override
