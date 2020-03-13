@@ -481,7 +481,10 @@ public class AxonServerEventStore extends AbstractEventStore {
                     requestStream,
                     configuration.getClientId(),
                     configuration.getEventFlowControl(),
-                    t -> GetEventsRequest.newBuilder().setNumberOfPermits(t.getPermits()).build(),
+                    t -> GetEventsRequest.newBuilder()
+                                         .setUseLocalStore(configuration.isUseLocalEventStore())
+                                         .setNumberOfPermits(t.getPermits())
+                                         .build(),
                     t -> false
             );
 
@@ -490,6 +493,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                        .setClientId(configuration.getClientId())
                                                        .setComponentName(configuration.getComponentName())
                                                        .setNumberOfPermits(configuration.getInitialNrOfPermits())
+                                                       .setUseLocalStore(configuration.isUseLocalEventStore())
                                                        .build();
             observer.onNext(request);
 
@@ -539,12 +543,16 @@ public class AxonServerEventStore extends AbstractEventStore {
                     requestStream,
                     configuration.getClientId(),
                     configuration.getEventFlowControl(),
-                    t -> QueryEventsRequest.newBuilder().setNumberOfPermits(t.getPermits()).build(),
+                    t -> QueryEventsRequest.newBuilder()
+                                           .setNumberOfPermits(t.getPermits())
+                                           .setUseLocalStore(configuration.isUseLocalEventStore())
+                                           .build(),
                     t -> false
             );
 
             observer.onNext(QueryEventsRequest.newBuilder()
                                               .setQuery(query)
+                                              .setUseLocalStore(configuration.isUseLocalEventStore())
                                               .setNumberOfPermits(configuration.getInitialNrOfPermits())
                                               .setLiveEvents(liveUpdates)
                                               .build());
