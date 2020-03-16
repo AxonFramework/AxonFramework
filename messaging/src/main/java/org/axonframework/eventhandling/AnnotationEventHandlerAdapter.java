@@ -16,7 +16,14 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+
+import java.util.Optional;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
@@ -76,27 +83,26 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public Object handle(EventMessage<?> event) throws Exception {
-        for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
-            if (handler.canHandle(event)) {
-                return handler.handle(event, annotatedEventListener);
-            }
+        Optional<MessageHandlingMember<? super Object>> handler =
+                inspector.getHandlers(listenerType)
+                         .filter(h -> h.canHandle(event))
+                         .findFirst();
+        if (handler.isPresent()) {
+            return handler.get().handle(event, annotatedEventListener);
         }
         return null;
     }
 
     @Override
     public boolean canHandle(EventMessage<?> event) {
-        for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
-            if (handler.canHandle(event)) {
-                return true;
-            }
-        }
-        return false;
+        return inspector.getHandlers(listenerType)
+                        .anyMatch(h -> h.canHandle(event));
     }
 
     @Override
     public boolean canHandleType(Class<?> payloadType) {
-        return inspector.getHandlers().stream().anyMatch(handler -> handler.canHandleType(payloadType));
+        return inspector.getHandlers(listenerType)
+                        .anyMatch(handler -> handler.canHandleType(payloadType));
     }
 
     @Override

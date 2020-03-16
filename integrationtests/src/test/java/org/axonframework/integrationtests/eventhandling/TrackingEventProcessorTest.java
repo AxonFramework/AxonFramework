@@ -750,10 +750,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
-            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
+            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -791,10 +791,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
-            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
+            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -851,10 +851,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
-            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
+            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -889,10 +889,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
-            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
+            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 

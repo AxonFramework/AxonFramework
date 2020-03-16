@@ -33,15 +33,14 @@ import java.util.Map;
  */
 public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(DeadlineHandler.class)
-                       .map(attr -> (MessageHandlingMember<T>) new DeadlineMethodMessageHandlingMember(original, attr))
+                       .map(attr -> (MessageHandlingMember<T>) new DeadlineMethodMessageHandlingMember<>(original, attr))
                        .orElse(original);
     }
 
-    private class DeadlineMethodMessageHandlingMember<T> extends WrappedMessageHandlingMember<T>
+    private static class DeadlineMethodMessageHandlingMember<T> extends WrappedMessageHandlingMember<T>
             implements DeadlineHandlingMember<T> {
 
         private final String deadlineName;
@@ -55,16 +54,25 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
         @Override
         public boolean canHandle(Message<?> message) {
             return message instanceof DeadlineMessage
-                    && deadlineNameMatch((DeadlineMessage) message)
+                    && deadlineNameMatch((DeadlineMessage<?>) message)
                     && super.canHandle(message);
         }
 
-        private boolean deadlineNameMatch(DeadlineMessage message) {
+        private boolean deadlineNameMatch(DeadlineMessage<?> message) {
             return deadlineNameMatchesAll() || deadlineName.equals(message.getDeadlineName());
         }
 
         private boolean deadlineNameMatchesAll() {
             return deadlineName.equals("");
+        }
+
+        @Override
+        public int priority() {
+            if (!deadlineNameMatchesAll()) {
+                return 10000 + Math.min(Integer.MAX_VALUE - 10000, super.priority());
+            } else {
+                return 1000 + Math.min(Integer.MAX_VALUE - 1000, super.priority());
+            }
         }
     }
 }
