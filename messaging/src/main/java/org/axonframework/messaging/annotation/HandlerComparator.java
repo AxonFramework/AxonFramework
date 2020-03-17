@@ -26,13 +26,19 @@ import java.util.function.ToIntFunction;
  */
 public final class HandlerComparator {
 
-    private static final Comparator<MessageHandlingMember<?>> INSTANCE = Comparator
-            .comparing((Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
-                       HandlerComparator::compareHierarchy)
-            .thenComparing(
-                    Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
-                            .reversed())
-            .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));
+    private static final Comparator<MessageHandlingMember<?>> INSTANCE =
+            Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
+                      .reversed()
+                      .thenComparing(
+                              (Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
+                              HandlerComparator::compareHierarchy)
+                      .thenComparing(
+                              Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>)
+                                                              m -> m.unwrap(Executable.class)
+                                                                    .map(Executable::getParameterCount)
+                                                                    .orElse(1))
+                                        .reversed())
+                      .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));
 
     // prevent construction
     private HandlerComparator() {
