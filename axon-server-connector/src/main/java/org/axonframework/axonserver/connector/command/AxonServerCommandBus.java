@@ -24,7 +24,6 @@ import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
 import io.axoniq.axonserver.grpc.command.CommandSubscription;
-import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
@@ -361,7 +360,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         commandProcessor.subscribe(commandName);
         return new AxonServerRegistration(
                 registration,
-                () -> commandProcessor.unsubscribeAndRemove(commandName)
+                () -> commandProcessor.removeAndUnsubscribe(commandName)
         );
     }
 
@@ -384,13 +383,11 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     /**
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
-     * handlers. After this the connection will be closed, waiting until all command processing tasks have been
-     * resolved. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
+     * handlers. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
     @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public void disconnect() {
         commandProcessor.unsubscribeAll();
-        commandProcessor.disconnect();
     }
 
     /**
@@ -402,8 +399,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        commandProcessor.removeLocalSubscriptions();
-        return shutdownLatch.initiateShutdown();
+        return CompletableFuture.runAsync(commandProcessor::disconnect)
+                                .thenCompose(r -> shutdownLatch.initiateShutdown())
+                                .thenRun(commandProcessor::removeLocalSubscriptions);
     }
 
     /**
@@ -820,17 +818,15 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         private void unsubscribeAll() {
-            StreamObserver<CommandProviderOutbound> out = subscriberStreamObserver;
-            if (out != null) {
-                subscriberStreamObserver = null;
+            if (subscriberStreamObserver != null) {
                 subscribedCommands.forEach(this::unsubscribe);
-                out.onCompleted();
             }
         }
 
-        public void unsubscribeAndRemove(String command) {
-            subscribedCommands.remove(command);
-            unsubscribe(command);
+        public void removeAndUnsubscribe(String command) {
+            if (subscribedCommands.remove(command)) {
+                unsubscribe(command);
+            }
         }
 
         private void unsubscribe(String command) {
@@ -862,10 +858,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         void disconnect() {
-            if (subscriberStreamObserver != null) {
-                subscriberStreamObserver.onCompleted();
-            }
-
+            running = false;
             commandExecutor.shutdown();
             try {
                 if (!commandExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -880,7 +873,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                 commandExecutor.shutdownNow();
                 Thread.currentThread().interrupt();
             }
-            running = false;
+
+            if (subscriberStreamObserver != null) {
+                subscriberStreamObserver.onCompleted();
+            }
         }
 
         /**
