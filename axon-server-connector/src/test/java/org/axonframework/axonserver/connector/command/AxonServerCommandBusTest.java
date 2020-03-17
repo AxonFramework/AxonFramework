@@ -507,9 +507,12 @@ class AxonServerCommandBusTest {
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
         testSubject.shutdownDispatching();
 
-        assertThrows(
-                ShutdownInProgressException.class,
-                () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(
+                        ShutdownInProgressException.class,
+                        () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
+                )
         );
     }
 

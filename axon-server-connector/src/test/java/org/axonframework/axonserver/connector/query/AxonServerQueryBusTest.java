@@ -480,11 +480,13 @@ class AxonServerQueryBusTest {
 
     @Test
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
+
         testSubject.shutdownDispatching();
 
-        assertThrows(
-                ShutdownInProgressException.class,
-                () -> testSubject.query(new GenericQueryMessage<>("some-query", ResponseTypes.instanceOf(String.class)))
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(ShutdownInProgressException.class, () -> testSubject.query(testQuery))
         );
     }
 
@@ -494,7 +496,13 @@ class AxonServerQueryBusTest {
 
         testSubject.shutdownDispatching();
 
-        assertThrows(ShutdownInProgressException.class, () -> testSubject.scatterGather(testQuery, 1, TimeUnit.SECONDS));
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(
+                        ShutdownInProgressException.class,
+                        () -> testSubject.scatterGather(testQuery, 1, TimeUnit.SECONDS)
+                )
+        );
     }
 
     @Test
@@ -504,7 +512,13 @@ class AxonServerQueryBusTest {
 
         testSubject.shutdownDispatching();
 
-        assertThrows(ShutdownInProgressException.class, () -> testSubject.subscriptionQuery(testSubscriptionQuery));
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(
+                        ShutdownInProgressException.class,
+                        () -> testSubject.subscriptionQuery(testSubscriptionQuery)
+                )
+        );
     }
 
     @Test
