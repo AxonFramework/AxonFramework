@@ -148,6 +148,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             } else {
                 switch (aggregateCreationPolicy.get()) {
                     case ALWAYS:
+                        handlersFound.add(new AlwaysCreateAggregateCommandHandler(
+                                handler, aggregateModel.entityClass()::newInstance
+                        ));
+                        break;
                     case CREATE_IF_MISSING:
                         handlersFound.add(new AggregateCreateOrUpdateCommandHandler(
                                 handler, aggregateModel.entityClass()::newInstance
@@ -370,6 +374,33 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
             Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
+            return resolveReturnValue(command, aggregate);
+        }
+
+        @Override
+        public boolean canHandle(CommandMessage<?> message) {
+            return handler.canHandle(message);
+        }
+    }
+
+    private class AlwaysCreateAggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
+
+        private final MessageHandlingMember<? super T> handler;
+        private final Callable<T> factoryMethod;
+
+        private AlwaysCreateAggregateCommandHandler(MessageHandlingMember<? super T> handler,
+                                                    Callable<T> factoryMethod) {
+            this.handler = handler;
+            this.factoryMethod = factoryMethod;
+        }
+
+        @Override
+        public Object handle(CommandMessage<?> command) throws Exception {
+            Aggregate<T> aggregate = repository.newInstance(() -> {
+                T newInstance = factoryMethod.call();
+                handler.handle(command, newInstance);
+                return newInstance;
+            });
             return resolveReturnValue(command, aggregate);
         }
 
