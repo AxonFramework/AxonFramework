@@ -219,7 +219,7 @@ public class AxonServerConfiguration {
      * If Axon Server SE is used, this property has no effect.
      * </p>
      */
-    private boolean useLocalEventStore = false;
+    private boolean allowReadingEventsFromFollower = false;
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -475,12 +475,12 @@ public class AxonServerConfiguration {
         this.connectTimeout = connectTimeout;
     }
 
-    public boolean isUseLocalEventStore() {
-        return useLocalEventStore;
+    public boolean isAllowReadingEventsFromFollower() {
+        return allowReadingEventsFromFollower;
     }
 
-    public void setUseLocalEventStore(boolean useLocalEventStore) {
-        this.useLocalEventStore = useLocalEventStore;
+    public void setAllowReadingEventsFromFollower(boolean allowReadingEventsFromFollower) {
+        this.allowReadingEventsFromFollower = allowReadingEventsFromFollower;
     }
 
     public FlowControlConfiguration getEventFlowControl() {
@@ -622,8 +622,8 @@ public class AxonServerConfiguration {
             return this;
         }
 
-        public Builder useLocalEventStore(boolean useLocalEventStore) {
-            instance.useLocalEventStore = useLocalEventStore;
+        public Builder allowReadingEventsFromFollower(boolean allowReadingEventsFromFollower) {
+            instance.allowReadingEventsFromFollower = allowReadingEventsFromFollower;
             return this;
         }
 

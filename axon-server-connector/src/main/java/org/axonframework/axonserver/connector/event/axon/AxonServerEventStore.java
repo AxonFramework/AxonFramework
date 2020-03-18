@@ -482,7 +482,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                     configuration.getClientId(),
                     configuration.getEventFlowControl(),
                     t -> GetEventsRequest.newBuilder()
-                                         .setUseLocalStore(configuration.isUseLocalEventStore())
+                                         .setAllowReadingFromFollower(configuration.isAllowReadingEventsFromFollower())
                                          .setNumberOfPermits(t.getPermits())
                                          .build(),
                     t -> false
@@ -493,7 +493,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                        .setClientId(configuration.getClientId())
                                                        .setComponentName(configuration.getComponentName())
                                                        .setNumberOfPermits(configuration.getInitialNrOfPermits())
-                                                       .setUseLocalStore(configuration.isUseLocalEventStore())
+                                                       .setAllowReadingFromFollower(configuration.isAllowReadingEventsFromFollower())
                                                        .build();
             observer.onNext(request);
 
@@ -545,14 +545,14 @@ public class AxonServerEventStore extends AbstractEventStore {
                     configuration.getEventFlowControl(),
                     t -> QueryEventsRequest.newBuilder()
                                            .setNumberOfPermits(t.getPermits())
-                                           .setUseLocalStore(configuration.isUseLocalEventStore())
+                                           .setAllowReadingFromFollower(configuration.isAllowReadingEventsFromFollower())
                                            .build(),
                     t -> false
             );
 
             observer.onNext(QueryEventsRequest.newBuilder()
                                               .setQuery(query)
-                                              .setUseLocalStore(configuration.isUseLocalEventStore())
+                                              .setAllowReadingFromFollower(configuration.isAllowReadingEventsFromFollower())
                                               .setNumberOfPermits(configuration.getInitialNrOfPermits())
                                               .setLiveEvents(liveUpdates)
                                               .build());
