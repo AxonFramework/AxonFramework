@@ -38,14 +38,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
 
 /**
  * Command handler that handles commands based on {@link CommandHandler} annotations on an aggregate. Those annotations
@@ -129,24 +129,21 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private void initializeHandler(AggregateModel<T> aggregateModel,
                                    MessageHandlingMember<? super T> handler,
                                    List<MessageHandler<CommandMessage<?>>> handlersFound) {
-        AtomicReference<AggregateCreationPolicy> aggregateCreationPolicy =
-                new AtomicReference<>(AggregateCreationPolicy.NEVER);
-        AtomicBoolean creationPolicySet = new AtomicBoolean();
-        handler.unwrap(CreationPolicyMember.class).ifPresent(cmh -> {
-            aggregateCreationPolicy.set(cmh.creationPolicy());
-            creationPolicySet.set(true);
-        });
+
 
         handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
+            Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
+                                                              .map(CreationPolicyMember::creationPolicy);
+
             if (cmh.isFactoryHandler()) {
                 assertThat(
-                        aggregateCreationPolicy.get(),
-                        policy -> !creationPolicySet.get() || AggregateCreationPolicy.ALWAYS == policy,
+                        policy,
+                        p -> p.map(AggregateCreationPolicy.ALWAYS::equals).orElse(true),
                         aggregateModel.type() + ": Static methods/constructors can only use creationPolicy ALWAYS"
                 );
                 handlersFound.add(new AggregateConstructorCommandHandler(handler));
             } else {
-                switch (aggregateCreationPolicy.get()) {
+                switch (policy.orElse(NEVER)) {
                     case ALWAYS:
                         handlersFound.add(new AlwaysCreateAggregateCommandHandler(
                                 handler, aggregateModel.entityClass()::newInstance
@@ -452,7 +449,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             this.handler = handler;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
