@@ -21,7 +21,11 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -80,11 +84,6 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     @Override
     public Class<?> payloadType() {
         return payloadType;
-    }
-
-    @Override
-    public int priority() {
-        return parameterCount;
     }
 
     @Override
