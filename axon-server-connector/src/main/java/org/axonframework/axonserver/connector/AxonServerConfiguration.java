@@ -211,7 +211,7 @@ public class AxonServerConfiguration {
     private long connectTimeout = 5000;
 
     /**
-     * Indicates whether it is ok to query events from the local Axon Server node - the node the client is currently
+     * Indicates whether it is OK to query events from the local Axon Server node - the node the client is currently
      * connected to. This means that the client will probably get stale events since all events my not be replicated to
      * this node yet. Used when criteria for eventual consistency is loosen up. It will spread the load for querying
      * events - not all requests will go to the leader of the cluster anymore.
