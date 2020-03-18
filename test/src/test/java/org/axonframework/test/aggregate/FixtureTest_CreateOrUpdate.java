@@ -23,8 +23,6 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.junit.jupiter.*;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -35,41 +33,57 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
  * Fixture tests for load or create command handler.
  *
  * @author Marc Gathier
+ * @author Steven van Beelen
  */
-@ExtendWith(MockitoExtension.class)
 class FixtureTest_CreateOrUpdate {
 
     private static final ComplexAggregateId AGGREGATE_ID = new ComplexAggregateId(UUID.randomUUID(), 42);
 
-    private FixtureConfiguration<Aggregate1> fixture;
+    private FixtureConfiguration<TestAggregate> fixture;
 
     @BeforeEach
     void setUp() {
-        fixture = new AggregateTestFixture<>(Aggregate1.class);
+        fixture = new AggregateTestFixture<>(TestAggregate.class);
     }
 
     @Test
-    void testFixtureWithoutPriorActivity() {
+    void testCreateOrUpdatePolicyForNewInstance() {
         fixture.givenNoPriorActivity()
-               .when(new CreateOrUpdateAggregate1Command(AGGREGATE_ID))
-               .expectEvents(new Aggregate1CreatedOrUpdatedEvent(AGGREGATE_ID))
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID))
+               .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
     }
 
     @Test
-    void testFixtureWithExistingAggregate() {
-        fixture.given(new Aggregate1CreatedEvent(AGGREGATE_ID))
-               .when(new CreateOrUpdateAggregate1Command(AGGREGATE_ID))
-               .expectEvents(new Aggregate1CreatedOrUpdatedEvent(AGGREGATE_ID))
+    void testCreateOrUpdatePolicyForExistingInstance() {
+        fixture.given(new CreatedEvent(AGGREGATE_ID))
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID))
+               .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
     }
 
-    private static class CreateAggregate1Command {
+    @Test
+    void testAlwaysCreatePolicy() {
+        fixture.givenNoPriorActivity()
+               .when(new AlwaysCreateCommand(AGGREGATE_ID))
+               .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+               .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void testNeverCreatePolicy() {
+        fixture.given(new CreatedEvent(AGGREGATE_ID))
+               .when(new ExecuteOnExistingCommand(AGGREGATE_ID))
+               .expectEvents(new ExecutedOnExistingEvent(AGGREGATE_ID))
+               .expectSuccessfulHandlerExecution();
+    }
+
+    private static class CreateCommand {
 
         @TargetAggregateIdentifier
         private final ComplexAggregateId id;
 
-        private CreateAggregate1Command(ComplexAggregateId id) {
+        private CreateCommand(ComplexAggregateId id) {
             this.id = id;
         }
 
@@ -78,12 +92,12 @@ class FixtureTest_CreateOrUpdate {
         }
     }
 
-    private static class CreateOrUpdateAggregate1Command {
+    private static class CreateOrUpdateCommand {
 
         @TargetAggregateIdentifier
         private final ComplexAggregateId id;
 
-        private CreateOrUpdateAggregate1Command(ComplexAggregateId id) {
+        private CreateOrUpdateCommand(ComplexAggregateId id) {
             this.id = id;
         }
 
@@ -92,11 +106,39 @@ class FixtureTest_CreateOrUpdate {
         }
     }
 
-    private static class Aggregate1CreatedEvent {
+    private static class AlwaysCreateCommand {
+
+        @TargetAggregateIdentifier
+        private final ComplexAggregateId id;
+
+        private AlwaysCreateCommand(ComplexAggregateId id) {
+            this.id = id;
+        }
+
+        public ComplexAggregateId getId() {
+            return id;
+        }
+    }
+
+    private static class ExecuteOnExistingCommand {
+
+        @TargetAggregateIdentifier
+        private final ComplexAggregateId id;
+
+        private ExecuteOnExistingCommand(ComplexAggregateId id) {
+            this.id = id;
+        }
+
+        public ComplexAggregateId getId() {
+            return id;
+        }
+    }
+
+    private static class CreatedEvent {
 
         private final ComplexAggregateId id;
 
-        private Aggregate1CreatedEvent(ComplexAggregateId id) {
+        private CreatedEvent(ComplexAggregateId id) {
             this.id = id;
         }
 
@@ -112,7 +154,7 @@ class FixtureTest_CreateOrUpdate {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            Aggregate1CreatedEvent that = (Aggregate1CreatedEvent) o;
+            CreatedEvent that = (CreatedEvent) o;
             return Objects.equals(id, that.id);
         }
 
@@ -122,11 +164,11 @@ class FixtureTest_CreateOrUpdate {
         }
     }
 
-    private static class Aggregate1CreatedOrUpdatedEvent {
+    private static class CreatedOrUpdatedEvent {
 
         private final ComplexAggregateId id;
 
-        private Aggregate1CreatedOrUpdatedEvent(ComplexAggregateId id) {
+        private CreatedOrUpdatedEvent(ComplexAggregateId id) {
             this.id = id;
         }
 
@@ -142,7 +184,7 @@ class FixtureTest_CreateOrUpdate {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            Aggregate1CreatedOrUpdatedEvent that = (Aggregate1CreatedOrUpdatedEvent) o;
+            CreatedOrUpdatedEvent that = (CreatedOrUpdatedEvent) o;
             return Objects.equals(id, that.id);
         }
 
@@ -152,34 +194,110 @@ class FixtureTest_CreateOrUpdate {
         }
     }
 
+    private static class AlwaysCreatedEvent {
+
+        private final ComplexAggregateId id;
+
+        private AlwaysCreatedEvent(ComplexAggregateId id) {
+            this.id = id;
+        }
+
+        public ComplexAggregateId getId() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            AlwaysCreatedEvent that = (AlwaysCreatedEvent) o;
+            return Objects.equals(id, that.id);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
+        }
+    }
+
+    private static class ExecutedOnExistingEvent {
+
+        private final ComplexAggregateId id;
+
+        private ExecutedOnExistingEvent(ComplexAggregateId id) {
+            this.id = id;
+        }
+
+        public ComplexAggregateId getId() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ExecutedOnExistingEvent that = (ExecutedOnExistingEvent) o;
+            return Objects.equals(id, that.id);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
+        }
+    }
 
     @SuppressWarnings("unused")
-    public static class Aggregate1 {
+    public static class TestAggregate {
 
         @AggregateIdentifier
         private ComplexAggregateId id;
 
-        public Aggregate1() {
+        public TestAggregate() {
         }
 
         @CommandHandler
-        public Aggregate1(CreateAggregate1Command command) {
-            apply(new Aggregate1CreatedEvent(command.getId()));
+        public TestAggregate(CreateCommand command) {
+            apply(new CreatedEvent(command.getId()));
         }
 
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
-        public void handle(CreateOrUpdateAggregate1Command command) {
-            apply(new Aggregate1CreatedOrUpdatedEvent(command.getId()));
+        public void handle(CreateOrUpdateCommand command) {
+            apply(new CreatedOrUpdatedEvent(command.getId()));
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(AlwaysCreateCommand command) {
+            apply(new AlwaysCreatedEvent(command.getId()));
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.NEVER)
+        public void handle(ExecuteOnExistingCommand command) {
+            apply(new ExecutedOnExistingEvent(command.getId()));
         }
 
         @EventSourcingHandler
-        public void on(Aggregate1CreatedEvent event) {
+        public void on(CreatedEvent event) {
             this.id = event.getId();
         }
 
         @EventSourcingHandler
-        public void on(Aggregate1CreatedOrUpdatedEvent event) {
+        public void on(CreatedOrUpdatedEvent event) {
+            this.id = event.getId();
+        }
+
+        @EventSourcingHandler
+        public void on(AlwaysCreatedEvent event) {
             this.id = event.getId();
         }
     }
