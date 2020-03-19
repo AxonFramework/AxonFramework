@@ -36,34 +36,34 @@ public abstract class Phase {
      */
     public static final int EXTERNAL_CONNECTIONS = Integer.MIN_VALUE >> 4;
     /**
+     * Phase to start or shutdown outbound event connectors. It is targeted towards connectors which can send events out
+     * to external applications.
+     */
+    public static final int OUTBOUND_EVENT_CONNECTORS = -10;
+    /**
      * Phase to register or cancel the registration of any local message handler.
      */
     public static final int LOCAL_MESSAGE_HANDLER_REGISTRATIONS = 0;
     /**
-     * Phase to start or shutdown inbound command connectors. It is targeted towards connectors which
-     * receive commands from external applications.
+     * Phase to start or shutdown outbound command and/or query connectors. It is targeted towards connectors which send
+     * commands and/or queries out to external applications.
      */
-    public static final int INBOUND_COMMAND_CONNECTOR = 0;
-    /**
-     * Phase to start or shutdown inbound query connectors. It is targeted towards connectors which
-     * receive queries from external applications.
-     */
-    public static final int INBOUND_QUERY_CONNECTOR = 0;
-    /**
-     * Phase to start or shutdown outbound event connectors. It is targeted towards connectors which can send events out
-     * to external applications.
-     */
-    public static final int OUTBOUND_EVENT_CONNECTORS = Integer.MAX_VALUE >> 3;
+    public static final int OUTBOUND_COMMAND_CONNECTORS = 0;
     /**
      * Phase to start or shutdown outbound command and/or query connectors. It is targeted towards connectors which send
      * commands and/or queries out to external applications.
      */
-    public static final int OUTBOUND_COMMAND_CONNECTORS = Integer.MAX_VALUE >> 2;
+    public static final int OUTBOUND_QUERY_CONNECTORS = 0;
     /**
-     * Phase to start or shutdown outbound command and/or query connectors. It is targeted towards connectors which send
-     * commands and/or queries out to external applications.
+     * Phase to start or shutdown inbound command connectors. It is targeted towards connectors which receive commands
+     * from external applications.
      */
-    public static final int OUTBOUND_QUERY_CONNECTORS = Integer.MAX_VALUE >> 2;
+    public static final int INBOUND_COMMAND_CONNECTOR = Integer.MAX_VALUE >> 2;
+    /**
+     * Phase to start or shutdown inbound query connectors. It is targeted towards connectors which receive queries from
+     * external applications.
+     */
+    public static final int INBOUND_QUERY_CONNECTOR = Integer.MAX_VALUE >> 2;
     /**
      * Phase to start or shutdown inbound event connectors. It is targeted towards connectors which can receive events
      * from external sources.

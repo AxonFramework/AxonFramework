@@ -726,6 +726,7 @@ public class AxonServerConnectionManager {
     @ShutdownHandler(phase = Phase.EXTERNAL_CONNECTIONS)
     public void shutdown() {
         shutdown = true;
+        instructionStreams.values().forEach(StreamObserver::onCompleted);
         disconnect();
         scheduler.shutdown();
     }

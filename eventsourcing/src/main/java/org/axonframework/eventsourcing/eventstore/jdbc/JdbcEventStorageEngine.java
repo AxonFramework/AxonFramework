@@ -47,13 +47,13 @@ import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataF
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithGapsStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithoutGapsStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadSnapshotDataStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -90,7 +90,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  */
 public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
-    private static final Logger logger = LoggerFactory.getLogger(JpaEventStorageEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
     private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
