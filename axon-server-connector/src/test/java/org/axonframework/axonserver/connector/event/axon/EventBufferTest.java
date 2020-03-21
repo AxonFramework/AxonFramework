@@ -20,16 +20,18 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
+import org.axonframework.axonserver.connector.utils.SerializerParameterResolver;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -37,15 +39,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class to verify the implementation of the {@link EventBuffer} class.
@@ -53,17 +50,23 @@ import static org.mockito.Mockito.when;
  * @author Marc Gathier
  * @author Steven van Beelen
  */
+@ExtendWith(SerializerParameterResolver.class)
 class EventBufferTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EventBufferTest.class);
+
     private EventUpcaster stubUpcaster;
-    private XStreamSerializer serializer;
 
     private EventBuffer testSubject;
 
     private org.axonframework.serialization.SerializedObject<byte[]> serializedObject;
 
+    private Serializer eventSerializer;
+
     @BeforeEach
-    void setUp() {
+    void setUp(Serializer serializer, TestInfo testInfo) {
+        LOG.info("Running test {} with serializer {}.", testInfo.getDisplayName(), serializer.getClass());
+
         stubUpcaster = mock(EventUpcaster.class);
         //noinspection unchecked
         when(stubUpcaster.upcast(any()))
@@ -71,13 +74,13 @@ class EventBufferTest {
                         (Stream<IntermediateEventRepresentation>) invocationOnMock.getArguments()[0]
                 );
 
-        serializer = XStreamSerializer.defaultSerializer();
         serializedObject = serializer.serialize("some object", byte[].class);
 
+        eventSerializer = serializer;
         testSubject = new EventBuffer(stubUpcaster, serializer);
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testDataUpcastAndDeserialized() throws InterruptedException {
         assertFalse(testSubject.hasNextAvailable());
         testSubject.push(createEventData(1L));
@@ -98,9 +101,9 @@ class EventBufferTest {
         verify(stubUpcaster).upcast(isA(Stream.class));
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testConsumptionIsRecorded() {
-        testSubject = new EventBuffer(stream -> stream.filter(i -> false), serializer);
+        testSubject = new EventBuffer(stream -> stream.filter(i -> false), eventSerializer);
 
         testSubject.push(createEventData(1));
         testSubject.push(createEventData(2));
@@ -113,8 +116,8 @@ class EventBufferTest {
         assertEquals(3, consumed.get());
     }
 
-    @Test
-    void testHasNextAvailableThrowsExceptionWhenStreamFailed() throws InterruptedException {
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
+    void testHasNextAvailableThrowsExceptionWhenStreamFailed() {
         RuntimeException expected = new RuntimeException("Some Exception");
         testSubject.fail(expected);
 
@@ -126,7 +129,7 @@ class EventBufferTest {
                 testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     @Timeout(value = 2)
     void testNextAvailableDoesNotBlockIndefinitelyIfTheStreamIsClosedExceptionally()
             throws InterruptedException {

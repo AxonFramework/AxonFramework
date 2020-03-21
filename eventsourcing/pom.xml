@@ -59,6 +59,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-serializer-adapter-xstreams</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <scope>test</scope>
@@ -152,6 +159,8 @@
                                 <include>**/BatchingEventStorageEngineTest.*</include>
                                 <include>**/EventStorageEngineTest.*</include>
                                 <include>**/EventStoreTestUtils.*</include>
+                                <include>**/CustomDomainEventEntry.*</include>
+                                <include>**/CustomSnapshotEventEntry.*</include>
                             </includes>
                         </configuration>
                     </execution>

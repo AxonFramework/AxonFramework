@@ -32,4 +32,12 @@
         <class>org.axonframework.integrationtests.polymorphic.Child2Aggregate</class>
         <class>org.axonframework.integrationtests.polymorphic.SimpleAggregate</class>
     </persistence-unit>
+    <persistence-unit name="jpaEventStore" transaction-type="RESOURCE_LOCAL">
+        <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.jpa.CustomDomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.jpa.CustomSnapshotEventEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
+    </persistence-unit>
 </persistence>

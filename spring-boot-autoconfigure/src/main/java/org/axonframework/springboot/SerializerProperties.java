@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.serialization.SerializerBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -34,6 +35,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * If no General Serializer is specified, it defaults to an XStream based serializer (see
  * {@link org.axonframework.serialization.xml.XStreamSerializer}).
  */
+// TODO enhance
 @ConfigurationProperties("axon.serializer")
 public class SerializerProperties {
 
@@ -125,26 +127,42 @@ public class SerializerProperties {
          * of serializing just about any object. This makes it a very suitable implementation to use as the "general
          * serializer".
          */
-        XSTREAM,
+        XSTREAM("XStreamSerializer"),
         /**
          * Uses Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper} to serialize objects into JSON. Provides
          * highly interoperable JSON output, but does require the objects to adhere to a certain structure. The Jackson
          * based serializer is generally suitable as a Message Serializer.
          */
-        JACKSON,
+        JACKSON("JacksonSerializer"),
         /**
          * Uses the Java Serialization API (see {@link java.io.ObjectOutputStream}) to write objects. The Java
          * serializer's output is not interoperable and should really be only used in very specific cases. It is not
          * recommended to use this serializer as an Event Serializer, as it could cause Events to be stored in format
          * that is difficult to upcast when the structure of Events changes.
          */
-        JAVA,
+        JAVA("JavaSerializer"),
+
+        /**
+         * Use the Google JSON library GSON.
+         */
+        GSON("GsonSerializer"),
+
         /**
          * Defines that the default serializer should be used. For "general serializer", this means an XStream based
          * serializer. For the "message serializer", this means the "general serializer" is used. Similarly, the "event
          * serializer" will default to the "message serializer" (or the "general serializer").
          */
-        DEFAULT
+        DEFAULT("");
+
+        private final String serializerClass;
+
+        private SerializerType(String aSerializerClass) {
+            this.serializerClass = aSerializerClass;
+        }
+
+        public boolean matches(SerializerBuilder sb) {
+            return sb.getClass().getDeclaringClass().getSimpleName().equals(serializerClass);
+        }
     }
 
 }

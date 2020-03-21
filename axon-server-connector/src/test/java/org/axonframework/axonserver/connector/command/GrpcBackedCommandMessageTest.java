@@ -21,9 +21,9 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 
@@ -41,7 +41,7 @@ class GrpcBackedCommandMessageTest {
     private static final String ROUTING_KEY = "someRoutingKey";
     private static final int PRIORITY = 1;
 
-    private final Serializer serializer = XStreamSerializer.defaultSerializer();
+    private final Serializer serializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER.get();
     private final CommandSerializer commandSerializer =
             new CommandSerializer(serializer, new AxonServerConfiguration());
 

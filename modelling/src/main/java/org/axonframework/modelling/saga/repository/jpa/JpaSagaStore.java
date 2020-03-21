@@ -21,9 +21,9 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -358,7 +358,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     public static class Builder {
 
         private EntityManagerProvider entityManagerProvider;
-        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER;
 
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the

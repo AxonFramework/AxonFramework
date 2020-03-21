@@ -23,9 +23,9 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 
@@ -42,7 +42,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     private static final TestQuery TEST_QUERY = new TestQuery("aggregateId", 42);
     private static final ResponseType<String> RESPONSE_TYPE = ResponseTypes.instanceOf(String.class);
 
-    private final Serializer serializer = XStreamSerializer.defaultSerializer();
+    private final Serializer serializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER.get();
     private final SubscriptionMessageSerializer subscriptionMessageSerializer =
             new SubscriptionMessageSerializer(serializer, serializer, new AxonServerConfiguration());
 

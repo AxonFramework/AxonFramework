@@ -16,11 +16,7 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
-import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
@@ -43,11 +39,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -56,40 +48,20 @@ import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -168,7 +140,7 @@ public class DefaultConfigurer implements Configurer {
     /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
      * {@link SimpleEventBus}, indicating whether to {@code autoLocateConfigurerModules}.
-     *
+     * <p>
      * When {@code autoLocateConfigurerModules} is {@code true}, a ServiceLoader will be used to locate all declared
      * instances of type {@link ConfigurerModule}. Each of the discovered instances will be invoked, allowing it to
      * set default values for the configuration.
@@ -180,7 +152,7 @@ public class DefaultConfigurer implements Configurer {
      */
     public static Configurer defaultConfiguration(boolean autoLocateConfigurerModules) {
         DefaultConfigurer configurer = new DefaultConfigurer();
-        if(autoLocateConfigurerModules) {
+        if (autoLocateConfigurerModules) {
             ServiceLoader<ConfigurerModule> configurerModuleLoader = ServiceLoader.load(ConfigurerModule.class, configurer.getClass().getClassLoader());
             List<ConfigurerModule> configurerModules = new ArrayList<>();
             configurerModuleLoader.forEach(configurerModules::add);
@@ -207,26 +179,26 @@ public class DefaultConfigurer implements Configurer {
                 .registerComponent(TransactionManager.class, c -> transactionManager)
                 .configureEmbeddedEventStore(
                         c -> JpaEventStorageEngine.builder()
-                                                  .snapshotSerializer(c.serializer())
-                                                  .upcasterChain(c.upcasterChain())
-                                                  .persistenceExceptionResolver(
-                                                          c.getComponent(PersistenceExceptionResolver.class)
-                                                  )
-                                                  .eventSerializer(c.eventSerializer())
-                                                  .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                  .transactionManager(c.getComponent(TransactionManager.class))
-                                                  .build()
+                                .snapshotSerializer(c.serializer())
+                                .upcasterChain(c.upcasterChain())
+                                .persistenceExceptionResolver(
+                                        c.getComponent(PersistenceExceptionResolver.class)
+                                )
+                                .eventSerializer(c.eventSerializer())
+                                .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                .transactionManager(c.getComponent(TransactionManager.class))
+                                .build()
                 )
                 .registerComponent(TokenStore.class,
-                                   c -> JpaTokenStore.builder()
-                                                     .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                     .serializer(c.serializer())
-                                                     .build())
+                        c -> JpaTokenStore.builder()
+                                .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                .serializer(c.serializer())
+                                .build())
                 .registerComponent(SagaStore.class,
-                                   c -> JpaSagaStore.builder()
-                                                    .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                    .serializer(c.serializer())
-                                                    .build());
+                        c -> JpaSagaStore.builder()
+                                .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                .serializer(c.serializer())
+                                .build());
     }
 
     /**
@@ -249,7 +221,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected DefaultConfigurer() {
         components.put(ParameterResolverFactory.class,
-                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
+                new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
         components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
@@ -261,7 +233,7 @@ public class DefaultConfigurer implements Configurer {
         );
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
-                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+                new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
         components.put(EventUpcaster.class, upcasterChain);
         components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
@@ -297,15 +269,15 @@ public class DefaultConfigurer implements Configurer {
      */
     protected QueryBus defaultQueryBus(Configuration config) {
         return SimpleQueryBus.builder()
-                             .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
-                             .transactionManager(config.getComponent(TransactionManager.class,
-                                                                     NoTransactionManager::instance))
-                             .errorHandler(config.getComponent(
-                                     QueryInvocationErrorHandler.class,
-                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
-                             ))
-                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                             .build();
+                .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
+                .transactionManager(config.getComponent(TransactionManager.class,
+                        NoTransactionManager::instance))
+                .errorHandler(config.getComponent(
+                        QueryInvocationErrorHandler.class,
+                        () -> LoggingQueryInvocationErrorHandler.builder().build()
+                ))
+                .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                .build();
     }
 
     /**
@@ -319,8 +291,8 @@ public class DefaultConfigurer implements Configurer {
         MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
                 config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
         return SimpleQueryUpdateEmitter.builder()
-                                       .updateMessageMonitor(updateMessageMonitor)
-                                       .build();
+                .updateMessageMonitor(updateMessageMonitor)
+                .build();
     }
 
     /**
@@ -331,7 +303,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
         return MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
-                                                     new ConfigurationParameterResolverFactory(config));
+                new ConfigurationParameterResolverFactory(config));
     }
 
     /**
@@ -353,12 +325,12 @@ public class DefaultConfigurer implements Configurer {
     protected CommandBus defaultCommandBus(Configuration config) {
         SimpleCommandBus commandBus =
                 SimpleCommandBus.builder()
-                                .transactionManager(config.getComponent(TransactionManager.class,
-                                                                        () -> NoTransactionManager.INSTANCE))
-                                .duplicateCommandHandlerResolver(config.getComponent(DuplicateCommandHandlerResolver.class,
-                                                                                     LoggingDuplicateCommandHandlerResolver::instance))
-                                .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
-                                .build();
+                        .transactionManager(config.getComponent(TransactionManager.class,
+                                () -> NoTransactionManager.INSTANCE))
+                        .duplicateCommandHandlerResolver(config.getComponent(DuplicateCommandHandlerResolver.class,
+                                LoggingDuplicateCommandHandlerResolver::instance))
+                        .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
+                        .build();
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
         return commandBus;
     }
@@ -393,8 +365,8 @@ public class DefaultConfigurer implements Configurer {
      */
     protected EventBus defaultEventBus(Configuration config) {
         return SimpleEventBus.builder()
-                             .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
-                             .build();
+                .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
+                .build();
     }
 
     /**
@@ -415,19 +387,20 @@ public class DefaultConfigurer implements Configurer {
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(Configuration config) {
-        return XStreamSerializer.builder()
-                                .revisionResolver(config.getComponent(RevisionResolver.class,
-                                                                      AnnotationRevisionResolver::new))
-                                .build();
+        return DefaultSerializerSupplier.DEFAULT_SERIALIZER_BUILDER.get()
+                .revisionResolver(config.getComponent(
+                        RevisionResolver.class,
+                        AnnotationRevisionResolver::new
+                )).build();
     }
 
     @Override
     public EventProcessingConfigurer eventProcessing() {
         List<EventProcessingConfigurer> eventProcessingConfigurers =
                 modules.stream()
-                       .filter(module -> module.isType(EventProcessingConfigurer.class))
-                       .map(module -> (EventProcessingConfigurer) module.unwrap()) // It's safe to unwrap it since it isn't dependent on anything else.
-                       .collect(toList());
+                        .filter(module -> module.isType(EventProcessingConfigurer.class))
+                        .map(module -> (EventProcessingConfigurer) module.unwrap()) // It's safe to unwrap it since it isn't dependent on anything else.
+                        .collect(toList());
         switch (eventProcessingConfigurers.size()) {
             case 0:
                 EventProcessingModule eventProcessingModule = new EventProcessingModule();
@@ -537,9 +510,9 @@ public class DefaultConfigurer implements Configurer {
             MessageMonitor<Message<?>> monitor =
                     messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
             EmbeddedEventStore eventStore = EmbeddedEventStore.builder()
-                                                              .storageEngine(storageEngineBuilder.apply(c))
-                                                              .messageMonitor(monitor)
-                                                              .build();
+                    .storageEngine(storageEngineBuilder.apply(c))
+                    .messageMonitor(monitor)
+                    .build();
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });

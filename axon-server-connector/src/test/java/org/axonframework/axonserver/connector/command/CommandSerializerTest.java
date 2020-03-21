@@ -21,14 +21,15 @@ import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.utils.SerializerParameterResolver;
 import org.axonframework.commandhandling.*;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,8 +44,7 @@ class CommandSerializerTest {
             this.setClientId("client");
             this.setComponentName("component");
         }};
-        return Stream.of(JacksonSerializer.defaultSerializer(),
-                         XStreamSerializer.defaultSerializer())
+        return SerializerParameterResolver.serializerStream()
                 .map(serializer -> new CommandSerializer(serializer, configuration));
     }
 
@@ -70,7 +70,7 @@ class CommandSerializerTest {
     @ParameterizedTest
     void testSerializeResponse(CommandSerializer testSubject) {
         CommandResultMessage response = new GenericCommandResultMessage<>("response",
-                                                                          MetaData.with("test", "testValue"));
+                MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
         CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
 
@@ -86,7 +86,7 @@ class CommandSerializerTest {
     void testSerializeExceptionalResponse(CommandSerializer testSubject) {
         RuntimeException exception = new RuntimeException("oops");
         CommandResultMessage response = new GenericCommandResultMessage<>(exception,
-                                                                          MetaData.with("test", "testValue"));
+                MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
         CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
 
@@ -102,7 +102,7 @@ class CommandSerializerTest {
     void testSerializeExceptionalResponseWithDetails(CommandSerializer testSubject) {
         Exception exception = new CommandExecutionException("oops", null, "Details");
         CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
-                                                                             MetaData.with("test", "testValue"));
+                MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
         assertEquals(response.getIdentifier(), outbound.getCommandResponse().getMessageIdentifier());
         CommandResultMessage<?> deserialize = testSubject.deserialize(outbound.getCommandResponse());
@@ -121,9 +121,9 @@ class CommandSerializerTest {
     @ParameterizedTest
     void testDeserializeResponseWithoutPayload(CommandSerializer testSubject) {
         CommandResponse response = CommandResponse.newBuilder()
-                                                  .setRequestIdentifier("requestId")
-                                                  .putAllMetaData(Collections.singletonMap("meta-key", MetaDataValue.newBuilder().setTextValue("meta-value").build()))
-                                                  .build();
+                .setRequestIdentifier("requestId")
+                .putAllMetaData(Collections.singletonMap("meta-key", MetaDataValue.newBuilder().setTextValue("meta-value").build()))
+                .build();
 
         CommandResultMessage<Object> actual = testSubject.deserialize(response);
         assertEquals(Void.class, actual.getPayloadType());

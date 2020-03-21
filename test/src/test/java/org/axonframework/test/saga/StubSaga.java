@@ -28,17 +28,16 @@ import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
-import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.inject.Inject;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Stub saga used to test various scenarios of the {@link FixtureConfiguration}.
@@ -49,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
-    @Autowired
+    @Inject
     private transient StubGateway stubGateway;
     @Inject
     private transient EventScheduler scheduler;
@@ -73,7 +72,7 @@ public class StubSaga {
         }
 
         timer = scheduler.schedule(message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
+                new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @StartSaga(forceNew = true)
@@ -81,7 +80,7 @@ public class StubSaga {
     public void handleForcedSagaStart(ForceTriggerSagaStartEvent event, @Timestamp Instant timestamp) {
         handledEvents.add(event);
         timer = scheduler.schedule(timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
+                new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @SagaEventHandler(associationProperty = "identifier")
@@ -124,7 +123,7 @@ public class StubSaga {
         handledEvents.add(event);
         scheduler.cancelSchedule(timer);
         timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
+                new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     public EventScheduler getScheduler() {
