@@ -51,7 +51,7 @@ import static java.lang.reflect.Modifier.isAbstract;
  * @since 0.4
  */
 public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
-        implements BeanPostProcessor, BeanFactoryAware {
+    implements BeanPostProcessor, BeanFactoryAware {
 
     private ParameterResolverFactory parameterResolverFactory;
     private HandlerDefinition handlerDefinition;
@@ -70,7 +70,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
-        if (beanName != null && !bean.equals(null) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
+        if (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
             return bean;
         }
 
@@ -86,7 +86,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
             T adapter = initializeAdapterFor(bean, parameterResolverFactory, handlerDefinition);
             return createAdapterProxy(bean, adapter, getAdapterInterfaces(), true, classLoader);
         } else if (!isInstance(bean, getAdapterInterfaces())
-                && isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
+            && isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
             // Java Proxy, find target and inspect that instance
             try {
                 Object targetBean = ((Advised) bean).getTargetSource().getTarget();
@@ -95,12 +95,25 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
                 T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory, handlerDefinition);
                 return createAdapterProxy(proxyInvokingBean, adapter, getAdapterInterfaces(), false,
-                                          classLoader);
+                    classLoader);
             } catch (Exception e) {
                 throw new AxonConfigurationException("Unable to wrap annotated handler.", e);
             }
         }
         return bean;
+    }
+
+    /**
+     * Check if bean is NullBean
+     *
+     * {@link <a href="https://github.com/AxonFramework/AxonFramework/pull/1354">github issue</a>}
+     * @see org.springframework.beans.factory.support.NullBean#equals
+     *
+     * @param bean bean to check
+     * @return true if bean is NullBean
+     */
+    private boolean isNullBean(final Object bean) {
+        return bean.equals(null);
     }
 
     private boolean isInstance(Object bean, Class<?>[] adapterInterfaces) {
@@ -199,7 +212,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     }
 
     private static final class ProxyOrImplementationInvocationInterceptor
-            implements IntroductionInfo, IntroductionInterceptor {
+        implements IntroductionInfo, IntroductionInterceptor {
 
         private final Object proxy;
         private final Method[] proxyMethods;
@@ -232,8 +245,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                 // if the method is declared on the proxy, invoke it there
                 for (Method proxyMethod : proxyMethods) {
                     if (proxyMethod.getName().equals(invocation.getMethod().getName())
-                            && Arrays.equals(proxyMethod.getParameterTypes(),
-                                             invocation.getMethod().getParameterTypes())) {
+                        && Arrays.equals(proxyMethod.getParameterTypes(),
+                        invocation.getMethod().getParameterTypes())) {
                         return proxyMethod.invoke(proxy, invocation.getArguments());
                     }
                 }
@@ -287,25 +300,25 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
             try {
                 Method proxyMethod = invocation.getMethod();
                 Method methodOnAdapter = adapter.getClass()
-                                                .getMethod(proxyMethod.getName(), proxyMethod.getParameterTypes());
+                    .getMethod(proxyMethod.getName(), proxyMethod.getParameterTypes());
 
                 if (!methodOnAdapter.isSynthetic()) {
                     return true;
                 }
 
                 return StreamSupport.stream(ReflectionUtils.methodsOf(adapter.getClass()).spliterator(), false)
-                                    .filter(m -> !m.isSynthetic())
-                                    .filter(m -> !isAbstract(m.getModifiers()))
-                                    .filter(m -> invocation.getMethod().getName().equals(m.getName()))
-                                    .filter(m -> m.getParameterCount() == invocation.getArguments().length)
-                                    .anyMatch(m -> {
-                                        for (int i = 0; i < m.getParameterTypes().length; i++) {
-                                            if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
-                                                return false;
-                                            }
-                                        }
-                                        return true;
-                                    });
+                    .filter(m -> !m.isSynthetic())
+                    .filter(m -> !isAbstract(m.getModifiers()))
+                    .filter(m -> invocation.getMethod().getName().equals(m.getName()))
+                    .filter(m -> m.getParameterCount() == invocation.getArguments().length)
+                    .anyMatch(m -> {
+                        for (int i = 0; i < m.getParameterTypes().length; i++) {
+                            if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
             } catch (NoSuchMethodException e) {
                 return false;
             }
