@@ -66,6 +66,19 @@ public class GrpcInstructionResultPublisher implements InstructionResultPublishe
         ErrorMessage errorMessage = newBuilder(ExceptionSerializer.serialize(clientId.get(), error))
                 .setErrorCode(INSTRUCTION_EXECUTION_ERROR.errorCode())
                 .build();
+        publishFailure(instructionId, errorMessage);
+    }
+
+    @Override
+    public void publishFailureFor(String instructionId, String errorDescription) {
+        ErrorMessage errorMessage = newBuilder()
+                .setMessage(errorDescription)
+                .setErrorCode(INSTRUCTION_EXECUTION_ERROR.errorCode())
+                .build();
+        publishFailure(instructionId, errorMessage);
+    }
+
+    private void publishFailure(String instructionId, ErrorMessage errorMessage) {
         PlatformInboundInstruction message = PlatformInboundInstruction
                 .newBuilder()
                 .setResult(InstructionResult
