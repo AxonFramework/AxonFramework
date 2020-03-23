@@ -16,6 +16,7 @@ import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
@@ -158,15 +159,21 @@ public class AxonServerEventScheduler implements EventScheduler {
     private Event toEvent(Object event) {
         SerializedObject<byte[]> serializedPayload;
         MetaData metadata;
+        String requestId = null;
         if (event instanceof EventMessage<?>) {
             serializedPayload = ((EventMessage<?>) event)
                     .serializePayload(serializer, byte[].class);
             metadata = ((EventMessage<?>) event).getMetaData();
+            requestId = ((EventMessage<?>) event).getIdentifier();
         } else {
             metadata = MetaData.emptyInstance();
             serializedPayload = serializer.serialize(event, byte[].class);
         }
-        Event.Builder builder = Event.newBuilder();
+        if (requestId == null) {
+            requestId = IdentifierFactory.getInstance().generateIdentifier();
+        }
+        Event.Builder builder = Event.newBuilder()
+                                     .setMessageIdentifier(requestId);
         builder.setPayload(
                 io.axoniq.axonserver.grpc.SerializedObject.newBuilder()
                                                           .setType(serializedPayload.getType().getName())
