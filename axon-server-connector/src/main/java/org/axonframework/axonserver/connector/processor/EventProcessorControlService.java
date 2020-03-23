@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Function;
 
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
+import static java.lang.String.format;
 
 /**
  * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when for example
@@ -153,7 +154,9 @@ public class EventProcessorControlService {
         int segmentId = splitSegment.getSegmentIdentifier();
         String processorName = splitSegment.getProcessorName();
         try {
-            eventProcessorController.splitSegment(processorName, segmentId);
+            if (!eventProcessorController.splitSegment(processorName, segmentId)) {
+                throw new IllegalArgumentException(format("%s is not a Tracking Event Processor", processorName));
+            }
             resultPublisher.publishSuccessFor(platformOutboundInstruction.getInstructionId());
         } catch (Exception e) {
             logger.error("Failed to split segment [{}] for processor [{}]", segmentId, processorName, e);
@@ -166,7 +169,9 @@ public class EventProcessorControlService {
         String processorName = mergeSegment.getProcessorName();
         int segmentId = mergeSegment.getSegmentIdentifier();
         try {
-            eventProcessorController.mergeSegment(processorName, segmentId);
+            if (!eventProcessorController.mergeSegment(processorName, segmentId)) {
+                throw new IllegalArgumentException(format("%s is not a Tracking Event Processor", processorName));
+            }
             resultPublisher.publishSuccessFor(platformOutboundInstruction.getInstructionId());
         } catch (Exception e) {
             logger.error("Failed to merge segment [{}] for processor [{}]", segmentId, processorName, e);
