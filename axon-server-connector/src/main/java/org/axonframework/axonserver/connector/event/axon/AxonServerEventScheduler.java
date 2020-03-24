@@ -1,8 +1,24 @@
+/*
+ * Copyright (c) 2010-2020. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.InstructionAck;
-import io.axoniq.axonserver.grpc.event.CancelScheduledeEventRequest;
+import io.axoniq.axonserver.grpc.event.CancelScheduledEventRequest;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventSchedulerGrpc;
 import io.axoniq.axonserver.grpc.event.RescheduleEventRequest;
@@ -13,7 +29,6 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
@@ -40,7 +55,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
+ * Implementation of the {@link EventScheduler} that uses Axon Server to schedule the events.
+ *
  * @author Marc Gathier
+ * @since 4.4
  */
 public class AxonServerEventScheduler implements EventScheduler {
 
@@ -50,19 +68,29 @@ public class AxonServerEventScheduler implements EventScheduler {
     private final GrpcMetaDataConverter converter;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
 
-    public AxonServerEventScheduler(Builder builder) {
+    /**
+     * Instantiates an {@link AxonServerEventScheduler} using the given {@link Builder}.
+     *
+     * @param builder the {@link Builder} used.
+     */
+    private AxonServerEventScheduler(Builder builder) {
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.axonServerConfiguration = builder.axonServerConfiguration;
         this.serializer = builder.eventSerializer.get();
         this.converter = new GrpcMetaDataConverter(serializer);
     }
 
+    /**
+     * Creates a builder to instantiate an {@link AxonServerEventScheduler}.
+     *
+     * @return a builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Start the Axon Server {@link CommandBus} implementation.
+     * Start the Axon Server {@link EventScheduler} implementation.
      */
     @StartHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public void start() {
@@ -74,6 +102,14 @@ public class AxonServerEventScheduler implements EventScheduler {
         return shutdownLatch.initiateShutdown();
     }
 
+    /**
+     * Schedules an event to be published at a given moment.  The event is published in the application's default
+     * context.
+     *
+     * @param triggerDateTime The moment to trigger publication of the event
+     * @param event           The event to publish
+     * @return a token used to manage the schedule later
+     */
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new events as this scheduler is being shutdown");
@@ -96,11 +132,23 @@ public class AxonServerEventScheduler implements EventScheduler {
         return new SimpleScheduleToken(response.getToken());
     }
 
+    /**
+     * Schedules an event to be published after a specified amount of time.
+     *
+     * @param triggerDuration The amount of time to wait before publishing the event
+     * @param event           The event to publish
+     * @return a token used to manage the schedule later
+     */
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
         return schedule(Instant.now().plus(triggerDuration), event);
     }
 
+    /**
+     * Cancel a scheduled event.
+     *
+     * @param scheduleToken the token returned when the event was scheduled
+     */
     @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new events as this scheduler is being shutdown");
@@ -110,10 +158,10 @@ public class AxonServerEventScheduler implements EventScheduler {
         Channel channel = axonServerConnectionManager.getChannel(axonServerConfiguration.getContext());
         EventSchedulerGrpc.EventSchedulerFutureStub scheduleStub = EventSchedulerGrpc.newFutureStub(channel);
         try {
-            InstructionAck instructionAck = scheduleStub.cancelScheduledEvent(CancelScheduledeEventRequest.newBuilder()
-                                                                                                          .setToken(
-                                                                                                                  token)
-                                                                                                          .build())
+            InstructionAck instructionAck = scheduleStub.cancelScheduledEvent(CancelScheduledEventRequest.newBuilder()
+                                                                                                         .setToken(
+                                                                                                                 token)
+                                                                                                         .build())
                                                         .get();
             if (!instructionAck.getSuccess()) {
                 throw ErrorCode.getFromCode(instructionAck.getError().getErrorCode()).convert(instructionAck
@@ -127,33 +175,40 @@ public class AxonServerEventScheduler implements EventScheduler {
         }
     }
 
+    /**
+     * Changes the trigger time for a scheduled event.
+     *
+     * @param scheduleToken   the token returned when the event was scheduled, might be null
+     * @param triggerDuration The amount of time to wait before publishing the event
+     * @param event           The event to publish
+     * @return a token used to manage the schedule later
+     */
     @Override
     public ScheduleToken reschedule(ScheduleToken scheduleToken, Duration triggerDuration, Object event) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new events as this scheduler is being shutdown");
-        Assert.isTrue(scheduleToken instanceof SimpleScheduleToken,
+        Assert.isTrue(scheduleToken == null || scheduleToken instanceof SimpleScheduleToken,
                       () -> "Invalid tracking token type. Must be SimpleScheduleToken.");
-        String token = ((SimpleScheduleToken) scheduleToken).getTokenId();
+        String token = scheduleToken == null ? "" : ((SimpleScheduleToken) scheduleToken).getTokenId();
         Channel channel = axonServerConnectionManager.getChannel(axonServerConfiguration.getContext());
         EventSchedulerGrpc.EventSchedulerFutureStub scheduleStub = EventSchedulerGrpc.newFutureStub(channel);
         try {
-            InstructionAck instructionAck = scheduleStub.rescheduleEvent(RescheduleEventRequest.newBuilder()
-                                                                                               .setToken(token)
-                                                                                               .setInstant(Instant.now()
-                                                                                                                  .plus(triggerDuration)
-                                                                                                                  .toEpochMilli())
-                                                                                               .build()).get();
-            if (!instructionAck.getSuccess()) {
-                throw ErrorCode.getFromCode(instructionAck.getError().getErrorCode()).convert(instructionAck
-                                                                                                      .getError());
-            }
+            RescheduleEventRequest request =
+                    RescheduleEventRequest.newBuilder()
+                                          .setToken(token)
+                                          .setEvent(toEvent(event))
+                                          .setInstant(Instant.now()
+                                                             .plus(triggerDuration)
+                                                             .toEpochMilli())
+                                          .build();
+            io.axoniq.axonserver.grpc.event.ScheduleToken updatedScheduleToken = scheduleStub
+                    .rescheduleEvent(request).get();
+            return new SimpleScheduleToken(updatedScheduleToken.getToken());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw GrpcExceptionParser.parse(e);
         } catch (ExecutionException e) {
             throw GrpcExceptionParser.parse(e.getCause());
         }
-
-        return scheduleToken;
     }
 
     private Event toEvent(Object event) {
@@ -186,29 +241,61 @@ public class AxonServerEventScheduler implements EventScheduler {
         return builder.build();
     }
 
+    /**
+     * Builder class for an {@link AxonServerEventScheduler}.
+     * The {@link Serializer} defaults to the XStreamSerializer. The {@code configuration} and {@code connectionManager}
+     * are required.
+     */
     public static class Builder {
 
         private AxonServerConnectionManager axonServerConnectionManager;
         private AxonServerConfiguration axonServerConfiguration;
         private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
 
+        /**
+         * Sets the {@link Serializer} used to de-/serialize events.
+         *
+         * @param eventSerializer a {@link Serializer} used to de-/serialize events
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder eventSerializer(Serializer eventSerializer) {
             this.eventSerializer = () -> eventSerializer;
             return this;
         }
 
+        /**
+         * Sets the {@link AxonServerConfiguration} used to configure several components within the Axon Server Command
+         * Bus, like setting the client id or the number of command handling threads used.
+         *
+         * @param configuration an {@link AxonServerConfiguration} used to configure several components within the Axon
+         *                      Server Command Bus
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder configuration(AxonServerConfiguration configuration) {
             assertNonNull(configuration, "AxonServerConfiguration may not be null");
             this.axonServerConfiguration = configuration;
             return this;
         }
 
+        /**
+         * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
+         * Server instance.
+         *
+         * @param axonServerConnectionManager an {@link AxonServerConnectionManager} used to create connections between
+         *                                    this application and an Axon Server instance
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder connectionManager(AxonServerConnectionManager axonServerConnectionManager) {
             assertNonNull(axonServerConnectionManager, "AxonServerConnectionManager may not be null");
             this.axonServerConnectionManager = axonServerConnectionManager;
             return this;
         }
 
+        /**
+         * Initializes a {@link AxonServerEventScheduler} as specified through this Builder.
+         *
+         * @return a {@link AxonServerEventScheduler} as specified through this Builder
+         */
         public AxonServerEventScheduler build() {
             validate();
             return new AxonServerEventScheduler(this);
