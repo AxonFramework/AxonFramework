@@ -17,11 +17,19 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.MultiSourceTrackingToken;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.jupiter.api.Test;
+import org.axonframework.eventsourcing.utils.MockException;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,7 +38,16 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class MultiStreamableMessageSourceTest {
 
@@ -63,6 +80,26 @@ class MultiStreamableMessageSourceTest {
         assertEquals(publishedEvent.getPayload(), singleEventStream.nextAvailable().getPayload());
 
         singleEventStream.close();
+    }
+
+    @Test
+    void testConnectionsAreClosedWhenOpeningFails() {
+        StreamableMessageSource<TrackedEventMessage<?>> source1 = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage<?>> source2 = mock(StreamableMessageSource.class);
+        testSubject = MultiStreamableMessageSource.builder()
+                                                  .addMessageSource("source1", source1)
+                                                  .addMessageSource("source2", source2)
+                                                  .build();
+        BlockingStream<TrackedEventMessage<?>> mockStream = mock(BlockingStream.class);
+        when(source1.openStream(any())).thenReturn(mockStream);
+        when(source2.openStream(any())).thenThrow(new MockException());
+
+        assertThrows(MockException.class, () ->
+                testSubject.openStream(null));
+
+        verify(mockStream).close();
+        verify(source1).openStream(null);
+        verify(source2).openStream(null);
     }
 
     @Test

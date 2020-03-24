@@ -371,7 +371,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          */
         private AggregateFactory<T> buildAggregateFactory() {
             if (aggregateFactory == null) {
-                return new GenericAggregateFactory<>(aggregateType);
+                return new GenericAggregateFactory<>(buildAggregateModel());
             } else {
                 return aggregateFactory;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import org.axonframework.serialization.upcasting.Upcaster;
 /**
  * Abstract implementation of an event {@link Upcaster} that eases the common process of upcasting one intermediate
  * event representation to another representation by applying a simple mapping function to the input stream of
- * intermediate representations.
- * Additionally, it's a context aware implementation, which enables it to store and reuse
+ * intermediate representations. Additionally, it's a context aware implementation, which enables it to store and reuse
  * context information from one entry to another during upcasting.
  *
  * @param <C> the type of context used as {@code C}

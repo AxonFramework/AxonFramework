@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,18 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 .map(rt -> rt.isReplay())
                 .orElse(false);
 
+    }
+
+    /**
+     * Return the relative position at which a reset was triggered for this Segment.
+     * In case a replay finished or no replay is active, an {@code OptionalLong.empty()} will be returned.
+     *
+     * @return the relative position at which a reset was triggered for this Segment
+     */
+    public static OptionalLong getTokenAtReset(TrackingToken trackingToken) {
+        return WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                           .map(rt -> rt.getTokenAtReset().position())
+                .orElse(OptionalLong.empty());
     }
 
     /**
@@ -253,4 +265,5 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         }
         return OptionalLong.empty();
     }
+
 }

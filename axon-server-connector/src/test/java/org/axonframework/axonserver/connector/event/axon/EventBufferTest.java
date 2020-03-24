@@ -26,9 +26,10 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.stubbing.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.stubbing.Answer;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -36,9 +37,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class to verify the implementation of the {@link EventBuffer} class.
@@ -104,6 +111,19 @@ class EventBufferTest {
 
         testSubject.peek(); // this should consume 3 incoming messages
         assertEquals(3, consumed.get());
+    }
+
+    @Test
+    void testHasNextAvailableThrowsExceptionWhenStreamFailed() throws InterruptedException {
+        RuntimeException expected = new RuntimeException("Some Exception");
+        testSubject.fail(expected);
+
+        assertThrows(RuntimeException.class, () ->
+                testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
+
+        // a second attempt should still throw the exception
+        assertThrows(RuntimeException.class, () ->
+                testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
     }
 
     @Test

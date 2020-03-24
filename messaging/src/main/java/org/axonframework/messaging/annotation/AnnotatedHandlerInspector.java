@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,19 @@ package org.axonframework.messaging.annotation;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Collections.emptySet;
+import static java.util.Collections.emptySortedSet;
 
 /**
  * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
@@ -32,20 +44,23 @@ public class AnnotatedHandlerInspector<T> {
     private final ParameterResolverFactory parameterResolverFactory;
     private final Map<Class<?>, AnnotatedHandlerInspector> registry;
     private final List<AnnotatedHandlerInspector<? super T>> superClassInspectors;
-    private final List<MessageHandlingMember<? super T>> handlers;
+    private final List<AnnotatedHandlerInspector<? extends T>> subClassInspectors;
+    private final Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> handlers;
     private final HandlerDefinition handlerDefinition;
 
     private AnnotatedHandlerInspector(Class<T> inspectedType,
                                       List<AnnotatedHandlerInspector<? super T>> superClassInspectors,
                                       ParameterResolverFactory parameterResolverFactory,
                                       HandlerDefinition handlerDefinition,
-                                      Map<Class<?>, AnnotatedHandlerInspector> registry) {
+                                      Map<Class<?>, AnnotatedHandlerInspector> registry,
+                                      List<AnnotatedHandlerInspector<? extends T>> subClassInspectors) {
         this.inspectedType = inspectedType;
         this.parameterResolverFactory = parameterResolverFactory;
         this.registry = registry;
         this.superClassInspectors = new ArrayList<>(superClassInspectors);
-        this.handlers = new ArrayList<>();
+        this.handlers = new HashMap<>();
         this.handlerDefinition = handlerDefinition;
+        this.subClassInspectors = subClassInspectors;
     }
 
     /**
@@ -89,23 +104,43 @@ public class AnnotatedHandlerInspector<T> {
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition) {
+        return inspectType(handlerType, parameterResolverFactory, handlerDefinition, emptySet());
+    }
+
+    /**
+     * Create an inspector for given {@code handlerType} and its {@code declaredSubtypes} that uses given {@code
+     * parameterResolverFactory} to resolve method parameters and given {@code handlerDefinition} to create handlers.
+     *
+     * @param handlerType              the target handler type
+     * @param parameterResolverFactory the resolver factory to use during detection
+     * @param handlerDefinition        the handler definition used to create concrete handlers
+     * @param declaredSubtypes         the declared subtypes of this {@code handlerType}
+     * @param <T>                      the handler's type
+     * @return a new inspector instance for the inspected class
+     */
+    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
+                                                               ParameterResolverFactory parameterResolverFactory,
+                                                               HandlerDefinition handlerDefinition,
+                                                               Set<Class<? extends T>> declaredSubtypes) {
         return createInspector(handlerType,
                                parameterResolverFactory,
                                handlerDefinition,
-                               new HashMap<>());
+                               new HashMap<>(),
+                               declaredSubtypes);
     }
-
 
     private static <T> AnnotatedHandlerInspector<T> createInspector(Class<? extends T> inspectedType,
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     HandlerDefinition handlerDefinition,
-                                                                    Map<Class<?>, AnnotatedHandlerInspector> registry) {
+                                                                    Map<Class<?>, AnnotatedHandlerInspector> registry,
+                                                                    Set<Class<? extends T>> declaredSubtypes) {
         if (!registry.containsKey(inspectedType)) {
             registry.put(inspectedType,
-                         AnnotatedHandlerInspector.initialize(inspectedType,
+                         AnnotatedHandlerInspector.initialize((Class<T>) inspectedType,
                                                               parameterResolverFactory,
                                                               handlerDefinition,
-                                                              registry));
+                                                              registry,
+                                                              declaredSubtypes));
         }
         //noinspection unchecked
         return registry.get(inspectedType);
@@ -114,46 +149,67 @@ public class AnnotatedHandlerInspector<T> {
     private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,
-                                                               Map<Class<?>, AnnotatedHandlerInspector> registry) {
+                                                               Map<Class<?>, AnnotatedHandlerInspector> registry,
+                                                               Set<Class<? extends T>> declaredSubtypes) {
         List<AnnotatedHandlerInspector<? super T>> parents = new ArrayList<>();
         for (Class<?> iFace : inspectedType.getInterfaces()) {
             //noinspection unchecked
             parents.add(createInspector(iFace,
                                         parameterResolverFactory,
                                         handlerDefinition,
-                                        registry));
+                                        registry,
+                                        emptySet()));
         }
         if (inspectedType.getSuperclass() != null && !Object.class.equals(inspectedType.getSuperclass())) {
             parents.add(createInspector(inspectedType.getSuperclass(),
                                         parameterResolverFactory,
                                         handlerDefinition,
-                                        registry));
+                                        registry,
+                                        emptySet()));
         }
+        List<AnnotatedHandlerInspector<? extends T>> children =
+                declaredSubtypes.stream()
+                                .map(subclass -> createInspector(subclass,
+                                                                 parameterResolverFactory,
+                                                                 handlerDefinition,
+                                                                 registry,
+                                                                 emptySet()))
+                                .collect(Collectors.toList());
         AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<>(inspectedType,
                                                                                  parents,
                                                                                  parameterResolverFactory,
                                                                                  handlerDefinition,
-                                                                                 registry);
+                                                                                 registry,
+                                                                                 children);
         inspector.initializeMessageHandlers(parameterResolverFactory, handlerDefinition);
         return inspector;
     }
 
     private void initializeMessageHandlers(ParameterResolverFactory parameterResolverFactory,
                                            HandlerDefinition handlerDefinition) {
+        handlers.put(inspectedType, new TreeSet<>(HandlerComparator.instance()));
         for (Method method : inspectedType.getDeclaredMethods()) {
             handlerDefinition.createHandler(inspectedType, method, parameterResolverFactory)
-                             .ifPresent(this::registerHandler);
+                             .ifPresent(h -> registerHandler(inspectedType, h));
         }
         for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
             handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory)
-                            .ifPresent(this::registerHandler);
+                            .ifPresent(h -> registerHandler(inspectedType, h));
         }
-        superClassInspectors.forEach(sci -> handlers.addAll(sci.getHandlers()));
-        handlers.sort(HandlerComparator.instance());
+
+        subClassInspectors.forEach(sci -> sci.getAllHandlers()
+                .forEach((key, value) -> value.forEach(h -> registerHandler(key, (MessageHandlingMember<T>) h))));
+
+        superClassInspectors.forEach(sci -> sci.getAllHandlers()
+                .forEach((key, value) -> value.forEach(h -> {
+                    registerHandler(key, h);
+                    registerHandler(inspectedType, h);
+                })));
     }
 
-    private void registerHandler(MessageHandlingMember<T> handler) {
-        handlers.add(handler);
+    private void registerHandler(Class<?> type, MessageHandlingMember<? super T> handler) {
+        handlers.computeIfAbsent(type, t -> new TreeSet<>(HandlerComparator.instance()))
+                .add(handler);
     }
 
     /**
@@ -168,15 +224,38 @@ public class AnnotatedHandlerInspector<T> {
         return AnnotatedHandlerInspector.createInspector(entityType,
                                                          parameterResolverFactory,
                                                          handlerDefinition,
-                                                         registry);
+                                                         registry,
+                                                         emptySet());
     }
 
     /**
      * Returns a list of detected members of the inspected entity that are capable of handling certain messages.
      *
      * @return a list of detected message handlers
+     * @deprecated use {@link #getAllHandlers()} or {@link #getHandlers(Class)} instead
      */
+    @Deprecated
     public List<MessageHandlingMember<? super T>> getHandlers() {
-        return handlers;
+        return getHandlers(inspectedType).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a list of detected members of given {@code type} that are capable of handling certain messages.
+     *
+     * @param type a type of inspected entity
+     * @return a stream of detected message handlers for given {@code type}
+     */
+    public Stream<MessageHandlingMember<? super T>> getHandlers(Class<?> type) {
+        return handlers.getOrDefault(type, emptySortedSet())
+                       .stream();
+    }
+
+    /**
+     * Gets all handlers per type for inspected entity. Handlers are sorted based on {@link HandlerComparator}.
+     *
+     * @return a map of handlers per type
+     */
+    public Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> getAllHandlers() {
+        return Collections.unmodifiableMap(handlers);
     }
 }

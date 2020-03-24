@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,13 @@ import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver
 import org.axonframework.axonserver.connector.util.ResubscribableStreamObserver;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
+import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -128,6 +133,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private final Handlers<QueryProviderInbound.RequestCase, BiConsumer<QueryProviderInbound, StreamObserver<QueryProviderOutbound>>> queryHandlers = new DefaultHandlers<>();
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
     private final InstructionAckSource<QueryProviderOutbound> instructionAckSource;
+    private final ShutdownLatch shutdownLatch = new ShutdownLatch();
 
     /**
      * Creates an instance of the Axon Server {@link QueryBus} client. Will connect to an Axon Server instance to submit
@@ -217,7 +223,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         );
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::resubscribe);
+        this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::publishSubscriptions);
         this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
 
         this.axonServerConnectionManager.addDisconnectListener(context, queryProcessor::unsubscribeAll);
@@ -254,7 +260,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                  builder.requestStreamFactory);
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::resubscribe);
+        this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::publishSubscriptions);
         this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
 
         this.axonServerConnectionManager.addDisconnectListener(context, queryProcessor::unsubscribeAll);
@@ -282,7 +288,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return new Builder();
     }
 
-
     private Consumer<String> interceptReconnectRequest(Consumer<String> reconnect) {
         if (subscriptions.isEmpty()) {
             return reconnect;
@@ -294,115 +299,138 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         subscriptions.remove(context);
     }
 
+    /**
+     * Start the Axon Server {@link QueryBus} implementation.
+     */
+    @StartHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
+    public void start() {
+        shutdownLatch.initialize();
+    }
+
     @Override
     public <R> Registration subscribe(String queryName,
                                       Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         return new AxonServerRegistration(
                 queryProcessor.subscribe(queryName, responseType, configuration.getComponentName(), handler),
-                () -> queryProcessor.unsubscribe(queryName, responseType, configuration.getComponentName())
+                () -> queryProcessor.removeAndUnsubscribe(queryName, responseType, configuration.getComponentName())
         );
     }
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
+        shutdownLatch.ifShuttingDown(String.format("Cannot dispatch new %s as this bus is being shut down", "queries"));
+
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
-        CompletableFuture<QueryResponseMessage<R>> completableFuture = new CompletableFuture<>();
+        ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
+        CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
         try {
             String context = targetContextResolver.resolveContext(interceptedQuery);
-            QueryRequest queryRequest = serializer.serializeRequest(
-                    interceptedQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, DIRECT_QUERY_TIMEOUT_MS,
-                    priorityCalculator.determinePriority(interceptedQuery)
-            );
+            QueryRequest queryRequest =
+                    serializer.serializeRequest(interceptedQuery,
+                                                DIRECT_QUERY_NUMBER_OF_RESULTS,
+                                                DIRECT_QUERY_TIMEOUT_MS,
+                                                priorityCalculator.determinePriority(interceptedQuery));
 
-            queryService(context)
-                    .query(queryRequest,
-                           new StreamObserver<QueryResponse>() {
-                               @Override
-                               public void onNext(QueryResponse queryResponse) {
-                                   logger.debug("Received query response [{}]", queryResponse);
-                                   completableFuture.complete(serializer.deserializeResponse(queryResponse, queryMessage.getResponseType()));
-                               }
+            QueryServiceGrpc.QueryServiceStub queryService = queryService(context);
+            queryService.query(queryRequest, new StreamObserver<QueryResponse>() {
+                @Override
+                public void onNext(QueryResponse queryResponse) {
+                    logger.debug("Received query response [{}]", queryResponse);
+                    QueryResponseMessage<R> responseMessage =
+                            serializer.deserializeResponse(queryResponse, queryMessage.getResponseType());
+                    queryTransaction.complete(responseMessage);
+                }
 
-                               @Override
-                               public void onError(Throwable throwable) {
-                                   if (logger.isDebugEnabled()) {
-                                       logger.debug("Received error while waiting for first response", throwable);
-                                   }
-                                   completableFuture.completeExceptionally(
-                                           ErrorCode.QUERY_DISPATCH_ERROR.convert(
-                                                   configuration.getClientId(), throwable
-                                           )
-                                   );
-                               }
+                @Override
+                public void onError(Throwable throwable) {
+                    logger.debug("Received error while waiting for first response", throwable);
+                    AxonException exception =
+                            ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), throwable);
+                    queryTransaction.completeExceptionally(exception);
+                    queryInTransit.end();
+                }
 
-                               @Override
-                               public void onCompleted() {
-                                   if (completableFuture.isDone()) {
-                                       return;
-                                   }
-
-                                   completableFuture.completeExceptionally(
-                                           ErrorCode.QUERY_DISPATCH_ERROR.convert(
-                                                   ErrorMessage.newBuilder()
-                                                               .setMessage("No result from query executor")
-                                                               .build()
-                                           ));
-                               }
-                           });
+                @Override
+                public void onCompleted() {
+                    if (!queryTransaction.isDone()) {
+                        ErrorMessage errorMessage = ErrorMessage.newBuilder()
+                                                                .setMessage("No result from query executor")
+                                                                .build();
+                        AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(errorMessage);
+                        queryTransaction.completeExceptionally(exception);
+                    }
+                    queryInTransit.end();
+                }
+            });
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
-            completableFuture.completeExceptionally(
-                    ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e)
-            );
+            AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
+            queryTransaction.completeExceptionally(exception);
+            queryInTransit.end();
         }
-        return completableFuture;
+
+        return queryTransaction;
     }
 
     @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 TimeUnit timeUnit) {
+        shutdownLatch.ifShuttingDown(String.format(
+                "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
+        ));
+
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
-        String context = targetContextResolver.resolveContext(interceptedQuery);
-        QueryRequest queryRequest = serializer.serializeRequest(interceptedQuery,
-                                                                SCATTER_GATHER_NUMBER_OF_RESULTS,
-                                                                timeUnit.toMillis(timeout),
-                                                                priorityCalculator.determinePriority(interceptedQuery));
+        ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
         BufferingSpliterator<QueryResponseMessage<R>> resultSpliterator =
                 new BufferingSpliterator<>(Instant.now().plusMillis(timeUnit.toMillis(timeout)));
+        try {
+            String context = targetContextResolver.resolveContext(interceptedQuery);
+            QueryRequest queryRequest =
+                    serializer.serializeRequest(interceptedQuery,
+                                                SCATTER_GATHER_NUMBER_OF_RESULTS,
+                                                timeUnit.toMillis(timeout),
+                                                priorityCalculator.determinePriority(interceptedQuery));
 
-        queryService(context)
-                .withDeadlineAfter(timeout, timeUnit)
-                .query(queryRequest,
-                       new UpstreamAwareStreamObserver<QueryResponse>() {
-                           @Override
-                           public void onNext(QueryResponse queryResponse) {
-                               logger.debug("Received query response [{}]", queryResponse);
-                               if (queryResponse.hasErrorMessage()) {
-                                   logger.debug("The received query response has error message [{}]",
-                                                queryResponse.getErrorMessage());
-                               } else {
-                                   if (!resultSpliterator.put(serializer.deserializeResponse(queryResponse, queryMessage.getResponseType()))) {
-                                       getRequestStream().cancel("Cancellation requested by client", null);
-                                   }
-                               }
-                           }
+            QueryServiceGrpc.QueryServiceStub queryService =
+                    queryService(context).withDeadlineAfter(timeout, timeUnit);
+            queryService.query(queryRequest, new UpstreamAwareStreamObserver<QueryResponse>() {
+                @Override
+                public void onNext(QueryResponse queryResponse) {
+                    logger.debug("Received query response [{}]", queryResponse);
+                    if (queryResponse.hasErrorMessage()) {
+                        logger.debug("The received query response has error message [{}]",
+                                     queryResponse.getErrorMessage());
+                    } else {
+                        if (!resultSpliterator.put(serializer.deserializeResponse(
+                                queryResponse, queryMessage.getResponseType()
+                        ))) {
+                            getRequestStream().cancel("Cancellation requested by client", null);
+                        }
+                    }
+                }
 
-                           @Override
-                           public void onError(Throwable throwable) {
-                               if (!isDeadlineExceeded(throwable)) {
-                                   logger.info("Received error while waiting for responses",
-                                               throwable);
-                               }
-                               resultSpliterator.cancel(throwable);
-                           }
+                @Override
+                public void onError(Throwable throwable) {
+                    if (!isDeadlineExceeded(throwable)) {
+                        logger.info("Received error while waiting for responses", throwable);
+                    }
+                    resultSpliterator.cancel(throwable);
+                    queryInTransit.end();
+                }
 
-                           @Override
-                           public void onCompleted() {
-                               resultSpliterator.cancel(null);
-                           }
-                       });
+                @Override
+                public void onCompleted() {
+                    resultSpliterator.cancel(null);
+                    queryInTransit.end();
+                }
+            });
+        } catch (Exception e) {
+            logger.debug("There was a problem issuing a scatter-gather query {}.", interceptedQuery, e);
+            queryInTransit.end();
+            throw e;
+        }
 
         return StreamSupport.stream(resultSpliterator, false).onClose(() -> resultSpliterator.cancel(null));
     }
@@ -410,10 +438,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private boolean isDeadlineExceeded(Throwable throwable) {
         return throwable instanceof StatusRuntimeException
                 && ((StatusRuntimeException) throwable).getStatus().getCode().equals(Status.Code.DEADLINE_EXCEEDED);
-    }
-
-    public void disconnect() {
-        queryProcessor.disconnect();
     }
 
     private void publish(String context, QueryProviderOutbound providerOutbound) {
@@ -448,6 +472,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backPressure,
             int updateBufferSize) {
+        shutdownLatch.ifShuttingDown(String.format(
+                "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
+        ));
+
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(query);
         String subscriptionId = interceptedQuery.getIdentifier();
         String context = targetContextResolver.resolveContext(interceptedQuery);
@@ -496,6 +524,29 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     public Registration registerDispatchInterceptor(
             MessageDispatchInterceptor<? super QueryMessage<?, ?>> dispatchInterceptor) {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
+    }
+
+    /**
+     * Disconnect the query bus from Axon Server, by unsubscribing all known query handlers. This shutdown operation is
+     * performed in the {@link Phase#INBOUND_QUERY_CONNECTOR} phase.
+     */
+    @ShutdownHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
+    public void disconnect() {
+        queryProcessor.unsubscribeAll();
+    }
+
+    /**
+     * Shutdown the query bus asynchronously for dispatching queries to Axon Server. This process will wait for
+     * dispatched queries which have not received a response yet and will close off running subscription queries. This
+     * shutdown operation is performed in the {@link Phase#OUTBOUND_QUERY_CONNECTORS} phase.
+     *
+     * @return a completable future which is resolved once all query dispatching activities are completed
+     */
+    @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
+    public CompletableFuture<Void> shutdownDispatching() {
+        return CompletableFuture.runAsync(queryProcessor::disconnect)
+                                .thenCompose(r -> shutdownLatch.initiateShutdown())
+                                .thenRun(queryProcessor::removeLocalSubscriptions);
     }
 
     private class QueryProcessor {
@@ -547,7 +598,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                                   .errorCode());
         }
 
-        private void resubscribe() {
+        private void publishSubscriptions() {
             if (subscribedQueries.isEmpty() || subscribing) {
                 return;
             }
@@ -602,56 +653,54 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             try {
                 if (numberOfResults(query.getProcessingInstructionsList()) == 1) {
                     QueryResponseMessage<Object> response = localSegment.query(queryMessage).get();
-                    outboundStreamObserver.onNext(
-                            QueryProviderOutbound.newBuilder()
-                                                 .setQueryResponse(serializer.serializeResponse(response, requestId))
-                                                 .build()
-                    );
+                    sendResponse(query.getQuery(),
+                                 QueryProviderOutbound.newBuilder()
+                                                      .setQueryResponse(serializer.serializeResponse(response, requestId))
+                                                      .build());
                 } else {
                     localSegment.scatterGather(queryMessage, 0, TimeUnit.SECONDS)
-                                .forEach(response -> outboundStreamObserver.onNext(
-                                        QueryProviderOutbound.newBuilder()
-                                                             .setQueryResponse(
-                                                                     serializer.serializeResponse(response, requestId)
-                                                             )
-                                                             .build())
+                                .forEach(response -> sendResponse(query.getQuery(),
+                                                                  QueryProviderOutbound.newBuilder()
+                                                                                       .setQueryResponse(serializer.serializeResponse(response, requestId))
+                                                                                       .build())
                                 );
                 }
 
-                outboundStreamObserver.onNext(
-                        QueryProviderOutbound.newBuilder()
-                                             .setQueryComplete(
-                                                     QueryComplete.newBuilder()
-                                                                  .setMessageId(UUID.randomUUID().toString())
-                                                                  .setRequestId(requestId)
-                                             ).build()
-                );
+                sendResponse(query.getQuery(), QueryProviderOutbound.newBuilder()
+                                                                    .setQueryComplete(
+                                                                            QueryComplete.newBuilder()
+                                                                                         .setMessageId(UUID.randomUUID().toString())
+                                                                                         .setRequestId(requestId)
+                                                                    ).build());
             } catch (Exception e) {
                 logger.warn("Failed to dispatch query [{}] locally", queryMessage.getQueryName(), e);
+                sendResponse(query.getQuery(), QueryProviderOutbound.newBuilder().setQueryResponse(
+                        QueryResponse.newBuilder()
+                                     .setMessageIdentifier(UUID.randomUUID().toString())
+                                     .setRequestIdentifier(requestId)
+                                     .setErrorMessage(
+                                             ExceptionSerializer.serialize(configuration.getClientId(), e)
+                                     )
+                                     .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                     .build()).build());
+            }
+        }
 
-                if (outboundStreamObserver == null) {
-                    return;
-                }
-
-                outboundStreamObserver.onNext(
-                        QueryProviderOutbound.newBuilder().setQueryResponse(
-                                QueryResponse.newBuilder()
-                                             .setMessageIdentifier(UUID.randomUUID().toString())
-                                             .setRequestIdentifier(requestId)
-                                             .setErrorMessage(
-                                                     ExceptionSerializer.serialize(configuration.getClientId(), e)
-                                             )
-                                             .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                                             .build()).build()
-                );
+        private void sendResponse(String queryName, QueryProviderOutbound response) {
+            StreamObserver<QueryProviderOutbound> out = this.outboundStreamObserver;
+            if (out != null) {
+                out.onNext(response);
+            } else {
+                logger.info("Unable to send Query Result for query [{}] due to lost connection to AxonServer",
+                            queryName);
             }
         }
 
         private synchronized StreamObserver<QueryProviderOutbound> getSubscriberObserver(String context) {
-            if (outboundStreamObserver != null) {
-                return outboundStreamObserver;
+            StreamObserver<QueryProviderOutbound> out = this.outboundStreamObserver;
+            if (out != null) {
+                return out;
             }
-
             StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new UpstreamAwareStreamObserver<QueryProviderInbound>() {
                 @Override
                 public void onNext(QueryProviderInbound inboundRequest) {
@@ -670,7 +719,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 @Override
                 public void onError(Throwable ex) {
                     logger.warn("Query Inbound Stream closed with error", ex);
-                    outboundStreamObserver = null;
                 }
 
                 @Override
@@ -681,7 +729,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             };
 
             ResubscribableStreamObserver<QueryProviderInbound> resubscribableStreamObserver =
-                    new ResubscribableStreamObserver<>(queryProviderInboundStreamObserver, t -> resubscribe());
+                    new ResubscribableStreamObserver<>(queryProviderInboundStreamObserver, t -> reconnectQueryStream());
 
             StreamObserver<QueryProviderOutbound> streamObserver = axonServerConnectionManager.getQueryStream(
                     context, resubscribableStreamObserver
@@ -691,16 +739,38 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
             outboundStreamObserver = new FlowControllingStreamObserver<>(
                     streamObserver,
-                    configuration,
+                    configuration.getClientId(),
+                    configuration.getQueryFlowControl(),
                     flowControl -> QueryProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
                     t -> t.getRequestCase().equals(QueryProviderOutbound.RequestCase.QUERY_RESPONSE)
             ).sendInitialPermits();
             return outboundStreamObserver;
         }
 
-        public void unsubscribe(String queryName, Type responseType, String componentName) {
-            QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType.getTypeName(), componentName);
-            subscribedQueries.remove(queryDefinition);
+        private void reconnectQueryStream() {
+            unsubscribeAll();
+            if (running) {
+                publishSubscriptions();
+            }
+        }
+
+        private void unsubscribeAll() {
+            if (outboundStreamObserver != null) {
+                subscribedQueries.keySet().forEach(this::unsubscribe);
+            }
+        }
+
+        public void removeAndUnsubscribe(String queryName, Type responseType, String componentName) {
+            removeAndUnsubscribe(new QueryDefinition(queryName, responseType.getTypeName(), componentName));
+        }
+
+        private void removeAndUnsubscribe(QueryDefinition queryDefinition) {
+            if (subscribedQueries.remove(queryDefinition) != null) {
+                unsubscribe(queryDefinition);
+            }
+        }
+
+        private void unsubscribe(QueryDefinition queryDefinition) {
             try {
                 getSubscriberObserver(context).onNext(
                         QueryProviderOutbound.newBuilder()
@@ -712,27 +782,30 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             }
         }
 
-        private void unsubscribeAll() {
-            subscribedQueries.forEach((queryDefinition, handlerSet) -> {
-                try {
-                    getSubscriberObserver(context).onNext(
-                            QueryProviderOutbound.newBuilder()
-                                                 .setUnsubscribe(buildQuerySubscription(queryDefinition, 1))
-                                                 .build()
-                    );
-                } catch (Exception ignored) {
-                    // This exception is ignored
-                }
-            });
-            outboundStreamObserver = null;
+        private void removeLocalSubscriptions() {
+            subscribedQueries.clear();
         }
 
         void disconnect() {
+            running = false;
+            queryExecutor.shutdown();
+            try {
+                if (!queryExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    logger.warn("Awaited Query Bus termination for 5 seconds. Wait period extended by 30 seconds.");
+                }
+                if (!queryExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+                    logger.warn("Awaited Query Bus termination for 35 seconds. Will shutdown forcefully.");
+                    queryExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                logger.warn("Awaiting termination of Query Bus got interrupted. Will shutdown immediately", e);
+                queryExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+
             if (outboundStreamObserver != null) {
                 outboundStreamObserver.onCompleted();
             }
-            running = false;
-            queryExecutor.shutdown();
         }
 
         private QuerySubscription buildQuerySubscription(QueryDefinition queryDefinition, int nrHandlers) {
@@ -799,12 +872,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
             @Override
             public void run() {
-                if (!running) {
-                    logger.debug("Query Processor has stopped running, "
-                                         + "hence query [{}] will no longer be processed", queryRequest.getQuery());
-                    return;
-                }
-
                 try {
                     logger.debug("Will process query [{}]", queryRequest.getQuery());
                     processQuery(queryRequest);

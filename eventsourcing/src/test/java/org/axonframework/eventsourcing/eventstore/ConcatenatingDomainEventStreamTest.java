@@ -25,16 +25,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConcatenatingDomainEventStreamTest {
 
-    private DomainEventMessage event1;
-    private DomainEventMessage event2;
-    private DomainEventMessage event3;
-    private DomainEventMessage event4;
-    private DomainEventMessage event5;
+    private DomainEventMessage<String> event1;
+    private DomainEventMessage<String> event2;
+    private DomainEventMessage<String> event3;
+    private DomainEventMessage<String> event4;
+    private DomainEventMessage<String> event5;
 
     @BeforeEach
     void setUp() {
@@ -124,51 +125,75 @@ class ConcatenatingDomainEventStreamTest {
 
     @Test
     void testLastKnownSequenceReturnsTheLastEventItsSequence() {
+        DomainEventStream lastStream = DomainEventStream.of(event4, event5);
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1),
                                                                       DomainEventStream.of(event2, event3),
-                                                                      DomainEventStream.of(event4, event5));
-        // This is still null if we have not traversed the stream yet.
-        assertNull(concat.getLastSequenceNumber());
+                                                                      lastStream);
 
         assertTrue(concat.hasNext());
+
         assertSame(event1.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 0L, concat.getLastSequenceNumber());
-
         assertSame(event2.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 1L, concat.getLastSequenceNumber());
-
         assertSame(event3.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 2L, concat.getLastSequenceNumber());
-
         assertSame(event4.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 3L, concat.getLastSequenceNumber());
-
         assertSame(event5.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 4L, concat.getLastSequenceNumber());
 
         assertFalse(concat.hasNext());
+
+        assertEquals(lastStream.getLastSequenceNumber(), concat.getLastSequenceNumber());
     }
 
     @Test
     void testLastKnownSequenceReturnsTheLastEventItsSequenceEventIfEventsHaveGaps() {
+        DomainEventStream lastStream = DomainEventStream.of(event4, event5);
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event3),
-                                                                      DomainEventStream.of(event4, event5));
-        // This is still null if we have not traversed the stream yet.
-        assertNull(concat.getLastSequenceNumber());
+                                                                      lastStream);
 
         assertTrue(concat.hasNext());
+
         assertSame(event1.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 0L, concat.getLastSequenceNumber());
-
         assertSame(event3.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 2L, concat.getLastSequenceNumber());
-
         assertSame(event4.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 3L, concat.getLastSequenceNumber());
-
         assertSame(event5.getPayload(), concat.next().getPayload());
-        assertEquals((Long) 4L, concat.getLastSequenceNumber());
 
         assertFalse(concat.hasNext());
+
+        assertEquals(lastStream.getLastSequenceNumber(), concat.getLastSequenceNumber());
     }
+
+    @Test
+    void testLastSequenceNumberWhenLastEventIsFilteredOut() {
+        // the last sequence number is the one from the event that is filtered out, e.g. when using upcasters
+        DomainEventStream concat = new ConcatenatingDomainEventStream(
+                DomainEventStream.of(
+                        Stream.of(event1, event2).filter(x -> x != event2),
+                        () -> event2.getSequenceNumber()));
+
+        assertSame(event1, concat.next());
+        assertFalse(concat.hasNext());
+        assertEquals(event2.getSequenceNumber(), concat.getLastSequenceNumber());
+    }
+
+    @Test
+    void testMaxLastSequenceNumberFromDelegates() {
+        DomainEventStream concat = new ConcatenatingDomainEventStream(
+                DomainEventStream.of(event1, event3),
+                DomainEventStream.of(event2));
+
+        assertSame(event1, concat.next());
+        assertSame(event3, concat.next());
+        assertFalse(concat.hasNext());
+
+        assertEquals(event3.getSequenceNumber(), concat.getLastSequenceNumber());
+    }
+
+    @Test
+    void testNullSequenceNumberFromDelegates_NullPointer() {
+        DomainEventStream concat = new ConcatenatingDomainEventStream(
+                DomainEventStream.of(event1),
+                DomainEventStream.of(Stream.empty(), () -> null));
+
+        assertEquals(event1.getSequenceNumber(), concat.getLastSequenceNumber());
+    }
+
 }

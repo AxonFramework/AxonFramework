@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,13 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -79,11 +84,6 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     @Override
     public Class<?> payloadType() {
         return payloadType;
-    }
-
-    @Override
-    public int priority() {
-        return parameterCount;
     }
 
     @Override
@@ -180,5 +180,22 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     @Override
     public String toString() {
         return getClass().getSimpleName() + " " + executable.toGenericString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(executable);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AnnotatedMessageHandlingMember<?> that = (AnnotatedMessageHandlingMember<?>) o;
+        return executable.equals(that.executable);
     }
 }

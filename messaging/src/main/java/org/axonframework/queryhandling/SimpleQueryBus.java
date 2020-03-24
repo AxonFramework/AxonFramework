@@ -260,7 +260,9 @@ public class SimpleQueryBus implements QueryBus {
             } else if (queryResponse instanceof Future) {
                 return CompletableFuture.supplyAsync(() -> {
                     try {
-                        return ((Future<QueryResponseMessage<R>>) queryResponse).get();
+                        return GenericQueryResponseMessage.asNullableResponseMessage(
+                                responseType.responseMessagePayloadType(),
+                                responseType.convert(((Future) queryResponse).get()));
                     } catch (InterruptedException | ExecutionException e) {
                         throw new QueryExecutionException("Error happened while trying to execute query handler", e);
                     }

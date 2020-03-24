@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.PlatformService;
+import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -42,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -51,6 +54,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.spy;
 
 class AxonServerEventStoreTest {
 
@@ -58,14 +62,18 @@ class AxonServerEventStoreTest {
     private AxonServerEventStore testSubject;
     private EventUpcaster upcasterChain;
     private AxonServerConnectionManager axonServerConnectionManager;
+    private EventStoreImpl eventStore;
 
     @BeforeEach
     void setUp() throws Exception {
-        server = new StubServer(TcpUtil.findFreePort());
+        int freePort = TcpUtil.findFreePort();
+        eventStore = spy(new EventStoreImpl());
+        server = new StubServer(freePort, new PlatformService(freePort), eventStore);
         server.start();
         upcasterChain = mock(EventUpcaster.class);
         when(upcasterChain.upcast(any())).thenAnswer(i -> i.getArgument(0));
         AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .allowReadingEventsFromFollower(true)
                                                                 .servers("localhost:" + server.getPort())
                                                                 .componentName("JUNIT")
                                                                 .flowControl(2, 1, 1)
@@ -158,5 +166,22 @@ class AxonServerEventStoreTest {
     @Test
     void testCreateStreamableMessageSourceForContext() {
         assertNotNull(testSubject.createStreamableMessageSourceForContext("some-context"));
+    }
+
+    @Test
+    void testUsingLocalEventStoreOnOpeningStream() {
+        testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"));
+        testSubject.openStream(null);
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, eventStore.getEventsRequests().size()));
+        assertTrue(eventStore.getEventsRequests().get(0).getAllowReadingFromFollower());
+    }
+
+    @Test
+    void testUsingLocalEventStoreOnQueryingEvents() {
+        testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"));
+        testSubject.query("", true);
+        assertWithin(1, TimeUnit.SECONDS,
+                     () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
+        assertTrue(eventStore.getQueryEventsRequests().get(0).getAllowReadingFromFollower());
     }
 }
