@@ -16,11 +16,18 @@
 
 package org.axonframework.axonserver.connector.processor;
 
+import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.InstructionResult;
+import io.axoniq.axonserver.grpc.control.EventProcessorSegmentReference;
+import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.junit.jupiter.api.*;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
@@ -28,13 +35,31 @@ import static org.mockito.Mockito.*;
 
 class EventProcessorControlServiceTest {
 
+    public static final String GOOD_INSTRUCTION_ID = "goodInstructionId";
+    public static final String TRACKING_EVENT_PROCESSOR = "TEP";
+    public static final String BAD_INSTRUCTION_ID = "badInstructionId";
+    public static final String SUBSCRIBING_EVENT_PROCESSOR = "SEP";
     private final AxonServerConfiguration configuration = mock(AxonServerConfiguration.class);
     private final AxonServerConnectionManager axonServerConnectionManager = mock(AxonServerConnectionManager.class);
     private final EventProcessorController eventProcessorController = mock(EventProcessorController.class);
+    private final AtomicReference<Consumer<PlatformOutboundInstruction>> splitRequestConsumer = new AtomicReference<>();
+    private final AtomicReference<Consumer<PlatformOutboundInstruction>> mergeRequestConsumer = new AtomicReference<>();
 
     @BeforeEach
     void setUp() {
         when(configuration.getContext()).thenReturn(BOUNDED_CONTEXT);
+
+        doAnswer(invocation -> {
+            splitRequestConsumer.set(invocation.getArgument(2));
+            return null;
+        }).when(axonServerConnectionManager)
+          .onOutboundInstruction(eq(BOUNDED_CONTEXT), eq(SPLIT_EVENT_PROCESSOR_SEGMENT), any(Consumer.class));
+
+        doAnswer(invocation -> {
+            mergeRequestConsumer.set(invocation.getArgument(2));
+            return null;
+        }).when(axonServerConnectionManager)
+          .onOutboundInstruction(eq(BOUNDED_CONTEXT), eq(MERGE_EVENT_PROCESSOR_SEGMENT), any(Consumer.class));
 
         EventProcessorControlService testSubject =
                 new EventProcessorControlService(axonServerConnectionManager,
@@ -66,5 +91,91 @@ class EventProcessorControlServiceTest {
         );
         verify(configuration, atLeastOnce()).getContext();
         verifyNoMoreInteractions(axonServerConnectionManager);
+    }
+
+    @Test
+    void testSuccessSplit() {
+        when(eventProcessorController.splitSegment(eq(TRACKING_EVENT_PROCESSOR), eq(0))).thenReturn(true);
+        splitRequestConsumer.get().accept(PlatformOutboundInstruction.newBuilder()
+                                                                     .setInstructionId(GOOD_INSTRUCTION_ID)
+                                                                     .setSplitEventProcessorSegment(tep())
+                                                                     .build());
+
+        PlatformInboundInstruction successResult = successResult();
+        verify(axonServerConnectionManager).send(eq(BOUNDED_CONTEXT), eq(successResult));
+    }
+
+    @Test
+    void testFailedSplit() {
+        splitRequestConsumer.get().accept(PlatformOutboundInstruction.newBuilder()
+                                                                     .setInstructionId(BAD_INSTRUCTION_ID)
+                                                                     .setSplitEventProcessorSegment(sep())
+                                                                     .build());
+        PlatformInboundInstruction failureResult = failureResult();
+        verify(axonServerConnectionManager).send(eq(BOUNDED_CONTEXT), eq(failureResult));
+    }
+
+    @Test
+    void testSuccessMerge() {
+        when(eventProcessorController.mergeSegment(eq(TRACKING_EVENT_PROCESSOR), eq(0))).thenReturn(true);
+        mergeRequestConsumer.get().accept(PlatformOutboundInstruction.newBuilder()
+                                                                     .setInstructionId("goodInstructionId")
+                                                                     .setMergeEventProcessorSegment(tep())
+                                                                     .build());
+        verify(axonServerConnectionManager).send(eq(BOUNDED_CONTEXT), eq(successResult()));
+    }
+
+    @Test
+    void testFailedMerge() {
+        splitRequestConsumer.get().accept(PlatformOutboundInstruction
+                                                  .newBuilder()
+                                                  .setInstructionId(BAD_INSTRUCTION_ID)
+                                                  .setSplitEventProcessorSegment(sep())
+                                                  .build());
+        verify(axonServerConnectionManager).send(eq(BOUNDED_CONTEXT), eq(failureResult()));
+    }
+
+    @Nonnull
+    private EventProcessorSegmentReference tep() {
+        return EventProcessorSegmentReference
+                .newBuilder()
+                .setProcessorName(TRACKING_EVENT_PROCESSOR)
+                .setSegmentIdentifier(0)
+                .build();
+    }
+
+    @Nonnull
+    private PlatformInboundInstruction successResult() {
+        return PlatformInboundInstruction
+                .newBuilder()
+                .setResult(InstructionResult
+                                   .newBuilder()
+                                   .setSuccess(true)
+                                   .setInstructionId(GOOD_INSTRUCTION_ID)
+
+                ).build();
+    }
+
+    @Nonnull
+    private PlatformInboundInstruction failureResult() {
+        return PlatformInboundInstruction
+                .newBuilder()
+                .setResult(InstructionResult
+                                   .newBuilder()
+                                   .setSuccess(false)
+                                   .setInstructionId(BAD_INSTRUCTION_ID)
+                                   .setError(ErrorMessage.newBuilder()
+                                                         .setMessage("SEP is not a Tracking Event Processor")
+                                                         .setErrorCode("AXONIQ-1004")
+                                                         .addDetails("SEP is not a Tracking Event Processor")
+                                   )
+                )
+                .build();
+    }
+
+    @Nonnull
+    private EventProcessorSegmentReference sep() {
+        return EventProcessorSegmentReference
+                .newBuilder().setProcessorName(SUBSCRIBING_EVENT_PROCESSOR).build();
     }
 }
