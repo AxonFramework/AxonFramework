@@ -165,9 +165,9 @@ class EventProcessorControlServiceTest {
                                    .setSuccess(false)
                                    .setInstructionId(BAD_INSTRUCTION_ID)
                                    .setError(ErrorMessage.newBuilder()
-                                                         .setMessage("SEP is not a Tracking Event Processor")
+                                                         .setMessage("Failed to split segment [0] for processor [SEP]")
                                                          .setErrorCode("AXONIQ-1004")
-                                                         .addDetails("SEP is not a Tracking Event Processor")
+                                                         .addDetails("Failed to split segment [0] for processor [SEP]")
                                    )
                 )
                 .build();
