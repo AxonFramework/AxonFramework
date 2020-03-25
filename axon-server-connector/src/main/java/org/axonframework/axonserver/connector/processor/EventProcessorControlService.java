@@ -157,13 +157,14 @@ public class EventProcessorControlService {
         EventProcessorSegmentReference splitSegment = platformOutboundInstruction.getSplitEventProcessorSegment();
         int segmentId = splitSegment.getSegmentIdentifier();
         String processorName = splitSegment.getProcessorName();
+        String errorMessage = format("Failed to split segment [%s] for processor [%s]", segmentId, processorName);
         try {
             if (!eventProcessorController.splitSegment(processorName, segmentId)) {
-                throw new IllegalArgumentException(format("%s is not a Tracking Event Processor", processorName));
+                throw new RuntimeException(errorMessage);
             }
             resultPublisher.publishSuccessFor(platformOutboundInstruction.getInstructionId());
         } catch (Exception e) {
-            logger.error("Failed to split segment [{}] for processor [{}]", segmentId, processorName, e);
+            logger.error(errorMessage, e);
             resultPublisher.publishFailureFor(platformOutboundInstruction.getInstructionId(), e);
         }
     }
@@ -172,13 +173,14 @@ public class EventProcessorControlService {
         EventProcessorSegmentReference mergeSegment = platformOutboundInstruction.getMergeEventProcessorSegment();
         String processorName = mergeSegment.getProcessorName();
         int segmentId = mergeSegment.getSegmentIdentifier();
+        String errorMessage = format("Failed to merge segment [%s] for processor [%s]", segmentId, processorName);
         try {
             if (!eventProcessorController.mergeSegment(processorName, segmentId)) {
-                throw new IllegalArgumentException(format("%s is not a Tracking Event Processor", processorName));
+                throw new RuntimeException(errorMessage);
             }
             resultPublisher.publishSuccessFor(platformOutboundInstruction.getInstructionId());
         } catch (Exception e) {
-            logger.error("Failed to merge segment [{}] for processor [{}]", segmentId, processorName, e);
+            logger.error(errorMessage, e);
             resultPublisher.publishFailureFor(platformOutboundInstruction.getInstructionId(), e);
         }
     }

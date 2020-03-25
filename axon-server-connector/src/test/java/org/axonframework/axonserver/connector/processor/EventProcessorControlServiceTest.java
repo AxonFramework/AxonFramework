@@ -35,10 +35,10 @@ import static org.mockito.Mockito.*;
 
 class EventProcessorControlServiceTest {
 
-    public static final String GOOD_INSTRUCTION_ID = "goodInstructionId";
-    public static final String TRACKING_EVENT_PROCESSOR = "TEP";
-    public static final String BAD_INSTRUCTION_ID = "badInstructionId";
-    public static final String SUBSCRIBING_EVENT_PROCESSOR = "SEP";
+    private static final String GOOD_INSTRUCTION_ID = "goodInstructionId";
+    private static final String TRACKING_EVENT_PROCESSOR = "TEP";
+    private static final String BAD_INSTRUCTION_ID = "badInstructionId";
+    private static final String SUBSCRIBING_EVENT_PROCESSOR = "SEP";
     private final AxonServerConfiguration configuration = mock(AxonServerConfiguration.class);
     private final AxonServerConnectionManager axonServerConnectionManager = mock(AxonServerConnectionManager.class);
     private final EventProcessorController eventProcessorController = mock(EventProcessorController.class);
