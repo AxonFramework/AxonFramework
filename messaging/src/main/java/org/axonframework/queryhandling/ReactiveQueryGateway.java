@@ -183,15 +183,15 @@ public interface ReactiveQueryGateway {
                                  TimeUnit timeUnit);
 
     /**
-     * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
+     * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
-     * <p><b>Do note that query will not be dispatched until there is a subscription to the resulting {@link
+     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
-     * the {@link QueryBus} instead.
+     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@code QueryBus} instead.
      *
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
