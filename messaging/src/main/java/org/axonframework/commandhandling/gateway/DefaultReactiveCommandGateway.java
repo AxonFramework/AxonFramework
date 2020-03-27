@@ -32,7 +32,7 @@ import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Default implementation of {@link ReactiveCommandGateway}.
+ * Default implementation of the {@link ReactiveCommandGateway}.
  *
  * @author Milan Savic
  * @since 4.4
