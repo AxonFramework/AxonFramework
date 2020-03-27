@@ -110,8 +110,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * {@link <a href="https://github.com/AxonFramework/AxonFramework/pull/1354">github issue</a>}
      * @see org.springframework.beans.factory.support.NullBean#equals
      *
-     * @param bean bean to check
-     * @return true if bean is NullBean
+     * @param bean the {@link Object} to verify if it is a {@link org.springframework.beans.factory.support.NullBean}
+     * @return {@code true} if the given {@code bean} is of type {@link org.springframework.beans.factory.support.NullBean} and {@code false} otherwise
      */
     private boolean isNullBean(final Object bean) {
         return bean.equals(null);
