@@ -117,14 +117,14 @@ public interface ReactiveQueryGateway {
     <R, Q> Mono<R> query(String queryName, Mono<Q> query, ResponseType<R> responseType);
 
     /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources. The flux is completed when a {@code timeout} occurs or when all results are received. The
+     * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
+     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all possible results are received. The
      * query name will be derived from the provided {@code query}. Execution may be asynchronous, depending on the
-     * QueryBus implementation.
-     * <p><b>Do note that query will not be dispatched until there is a subscription to the resulting {@link
+     * {@code QueryBus} implementation.
+     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
-     * <b>Note</b>: Any {@code null} results will be filtered out by the QueryGateway. If you require the {@code null}
-     * to be returned, we suggest using {@link QueryBus} instead.
+     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require the {@code null}
+     * to be returned, we suggest using {@code QueryBus} instead.
      *
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
