@@ -162,13 +162,13 @@ public interface ReactiveQueryGateway {
     }
 
     /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources. The flux is completed when a {@code timeout} occurs or when all results are received.
-     * Execution may be asynchronous, depending on the QueryBus implementation.
-     * <p><b>Do note that query will not be dispatched until there is a subscription to the resulting {@link
+     * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
+     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all results are received.
+     * Execution may be asynchronous, depending on the {@code QueryBus} implementation.
+     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
-     * <b>Note</b>: Any {@code null} results will be filtered out by the QueryGateway. If you require the {@code null}
-     * to be returned, we suggest using {@link QueryBus} instead.
+     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require the {@code null}
+     * to be returned, we suggest using {@code QueryBus} instead.
      *
      * @param queryName    A {@link String} describing the query to be executed
      * @param query        a {@link Mono} which is resolved once the caller subscribes to the query result
