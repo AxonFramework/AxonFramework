@@ -117,6 +117,24 @@
             </build>
         </profile>
 
+        <profile>
+            <id>ossrh</id>
+            <repositories>
+                <repository>
+                    <id>sonatype</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <checksumPolicy>fail</checksumPolicy>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                </repository>
+            </repositories>
+
+        </profile>
     </profiles>
 
     <properties>
@@ -140,7 +158,7 @@
         -->
         <grpc.version>1.22.1</grpc.version>
         <netty.tcnative.version>2.0.25.Final</netty.tcnative.version>
-        <axonserver.api.version>4.3</axonserver.api.version>
+        <axonserver.api.version>4.4-SNAPSHOT</axonserver.api.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.0.0</javax.cache-api.version>
         <javax.el-api.version>2.2.4</javax.el-api.version>
@@ -149,7 +167,7 @@
         <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
         <javax.jaxb-api.version>2.3.0</javax.jaxb-api.version>
         <disruptor.version>3.4.2</disruptor.version>
-        <mysql-connector-java.version>5.1.31</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.19</mysql-connector-java.version>
         <ehcache.version>2.10.6</ehcache.version>
         <quartz.version>2.3.0</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -638,21 +656,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <checksumPolicy>fail</checksumPolicy>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
 
     <!-- deploy and release configuration -->
     <distributionManagement>
