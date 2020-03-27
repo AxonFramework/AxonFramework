@@ -576,10 +576,8 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
-            Component<EventProcessor> eps = eventProcessors.get(processorName);
-            if (eps != null && eps.isInitialized()) {
-                eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
-            }
+            eventProcessor(processorName).ifPresent(eventProcessor -> eventProcessor
+                    .registerHandlerInterceptor(interceptorBuilder.apply(configuration)));
         }
         this.handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                         .add(interceptorBuilder);

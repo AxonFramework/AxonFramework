@@ -42,7 +42,9 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -58,10 +60,21 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test class to cover all the operations performed by the {@link AxonServerCommandBus}.
@@ -261,10 +274,10 @@ class AxonServerCommandBusTest {
     @Test
     void subscribe() {
         Registration registration = testSubject.subscribe(String.class.getName(), c -> "Done");
-        assertWithin(500, TimeUnit.MILLISECONDS, () ->
+        assertWithin(100, TimeUnit.MILLISECONDS, () ->
                 assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
         registration.cancel();
-        assertWithin(500, TimeUnit.MILLISECONDS, () ->
+        assertWithin(100, TimeUnit.MILLISECONDS, () ->
                 assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
 
@@ -493,7 +506,7 @@ class AxonServerCommandBusTest {
         try {
             inboundStreamObserverRef.get().onNext(testCommandMessage);
         } finally {
-            disconnected = testSubject.shutdownDispatching();
+            disconnected = CompletableFuture.runAsync(testSubject::disconnect);
             slowHandlerLock.unlock();
         }
 
@@ -507,12 +520,9 @@ class AxonServerCommandBusTest {
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
         testSubject.shutdownDispatching();
 
-        assertWithin(
-                50, TimeUnit.MILLISECONDS,
-                () -> assertThrows(
-                        ShutdownInProgressException.class,
-                        () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
-                )
+        assertThrows(
+                ShutdownInProgressException.class,
+                () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
         );
     }
 

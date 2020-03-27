@@ -98,13 +98,4 @@ public class Component<B> {
         Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
         this.builderFunction = builderFunction;
     }
-
-    /**
-     * Checks if the component is already initialized.
-     *
-     * @return true if component is initialized
-     */
-    public boolean isInitialized() {
-        return instance != null;
-    }
 }

@@ -37,15 +37,11 @@ public class StubServer {
     }
 
     public StubServer(int port, PlatformService platformService) {
-        this(port, platformService, new EventStoreImpl());
-    }
-
-    public StubServer(int port, PlatformService platformService, EventStoreImpl eventStore) {
         this.port = port;
         server = NettyServerBuilder.forPort(port)
-                                   .addService(eventStore)
-                                   .addService(platformService)
-                                   .build();
+                .addService(new EventStoreImpl())
+                .addService(platformService)
+                .build();
         this.platformService = platformService;
     }
 

@@ -81,6 +81,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -313,7 +314,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         return new AxonServerRegistration(
                 queryProcessor.subscribe(queryName, responseType, configuration.getComponentName(), handler),
-                () -> queryProcessor.removeAndUnsubscribe(queryName, responseType, configuration.getComponentName())
+                () -> queryProcessor.unsubscribeAndRemove(queryName, responseType, configuration.getComponentName())
         );
     }
 
@@ -527,12 +528,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     /**
-     * Disconnect the query bus from Axon Server, by unsubscribing all known query handlers. This shutdown operation is
+     * Disconnect the query bus from Axon Server, by unsubscribing all known query handlers. After this the connection
+     * will be closed, waiting nicely until all query processing tasks have been resolved. This shutdown operation is
      * performed in the {@link Phase#INBOUND_QUERY_CONNECTOR} phase.
      */
     @ShutdownHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
     public void disconnect() {
         queryProcessor.unsubscribeAll();
+        queryProcessor.disconnect();
     }
 
     /**
@@ -544,9 +547,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        return CompletableFuture.runAsync(queryProcessor::disconnect)
-                                .thenCompose(r -> shutdownLatch.initiateShutdown())
-                                .thenRun(queryProcessor::removeLocalSubscriptions);
+        queryProcessor.removeLocalSubscriptions();
+        return shutdownLatch.initiateShutdown();
     }
 
     private class QueryProcessor {
@@ -755,19 +757,21 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         private void unsubscribeAll() {
-            if (outboundStreamObserver != null) {
+            StreamObserver<QueryProviderOutbound> out = outboundStreamObserver;
+            if (out != null) {
+                outboundStreamObserver = null;
                 subscribedQueries.keySet().forEach(this::unsubscribe);
+                out.onCompleted();
             }
         }
 
-        public void removeAndUnsubscribe(String queryName, Type responseType, String componentName) {
-            removeAndUnsubscribe(new QueryDefinition(queryName, responseType.getTypeName(), componentName));
+        public void unsubscribeAndRemove(String queryName, Type responseType, String componentName) {
+            unsubscribeAndRemove(new QueryDefinition(queryName, responseType.getTypeName(), componentName));
         }
 
-        private void removeAndUnsubscribe(QueryDefinition queryDefinition) {
-            if (subscribedQueries.remove(queryDefinition) != null) {
-                unsubscribe(queryDefinition);
-            }
+        private void unsubscribeAndRemove(QueryDefinition queryDefinition) {
+            subscribedQueries.remove(queryDefinition);
+            unsubscribe(queryDefinition);
         }
 
         private void unsubscribe(QueryDefinition queryDefinition) {
@@ -787,6 +791,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         void disconnect() {
+            if (outboundStreamObserver != null) {
+                outboundStreamObserver.onCompleted();
+            }
+
             running = false;
             queryExecutor.shutdown();
             try {
@@ -803,9 +811,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 Thread.currentThread().interrupt();
             }
 
-            if (outboundStreamObserver != null) {
-                outboundStreamObserver.onCompleted();
-            }
+            Optional.ofNullable(this.outboundStreamObserver).ifPresent(StreamObserver::onCompleted);
         }
 
         private QuerySubscription buildQuerySubscription(QueryDefinition queryDefinition, int nrHandlers) {

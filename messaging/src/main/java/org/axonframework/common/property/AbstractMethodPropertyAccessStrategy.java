@@ -19,7 +19,6 @@ package org.axonframework.common.property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
 /**
@@ -32,7 +31,7 @@ import java.lang.reflect.Method;
  */
 public abstract class AbstractMethodPropertyAccessStrategy extends PropertyAccessStrategy {
 
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final Logger logger = LoggerFactory.getLogger(BeanPropertyAccessStrategy.class);
 
     @Override
     public <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {

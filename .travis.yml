@@ -20,7 +20,7 @@ cache:
   - $HOME/.m2
 
 script:
-  - mvn clean verify -B -P ossrh
+  - mvn clean verify -B
 
 notifications:
   slack:

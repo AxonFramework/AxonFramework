@@ -21,7 +21,6 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -39,7 +38,7 @@ import java.util.function.Consumer;
  */
 public class QueryResultBuffer implements QueryResultStream {
 
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final Logger logger = LoggerFactory.getLogger(EventBuffer.class);
 
     private final BlockingQueue<RowResponse> queryResultQueue;
 

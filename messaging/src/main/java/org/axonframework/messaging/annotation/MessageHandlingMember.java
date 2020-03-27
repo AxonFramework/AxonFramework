@@ -50,9 +50,7 @@ public interface MessageHandlingMember<T> {
      *
      * @return Number indicating the priority of this handler over other handlers
      */
-    default int priority() {
-        return 0;
-    }
+    int priority();
 
     /**
      * Checks if this handler is capable of handling the given {@code message}.

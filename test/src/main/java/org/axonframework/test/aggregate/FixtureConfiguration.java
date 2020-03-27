@@ -202,7 +202,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor);
+            MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor);
 
     /**
      * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
@@ -213,7 +213,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor);
+            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor);
 
     /**
      * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
@@ -224,7 +224,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor);
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor);
 
     /**
      * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
@@ -234,7 +234,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor);
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.

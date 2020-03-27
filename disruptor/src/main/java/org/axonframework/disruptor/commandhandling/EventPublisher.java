@@ -25,7 +25,6 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -41,7 +40,7 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
  */
 public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
 
     private final Executor executor;
     private final RollbackConfiguration rollbackConfiguration;

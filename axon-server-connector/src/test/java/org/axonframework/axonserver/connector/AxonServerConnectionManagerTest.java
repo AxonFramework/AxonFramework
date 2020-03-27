@@ -24,9 +24,7 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.config.TagsConfiguration;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -37,13 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link AxonServerConnectionManager}.
@@ -106,7 +99,7 @@ class AxonServerConnectionManagerTest {
     void testConnectionTimeout() throws IOException, InterruptedException {
         String version = "4.2.1";
         stubServer.shutdown();
-        stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()){
+        stubServer = new StubServer(stubServer.getPort(), new PlatformService(secondNode.getPort()){
             @Override
             public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
                 // ignore calls

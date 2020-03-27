@@ -750,10 +750,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
-            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -791,10 +791,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
-            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -851,10 +851,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
-            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -889,10 +889,10 @@ class TrackingEventProcessorTest {
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
             }
-            handled.add(message.getIdentifier());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -1081,9 +1081,7 @@ class TrackingEventProcessorTest {
     @Test
     @Timeout(value = 10)
     void testMergeSegments_BothClaimedByProcessor() throws Exception {
-        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
-                                                         .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS)
-                                                         .andBatchSize(100));
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         int segmentId = 0;
@@ -1094,14 +1092,6 @@ class TrackingEventProcessorTest {
 
         testSubject.start();
         waitForActiveThreads(2);
-
-        assertWithin(
-                5, TimeUnit.SECONDS,
-                () -> assertEquals(
-                        10, handledEvents.stream().map(EventMessage::getIdentifier).distinct().count(),
-                        "Expected message to be handled"
-                )
-        );
 
         assertFalse(testSubject.processingStatus().get(segmentId).isMerging());
         assertFalse(testSubject.processingStatus().get(segmentId).mergeCompletedPosition().isPresent());
@@ -1116,6 +1106,18 @@ class TrackingEventProcessorTest {
         long mergeCompletedPosition = status.mergeCompletedPosition().getAsLong();
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
+        waitForProcessingStatus(segmentId, EventTrackerStatus::isCaughtUp);
+
+        assertWithin(
+                5, TimeUnit.SECONDS,
+                () -> assertEquals(
+                        10, handledEvents.stream().map(EventMessage::getIdentifier).distinct().count(),
+                        "Expected all 10 messages to be handled"
+                )
+        );
+
+        Thread.sleep(100);
+        assertEquals(10, handledEvents.size(), "Number of handler invocations doesn't match number of unique events");
 
         publishEvents(1);
         status = waitForProcessingStatus(segmentId, s -> !s.isMerging());
@@ -1484,7 +1486,7 @@ class TrackingEventProcessorTest {
         while (!Optional.ofNullable(status)
                         .map(expectedStatus::test)
                         .orElse(false)) {
-            Thread.sleep(1);
+            Thread.sleep(10);
             status = testSubject.processingStatus().get(segmentId);
         }
         return status;

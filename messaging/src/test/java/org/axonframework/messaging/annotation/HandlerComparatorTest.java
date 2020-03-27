@@ -21,16 +21,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class HandlerComparatorTest {
 
@@ -38,7 +31,6 @@ class HandlerComparatorTest {
     private MessageHandlingMember<?> objectHandler;
     private MessageHandlingMember<?> longHandler;
     private MessageHandlingMember<?> numberHandler;
-    private MessageHandlingMember<?> priorityHandler;
 
     private Comparator<MessageHandlingMember<?>> testSubject;
 
@@ -47,8 +39,7 @@ class HandlerComparatorTest {
         stringHandler = new StubMessageHandlingMember(String.class, 0);
         objectHandler = new StubMessageHandlingMember(Object.class, 0);
         longHandler = new StubMessageHandlingMember(Long.class, 0);
-        numberHandler = new StubMessageHandlingMember(Number.class, 0);
-        priorityHandler = new StubMessageHandlingMember(Object.class, 1);
+        numberHandler = new StubMessageHandlingMember(Number.class, 1);
 
         testSubject = HandlerComparator.instance();
     }
@@ -74,14 +65,12 @@ class HandlerComparatorTest {
         assertEquals(0, testSubject.compare(objectHandler, objectHandler));
         assertEquals(0, testSubject.compare(longHandler, longHandler));
         assertEquals(0, testSubject.compare(numberHandler, numberHandler));
-        assertEquals(0, testSubject.compare(priorityHandler, priorityHandler));
 
         assertNotEquals(0, testSubject.compare(stringHandler, objectHandler));
         assertNotEquals(0, testSubject.compare(longHandler, stringHandler));
         assertNotEquals(0, testSubject.compare(numberHandler, stringHandler));
         assertNotEquals(0, testSubject.compare(objectHandler, longHandler));
         assertNotEquals(0, testSubject.compare(objectHandler, numberHandler));
-        assertNotEquals(0, testSubject.compare(priorityHandler, numberHandler));
     }
 
     @Test
@@ -95,8 +84,8 @@ class HandlerComparatorTest {
 
     @Test
     void testNotInSameHierarchyUsesPriorityBasedEvaluation() {
-        assertTrue(testSubject.compare(priorityHandler, stringHandler) < 0, "priorityHandler should appear before String based on priority");
-        assertTrue(testSubject.compare(stringHandler, priorityHandler) > 0, "priorityHandler should appear before String based on priority");
+        assertTrue(testSubject.compare(numberHandler, stringHandler) < 0, "Number should appear before String based on priority");
+        assertTrue(testSubject.compare(stringHandler, numberHandler) > 0, "Number should appear before String based on priority");
     }
 
     private static class StubMessageHandlingMember implements MessageHandlingMember<Object> {
