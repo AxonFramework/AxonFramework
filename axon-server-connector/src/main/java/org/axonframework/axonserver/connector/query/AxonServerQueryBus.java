@@ -719,6 +719,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 @Override
                 public void onError(Throwable ex) {
                     logger.warn("Query Inbound Stream closed with error", ex);
+                    outboundStreamObserver = null;
                 }
 
                 @Override
