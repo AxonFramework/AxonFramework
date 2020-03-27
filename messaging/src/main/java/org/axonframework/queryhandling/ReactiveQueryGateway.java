@@ -68,10 +68,10 @@ public interface ReactiveQueryGateway {
     }
 
     /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
+     * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
      * from a single source. The query name will be derived from the provided {@code query}. Execution may be
-     * asynchronous, depending on the QueryBus implementation.
-     * <p><b>Do note that query will not be dispatched until there is a subscription to the resulting {@link
+     * asynchronous, depending on the {@code QueryBus} implementation.
+     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
      *
      * @param query        The {@code query} to be sent
