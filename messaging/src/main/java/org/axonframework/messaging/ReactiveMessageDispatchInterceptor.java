@@ -23,8 +23,8 @@ import java.util.function.Supplier;
 
 /**
  * Interceptor that allows messages to be intercepted and modified before they are dispatched. Implementations are
- * required to provide a function that modifies a {@link Mono} of a message and returns a modified/new {@link Mono} to
- * be passed down the interceptor chain or to be sent. This way we provide a reactive way to intercept messages.
+ * required to provide a function that modifies a {@link Mono} of a message and returns a modified/new {@code Mono} to
+ * be passed down the interceptor chain or to be dispatched. This way we provide a reactive approach to intercepting messages.
  *
  * @param <T> the message type this interceptor can process
  * @author Milan Savic
