@@ -177,7 +177,7 @@ public interface ReactiveQueryGateway {
      * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A flux of results.
+     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}     
      */
     <R, Q> Flux<R> scatterGather(String queryName, Mono<Q> query, ResponseType<R> responseType, long timeout,
                                  TimeUnit timeUnit);
