@@ -104,7 +104,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     }
 
     /**
-     * Check if bean is NullBean
+     * Verify if the given {@code bean} is a {@link org.springframework.beans.factory.support.NullBean} instance.
+     * If this is the case, a call to {@link org.springframework.beans.factory.support.NullBean#equals} using {@code null} will return {@code true}.
      *
      * {@link <a href="https://github.com/AxonFramework/AxonFramework/pull/1354">github issue</a>}
      * @see org.springframework.beans.factory.support.NullBean#equals
