@@ -31,9 +31,9 @@ public interface ReactiveCommandGateway {
     /**
      * Sends the given {@code command} once the caller subscribes to the command result. Returns immediately.
      * <p/>
-     * The given {@code command} is wrapped as the payload of the CommandMessage that is eventually posted on the
-     * Command Bus, unless Command already implements {@link Message}. In that case, a
-     * CommandMessage is constructed from that message's payload and MetaData.
+     * The given {@code command} is wrapped as the payload of a {@link CommandMessage} that is eventually posted on the
+     * {@link CommandBus}, unless the {@code command} already implements {@link Message}. In that case, a
+     * {@code CommandMessage} is constructed from that message's payload and {@link MetaData}.
      *
      * @param command the command to dispatch
      * @param <R>     the type of the command result
