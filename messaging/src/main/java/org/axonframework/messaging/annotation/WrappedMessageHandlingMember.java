@@ -71,6 +71,8 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
         if (handlerType.isInstance(this)) {
             return (Optional<HT>) Optional.of(this);
+        } else if (handlerType.isInstance(delegate)) {
+            return (Optional<HT>) Optional.of(delegate);
         }
         return delegate.unwrap(handlerType);
     }

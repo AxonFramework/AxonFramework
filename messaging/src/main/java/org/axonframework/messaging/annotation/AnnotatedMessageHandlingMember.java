@@ -171,6 +171,9 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     @SuppressWarnings("unchecked")
     @Override
     public <H> Optional<H> unwrap(Class<H> handlerType) {
+        if (handlerType.isInstance(this)) {
+            return (Optional<H>) Optional.of(this);
+        }
         if (handlerType.isInstance(executable)) {
             return (Optional<H>) Optional.of(executable);
         }
