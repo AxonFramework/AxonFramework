@@ -314,7 +314,7 @@ public interface ReactiveQueryGateway {
     }
 
     /**
-     * Sends thegiven {@code query} over the {@link QueryBus} and returns result containing initial response and
+     * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
      * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link

@@ -19,6 +19,7 @@ package org.axonframework.springboot;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.ReactiveCommandGateway;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
@@ -38,6 +39,7 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.ReactiveQueryGateway;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
@@ -104,6 +106,8 @@ public class AxonAutoConfigurationTest {
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
+        assertNotNull(applicationContext.getBean(ReactiveCommandGateway.class));
+        assertNotNull(applicationContext.getBean(ReactiveQueryGateway.class));
         assertEquals(MultiParameterResolverFactory.class,
                      applicationContext.getBean(ParameterResolverFactory.class).getClass());
         assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());

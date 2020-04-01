@@ -30,6 +30,7 @@ import java.util.function.Supplier;
  * @author Milan Savic
  * @since 4.4
  */
+@FunctionalInterface
 public interface ReactiveMessageDispatchInterceptor<T extends Message<?>> extends Supplier<Function<Mono<T>, Mono<T>>> {
 
     /**

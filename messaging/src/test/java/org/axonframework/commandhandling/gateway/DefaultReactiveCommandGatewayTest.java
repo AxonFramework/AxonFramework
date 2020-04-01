@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
-public class DefaultReactiveCommandGatewayTest {
+class DefaultReactiveCommandGatewayTest {
 
     private DefaultReactiveCommandGateway reactiveCommandGateway;
     private MessageHandler<CommandMessage<?>> commandMessageHandler;

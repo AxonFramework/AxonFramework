@@ -99,7 +99,6 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <R, Q> Mono<R> query(String queryName, Mono<Q> query, ResponseType<R> responseType) {
         return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
                 .flatMap(queryMessage -> Mono.create(
@@ -111,6 +110,7 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
                                     if (response.isExceptional()) {
                                         sink.error(response.exceptionResult());
                                     } else {
+                                        //noinspection unchecked
                                         sink.success(((QueryResponseMessage<R>) response).getPayload());
                                     }
                                 }

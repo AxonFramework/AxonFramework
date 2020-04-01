@@ -16,7 +16,10 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 import reactor.core.publisher.Mono;
 
 /**
