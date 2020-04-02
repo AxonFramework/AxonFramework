@@ -144,14 +144,16 @@ public class AnnotatedHandlerInspector<T> {
                                                                     HandlerDefinition handlerDefinition,
                                                                     Map<Class<?>, AnnotatedHandlerInspector<?>> registry,
                                                                     Set<Class<? extends T>> declaredSubtypes) {
-        return (AnnotatedHandlerInspector<T>)
-                registry.computeIfAbsent(
-                        inspectedType,
-                        type -> AnnotatedHandlerInspector.initialize((Class<T>) inspectedType,
-                                                                     parameterResolverFactory,
-                                                                     handlerDefinition,
-                                                                     registry,
-                                                                     declaredSubtypes));
+        if (!registry.containsKey(inspectedType)) {
+            registry.put(inspectedType,
+                         AnnotatedHandlerInspector.initialize((Class<T>) inspectedType,
+                                                              parameterResolverFactory,
+                                                              handlerDefinition,
+                                                              registry,
+                                                              declaredSubtypes));
+        }
+        //noinspection unchecked
+        return (AnnotatedHandlerInspector<T>) registry.get(inspectedType);
     }
 
     private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
