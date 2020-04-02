@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ReactiveMessageDispatchInterceptorSupport;
 import reactor.core.publisher.Mono;
 
 /**
@@ -29,7 +30,7 @@ import reactor.core.publisher.Mono;
  * @author Milan Savic
  * @since 4.4
  */
-public interface ReactiveCommandGateway {
+public interface ReactiveCommandGateway extends ReactiveMessageDispatchInterceptorSupport<CommandMessage<?>> {
 
     /**
      * Sends the given {@code command} once the caller subscribes to the command result. Returns immediately.

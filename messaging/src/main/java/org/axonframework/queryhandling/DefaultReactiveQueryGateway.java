@@ -74,13 +74,8 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
         return new Builder();
     }
 
-    /**
-     * Registers a {@link ReactiveMessageDispatchInterceptor} within this reactive gateway.
-     *
-     * @param interceptor intercepts a query message
-     * @return a registration which can be used to unregister this {@code interceptor}
-     */
-    public Registration registerQueryDispatchInterceptor(
+    @Override
+    public Registration registerDispatchInterceptor(
             ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);

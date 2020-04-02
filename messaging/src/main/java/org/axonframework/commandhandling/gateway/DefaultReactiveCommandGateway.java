@@ -96,14 +96,8 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
                         }));
     }
 
-    /**
-     * Registers a {@link ReactiveMessageDispatchInterceptor} within this reactive gateway.
-     *
-     * @param interceptor intercepts a command message
-     * @return a registration which can be used to unregister this {@code interceptor}
-     */
-    public Registration registerCommandDispatchInterceptor(
-            ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
+    @Override
+    public Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }

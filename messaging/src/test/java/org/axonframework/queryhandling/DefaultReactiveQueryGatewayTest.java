@@ -95,10 +95,10 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testQueryWithDispatchInterceptor() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> queryMono
+                .registerDispatchInterceptor(() -> queryMono -> queryMono
                         .map(query -> query.andMetaData(Collections.singletonMap("key1", "value1"))));
         Registration registration2 = reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> queryMono
+                .registerDispatchInterceptor(() -> queryMono -> queryMono
                         .map(query -> query.andMetaData(Collections.singletonMap("key2", "value2"))));
 
         StepVerifier.create(reactiveQueryGateway.query(true, String.class))
@@ -115,7 +115,7 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testQueryWithDispatchInterceptorThrowingAnException() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> {
+                .registerDispatchInterceptor(() -> queryMono -> {
                     throw new RuntimeException();
                 });
         StepVerifier.create(reactiveQueryGateway.query(true, String.class))
@@ -125,7 +125,7 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testQueryWithDispatchInterceptorReturningErrorMono() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> Mono.error(new RuntimeException()));
+                .registerDispatchInterceptor(() -> queryMono -> Mono.error(new RuntimeException()));
         StepVerifier.create(reactiveQueryGateway.query(true, String.class))
                     .verifyError(RuntimeException.class);
     }
@@ -164,10 +164,10 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testScatterGatherWithDispatchInterceptor() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> queryMono
+                .registerDispatchInterceptor(() -> queryMono -> queryMono
                         .map(query -> query.andMetaData(Collections.singletonMap("key1", "value1"))));
         Registration registration2 = reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> queryMono
+                .registerDispatchInterceptor(() -> queryMono -> queryMono
                         .map(query -> query.andMetaData(Collections.singletonMap("key2", "value2"))));
 
         StepVerifier.create(reactiveQueryGateway
@@ -185,7 +185,7 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testScatterGatherWithDispatchInterceptorThrowingAnException() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> {
+                .registerDispatchInterceptor(() -> queryMono -> {
                     throw new RuntimeException();
                 });
         StepVerifier.create(reactiveQueryGateway
@@ -196,7 +196,7 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testScatterGatherWithDispatchInterceptorReturningErrorMono() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> Mono.error(new RuntimeException()));
+                .registerDispatchInterceptor(() -> queryMono -> Mono.error(new RuntimeException()));
         StepVerifier.create(reactiveQueryGateway
                                     .scatterGather(true, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS))
                     .verifyError(RuntimeException.class);
@@ -258,10 +258,10 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testSubscriptionQueryWithDispatchInterceptor() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> queryMono
+                .registerDispatchInterceptor(() -> queryMono -> queryMono
                         .map(query -> query.andMetaData(Collections.singletonMap("key1", "value1"))));
         Registration registration2 = reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> queryMono
+                .registerDispatchInterceptor(() -> queryMono -> queryMono
                         .map(query -> query.andMetaData(Collections.singletonMap("key2", "value2"))));
 
         Mono<SubscriptionQueryResult<String, String>> monoResult = reactiveQueryGateway
@@ -285,7 +285,7 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testSubscriptionQueryWithDispatchInterceptorThrowingAnException() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> {
+                .registerDispatchInterceptor(() -> queryMono -> {
                     throw new RuntimeException();
                 });
         StepVerifier.create(reactiveQueryGateway.subscriptionQuery(true, String.class, String.class))
@@ -295,7 +295,7 @@ public class DefaultReactiveQueryGatewayTest {
     @Test
     void testSubscriptionQueryWithDispatchInterceptorReturningErrorMono() {
         reactiveQueryGateway
-                .registerQueryDispatchInterceptor(() -> queryMono -> Mono.error(new RuntimeException()));
+                .registerDispatchInterceptor(() -> queryMono -> Mono.error(new RuntimeException()));
         StepVerifier.create(reactiveQueryGateway.subscriptionQuery(true, String.class, String.class))
                     .verifyError(RuntimeException.class);
     }

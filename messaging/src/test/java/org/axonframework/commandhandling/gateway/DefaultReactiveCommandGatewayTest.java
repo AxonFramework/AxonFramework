@@ -84,10 +84,10 @@ class DefaultReactiveCommandGatewayTest {
     @Test
     void testSendWithDispatchInterceptor() {
         reactiveCommandGateway
-                .registerCommandDispatchInterceptor(() -> cmdMono -> cmdMono
+                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
                         .map(cmd -> cmd.andMetaData(Collections.singletonMap("key1", "value1"))));
         Registration registration2 = reactiveCommandGateway
-                .registerCommandDispatchInterceptor(() -> cmdMono -> cmdMono
+                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
                         .map(cmd -> cmd.andMetaData(Collections.singletonMap("key2", "value2"))));
 
         StepVerifier.create(reactiveCommandGateway.send(true))
@@ -104,7 +104,7 @@ class DefaultReactiveCommandGatewayTest {
     @Test
     void testDispatchInterceptorThrowingAnException() {
         reactiveCommandGateway
-                .registerCommandDispatchInterceptor(() -> cmdMono -> {
+                .registerDispatchInterceptor(() -> cmdMono -> {
                     throw new RuntimeException();
                 });
         StepVerifier.create(reactiveCommandGateway.send(true))
@@ -114,7 +114,7 @@ class DefaultReactiveCommandGatewayTest {
     @Test
     void testDispatchInterceptorReturningErrorMono() {
         reactiveCommandGateway
-                .registerCommandDispatchInterceptor(() -> cmdMono -> Mono.error(new RuntimeException()));
+                .registerDispatchInterceptor(() -> cmdMono -> Mono.error(new RuntimeException()));
         StepVerifier.create(reactiveCommandGateway.send(true))
                     .verifyError(RuntimeException.class);
     }

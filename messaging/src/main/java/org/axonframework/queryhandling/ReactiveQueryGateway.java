@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.ReactiveMessageDispatchInterceptorSupport;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import reactor.core.publisher.Flux;
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @author Milan Savic
  * @since 4.4
  */
-public interface ReactiveQueryGateway {
+public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response with the given {@code responseType}
