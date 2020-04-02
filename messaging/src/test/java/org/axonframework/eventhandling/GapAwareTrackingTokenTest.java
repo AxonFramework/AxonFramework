@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,9 +29,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.emptySortedSet;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,11 +63,18 @@ class GapAwareTrackingTokenTest {
         }
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
-                "ExecutorService not stopped within expected reasonable time frame");
+                   "ExecutorService not stopped within expected reasonable time frame");
 
         assertTrue(counter.get() > 0, "The test did not seem to have generated any tokens");
         assertEquals(counter.get() - 1, currentToken.get().getIndex());
         assertEquals(emptySortedSet(), currentToken.get().getGaps());
+    }
+
+    @Test
+    void testInitializationWithNullGaps() {
+        GapAwareTrackingToken token = new GapAwareTrackingToken(10, null);
+        assertNotNull(token.getGaps());
+        assertEquals(0, token.getGaps().size());
     }
 
     @Test
