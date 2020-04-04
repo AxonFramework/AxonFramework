@@ -129,7 +129,7 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
                                         .filter(Objects::nonNull)
                                         .forEach(sink::next);
                                 sink.complete();
-                            } catch (Exception e){
+                            } catch (Exception e) {
                                 sink.error(e);
                             }
                         }

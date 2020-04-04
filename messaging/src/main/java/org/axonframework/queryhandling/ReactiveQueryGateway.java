@@ -119,13 +119,13 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all possible results are received. The
-     * query name will be derived from the provided {@code query}. Execution may be asynchronous, depending on the
-     * {@code QueryBus} implementation.
+     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all possible
+     * results are received. The query name will be derived from the provided {@code query}. Execution may be
+     * asynchronous, depending on the {@code QueryBus} implementation.
      * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
-     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require the {@code null}
-     * to be returned, we suggest using {@code QueryBus} instead.
+     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require
+     * the {@code null} to be returned, we suggest using {@code QueryBus} instead.
      *
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
@@ -133,7 +133,7 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}     
+     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}
      */
     default <R, Q> Flux<R> scatterGather(Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
         return scatterGather(query.getClass().getName(), query, responseType, timeout, timeUnit);
@@ -141,12 +141,12 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all results are received.
-     * Execution may be asynchronous, depending on the {@code QueryBus} implementation.
+     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all results
+     * are received. Execution may be asynchronous, depending on the {@code QueryBus} implementation.
      * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
-     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require the {@code null}
-     * to be returned, we suggest using {@code QueryBus} instead.
+     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require
+     * the {@code null} to be returned, we suggest using {@code QueryBus} instead.
      *
      * @param queryName    A {@link String} describing the query to be executed
      * @param query        The {@code query} to be sent
@@ -155,7 +155,7 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}     
+     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}
      */
     default <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
                                          TimeUnit timeUnit) {
@@ -164,12 +164,12 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all results are received.
-     * Execution may be asynchronous, depending on the {@code QueryBus} implementation.
+     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all results
+     * are received. Execution may be asynchronous, depending on the {@code QueryBus} implementation.
      * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Mono}</b></p>
-     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require the {@code null}
-     * to be returned, we suggest using {@code QueryBus} instead.
+     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require
+     * the {@code null} to be returned, we suggest using {@code QueryBus} instead.
      *
      * @param queryName    A {@link String} describing the query to be executed
      * @param query        a {@link Mono} which is resolved once the caller subscribes to the query result
@@ -178,7 +178,7 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}     
+     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}
      */
     <R, Q> Flux<R> scatterGather(String queryName, Mono<Q> query, ResponseType<R> responseType, long timeout,
                                  TimeUnit timeUnit);
@@ -191,8 +191,8 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results, we suggest using
-     * the {@code QueryBus} instead.
+     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
      *
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
@@ -221,8 +221,8 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results, we suggest using
-     * the {@code QueryBus} instead.
+     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
      *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               The {@code query} to be sent
@@ -254,8 +254,8 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results, we suggest using
-     * the {@code QueryBus} instead.
+     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
      *
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
@@ -286,8 +286,8 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results, we suggest using
-     * the {@code QueryBus} instead.
+     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
      *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               The {@code query} to be sent
@@ -322,8 +322,8 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results, we suggest using
-     * the {@code QueryBus} instead.
+     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
      *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               The {@code query} to be sent
@@ -361,8 +361,8 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results, we suggest using
-     * the {@code QueryBus} instead.
+     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
      *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               a {@link Mono} which is resolved once the caller subscribes to the query result
