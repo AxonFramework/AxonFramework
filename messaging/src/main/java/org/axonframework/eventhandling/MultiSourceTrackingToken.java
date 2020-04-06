@@ -76,9 +76,11 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) ->
-                                                       tokenMap.put(tokenSourceName,
-                                                                    trackingTokens.get(tokenSourceName).lowerBound(otherToken))
+        otherMultiToken.trackingTokens
+                .forEach((tokenSourceName, otherToken) ->
+                                 tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName) == null ?
+                                                    null :
+                                                    trackingTokens.get(tokenSourceName).lowerBound(otherToken))
         );
 
         return new MultiSourceTrackingToken(tokenMap);
@@ -104,8 +106,11 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) ->
-                                                       tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName).upperBound(otherToken))
+        otherMultiToken.trackingTokens
+                .forEach((tokenSourceName, otherToken) ->
+                                 tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName) == null ?
+                                                    otherToken :
+                                                    trackingTokens.get(tokenSourceName).upperBound(otherToken))
         );
 
         return new MultiSourceTrackingToken(tokenMap);
@@ -214,6 +219,10 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
         for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
             try {
+                if ( trackingTokenEntry.getValue() == null  && that.trackingTokens.get(trackingTokenEntry.getKey()) == null) {
+                    return true;
+                }
+
                 if (!trackingTokenEntry.getValue().equals(that.trackingTokens.get(trackingTokenEntry.getKey()))) {
                     return false;
                 }
