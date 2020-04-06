@@ -186,11 +186,12 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
     public OptionalLong position() {
 
         //If all delegated tokens are empty then return empty
-        if (trackingTokens.entrySet().stream().noneMatch(token -> token.getValue().position().isPresent())) {
+        if (trackingTokens.entrySet().stream().noneMatch(token -> token.getValue() != null && token.getValue().position().isPresent())) {
             return OptionalLong.empty();
         }
 
         long sumOfTokens = trackingTokens.values().stream()
+                                         .filter(Objects::nonNull)
                                          .mapToLong(trackingToken -> trackingToken.position().orElse(0L))
                                          .sum();
 

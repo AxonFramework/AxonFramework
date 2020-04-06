@@ -199,6 +199,28 @@ class MultiSourceTrackingTokenTest {
     }
 
     @Test
+    void positionWithNullValue() {
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
+        tokenMap.put("token1", new GlobalSequenceTrackingToken(10));
+        tokenMap.put("token2", null);
+
+        MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(tokenMap);
+
+        assertEquals(10, newMultiToken.position().orElse(-1));
+    }
+
+    @Test
+    void positionWithNullValue2() {
+        Map<String, TrackingToken> tokenMap = new HashMap<>();
+        tokenMap.put("token1", null);
+        tokenMap.put("token2", new GlobalSequenceTrackingToken(10));
+
+        MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(tokenMap);
+
+        assertEquals(10, newMultiToken.position().orElse(-1));
+    }
+
+    @Test
     void equals() {
         Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
