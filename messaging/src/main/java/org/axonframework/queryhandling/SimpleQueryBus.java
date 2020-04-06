@@ -198,9 +198,14 @@ public class SimpleQueryBus implements QueryBus {
                                    interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery),
                                                       handler);
                            QueryResponseMessage<R> response = null;
+                           //noinspection unchecked
+                           Class<R> responseType = (Class<R>) interceptedQuery.getResponseType()
+                                                                              .getExpectedResponseType();
                            if (resultMessage.isExceptional()) {
                                monitorCallback.reportFailure(resultMessage.exceptionResult());
                                errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
+                               response = GenericQueryResponseMessage.asResponseMessage(responseType,
+                                                                                        resultMessage.exceptionResult());
                            } else {
                                try {
                                    response = resultMessage.getPayload().get(leftTimeout, TimeUnit.MILLISECONDS);
@@ -208,6 +213,7 @@ public class SimpleQueryBus implements QueryBus {
                                } catch (Exception e) {
                                    monitorCallback.reportFailure(e);
                                    errorHandler.onError(e, interceptedQuery, handler);
+                                   response = GenericQueryResponseMessage.asResponseMessage(responseType, e);
                                }
                            }
                            return response;

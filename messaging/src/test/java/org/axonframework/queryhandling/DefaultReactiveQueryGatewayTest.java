@@ -208,8 +208,7 @@ public class DefaultReactiveQueryGatewayTest {
                                                                ResponseTypes.instanceOf(Integer.class),
                                                                1,
                                                                TimeUnit.SECONDS))
-                    .expectNextCount(0)
-                    .verifyComplete();
+                    .verifyError(RuntimeException.class);
     }
 
     @Test

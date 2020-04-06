@@ -125,9 +125,16 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
                         sink -> {
                             try {
                                 queryBus.scatterGather((QueryMessage<?, R>) queryMessage, timeout, timeUnit)
-                                        .map(Message::getPayload)
-                                        .filter(Objects::nonNull)
-                                        .forEach(sink::next);
+                                        .forEach(r -> {
+                                            if (r.isExceptional()) {
+                                                sink.error(r.exceptionResult());
+                                            } else {
+                                                R payload = r.getPayload();
+                                                if (payload != null) {
+                                                    sink.next(payload);
+                                                }
+                                            }
+                                        });
                                 sink.complete();
                             } catch (Exception e) {
                                 sink.error(e);
