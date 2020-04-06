@@ -261,10 +261,10 @@ class AxonServerCommandBusTest {
     @Test
     void subscribe() {
         Registration registration = testSubject.subscribe(String.class.getName(), c -> "Done");
-        assertWithin(100, TimeUnit.MILLISECONDS, () ->
+        assertWithin(500, TimeUnit.MILLISECONDS, () ->
                 assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
         registration.cancel();
-        assertWithin(100, TimeUnit.MILLISECONDS, () ->
+        assertWithin(500, TimeUnit.MILLISECONDS, () ->
                 assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
 
