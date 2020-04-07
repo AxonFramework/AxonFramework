@@ -789,12 +789,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                 @Override
                 public void onError(Throwable ex) {
                     logger.warn("Command Inbound Stream closed with error", ex);
+                    completeRequestStream();
                     subscriberStreamObserver = null;
                 }
 
                 @Override
                 public void onCompleted() {
                     logger.info("Received completed from server.");
+                    completeRequestStream();
                     subscriberStreamObserver = null;
                 }
             };
