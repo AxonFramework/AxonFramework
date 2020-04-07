@@ -217,21 +217,10 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
             return false;
         }
 
-        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
-            try {
-                if ( trackingTokenEntry.getValue() == null  && that.trackingTokens.get(trackingTokenEntry.getKey()) == null) {
-                    return true;
-                }
-
-                if (!trackingTokenEntry.getValue().equals(that.trackingTokens.get(trackingTokenEntry.getKey()))) {
-                    return false;
-                }
-            } catch (NullPointerException ex) {
-                logger.warn("A constituent token has not been initialized");
-                return false;
-            }
-        }
-        return true;
+        return trackingTokens.entrySet()
+                             .stream()
+                             .allMatch(trackingTokenEntry -> Objects.equals(trackingTokenEntry.getValue(),
+                                                                            that.trackingTokens.get(trackingTokenEntry.getKey())));
     }
 
     @Override
