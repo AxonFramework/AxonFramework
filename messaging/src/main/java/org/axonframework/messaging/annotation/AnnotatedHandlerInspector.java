@@ -227,7 +227,7 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     private void registerHandler(Class<?> type, MessageHandlingMember<? super T> handler) {
-        if (handler.unwrap(MessageHandlerInterceptorMember.class).isPresent()) {
+        if (handler.unwrap(MessageInterceptingMember.class).isPresent()) {
             interceptors.computeIfAbsent(type, t -> new TreeSet<>(HandlerComparator.instance()))
                         .add(handler);
 

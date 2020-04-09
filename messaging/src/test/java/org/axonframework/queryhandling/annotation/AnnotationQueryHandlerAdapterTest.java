@@ -16,10 +16,10 @@
 package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;

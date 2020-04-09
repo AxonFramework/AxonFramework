@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.interceptors;
+package org.axonframework.messaging.interceptors;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.MessageHandler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,20 +24,26 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation marking an handler method as an interceptor handler. Unlike regular handlers, interceptor handlers are
- * chained and do not block processing by other handlers. They can be used to add processing behavior either before,
- * after or both before and after processing of other handlers.
+ * Annotation marking a Handler as an interceptor for other handlers that is only interested in handling
+ * exception results. This handler method will be invoked after a regular handler has been executed and may receive the
+ * result of that handler as a parameter.
  * <p>
- * When parameters of an interceptor do not match the message, this will prevent the invocation of this handler, but it
- * will not block processing of any other handlers that do match.
+ * A handler will only be invoked when the parameters of this method match the combination of the handled Message and
+ * the result of the handler method invocation.
  *
  * @author Allard Buijze
  * @since 4.4
  */
-@MessageHandler
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-public @interface MessageHandlerInterceptor {
+@MessageHandlerInterceptor
+@ResultHandler(resultType = Exception.class)
+public @interface ExceptionHandler {
+
+    /**
+     * Defines the type of result this handler needs to be triggered for. Defaults to all {@code Exception}s.
+     */
+    Class<? extends Exception> resultType() default Exception.class;
 
     /**
      * Specifies the type of message that can be handled by the member method. Defaults to any {@link Message}.
@@ -50,4 +55,5 @@ public @interface MessageHandlerInterceptor {
      * be assignable to this type. Defaults to any {@link Object}.
      */
     Class<?> payloadType() default Object.class;
+
 }

@@ -46,6 +46,8 @@ public class InterceptorChainParameterResolverFactory
      * Initializes current unit of work with interceptor chain.
      *
      * @param interceptorChain the interceptor chain
+     *
+     * @deprecated in favor of {@link #callWithInterceptorChain(InterceptorChain, Callable)}
      */
     @Deprecated
     public static void initialize(InterceptorChain interceptorChain) {
@@ -93,9 +95,9 @@ public class InterceptorChainParameterResolverFactory
 
     @Override
     public InterceptorChain resolveParameterValue(Message<?> message) {
-        InterceptorChain tl = CURRENT.get();
-        if (tl != null) {
-            return tl;
+        InterceptorChain interceptorChain = CURRENT.get();
+        if (interceptorChain != null) {
+            return interceptorChain;
         }
         return CurrentUnitOfWork.map(uow -> (InterceptorChain) uow.getResource(INTERCEPTOR_CHAIN_EMITTER_KEY))
                                 .orElseThrow(() -> new IllegalStateException(

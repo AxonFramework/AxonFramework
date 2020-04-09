@@ -50,13 +50,10 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     @Override
     public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork, InterceptorChain interceptorChain)
             throws Exception {
-        return InterceptorChainParameterResolverFactory.callWithInterceptorChain(interceptorChain, () -> {
-            if (!delegate.canHandle(unitOfWork.getMessage())) {
-                return interceptorChain.proceed();
-            }
-
-            return delegate.handle(unitOfWork.getMessage(), target);
-
-        });
+        return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
+                interceptorChain,
+                () -> delegate.canHandle(unitOfWork.getMessage())
+                      ? delegate.handle(unitOfWork.getMessage(), target)
+                      : interceptorChain.proceed());
     }
 }

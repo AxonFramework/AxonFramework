@@ -17,10 +17,10 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptor;
-import org.axonframework.eventhandling.interceptors.ResultHandler;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.ResultHandler;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -52,7 +52,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         return original;
     }
 
-    private static class ResultHandlingInterceptorMember<T> extends WrappedMessageHandlingMember<T> implements MessageHandlerInterceptorMember<T> {
+    private static class ResultHandlingInterceptorMember<T> extends WrappedMessageHandlingMember<T> implements MessageInterceptingMember<T> {
 
         private final Class<?> expectedResultType;
 
@@ -92,7 +92,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
     }
 
-    private static class InterceptedMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements MessageHandlerInterceptorMember<T> {
+    private static class InterceptedMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements MessageInterceptingMember<T> {
 
         private final boolean shouldInvokeInterceptorChain;
 

@@ -241,9 +241,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                     }
                 }
             }
-            for (Map.Entry<Class<?>, SortedSet<MessageHandlingMember<? super T>>> handlersPerType : handlerInspector.getAllInterceptors().entrySet()) {
-                Class<?> type = handlersPerType.getKey();
-                for (MessageHandlingMember<? super T> handler : handlersPerType.getValue()) {
+            for (Map.Entry<Class<?>, SortedSet<MessageHandlingMember<? super T>>> interceptorsPerType : handlerInspector.getAllInterceptors().entrySet()) {
+                Class<?> type = interceptorsPerType.getKey();
+                for (MessageHandlingMember<? super T> handler : interceptorsPerType.getValue()) {
                     addHandler(allCommandHandlerInterceptors, type, handler);
                 }
             }

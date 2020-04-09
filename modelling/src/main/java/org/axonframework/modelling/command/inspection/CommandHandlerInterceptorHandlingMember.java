@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMember;
+import org.axonframework.messaging.annotation.MessageInterceptingMember;
 
 /**
  * Interface specifying a message handler capable of intercepting a command.
@@ -25,10 +25,10 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMember;
  *
  * @author Milan Savic
  * @since 3.3
- * @deprecated in favor of the more generic {@link MessageHandlerInterceptorMember}
+ * @deprecated in favor of the more generic {@link MessageInterceptingMember}
  */
 @Deprecated
-public interface CommandHandlerInterceptorHandlingMember<T> extends MessageHandlerInterceptorMember<T> {
+public interface CommandHandlerInterceptorHandlingMember<T> extends MessageInterceptingMember<T> {
 
     /**
      * Indicates whether interceptor chain (containing a command handler) should be invoked automatically or command

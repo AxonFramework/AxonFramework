@@ -17,14 +17,14 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonException;
-import org.axonframework.eventhandling.interceptors.ExceptionHandler;
-import org.axonframework.eventhandling.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.interceptors.ExceptionHandler;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -72,23 +72,7 @@ class AnnotationEventMessageHandlerAdapterTest {
             assertEquals(RuntimeException.class, e.getClass());
             assertEquals(IllegalArgumentException.class, e.getCause().getClass());
             assertEquals("testing", e.getCause().getMessage());
-        }
-    }
-
-    @Test
-    void testExceptionFromHandlerPickedUp() {
-        Listener annotatedEventListener = new Listener();
-        AnnotationEventHandlerAdapter testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
-                                                                                      MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
-                                                                                                                            new SimpleResourceParameterResolverFactory(singletonList(new SomeResource()))));
-
-        try {
-            testSubject.handle(GenericEventMessage.asEventMessage("testing").andMetaData(MetaData.with("key", "value")));
-            fail("Expected exception");
-        } catch (Exception e) {
-            assertEquals(RuntimeException.class, e.getClass());
-            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
-            assertEquals("testing", e.getCause().getMessage());
+            assertEquals("value", e.getMessage());
         }
     }
 

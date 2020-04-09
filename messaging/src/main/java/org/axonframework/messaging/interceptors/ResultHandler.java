@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.interceptors;
+package org.axonframework.messaging.interceptors;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -17,8 +17,8 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.eventhandling.interceptors.ResultHandler;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.interceptors.ResultHandler;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -79,9 +79,11 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
     public static <T> T ignoringResultParameters(Supplier<T> action) {
         try {
             return (T) callWithResult(IGNORE_RESULT_PARAMETER_MARKER, action::get);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            // oh dear... this is bad
-            return action.get();
+            // oh dear... this shouldn't be possible
+            throw new RuntimeException(e);
         }
     }
 
