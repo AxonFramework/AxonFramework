@@ -29,7 +29,8 @@ import java.lang.annotation.Target;
  * The {@link #resultType()} can be used to limit the types of responses the handler should be invoked for.
  * <p>
  * This annotation is exclusively meant as a Meta-Annotation and cannot not be placed directly on a method.
- *
+ * @author Allard Buijze
+ * @since 4.4
  * @see ExceptionHandler
  */
 @Retention(RetentionPolicy.RUNTIME)

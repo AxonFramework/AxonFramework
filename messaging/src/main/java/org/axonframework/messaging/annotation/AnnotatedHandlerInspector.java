@@ -306,7 +306,7 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Returns a Map of all registered interceptor method per inspected type. Each entry
+     * Returns a Map of all registered interceptor methods per inspected type. Each entry
      * contains the inspected type as key, and a SortedSet of interceptor methods defined
      * on that type, in the order they are considered for invocation.
      *

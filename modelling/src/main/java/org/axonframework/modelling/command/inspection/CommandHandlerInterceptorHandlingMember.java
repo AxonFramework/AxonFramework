@@ -25,7 +25,7 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMember;
  *
  * @author Milan Savic
  * @since 3.3
- * @deprecated in favor of the more generic {@link MessageHandlerInterceptorMember¶}
+ * @deprecated in favor of the more generic {@link MessageHandlerInterceptorMember}
  */
 @Deprecated
 public interface CommandHandlerInterceptorHandlingMember<T> extends MessageHandlerInterceptorMember<T> {

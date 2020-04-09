@@ -21,6 +21,8 @@ package org.axonframework.messaging.annotation;
  * than regular members.
  *
  * @param <T> The type that the handler was declared on.
+ * @author Allard Buijze
+ * @since 4.4
  */
 public interface MessageHandlerInterceptorMember<T> extends MessageHandlingMember<T> {
 

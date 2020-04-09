@@ -19,11 +19,13 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.Message;
 
 /**
- * Interface to interact with a MessageHandlingMember instance through a chain of interceptor, which were
+ * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were
  * used to build up this chain. Unlike regular handlers, interceptors have the ability to act on messages on their
  * way to the regular handler, and have the ability to block these messages.
  *
  * @param <T> The type that declares the handlers in this chain
+ * @author Allard Buijze
+ * @since 4.4
  */
 public interface MessageHandlerInterceptorMemberChain<T> {
 

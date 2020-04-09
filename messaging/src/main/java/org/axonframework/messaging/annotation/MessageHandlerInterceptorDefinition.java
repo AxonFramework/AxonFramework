@@ -28,12 +28,15 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * MethodEnhancerDefinition that marks methods (meta-)annotated with {@link MessageHandlerInterceptor}
+ * {@link HandlerEnhancerDefinition} that marks methods (meta-)annotated with {@link MessageHandlerInterceptor}
  * as interceptors. These methods need to be given special treatment when invoking handlers. Matching
  * interceptors need to be invoked first, allowing them to proceed the invocation chain.
  * <p>
  * This definition also recognizes interceptors only acting on the response. These must be meta-annotated with
  * {@link ResultHandler}.
+ *
+ * @author Allard Buijze
+ * @since 4.4
  */
 public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefinition {
     @Override
@@ -96,7 +99,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         public InterceptedMessageHandlingMember(MessageHandlingMember<T> original) {
             super(original);
             Method method = original.unwrap(Method.class).orElseThrow(() -> new AxonConfigurationException(
-                    "The @MessageHandlerInterceptor must be on method."));
+                    "The @MessageHandlerInterceptor must be on a method."));
             shouldInvokeInterceptorChain = Arrays.stream(method.getParameters())
                                                  .noneMatch(p -> p.getType().equals(InterceptorChain.class));
             if (shouldInvokeInterceptorChain && !Void.TYPE.equals(method.getReturnType())) {
