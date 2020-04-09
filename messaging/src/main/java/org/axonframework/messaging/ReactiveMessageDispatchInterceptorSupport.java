@@ -19,7 +19,7 @@ package org.axonframework.messaging;
 import org.axonframework.common.Registration;
 
 /**
- * Interface marking components capable of registering Reactive Dispatch Interceptors. Generally, these are Messaging
+ * Interface marking components capable of registering a {@link ReactiveMessageDispatchInterceptor}. Generally, these are messaging
  * components injected into the sending end of the communication.
  *
  * @param <T>
