@@ -16,17 +16,25 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.jupiter.api.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -42,11 +50,17 @@ class DefaultReactiveCommandGatewayTest {
 
     @BeforeEach
     void setUp() {
-        CommandBus commandBus = SimpleCommandBus.builder().build();
+        CommandBus commandBus = AsynchronousCommandBus.builder().build();
         mockRetryScheduler = mock(RetryScheduler.class);
         commandMessageHandler = spy(new MessageHandler<CommandMessage<?>>() {
+
+            private final AtomicInteger count = new AtomicInteger();
+
             @Override
             public Object handle(CommandMessage<?> message) {
+                if ("backpressure".equals(message.getPayload())) {
+                    return count.incrementAndGet();
+                }
                 return "handled";
             }
         });
@@ -72,6 +86,39 @@ class DefaultReactiveCommandGatewayTest {
                     .verifyComplete();
         verify(commandMessageHandler).handle(any());
         verifyZeroInteractions(mockRetryScheduler);
+    }
+
+    @Test
+    void testSendAll() throws Exception {
+        Flux<Object> commands = Flux.fromIterable(Arrays.asList("command1", 4, "command2", 5, true));
+
+        Flux<Object> result = reactiveCommandGateway.sendAll(commands);
+        verifyZeroInteractions(commandMessageHandler);
+
+        List<Throwable> exceptions = new ArrayList<>(2);
+        StepVerifier.create(result.onErrorContinue((t, o) -> exceptions.add(t)))
+                    .expectNext("handled", "handled", "")
+                    .verifyComplete();
+
+        assertEquals(2, exceptions.size());
+        assertTrue(exceptions.get(0) instanceof RuntimeException);
+        assertTrue(exceptions.get(1) instanceof RuntimeException);
+        verify(commandMessageHandler, times(2)).handle(any());
+    }
+
+    @Test
+    void testSendAllOrdering() throws Exception {
+        int numberOfCommands = 10_000;
+        Flux<String> commands = Flux.fromStream(IntStream.range(0, numberOfCommands)
+                                                         .mapToObj(i -> "backpressure"));
+        List<Integer> expectedResults = IntStream.range(1, numberOfCommands + 1)
+                                                 .boxed()
+                                                 .collect(toList());
+        Flux<Object> result = reactiveCommandGateway.sendAll(commands);
+        StepVerifier.create(result)
+                    .expectNext(expectedResults.toArray(new Integer[0]))
+                    .verifyComplete();
+        verify(commandMessageHandler, times(numberOfCommands)).handle(any());
     }
 
     @Test

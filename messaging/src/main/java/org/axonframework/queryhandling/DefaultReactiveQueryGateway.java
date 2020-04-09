@@ -94,8 +94,8 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
     }
 
     @Override
-    public <R, Q> Mono<R> query(String queryName, Mono<Q> query, ResponseType<R> responseType) {
-        return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
+    public <R, Q> Mono<R> query(String queryName, Q query, ResponseType<R> responseType) {
+        return processInterceptors(Mono.just(new GenericQueryMessage<>(query, queryName, responseType)))
                 .flatMap(queryMessage -> Mono.create(
                         sink -> queryBus.query(queryMessage).whenComplete((response, throwable) -> {
                             try {
@@ -118,9 +118,9 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <R, Q> Flux<R> scatterGather(String queryName, Mono<Q> query, ResponseType<R> responseType, long timeout,
+    public <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
                                         TimeUnit timeUnit) {
-        return processInterceptors(query.map(q -> new GenericQueryMessage<>(q, queryName, responseType)))
+        return processInterceptors(Mono.just(new GenericQueryMessage<>(query, queryName, responseType)))
                 .flatMapMany(queryMessage -> Flux.create(
                         sink -> {
                             try {
@@ -145,15 +145,15 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Mono<Q> query,
+    public <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Q query,
                                                                            ResponseType<I> initialResponseType,
                                                                            ResponseType<U> updateResponseType,
                                                                            SubscriptionQueryBackpressure backpressure,
                                                                            int updateBufferSize) {
-        return processInterceptors(query.map(q -> new GenericSubscriptionQueryMessage<>(q,
-                                                                                        queryName,
-                                                                                        initialResponseType,
-                                                                                        updateResponseType)))
+        return processInterceptors(Mono.just(new GenericSubscriptionQueryMessage<>(query,
+                                                                                   queryName,
+                                                                                   initialResponseType,
+                                                                                   updateResponseType)))
                 .flatMap(queryMessage -> {
                     SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> data = queryBus
                             .subscriptionQuery((SubscriptionQueryMessage<Q, I, U>) queryMessage,

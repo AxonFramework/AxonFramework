@@ -21,7 +21,11 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ReactiveMessageDispatchInterceptorSupport;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.function.Function;
 
 /**
  * Variation of {@link CommandGateway}. Provides support for reactive return type such as {@link Mono} from Project
@@ -43,17 +47,21 @@ public interface ReactiveCommandGateway extends ReactiveMessageDispatchIntercept
      * @param <R>     the type of the command result
      * @return a {@link Mono} which is resolved when the command is executed
      */
-    default <R> Mono<R> send(Object command) {
-        return send(Mono.just(command));
-    }
+    <R> Mono<R> send(Object command);
 
     /**
-     * Sends the given {@code command} once the caller subscribes to the command result. Returns immediately.
+     * Uses given Publisher of commands to send incoming commands away. Commands will be sent sequentially - once a
+     * result of Nth command arrives, (N + 1)th command is dispatched.
      *
-     * @param command a {@link Mono} which is resolved once the caller subscribes to the command result
-     * @param <R>     the type of the command result
-     * @return a {@link Mono} which is resolved when the command is executed
+     * @param commands a Publisher stream of commands to be dispatched
+     * @return a Flux of command results. An ordering of command results corresponds to an ordering of commands being
+     * dispatched
+     *
      * @see #send(Object)
+     * @see Flux#concatMap(Function)
      */
-    <R> Mono<R> send(Mono<Object> command);
+    default Flux<Object> sendAll(Publisher<?> commands) {
+        return Flux.from(commands)
+                   .concatMap(this::send);
+    }
 }

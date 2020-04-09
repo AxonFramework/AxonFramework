@@ -74,8 +74,8 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
     }
 
     @Override
-    public <R> Mono<R> send(Mono<Object> command) {
-        return processInterceptors(command.map(GenericCommandMessage::asCommandMessage))
+    public <R> Mono<R> send(Object command) {
+        return processInterceptors(Mono.just(GenericCommandMessage.asCommandMessage(command)))
                 .flatMap(commandMessage -> Mono.create(
                         sink -> {
                             CommandCallback<Object, R> commandCallback = (cm, result) -> {

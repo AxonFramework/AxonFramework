@@ -19,11 +19,13 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.ReactiveMessageDispatchInterceptorSupport;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * Variation of {@link QueryGateway}. Provides support for reactive return types such as {@link Mono} and {@link Flux}
@@ -98,24 +100,23 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * @param <Q>          The query class
      * @return A {@link Mono} containing the query result as dictated by the given {@code responseType}
      */
-    default <R, Q> Mono<R> query(String queryName, Q query, ResponseType<R> responseType) {
-        return query(queryName, Mono.just(query), responseType);
-    }
+    <R, Q> Mono<R> query(String queryName, Q query, ResponseType<R> responseType);
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from a single source. Execution may be asynchronous, depending on the {@code QueryBus} implementation.
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * Uses given Publisher of query messages to send incoming queries away. Queries will be sent sequentially - once a
+     * result of Nth query arrives, (N + 1)th query is dispatched.
      *
-     * @param queryName    A {@link String} describing the query to be executed
-     * @param query        a {@link Mono} which is resolved once the caller subscribes to the query result
-     * @param responseType The {@link ResponseType} used for this query
-     * @param <R>          The response class contained in the given {@code responseType}
-     * @param <Q>          The query class
-     * @return A {@link Mono} containing the query result as dictated by the given {@code responseType}
+     * @param queries a Publisher stream of queries to be dispatched
+     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * dispatched
+     *
+     * @see #query(String, Object, ResponseType)
+     * @see Flux#concatMap(Function)
      */
-    <R, Q> Mono<R> query(String queryName, Mono<Q> query, ResponseType<R> responseType);
+    default Flux<Object> query(Publisher<QueryMessage<?, ?>> queries) {
+        return Flux.from(queries)
+                   .concatMap(q -> query(q.getQueryName(), q.getPayload(), q.getResponseType()));
+    }
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
@@ -157,31 +158,28 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * @param <Q>          The query class
      * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}
      */
-    default <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
-                                         TimeUnit timeUnit) {
-        return scatterGather(queryName, Mono.just(query), responseType, timeout, timeUnit);
-    }
+    <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
+                                 TimeUnit timeUnit);
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all results
-     * are received. Execution may be asynchronous, depending on the {@code QueryBus} implementation.
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
-     * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactiveQueryGateway}. If you require
-     * the {@code null} to be returned, we suggest using {@code QueryBus} instead.
+     * Uses given Publisher of queries to send incoming queries in scatter gather manner. Queries will be sent
+     * sequentially - once a result of Nth query arrives, (N + 1)th query is dispatched. All queries will be dispatched
+     * using given {@code timeout} and {@code timeUnit}.
      *
-     * @param queryName    A {@link String} describing the query to be executed
-     * @param query        a {@link Mono} which is resolved once the caller subscribes to the query result
-     * @param responseType The {@link ResponseType} used for this query
-     * @param timeout      A timeout of {@code long} for the query
-     * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
-     * @param <R>          The response class contained in the given {@code responseType}
-     * @param <Q>          The query class
-     * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}
+     * @param queries  a Publisher stream of queries to be dispatched
+     * @param timeout  A timeout of {@code long} for the query
+     * @param timeUnit The selected {@link TimeUnit} for the given {@code timeout}
+     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * dispatched
      */
-    <R, Q> Flux<R> scatterGather(String queryName, Mono<Q> query, ResponseType<R> responseType, long timeout,
-                                 TimeUnit timeUnit);
+    default Flux<Object> scatterGather(Publisher<QueryMessage<?, ?>> queries, long timeout, TimeUnit timeUnit) {
+        return Flux.from(queries)
+                   .concatMap(q -> scatterGather(q.getQueryName(),
+                                                 q.getPayload(),
+                                                 q.getResponseType(),
+                                                 timeout,
+                                                 timeUnit));
+    }
 
     /**
      * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
@@ -330,7 +328,7 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * @param initialResponseType The initial response type used for this query
      * @param updateResponseType  The update response type used for this query
      * @param backpressure        The backpressure mechanism to deal with producing of incremental updates
-     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the {@code} flux
+     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the {@code flux}
      *                            is made
      * @param <Q>                 The type of the query
      * @param <I>                 The type of the initial response
@@ -340,48 +338,70 @@ public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptor
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
-    default <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Q query,
-                                                                            ResponseType<I> initialResponseType,
-                                                                            ResponseType<U> updateResponseType,
-                                                                            SubscriptionQueryBackpressure backpressure,
-                                                                            int updateBufferSize) {
-        return subscriptionQuery(queryName,
-                                 Mono.just(query),
-                                 initialResponseType,
-                                 updateResponseType,
-                                 backpressure,
-                                 updateBufferSize);
-    }
-
-    /**
-     * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
-     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
-     * the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
-     * <p>
-     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
-     * {@link ReactiveQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
-     * we suggest using the {@code QueryBus} instead.
-     *
-     * @param queryName           A {@link String} describing query to be executed
-     * @param query               a {@link Mono} which is resolved once the caller subscribes to the query result
-     * @param initialResponseType The initial response type used for this query
-     * @param updateResponseType  The update response type used for this query
-     * @param backpressure        The backpressure mechanism to deal with producing of incremental updates
-     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the {@code} flux
-     *                            is made
-     * @param <Q>                 The type of the query
-     * @param <I>                 The type of the initial response
-     * @param <U>                 The type of the incremental update
-     * @return registration which can be used to cancel receiving updates
-     *
-     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
-     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
-     */
-    <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Mono<Q> query,
+    <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Q query,
                                                                     ResponseType<I> initialResponseType,
                                                                     ResponseType<U> updateResponseType,
                                                                     SubscriptionQueryBackpressure backpressure,
                                                                     int updateBufferSize);
+
+    /**
+     * Uses given Publisher of queries to send incoming queries away. Queries will be sent sequentially - once a result
+     * of Nth query arrives, (N + 1)th query is dispatched.
+     *
+     * @param queries a Publisher stream of queries to be dispatched
+     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * dispatched
+     *
+     * @see #subscriptionQuery(String, Object, Class, Class)
+     * @see Flux#concatMap(Function)
+     */
+    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery(
+            Publisher<SubscriptionQueryMessage<?, ?, ?>> queries) {
+        return subscriptionQuery(queries, SubscriptionQueryBackpressure.defaultBackpressure());
+    }
+
+    /**
+     * Uses given Publisher of queries to send incoming queries away. Queries will be sent sequentially - once a result
+     * of Nth query arrives, (N + 1)th query is dispatched. All queries will be dispatched using given {@code
+     * backpressure}.
+     *
+     * @param queries      a Publisher stream of queries to be dispatched
+     * @param backpressure The backpressure mechanism to deal with producing of incremental updates
+     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * dispatched
+     *
+     * @see #subscriptionQuery(String, Object, Class, Class)
+     * @see Flux#concatMap(Function)
+     */
+    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery(Publisher<SubscriptionQueryMessage<?, ?, ?>> queries,
+                                                                  SubscriptionQueryBackpressure backpressure) {
+        return subscriptionQuery(queries, backpressure, Queues.SMALL_BUFFER_SIZE);
+    }
+
+    /**
+     * Uses given Publisher of queries to send incoming queries away. Queries will be sent sequentially - once a result
+     * of Nth query arrives, (N + 1)th query is dispatched. All queries will be dispatched using given {@code
+     * backpressure} and {@code updateBufferSize}.
+     *
+     * @param queries          a Publisher stream of queries to be dispatched
+     * @param backpressure     The backpressure mechanism to deal with producing of incremental updates
+     * @param updateBufferSize The size of buffer which accumulates updates before subscription to the {@code flux}
+     *                         is made
+     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * dispatched
+     *
+     * @see #subscriptionQuery(String, Object, Class, Class)
+     * @see Flux#concatMap(Function)
+     */
+    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery(Publisher<SubscriptionQueryMessage<?, ?, ?>> queries,
+                                                                  SubscriptionQueryBackpressure backpressure,
+                                                                  int updateBufferSize) {
+        return Flux.from(queries)
+                   .concatMap(q -> subscriptionQuery(q.getQueryName(),
+                                                     q.getPayload(),
+                                                     q.getResponseType(),
+                                                     q.getUpdateResponseType(),
+                                                     backpressure,
+                                                     updateBufferSize));
+    }
 }

@@ -24,8 +24,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -46,15 +52,23 @@ public class DefaultReactiveQueryGatewayTest {
     void setUp() {
         SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
         queryUpdateEmitter = queryBus.queryUpdateEmitter();
+        AtomicInteger count = new AtomicInteger();
         queryMessageHandler1 = spy(new MessageHandler<QueryMessage<?, Object>>() {
+
             @Override
             public Object handle(QueryMessage<?, Object> message) {
+                if ("backpressure".equals(message.getPayload())) {
+                    return count.incrementAndGet();
+                }
                 return "handled";
             }
         });
         queryMessageHandler2 = spy(new MessageHandler<QueryMessage<?, Object>>() {
             @Override
             public Object handle(QueryMessage<?, Object> message) {
+                if ("backpressure".equals(message.getPayload())) {
+                    return count.incrementAndGet();
+                }
                 return "handled";
             }
         });
@@ -82,6 +96,47 @@ public class DefaultReactiveQueryGatewayTest {
                     .expectNext("handled")
                     .verifyComplete();
         verify(queryMessageHandler1).handle(any());
+    }
+
+    @Test
+    void testMultipleQueries() throws Exception {
+        Flux<QueryMessage<?, ?>> queries = Flux.fromIterable(Arrays.asList(
+                new GenericQueryMessage<>("query1", ResponseTypes.instanceOf(String.class)),
+                new GenericQueryMessage<>(4, ResponseTypes.instanceOf(Integer.class)),
+                new GenericQueryMessage<>("query2", ResponseTypes.instanceOf(String.class)),
+                new GenericQueryMessage<>(5, ResponseTypes.instanceOf(Integer.class)),
+                new GenericQueryMessage<>(true, ResponseTypes.instanceOf(String.class))));
+
+        Flux<Object> result = reactiveQueryGateway.query(queries);
+        verifyZeroInteractions(queryMessageHandler1);
+        verifyZeroInteractions(queryMessageHandler2);
+
+        List<Throwable> exceptions = new ArrayList<>(2);
+        StepVerifier.create(result.onErrorContinue((t, o) -> exceptions.add(t)))
+                    .expectNext("handled", "handled", "")
+                    .verifyComplete();
+
+        assertEquals(2, exceptions.size());
+        assertTrue(exceptions.get(0) instanceof RuntimeException);
+        assertTrue(exceptions.get(1) instanceof RuntimeException);
+        verify(queryMessageHandler1, times(2)).handle(any());
+    }
+
+    @Test
+    void testMultipleQueriesOrdering() throws Exception {
+        int numberOfQueries = 10_000;
+        Flux<QueryMessage<?, ?>> queries = Flux
+                .fromStream(IntStream.range(0, numberOfQueries)
+                                     .mapToObj(i -> new GenericQueryMessage<>("backpressure",
+                                                                              ResponseTypes.instanceOf(String.class))));
+        List<Integer> expectedResults = IntStream.range(1, numberOfQueries + 1)
+                                                 .boxed()
+                                                 .collect(Collectors.toList());
+        Flux<Object> result = reactiveQueryGateway.query(queries);
+        StepVerifier.create(result)
+                    .expectNext(expectedResults.toArray(new Integer[0]))
+                    .verifyComplete();
+        verify(queryMessageHandler1, times(numberOfQueries)).handle(any());
     }
 
     @Test
@@ -149,6 +204,49 @@ public class DefaultReactiveQueryGatewayTest {
                     .verifyComplete();
         verify(queryMessageHandler1).handle(any());
         verify(queryMessageHandler2).handle(any());
+    }
+
+    @Test
+    void testMultipleScatterGather() throws Exception {
+        Flux<QueryMessage<?, ?>> queries = Flux.fromIterable(Arrays.asList(
+                new GenericQueryMessage<>("query1", ResponseTypes.instanceOf(String.class)),
+                new GenericQueryMessage<>(4, ResponseTypes.instanceOf(Integer.class)),
+                new GenericQueryMessage<>("query2", ResponseTypes.instanceOf(String.class)),
+                new GenericQueryMessage<>(5, ResponseTypes.instanceOf(Integer.class)),
+                new GenericQueryMessage<>(true, ResponseTypes.instanceOf(String.class))));
+
+        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, 1, TimeUnit.SECONDS);
+        verifyZeroInteractions(queryMessageHandler1);
+        verifyZeroInteractions(queryMessageHandler2);
+
+        List<Throwable> exceptions = new ArrayList<>(2);
+        StepVerifier.create(result.onErrorContinue((t, o) -> exceptions.add(t)))
+                    .expectNext("handled", "handled", "handled", "handled", "")
+                    .verifyComplete();
+
+        assertEquals(2, exceptions.size());
+        assertTrue(exceptions.get(0) instanceof RuntimeException);
+        assertTrue(exceptions.get(1) instanceof RuntimeException);
+        verify(queryMessageHandler1, times(2)).handle(any());
+        verify(queryMessageHandler2, times(2)).handle(any());
+    }
+
+    @Test
+    void testMultipleScatterGatherOrdering() throws Exception {
+        int numberOfQueries = 10_000;
+        Flux<QueryMessage<?, ?>> queries = Flux
+                .fromStream(IntStream.range(0, numberOfQueries)
+                                     .mapToObj(i -> new GenericQueryMessage<>("backpressure",
+                                                                              ResponseTypes.instanceOf(String.class))));
+        List<Integer> expectedResults = IntStream.range(1, 2 * numberOfQueries + 1)
+                                                 .boxed()
+                                                 .collect(Collectors.toList());
+        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, 1, TimeUnit.SECONDS);
+        StepVerifier.create(result)
+                    .expectNext(expectedResults.toArray(new Integer[0]))
+                    .verifyComplete();
+        verify(queryMessageHandler1, times(numberOfQueries)).handle(any());
+        verify(queryMessageHandler2, times(numberOfQueries)).handle(any());
     }
 
     @Test
@@ -232,6 +330,57 @@ public class DefaultReactiveQueryGatewayTest {
                     .expectNext("update")
                     .verifyComplete();
         verify(queryMessageHandler1).handle(any());
+    }
+
+    @Test
+    void testMultipleSubscriptionQueries() throws Exception {
+        Flux<SubscriptionQueryMessage<?, ?, ?>> queries = Flux.fromIterable(Arrays.asList(
+                new GenericSubscriptionQueryMessage<>("query1",
+                                                      ResponseTypes.instanceOf(String.class),
+                                                      ResponseTypes.instanceOf(String.class)),
+                new GenericSubscriptionQueryMessage<>(4,
+                                                      ResponseTypes.instanceOf(Integer.class),
+                                                      ResponseTypes.instanceOf(String.class))));
+
+        Flux<SubscriptionQueryResult<?, ?>> result = reactiveQueryGateway.subscriptionQuery(queries);
+        verifyZeroInteractions(queryMessageHandler1);
+        verifyZeroInteractions(queryMessageHandler2);
+        List<Mono<Object>> initialResults = new ArrayList<>(2);
+        //noinspection unchecked
+        result.subscribe(sqr -> initialResults.add((Mono<Object>) sqr.initialResult()));
+        assertEquals(2, initialResults.size());
+        StepVerifier.create(initialResults.get(0))
+                    .expectNext("handled")
+                    .verifyComplete();
+        StepVerifier.create(initialResults.get(1))
+                    .verifyError(RuntimeException.class);
+
+        verify(queryMessageHandler1).handle(any());
+    }
+
+    @Test
+    void testMultipleSubscriptionQueriesOrdering() throws Exception {
+        int numberOfQueries = 10_000;
+        Flux<SubscriptionQueryMessage<?, ?, ?>> queries = Flux
+                .fromStream(IntStream.range(0, numberOfQueries)
+                                     .mapToObj(i -> new GenericSubscriptionQueryMessage<>("backpressure",
+                                                                                          ResponseTypes.instanceOf(String.class),
+                                                                                          ResponseTypes.instanceOf(String.class))));
+        List<Integer> expectedResults = IntStream.range(1, numberOfQueries + 1)
+                                                 .boxed()
+                                                 .collect(Collectors.toList());
+        Flux<SubscriptionQueryResult<?, ?>> result = reactiveQueryGateway.subscriptionQuery(queries);
+        List<Mono<Object>> initialResults = new ArrayList<>(numberOfQueries);
+        //noinspection unchecked
+        result.subscribe(sqr -> initialResults.add((Mono<Object>) sqr.initialResult()));
+        assertEquals(numberOfQueries, initialResults.size());
+        for (int i = 0; i < numberOfQueries; i++) {
+            StepVerifier.create(initialResults.get(i))
+                        .expectNext(expectedResults.get(i))
+                        .verifyComplete();
+        }
+
+        verify(queryMessageHandler1, times(numberOfQueries)).handle(any());
     }
 
     @Test
