@@ -219,14 +219,10 @@ public class DefaultReactiveQueryGatewayTest {
         verifyZeroInteractions(queryMessageHandler1);
         verifyZeroInteractions(queryMessageHandler2);
 
-        List<Throwable> exceptions = new ArrayList<>(2);
-        StepVerifier.create(result.onErrorContinue((t, o) -> exceptions.add(t)))
+        StepVerifier.create(result)
                     .expectNext("handled", "handled", "handled", "handled", "")
                     .verifyComplete();
 
-        assertEquals(2, exceptions.size());
-        assertTrue(exceptions.get(0) instanceof RuntimeException);
-        assertTrue(exceptions.get(1) instanceof RuntimeException);
         verify(queryMessageHandler1, times(2)).handle(any());
         verify(queryMessageHandler2, times(2)).handle(any());
     }
@@ -306,7 +302,8 @@ public class DefaultReactiveQueryGatewayTest {
                                                                ResponseTypes.instanceOf(Integer.class),
                                                                1,
                                                                TimeUnit.SECONDS))
-                    .verifyError(RuntimeException.class);
+                    .expectNextCount(0)
+                    .verifyComplete();
     }
 
     @Test
