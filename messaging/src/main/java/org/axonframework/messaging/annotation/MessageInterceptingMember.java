@@ -27,4 +27,9 @@ package org.axonframework.messaging.annotation;
  */
 public interface MessageInterceptingMember<T> extends MessageHandlingMember<T> {
 
+    @Override
+    default int priority() {
+        return 100_000;
+    }
+
 }
