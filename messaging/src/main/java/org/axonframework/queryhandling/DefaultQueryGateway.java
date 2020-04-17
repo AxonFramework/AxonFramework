@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,23 +94,29 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <R, Q> Stream<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
+    public <R, Q> Stream<R> scatterGather(String queryName,
+                                          Q query,
+                                          ResponseType<R> responseType,
+                                          long timeout,
                                           TimeUnit timeUnit) {
-        GenericQueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(query, queryName, responseType);
+        GenericQueryMessage<?, R> queryMessage = new GenericQueryMessage<>(asMessage(query), queryName, responseType);
         return queryBus.scatterGather(processInterceptors(queryMessage), timeout, timeUnit)
                        .map(QueryResponseMessage::getPayload);
     }
 
     @Override
-    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
+                                                                     Q query,
                                                                      ResponseType<I> initialResponseType,
                                                                      ResponseType<U> updateResponseType,
                                                                      SubscriptionQueryBackpressure backpressure,
                                                                      int updateBufferSize) {
-        SubscriptionQueryMessage<Q, I, U> subscriptionQueryMessage =
-                new GenericSubscriptionQueryMessage<>(query, queryName, initialResponseType, updateResponseType);
-        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
-                .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, updateBufferSize);
+        SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage = new GenericSubscriptionQueryMessage<>(
+                asMessage(query), queryName, initialResponseType, updateResponseType
+        );
+        SubscriptionQueryMessage<?, I, U> interceptedQuery = processInterceptors(subscriptionQueryMessage);
+        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
+                queryBus.subscriptionQuery(interceptedQuery, backpressure, updateBufferSize);
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
                       .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))

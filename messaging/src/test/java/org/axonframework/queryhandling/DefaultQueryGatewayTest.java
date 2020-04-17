@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,6 +133,27 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
+    void testDispatchMultiResultQueryWithMetaData() {
+        when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
+                .thenReturn(Stream.of(answer));
+
+        String expectedMetaDataKey = "key";
+        String expectedMetaDataValue = "value";
+
+        testSubject.scatterGather(
+                new GenericMessage<>("scatterGather", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)),
+                instanceOf(String.class), 1, TimeUnit.SECONDS
+        );
+
+        verify(mockBus).scatterGather(
+                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "scatterGather".equals(x.getPayload())
+                        && expectedMetaDataValue.equals(x.getMetaData().get(expectedMetaDataKey))),
+                eq(1L),
+                eq(TimeUnit.SECONDS)
+        );
+    }
+
+    @Test
     void testDispatchSubscriptionQuery() {
         when(mockBus.subscriptionQuery(any(), any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
@@ -143,6 +164,29 @@ class DefaultQueryGatewayTest {
         verify(mockBus)
                 .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>)
                                                    x -> "query".equals(x.getPayload())), any(), anyInt());
+    }
+
+    @Test
+    void testDispatchSubscriptionQueryWithMetaData() {
+        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+
+        String expectedMetaDataKey = "key";
+        String expectedMetaDataValue = "value";
+
+        testSubject.subscriptionQuery(
+                new GenericMessage<>("subscription", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)),
+                instanceOf(String.class), instanceOf(String.class)
+        );
+
+        verify(mockBus).subscriptionQuery(
+                argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>) x ->
+                        "subscription".equals(x.getPayload())
+                                && expectedMetaDataValue.equals(x.getMetaData().get(expectedMetaDataKey))
+                ),
+                any(),
+                anyInt()
+        );
     }
 
     @Test

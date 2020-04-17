@@ -44,9 +44,7 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -67,21 +65,10 @@ import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWit
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit test suite to verify the {@link AxonServerQueryBus}.
@@ -481,7 +468,7 @@ class AxonServerQueryBusTest {
         try {
             inboundStreamObserver.get().onNext(testQueryMessage);
         } finally {
-            disconnected = CompletableFuture.runAsync(testSubject::disconnect);
+            disconnected = testSubject.shutdownDispatching();
             slowHandlerLock.unlock();
         }
 
@@ -493,11 +480,13 @@ class AxonServerQueryBusTest {
 
     @Test
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
+
         testSubject.shutdownDispatching();
 
-        assertThrows(
-                ShutdownInProgressException.class,
-                () -> testSubject.query(new GenericQueryMessage<>("some-query", ResponseTypes.instanceOf(String.class)))
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(ShutdownInProgressException.class, () -> testSubject.query(testQuery))
         );
     }
 
@@ -507,7 +496,13 @@ class AxonServerQueryBusTest {
 
         testSubject.shutdownDispatching();
 
-        assertThrows(ShutdownInProgressException.class, () -> testSubject.scatterGather(testQuery, 1, TimeUnit.SECONDS));
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(
+                        ShutdownInProgressException.class,
+                        () -> testSubject.scatterGather(testQuery, 1, TimeUnit.SECONDS)
+                )
+        );
     }
 
     @Test
@@ -517,7 +512,13 @@ class AxonServerQueryBusTest {
 
         testSubject.shutdownDispatching();
 
-        assertThrows(ShutdownInProgressException.class, () -> testSubject.subscriptionQuery(testSubscriptionQuery));
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(
+                        ShutdownInProgressException.class,
+                        () -> testSubject.subscriptionQuery(testSubscriptionQuery)
+                )
+        );
     }
 
     @Test

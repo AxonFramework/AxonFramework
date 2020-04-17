@@ -22,7 +22,13 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
 import org.axonframework.modelling.command.EntityId;
@@ -30,7 +36,15 @@ import org.axonframework.modelling.command.EntityId;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -234,16 +248,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         private void addHandler(Map<Class<?>, List<MessageHandlingMember<? super T>>> handlers, Class<?> type,
                                 MessageHandlingMember<? super T> handler) {
-            handlers.compute(type, (key, value) -> {
-                if (value == null) {
-                    List<MessageHandlingMember<? super T>> hs = new ArrayList<>();
-                    hs.add(handler);
-                    return hs;
-                } else {
-                    value.add(handler);
-                    return value;
-                }
-            });
+            handlers.computeIfAbsent(type, t -> new ArrayList<>())
+                    .add(handler);
         }
 
         /**

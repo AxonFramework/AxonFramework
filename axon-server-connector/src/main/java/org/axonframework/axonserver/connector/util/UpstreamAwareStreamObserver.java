@@ -27,4 +27,18 @@ public abstract class UpstreamAwareStreamObserver<ResT> implements ClientRespons
     public ClientCallStreamObserver<?> getRequestStream() {
         return requestStream;
     }
+
+    /**
+     * Completes the request steam related to this stream observer. Ignores exceptions that may occur (for instance if
+     * the request stream is already half-closed).
+     */
+    protected void completeRequestStream() {
+         if( requestStream != null) {
+             try {
+                 requestStream.onCompleted();
+             } catch (Exception ex) {
+                // Ignore exceptions on completing the request stream, may already have been closed
+             }
+         }
+    }
 }
