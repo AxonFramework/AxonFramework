@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  */
 class GenericMessageTest {
 
-    private Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
+    private final Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
     @BeforeEach
     void setUp() {
@@ -91,5 +91,24 @@ class GenericMessageTest {
 
         assertNotEquals(testPayload, result);
         assertEquals(testPayload, result.getPayload());
+    }
+
+    @Test
+    void testMessageNameResemblesPayloadClassName() {
+        String testPayload = "payload";
+
+        String result = GenericMessage.messageName(testPayload);
+
+        assertEquals(String.class.getName(), result);
+    }
+
+    @Test
+    void testMessageNameResemblesMessagePayloadTypeClassName() {
+        String testPayload = "payload";
+        Message<?> testMessage = GenericMessage.asMessage(testPayload);
+
+        String result = GenericMessage.messageName(testMessage);
+
+        assertEquals(String.class.getName(), result);
     }
 }
