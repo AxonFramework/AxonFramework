@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marker annotation to mark any method on an object as being a CommandHandler. Use the {@link
- * AnnotationCommandHandlerAdapter} to subscribe the annotated class to the command bus. This annotation can alos be
+ * AnnotationCommandHandlerAdapter} to subscribe the annotated class to the command bus. This annotation can also be
  * placed directly on Aggregate members to have it handle the commands directly.
  * <p/>
  * The annotated method's first parameter is the command handled by that method. Optionally, the command handler may
