@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.GenericMessage.messageName;
+import static org.axonframework.queryhandling.QueryMessage.queryName;
 
 /**
  * Interface towards the Query Handling components of an application. This interface provides a friendlier API toward
@@ -51,7 +51,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, Class<R> responseType) {
-        return query(messageName(query), query, responseType);
+        return query(queryName(query), query, responseType);
     }
 
     /**
@@ -84,7 +84,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, ResponseType<R> responseType) {
-        return query(messageName(query), query, responseType);
+        return query(queryName(query), query, responseType);
     }
 
     /**
@@ -117,7 +117,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return A stream of results.
      */
     default <R, Q> Stream<R> scatterGather(Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
-        return scatterGather(messageName(query), query, responseType, timeout, timeUnit);
+        return scatterGather(queryName(query), query, responseType, timeout, timeUnit);
     }
 
     /**
@@ -158,7 +158,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, Class<I> initialResponseType,
                                                                       Class<U> updateResponseType) {
-        return subscriptionQuery(messageName(query), query, initialResponseType, updateResponseType);
+        return subscriptionQuery(queryName(query), query, initialResponseType, updateResponseType);
     }
 
     /**
@@ -212,7 +212,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, ResponseType<I> initialResponseType,
                                                                       ResponseType<U> updateResponseType) {
-        return subscriptionQuery(messageName(query),
+        return subscriptionQuery(queryName(query),
                                  query,
                                  initialResponseType,
                                  updateResponseType,

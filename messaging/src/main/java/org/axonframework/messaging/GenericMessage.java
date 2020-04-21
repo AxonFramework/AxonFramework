@@ -58,23 +58,6 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     }
 
     /**
-     * Extracts the message name from the given {@code payloadOrMessage}. If the given {@code payloadOrMessage} is an
-     * instance of {@link Message}, {@link Message#getPayloadType()} is used. Otherwise we expect the given {@link
-     * Object} to be the payload directly. The return value will be the result of {@link Class#getName()}, either from
-     * the {@code Message}'s {@code payloadType} or from the payload's class.
-     *
-     * @param payloadOrMessage the payload to extract the {@link Class#getName()} from, or an instance of {@link
-     *                         Message}
-     * @return the {@link Class#getName()} result from the payload, or from the {@link Message#getPayloadType()} if the
-     * given {@code payloadOrMessage} is an instance of {@link Message}
-     */
-    public static String messageName(Object payloadOrMessage) {
-        return Message.class.isAssignableFrom(payloadOrMessage.getClass())
-                ? ((Message<?>) payloadOrMessage).getPayloadType().getName()
-                : payloadOrMessage.getClass().getName();
-    }
-
-    /**
      * Constructs a Message for the given {@code payload} using the correlation data of the current Unit of Work, if
      * present.
      *

@@ -92,23 +92,4 @@ class GenericMessageTest {
         assertNotEquals(testPayload, result);
         assertEquals(testPayload, result.getPayload());
     }
-
-    @Test
-    void testMessageNameResemblesPayloadClassName() {
-        String testPayload = "payload";
-
-        String result = GenericMessage.messageName(testPayload);
-
-        assertEquals(String.class.getName(), result);
-    }
-
-    @Test
-    void testMessageNameResemblesMessagePayloadTypeClassName() {
-        String testPayload = "payload";
-        Message<?> testMessage = GenericMessage.asMessage(testPayload);
-
-        String result = GenericMessage.messageName(testMessage);
-
-        assertEquals(String.class.getName(), result);
-    }
 }
