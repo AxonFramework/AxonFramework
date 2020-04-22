@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,27 @@ public interface QueryMessage<T, R> extends Message<T> {
     String getQueryName();
 
     /**
+     * Extracts the {@code queryName} from the given {@code payloadOrMessage}, with three possible outcomes:
+     * <ul>
+     * <li>The {@code payloadOrMessage} is an instance of {@link QueryMessage} - {@link QueryMessage#getQueryName()} is returned.</li>
+     * <li>The {@code payloadOrMessage} is an instance of {@link Message} - the name of {@link Message#getPayloadType()} is returned.</li>
+     * <li>The {@code payloadOrMessage} is the query payload - {@link Class#getName()} is returned.</li>
+     * </ul>
+     *
+     * @param payloadOrMessage the object to base the {@code queryName} on
+     * @return the {@link QueryMessage#getQueryName()}, the name of {@link Message#getPayloadType()} or the result of {@link
+     * Class#getName()}, depending on the type of the {@code payloadOrMessage}
+     */
+    static String queryName(Object payloadOrMessage) {
+        if (payloadOrMessage instanceof QueryMessage) {
+            return ((QueryMessage<?, ?>) payloadOrMessage).getQueryName();
+        } else if (payloadOrMessage instanceof Message) {
+            return ((Message<?>) payloadOrMessage).getPayloadType().getName();
+        }
+        return payloadOrMessage.getClass().getName();
+    }
+
+    /**
      * The type of response expected by the sender of the query
      *
      * @return the type of response expected by the sender of the query
@@ -54,8 +75,8 @@ public interface QueryMessage<T, R> extends Message<T> {
     QueryMessage<T, R> withMetaData(Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this QueryMessage with its MetaData merged with given {@code metaData}. The payload
-     * remains unchanged.
+     * Returns a copy of this QueryMessage with its MetaData merged with given {@code metaData}. The payload remains
+     * unchanged.
      *
      * @param additionalMetaData The MetaData to merge into the QueryMessage
      * @return a copy of this message with the given additional MetaData
