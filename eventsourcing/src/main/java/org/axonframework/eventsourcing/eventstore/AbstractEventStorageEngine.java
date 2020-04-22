@@ -26,10 +26,10 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -248,10 +248,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     public abstract static class Builder {
 
-        private Supplier<Serializer> snapshotSerializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> snapshotSerializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER;
         protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private PersistenceExceptionResolver persistenceExceptionResolver;
-        private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> eventSerializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER;
         private Predicate<? super DomainEventData<?>> snapshotFilter = i -> true;
 
         /**

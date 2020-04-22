@@ -22,29 +22,18 @@ import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.grpc.stub.StreamObserver;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.TestStreamObserver;
-import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.axonserver.connector.*;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.*;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -66,8 +55,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -84,13 +73,15 @@ class AxonServerQueryBusTest {
     private AxonServerConnectionManager axonServerConnectionManager;
     private AxonServerConfiguration configuration;
     private QueryBus localSegment = SimpleQueryBus.builder().build();
-    private Serializer serializer = XStreamSerializer.defaultSerializer();
     private TargetContextResolver<QueryMessage<?, ?>> targetContextResolver = spy(new TestTargetContextResolver<>());
+
+    private Serializer genericSerializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER.get();
 
     private AxonServerQueryBus testSubject;
 
     @BeforeEach
     void setup() throws Exception {
+
         dummyMessagePlatformServer = new DummyMessagePlatformServer();
         dummyMessagePlatformServer.start();
 
@@ -103,18 +94,18 @@ class AxonServerQueryBusTest {
         configuration.setNrOfNewPermits(1000);
         configuration.setContext(BOUNDED_CONTEXT);
         axonServerConnectionManager = spy(AxonServerConnectionManager.builder()
-                                                                     .axonServerConfiguration(configuration)
-                                                                     .build());
+                .axonServerConfiguration(configuration)
+                .build());
 
         testSubject = AxonServerQueryBus.builder()
-                                        .axonServerConnectionManager(axonServerConnectionManager)
-                                        .configuration(configuration)
-                                        .localSegment(localSegment)
-                                        .updateEmitter(localSegment.queryUpdateEmitter())
-                                        .messageSerializer(serializer)
-                                        .genericSerializer(serializer)
-                                        .targetContextResolver(targetContextResolver)
-                                        .build();
+                .axonServerConnectionManager(axonServerConnectionManager)
+                .configuration(configuration)
+                .localSegment(localSegment)
+                .updateEmitter(localSegment.queryUpdateEmitter())
+                .messageSerializer(genericSerializer)
+                .genericSerializer(genericSerializer)
+                .targetContextResolver(targetContextResolver)
+                .build();
     }
 
     @AfterEach
@@ -159,17 +150,17 @@ class AxonServerQueryBusTest {
     void queryWhenQueryServiceStubFails() {
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
-                                           .axonServerConfiguration(configuration)
-                                           .build();
+                        .axonServerConfiguration(configuration)
+                        .build();
         AxonServerQueryBus testSubject = spy(AxonServerQueryBus.builder()
-                                                               .axonServerConnectionManager(axonServerConnectionManager)
-                                                               .configuration(configuration)
-                                                               .localSegment(localSegment)
-                                                               .updateEmitter(localSegment.queryUpdateEmitter())
-                                                               .messageSerializer(serializer)
-                                                               .genericSerializer(serializer)
-                                                               .targetContextResolver(targetContextResolver)
-                                                               .build());
+                .axonServerConnectionManager(axonServerConnectionManager)
+                .configuration(configuration)
+                .localSegment(localSegment)
+                .updateEmitter(localSegment.queryUpdateEmitter())
+                .messageSerializer(genericSerializer)
+                .genericSerializer(genericSerializer)
+                .targetContextResolver(targetContextResolver)
+                .build());
         RuntimeException expectedException = new RuntimeException("oops");
         when(testSubject.queryService(anyString())).thenThrow(expectedException);
 
@@ -215,15 +206,15 @@ class AxonServerQueryBusTest {
     @Test
     void processQuery() {
         AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
-                                                           .axonServerConnectionManager(axonServerConnectionManager)
-                                                           .configuration(configuration)
-                                                           .localSegment(localSegment)
-                                                           .updateEmitter(localSegment.queryUpdateEmitter())
-                                                           .messageSerializer(serializer)
-                                                           .genericSerializer(serializer)
-                                                           .targetContextResolver(targetContextResolver)
-                                                           .requestStreamFactory(so -> new TestStreamObserver<>())
-                                                           .build();
+                .axonServerConnectionManager(axonServerConnectionManager)
+                .configuration(configuration)
+                .localSegment(localSegment)
+                .updateEmitter(localSegment.queryUpdateEmitter())
+                .messageSerializer(genericSerializer)
+                .genericSerializer(genericSerializer)
+                .targetContextResolver(targetContextResolver)
+                .requestStreamFactory(so -> new TestStreamObserver<>())
+                .build();
 
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
                 buildInboundQueryStreamObserverReference();
@@ -240,15 +231,15 @@ class AxonServerQueryBusTest {
     void unsupportedQueryInstruction() {
         TestStreamObserver<QueryProviderOutbound> requestStream = new TestStreamObserver<>();
         AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
-                                                           .axonServerConnectionManager(axonServerConnectionManager)
-                                                           .configuration(configuration)
-                                                           .localSegment(localSegment)
-                                                           .updateEmitter(localSegment.queryUpdateEmitter())
-                                                           .messageSerializer(serializer)
-                                                           .genericSerializer(serializer)
-                                                           .targetContextResolver(targetContextResolver)
-                                                           .requestStreamFactory(so -> requestStream)
-                                                           .build();
+                .axonServerConnectionManager(axonServerConnectionManager)
+                .configuration(configuration)
+                .localSegment(localSegment)
+                .updateEmitter(localSegment.queryUpdateEmitter())
+                .messageSerializer(genericSerializer)
+                .genericSerializer(genericSerializer)
+                .targetContextResolver(targetContextResolver)
+                .requestStreamFactory(so -> requestStream)
+                .build();
 
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
                 buildInboundQueryStreamObserverReference();
@@ -257,35 +248,35 @@ class AxonServerQueryBusTest {
 
         String instructionId = "instructionId";
         QueryProviderInbound inboundMessage = QueryProviderInbound.newBuilder()
-                                                                  .setInstructionId(instructionId)
-                                                                  .build();
+                .setInstructionId(instructionId)
+                .build();
         inboundStreamObserver.get().onNext(inboundMessage);
 
         result.close();
 
         assertTrue(requestStream.sentMessages()
-                                .stream()
-                                .anyMatch(outbound -> outbound.getRequestCase()
-                                                              .equals(QueryProviderOutbound.RequestCase.ACK)
-                                        && !outbound.getAck().getSuccess()
-                                        && outbound.getAck().getError().getErrorCode()
-                                                   .equals(UNSUPPORTED_INSTRUCTION.errorCode())
-                                        && outbound.getAck().getInstructionId().equals(instructionId)));
+                .stream()
+                .anyMatch(outbound -> outbound.getRequestCase()
+                        .equals(QueryProviderOutbound.RequestCase.ACK)
+                        && !outbound.getAck().getSuccess()
+                        && outbound.getAck().getError().getErrorCode()
+                        .equals(UNSUPPORTED_INSTRUCTION.errorCode())
+                        && outbound.getAck().getInstructionId().equals(instructionId)));
     }
 
     @Test
     void unsupportedQueryInstructionWithoutInstructionId() {
         TestStreamObserver<QueryProviderOutbound> requestStream = new TestStreamObserver<>();
         AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
-                                                           .axonServerConnectionManager(axonServerConnectionManager)
-                                                           .configuration(configuration)
-                                                           .localSegment(localSegment)
-                                                           .updateEmitter(localSegment.queryUpdateEmitter())
-                                                           .messageSerializer(serializer)
-                                                           .genericSerializer(serializer)
-                                                           .targetContextResolver(targetContextResolver)
-                                                           .requestStreamFactory(so -> requestStream)
-                                                           .build();
+                .axonServerConnectionManager(axonServerConnectionManager)
+                .configuration(configuration)
+                .localSegment(localSegment)
+                .updateEmitter(localSegment.queryUpdateEmitter())
+                .messageSerializer(genericSerializer)
+                .genericSerializer(genericSerializer)
+                .targetContextResolver(targetContextResolver)
+                .requestStreamFactory(so -> requestStream)
+                .build();
 
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
                 buildInboundQueryStreamObserverReference();
@@ -317,12 +308,15 @@ class AxonServerQueryBusTest {
                         MetaData.with("repeat", 10).and("interval", 10)
                 );
 
-        assertEquals(10, testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS)
-                                    .filter(i -> Optional.class.isAssignableFrom(i.getPayloadType()))
-                                    .filter(i -> i.getPayload().isPresent())
-                                    .count());
+        Stream<QueryResponseMessage<Optional<String>>> responseMessageStream = testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS);
+        assertEquals(10, responseMessageStream
+                .filter(i -> Optional.class.isAssignableFrom(i.getPayloadType()))
+                .filter(i -> i.getPayload().isPresent())
+                .count());
 
         verify(targetContextResolver).resolveContext(testQuery);
+
+        responseMessageStream.close();
     }
 
     @Test
@@ -372,14 +366,14 @@ class AxonServerQueryBusTest {
     @Test
     void handlerInterceptor() {
         AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
-                                                           .axonServerConnectionManager(axonServerConnectionManager)
-                                                           .configuration(configuration)
-                                                           .localSegment(localSegment)
-                                                           .updateEmitter(localSegment.queryUpdateEmitter())
-                                                           .messageSerializer(serializer)
-                                                           .genericSerializer(serializer)
-                                                           .targetContextResolver(targetContextResolver)
-                                                           .build();
+                .axonServerConnectionManager(axonServerConnectionManager)
+                .configuration(configuration)
+                .localSegment(localSegment)
+                .updateEmitter(localSegment.queryUpdateEmitter())
+                .messageSerializer(genericSerializer)
+                .genericSerializer(genericSerializer)
+                .targetContextResolver(targetContextResolver)
+                .build();
         AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserver =
                 buildInboundQueryStreamObserverReference();
 
@@ -437,15 +431,15 @@ class AxonServerQueryBusTest {
         QueryProviderInbound testQueryMessage = testQueryMessage();
 
         AxonServerQueryBus testSubject = AxonServerQueryBus.builder()
-                                                           .axonServerConnectionManager(axonServerConnectionManager)
-                                                           .configuration(configuration)
-                                                           .localSegment(localSegment)
-                                                           .updateEmitter(localSegment.queryUpdateEmitter())
-                                                           .messageSerializer(serializer)
-                                                           .genericSerializer(serializer)
-                                                           .targetContextResolver(targetContextResolver)
-                                                           .requestStreamFactory(so -> new TestStreamObserver<>())
-                                                           .build();
+                .axonServerConnectionManager(axonServerConnectionManager)
+                .configuration(configuration)
+                .localSegment(localSegment)
+                .updateEmitter(localSegment.queryUpdateEmitter())
+                .messageSerializer(genericSerializer)
+                .genericSerializer(genericSerializer)
+                .targetContextResolver(targetContextResolver)
+                .requestStreamFactory(so -> new TestStreamObserver<>())
+                .build();
 
 
         // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
@@ -537,6 +531,7 @@ class AxonServerQueryBusTest {
         // Wait until the shutdownDispatching-thread and queryResponse-thread have finished prior to validating
         dispatchingHasShutdown.join();
 
+        assertTrue(queryResponse.isDone());
         assertTrue(queryHandled.get());
         assertTrue(dispatchingHasShutdown.isDone());
     }
@@ -575,28 +570,28 @@ class AxonServerQueryBusTest {
 
     private QueryProviderInbound testQueryMessage() {
         org.axonframework.serialization.SerializedObject<byte[]> serializedResponseType =
-                serializer.serialize(instanceOf(String.class), byte[].class);
+                genericSerializer.serialize(instanceOf(String.class), byte[].class);
         SerializedObject responseType =
                 SerializedObject.newBuilder()
-                                .setData(ByteString.copyFrom(serializedResponseType.getData()))
-                                .setType(serializedResponseType.getType().getName())
-                                .setRevision(getOrDefault(serializedResponseType.getType().getRevision(), ""))
-                                .build();
+                        .setData(ByteString.copyFrom(serializedResponseType.getData()))
+                        .setType(serializedResponseType.getType().getName())
+                        .setRevision(getOrDefault(serializedResponseType.getType().getRevision(), ""))
+                        .build();
 
         SerializedObject queryPayload = SerializedObject.newBuilder()
-                                                        .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
-                                                        .setType(String.class.getName())
-                                                        .build();
+                .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
+                .setType(String.class.getName())
+                .build();
 
         QueryRequest query = QueryRequest.newBuilder()
-                                         .setQuery(TEST_QUERY)
-                                         .setResponseType(responseType)
-                                         .setPayload(queryPayload)
-                                         .build();
+                .setQuery(TEST_QUERY)
+                .setResponseType(responseType)
+                .setPayload(queryPayload)
+                .build();
 
         return QueryProviderInbound.newBuilder()
-                                   .setInstructionId("instructionId")
-                                   .setQuery(query)
-                                   .build();
+                .setInstructionId("instructionId")
+                .setQuery(query)
+                .build();
     }
 }

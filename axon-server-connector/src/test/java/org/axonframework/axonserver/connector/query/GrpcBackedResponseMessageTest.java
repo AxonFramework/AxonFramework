@@ -21,9 +21,9 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -35,7 +35,7 @@ class GrpcBackedResponseMessageTest {
     private static final TestQueryResponse TEST_QUERY_RESPONSE = new TestQueryResponse("aggregateId", 42);
     private static final String REQUEST_MESSAGE_ID = "request-message-id";
 
-    private final Serializer serializer = XStreamSerializer.defaultSerializer();
+    private final Serializer serializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER.get();
     private final QuerySerializer querySerializer =
             new QuerySerializer(serializer, serializer, new AxonServerConfiguration());
 

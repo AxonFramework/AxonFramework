@@ -28,18 +28,11 @@ import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,10 +145,10 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     protected JobDetail buildJobDetail(EventMessage event, JobKey jobKey) {
         JobDataMap jobData = jobDataBinder.toJobData(event);
         return JobBuilder.newJob(FireEventJob.class)
-                         .withDescription(event.getPayloadType().getName())
-                         .withIdentity(jobKey)
-                         .usingJobData(jobData)
-                         .build();
+                .withDescription(event.getPayloadType().getName())
+                .withIdentity(jobKey)
+                .usingJobData(jobData)
+                .build();
     }
 
     /**
@@ -168,9 +161,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      */
     protected Trigger buildTrigger(Instant triggerDateTime, JobKey jobKey) {
         return TriggerBuilder.newTrigger()
-                             .forJob(jobKey)
-                             .startAt(Date.from(triggerDateTime))
-                             .build();
+                .forJob(jobKey)
+                .startAt(Date.from(triggerDateTime))
+                .build();
     }
 
     @Override
@@ -244,7 +237,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          * de-/serializing event messages.
          */
         public DirectEventJobDataBinder() {
-            this(XStreamSerializer.defaultSerializer());
+            this(DefaultSerializerSupplier.DEFAULT_SERIALIZER.get());
         }
 
         /**
@@ -294,9 +287,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         public Object fromJobData(JobDataMap jobDataMap) {
             if (jobDataMap.containsKey(SERIALIZED_MESSAGE_PAYLOAD)) {
                 return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
-                                                 deserializePayload(jobDataMap),
-                                                 deserializeMetaData(jobDataMap),
-                                                 retrieveDeadlineTimestamp(jobDataMap));
+                        deserializePayload(jobDataMap),
+                        deserializeMetaData(jobDataMap),
+                        retrieveDeadlineTimestamp(jobDataMap));
             }
 
             return fromJobDataMap(jobDataMap);

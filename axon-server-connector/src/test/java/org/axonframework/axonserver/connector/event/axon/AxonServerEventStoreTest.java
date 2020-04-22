@@ -22,6 +22,7 @@ import org.axonframework.axonserver.connector.PlatformService;
 import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
+import org.axonframework.axonserver.connector.utils.SerializerParameterResolver;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
@@ -30,13 +31,13 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,18 +46,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(SerializerParameterResolver.class)
 class AxonServerEventStoreTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AxonServerEventStoreTest.class);
 
     private StubServer server;
     private AxonServerEventStore testSubject;
@@ -65,7 +62,9 @@ class AxonServerEventStoreTest {
     private EventStoreImpl eventStore;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp(Serializer serializer, TestInfo testInfo) throws Exception {
+        LOG.info("Running test {} with serializer {}.", testInfo.getDisplayName(), serializer.getClass());
+
         int freePort = TcpUtil.findFreePort();
         eventStore = spy(new EventStoreImpl());
         server = new StubServer(freePort, new PlatformService(freePort), eventStore);
@@ -73,21 +72,21 @@ class AxonServerEventStoreTest {
         upcasterChain = mock(EventUpcaster.class);
         when(upcasterChain.upcast(any())).thenAnswer(i -> i.getArgument(0));
         AxonServerConfiguration config = AxonServerConfiguration.builder()
-                                                                .allowReadingEventsFromFollower(true)
-                                                                .servers("localhost:" + server.getPort())
-                                                                .componentName("JUNIT")
-                                                                .flowControl(2, 1, 1)
-                                                                .build();
+                .allowReadingEventsFromFollower(true)
+                .servers("localhost:" + server.getPort())
+                .componentName("JUNIT")
+                .flowControl(2, 1, 1)
+                .build();
         axonServerConnectionManager = AxonServerConnectionManager.builder()
-                                   .axonServerConfiguration(config)
-                                   .build();
+                .axonServerConfiguration(config)
+                .build();
         testSubject = AxonServerEventStore.builder()
-                                          .configuration(config)
-                                          .platformConnectionManager(axonServerConnectionManager)
-                                          .upcasterChain(upcasterChain)
-                                          .eventSerializer(JacksonSerializer.defaultSerializer())
-                                          .snapshotSerializer(XStreamSerializer.defaultSerializer())
-                                          .build();
+                .configuration(config)
+                .platformConnectionManager(axonServerConnectionManager)
+                .upcasterChain(upcasterChain)
+                .eventSerializer(serializer)
+                .snapshotSerializer(serializer)
+                .build();
     }
 
     @AfterEach
@@ -96,12 +95,12 @@ class AxonServerEventStoreTest {
         server.shutdown();
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testPublishAndConsumeEvents() throws Exception {
         UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(GenericEventMessage.asEventMessage("Test1"),
-                            GenericEventMessage.asEventMessage("Test2"),
-                            GenericEventMessage.asEventMessage("Test3"));
+                GenericEventMessage.asEventMessage("Test2"),
+                GenericEventMessage.asEventMessage("Test3"));
         uow.commit();
 
         TrackingEventStream stream = testSubject.openStream(null);
@@ -115,7 +114,7 @@ class AxonServerEventStoreTest {
         assertEquals(Arrays.asList("Test1", "Test2", "Test3"), received);
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testLoadEventsWithMultiUpcaster() {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
@@ -123,8 +122,8 @@ class AxonServerEventStoreTest {
             return si.flatMap(i -> Stream.of(i, i));
         });
         testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"),
-                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2"),
-                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3"));
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2"),
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3"));
 
         DomainEventStream actual = testSubject.readEvents("aggregateId");
         assertTrue(actual.hasNext());
@@ -137,7 +136,7 @@ class AxonServerEventStoreTest {
         assertFalse(actual.hasNext());
     }
 
-    @Test
+    @Test // cannot be repeated
     void testLoadSnapshotAndEventsWithMultiUpcaster() {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
@@ -145,8 +144,8 @@ class AxonServerEventStoreTest {
             return si.flatMap(i -> Stream.of(i, i));
         });
         testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"),
-                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2"),
-                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3"));
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2"),
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3"));
         testSubject.storeSnapshot(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Snapshot1"));
 
         DomainEventStream actual = testSubject.readEvents("aggregateId");
@@ -158,17 +157,17 @@ class AxonServerEventStoreTest {
         assertFalse(actual.hasNext());
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testLastSequenceNumberFor() {
         assertThrows(EventStoreException.class, () -> testSubject.lastSequenceNumberFor("Agg1"));
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testCreateStreamableMessageSourceForContext() {
         assertNotNull(testSubject.createStreamableMessageSourceForContext("some-context"));
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testUsingLocalEventStoreOnOpeningStream() {
         testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"));
         testSubject.openStream(null);
@@ -176,12 +175,12 @@ class AxonServerEventStoreTest {
         assertTrue(eventStore.getEventsRequests().get(0).getAllowReadingFromFollower());
     }
 
-    @Test
+    @RepeatedTest(SerializerParameterResolver.SERIALIZER_COUNT)
     void testUsingLocalEventStoreOnQueryingEvents() {
         testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"));
         testSubject.query("", true);
         assertWithin(1, TimeUnit.SECONDS,
-                     () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
+                () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
         assertTrue(eventStore.getQueryEventsRequests().get(0).getAllowReadingFromFollower());
     }
 }

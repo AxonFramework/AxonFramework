@@ -25,9 +25,9 @@ import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.SagaStorageException;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.SagaEntry;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -307,7 +307,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
 
         private ConnectionProvider connectionProvider;
         private SagaSqlSchema sqlSchema = new GenericSagaSqlSchema();
-        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER;
 
         /**
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.

@@ -37,10 +37,16 @@
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-serializer-adapter-xstreams</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-serializer-adapter-jackson</artifactId>
+            <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 

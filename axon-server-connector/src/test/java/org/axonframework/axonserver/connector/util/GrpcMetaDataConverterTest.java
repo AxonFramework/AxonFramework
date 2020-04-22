@@ -2,10 +2,10 @@ package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
  */
 class GrpcMetaDataConverterTest {
 
-    private final Serializer serializer = spy(XStreamSerializer.defaultSerializer());
+    private final Serializer serializer = spy(DefaultSerializerSupplier.DEFAULT_SERIALIZER.get());
     private final GrpcMetaDataConverter testSubject = new GrpcMetaDataConverter(serializer);
 
     @Test
@@ -117,8 +117,8 @@ class GrpcMetaDataConverterTest {
     void testConvertFromTextMetaDataValue() {
         String expected = "some-text";
         MetaDataValue testMetaData = MetaDataValue.newBuilder()
-                                                  .setTextValue(expected)
-                                                  .build();
+                .setTextValue(expected)
+                .build();
 
         Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
 
@@ -151,8 +151,8 @@ class GrpcMetaDataConverterTest {
         @SuppressWarnings("WrapperTypeMayBePrimitive")
         Double expected = 10d;
         MetaDataValue testMetaData = MetaDataValue.newBuilder()
-                                                  .setDoubleValue(expected)
-                                                  .build();
+                .setDoubleValue(expected)
+                .build();
 
         Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
 
@@ -166,8 +166,8 @@ class GrpcMetaDataConverterTest {
         @SuppressWarnings("WrapperTypeMayBePrimitive")
         Long expected = 10L;
         MetaDataValue testMetaData = MetaDataValue.newBuilder()
-                                                  .setNumberValue(expected)
-                                                  .build();
+                .setNumberValue(expected)
+                .build();
 
         Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
 
@@ -179,8 +179,8 @@ class GrpcMetaDataConverterTest {
     @Test
     void testConvertFromBooleanMetaDataValue() {
         MetaDataValue testMetaData = MetaDataValue.newBuilder()
-                                                  .setBooleanValue(true)
-                                                  .build();
+                .setBooleanValue(true)
+                .build();
 
         Object resultObject = testSubject.convertFromMetaDataValue(testMetaData);
 

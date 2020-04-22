@@ -28,16 +28,9 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.serialization.defaults.DefaultSerializerSupplier;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
+import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,8 +125,8 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
             DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             try {
                 JobDetail jobDetail = buildJobDetail(interceptedDeadlineMessage,
-                                                     deadlineScope,
-                                                     new JobKey(deadlineId, deadlineName));
+                        deadlineScope,
+                        new JobKey(deadlineId, deadlineName));
                 scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
             } catch (SchedulerException e) {
                 throw new DeadlineException("An error occurred while setting a timer for a deadline", e);
@@ -161,7 +154,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         runOnPrepareCommitOrNow(() -> {
             try {
                 scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
-                         .forEach(this::cancelSchedule);
+                        .forEach(this::cancelSchedule);
             } catch (SchedulerException e) {
                 throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
             }
@@ -198,17 +191,17 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope, JobKey jobKey) {
         JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, deadlineMessage, deadlineScope);
         return JobBuilder.newJob(DeadlineJob.class)
-                         .withDescription(deadlineMessage.getPayloadType().getName())
-                         .withIdentity(jobKey)
-                         .usingJobData(jobData)
-                         .build();
+                .withDescription(deadlineMessage.getPayloadType().getName())
+                .withIdentity(jobKey)
+                .usingJobData(jobData)
+                .build();
     }
 
     private static Trigger buildTrigger(Instant triggerDateTime, JobKey key) {
         return TriggerBuilder.newTrigger()
-                             .forJob(key)
-                             .startAt(Date.from(triggerDateTime))
-                             .build();
+                .forJob(key)
+                .startAt(Date.from(triggerDateTime))
+                .build();
     }
 
     /**
@@ -238,7 +231,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         private Scheduler scheduler;
         private ScopeAwareProvider scopeAwareProvider;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer = DefaultSerializerSupplier.DEFAULT_SERIALIZER;
         private Predicate<Throwable> refireImmediatelyPolicy =
                 throwable -> !findException(throwable, t -> t instanceof AxonNonTransientException).isPresent();
 
