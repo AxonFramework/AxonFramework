@@ -41,6 +41,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -231,13 +232,27 @@ public class EventProcessingModule
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
                     c -> SimpleEventHandlerInvoker.builder()
                                                   .eventHandlers(handlers)
+                                                  .handlerDefinition(retrieveHandlerDefinition(handlers))
                                                   .parameterResolverFactory(configuration.parameterResolverFactory())
                                                   .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
                                                           processingGroup
                                                   ))
                                                   .sequencingPolicy(sequencingPolicy(processingGroup))
-                                                  .build());
+                                                  .build()
+            );
         });
+    }
+
+    /**
+     * The class is required to be provided in case the {@code ClasspathHandlerDefinition is used to retrieve the {@link
+     * HandlerDefinition}. Ideally, a {@code HandlerDefinition} would be retrieved per event handling class, as
+     * potentially users would be able to define different {@link ClassLoader} instances per event handling class
+     * contained in an Event Processor. For now we have deduced the latter to be to much of an edge case. Hence we
+     * assume users will use the same ClassLoader for differing event handling instance within a single Event
+     * Processor.
+     */
+    private HandlerDefinition retrieveHandlerDefinition(List<Object> handlers) {
+        return configuration.handlerDefinition(handlers.get(0).getClass());
     }
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
