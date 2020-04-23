@@ -38,7 +38,6 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -49,6 +48,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -66,14 +66,14 @@ public class AxonServerEventScheduler implements EventScheduler {
     private final AxonServerConfiguration axonServerConfiguration;
     private final Serializer serializer;
     private final GrpcMetaDataConverter converter;
-    private final ShutdownLatch shutdownLatch = new ShutdownLatch();
+    private final AtomicBoolean started = new AtomicBoolean();
 
     /**
      * Instantiates an {@link AxonServerEventScheduler} using the given {@link Builder}.
      *
      * @param builder the {@link Builder} used.
      */
-    private AxonServerEventScheduler(Builder builder) {
+    protected AxonServerEventScheduler(Builder builder) {
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.axonServerConfiguration = builder.axonServerConfiguration;
         this.serializer = builder.eventSerializer.get();
@@ -94,12 +94,13 @@ public class AxonServerEventScheduler implements EventScheduler {
      */
     @StartHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public void start() {
-        shutdownLatch.initialize();
+        started.set(true);
     }
 
     @ShutdownHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        return shutdownLatch.initiateShutdown();
+        started.set(false);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -112,17 +113,15 @@ public class AxonServerEventScheduler implements EventScheduler {
      */
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
-        shutdownLatch.ifShuttingDown("Cannot dispatch new events as this scheduler is being shutdown");
-        Channel channel = axonServerConnectionManager.getChannel(axonServerConfiguration.getContext());
-        EventSchedulerGrpc.EventSchedulerFutureStub scheduleStub = EventSchedulerGrpc.newFutureStub(channel);
+        Assert.isTrue(started.get(), () -> "Cannot dispatch new events as this scheduler is being shutdown");
         io.axoniq.axonserver.grpc.event.ScheduleToken response = null;
         try {
-            response = scheduleStub.scheduleEvent(ScheduleEventRequest
-                                                          .newBuilder()
-                                                          .setInstant(triggerDateTime.toEpochMilli())
-                                                          .setEvent(toEvent(event))
-                                                          .build())
-                                   .get();
+            response = eventSchedulerStub().scheduleEvent(ScheduleEventRequest
+                                                                  .newBuilder()
+                                                                  .setInstant(triggerDateTime.toEpochMilli())
+                                                                  .setEvent(toEvent(event))
+                                                                  .build())
+                                           .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw GrpcExceptionParser.parse(e);
@@ -151,18 +150,17 @@ public class AxonServerEventScheduler implements EventScheduler {
      */
     @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
-        shutdownLatch.ifShuttingDown("Cannot dispatch new events as this scheduler is being shutdown");
+        Assert.isTrue(started.get(), () -> "Scheduler is being shutdown");
         Assert.isTrue(scheduleToken instanceof SimpleScheduleToken,
                       () -> "Invalid tracking token type. Must be SimpleScheduleToken.");
         String token = ((SimpleScheduleToken) scheduleToken).getTokenId();
-        Channel channel = axonServerConnectionManager.getChannel(axonServerConfiguration.getContext());
-        EventSchedulerGrpc.EventSchedulerFutureStub scheduleStub = EventSchedulerGrpc.newFutureStub(channel);
         try {
-            InstructionAck instructionAck = scheduleStub.cancelScheduledEvent(CancelScheduledEventRequest.newBuilder()
-                                                                                                         .setToken(
-                                                                                                                 token)
-                                                                                                         .build())
-                                                        .get();
+            InstructionAck instructionAck = eventSchedulerStub().cancelScheduledEvent(CancelScheduledEventRequest
+                                                                                              .newBuilder()
+                                                                                              .setToken(
+                                                                                                      token)
+                                                                                              .build())
+                                                                .get();
             if (!instructionAck.getSuccess()) {
                 throw ErrorCode.getFromCode(instructionAck.getError().getErrorCode()).convert(instructionAck
                                                                                                       .getError());
@@ -175,6 +173,11 @@ public class AxonServerEventScheduler implements EventScheduler {
         }
     }
 
+    private EventSchedulerGrpc.EventSchedulerFutureStub eventSchedulerStub() {
+        Channel channel = axonServerConnectionManager.getChannel(axonServerConfiguration.getContext());
+        return EventSchedulerGrpc.newFutureStub(channel);
+    }
+
     /**
      * Changes the trigger time for a scheduled event.
      *
@@ -185,12 +188,10 @@ public class AxonServerEventScheduler implements EventScheduler {
      */
     @Override
     public ScheduleToken reschedule(ScheduleToken scheduleToken, Duration triggerDuration, Object event) {
-        shutdownLatch.ifShuttingDown("Cannot dispatch new events as this scheduler is being shutdown");
+        Assert.isTrue(started.get(), () -> "Cannot dispatch new events as this scheduler is being shutdown");
         Assert.isTrue(scheduleToken == null || scheduleToken instanceof SimpleScheduleToken,
                       () -> "Invalid tracking token type. Must be SimpleScheduleToken.");
         String token = scheduleToken == null ? "" : ((SimpleScheduleToken) scheduleToken).getTokenId();
-        Channel channel = axonServerConnectionManager.getChannel(axonServerConfiguration.getContext());
-        EventSchedulerGrpc.EventSchedulerFutureStub scheduleStub = EventSchedulerGrpc.newFutureStub(channel);
         try {
             RescheduleEventRequest request =
                     RescheduleEventRequest.newBuilder()
@@ -200,7 +201,7 @@ public class AxonServerEventScheduler implements EventScheduler {
                                                              .plus(triggerDuration)
                                                              .toEpochMilli())
                                           .build();
-            io.axoniq.axonserver.grpc.event.ScheduleToken updatedScheduleToken = scheduleStub
+            io.axoniq.axonserver.grpc.event.ScheduleToken updatedScheduleToken = eventSchedulerStub()
                     .rescheduleEvent(request).get();
             return new SimpleScheduleToken(updatedScheduleToken.getToken());
         } catch (InterruptedException e) {

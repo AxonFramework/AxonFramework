@@ -39,7 +39,6 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
-import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
@@ -61,7 +60,7 @@ public class AxonServerEventSchedulerTest {
     private AxonServerEventScheduler testSubject;
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() throws Exception {
         server = ServerBuilder.forPort(18024)
                               .addService(new PlatformServiceGrpc.PlatformServiceImplBase() {
                                   @Override
@@ -145,12 +144,12 @@ public class AxonServerEventSchedulerTest {
     }
 
     @AfterAll
-    public static void shutdown() throws Exception {
+    static void shutdown() throws Exception {
         server.shutdownNow().awaitTermination();
     }
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         AxonServerConfiguration axonserverConfiguration = AxonServerConfiguration.builder()
                                                                                  .servers("localhost:18024")
                                                                                  .build();
@@ -161,10 +160,11 @@ public class AxonServerEventSchedulerTest {
                                                                                             .build())
                                               .configuration(axonserverConfiguration)
                                               .build();
+        testSubject.start();
     }
 
     @Test
-    public void schedule() {
+    void schedule() {
         org.axonframework.eventhandling.scheduling.ScheduleToken token = testSubject.schedule(Instant.now()
                                                                                                      .plus(Duration.ofMinutes(
                                                                                                              5)),
@@ -175,7 +175,7 @@ public class AxonServerEventSchedulerTest {
     }
 
     @Test
-    public void scheduleWithDuration() {
+    void scheduleWithDuration() {
         org.axonframework.eventhandling.scheduling.ScheduleToken token = testSubject.schedule(Duration.ofMinutes(5),
                                                                                               "TestEvent");
         assertTrue(token instanceof SimpleScheduleToken);
@@ -184,26 +184,26 @@ public class AxonServerEventSchedulerTest {
     }
 
     @Test
-    public void scheduleDuringShutdown() {
+    void scheduleDuringShutdown() {
         testSubject.shutdownDispatching();
-        assertThrows(ShutdownInProgressException.class, () -> testSubject.schedule(Duration.ofMinutes(5), "TestEvent"));
+        assertThrows(IllegalArgumentException.class, () -> testSubject.schedule(Duration.ofMinutes(5), "TestEvent"));
     }
 
     @Test
-    public void cancelSchedule() {
+    void cancelSchedule() {
         scheduled.put("12345", Event.newBuilder().build());
         testSubject.cancelSchedule(new SimpleScheduleToken("12345"));
     }
 
     @Test
-    public void cancelWithQuartzScheduleToken() {
+    void cancelWithQuartzScheduleToken() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.cancelSchedule(new
                                                                                               QuartzScheduleToken("job",
                                                                                                                   "12345")));
     }
 
     @Test
-    public void reschedule() {
+    void reschedule() {
         String token = "12345";
         scheduled.put(token, Event.newBuilder().build());
         testSubject.reschedule(new SimpleScheduleToken(token), Duration.ofDays(1), new GenericEventMessage<>("Updated",
@@ -216,7 +216,7 @@ public class AxonServerEventSchedulerTest {
     }
 
     @Test
-    public void rescheduleWithoutToken() {
+    void rescheduleWithoutToken() {
         org.axonframework.eventhandling.scheduling.ScheduleToken token =
                 testSubject.reschedule(null, Duration.ofDays(1),
                                        new GenericEventMessage<>("Updated", MetaData.with("updated", "true")));
