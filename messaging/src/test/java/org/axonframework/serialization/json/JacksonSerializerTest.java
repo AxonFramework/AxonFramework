@@ -20,8 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -97,11 +95,7 @@ class JacksonSerializerTest {
 
     @Test
     void testSerializeAndDeserializeList() {
-        objectMapper.activateDefaultTyping(
-                objectMapper.getPolymorphicTypeValidator(),
-                ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE
-        );
-
+        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -239,13 +233,7 @@ class JacksonSerializerTest {
     @Test
     void testSerializeMetaDataWithComplexObjects() {
         // Typing must be enabled for this (which we expect end-users to do)
-        PolymorphicTypeValidator polymorphicTypeValidator =
-                BasicPolymorphicTypeValidator.builder()
-                                             .allowIfSubType(ComplexObject.class)
-                                             .build();
-        JacksonSerializer testSubject = JacksonSerializer.builder()
-                                                         .activateDefaultTyping(polymorphicTypeValidator)
-                                                         .build();
+        JacksonSerializer testSubject = JacksonSerializer.builder().defaultTyping().build();
 
         MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
         SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
@@ -258,20 +246,13 @@ class JacksonSerializerTest {
      * Test case corresponding with a {@link org.axonframework.queryhandling.QueryHandler} annotated method which
      * returns a {@link List} of {@link ComplexObject}. Upon deserialization, the type info is required by the {@link
      * ObjectMapper} to <b>not</b> defer to an {@link ArrayList} of {@link java.util.LinkedHashMap}s. This can be
-     * enabled through {@link JacksonSerializer.Builder#activateDefaultTyping(PolymorphicTypeValidator)} or by providing
-     * an {@link ObjectMapper} which is configured with {@link ObjectMapper#activateDefaultTyping(PolymorphicTypeValidator,
-     * ObjectMapper.DefaultTyping)}.
+     * enabled through {@link JacksonSerializer.Builder#defaultTyping()} or by providing an {@link ObjectMapper} which
+     * is configured with {@link ObjectMapper#enableDefaultTyping(ObjectMapper.DefaultTyping)}.
      */
     @Test
     void testSerializeCollectionOfObjects() {
         // Typing must be enabled for this (which we expect end-users to do)
-        PolymorphicTypeValidator polymorphicTypeValidator =
-                BasicPolymorphicTypeValidator.builder()
-                                             .allowIfSubType(ComplexObject.class)
-                                             .build();
-        JacksonSerializer testSubject = JacksonSerializer.builder()
-                                                         .activateDefaultTyping(polymorphicTypeValidator)
-                                                         .build();
+        JacksonSerializer testSubject = JacksonSerializer.builder().defaultTyping().build();
 
         List<ComplexObject> objectToSerialize = new ArrayList<>();
         objectToSerialize.add(new ComplexObject("String1", "String2", 3));

@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.common.AxonConfigurationException;
@@ -268,7 +267,7 @@ public class JacksonSerializer implements Serializer {
         private Converter converter = new ChainingConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
         private boolean lenientDeserialization = false;
-        private PolymorphicTypeValidator polymorphicTypeValidator;
+        private boolean defaultTyping = false;
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
@@ -342,25 +341,16 @@ public class JacksonSerializer implements Serializer {
 
         /**
          * Configures the underlying {@link ObjectMapper} to include type information when serializing Java objects into
-         * JSON. Specifically, it calls {@link ObjectMapper#activateDefaultTyping(PolymorphicTypeValidator,
-         * ObjectMapper.DefaultTyping)} with the given {@code polymorphicTypeValidator} and {@link
-         * ObjectMapper.DefaultTyping#NON_CONCRETE_AND_ARRAYS}. This can be toggled on to allow {@link
+         * JSON. Specifically, it calls {@link ObjectMapper#enableDefaultTyping(ObjectMapper.DefaultTyping)} method,
+         * using {@link ObjectMapper.DefaultTyping#NON_CONCRETE_AND_ARRAYS}. This can be toggled on to allow {@link
          * java.util.Collection}s of objects, for example query {@link java.util.List} responses, to automatically
          * include the types without require the use of {@link com.fasterxml.jackson.annotation.JsonTypeInfo} on the
          * objects themselves.
-         * <p>
-         * Note: Jackson documentation is very <b>specific</b> on the {@link PolymorphicTypeValidator} used for security
-         * reasons. Allowing all subtypes to be included (with the {@link com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator}
-         * implementation for example) can be risky for untrusted content.
          *
-         * @param polymorphicTypeValidator the {@link PolymorphicTypeValidator} used to call {@link
-         *                                 ObjectMapper#activateDefaultTyping(PolymorphicTypeValidator,
-         *                                 ObjectMapper.DefaultTyping)}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder activateDefaultTyping(PolymorphicTypeValidator polymorphicTypeValidator) {
-            assertNonNull(polymorphicTypeValidator, "PolymorphicTypeValidator may not be null");
-            this.polymorphicTypeValidator = polymorphicTypeValidator;
+        public Builder defaultTyping() {
+            defaultTyping = true;
             return this;
         }
 
@@ -375,10 +365,8 @@ public class JacksonSerializer implements Serializer {
                 objectMapper.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS);
                 objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             }
-            if (polymorphicTypeValidator != null) {
-                objectMapper.activateDefaultTyping(
-                        polymorphicTypeValidator, ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS
-                );
+            if (defaultTyping) {
+                objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
             }
             return new JacksonSerializer(this);
         }
