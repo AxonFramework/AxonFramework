@@ -34,41 +34,41 @@ import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Default implementation of the {@link ReactiveQueryGateway}.
+ * Implementation of the {@link ReactiveQueryGateway} that uses Project Reactor to achieve reactiveness.
  *
  * @author Milan Savic
  * @since 4.4
  */
-public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
+public class ReactorQueryGateway implements ReactiveQueryGateway {
 
     private final List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors;
 
     private final QueryBus queryBus;
 
     /**
-     * Creates an instance of {@link DefaultReactiveQueryGateway} based on the fields contained in the {@link
+     * Creates an instance of {@link ReactorQueryGateway} based on the fields contained in the {@link
      * Builder}.
      * <p>
      * Will assert that the {@link QueryBus} is not {@code null} and throws an {@link AxonConfigurationException} if
      * it is.
      * </p>
      *
-     * @param builder the {@link Builder} used to instantiated a {@link DefaultReactiveQueryGateway} instance
+     * @param builder the {@link Builder} used to instantiated a {@link ReactorQueryGateway} instance
      */
-    protected DefaultReactiveQueryGateway(Builder builder) {
+    protected ReactorQueryGateway(Builder builder) {
         builder.validate();
         this.queryBus = builder.queryBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link DefaultReactiveQueryGateway}.
+     * Instantiate a Builder to be able to create a {@link ReactorQueryGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
      * The {@link QueryBus} is a <b>hard requirements</b> and as such should be provided.
      * </p>
      *
-     * @return a Builder to be able to create a {@link DefaultReactiveQueryGateway}
+     * @return a Builder to be able to create a {@link ReactorQueryGateway}
      */
     public static Builder builder() {
         return new Builder();
@@ -166,7 +166,7 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
     }
 
     /**
-     * Builder class to instantiate {@link DefaultReactiveQueryGateway}.
+     * Builder class to instantiate {@link ReactorQueryGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
      * The {@link QueryBus} is a <b>hard requirement</b> and as such should be provided.
@@ -228,12 +228,12 @@ public class DefaultReactiveQueryGateway implements ReactiveQueryGateway {
         }
 
         /**
-         * Initializes a {@link DefaultReactiveQueryGateway} as specified through this Builder.
+         * Initializes a {@link ReactorQueryGateway} as specified through this Builder.
          *
-         * @return a {@link DefaultReactiveQueryGateway} as specified through this Builder
+         * @return a {@link ReactorQueryGateway} as specified through this Builder
          */
-        public DefaultReactiveQueryGateway build() {
-            return new DefaultReactiveQueryGateway(this);
+        public ReactorQueryGateway build() {
+            return new ReactorQueryGateway(this);
         }
     }
 }

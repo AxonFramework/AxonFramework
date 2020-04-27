@@ -32,28 +32,28 @@ import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Default implementation of the {@link ReactiveCommandGateway}.
+ * Implementation of the {@link ReactiveCommandGateway} that uses Project Reactor to achieve reactiveness.
  *
  * @author Milan Savic
  * @since 4.4
  */
-public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
+public class ReactorCommandGateway implements ReactiveCommandGateway {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
     private final List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
 
     /**
-     * Creates an instance of {@link DefaultReactiveCommandGateway} based on the fields contained in the {@link
+     * Creates an instance of {@link ReactorCommandGateway} based on the fields contained in the {@link
      * Builder}.
      * <p>
      * Will assert that the {@link CommandBus} is not {@code null} and throws an {@link AxonConfigurationException} if
      * it is.
      * </p>
      *
-     * @param builder the {@link Builder} used to instantiated a {@link DefaultReactiveCommandGateway} instance
+     * @param builder the {@link Builder} used to instantiated a {@link ReactorCommandGateway} instance
      */
-    protected DefaultReactiveCommandGateway(Builder builder) {
+    protected ReactorCommandGateway(Builder builder) {
         builder.validate();
         this.commandBus = builder.commandBus;
         this.retryScheduler = builder.retryScheduler;
@@ -61,13 +61,13 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link DefaultReactiveCommandGateway}.
+     * Instantiate a Builder to be able to create a {@link ReactorCommandGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
      * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
      * </p>
      *
-     * @return a Builder to be able to create a {@link DefaultReactiveCommandGateway}
+     * @return a Builder to be able to create a {@link ReactorCommandGateway}
      */
     public static Builder builder() {
         return new Builder();
@@ -115,7 +115,7 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
     }
 
     /**
-     * Builder class to instantiate {@link DefaultReactiveCommandGateway}.
+     * Builder class to instantiate {@link ReactorCommandGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
      * The {@link CommandBus} is a <b>hard requirement</b> and as such should be provided.
@@ -190,12 +190,12 @@ public class DefaultReactiveCommandGateway implements ReactiveCommandGateway {
         }
 
         /**
-         * Initializes a {@link DefaultReactiveCommandGateway} as specified through this Builder.
+         * Initializes a {@link ReactorCommandGateway} as specified through this Builder.
          *
-         * @return a {@link DefaultReactiveCommandGateway} as specified through this Builder
+         * @return a {@link ReactorCommandGateway} as specified through this Builder
          */
-        public DefaultReactiveCommandGateway build() {
-            return new DefaultReactiveCommandGateway(this);
+        public ReactorCommandGateway build() {
+            return new ReactorCommandGateway(this);
         }
     }
 }

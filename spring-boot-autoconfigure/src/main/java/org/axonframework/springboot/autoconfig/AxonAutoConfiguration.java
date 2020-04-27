@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultReactiveCommandGateway;
+import org.axonframework.commandhandling.gateway.ReactorCommandGateway;
 import org.axonframework.commandhandling.gateway.ReactiveCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
@@ -209,18 +209,18 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     @ConditionalOnClass(name = "reactor.core.publisher.Mono")
     public ReactiveCommandGateway reactiveCommandGateway(CommandBus commandBus) {
-        return DefaultReactiveCommandGateway.builder()
-                                            .commandBus(commandBus)
-                                            .build();
+        return ReactorCommandGateway.builder()
+                                    .commandBus(commandBus)
+                                    .build();
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(name = "reactor.core.publisher.Mono")
     public ReactiveQueryGateway reactiveQueryGateway(QueryBus queryBus) {
-        return DefaultReactiveQueryGateway.builder()
-                                          .queryBus(queryBus)
-                                          .build();
+        return ReactorQueryGateway.builder()
+                                  .queryBus(queryBus)
+                                  .build();
     }
 
     @Bean

@@ -42,9 +42,9 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
-class DefaultReactiveCommandGatewayTest {
+class ReactorCommandGatewayTest {
 
-    private DefaultReactiveCommandGateway reactiveCommandGateway;
+    private ReactorCommandGateway reactiveCommandGateway;
     private MessageHandler<CommandMessage<?>> commandMessageHandler;
     private RetryScheduler mockRetryScheduler;
 
@@ -71,10 +71,10 @@ class DefaultReactiveCommandGatewayTest {
         commandBus.subscribe(Boolean.class.getName(),
                              message -> "" + message.getMetaData().getOrDefault("key1", "")
                                      + message.getMetaData().getOrDefault("key2", ""));
-        reactiveCommandGateway = DefaultReactiveCommandGateway.builder()
-                                                              .commandBus(commandBus)
-                                                              .retryScheduler(mockRetryScheduler)
-                                                              .build();
+        reactiveCommandGateway = ReactorCommandGateway.builder()
+                                                      .commandBus(commandBus)
+                                                      .retryScheduler(mockRetryScheduler)
+                                                      .build();
     }
 
     @Test

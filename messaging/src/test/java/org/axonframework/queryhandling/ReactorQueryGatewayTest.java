@@ -37,13 +37,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link DefaultReactiveQueryGateway}.
+ * Tests for {@link ReactorQueryGateway}.
  *
  * @author Milan Savic
  */
-public class DefaultReactiveQueryGatewayTest {
+public class ReactorQueryGatewayTest {
 
-    private DefaultReactiveQueryGateway reactiveQueryGateway;
+    private ReactorQueryGateway reactiveQueryGateway;
     private QueryUpdateEmitter queryUpdateEmitter;
     private MessageHandler<QueryMessage<?, Object>> queryMessageHandler1;
     private MessageHandler<QueryMessage<?, Object>> queryMessageHandler2;
@@ -82,9 +82,9 @@ public class DefaultReactiveQueryGatewayTest {
                            message -> "" + message.getMetaData().getOrDefault("key1", "")
                                    + message.getMetaData().getOrDefault("key2", ""));
         queryBus.subscribe(Long.class.getName(), String.class, message -> null);
-        reactiveQueryGateway = DefaultReactiveQueryGateway.builder()
-                                                          .queryBus(queryBus)
-                                                          .build();
+        reactiveQueryGateway = ReactorQueryGateway.builder()
+                                                  .queryBus(queryBus)
+                                                  .build();
     }
 
     @Test
