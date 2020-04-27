@@ -29,11 +29,11 @@ import org.axonframework.common.Registration;
 public interface ReactiveMessageDispatchInterceptorSupport<T extends Message<?>> {
 
     /**
-     * Register the given Reactive Dispatch Interceptor. After registration, the interceptor will be invoked for each
-     * Message dispatched on the messaging component that it was registered to.
+     * Register the given {@link ReactiveMessageDispatchInterceptor}. After registration, the interceptor will be invoked for each
+     * message dispatched on the messaging component that it was registered to.
      *
      * @param interceptor The reactive interceptor to register
-     * @return a Registration, which may be used to remove the unregister the interceptor
+     * @return a Registration, which may be used to unregister the interceptor
      */
     Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<T> interceptor);
 }
