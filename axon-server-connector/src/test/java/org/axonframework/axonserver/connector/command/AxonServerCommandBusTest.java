@@ -274,10 +274,10 @@ class AxonServerCommandBusTest {
     @Test
     void subscribe() {
         Registration registration = testSubject.subscribe(String.class.getName(), c -> "Done");
-        assertWithin(100, TimeUnit.MILLISECONDS, () ->
+        assertWithin(500, TimeUnit.MILLISECONDS, () ->
                 assertNotNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
         registration.cancel();
-        assertWithin(100, TimeUnit.MILLISECONDS, () ->
+        assertWithin(500, TimeUnit.MILLISECONDS, () ->
                 assertNull(dummyMessagePlatformServer.subscriptions(String.class.getName())));
     }
 
@@ -471,7 +471,7 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testDisconnectFinishesCommandsInTransit() {
+    void testDisconnectFinishesCommandsInTransit() throws InterruptedException {
         AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef =
                 buildInboundCommandStreamObserverReference();
         CommandProviderInbound testCommandMessage = testCommandMessage();
@@ -489,10 +489,11 @@ class AxonServerCommandBusTest {
         ReentrantLock slowHandlerLock = new ReentrantLock();
         slowHandlerLock.lock();
         AtomicBoolean commandHandled = new AtomicBoolean(false);
-
+        AtomicBoolean commandArrived = new AtomicBoolean(false);
         String testCommand = String.class.getName();
         MessageHandler<CommandMessage<?>> testCommandHandler = command -> {
             try {
+                commandArrived.set(true);
                 slowHandlerLock.lock();
             } finally {
                 slowHandlerLock.unlock();
@@ -505,8 +506,11 @@ class AxonServerCommandBusTest {
         CompletableFuture<Void> disconnected;
         try {
             inboundStreamObserverRef.get().onNext(testCommandMessage);
+            while(!commandArrived.get()) {
+                Thread.sleep(1);
+            }
         } finally {
-            disconnected = CompletableFuture.runAsync(testSubject::disconnect);
+            disconnected = testSubject.shutdownDispatching();
             slowHandlerLock.unlock();
         }
 
@@ -520,9 +524,12 @@ class AxonServerCommandBusTest {
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
         testSubject.shutdownDispatching();
 
-        assertThrows(
-                ShutdownInProgressException.class,
-                () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertThrows(
+                        ShutdownInProgressException.class,
+                        () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
+                )
         );
     }
 

@@ -26,6 +26,7 @@ import org.springframework.context.annotation.ConfigurationCondition;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.util.MultiValueMap;
 
+import java.lang.invoke.MethodHandles;
 import java.util.stream.Stream;
 
 import static org.axonframework.spring.SpringUtils.isQualifierMatch;
@@ -35,7 +36,7 @@ import static org.axonframework.spring.SpringUtils.isQualifierMatch;
  * given qualifier.
  */
 public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition implements ConfigurationCondition {
-    private static final Logger logger = LoggerFactory.getLogger(OnQualifiedBeanCondition.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String annotationName;
     private final String beanClassAttribute;

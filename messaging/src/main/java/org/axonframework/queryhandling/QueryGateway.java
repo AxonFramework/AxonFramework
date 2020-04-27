@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static org.axonframework.queryhandling.QueryMessage.queryName;
+
 /**
  * Interface towards the Query Handling components of an application. This interface provides a friendlier API toward
  * the query bus.
@@ -38,8 +40,8 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with
-     * the given {@code responseType} from a single source. The query name will be derived from the provided
-     * {@code query}. Execution may be asynchronous, depending on the QueryBus implementation.
+     * the given {@code responseType} from a single source. The query name will be derived from the provided {@code
+     * query}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
      * @param responseType A {@link java.lang.Class} describing the desired response type
@@ -49,7 +51,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, Class<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
+        return query(queryName(query), query, responseType);
     }
 
     /**
@@ -71,8 +73,8 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
-     * form of {@code responseType} from a single source. The query name will be derived from the provided
-     * {@code query}. Execution may be asynchronous, depending on the QueryBus implementation.
+     * form of {@code responseType} from a single source. The query name will be derived from the provided {@code
+     * query}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
@@ -82,7 +84,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, ResponseType<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
+        return query(queryName(query), query, responseType);
     }
 
     /**
@@ -115,7 +117,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return A stream of results.
      */
     default <R, Q> Stream<R> scatterGather(Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
-        return scatterGather(query.getClass().getName(), query, responseType, timeout, timeUnit);
+        return scatterGather(queryName(query), query, responseType, timeout, timeUnit);
     }
 
     /**
@@ -151,16 +153,12 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
-     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, Class<I> initialResponseType,
                                                                       Class<U> updateResponseType) {
-        return subscriptionQuery(query.getClass().getName(),
-                                 query,
-                                 initialResponseType,
-                                 updateResponseType);
+        return subscriptionQuery(queryName(query), query, initialResponseType, updateResponseType);
     }
 
     /**
@@ -180,7 +178,6 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
-     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
@@ -210,13 +207,12 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
-     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, ResponseType<I> initialResponseType,
                                                                       ResponseType<U> updateResponseType) {
-        return subscriptionQuery(query.getClass().getName(),
+        return subscriptionQuery(queryName(query),
                                  query,
                                  initialResponseType,
                                  updateResponseType,
@@ -241,7 +237,6 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
-     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
@@ -277,7 +272,6 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
-     *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */

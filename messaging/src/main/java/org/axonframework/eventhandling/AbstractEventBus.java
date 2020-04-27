@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,16 +192,26 @@ public abstract class AbstractEventBus implements EventBus {
             return Collections.emptyList();
         }
         List<EventMessage<?>> messages = new ArrayList<>();
-        for (UnitOfWork<?> uow = CurrentUnitOfWork.get(); uow != null; uow = uow.parent().orElse(null)) {
-            messages.addAll(0, uow.getOrDefaultResource(eventsKey, Collections.emptyList()));
-        }
+        addStagedMessages(CurrentUnitOfWork.get(), messages);
         return messages;
+    }
+
+    private void addStagedMessages(UnitOfWork<?> unitOfWork, List<EventMessage<?>> messages) {
+        unitOfWork.parent().ifPresent(parent -> addStagedMessages(parent, messages));
+        List<EventMessage<?>> stagedEvents = unitOfWork.getOrDefaultResource(eventsKey, Collections.emptyList());
+        for (EventMessage<?> stagedEvent : stagedEvents) {
+            if (!messages.contains(stagedEvent)) {
+                messages.add(stagedEvent);
+            }
+        }
+
     }
 
     /**
      * Invokes all the dispatch interceptors.
      *
      * @param events The original events being published
+     *
      * @return The events to actually publish
      */
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {

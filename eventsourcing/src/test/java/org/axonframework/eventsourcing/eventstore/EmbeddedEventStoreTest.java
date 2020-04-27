@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,13 @@ import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.jupiter.api.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Iterator;
 import java.util.List;
@@ -39,13 +43,28 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Rene de Waele
@@ -304,6 +323,30 @@ class EmbeddedEventStoreTest {
         unitOfWork.rollback();
 
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+    }
+
+    @Test
+    void testStagedEventsNotDuplicatedAfterCommit() {
+        List<DomainEventMessage<?>> events = createEvents(10);
+        testSubject.publish(events.subList(0, 2));
+        DefaultUnitOfWork<Message<?>> outerUoW = DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(events.subList(2, 4));
+        DefaultUnitOfWork<Message<?>> innerUoW = DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(events.subList(4, events.size()));
+
+        Consumer<UnitOfWork<Message<?>>> assertCorrectEventCount = uow -> {
+            assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
+        };
+
+        innerUoW.onPrepareCommit(assertCorrectEventCount);
+        innerUoW.afterCommit(assertCorrectEventCount);
+        innerUoW.onCommit(assertCorrectEventCount);
+        outerUoW.onPrepareCommit(assertCorrectEventCount);
+        outerUoW.afterCommit(assertCorrectEventCount);
+        outerUoW.onCommit(assertCorrectEventCount);
+
+        innerUoW.commit();
+        outerUoW.commit();
     }
 
     @Test

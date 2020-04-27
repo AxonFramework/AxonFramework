@@ -84,7 +84,8 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
                 () -> config, "eventProcessorControlService",
                 c -> new EventProcessorControlService(
                         this.connectionManager.get(),
-                        new EventProcessorController(this.eventProcessingConfiguration.get())
+                        new EventProcessorController(this.eventProcessingConfiguration.get()),
+                        this.axonServerConfiguration.get()
                 )
         );
         this.processorInfoSource = new Component<>(() -> config, "eventProcessorInfoSource", c -> {
