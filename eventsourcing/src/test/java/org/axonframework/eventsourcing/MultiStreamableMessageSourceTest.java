@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.utils.MockException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,6 +117,19 @@ class MultiStreamableMessageSourceTest {
         assertTrue(actual instanceof DomainEventMessage);
 
         singleEventStream.close();
+    }
+
+    @Test
+    void testPeekingLastMessageKeepsItAvailable() throws InterruptedException {
+        EventMessage<?> publishedEvent1 = GenericEventMessage.asEventMessage("Event1");
+
+
+        eventStoreA.publish(publishedEvent1);
+
+        BlockingStream<TrackedEventMessage<?>> stream = testSubject.openStream(null);
+        assertEquals("Event1", stream.peek().map(Message::getPayload).map(Object::toString).orElse("None"));
+        assertTrue(stream.hasNextAvailable());
+        assertTrue(stream.hasNextAvailable(10, TimeUnit.SECONDS));
     }
 
     @Test
