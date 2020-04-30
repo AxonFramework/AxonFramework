@@ -22,9 +22,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation indication that a parameter on a Message Handler method should be
- * injected with the identifier of a Message. The parameter type must be
- * assignable from {@link String}.
+ * Annotation indication that a parameter on a Message Handler method should be injected with the identifier of a
+ * Message. The parameter type must be assignable from {@link String}.
+ *
+ * @author Steven van Beelen
+ * @since 3.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})

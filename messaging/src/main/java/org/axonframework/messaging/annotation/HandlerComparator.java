@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,20 +22,42 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 /**
- * Comparator used by {@link AnnotatedHandlerInspector} to sort {@link MessageHandlingMember entity members}.
+ * Comparator used by {@link AnnotatedHandlerInspector} to sort {@link MessageHandlingMember} entity members.
+ * <p>
+ * The ordering among {@code MessageHandlingMember}s through this comparator is defined as follows:
+ * <ol type="1">
+ * <li>The {@link MessageHandlingMember#priority()}, favoring the largest number</li>
+ * <li>The class hierarchy of the {@link MessageHandlingMember#payloadType()}, favoring the most specific handler.</li>
+ * <li>The parameter count on the actual message handling function, favoring the highest number as the most specific handler.</li>
+ * <li>As a final tie breaker, the {@link Executable#toGenericString()} of the actual message handling function</li>
+ * </ol>
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public final class HandlerComparator {
 
-    private static final Comparator<MessageHandlingMember<?>> INSTANCE = Comparator
-            .comparing((Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
-                       HandlerComparator::compareHierarchy)
-            .thenComparing(
-                    Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
-                            .reversed())
-            .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));
+    private static final Comparator<MessageHandlingMember<?>> INSTANCE =
+            Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
+                      .reversed()
+                      .thenComparing(
+                              (Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
+                              HandlerComparator::compareHierarchy
+                      )
+                      .thenComparing(Comparator.comparingInt(
+                              (ToIntFunction<MessageHandlingMember<?>>) m -> m.unwrap(Executable.class)
+                                                                              .map(Executable::getParameterCount)
+                                                                              .orElse(1)
+                                     ).reversed()
+                      )
+                      .thenComparing(
+                              m -> m.unwrap(Executable.class)
+                                    .map(Executable::toGenericString)
+                                    .orElse(m.toString())
+                      );
 
-    // prevent construction
     private HandlerComparator() {
+        // Utility class
     }
 
     /**
@@ -48,7 +70,7 @@ public final class HandlerComparator {
     }
 
     private static int compareHierarchy(Class<?> o1, Class<?> o2) {
-        if (o1.isInterface() && !o2.isInterface()){
+        if (o1.isInterface() && !o2.isInterface()) {
             return 1;
         } else if (!o1.isInterface() && o2.isInterface()) {
             return -1;
@@ -75,5 +97,4 @@ public final class HandlerComparator {
         }
         return depth;
     }
-
 }

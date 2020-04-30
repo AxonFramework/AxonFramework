@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,11 @@ public abstract class SingleEntryUpcaster<T> implements Upcaster<T> {
             if (!canUpcast(entry)) {
                 return entry;
             }
-            return requireNonNull(doUpcast(entry), "Result from #doUpcast() should not be null. To remove an " +
-                    "intermediateRepresentation add a filter to the input stream.");
+            return requireNonNull(
+                    doUpcast(entry),
+                    "Result from #doUpcast() should not be null. "
+                            + "To remove an intermediateRepresentation add a filter to the input stream."
+            );
         });
     }
 
@@ -54,8 +57,8 @@ public abstract class SingleEntryUpcaster<T> implements Upcaster<T> {
      * Upcasts the given {@code intermediateRepresentation}. This method is only invoked if {@link #canUpcast(Object)}
      * returned {@code true} for the given representation.
      * <p>
-     * Note that the returned representation should not be {@code null}. To remove an intermediateRepresentation
-     * add a filter to the input stream.
+     * Note that the returned representation should not be {@code null}. To remove an intermediateRepresentation add a
+     * filter to the input stream.
      *
      * @param intermediateRepresentation the representation of the object to upcast
      * @return the upcasted representation

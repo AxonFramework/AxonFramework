@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -96,7 +96,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      * @return a {@link SortedSet} constructed out of the given {@code gaps}
      */
     protected static SortedSet<Long> createSortedSetOf(Collection<Long> gaps, long index) {
-        if (gaps.isEmpty()) {
+        if (gaps == null || gaps.isEmpty()) {
             return Collections.emptySortedSet();
         }
         SortedSet<Long> gapSet = new ConcurrentSkipListSet<>(gaps);

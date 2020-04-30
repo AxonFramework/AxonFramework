@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ class DisruptorCommandBusTest {
         stubHandler = new StubHandler();
         eventStore = new InMemoryEventStore();
         eventStore.publish(singletonList(
-                new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>("StubAggregate", aggregateIdentifier, 0, new StubDomainEvent())));
         parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(DisruptorCommandBusTest.class));
         messageHandlingCounter = new AtomicInteger(0);
     }

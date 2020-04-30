@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,8 +25,15 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -88,6 +95,15 @@ import java.util.function.Supplier;
  * @since 0.6
  */
 public interface FixtureConfiguration<T> {
+
+    /**
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
+     * will be considered part of this aggregate's handlers.
+     *
+     * @param subtypes subtypes in this polymorphic hierarchy
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes);
 
     /**
      * Registers an arbitrary {@code repository} with the fixture. The repository must be wired
@@ -155,37 +171,49 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Registers a resource that is eligible for injection in handler method (e.g. methods annotated with {@link
-     * CommandHandler @CommandHandler}, {@link
-     * EventSourcingHandler @EventSourcingHandler} and {@link
-     * EventHandler @EventHandler}. These resource must be
-     * registered <em>before</em> registering any command handler.
+     * CommandHandler @CommandHandler}, {@link EventSourcingHandler @EventSourcingHandler} and {@link EventHandler}.
+     * These resource must be registered <em>before</em> registering any command handler.
      *
-     * @param resource The resource eligible for injection
+     * @param resource the resource eligible for injection
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerInjectableResource(Object resource);
+
+    /**
+     * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
+     * will be added to the other parameter resolver factories introduced through {@link
+     * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
+     * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
+     * (with {@link #registerInjectableResource(Object)}. The generic {@code T} is used as input for the {@code
+     * ClasspathParameterResolverFactory#forClass(Class)} operation.
+     *
+     * @param parameterResolverFactory the {@link ParameterResolver} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     * @see #registerInjectableResource(Object)
+     */
+    FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory);
 
     /**
      * Register a command dispatch interceptor which will always be invoked before a command is dispatched on the
      * command bus to perform a task specified in the interceptor. For example by adding
      * {@link MetaData} or throwing an exception based on the command.
      *
-     * @param commandDispatchInterceptor the command dispatch interceptor to be added to the commandbus
+     * @param commandDispatchInterceptor the command dispatch interceptor to be added to the command bus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandDispatchInterceptor(
-            MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor);
+            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor);
 
     /**
      * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
      * the command bus to perform a task specified in the interceptor. It could for example block the command for
      * security reasons or add auditing to the command bus
      *
-     * @param commandHandlerInterceptor the command handler interceptor to be added to the commandbus
+     * @param commandHandlerInterceptor the command handler interceptor to be added to the command bus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor);
+            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor);
 
     /**
      * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
@@ -196,7 +224,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor);
+            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor);
 
     /**
      * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
@@ -206,7 +234,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
+            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.
@@ -236,8 +264,9 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
-     * Registers handler definition within this fixture. This {@code handlerDefinition} will replace existing one within
-     * this fixture.
+     * Registers a {@link HandlerDefinition} within this fixture. The given {@code handlerDefinition} is added to the
+     * handler definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerDefinition#forClass(Class)}.
+     * The generic {@code T} is used as input for the {@code ClasspathHandlerDefinition#forClass(Class)} operation.
      *
      * @param handlerDefinition used to create concrete handlers
      * @return the current FixtureConfiguration, for fluent interfacing
@@ -245,7 +274,20 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
 
     /**
-     * Registers the {@link CommandTargetResolver} within this fixture. The {@code commandTargetResolver} will replace the default implementation (defined by the {@link org.axonframework.modelling.command.AggregateAnnotationCommandHandler}  within this fixture.
+     * Registers a {@link HandlerEnhancerDefinition} within this fixture. This given {@code handlerEnhancerDefinition}
+     * is added to the handler enhancer definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition#forClass(Class)}.
+     * The generic {@code T} is used as input for the {@code ClasspathHandlerEnhancerDefinition#forClass(Class)}
+     * operation.
+     *
+     * @param handlerEnhancerDefinition the {@link HandlerEnhancerDefinition} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition);
+
+    /**
+     * Registers the {@link CommandTargetResolver} within this fixture. The {@code commandTargetResolver} will replace
+     * the default implementation (defined by the {@link org.axonframework.modelling.command.AggregateAnnotationCommandHandler}
+     * within this fixture.
      *
      * @param commandTargetResolver the {@link CommandTargetResolver} used to resolve an Aggregate for a given command
      * @return the current FixtureConfiguration, for fluent interfacing

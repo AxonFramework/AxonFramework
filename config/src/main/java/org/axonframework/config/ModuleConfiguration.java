@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,16 @@ package org.axonframework.config;
  * access to the component available in the main Configuration.
  * <p>
  * Modules have callback methods for the initialization, start and shutdown phases of the application's lifecycle.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public interface ModuleConfiguration {
 
     /**
-     * Initialize the module configuration using the given global {@code config}
+     * Initialize the module configuration using the given global {@code config}. Any specific start up or shut down
+     * processes should be added here by using the provided {@code config} and invoke {@link Configuration#onStart(int,
+     * LifecycleHandler)} and {@link Configuration#onShutdown(int, LifecycleHandler)} respectively.
      *
      * @param config the global configuration, providing access to generic components
      */
@@ -36,7 +41,10 @@ public interface ModuleConfiguration {
      * will be invoked.
      *
      * @return this module's phase
+     * @deprecated a {@link ModuleConfiguration}'s phase is no longer used, as distinct phases might be necessary for
+     * any of the start or shutdown processes added in the {@link #initialize(Configuration)} method
      */
+    @Deprecated
     default int phase() {
         return 0;
     }
@@ -45,15 +53,29 @@ public interface ModuleConfiguration {
      * Invoked when the Configuration is started.
      *
      * @see Configuration#start()
+     * @deprecated in favor of maintaining start operations in the {@link Component}. Any lifecycle operations not
+     * covered through the components created by this {@link ModuleConfiguration} should be added to the {@link
+     * Configuration} in {@link #initialize(Configuration)} through {@link Configuration#onStart(int,
+     * LifecycleHandler)}
      */
-    void start();
+    @Deprecated
+    default void start() {
+        //No-op
+    }
 
     /**
      * Invoked prior to shutdown of the application.
      *
      * @see Configuration#shutdown()
+     * @deprecated in favor of maintaining shutdown operations in the {@link Component}. Any lifecycle operations not
+     * covered through the components created by this {@link ModuleConfiguration} should be added to the {@link
+     * Configuration} in {@link #initialize(Configuration)} through {@link Configuration#onShutdown(int,
+     * LifecycleHandler)}
      */
-    void shutdown();
+    @Deprecated
+    default void shutdown() {
+        //No-op
+    }
 
     /**
      * Returns the actual module configuration instance. Usually, it is the instance itself. However, in case of module

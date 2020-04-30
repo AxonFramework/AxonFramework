@@ -1,7 +1,5 @@
 language: java
 
-sudo: required
-
 services:
   - docker
   - mysql
@@ -22,7 +20,7 @@ cache:
   - $HOME/.m2
 
 script:
-  - mvn clean verify -B
+  - mvn clean verify -B -P ossrh
 
 notifications:
   slack:

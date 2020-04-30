@@ -16,41 +16,27 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.modelling.saga.AbstractResourceInjector;
-
-import java.util.Optional;
+import org.axonframework.modelling.saga.SimpleResourceInjector;
 
 /**
- * Resource injector that uses setter methods to inject resources. All methods and fields annotated with
- * {@code @Inject} are evaluated. If that method has a single parameter, a Resource of that type
- * is injected into it, if present.
+ * Resource injector that uses setter methods to inject resources. All methods and fields annotated with {@code @Inject}
+ * are evaluated. If that method has a single parameter, a Resource of that type is injected into it, if present.
  * <p>
  * Unlike the SimpleResourceInjector, changes in the provided {@link Iterable} are reflected in this injector.
  *
  * @author Allard Buijze
  * @since 1.1
+ * @deprecated in favor of the {@link SimpleResourceInjector}
  */
-public class AutowiredResourceInjector extends AbstractResourceInjector {
-
-    private final Iterable<?> resources;
+@Deprecated
+public class AutowiredResourceInjector extends SimpleResourceInjector {
 
     /**
      * Initializes the resource injector to inject to given {@code resources}.
      *
-     * @param resources The resources to inject
+     * @param resources the resources to inject
      */
-    public AutowiredResourceInjector(Iterable<?> resources) {
-        this.resources = resources;
+    public AutowiredResourceInjector(Iterable<Object> resources) {
+        super(resources);
     }
-
-    @Override
-    protected <R> Optional<R> findResource(Class<R> requiredType) {
-        for (Object resource : resources) {
-            if (requiredType.isInstance(resource)) {
-                return Optional.of(requiredType.cast(resource));
-            }
-        }
-        return Optional.empty();
-    }
-
 }

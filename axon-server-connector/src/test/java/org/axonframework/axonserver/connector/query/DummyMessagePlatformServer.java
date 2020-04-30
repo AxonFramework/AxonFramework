@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,12 +32,16 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.PlatformService;
+import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Minimal dummy implementation of gRPC connection to spoof a connection with for example Axon Server when testing Axon
@@ -48,11 +52,18 @@ import java.util.Map;
 public class DummyMessagePlatformServer {
 
     private final static Logger logger = LoggerFactory.getLogger(DummyMessagePlatformServer.class);
+
     private final int port;
     private Server server;
-    private Map<QueryDefinition, StreamObserver> subscriptions = new HashMap<>();
 
-    DummyMessagePlatformServer(int port) {
+    private Map<QueryDefinition, StreamObserver<?>> subscriptions = new HashMap<>();
+    private Set<QueryDefinition> unsubscribedQueries = new CopyOnWriteArraySet<>();
+
+    public DummyMessagePlatformServer() {
+        this(TcpUtil.findFreePort());
+    }
+
+    public DummyMessagePlatformServer(int port) {
         this.port = port;
     }
 
@@ -71,14 +82,29 @@ public class DummyMessagePlatformServer {
         }
     }
 
-    public StreamObserver subscriptions(String query, String response) {
+    public String getAddress() {
+        return "localhost:" + port;
+    }
+
+    public StreamObserver<?> subscriptions(String query, String response) {
         return subscriptions.get(new QueryDefinition(query, response));
     }
 
     public void onError(String query, String response) {
-        StreamObserver subscription = this.subscriptions(query, response);
+        StreamObserver<?> subscription = this.subscriptions(query, response);
         subscription.onError(new RuntimeException());
         subscriptions.remove(subscription);
+    }
+
+    /**
+     * Verify whether the given {@code queryName} and {@code responseType} is unsubscribed from the platform server.
+     *
+     * @param queryName    the name of the query to validate whether it's unsubscribed
+     * @param responseType the {@link Type} of the query to validate whether it's unsubscribed
+     * @return {@code true} if the {@code queryDefinition} was unsubscribed, {@code false} if it is not
+     */
+    public boolean isUnsubscribed(String queryName, Type responseType) {
+        return unsubscribedQueries.contains(new QueryDefinition(queryName, responseType.getTypeName()));
     }
 
     class QueryHandler extends QueryServiceGrpc.QueryServiceImplBase {
@@ -95,12 +121,13 @@ public class DummyMessagePlatformServer {
                             subscriptions.put(queryDefinition, responseObserver);
                             break;
                         case UNSUBSCRIBE:
-                            subscriptions.remove(new QueryDefinition(queryProviderOutbound.getUnsubscribe()));
+                            QueryDefinition queryToUnsubscribe =
+                                    new QueryDefinition(queryProviderOutbound.getUnsubscribe());
+                            subscriptions.remove(queryToUnsubscribe);
+                            unsubscribedQueries.add(queryToUnsubscribe);
                             break;
                         case FLOW_CONTROL:
-                            break;
                         case QUERY_RESPONSE:
-                            break;
                         case REQUEST_NOT_SET:
                             break;
                     }
@@ -120,14 +147,8 @@ public class DummyMessagePlatformServer {
 
         @Override
         public void query(QueryRequest request, StreamObserver<QueryResponse> responseObserver) {
-            long repeat = request.getMetaDataOrDefault("repeat", MetaDataValue.newBuilder().setNumberValue(1).build())
-                                 .getNumberValue();
-            long interval = request.getMetaDataOrDefault("interval",
-                                                         MetaDataValue.newBuilder().setNumberValue(0).build())
-                                   .getNumberValue();
-            String errorCode = request.getMetaDataOrDefault("errorCode",
-                                                            MetaDataValue.getDefaultInstance())
-                                      .getTextValueBytes().toStringUtf8();
+            String errorCode = retrieveErrorCode(request);
+
             if (!"".equals(errorCode)) {
                 responseObserver.onNext(QueryResponse.newBuilder()
                                                      .setMessageIdentifier(request.getMessageIdentifier())
@@ -137,15 +158,19 @@ public class DummyMessagePlatformServer {
                                                                                   .build())
                                                      .build());
             } else {
+                long repeat = retrieveRepeat(request);
                 for (long r = 0; r < repeat; r++) {
+                    SerializedObject serializedObject =
+                            SerializedObject.newBuilder()
+                                            .setData(ByteString.copyFromUtf8("<string>test</string>"))
+                                            .setType(String.class.getName())
+                                            .build();
                     responseObserver.onNext(QueryResponse.newBuilder()
                                                          .setMessageIdentifier(request.getMessageIdentifier())
-                                                         .setPayload(SerializedObject.newBuilder()
-                                                                                     .setData(ByteString.copyFromUtf8(
-                                                                                             "<string>test</string>"))
-                                                                                     .setType(String.class.getName())
-                                                                                     .build())
+                                                         .setPayload(serializedObject)
                                                          .build());
+
+                    long interval = retrieveInterval(request);
                     if (interval > 0) {
                         try {
                             Thread.sleep(interval);
@@ -156,6 +181,21 @@ public class DummyMessagePlatformServer {
                 }
             }
             responseObserver.onCompleted();
+        }
+
+        private long retrieveInterval(QueryRequest request) {
+            return request.getMetaDataOrDefault("interval", MetaDataValue.newBuilder().setNumberValue(0).build())
+                          .getNumberValue();
+        }
+
+        private long retrieveRepeat(QueryRequest request) {
+            return request.getMetaDataOrDefault("repeat", MetaDataValue.newBuilder().setNumberValue(1).build())
+                          .getNumberValue();
+        }
+
+        private String retrieveErrorCode(QueryRequest request) {
+            return request.getMetaDataOrDefault("errorCode", MetaDataValue.getDefaultInstance())
+                          .getTextValueBytes().toStringUtf8();
         }
 
         @Override
@@ -180,7 +220,7 @@ public class DummyMessagePlatformServer {
         }
     }
 
-    class QueryDefinition {
+    private static class QueryDefinition {
 
         private final String queryName;
         private final String responseName;

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,8 +21,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.UnknownSerializedType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +43,15 @@ import java.util.Objects;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze
@@ -249,6 +266,20 @@ class JacksonSerializerTest {
     void testDeserializeEmptyBytes() {
         assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
         assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
+    }
+
+    @Test
+    void testDeserializeLenientIgnoresUnknownValues() {
+        testSubject = JacksonSerializer.builder().lenientDeserialization().objectMapper(objectMapper).build();
+        SerializedObject<JsonNode> serialized = testSubject.serialize(new ComplexObject("one", "two", 3), JsonNode.class);
+        ObjectNode data = (ObjectNode) serialized.getData();
+        JsonNodeFactory nf = objectMapper.getNodeFactory();
+        data.set("newField", nf.textNode("newValue"));
+        ArrayNode arrayNode = nf.arrayNode().add(data);
+        ComplexObject actual = testSubject.deserialize(new SimpleSerializedObject<>(arrayNode, JsonNode.class, serialized.getType()));
+        assertEquals("one", actual.getValue1());
+        assertEquals("two", actual.getValue2());
+        assertEquals(3, actual.getValue3());
     }
 
     public static class ComplexObject {

@@ -215,8 +215,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
         }
 
         if (updateCount == 0) {
-            logger.warn("Expected to be able to update a Saga instance, but no rows were found. Inserting instead.");
-            insertSaga(sagaType, sagaIdentifier, saga, associationValues.asSet());
+            logger.warn("Expected to be able to update a Saga instance, but no rows were found.");
         }
     }
 

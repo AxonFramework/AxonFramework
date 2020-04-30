@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import java.util.function.Function;
+
 /**
  * Schema of an event entry to be stored using Jdbc.
  *
@@ -27,6 +29,8 @@ public class EventSchema {
     private final String domainEventTable, snapshotTable, globalIndexColumn, timestampColumn, eventIdentifierColumn,
             aggregateIdentifierColumn, sequenceNumberColumn, typeColumn, payloadTypeColumn, payloadRevisionColumn,
             payloadColumn, metaDataColumn;
+
+    private final Function<EventSchema, String> domainEventFields, trackedEventFields;
 
     /**
      * Initializes the default Event Schema
@@ -48,6 +52,8 @@ public class EventSchema {
         payloadRevisionColumn = builder.payloadRevisionColumn;
         payloadColumn = builder.payloadColumn;
         metaDataColumn = builder.metaDataColumn;
+        domainEventFields = builder.domainEventFields;
+        trackedEventFields = builder.trackedEventFields;
     }
 
     /**
@@ -168,6 +174,24 @@ public class EventSchema {
     }
 
     /**
+     * Get a comma separated list of domain event column names to select from an event or snapshot entry.
+     *
+     * @return comma separated domain event column names.
+     */
+    public String domainEventFields() {
+        return domainEventFields.apply(this);
+    }
+
+    /**
+     * Get a comma separated list of tracked domain event column names to select from an event entry.
+     *
+     * @return comma separated tracked domain event column names.
+     */
+    public String trackedEventFields() {
+        return trackedEventFields.apply(this);
+    }
+
+    /**
      * Builder for an {@link EventSchema} that gets initialized with default values.
      */
     @SuppressWarnings("SqlResolve")
@@ -185,6 +209,21 @@ public class EventSchema {
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
         private String metaDataColumn = "metaData";
+
+        private Function<EventSchema, String> domainEventFields = eventSchema ->
+                String.join(", ",
+                            eventSchema.eventIdentifierColumn(),
+                            eventSchema.aggregateIdentifierColumn(),
+                            eventSchema.sequenceNumberColumn(),
+                            eventSchema.typeColumn(),
+                            eventSchema.timestampColumn(),
+                            eventSchema.payloadTypeColumn(),
+                            eventSchema.payloadRevisionColumn(),
+                            eventSchema.payloadColumn(),
+                            eventSchema.metaDataColumn());
+
+        private Function<EventSchema, String> trackedEventFields = eventSchema ->
+                eventSchema.globalIndexColumn() + ", " + eventSchema.domainEventFields();
 
         /**
          * Sets the name of the domain events table. Defaults to 'DomainEventEntry'.
@@ -315,6 +354,34 @@ public class EventSchema {
          */
         public Builder metaDataColumn(String metaDataColumn) {
             this.metaDataColumn = metaDataColumn;
+            return this;
+        }
+
+        /**
+         * Set a comma separated list of domain event column names to select from an event or snapshot entry. Defaults
+         * to:
+         * <p/>
+         * {@code "[eventIdentifierColumn], [aggregateIdentifierColumn], [sequenceNumberColumn], [typeColumn],
+         * [timestampColumn], [payloadTypeColumn], [payloadRevisionColumn], [payloadColumn], [metaDataColumn]" }
+         * <p/>
+         *
+         * @return the modified Builder instance
+         */
+        public Builder domainEventFields(Function<EventSchema, String> domainEventFields) {
+            this.domainEventFields = domainEventFields;
+            return this;
+        }
+
+        /**
+         * Set a comma separated list of tracked domain event column names to select from an event entry. Defaults to:
+         * <p/>
+         * {@code "[globalIndexColumn], [domainEventFields]" }
+         * <p/>
+         *
+         * @return the modified Builder instance
+         */
+        public Builder trackedEventFields(Function<EventSchema, String> trackedEventFields) {
+            this.trackedEventFields = trackedEventFields;
             return this;
         }
 

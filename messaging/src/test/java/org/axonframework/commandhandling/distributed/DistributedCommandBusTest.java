@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -40,6 +41,7 @@ import org.mockito.quality.Strictness;
 import java.util.Optional;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+import static org.axonframework.commandhandling.distributed.DistributedCommandBus.INITIAL_LOAD_FACTOR;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -215,6 +217,20 @@ class DistributedCommandBusTest {
         CommandBus resultLocalSegment = testSubject.localSegment();
 
         assertEquals(expectedLocalSegment, resultLocalSegment);
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testDisconnectRemovesAllSubscribedCommandHandlers() {
+        testSubject.disconnect();
+        verify(mockCommandRouter).updateMembership(INITIAL_LOAD_FACTOR, DenyAll.INSTANCE);
+    }
+
+    @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
+    void testShutdownDispatchingInitiatesShutdownOfCommandBusConnector() {
+        testSubject.shutdownDispatching();
+        verify(mockConnector).initiateShutdown();
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {
