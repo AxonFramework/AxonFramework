@@ -61,6 +61,7 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
         EventProcessorInfo eventProcessorInfo =
                 EventProcessorInfo.newBuilder()
                                   .setProcessorName(eventProcessor.getName())
+                                  .setTokenStoreIdentifier(eventProcessor.getTokenStoreIdentifier())
                                   .setMode(EVENT_PROCESSOR_MODE)
                                   .setActiveThreads(eventProcessor.activeProcessorThreads())
                                   .setAvailableThreads(eventProcessor.availableProcessorThreads())
