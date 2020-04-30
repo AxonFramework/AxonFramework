@@ -19,6 +19,8 @@ package org.axonframework.eventhandling.tokenstore;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.TrackingToken;
 
+import java.util.Optional;
+
 /**
  * Describes a component capable of storing and retrieving event tracking tokens. An {@link EventProcessor} that is
  * tracking an event stream can use the store to keep track of its position in the event stream. Tokens are stored by
@@ -200,7 +202,25 @@ public interface TokenStore {
      * empty, an empty array is returned.
      *
      * @param processorName The process name for which to fetch the segments
+     *
      * @return an array of segment identifiers.
      */
     int[] fetchSegments(String processorName);
+
+    /**
+     * Returns a unique identifier that uniquely identifies the storage location of the tokens in this store. Two token
+     * store implementations that share state, must return the same identifier. Two token store implementations that
+     * do not share a location, must return a different identifier (or an empty optional if identifiers are not
+     * supported).
+     * <p>
+     * Note that this method may require the implementation to consult its underlying storage. Therefore, a Transaction
+     * should be active when this method is called, similarly to invocations like {@link #fetchToken(String, int)},
+     * {@link #fetchSegments(String)}, etc. When no Transaction is active, the behavior is undefined.
+     *
+     * @return an identifier to uniquely identify the storage location of tokens in this TokenStore.
+     * @throws UnableToRetrieveIdentifierException when the implementation was unable to determine its identifier
+     */
+    default Optional<String> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
+        return Optional.empty();
+    }
 }

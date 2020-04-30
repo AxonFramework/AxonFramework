@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,16 @@
 
 package org.axonframework.eventhandling.tokenstore.jpa;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
+import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +35,12 @@ import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -49,6 +57,8 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
 public class JpaTokenStore implements TokenStore {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaTokenStore.class);
+    private static final String CONFIG_TOKEN_ID = "__config";
+    private static final int CONFIG_SEGMENT = 0;
 
     private final EntityManagerProvider entityManagerProvider;
     private final Serializer serializer;
@@ -225,6 +235,36 @@ public class JpaTokenStore implements TokenStore {
                            segment, token.getOwner()));
         }
         return token;
+    }
+
+    @Override
+    public Optional<String> retrieveStorageIdentifier() {
+        try {
+            return Optional.of(getConfig()).map(i -> i.get("id"));
+        } catch (Exception e) {
+            throw new UnableToRetrieveIdentifierException("Exception occurred while trying to establish storage identifier", e);
+        }
+    }
+
+    private ConfigToken getConfig() {
+        EntityManager em = entityManagerProvider.getEntityManager();
+        TokenEntry token = em
+                .find(TokenEntry.class, new TokenEntry.PK(CONFIG_TOKEN_ID, CONFIG_SEGMENT), LockModeType.NONE);
+        if (token == null) {
+            token = new TokenEntry(CONFIG_TOKEN_ID, CONFIG_SEGMENT, new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())), serializer);
+            em.persist(token);
+            em.flush();
+        }
+        return (ConfigToken) token.getToken(serializer);
+    }
+
+    /**
+     * Returns the serializer used by the Token Store to serialize tokens.
+     *
+     * @return the serializer used by the Token Store to serialize tokens
+     */
+    public Serializer serializer() {
+        return serializer;
     }
 
     /**

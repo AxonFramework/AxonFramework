@@ -107,6 +107,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final String lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
+    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
+
 
     private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
     private final boolean storeTokenBeforeProcessing;
@@ -230,6 +232,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
                          .add(new SplitSegmentInstruction(result, segmentId));
         return result;
+    }
+
+    /**
+     * Returns the unique identifier of the TokenStore used by this EventProcessor.
+     *
+     * @return
+     * @throws org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException if the tokenStore was
+     *                                                                                        unable to retrieve it
+     */
+    public String getTokenStoreIdentifier() {
+        return tokenStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
+    }
+
+    private String calculateIdentifier() {
+        return transactionManager.fetchInTransaction(
+                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        );
     }
 
     /**
