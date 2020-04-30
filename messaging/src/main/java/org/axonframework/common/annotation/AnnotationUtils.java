@@ -110,6 +110,15 @@ public abstract class AnnotationUtils {
         return findAnnotationAttributes(element, annotationType.getName());
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<T> findAnnotationAttribute(AnnotatedElement element,
+                                                          Class<? extends Annotation> annotationType,
+                                                          String attributeName) {
+        return findAnnotationAttributes(element, annotationType.getName())
+                .map(attributes ->  attributes.get(attributeName))
+                .map(attribute -> (T) attribute);
+    }
+
     private static boolean collectAnnotationAttributes(Class<? extends Annotation> target, String annotationType, HashSet<String> visited, Map<String, Object> attributes) {
         Annotation ann = getAnnotation(target, annotationType);
         if (ann == null && visited.add(target.getName())) {

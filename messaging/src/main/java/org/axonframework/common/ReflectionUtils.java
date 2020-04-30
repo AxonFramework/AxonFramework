@@ -16,11 +16,24 @@
 
 package org.axonframework.common;
 
-import java.lang.reflect.*;
-import java.security.AccessController;
-import java.util.*;
-
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.security.AccessController;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -323,6 +336,37 @@ public abstract class ReflectionUtils {
             return Optional.empty();
         }
         return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <R> R invokeAndGetMethodValue(Method method, Object target) {
+        ensureAccessible(method);
+        try {
+            return (R) method.invoke(target);
+        } catch (IllegalAccessException | InvocationTargetException ex) {
+            throw new IllegalStateException("Unable to access method for invocation.", ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <R> R getMemberValue(Member member, Object target) {
+        if (member instanceof Field) {
+            return (R) ReflectionUtils.getFieldValue((Field) member, target);
+        } else if (member instanceof Method) {
+            return (R) ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
+        }
+        return null;
+    }
+
+    public static Optional<Class<?>> getMemberValueType(Member member) {
+        if (member instanceof Method) {
+            final Method method = (Method) member;
+            return Optional.of(method.getReturnType());
+        } else if (member instanceof Field) {
+            final Field field = (Field) member;
+            return Optional.of(field.getType());
+        }
+        return Optional.empty();
     }
 
     private ReflectionUtils() {

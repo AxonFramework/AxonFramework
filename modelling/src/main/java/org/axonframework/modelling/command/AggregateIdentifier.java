@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * @author Allard Buijze
  * @since 2.0
  */
-@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @EntityId
 public @interface AggregateIdentifier {
