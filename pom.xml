@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2019. Axon Framework
+  ~ Copyright (c) 2010-2020. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~    http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>4.3-SNAPSHOT</version>
+    <version>4.4-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
         <module>modelling</module>
@@ -117,6 +117,24 @@
             </build>
         </profile>
 
+        <profile>
+            <id>ossrh</id>
+            <repositories>
+                <repository>
+                    <id>sonatype</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <checksumPolicy>fail</checksumPolicy>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                </repository>
+            </repositories>
+
+        </profile>
     </profiles>
 
     <properties>
@@ -124,7 +142,7 @@
 
         <!-- dependency versions -->
         <slf4j.version>1.7.28</slf4j.version>
-        <log4j.version>1.2.17</log4j.version>
+        <log4j.version>2.13.0</log4j.version>
         <spring.version>5.1.9.RELEASE</spring.version>
         <spring-security.version>5.1.4.RELEASE</spring-security.version>
         <spring.boot.version>2.1.8.RELEASE</spring.boot.version>
@@ -149,7 +167,7 @@
         <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
         <javax.jaxb-api.version>2.3.0</javax.jaxb-api.version>
         <disruptor.version>3.4.2</disruptor.version>
-        <mysql-connector-java.version>5.1.31</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.19</mysql-connector-java.version>
         <ehcache.version>2.10.6</ehcache.version>
         <quartz.version>2.3.0</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -205,9 +223,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -217,8 +235,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>
             <scope>test</scope>
             <exclusions>
@@ -638,21 +656,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <checksumPolicy>fail</checksumPolicy>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
 
     <!-- deploy and release configuration -->
     <distributionManagement>

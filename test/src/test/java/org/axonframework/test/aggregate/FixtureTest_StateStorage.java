@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,27 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.junit.jupiter.api.*;
+
+import java.util.function.Supplier;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.hamcrest.CoreMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
+ * Test class intended to validate the {@link AggregateTestFixture}'s inner workings after a {@link
+ * AggregateTestFixture#givenState(Supplier)}.
+ *
  * @author Allard Buijze
  */
 class FixtureTest_StateStorage {
+
+    private static final String AGGREGATE_ID = "id";
 
     private FixtureConfiguration<StateStoredAggregate> fixture;
 
@@ -50,16 +55,16 @@ class FixtureTest_StateStorage {
 
     @Test
     void testCreateStateStoredAggregate() {
-        fixture.givenState(() -> new StateStoredAggregate("id", "message"))
-               .when(new SetMessageCommand("id", "message2"))
+        fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
+               .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
                .expectEvents(new StubDomainEvent())
                .expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
     }
 
     @Test
     void testEmittedEventsFromExpectStateAreNotStored() {
-        fixture.givenState(() -> new StateStoredAggregate("id", "message"))
-               .when(new SetMessageCommand("id", "message2"))
+        fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
+               .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
                .expectEvents(new StubDomainEvent())
                .expectState(aggregate -> {
                    apply(new StubDomainEvent());
@@ -72,14 +77,32 @@ class FixtureTest_StateStorage {
     @Test
     void testCreateStateStoredAggregate_ErrorInChanges() {
         ResultValidator<StateStoredAggregate> result =
-                fixture.givenState(() -> new StateStoredAggregate("id", "message"))
-                       .when(new ErrorCommand("id", "message2"))
+                fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
+                       .when(new ErrorCommand(AGGREGATE_ID, "message2"))
                        .expectException(any(Exception.class))
                        .expectNoEvents();
-        IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> result.expectState(aggregate -> assertEquals("message2", aggregate.getMessage())));
+        IllegalStateException e = assertThrows(
+                IllegalStateException.class,
+                () -> result.expectState(aggregate -> assertEquals("message2", aggregate.getMessage()))
+        );
         assertTrue(e.getMessage().contains("Unit of Work"), "Wrong message: " + e.getMessage());
         assertTrue(e.getMessage().contains("rolled back"), "Wrong message: " + e.getMessage());
+    }
+
+    /**
+     * Follow up on GitHub issue https://github.com/AxonFramework/AxonFramework/issues/1219
+     */
+    @Test
+    void testStateStoredAggregateCanAttachRegisteredResource() {
+        String expectedMessage = "state stored resource injection works";
+        HardToCreateResource testResource = spy(new HardToCreateResource());
+
+        fixture.registerInjectableResource(testResource)
+               .givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
+               .when(new HandleWithResourceCommand(AGGREGATE_ID, expectedMessage))
+               .expectEvents(new StubDomainEvent());
+
+        verify(testResource).difficultOperation(expectedMessage);
     }
 
     private static class InitializeCommand {
@@ -141,6 +164,27 @@ class FixtureTest_StateStorage {
         }
     }
 
+    private static class HandleWithResourceCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+        private final String messageToLog;
+
+        private HandleWithResourceCommand(String id, String messageToLog) {
+            this.id = id;
+            this.messageToLog = messageToLog;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getMessageToLog() {
+            return messageToLog;
+        }
+    }
+
+    @SuppressWarnings("unused")
     public static class StateStoredAggregate {
 
         @AggregateIdentifier
@@ -172,10 +216,15 @@ class FixtureTest_StateStorage {
             throw new RuntimeException("Stub");
         }
 
+        @CommandHandler
+        public void handle(HandleWithResourceCommand command, HardToCreateResource resource) {
+            resource.difficultOperation(command.getMessageToLog());
+            apply(new StubDomainEvent());
+        }
+
         public String getMessage() {
             return message;
         }
-
     }
 
     private static class StubDomainEvent {

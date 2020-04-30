@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.util;
 import io.axoniq.axonserver.grpc.FlowControl;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConfiguration.FlowControlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,8 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
     private static final Logger logger = LoggerFactory.getLogger(FlowControllingStreamObserver.class);
     private final AtomicLong remainingPermits;
     private final long newPermits;
-    private final AxonServerConfiguration configuration;
+    private final long initialNrofPermits;
+    private final String clientId;
     private final T newPermitsRequest;
     private final Predicate<T> isConfirmationMessage;
     private final Function<FlowControl, T> requestWrapper;
@@ -55,27 +57,44 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
      */
     public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, AxonServerConfiguration configuration,
                                          Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
+        this(wrappedStreamObserver,
+                configuration.getClientId(),
+                configuration.getDefaultFlowControlConfiguration(),
+                requestWrapper,
+                isConfirmationMessage);
+    }
+
+    /**
+     * @param wrappedStreamObserver    stream observer to send messages to AxonServer
+     * @param clientId                 ClientId in AxonServer configuration
+     * @param flowControlConfiguration Flow control configuration
+     * @param requestWrapper           Function to create a new permits request
+     * @param isConfirmationMessage    predicate to test if the message sent to AxonServer is a confirmation message
+     */
+    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, String clientId, FlowControlConfiguration flowControlConfiguration,
+                                         Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
         this.wrappedStreamObserver = wrappedStreamObserver;
-        this.configuration = configuration;
+        this.clientId = clientId;
         this.remainingPermits = new AtomicLong(
-                configuration.getInitialNrOfPermits().longValue() - configuration.getNewPermitsThreshold().longValue()
+                flowControlConfiguration.getInitialNrOfPermits().longValue() - flowControlConfiguration.getNewPermitsThreshold().longValue()
         );
-        this.newPermits = configuration.getNrOfNewPermits();
+        this.newPermits = flowControlConfiguration.getNrOfNewPermits();
+        this.initialNrofPermits = flowControlConfiguration.getInitialNrOfPermits();
         this.newPermitsRequest = requestWrapper.apply(createRequest(newPermits));
         this.isConfirmationMessage = isConfirmationMessage;
         this.requestWrapper = requestWrapper;
     }
 
     public FlowControllingStreamObserver<T> sendInitialPermits() {
-        wrappedStreamObserver.onNext(requestWrapper.apply(createRequest(configuration.getInitialNrOfPermits())));
+        wrappedStreamObserver.onNext(requestWrapper.apply(createRequest(initialNrofPermits)));
         return this;
     }
 
     private FlowControl createRequest(long initialNrOfPermits) {
         return FlowControl.newBuilder()
-                          .setClientId(configuration.getClientId())
-                          .setPermits(initialNrOfPermits)
-                          .build();
+                .setClientId(clientId)
+                .setPermits(initialNrOfPermits)
+                .build();
     }
 
     @Override

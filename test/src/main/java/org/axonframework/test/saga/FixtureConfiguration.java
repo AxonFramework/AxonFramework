@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,10 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
@@ -53,8 +57,8 @@ public interface FixtureConfiguration {
     FixtureConfiguration withTransienceCheckDisabled();
 
     /**
-     * Registers the given {@code resource}. When a Saga is created, all resources are injected on that instance
-     * before any Events are passed onto it.
+     * Registers the given {@code resource}. When a Saga is created, all resources are injected on that instance before
+     * any Events are passed onto it.
      * <p/>
      * Note that a CommandBus, EventBus and EventScheduler are already registered as resources, and need not be
      * registered again.
@@ -67,9 +71,23 @@ public interface FixtureConfiguration {
     void registerResource(Object resource);
 
     /**
-     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The
-     * gateway will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands
-     * using {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
+     * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory} will
+     * be added to the other parameter resolver factories introduced through {@link
+     * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
+     * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
+     * (with {@link #registerResource(Object)}. The type of the saga under test is used as input for the {@code
+     * ClasspathParameterResolverFactory#forClass(Class)} operation.
+     *
+     * @param parameterResolverFactory the {@link ParameterResolver} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     * @see #registerResource(Object)
+     */
+    FixtureConfiguration registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory);
+
+    /**
+     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The gateway
+     * will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands using
+     * {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
      * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
      * <p/>
      * Note that you need to use {@link #setCallbackBehavior(org.axonframework.test.utils.CallbackBehavior)} to defined
@@ -83,14 +101,14 @@ public interface FixtureConfiguration {
     <T> T registerCommandGateway(Class<T> gatewayInterface);
 
     /**
-     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The
-     * gateway will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands
-     * using {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
+     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The gateway
+     * will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands using
+     * {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
      * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
      * <p/>
-     * The behavior of the created gateway is defined by the given {@code stubImplementation}, if not null.
-     * Dispatched Commands are still recorded for verification. Note that only commands executed in the "when" phase
-     * are recorded, while the stub implementation may record activity during the "given" phase as well.
+     * The behavior of the created gateway is defined by the given {@code stubImplementation}, if not null. Dispatched
+     * Commands are still recorded for verification. Note that only commands executed in the "when" phase are recorded,
+     * while the stub implementation may record activity during the "given" phase as well.
      *
      * @param gatewayInterface   The interface describing the gateway
      * @param stubImplementation The stub or mock implementation defining behavior of the gateway
@@ -100,9 +118,9 @@ public interface FixtureConfiguration {
     <T> T registerCommandGateway(Class<T> gatewayInterface, T stubImplementation);
 
     /**
-     * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
-     * objects. The {@link ResultValidator#expectEvents(Object...)} and
-     * {@link ResultValidator#expectResultMessage(CommandResultMessage)}, for example, use this filter.
+     * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.
+     * The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectResultMessage(CommandResultMessage)},
+     * for example, use this filter.
      * <p/>
      * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
      * accepted.
@@ -115,25 +133,37 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerFieldFilter(FieldFilter fieldFilter);
 
     /**
-     * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass}
-     * is ignored when performing deep equality checks.
+     * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass} is ignored
+     * when performing deep equality checks.
      *
      * @param declaringClass The class declaring the field
      * @param fieldName      The name of the field
      * @return the current FixtureConfiguration, for fluent interfacing
-     *
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
-     * Registers handler definition within this fixture. This {@code handlerDefinition} will replace existing one within
-     * this fixture.
+     * Registers a {@link HandlerDefinition} within this fixture. The given {@code handlerDefinition} is added to the
+     * handler definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerDefinition#forClass(Class)}.
+     * The type of the saga under test is used as input for the {@code ClasspathHandlerDefinition#forClass(Class)}
+     * operation.
      *
      * @param handlerDefinition used to create concrete handlers
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers a {@link HandlerEnhancerDefinition} within this fixture. This given {@code handlerEnhancerDefinition}
+     * is added to the handler enhancer definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition#forClass(Class)}.
+     * The type of the saga under test is used as input for the {@code ClasspathHandlerEnhancerDefinition#forClass(Class)}
+     * operation.
+     *
+     * @param handlerEnhancerDefinition the {@link HandlerEnhancerDefinition} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition);
 
     /**
      * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
@@ -170,9 +200,8 @@ public interface FixtureConfiguration {
 
     /**
      * Registers a {@link ListenerInvocationErrorHandler} to be set for the Saga to deal with exceptions being thrown
-     * from within Saga Event Handlers. Will be given to the
-     * {@link org.axonframework.modelling.saga.AnnotatedSagaManager} for the defined Saga type. Defaults to a
-     * {@link org.axonframework.eventhandling.LoggingErrorHandler}.
+     * from within Saga Event Handlers. Will be given to the {@link org.axonframework.modelling.saga.AnnotatedSagaManager}
+     * for the defined Saga type. Defaults to a {@link org.axonframework.eventhandling.LoggingErrorHandler}.
      *
      * @param listenerInvocationErrorHandler to be set for the Saga to deal with exceptions being thrown from within
      *                                       Saga Event Handlers
@@ -180,6 +209,26 @@ public interface FixtureConfiguration {
      */
     FixtureConfiguration registerListenerInvocationErrorHandler(
             ListenerInvocationErrorHandler listenerInvocationErrorHandler);
+
+    /**
+     * Registers a {@link ResourceInjector} within this fixture. This approach can be used if a custom {@code
+     * ResourceInjector} has been built for a project which the user wants to take into account when testing it's
+     * sagas.
+     * <p>
+     * The provided {@code resourceInjector} will be paired with the fixture's default {@code ResourceInjector} to keep
+     * support for the {@link #registerResource(Object)} and {@link #withTransienceCheckDisabled()} methods. Note that
+     * <b>first</b> the default injector is called, and after that the given {@code resourceInjector}. This approach
+     * ensures the fixture's correct workings for default provided resources, like the {@link EventBus} and {@link
+     * CommandBus}}, whilst allowing the capability to append and/or override with the given {@code resourceInjector}.
+     * <p>
+     * Care should be taken if the custom {@code resourceInjector} overrides default resources like the {@code EventBus}
+     * and {@code CommandBus}, as the fixture uses specialized versions of the default sources to support all testing
+     * functionality.
+     *
+     * @param resourceInjector the {@link ResourceInjector} to register within this fixture
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerResourceInjector(ResourceInjector resourceInjector);
 
     /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.
@@ -191,8 +240,7 @@ public interface FixtureConfiguration {
     /**
      * Use this method to indicate that an aggregate with given identifier published certain events.
      * <p/>
-     * Can be chained to build natural sentences:<br/>
-     * {@code andThenAggregate(someIdentifier).published(someEvents)}
+     * Can be chained to build natural sentences:<br/> {@code andThenAggregate(someIdentifier).published(someEvents)}
      *
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
@@ -200,8 +248,8 @@ public interface FixtureConfiguration {
     GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier);
 
     /**
-     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start
-     * of the given state.
+     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start of
+     * the given state.
      *
      * @param currentTime The simulated "current time" at which the given state is initialized
      * @return an object that allows chaining of more given state
@@ -221,14 +269,12 @@ public interface FixtureConfiguration {
      * Indicates that no relevant activity has occurred in the past.
      *
      * @return an object that allows the definition of the activity to measure Saga behavior
-     *
      * @since 2.1.1
      */
     WhenState givenNoPriorActivity();
 
     /**
-     * Returns the time as "known" by the fixture. This is the time at which the fixture was created, plus the amount
-     * of
+     * Returns the time as "known" by the fixture. This is the time at which the fixture was created, plus the amount of
      * time the fixture was told to simulate a "wait".
      * <p/>
      * This time can be used to predict calculations that the saga may have made based on timestamps from the events it
@@ -240,8 +286,8 @@ public interface FixtureConfiguration {
 
     /**
      * Returns the event bus used by this fixture. The event bus is provided for wiring purposes only, for example to
-     * allow command handlers to publish events other than Domain Events. Events published on the returned event bus
-     * are recorded an evaluated in the {@link ResultValidator} operations.
+     * allow command handlers to publish events other than Domain Events. Events published on the returned event bus are
+     * recorded an evaluated in the {@link ResultValidator} operations.
      *
      * @return the event bus used by this fixture
      */

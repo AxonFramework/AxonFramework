@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class SpringPrototypeAggregateFactoryTest {
 
     @Test
     void testCreateNewAggregateInstance() {
-        SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", new GenericDomainEventMessage<>("type", "id2", 0,
+        SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", new GenericDomainEventMessage<>("SpringWiredAggregate", "id2", 0,
                                                                                                                 "FirstEvent"));
         assertTrue(aggregate.isInitialized(), "Aggregate's init method not invoked");
         assertNotNull(aggregate.getContext(), "ContextAware method not invoked");
@@ -56,7 +56,7 @@ class SpringPrototypeAggregateFactoryTest {
     @Test
     void testProcessSnapshotAggregateInstance() {
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2",
-                                                                     new GenericDomainEventMessage<>("type", "id2", 5,
+                                                                     new GenericDomainEventMessage<>("SpringWiredAggregate", "id2", 5,
                                                                                                      new SpringWiredAggregate()));
         assertTrue(aggregate.isInitialized(), "Aggregate's init method not invoked");
         assertNotNull(aggregate.getContext(), "ContextAware method not invoked");

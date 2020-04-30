@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ import java.util.Map;
  * If a GenericMessage is created while a {@link org.axonframework.messaging.unitofwork.UnitOfWork} is active it copies
  * over the correlation data of the UnitOfWork to the created message.
  *
- * @author Rene de Waele
+ * @author Allard Buijze
+ * @since 2.0
  */
 public class GenericMessage<T> extends AbstractMessage<T> {
 
@@ -67,21 +68,20 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     }
 
     /**
-     * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is
-     * merged with the MetaData from the correlation data of the current unit of work, if present.
-     * In case the {@code payload == null}, {@link Void} will be used as the {@code payloadType}.
+     * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is merged
+     * with the MetaData from the correlation data of the current unit of work, if present. In case the {@code payload
+     * == null}, {@link Void} will be used as the {@code payloadType}.
      *
      * @param payload  The payload for the message as a generic {@code T}
      * @param metaData The meta data {@link Map} for the message
      */
-    @SuppressWarnings("unchecked")
     public GenericMessage(T payload, Map<String, ?> metaData) {
         this(getDeclaredPayloadType(payload), payload, metaData);
     }
 
     /**
-     * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is
-     * merged with the MetaData from the correlation data of the current unit of work, if present.
+     * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is merged
+     * with the MetaData from the correlation data of the current unit of work, if present.
      *
      * @param declaredPayloadType The declared type of message payload
      * @param payload             The payload for the message
@@ -93,24 +93,23 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     }
 
     /**
-     * Constructor to reconstruct a Message using existing data. Note that no correlation data
-     * from a UnitOfWork is attached when using this constructor. If you're constructing a new
-     * Message, use {@link #GenericMessage(Object, Map)} instead.
+     * Constructor to reconstruct a Message using existing data. Note that no correlation data from a UnitOfWork is
+     * attached when using this constructor. If you're constructing a new Message, use {@link #GenericMessage(Object,
+     * Map)} instead.
      *
      * @param identifier The identifier of the Message
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
      * @throws NullPointerException when the given {@code payload} is {@code null}.
      */
-    @SuppressWarnings("unchecked")
     public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
         this(identifier, getDeclaredPayloadType(payload), payload, metaData);
     }
 
     /**
-     * Constructor to reconstruct a Message using existing data. Note that no correlation data
-     * from a UnitOfWork is attached when using this constructor. If you're constructing a new
-     * Message, use {@link #GenericMessage(Object, Map)} instead
+     * Constructor to reconstruct a Message using existing data. Note that no correlation data from a UnitOfWork is
+     * attached when using this constructor. If you're constructing a new Message, use {@link #GenericMessage(Object,
+     * Map)} instead
      *
      * @param identifier          The identifier of the Message
      * @param declaredPayloadType The declared type of message payload

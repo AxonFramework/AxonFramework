@@ -40,6 +40,14 @@ public class AxonServerConfiguration {
     private static final String DEFAULT_CONTEXT = "default";
 
     /**
+     * Whether (automatic) configuration of the AxonServer Connector is enabled. When {@code false}, the connector will
+     * not be implicitly be configured. Defaults to {@code true}.
+     * <p>
+     * Note that this setting will only affect automatic configuration by Application Containers (such as Spring).
+     */
+    private boolean enabled = true;
+
+    /**
      * Comma separated list of AxonServer servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
      * specified, default port 8123 is used.
      */
@@ -97,6 +105,24 @@ public class AxonServerConfiguration {
      * A value of {@code null}, 0, and negative values will have the threshold set to 50% of "initial-nr-of-permits".
      */
     private Integer newPermitsThreshold = null;
+
+    /**
+     * Specific flow control settings for the event message stream.
+     * <p>
+     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits en newPermitsThreshold
+     * will be used.
+     */
+    private FlowControlConfiguration eventFlowControl;
+
+    /**
+     * Specific flow control settings for the queue message stream
+     */
+    private FlowControlConfiguration queryFlowControl;
+
+    /**
+     * Specific flow control settings for the command message stream
+     */
+    private FlowControlConfiguration commandFlowControl;
 
     /**
      * Number of threads executing commands
@@ -185,6 +211,17 @@ public class AxonServerConfiguration {
     private long connectTimeout = 5000;
 
     /**
+     * Indicates whether it is OK to query events from the local Axon Server node - the node the client is currently
+     * connected to. This means that the client will probably get stale events since all events my not be replicated to
+     * this node yet. Can be used when the criteria for eventual consistency is less strict. It will spread the load for querying
+     * events - not all requests will go to the leader of the cluster anymore.
+     * <p>
+     * If Axon Server SE is used, this property has no effect.
+     * </p>
+     */
+    private boolean allowReadingEventsFromFollower = false;
+
+    /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
      *
      * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
@@ -202,6 +239,14 @@ public class AxonServerConfiguration {
      * Instantiate a default {@link AxonServerConfiguration}.
      */
     public AxonServerConfiguration() {
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public String getServers() {
@@ -298,7 +343,7 @@ public class AxonServerConfiguration {
         return Arrays.stream(serverArr).map(server -> {
             String[] s = server.trim().split(":");
             if (s.length > 1) {
-                return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(Integer.valueOf(s[1])).build();
+                return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(Integer.parseInt(s[1])).build();
             }
             return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(DEFAULT_GRPC_PORT).build();
         }).collect(Collectors.toList());
@@ -430,6 +475,125 @@ public class AxonServerConfiguration {
         this.connectTimeout = connectTimeout;
     }
 
+    public boolean isAllowReadingEventsFromFollower() {
+        return allowReadingEventsFromFollower;
+    }
+
+    public void setAllowReadingEventsFromFollower(boolean allowReadingEventsFromFollower) {
+        this.allowReadingEventsFromFollower = allowReadingEventsFromFollower;
+    }
+
+    public FlowControlConfiguration getEventFlowControl() {
+        if (eventFlowControl == null) {
+            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+        }
+        return eventFlowControl;
+    }
+
+    public void setEventFlowControl(FlowControlConfiguration eventFlowControl) {
+        this.eventFlowControl = eventFlowControl;
+    }
+
+    public FlowControlConfiguration getQueryFlowControl() {
+        if (queryFlowControl == null) {
+            return new FlowControlConfiguration(getInitialNrOfPermits(),getNrOfNewPermits(), getNewPermitsThreshold());
+        }
+        return queryFlowControl;
+    }
+
+    public void setQueryFlowControl(FlowControlConfiguration queryFlowControl) {
+        this.queryFlowControl = queryFlowControl;
+    }
+
+    public FlowControlConfiguration getCommandFlowControl() {
+        if (commandFlowControl == null) {
+            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
+        }
+        return commandFlowControl;
+    }
+
+    public void setCommandFlowControl(FlowControlConfiguration commandFlowControl) {
+        this.commandFlowControl = commandFlowControl;
+    }
+
+    public FlowControlConfiguration getDefaultFlowControlConfiguration() {
+        return new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold);
+    }
+
+    /**
+     * Configuration class for Flow Control of specific message types.
+     *
+     * @author Gerlo Hesselink
+     * @since 4.3
+     */
+    public static class FlowControlConfiguration {
+
+        /**
+         * Initial number of permits send for message streams (events, commands, queries)
+         */
+        private Integer initialNrOfPermits = 5000;
+
+        /**
+         * Additional number of permits send for message streams (events, commands, queries) when application
+         * is ready for more messages.
+         * <p>
+         * A value of {@code null}, 0, and negative values will have the client request the number of permits
+         * required to get from the "new-permits-threshold" to "initial-nr-of-permits".
+         */
+        private Integer nrOfNewPermits = null;
+
+        /**
+         * Threshold at which application sends new permits to server
+         * <p>
+         * A value of {@code null}, 0, and negative values will have the threshold set to 50% of "initial-nr-of-permits".
+         */
+        private Integer newPermitsThreshold = null;
+
+        public FlowControlConfiguration() {
+        }
+
+        /**
+         * @param initialNrOfPermits    Initial nr of new permits
+         * @param nrOfNewPermits        Additional number of permits when applictation is ready for message
+         * @param newPermitsThreshold   Threshold at which application sends new permits to server
+         */
+        public FlowControlConfiguration(Integer initialNrOfPermits, Integer nrOfNewPermits, Integer newPermitsThreshold) {
+            this.initialNrOfPermits = initialNrOfPermits;
+            this.nrOfNewPermits = nrOfNewPermits;
+            this.newPermitsThreshold = newPermitsThreshold;
+        }
+
+        public Integer getInitialNrOfPermits() {
+            return this.initialNrOfPermits;
+        }
+
+        public void setInitialNrOfPermits(Integer initialNrOfPermits) {
+            this.initialNrOfPermits = initialNrOfPermits;
+        }
+
+        public Integer getNrOfNewPermits() {
+            if (this.nrOfNewPermits == null || this.nrOfNewPermits <= 0) {
+                return getInitialNrOfPermits() - getNewPermitsThreshold();
+            }
+            return this.nrOfNewPermits;
+        }
+
+        public void setNrOfNewPermits(Integer nrOfNewPermits) {
+            this.nrOfNewPermits = nrOfNewPermits;
+        }
+
+        public Integer getNewPermitsThreshold() {
+            if (this.newPermitsThreshold == null || this.newPermitsThreshold <= 0) {
+                return this.initialNrOfPermits / 2;
+            }
+            return this.newPermitsThreshold;
+        }
+
+        public void setNewPermitsThreshold(Integer newPermitsThreshold) {
+            this.newPermitsThreshold = newPermitsThreshold;
+        }
+    }
+
     @SuppressWarnings("unused")
     public static class Builder {
 
@@ -458,10 +622,30 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        public Builder allowReadingEventsFromFollower(boolean allowReadingEventsFromFollower) {
+            instance.allowReadingEventsFromFollower = allowReadingEventsFromFollower;
+            return this;
+        }
+
         public Builder flowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
             instance.initialNrOfPermits = initialNrOfPermits;
             instance.nrOfNewPermits = nrOfNewPermits;
             instance.newPermitsThreshold = newPermitsThreshold;
+            return this;
+        }
+
+        public Builder commandFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setCommandFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
+            return this;
+        }
+
+        public Builder queryFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setQueryFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
+            return this;
+        }
+
+        public Builder eventFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
+            instance.setEventFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
             return this;
         }
 

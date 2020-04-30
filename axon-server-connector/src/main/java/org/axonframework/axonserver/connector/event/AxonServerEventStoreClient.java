@@ -125,10 +125,9 @@ public class AxonServerEventStoreClient {
      */
     public Stream<Event> listAggregateEvents(String context, GetAggregateEventsRequest request) {
         BufferingSpliterator<Event> queue = new BufferingSpliterator<>();
-        eventStoreStub(context).listAggregateEvents(
-                request,
-                new StreamingEventStreamObserver(queue, context, request.getAggregateId())
-        );
+        StreamingEventStreamObserver responseObserver =
+                new StreamingEventStreamObserver(queue, context, request.getAggregateId());
+        eventStoreStub(context).listAggregateEvents(request, responseObserver);
         return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
@@ -324,7 +323,6 @@ public class AxonServerEventStoreClient {
 
                     @Override
                     public void onCompleted() {
-                        // No-op - the operation has already been completed in the `onNext(Confirmation)`
                     }
                 }),
                 futureConfirmation,
@@ -447,10 +445,9 @@ public class AxonServerEventStoreClient {
      */
     public Stream<Event> listAggregateSnapshots(String context, GetAggregateSnapshotsRequest request) {
         BufferingSpliterator<Event> queue = new BufferingSpliterator<>(bufferCapacity);
-        eventStoreStub(context).listAggregateSnapshots(
-                request,
-                new StreamingEventStreamObserver(queue, context, request.getAggregateId())
-        );
+        StreamingEventStreamObserver responseObserver =
+                new StreamingEventStreamObserver(queue, context, request.getAggregateId());
+        eventStoreStub(context).listAggregateSnapshots(request, responseObserver);
         return StreamSupport.stream(queue, false).onClose(() -> queue.cancel(null));
     }
 
@@ -503,7 +500,9 @@ public class AxonServerEventStoreClient {
         private final String context;
         private int count;
 
-        private StreamingEventStreamObserver(BufferingSpliterator<Event> queue, String context, String aggregateId) {
+        private StreamingEventStreamObserver(BufferingSpliterator<Event> queue,
+                                             String context,
+                                             String aggregateId) {
             this.context = context;
             this.before = System.currentTimeMillis();
             this.events = queue;

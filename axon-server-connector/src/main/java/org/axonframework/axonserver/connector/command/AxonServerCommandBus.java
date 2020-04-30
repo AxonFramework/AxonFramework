@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.grpc.stub.StreamObserver;
 import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DefaultHandlers;
 import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
@@ -51,6 +49,10 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
+import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -64,10 +66,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -101,6 +105,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final TargetContextResolver<? super CommandMessage<?>> targetContextResolver;
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private final Handlers<CommandProviderInbound.RequestCase, BiConsumer<CommandProviderInbound, StreamObserver<CommandProviderOutbound>>> commandHandlers = new DefaultHandlers<>();
+    private final ShutdownLatch shutdownLatch = new ShutdownLatch();
 
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerCommandBus}.
@@ -212,11 +217,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.targetContextResolver = targetContextResolver.orElse(m -> context);
         this.defaultCommandCallback = NoOpCallback.INSTANCE;
         this.loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
-        this.commandProcessor = new CommandProcessor(context,
-                                                     configuration,
-                                                     ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder(),
-                                                     so -> (StreamObserver<CommandProviderOutbound>) so.getRequestStream(),
-                                                     new DefaultInstructionAckSource<>(ack -> CommandProviderOutbound.newBuilder().setAck(ack).build()));
+        //noinspection unchecked
+        this.commandProcessor = new CommandProcessor(
+                context,
+                configuration,
+                ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder(),
+                so -> (StreamObserver<CommandProviderOutbound>) so.getRequestStream(),
+                new DefaultInstructionAckSource<>(ack -> CommandProviderOutbound.newBuilder().setAck(ack).build())
+        );
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
@@ -262,6 +270,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         commandProcessor.unsubscribeAll();
     }
 
+    /**
+     * Start the Axon Server {@link CommandBus} implementation.
+     */
+    @StartHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
+    public void start() {
+        shutdownLatch.initialize();
+    }
+
     @Override
     public <C> void dispatch(CommandMessage<C> command) {
         dispatch(command, defaultCommandCallback);
@@ -276,64 +292,64 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
+        shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
+        ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         AtomicBoolean serverResponded = new AtomicBoolean(false);
         try {
             String context = targetContextResolver.resolveContext(commandMessage);
             Command command = serializer.serialize(commandMessage,
                                                    routingStrategy.getRoutingKey(commandMessage),
                                                    priorityCalculator.determinePriority(commandMessage));
+            CommandServiceGrpc.CommandServiceStub commandService =
+                    CommandServiceGrpc.newStub(axonServerConnectionManager.getChannel(context));
 
-            CommandServiceGrpc
-                    .newStub(axonServerConnectionManager.getChannel(context))
-                    .dispatch(command,
-                              new StreamObserver<CommandResponse>() {
-                                  @Override
-                                  public void onNext(CommandResponse commandResponse) {
-                                      serverResponded.set(true);
-                                      logger.debug("Received command response [{}]", commandResponse);
+            commandService.dispatch(command, new StreamObserver<CommandResponse>() {
+                @Override
+                public void onNext(CommandResponse commandResponse) {
+                    serverResponded.set(true);
+                    logger.debug("Received command response [{}]", commandResponse);
 
-                                      try {
-                                          CommandResultMessage<R> resultMessage =
-                                                  serializer.deserialize(commandResponse);
-                                          commandCallback.onResult(commandMessage, resultMessage);
-                                      } catch (Exception ex) {
-                                          commandCallback.onResult(commandMessage, asCommandResultMessage(ex));
-                                          logger.info("Failed to deserialize payload [{}] - Cause: {}",
-                                                      commandResponse.getPayload().getData(),
-                                                      ex.getCause().getMessage());
-                                      }
-                                  }
+                    try {
+                        CommandResultMessage<R> resultMessage = serializer.deserialize(commandResponse);
+                        commandCallback.onResult(commandMessage, resultMessage);
+                    } catch (Exception ex) {
+                        commandCallback.onResult(commandMessage, asCommandResultMessage(ex));
+                        logger.info("Failed to deserialize payload [{}] - Cause: {}",
+                                    commandResponse.getPayload().getData(),
+                                    ex.getCause().getMessage());
+                    }
+                }
 
-                                  @Override
-                                  public void onError(Throwable throwable) {
-                                      serverResponded.set(true);
-                                      commandCallback.onResult(commandMessage, asCommandResultMessage(
-                                              ErrorCode.COMMAND_DISPATCH_ERROR.convert(
-                                                      configuration.getClientId(), throwable
-                                              )
-                                      ));
-                                  }
+                @Override
+                public void onError(Throwable throwable) {
+                    serverResponded.set(true);
+                    commandCallback.onResult(commandMessage, asCommandResultMessage(
+                            ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), throwable)
+                    ));
+                    commandInTransit.end();
+                }
 
-                                  @Override
-                                  public void onCompleted() {
-                                      if (!serverResponded.get()) {
-                                          ErrorMessage errorMessage =
-                                                  ErrorMessage.newBuilder()
-                                                              .setMessage("No result from command executor")
-                                                              .build();
-                                          commandCallback.onResult(commandMessage, asCommandResultMessage(
-                                                  ErrorCode.COMMAND_DISPATCH_ERROR.convert(errorMessage))
-                                          );
-                                      }
-                                  }
-                              }
-                    );
+                @Override
+                public void onCompleted() {
+                    if (!serverResponded.get()) {
+                        ErrorMessage errorMessage = ErrorMessage.newBuilder()
+                                                                .setMessage("No result from command executor")
+                                                                .build();
+                        commandCallback.onResult(
+                                commandMessage,
+                                asCommandResultMessage(ErrorCode.COMMAND_DISPATCH_ERROR.convert(errorMessage))
+                        );
+                    }
+                    commandInTransit.end();
+                }
+            });
         } catch (Exception e) {
             logger.debug("There was a problem dispatching command [{}].", commandMessage, e);
             commandCallback.onResult(
                     commandMessage,
                     asCommandResultMessage(ErrorCode.COMMAND_DISPATCH_ERROR.convert(configuration.getClientId(), e))
             );
+            commandInTransit.end();
         }
     }
 
@@ -344,7 +360,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         commandProcessor.subscribe(commandName);
         return new AxonServerRegistration(
                 registration,
-                () -> commandProcessor.unsubscribe(commandName)
+                () -> commandProcessor.removeAndUnsubscribe(commandName)
         );
     }
 
@@ -359,19 +375,33 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
-    /**
-     * Disconnect the command bus from the Axon Server.
-     */
-    public void disconnect() {
-        if (commandProcessor != null) {
-            commandProcessor.disconnect();
-        }
-    }
-
     @Override
     public Registration registerDispatchInterceptor(
             MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
+    }
+
+    /**
+     * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
+     * handlers. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
+     */
+    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
+    public void disconnect() {
+        commandProcessor.unsubscribeAll();
+    }
+
+    /**
+     * Shutdown the command bus asynchronously for dispatching commands to Axon Server. This process will wait for
+     * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
+     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
+     *
+     * @return a completable future which is resolved once all command dispatching activities are completed
+     */
+    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
+    public CompletableFuture<Void> shutdownDispatching() {
+        return CompletableFuture.runAsync(commandProcessor::disconnect)
+                                .thenCompose(r -> shutdownLatch.initiateShutdown())
+                                .thenRun(commandProcessor::removeLocalSubscriptions);
     }
 
     /**
@@ -399,8 +429,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
         private CommandLoadFactorProvider loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
-        private Function<UpstreamAwareStreamObserver<CommandProviderInbound>, StreamObserver<CommandProviderOutbound>> requestStreamFactory = so -> (StreamObserver<CommandProviderOutbound>) so
-                .getRequestStream();
+        @SuppressWarnings("unchecked")
+        private Function<UpstreamAwareStreamObserver<CommandProviderInbound>, StreamObserver<CommandProviderOutbound>> requestStreamFactory =
+                so -> (StreamObserver<CommandProviderOutbound>) so.getRequestStream();
         private InstructionAckSource<CommandProviderOutbound> instructionAckSource = new DefaultInstructionAckSource<>(
                 ack -> CommandProviderOutbound.newBuilder().setAck(ack).build());
 
@@ -758,12 +789,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                 @Override
                 public void onError(Throwable ex) {
                     logger.warn("Command Inbound Stream closed with error", ex);
+                    completeRequestStream();
                     subscriberStreamObserver = null;
                 }
 
                 @Override
                 public void onCompleted() {
                     logger.info("Received completed from server.");
+                    completeRequestStream();
                     subscriberStreamObserver = null;
                 }
             };
@@ -778,15 +811,27 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
             subscriberStreamObserver = new FlowControllingStreamObserver<>(
                     streamObserver,
-                    configuration,
+                    configuration.getClientId(),
+                    configuration.getCommandFlowControl(),
                     flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),
                     t -> t.getRequestCase().equals(CommandProviderOutbound.RequestCase.COMMAND_RESPONSE)
             ).sendInitialPermits();
             return subscriberStreamObserver;
         }
 
-        public void unsubscribe(String command) {
-            subscribedCommands.remove(command);
+        private void unsubscribeAll() {
+            if (subscriberStreamObserver != null) {
+                subscribedCommands.forEach(this::unsubscribe);
+            }
+        }
+
+        public void removeAndUnsubscribe(String command) {
+            if (subscribedCommands.remove(command)) {
+                unsubscribe(command);
+            }
+        }
+
+        private void unsubscribe(String command) {
             try {
                 getSubscriberObserver(context).onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
                         CommandSubscription.newBuilder()
@@ -800,21 +845,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             }
         }
 
-        private void unsubscribeAll() {
-            for (String subscribedCommand : subscribedCommands) {
-                try {
-                    getSubscriberObserver(context).onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
-                            CommandSubscription.newBuilder()
-                                               .setCommand(subscribedCommand)
-                                               .setClientId(configuration.getClientId())
-                                               .setMessageId(UUID.randomUUID().toString())
-                                               .build()
-                    ).build());
-                } catch (Exception ignored) {
-                    // This exception is ignored
-                }
-            }
-            subscriberStreamObserver = null;
+        private void removeLocalSubscriptions() {
+            subscribedCommands.clear();
         }
 
         private <C> void dispatchLocal(CommandMessage<C> command,
@@ -828,11 +860,25 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         void disconnect() {
+            commandExecutor.shutdown();
+            try {
+                if (!commandExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    logger.warn("Awaited Command Bus termination for 5 seconds. Wait period extended by 30 seconds.");
+                }
+                if (!commandExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+                    logger.warn("Awaited Command Bus termination for 35 seconds. Will shutdown forcefully.");
+                    commandExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                logger.warn("Awaiting termination of Command Bus got interrupted. Will shutdown immediately", e);
+                commandExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+
             if (subscriberStreamObserver != null) {
                 subscriberStreamObserver.onCompleted();
             }
             running = false;
-            commandExecutor.shutdown();
         }
 
         /**

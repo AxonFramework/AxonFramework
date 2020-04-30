@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,8 +21,14 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -32,7 +38,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -150,7 +161,13 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
+     */
     @Override
+    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     public void shutdown() {
         scheduledExecutorService.shutdown();
     }

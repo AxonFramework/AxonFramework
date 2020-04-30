@@ -1,8 +1,27 @@
+/*
+ * Copyright (c) 2010-2020. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.heartbeat.connection.checker.HeartbeatConnectionChecker;
 import org.axonframework.axonserver.connector.util.Scheduler;
+import org.axonframework.lifecycle.Phase;
+import org.axonframework.lifecycle.ShutdownHandler;
+import org.axonframework.lifecycle.StartHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,16 +101,20 @@ public class HeartbeatMonitor {
     }
 
     /**
-     * Schedule a task that verifies that the connection is still alive and, if it is not,
-     * invoke a callback in order to react to the disconnection.
+     * Schedule a task that verifies that the connection is still alive and, if it is not, invoke a callback in order to
+     * react to the disconnection. Started in phase {@link Phase#INSTRUCTION_COMPONENTS}, as this means all inbound and
+     * outbound connections have been started.
      */
+    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         this.scheduler.scheduleWithFixedDelay(this::run, initialDelay, delay, TimeUnit.MILLISECONDS);
     }
 
     /**
-     * Stops the scheduled task and shutdown the monitor, that cannot be restarted again.
+     * Stops the scheduled task and shutdown the monitor, that cannot be restarted again. Shuts down in phase {@link
+     * Phase#INSTRUCTION_COMPONENTS}.
      */
+    @ShutdownHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void shutdown() {
         this.scheduler.shutdownNow();
     }

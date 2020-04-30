@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,26 +16,45 @@
 
 package org.axonframework.config;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.AbstractEventProcessor;
+import org.axonframework.eventhandling.ErrorContext;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -43,9 +62,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class EventProcessingModuleTest {
@@ -110,7 +127,7 @@ class EventProcessingModuleTest {
                                                                           .registerEventHandler(c -> new TrackingEventHandler())
                                                                           .registerTrackingEventProcessor("tracking"));
 
-        assertThrows(AxonConfigurationException.class, configurer::start);
+        assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
     }
 
     @Test

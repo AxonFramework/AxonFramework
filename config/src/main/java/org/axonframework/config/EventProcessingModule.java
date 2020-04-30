@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,20 @@ package org.axonframework.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DirectEventProcessingStrategy;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -28,6 +41,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -35,8 +49,13 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -57,7 +76,6 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
  */
 public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
-
 
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
@@ -146,12 +164,13 @@ public class EventProcessingModule
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
-    //<editor-fold desc="module configuration methods">
     @Override
     public void initialize(Configuration configuration) {
         this.configuration = configuration;
         eventProcessors.clear();
+
         instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
+
         Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
         registerSimpleEventHandlerInvokers(handlerInvokers);
         registerSagaManagers(handlerInvokers);
@@ -161,22 +180,24 @@ public class EventProcessingModule
                     new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
             eventProcessors.put(processorName, eventProcessorComponent);
         });
+
+        initializeProcessors();
     }
 
-    @Override
-    public void start() {
-        eventProcessors.forEach((name, component) -> component.get().start());
+    /**
+     * Ideally we would be able to just call {@code eventProcessors.values().forEach(Component::get)} to have the {@link
+     * Component} register the lifecycle handlers through the {@link LifecycleHandlerInspector} directly upon
+     * initialization. However, the Spring {@code AxonConfiguration} and {@code EventHandlerRegistrar} will call the
+     * {@link #initialize(Configuration)} method twice. As the {@code #initialize(Configuration)} clears out the list of
+     * processors, some processors (for example those for registered Sagas) might pop up twice; once in the first {@code
+     * #initialize(Configuration)} call and once in the second. Registering the {@code
+     * eventProcessors.values().forEach(Component::get)} at the earliest stage in the start cycle will resolve the
+     * problem. Note that this functionality should be adjusted once the Spring configuration is more inline with the
+     * default and auto Configuration.
+     */
+    private void initializeProcessors() {
+        this.configuration.onStart(Integer.MIN_VALUE, () -> eventProcessors.values().forEach(Component::get));
     }
-
-    @Override
-    public void shutdown() {
-        eventProcessors.values().stream()
-                       .map(Component::get)
-                       .map(EventProcessor::shutdownAsync)
-                       .reduce((cf1, cf2) -> CompletableFuture.allOf(cf1, cf2))
-                       .ifPresent(CompletableFuture::join);
-    }
-    //</editor-fold>
 
     private String selectProcessingGroupByType(Class<?> type) {
         return typeSelectors.stream()
@@ -211,13 +232,27 @@ public class EventProcessingModule
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
                     c -> SimpleEventHandlerInvoker.builder()
                                                   .eventHandlers(handlers)
+                                                  .handlerDefinition(retrieveHandlerDefinition(handlers))
                                                   .parameterResolverFactory(configuration.parameterResolverFactory())
                                                   .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
                                                           processingGroup
                                                   ))
                                                   .sequencingPolicy(sequencingPolicy(processingGroup))
-                                                  .build());
+                                                  .build()
+            );
         });
+    }
+
+    /**
+     * The class is required to be provided in case the {@code ClasspathHandlerDefinition is used to retrieve the {@link
+     * HandlerDefinition}. Ideally, a {@code HandlerDefinition} would be retrieved per event handling class, as
+     * potentially users would be able to define different {@link ClassLoader} instances per event handling class
+     * contained in an Event Processor. For now we have deduced the latter to be to much of an edge case. Hence we
+     * assume users will use the same ClassLoader for differing event handling instance within a single Event
+     * Processor.
+     */
+    private HandlerDefinition retrieveHandlerDefinition(List<Object> handlers) {
+        return configuration.handlerDefinition(handlers.get(0).getClass());
     }
 
     private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
@@ -556,8 +591,10 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
-            eventProcessor(processorName).ifPresent(eventProcessor -> eventProcessor
-                    .registerHandlerInterceptor(interceptorBuilder.apply(configuration)));
+            Component<EventProcessor> eps = eventProcessors.get(processorName);
+            if (eps != null && eps.isInitialized()) {
+                eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
+            }
         }
         this.handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                         .add(interceptorBuilder);

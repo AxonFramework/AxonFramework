@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,21 +58,30 @@ public class DeadlineManagerValidator {
     }
 
     /**
+     * The current date time as stated by the configured {@link StubDeadlineManager}.
+     *
+     * @return current date time as stated by the configured {@link StubDeadlineManager}
+     */
+    public Instant currentDateTime() {
+        return deadlineManager.getCurrentDateTime();
+    }
+
+    /**
      * Asserts that a deadline scheduled after given {@code duration} matches the given {@code matcher}.
      *
-     * @param duration The delay expected before the deadline is met
-     * @param matcher  The matcher that must match with the deadline scheduled at the given time
+     * @param duration the delay expected before the deadline is met
+     * @param matcher  the matcher that must match with the deadline scheduled at the given time
      */
     public void assertScheduledDeadlineMatching(Duration duration, Matcher<?> matcher) {
-        Instant targetTime = deadlineManager.getCurrentDateTime().plus(duration);
+        Instant targetTime = currentDateTime().plus(duration);
         assertScheduledDeadlineMatching(targetTime, matcher);
     }
 
     /**
      * Asserts that a deadline scheduled at the given {@code scheduledTime} matches the given {@code matcher}.
      *
-     * @param scheduledTime The time at which the deadline should be met
-     * @param matcher       The matcher that must match with the deadline scheduled at the given time
+     * @param scheduledTime the time at which the deadline should be met
+     * @param matcher       the matcher that must match with the deadline scheduled at the given time
      */
     public void assertScheduledDeadlineMatching(Instant scheduledTime, Matcher<?> matcher) {
         List<ScheduledDeadlineInfo> scheduledDeadlines = deadlineManager.getScheduledDeadlines();
@@ -88,7 +97,26 @@ public class DeadlineManagerValidator {
         describe(scheduledDeadlines, actual);
         throw new AxonAssertionError(format(
                 "Did not find a deadline at the given deadline manager. \nExpected:\n<%s> at <%s>\nGot:%s\n",
-                expected, scheduledTime, actual));
+                expected, scheduledTime, actual
+        ));
+    }
+
+    /**
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled.
+     *
+     * @param matcher the matcher defining the deadline which should not be scheduled
+     */
+    public void assertNoScheduledDeadlineMatching(Matcher<?> matcher) {
+        for (ScheduledDeadlineInfo scheduledDeadline : deadlineManager.getScheduledDeadlines()) {
+            if (matcher.matches(scheduledDeadline.deadlineMessage())) {
+                Description unexpected = new StringDescription();
+                matcher.describeTo(unexpected);
+                throw new AxonAssertionError(format(
+                        "Unexpected matching deadline found at the given deadline manager. \nGot:%s\n",
+                        unexpected
+                ));
+            }
+        }
     }
 
     /**
@@ -98,9 +126,9 @@ public class DeadlineManagerValidator {
      */
     public void assertDeadlinesMetMatching(Matcher<? extends Iterable<?>> matcher) {
         List<ScheduledDeadlineInfo> deadlinesMet = deadlineManager.getDeadlinesMet();
-        List<DeadlineMessage> deadlineMessages = deadlinesMet.stream()
-                                                             .map(ScheduledDeadlineInfo::deadlineMessage)
-                                                             .collect(Collectors.toList());
+        List<DeadlineMessage<?>> deadlineMessages = deadlinesMet.stream()
+                                                                .map(ScheduledDeadlineInfo::deadlineMessage)
+                                                                .collect(Collectors.toList());
         if (!matcher.matches(deadlineMessages)) {
             Description expected = new StringDescription();
             Description actual = new StringDescription();
@@ -108,7 +136,8 @@ public class DeadlineManagerValidator {
             describe(deadlinesMet, actual);
             throw new AxonAssertionError(format(
                     "Expected deadlines were not met at the given deadline manager. \nExpected:\n<%s>\nGot:%s\n",
-                    expected, actual));
+                    expected, actual
+            ));
         }
     }
 

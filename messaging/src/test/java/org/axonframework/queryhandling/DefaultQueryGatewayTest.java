@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -61,88 +62,278 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testDispatchSingleResultQuery() throws Exception {
+    void testPointToPointQuery() throws Exception {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
-        CompletableFuture<String> actual = testSubject.query("query", String.class);
-        assertEquals("answer", actual.get());
+        CompletableFuture<String> queryResponse = testSubject.query("query", String.class);
+        assertEquals("answer", queryResponse.get());
 
-        verify(mockBus).query(
-                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload()))
-        );
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+
+        verify(mockBus).query(queryMessageCaptor.capture());
+
+        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        assertEquals("query", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        assertEquals(MetaData.emptyInstance(), result.getMetaData());
     }
 
     @Test
-    void testDispatchMessageWithMetaData() {
+    void testPointToPointQuerySpecifyingQueryName() throws Exception {
+        String expectedQueryName = "myQueryName";
+
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
+        CompletableFuture<String> queryResponse = testSubject.query(expectedQueryName, "query", String.class);
+        assertEquals("answer", queryResponse.get());
+
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+
+        verify(mockBus).query(queryMessageCaptor.capture());
+
+        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        assertEquals("query", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(expectedQueryName, result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        assertEquals(MetaData.emptyInstance(), result.getMetaData());
+    }
+
+    @Test
+    void testPointToPointQueryWithMetaData() throws Exception {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
 
-        testSubject.query(
-                new GenericMessage<>("Query", MetaData.with(expectedMetaDataKey, expectedMetaDataValue)),
-                instanceOf(String.class)
-        );
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
-        verify(mockBus).query(
-                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "Query".equals(x.getPayload())
-                        && expectedMetaDataValue.equals(x.getMetaData().get(expectedMetaDataKey)))
-        );
+        GenericMessage<String> testQuery =
+                new GenericMessage<>("query", MetaData.with(expectedMetaDataKey, expectedMetaDataValue));
+
+        CompletableFuture<String> queryResponse = testSubject.query(testQuery, instanceOf(String.class));
+        assertEquals("answer", queryResponse.get());
+
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+
+        verify(mockBus).query(queryMessageCaptor.capture());
+
+        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        assertEquals("query", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        MetaData resultMetaData = result.getMetaData();
+        assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
+        assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
     }
 
     @Test
-    void testDispatchSingleResultQueryWhenBusReportsAnError() throws Exception {
+    void testPointToPointQueryWhenQueryBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<>(String.class, expected)));
 
         CompletableFuture<String> result = testSubject.query("query", String.class);
+
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected.getMessage(), result.exceptionally(Throwable::getMessage).get());
     }
 
     @Test
-    void testDispatchSingleResultQueryWhenBusThrowsException() throws Exception {
+    void testPointToPointQueryWhenQueryBusThrowsException() throws Exception {
         Throwable expected = new Throwable("oops");
-        CompletableFuture<QueryResponseMessage<String>> queryResponseMessageCompletableFuture = new CompletableFuture<>();
-        queryResponseMessageCompletableFuture.completeExceptionally(expected);
-        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(queryResponseMessageCompletableFuture);
+        CompletableFuture<QueryResponseMessage<String>> queryResponseCompletableFuture = new CompletableFuture<>();
+        queryResponseCompletableFuture.completeExceptionally(expected);
+        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(queryResponseCompletableFuture);
+
         CompletableFuture<String> result = testSubject.query("query", String.class);
+
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected.getMessage(), result.exceptionally(Throwable::getMessage).get());
     }
 
     @Test
-    void testDispatchMultiResultQuery() {
+    void testScatterGatherQuery() {
+        long expectedTimeout = 1L;
+        TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
+
         when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
                 .thenReturn(Stream.of(answer));
 
-        Stream<String> actual = testSubject.scatterGather(
-                "query", instanceOf(String.class), 1, TimeUnit.SECONDS
-        );
-        Optional<String> firstResult = actual.findFirst();
+        Stream<String> queryResponse =
+                testSubject.scatterGather("scatterGather", instanceOf(String.class), expectedTimeout, expectedTimeUnit);
+        Optional<String> firstResult = queryResponse.findFirst();
         assertTrue(firstResult.isPresent());
         assertEquals("answer", firstResult.get());
-        verify(mockBus).scatterGather(
-                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
-                eq(1L),
-                eq(TimeUnit.SECONDS)
-        );
+
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+
+        verify(mockBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
+
+        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        assertEquals("scatterGather", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        assertEquals(MetaData.emptyInstance(), result.getMetaData());
     }
 
     @Test
-    void testDispatchSubscriptionQuery() {
+    void testScatterGatherQuerySpecifyingQueryName() {
+        String expectedQueryName = "myQueryName";
+        long expectedTimeout = 1L;
+        TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
+
+        when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
+                .thenReturn(Stream.of(answer));
+
+        Stream<String> queryResponse = testSubject.scatterGather(
+                expectedQueryName, "scatterGather", instanceOf(String.class), expectedTimeout, expectedTimeUnit
+        );
+        Optional<String> firstResult = queryResponse.findFirst();
+        assertTrue(firstResult.isPresent());
+        assertEquals("answer", firstResult.get());
+
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+
+        verify(mockBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
+
+        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        assertEquals("scatterGather", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(expectedQueryName, result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        assertEquals(MetaData.emptyInstance(), result.getMetaData());
+    }
+
+    @Test
+    void testScatterGatherQueryWithMetaData() {
+        String expectedMetaDataKey = "key";
+        String expectedMetaDataValue = "value";
+        long expectedTimeout = 1L;
+        TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
+
+        when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
+                .thenReturn(Stream.of(answer));
+
+        GenericMessage<String> testQuery =
+                new GenericMessage<>("scatterGather", MetaData.with(expectedMetaDataKey, expectedMetaDataValue));
+
+        Stream<String> queryResponse =
+                testSubject.scatterGather(testQuery, instanceOf(String.class), expectedTimeout, expectedTimeUnit);
+        Optional<String> firstResult = queryResponse.findFirst();
+        assertTrue(firstResult.isPresent());
+        assertEquals("answer", firstResult.get());
+
+        //noinspection unchecked
+        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+
+        verify(mockBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
+
+        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        assertEquals("scatterGather", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        MetaData resultMetaData = result.getMetaData();
+        assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
+        assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
+    }
+
+    @Test
+    void testSubscriptionQuery() {
         when(mockBus.subscriptionQuery(any(), any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
-        testSubject.subscriptionQuery("query",
-                                      instanceOf(String.class),
-                                      instanceOf(String.class));
-        verify(mockBus)
-                .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>)
-                                                   x -> "query".equals(x.getPayload())), any(), anyInt());
+        testSubject.subscriptionQuery("subscription", instanceOf(String.class), instanceOf(String.class));
+
+        //noinspection unchecked
+        ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
+                ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
+
+        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), any(), anyInt());
+
+        SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
+        assertEquals("subscription", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getUpdateResponseType().getClass()));
+        assertEquals(String.class, result.getUpdateResponseType().getExpectedResponseType());
+        assertEquals(MetaData.emptyInstance(), result.getMetaData());
+    }
+
+    @Test
+    void testSubscriptionQuerySpecifyingQueryName() {
+        String expectedQueryName = "myQueryName";
+
+        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+
+        testSubject.subscriptionQuery(expectedQueryName, "subscription", String.class, String.class);
+
+        //noinspection unchecked
+        ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
+                ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
+
+        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), any(), anyInt());
+
+        SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
+        assertEquals("subscription", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(expectedQueryName, result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getUpdateResponseType().getClass()));
+        assertEquals(String.class, result.getUpdateResponseType().getExpectedResponseType());
+        assertEquals(MetaData.emptyInstance(), result.getMetaData());
+    }
+
+    @Test
+    void testSubscriptionQueryWithMetaData() {
+        String expectedMetaDataKey = "key";
+        String expectedMetaDataValue = "value";
+
+        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+
+
+        GenericMessage<String> testQuery =
+                new GenericMessage<>("subscription", MetaData.with(expectedMetaDataKey, expectedMetaDataValue));
+        testSubject.subscriptionQuery(testQuery, instanceOf(String.class), instanceOf(String.class));
+
+        //noinspection unchecked
+        ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
+                ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
+
+        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), any(), anyInt());
+
+        SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
+        assertEquals("subscription", result.getPayload());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getQueryName());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getResponseType().getClass()));
+        assertEquals(String.class, result.getResponseType().getExpectedResponseType());
+        assertTrue(InstanceResponseType.class.isAssignableFrom(result.getUpdateResponseType().getClass()));
+        assertEquals(String.class, result.getUpdateResponseType().getExpectedResponseType());
+        MetaData resultMetaData = result.getMetaData();
+        assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
+        assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
     }
 
     @Test

@@ -97,4 +97,11 @@ class JdbcSagaStoreTest {
         Set<String> actual = testSubject.findSagas(StubSaga.class, new AssociationValue("key", "value"));
         assertEquals(singleton("123"), actual);
     }
+
+    @Test
+    void testUpdateSagaWhenDeleted() {
+        AssociationValues associationsValues = new AssociationValuesImpl(singleton(new AssociationValue("key", "value")));
+        testSubject.updateSaga(StubSaga.class, "123456", new StubSaga(), associationsValues);
+        assertNull(testSubject.loadSaga(StubSaga.class, "123456"));
+    }
 }

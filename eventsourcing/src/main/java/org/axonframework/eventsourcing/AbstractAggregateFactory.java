@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+
+import java.util.Optional;
 
 /**
  * Abstract AggregateFactory implementation that is aware of snapshot events. If an incoming event is not a snapshot
@@ -29,9 +33,10 @@ import org.axonframework.eventhandling.DomainEventMessage;
 public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T> {
 
     private final Class<T> aggregateBaseType;
+    private final AggregateModel<T> aggregateModel;
 
     /**
-     * Initialize an aggregateFactory for the given {@code aggregateBaseType}. If a first event is and instance of this
+     * Initialize an Aggregate Factory for the given {@code aggregateBaseType}. If a first event is an instance of this
      * {@code aggregateBaseType}, it is recognised as a snapshot event. Otherwise, the subclass is asked to instantiate
      * a new aggregate root instance based on the first event.
      *
@@ -39,18 +44,41 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
      */
     protected AbstractAggregateFactory(Class<T> aggregateBaseType) {
         this.aggregateBaseType = aggregateBaseType;
+        this.aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateBaseType);
+    }
+
+    /**
+     * Initializes an Aggregate Factory for the given {@code aggregateModel}. If a first event is an instance of any
+     * aggregate root within this {@code aggregateModel}, it is recognised as a snapshot event. Otherwise, the subclass
+     * is asked to instantiate a new aggregate root instance based on the first event.
+     *
+     * @param aggregateModel The model of aggregate to be created by this factory
+     */
+    protected AbstractAggregateFactory(AggregateModel<T> aggregateModel) {
+        this.aggregateBaseType = (Class<T>) aggregateModel.entityClass();
+        this.aggregateModel = aggregateModel;
+    }
+
+    /**
+     * Gets the aggregate model.
+     *
+     * @return the aggregate model
+     */
+    protected AggregateModel<T> aggregateModel() {
+        return aggregateModel;
+    }
+
+    @Override
+    public final T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+        return postProcessInstance(fromSnapshot(firstEvent).orElse(doCreateAggregate(aggregateIdentifier, firstEvent)));
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public final T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
-        T aggregate;
-        if (aggregateBaseType.isAssignableFrom(firstEvent.getPayloadType())) {
-            aggregate = (T) firstEvent.getPayload();
-        } else {
-            aggregate = doCreateAggregate(aggregateIdentifier, firstEvent);
+    private Optional<T> fromSnapshot(DomainEventMessage<?> firstEvent) {
+        if (aggregateModel.types().anyMatch(firstEvent.getPayloadType()::equals)) {
+            return (Optional<T>) Optional.of(firstEvent.getPayload());
         }
-        return postProcessInstance(aggregate);
+        return Optional.empty();
     }
 
     /**
@@ -78,6 +106,7 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
      */
     protected abstract T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent);
 
+    @Override
     public Class<T> getAggregateType() {
         return aggregateBaseType;
     }

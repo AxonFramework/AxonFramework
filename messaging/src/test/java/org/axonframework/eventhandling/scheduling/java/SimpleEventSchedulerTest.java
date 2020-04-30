@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,14 +40,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Tests validating the {@link SimpleEventScheduler}.
+ *
  * @author Allard Buijze
  * @author Nakul Mishra
  */
+@ExtendWith(MockitoExtension.class)
 class SimpleEventSchedulerTest {
 
-    private SimpleEventScheduler testSubject;
-    private EventBus eventBus;
     private ScheduledExecutorService scheduledExecutorService;
+    private EventBus eventBus;
+
+    private SimpleEventScheduler testSubject;
 
     @BeforeEach
     void setUp() {
@@ -102,12 +108,24 @@ class SimpleEventSchedulerTest {
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);
-        verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) item -> (item != null)
+        verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<Object>>) item -> (item != null)
                 && event2.getPayload().equals(item.getPayload())
                 && event2.getMetaData().equals(item.getMetaData())));
         scheduledExecutorService.shutdown();
         assertTrue(scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS),
-                "Executor refused to shutdown within a second");
+                   "Executor refused to shutdown within a second");
+    }
+
+    @Test
+    void testShutdownInvokesExecutorServiceShutdown(@Mock ScheduledExecutorService scheduledExecutorService) {
+        SimpleEventScheduler testSubject = SimpleEventScheduler.builder()
+                                                               .scheduledExecutorService(scheduledExecutorService)
+                                                               .eventBus(eventBus)
+                                                               .build();
+
+        testSubject.shutdown();
+
+        verify(scheduledExecutorService).shutdown();
     }
 
     private EventMessage<Object> createEvent() {

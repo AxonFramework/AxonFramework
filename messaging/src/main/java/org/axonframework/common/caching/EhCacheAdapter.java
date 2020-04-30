@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,26 +49,25 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @Override
-    public <K, V> void put(K key, V value) {
+    public void put(Object key, Object value) {
         ehCache.put(new Element(key, value));
     }
 
     @Override
-    public <K, V> boolean putIfAbsent(K key, V value) {
+    public boolean putIfAbsent(Object key, Object value) {
         return ehCache.putIfAbsent(new Element(key, value)) == null;
     }
 
     @Override
-    public <K> boolean remove(K key) {
+    public boolean remove(Object key) {
         return ehCache.remove(key);
     }
 
     @Override
-    public <K> boolean containsKey(K key) {
+    public boolean containsKey(Object key) {
         return ehCache.isKeyInCache(key);
     }
 
-    @SuppressWarnings("ClassEscapesDefinedScope")
     @Override
     protected EhCacheAdapter.CacheEventListenerAdapter createListenerAdapter(EntryListener cacheEntryListener) {
         return new EhCacheAdapter.CacheEventListenerAdapter(ehCache, cacheEntryListener);
@@ -80,7 +79,6 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
         return () -> ehCache.getCacheEventNotificationService().unregisterListener(listenerAdapter);
     }
 
-    @SuppressWarnings("unchecked")
     private static class CacheEventListenerAdapter implements CacheEventListener, Cloneable {
 
         private Ehcache ehCache;
