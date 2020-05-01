@@ -19,14 +19,18 @@ package org.axonframework.modelling.saga;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.Scope;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.*;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,9 +43,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class AnnotatedSagaTest {
 
+    private ScheduledExecutorService executorService;
+
+    @Before
+    public void setUp() throws Exception {
+        executorService = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        executorService.shutdownNow();
+    }
+
     @Test
     void testInvokeSaga() {
-        StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+        StubAnnotatedSaga testSubject = new StubAnnotatedSaga(executorService);
         AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
                                                                  new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
@@ -59,8 +75,8 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSaga_MetaDataAssociationResolver() {
-        StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+    public void testInvokeSaga_MetaDataAssociationResolver() {
+        StubAnnotatedSaga testSubject = new StubAnnotatedSaga(executorService);
         AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
                                                                  new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
@@ -80,7 +96,7 @@ class AnnotatedSagaTest {
 
     @Test
     void testEndedAfterInvocation_BeanProperty() {
-        StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+        StubAnnotatedSaga testSubject = new StubAnnotatedSaga(executorService);
         AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
                                                                  new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
@@ -93,7 +109,7 @@ class AnnotatedSagaTest {
 
     @Test
     void testEndedAfterInvocation_WhenAssociationIsRemoved() {
-        StubAnnotatedSaga testSubject = new StubAnnotatedSagaWithExplicitAssociationRemoval();
+        StubAnnotatedSaga testSubject = new StubAnnotatedSagaWithExplicitAssociationRemoval(executorService);
         AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
                                                                  new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
@@ -106,7 +122,7 @@ class AnnotatedSagaTest {
 
     @Test
     void testEndedAfterInvocation_UniformAccessPrinciple() {
-        StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+        StubAnnotatedSaga testSubject = new StubAnnotatedSaga(executorService);
         AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
                                                                  new AnnotationSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
@@ -119,12 +135,21 @@ class AnnotatedSagaTest {
 
     private static class StubAnnotatedSaga {
 
-        private static final long serialVersionUID = -3224806999195676097L;
         private int invocationCount = 0;
+
+        private final ScheduledExecutorService executorService;
+
+        public StubAnnotatedSaga(ScheduledExecutorService executorService) {
+            this.executorService = executorService;
+        }
 
         @SagaEventHandler(associationProperty = "propertyName")
         public void handleStubDomainEvent(RegularEvent event) {
-            invocationCount++;
+            Scope.Async async = SagaLifecycle.startAsync();
+            executorService.schedule(() -> {
+                invocationCount++;
+                async.complete();
+            }, 100, TimeUnit.MILLISECONDS);
         }
 
         @SagaEventHandler(associationProperty = "propertyName")
@@ -137,10 +162,15 @@ class AnnotatedSagaTest {
             invocationCount++;
         }
 
-        @EndSaga
         @SagaEventHandler(associationProperty = "propertyName")
         public void handleStubDomainEvent(SagaEndEvent event) {
-            invocationCount++;
+            Scope.Async async = SagaLifecycle.startAsync();
+            executorService.schedule(() -> {
+                async.bindScope();
+                SagaLifecycle.end();
+                invocationCount++;
+                async.complete();
+            }, 20, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -155,6 +185,10 @@ class AnnotatedSagaTest {
     }
 
     private static class StubAnnotatedSagaWithExplicitAssociationRemoval extends StubAnnotatedSaga {
+
+        public StubAnnotatedSagaWithExplicitAssociationRemoval(ScheduledExecutorService executorService) {
+            super(executorService);
+        }
 
         @Override
         public void handleStubDomainEvent(SagaEndEvent event) {
