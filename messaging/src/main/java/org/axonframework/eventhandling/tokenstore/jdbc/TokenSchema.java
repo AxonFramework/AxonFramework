@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,17 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
  * Schema of an token entry to be stored using Jdbc.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class TokenSchema {
 
-    private final String tokenTable, processorNameColumn, segmentColumn, tokenColumn, tokenTypeColumn, timestampColumn,
-            ownerColum;
+    private final String tokenTable;
+    private final String processorNameColumn;
+    private final String segmentColumn;
+    private final String tokenColumn;
+    private final String tokenTypeColumn;
+    private final String timestampColumn;
+    private final String ownerColumn;
 
     /**
      * Initializes the default TokenSchema
@@ -40,7 +46,7 @@ public class TokenSchema {
         this.tokenColumn = builder.tokenColumn;
         this.tokenTypeColumn = builder.tokenTypeColumn;
         this.timestampColumn = builder.timestampColumn;
-        this.ownerColum = builder.ownerColum;
+        this.ownerColumn = builder.ownerColumn;
     }
 
     /**
@@ -73,7 +79,7 @@ public class TokenSchema {
     /**
      * Returns the name of the column containing the segment of the processor to which the token belongs.
      *
-     * @return the name of the column containing the segement of the processor owning the token
+     * @return the name of the column containing the segment of the processor owning the token
      */
     public String segmentColumn() {
         return segmentColumn;
@@ -110,22 +116,34 @@ public class TokenSchema {
      * Returns the name of the column containing the name of the machine that is currently the owner of this token.
      *
      * @return the name of the column containing the name of the owner node
+     * @deprecated in favor of {@link #ownerColumn}
      */
+    @Deprecated
     public String ownerColum() {
-        return ownerColum;
+        return ownerColumn();
+    }
+
+    /**
+     * Returns the name of the column containing the name of the machine that is currently the owner of this token.
+     *
+     * @return the name of the column containing the name of the owner node
+     */
+    public String ownerColumn() {
+        return ownerColumn;
     }
 
     /**
      * Builder for an {@link TokenSchema} that gets initialized with default values.
      */
     public static class Builder {
+
         private String tokenTable = "TokenEntry";
         private String processorNameColumn = "processorName";
         private String segmentColumn = "segment";
         private String tokenColumn = "token";
         private String tokenTypeColumn = "tokenType";
         private String timestampColumn = "timestamp";
-        private String ownerColum = "owner";
+        private String ownerColumn = "owner";
 
         /**
          * Sets the name of the token entry table. Defaults to 'TokenEntry'.
@@ -198,9 +216,21 @@ public class TokenSchema {
          *
          * @param columnName the name of the column
          * @return the modified Builder instance
+         * @deprecated in favor of {@link #setOwnerColumn(String)}
          */
+        @Deprecated
         public Builder setOwnerColum(String columnName) {
-            this.ownerColum = columnName;
+            return setOwnerColumn(columnName);
+        }
+
+        /**
+         * Sets the name of the owner column. Defaults to 'owner'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setOwnerColumn(String columnName) {
+            this.ownerColumn = columnName;
             return this;
         }
 
@@ -213,6 +243,4 @@ public class TokenSchema {
             return new TokenSchema(this);
         }
     }
-
-
 }
