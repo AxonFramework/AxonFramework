@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,79 +23,81 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.test.FixtureExecutionException;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Fixture tests validating exception handling.
+ *
+ * @author Patrick Haas
+ */
 class FixtureTest_ExceptionHandling {
 
     private final FixtureConfiguration<MyAggregate> fixture = new AggregateTestFixture<>(MyAggregate.class);
 
     @Test
     void testCreateAggregate() {
-        fixture.givenCommands().when(
-                new CreateMyAggregateCommand("14")
-        ).expectEvents(
-                new MyAggregateCreatedEvent("14")
-        );
+        fixture.givenCommands()
+               .when(new CreateMyAggregateCommand("14"))
+               .expectEvents(new MyAggregateCreatedEvent("14"));
     }
 
     @Test
     void givenUnknownCommand() {
-        FixtureExecutionException fee = assertThrows(FixtureExecutionException.class, () -> fixture.givenCommands(
-                new CreateMyAggregateCommand("14"),
-                new UnknownCommand("14")
-        ));
-        assertEquals(NoHandlerForCommandException.class, fee.getCause().getClass());
+        FixtureExecutionException result = assertThrows(FixtureExecutionException.class, () ->
+                fixture.givenCommands(
+                        new CreateMyAggregateCommand("14"),
+                        new UnknownCommand("14")
+                )
+        );
+        assertEquals(NoHandlerForCommandException.class, result.getCause().getClass());
     }
 
     @Test
     void testWhenExceptionTriggeringCommand() {
-        fixture.givenCommands(new CreateMyAggregateCommand("14")).when(
-                new ExceptionTriggeringCommand("14")
-        ).expectException(RuntimeException.class);
+        fixture.givenCommands(new CreateMyAggregateCommand("14"))
+               .when(new ExceptionTriggeringCommand("14"))
+               .expectException(RuntimeException.class);
     }
 
     @Test
     void testGivenExceptionTriggeringCommand() {
         assertThrows(RuntimeException.class, () ->
-                        fixture.givenCommands(
-                                new CreateMyAggregateCommand("14"),
-                                new ExceptionTriggeringCommand("14")
-                        )
-                );
+                fixture.givenCommands(
+                        new CreateMyAggregateCommand("14"),
+                        new ExceptionTriggeringCommand("14")
+                )
+        );
     }
 
     @Test
     void testGivenCommandWithInvalidIdentifier() {
-        fixture.givenCommands(
-                new CreateMyAggregateCommand("1")
-        ).when(
-                new ValidMyAggregateCommand("2")
-        ).expectException(EventStoreException.class);
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+               .when(new ValidMyAggregateCommand("2"))
+               .expectException(EventStoreException.class);
     }
 
     @Test
     void testExceptionMessageCheck() {
-        fixture.givenCommands(
-                new CreateMyAggregateCommand("1")
-        ).when(
-                new ValidMyAggregateCommand("2")
-        ).expectException(EventStoreException.class)
-                .expectExceptionMessage("You probably want to use aggregateIdentifier() on your fixture to get the aggregate identifier to use");
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+               .when(new ValidMyAggregateCommand("2"))
+               .expectException(EventStoreException.class)
+               .expectExceptionMessage(
+                       "The aggregate identifier used in the 'when' step does not resemble the aggregate identifier "
+                               + "used in the 'given' step. "
+                               + "Please make sure the when-identifier [2] resembles the given-identifier [1]."
+               );
     }
 
     @Test
     void testExceptionMessageCheckWithMatcher() {
-        fixture.givenCommands(
-                new CreateMyAggregateCommand("1")
-        ).when(
-                new ValidMyAggregateCommand("2")
-        ).expectException(EventStoreException.class)
-                .expectExceptionMessage(containsString("You"));
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+               .when(new ValidMyAggregateCommand("2"))
+               .expectException(EventStoreException.class)
+               .expectExceptionMessage(containsString("when-identifier"));
     }
 
     @Test
@@ -109,6 +111,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     private static abstract class AbstractMyAggregateCommand {
+
         @TargetAggregateIdentifier
         public final String id;
 
@@ -118,30 +121,35 @@ class FixtureTest_ExceptionHandling {
     }
 
     private static class CreateMyAggregateCommand extends AbstractMyAggregateCommand {
+
         protected CreateMyAggregateCommand(String id) {
             super(id);
         }
     }
 
     private static class ExceptionTriggeringCommand extends AbstractMyAggregateCommand {
+
         protected ExceptionTriggeringCommand(String id) {
             super(id);
         }
     }
 
     private static class ValidMyAggregateCommand extends AbstractMyAggregateCommand {
+
         protected ValidMyAggregateCommand(String id) {
             super(id);
         }
     }
 
     private static class UnknownCommand extends AbstractMyAggregateCommand {
+
         protected UnknownCommand(String id) {
             super(id);
         }
     }
 
     private static class MyAggregateCreatedEvent {
+
         public final String id;
 
         public MyAggregateCreatedEvent(String id) {
@@ -149,7 +157,9 @@ class FixtureTest_ExceptionHandling {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class MyAggregate {
+
         @AggregateIdentifier
         String id;
 
