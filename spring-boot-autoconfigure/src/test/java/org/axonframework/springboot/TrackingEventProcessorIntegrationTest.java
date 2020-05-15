@@ -23,6 +23,7 @@ import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.ResetHandler;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -44,15 +45,22 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Integration test for the {@link TrackingEventProcessor}.
+ *
+ * @author Allard Buijze
+ */
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
 @SpringBootConfiguration
@@ -63,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class TrackingEventProcessorIntegrationTest {
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private EventBus eventBus;
     @Autowired
@@ -71,6 +80,8 @@ public class TrackingEventProcessorIntegrationTest {
     private CountDownLatch countDownLatch1;
     @Autowired
     private CountDownLatch countDownLatch2;
+    @Autowired
+    private AtomicReference<String> resetTriggeredReference;
     @Autowired
     private EventProcessingModule eventProcessingModule;
     @Autowired
@@ -107,6 +118,21 @@ public class TrackingEventProcessorIntegrationTest {
                              ));
     }
 
+    @Test
+    void testResetHandlerIsCalledOnResetTokens() {
+        String resetInfo = "reset-info";
+
+        Optional<TrackingEventProcessor> optionalSecondTep =
+                eventProcessingModule.eventProcessor("second", TrackingEventProcessor.class);
+        assertTrue(optionalSecondTep.isPresent());
+
+        TrackingEventProcessor secondTep = optionalSecondTep.get();
+        secondTep.shutDown();
+        secondTep.resetTokens(resetInfo);
+
+        assertEquals(resetInfo, resetTriggeredReference.get());
+    }
+
     private void publishEvent(String... events) {
         DefaultUnitOfWork.startAndGet(null).execute(
                 () -> {
@@ -131,6 +157,11 @@ public class TrackingEventProcessorIntegrationTest {
         public CountDownLatch countDownLatch2() {
             return new CountDownLatch(3);
         }
+
+        @Bean
+        public AtomicReference<String> resetTriggeredReference() {
+            return new AtomicReference<>();
+        }
     }
 
     @Component
@@ -153,11 +184,19 @@ public class TrackingEventProcessorIntegrationTest {
 
         @Autowired
         private CountDownLatch countDownLatch2;
+        @Autowired
+        private AtomicReference<String> resetTriggeredReference;
 
         @SuppressWarnings("unused")
         @EventHandler
         public void handle(String event) {
             countDownLatch2.countDown();
+        }
+
+        @SuppressWarnings("unused")
+        @ResetHandler
+        public void reset(String resetInfo) {
+            resetTriggeredReference.set(resetInfo);
         }
     }
 }
