@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package org.axonframework.eventhandling;
 
+import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
+
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public interface EventHandlerInvoker {
 
     /**
-     * Check whether or not this invoker has handlers that can handle the given {@code eventMessage} for a given
-     * {@code segment}.
+     * Check whether or not this invoker has handlers that can handle the given {@code eventMessage} for a given {@code
+     * segment}.
      *
      * @param eventMessage The message to be processed
      * @param segment      The segment for which the event handler should be invoked
@@ -70,5 +73,15 @@ public interface EventHandlerInvoker {
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      */
     default void performReset() {
+        performReset(NO_RESET_PAYLOAD);
+    }
+
+    /**
+     * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
+     *
+     * @param resetInfo a {@code R} used to support the reset operation
+     * @param <R>       the type of the provided {@code resetInfo}
+     */
+    default <R> void performReset(R resetInfo) {
     }
 }

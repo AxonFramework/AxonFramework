@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,17 +16,24 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.replay.ResetMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import java.util.List;
 
+import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link MultiEventHandlerInvoker}.
+ *
+ * @author Steven van Beelen
+ */
 class MultiEventHandlerInvokerTest {
 
     private MultiEventHandlerInvoker testSubject;
@@ -116,8 +123,21 @@ class MultiEventHandlerInvokerTest {
 
         testSubject.performReset();
 
-        verify(mockedEventHandlerInvokerOne, times(1)).performReset();
-        verify(mockedEventHandlerInvokerTwo, never()).performReset();
+        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(NO_RESET_PAYLOAD));
+        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(NO_RESET_PAYLOAD));
+    }
+
+    @Test
+    void testPerformResetWithResetInfo() {
+        String resetInfo = "reset-info";
+
+        when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
+
+        testSubject.performReset(resetInfo);
+
+        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(resetInfo));
+        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(resetInfo));
     }
 
     @Test
@@ -141,7 +161,7 @@ class MultiEventHandlerInvokerTest {
     void testPerformResetThrowsException() {
         when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
         when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
-        doThrow(RuntimeException.class).when(mockedEventHandlerInvokerOne).performReset();
+        doThrow(RuntimeException.class).when(mockedEventHandlerInvokerOne).performReset(any());
 
         assertThrows(Exception.class, testSubject::performReset);
     }
