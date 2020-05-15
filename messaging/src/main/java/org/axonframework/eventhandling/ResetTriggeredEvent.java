@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ package org.axonframework.eventhandling;
  * @author Allard Buijze
  * @see ResetHandler @ResetHandler
  * @since 3.2
+ * @deprecated in favor of the {@link org.axonframework.eventhandling.replay.ResetMessage}
  */
+@Deprecated
 public class ResetTriggeredEvent {
 
 }
