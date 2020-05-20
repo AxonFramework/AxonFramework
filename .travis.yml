@@ -6,7 +6,7 @@ services:
 
 jdk:
   - openjdk8
-  - openjdk11
+#  - openjdk11
 
 before_install:
   - docker run -d -p 1521:1521 gautamsaggar/oracle11g:v2 || echo "WARNING - Unable to start Oracle 11g"
@@ -17,11 +17,19 @@ install: true
 
 cache:
   directories:
-  - $HOME/.m2
+    - $HOME/.m2
 
 script:
-  - mvn clean verify -B -P ossrh
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -B -P ossrh -Dsonar.projectKey=AxonFramework_AxonFramework
+#  - jdk_switcher use openjdk11
+#  - mvn clean verify -B -P ossrh
 
 notifications:
   slack:
     secure: d1HN9GBeH0e6EsHjNkPVXgBaFCYqbvjkZv9GUkpWnyjNYP5V1snSk6sO4X6ONttydgzfbElZTOfrgDzRTgWJ76iDMxAPccFPY7dmGcpw8/2TOjwP6H6yEitiiZcWR9fssTM2Li2WQtuGkwaVBhw15JNABzEsexxqXC+Cu48yUfA=
+
+addons:
+  sonarcloud:
+    organization: "axonframework"
+    token:
+      secure: "F59acBmCcZqxmvCffHkv+24wC9kMajf5CAAG8Khbkxo0cRJeLMiMzgYocKH37GSePJ0YQiVWEWgVOQ+WzsRgRh7ubiFtuNNhdIzsvcjqOmdfXytuw5D6nj8eZnvqBAA2lCU8uf3qndP4S9ZxwnZJ2gDAZPNsEmYF7NPhm49W2RM="
