@@ -32,4 +32,4 @@ addons:
   sonarcloud:
     organization: "axonframework"
     token:
-      secure: "F59acBmCcZqxmvCffHkv+24wC9kMajf5CAAG8Khbkxo0cRJeLMiMzgYocKH37GSePJ0YQiVWEWgVOQ+WzsRgRh7ubiFtuNNhdIzsvcjqOmdfXytuw5D6nj8eZnvqBAA2lCU8uf3qndP4S9ZxwnZJ2gDAZPNsEmYF7NPhm49W2RM="
+      secure: "cS6GecHod8X1EjDggVutgTQyKu1aQhCWnOz4KqDkxI7+u3HMwBLcJCxSctEhL0FhTp47tuB76ep/DyG/5clvvmMoY+05Qym/PJFh/qEL1LQhmcDQD3liNflbt5d3p1DaEWX4EPI5WyLVm3Y3lZlQWfW6WClIXrGRKfaUzrqaXU0="
