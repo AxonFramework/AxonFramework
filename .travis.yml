@@ -1,12 +1,16 @@
+# We want to run this on Ubuntu 18.04 LTS
+dist: bionic
+
 language: java
 
 services:
   - docker
   - mysql
 
+# We want OpenJDK 8 to be the default, but OpenJDK 10 and 11 are also available.
+# See https://docs.travis-ci.com/user/reference/bionic/#jvm-clojure-groovy-java-scala-support
 jdk:
   - openjdk8
-#  - openjdk11
 
 before_install:
   - docker run -d -p 1521:1521 gautamsaggar/oracle11g:v2 || echo "WARNING - Unable to start Oracle 11g"
@@ -19,10 +23,12 @@ cache:
   directories:
     - $HOME/.m2
 
+# We switch JDK by setting the JAVA_HOME environment variable. All JDKs are under the same base directory.
 script:
+  - mvn -version
   - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -B -P ossrh -Dsonar.projectKey=AxonFramework_AxonFramework
-#  - jdk_switcher use openjdk11
-#  - mvn clean verify -B -P ossrh
+  - JAVA_HOME=$(dirname ${JAVA_HOME})/openjdk11 mvn -version
+  - JAVA_HOME=$(dirname ${JAVA_HOME})/openjdk11 mvn clean verify -B -P ossrh
 
 notifications:
   slack:
