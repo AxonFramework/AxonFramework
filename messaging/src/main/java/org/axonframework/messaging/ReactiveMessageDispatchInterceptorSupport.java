@@ -22,11 +22,12 @@ import org.axonframework.common.Registration;
  * Interface marking components capable of registering a {@link ReactiveMessageDispatchInterceptor}. Generally, these are messaging
  * components injected into the sending end of the communication.
  *
- * @param <T>
+ * @param <M>
+ * @param <R>
  * @author Milan Savic
  * @since 4.4
  */
-public interface ReactiveMessageDispatchInterceptorSupport<T extends Message<?>> {
+public interface ReactiveMessageDispatchInterceptorSupport<M extends Message<?>, R extends ResultMessage<?>> {
 
     /**
      * Register the given {@link ReactiveMessageDispatchInterceptor}. After registration, the interceptor will be invoked for each
@@ -35,5 +36,8 @@ public interface ReactiveMessageDispatchInterceptorSupport<T extends Message<?>>
      * @param interceptor The reactive interceptor to register
      * @return a Registration, which may be used to unregister the interceptor
      */
-    Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<T> interceptor);
+    Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<M> interceptor);
+
+
+    Registration registerResultHandlerInterceptor(ReactiveResultHandlerInterceptor<M, R> interceptor);
 }

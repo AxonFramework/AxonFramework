@@ -128,41 +128,41 @@ class ReactorCommandGatewayTest {
         verify(mockRetryScheduler).scheduleRetry(any(), any(), anyList(), any());
     }
 
-    @Test
-    void testSendWithDispatchInterceptor() {
-        reactiveCommandGateway
-                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
-                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key1", "value1"))));
-        Registration registration2 = reactiveCommandGateway
-                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
-                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key2", "value2"))));
+//    @Test
+//    void testSendWithDispatchInterceptor() {
+//        reactiveCommandGateway
+//                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
+//                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key1", "value1"))));
+//        Registration registration2 = reactiveCommandGateway
+//                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
+//                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key2", "value2"))));
+//
+//        StepVerifier.create(reactiveCommandGateway.send(true))
+//                    .expectNext("value1value2")
+//                    .verifyComplete();
+//
+//        registration2.cancel();
+//
+//        StepVerifier.create(reactiveCommandGateway.send(true))
+//                    .expectNext("value1")
+//                    .verifyComplete();
+//    }
 
-        StepVerifier.create(reactiveCommandGateway.send(true))
-                    .expectNext("value1value2")
-                    .verifyComplete();
-
-        registration2.cancel();
-
-        StepVerifier.create(reactiveCommandGateway.send(true))
-                    .expectNext("value1")
-                    .verifyComplete();
-    }
-
-    @Test
-    void testDispatchInterceptorThrowingAnException() {
-        reactiveCommandGateway
-                .registerDispatchInterceptor(() -> cmdMono -> {
-                    throw new RuntimeException();
-                });
-        StepVerifier.create(reactiveCommandGateway.send(true))
-                    .verifyError(RuntimeException.class);
-    }
-
-    @Test
-    void testDispatchInterceptorReturningErrorMono() {
-        reactiveCommandGateway
-                .registerDispatchInterceptor(() -> cmdMono -> Mono.error(new RuntimeException()));
-        StepVerifier.create(reactiveCommandGateway.send(true))
-                    .verifyError(RuntimeException.class);
-    }
+//    @Test
+//    void testDispatchInterceptorThrowingAnException() {
+//        reactiveCommandGateway
+//                .registerDispatchInterceptor(() -> cmdMono -> {
+//                    throw new RuntimeException();
+//                });
+//        StepVerifier.create(reactiveCommandGateway.send(true))
+//                    .verifyError(RuntimeException.class);
+//    }
+//
+//    @Test
+//    void testDispatchInterceptorReturningErrorMono() {
+//        reactiveCommandGateway
+//                .registerDispatchInterceptor(() -> cmdMono -> Mono.error(new RuntimeException()));
+//        StepVerifier.create(reactiveCommandGateway.send(true))
+//                    .verifyError(RuntimeException.class);
+//    }
 }

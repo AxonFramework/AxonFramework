@@ -17,12 +17,13 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.ReactiveMessageDispatchInterceptor;
+import org.axonframework.messaging.ReactiveResultHandlerInterceptor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -42,6 +43,7 @@ public class ReactorCommandGateway implements ReactiveCommandGateway {
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
     private final List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
+    private final List<ReactiveResultHandlerInterceptor<CommandMessage<?>,CommandResultMessage<?>>> resultInterceptors;
 
     /**
      * Creates an instance of {@link ReactorCommandGateway} based on the fields contained in the {@link
@@ -58,6 +60,7 @@ public class ReactorCommandGateway implements ReactiveCommandGateway {
         this.commandBus = builder.commandBus;
         this.retryScheduler = builder.retryScheduler;
         this.dispatchInterceptors = builder.dispatchInterceptors;
+        this.resultInterceptors = builder.resultInterceptors;
     }
 
     /**
@@ -75,43 +78,38 @@ public class ReactorCommandGateway implements ReactiveCommandGateway {
 
     @Override
     public <R> Mono<R> send(Object command) {
-        return processInterceptors(Mono.just(GenericCommandMessage.asCommandMessage(command)))
-                .flatMap(commandMessage -> Mono.create(
-                        sink -> {
-                            CommandCallback<Object, R> commandCallback = (cm, result) -> {
-                                try {
-                                    if (result.isExceptional()) {
-                                        sink.error(result.exceptionResult());
-                                    } else {
-                                        sink.success(result.getPayload());
-                                    }
-                                } catch (Exception e) {
-                                    sink.error(e);
-                                }
-                            };
-                            if (retryScheduler != null) {
-                                commandCallback = new RetryingCallback<>(commandCallback, retryScheduler, commandBus);
-                            }
-                            commandBus.dispatch(commandMessage, commandCallback);
-                        }));
+        return null; //TODO
+    }
+
+    private Mono<CommandMessage<?>> interceptedCommand(Mono<CommandMessage<?>> command){
+        Mono<CommandMessage<?>> c = command;
+        for (ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor : dispatchInterceptors) {
+            c = interceptor.intercept(c);
+        }
+        return c;
+    }
+
+    private Flux<CommandResultMessage<?>> interceptedResults(CommandMessage<?> commandMessage,
+                                                             Flux<CommandResultMessage<?>> results){
+        Flux<CommandResultMessage<?>> r = results;
+        for (ReactiveResultHandlerInterceptor<CommandMessage<?>,CommandResultMessage<?>> interceptor : resultInterceptors) {
+            r = interceptor.intercept(commandMessage, r);
+        }
+        return r;
     }
 
     @Override
-    public Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
+    public Registration registerDispatchInterceptor(
+            ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
 
-    private Mono<CommandMessage<?>> processInterceptors(Mono<CommandMessage<?>> commandMessage) {
-        Mono<CommandMessage<?>> message = commandMessage;
-        for (ReactiveMessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor : dispatchInterceptors) {
-            try {
-                message = dispatchInterceptor.intercept(message);
-            } catch (Throwable t) {
-                return Mono.error(t);
-            }
-        }
-        return message;
+    @Override
+    public Registration registerResultHandlerInterceptor(
+            ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>> interceptor) {
+        resultInterceptors.add(interceptor);
+        return () -> resultInterceptors.remove(interceptor);
     }
 
     /**
@@ -126,6 +124,7 @@ public class ReactorCommandGateway implements ReactiveCommandGateway {
         private CommandBus commandBus;
         private RetryScheduler retryScheduler;
         private List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+        private List<ReactiveResultHandlerInterceptor<CommandMessage<?>,CommandResultMessage<?>>> resultInterceptors = new CopyOnWriteArrayList<>();
 
         /**
          * Sets the {@link CommandBus} used to dispatch commands.
@@ -175,6 +174,34 @@ public class ReactorCommandGateway implements ReactiveCommandGateway {
                 List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
             this.dispatchInterceptors = dispatchInterceptors != null && dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
+                    : new CopyOnWriteArrayList<>();
+            return this;
+        }
+
+        /**
+         * Sets the {@link List} of {@link ReactiveResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Are invoked when a result has been received.
+         *
+         * @param resultInterceptors which are invoked when a result has been received
+         * @return the current Builder instance, for fluent interfacing
+         */
+        @SafeVarargs
+        public final Builder resultInterceptors(
+                ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>... resultInterceptors) {
+            return resultInterceptors(asList(resultInterceptors));
+        }
+
+        /**
+         * Sets the {@link List} of {@link ReactiveResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Are invoked when a result has been received.
+         *
+         * @param resultInterceptors which are invoked when a result has been received
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder resultInterceptors(
+                List<ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>> resultInterceptors) {
+            this.resultInterceptors = resultInterceptors != null && resultInterceptors.isEmpty()
+                    ? new CopyOnWriteArrayList<>(resultInterceptors)
                     : new CopyOnWriteArrayList<>();
             return this;
         }

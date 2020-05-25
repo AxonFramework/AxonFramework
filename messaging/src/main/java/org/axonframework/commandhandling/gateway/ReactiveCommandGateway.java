@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ReactiveMessageDispatchInterceptorSupport;
@@ -34,7 +35,8 @@ import java.util.function.Function;
  * @author Milan Savic
  * @since 4.4
  */
-public interface ReactiveCommandGateway extends ReactiveMessageDispatchInterceptorSupport<CommandMessage<?>> {
+public interface ReactiveCommandGateway
+        extends ReactiveMessageDispatchInterceptorSupport<CommandMessage<?>, CommandResultMessage<?>> {
 
     /**
      * Sends the given {@code command} once the caller subscribes to the command result. Returns immediately.

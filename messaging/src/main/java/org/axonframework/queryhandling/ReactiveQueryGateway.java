@@ -34,7 +34,7 @@ import java.util.function.Function;
  * @author Milan Savic
  * @since 4.4
  */
-public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
+public interface ReactiveQueryGateway extends ReactiveMessageDispatchInterceptorSupport<QueryMessage<?, ?>, QueryResponseMessage<?>> {
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response with the given {@code responseType}

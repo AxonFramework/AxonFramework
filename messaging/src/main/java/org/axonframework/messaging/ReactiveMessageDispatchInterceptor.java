@@ -19,7 +19,6 @@ package org.axonframework.messaging;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Interceptor that allows messages to be intercepted and modified before they are dispatched. Implementations are
@@ -31,7 +30,7 @@ import java.util.function.Supplier;
  * @since 4.4
  */
 @FunctionalInterface
-public interface ReactiveMessageDispatchInterceptor<T extends Message<?>> extends Supplier<Function<Mono<T>, Mono<T>>> {
+public interface ReactiveMessageDispatchInterceptor<T extends Message<?>> extends Function<Mono<T>, Mono<T>> {
 
     /**
      * Intercepts a message.
@@ -40,6 +39,6 @@ public interface ReactiveMessageDispatchInterceptor<T extends Message<?>> extend
      * @return the message {@link Mono} to dispatch
      */
     default Mono<T> intercept(Mono<T> message) {
-        return get().apply(message);
+        return apply(message);
     }
 }
