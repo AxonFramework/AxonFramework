@@ -3,6 +3,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -80,7 +81,8 @@ public class ReactiveCommandGatewayTest {
         registerMessageMapping(gateway, command -> command.andMetaData(metadata1));
 
         // int 2 -> copy metadata from command into results
-        registerResultMapping(gateway, (command, result) -> result.andMetaData(command.getMetaData()));
+        registerResultMapping(gateway,
+                              (command, result) -> new GenericCommandResultMessage<>(command.getMetaData().get("k1")));
 
         // int 3 -> metadata on command k1 -> v2
         Map<String, String> metadata2 = new HashMap<>();
@@ -88,12 +90,12 @@ public class ReactiveCommandGatewayTest {
         registerMessageMapping(gateway, command -> command.andMetaData(metadata2));
 
         //send
-        Mono<CommandResultMessage<?>> results = gateway.send(new GenericCommandMessage<>(""));
+        Mono<String> results = gateway.send(new GenericCommandMessage<>(""));
 
-        // verify -> results have k1 -> v2
+        // verify -> results equals v2
         StepVerifier
                 .create(results)
-                .expectNextMatches(result -> result.getMetaData().get("k1").equals("v2"))
+                .expectNextMatches(result -> result.equals("v2"))
                 .verifyComplete();
 
         // verify -> command sent has k1 -> v2
@@ -163,6 +165,20 @@ public class ReactiveCommandGatewayTest {
         ReactiveCommandGateway gateway = gateway(sender);
 
         registerResultsFilter(gateway, result -> result.getMetaData().containsKey("K"));
+        // int 1 -> flux of results is filtered
+
+        Mono<CommandResultMessage<?>> results = gateway.send(new GenericCommandMessage<>(""));
+        StepVerifier.create(results).verifyComplete();
+        // verify -> command has not been sent
+        assertEquals(1, sender.numberOfSentCommands());
+    }
+
+    @Test
+    void test6bis() {
+        Sender sender = new Sender();
+        ReactiveCommandGateway gateway = gateway(sender);
+
+        registerMessageFilter(gateway, result -> result.getMetaData().containsKey("K"));
         // int 1 -> flux of results is filtered
 
         Mono<CommandResultMessage<?>> results = gateway.send(new GenericCommandMessage<>(""));
@@ -263,25 +279,21 @@ public class ReactiveCommandGatewayTest {
         Sender sender = new Sender();
         ReactiveCommandGateway gateway = gateway(sender);
 
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("k1", "v1");
-
-        // int 1 -> add metadata to result flux only if the command name = "MyCommandName"
         registerResultMapping(gateway, (command, result) ->
-                command.getCommandName().equals("java.lang.String") ? result.andMetaData(metadata) : result);
-
-        // command "AnotherCommand" is sent
-        Mono<CommandResultMessage<?>> results = gateway.send(new GenericCommandMessage<>(""));
-        // verify that the metadata is not in the results
+                command.getMetaData()
+                       .containsKey("kX") ? new GenericCommandResultMessage<Object>("new Payload") : result);
+        Map<String, String> commandMetadata = new HashMap<>();
+        commandMetadata.put("kX", "vX");
+        GenericCommandMessage<String> myCommand = new GenericCommandMessage<>("");
+        Mono<String> results = gateway.send(myCommand.andMetaData(commandMetadata));
         StepVerifier.create(results)
-                    .expectNextMatches(result -> !result.getMetaData().containsKey("k1"))
+                    .expectNextMatches(result -> result.equals("new Payload"))
                     .verifyComplete();
-
         // command "MyCommandName" is sent
-        Mono<CommandResultMessage<?>> results2 = gateway.send(new GenericCommandMessage<>(new Object()));
+        Mono<String> results2 = gateway.send(myCommand);
         // verify that the metadata is in the results
         StepVerifier.create(results2)
-                    .expectNextMatches(result -> result.getMetaData().get("k1").equals("v1"))
+                    .expectNextMatches(result -> result.equals(""))
                     .verifyComplete();
     }
 }

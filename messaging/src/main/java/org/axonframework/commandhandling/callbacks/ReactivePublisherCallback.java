@@ -16,13 +16,13 @@
 
 package org.axonframework.commandhandling.callbacks;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
-
-import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
  * @author Stefan Dragisic
@@ -44,9 +44,9 @@ public class ReactivePublisherCallback<C, R> implements Publisher<CommandResultM
         sink.complete();
     }
 
-    @Override
-    public void subscribe(Subscriber<? super CommandResultMessage<? extends R>> subscriber) {
-        commandResultMessageEmmiter.subscribe(subscriber);
-    }
 
+    @Override
+    public void subscribe(Subscriber<? super CommandResultMessage<? extends R>> s) {
+        commandResultMessageEmmiter.subscribe(s);
+    }
 }
