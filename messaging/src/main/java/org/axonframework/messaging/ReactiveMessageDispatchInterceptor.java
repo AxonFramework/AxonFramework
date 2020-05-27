@@ -32,8 +32,8 @@ import java.util.function.BiFunction;
  * @since 4.4
  */
 @FunctionalInterface
-public interface ReactiveMessageDispatchInterceptor<M> extends
-        MessageDispatchInterceptor {
+public interface  ReactiveMessageDispatchInterceptor<M extends Message<?>> extends
+        MessageDispatchInterceptor<M> {
 
     /**
      * Intercepts a message.

@@ -27,11 +27,11 @@ import reactor.core.publisher.FluxSink;
 /**
  * @author Stefan Dragisic
  */
-public class ReactivePublisherCallback<C, R> implements Publisher<CommandResultMessage<? extends R>>
+public class ReactiveCallback<C, R> implements Publisher<CommandResultMessage<? extends R>>
         , CommandCallback<C, R> {
 
-    EmitterProcessor<CommandResultMessage<? extends R>> commandResultMessageEmmiter = EmitterProcessor.create(1);
-    FluxSink<CommandResultMessage<? extends R>> sink = commandResultMessageEmmiter.sink();
+    EmitterProcessor<CommandResultMessage<? extends R>> commandResultMessageEmitter = EmitterProcessor.create(1);
+    FluxSink<CommandResultMessage<? extends R>> sink = commandResultMessageEmitter.sink();
 
     @Override
     public void onResult(CommandMessage<? extends C> commandMessage,
@@ -47,6 +47,6 @@ public class ReactivePublisherCallback<C, R> implements Publisher<CommandResultM
 
     @Override
     public void subscribe(Subscriber<? super CommandResultMessage<? extends R>> s) {
-        commandResultMessageEmmiter.subscribe(s);
+        commandResultMessageEmitter.subscribe(s);
     }
 }

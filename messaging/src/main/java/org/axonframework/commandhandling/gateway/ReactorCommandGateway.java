@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.callbacks.ReactivePublisherCallback;
+import org.axonframework.commandhandling.callbacks.ReactiveCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.ReactiveMessageDispatchInterceptor;
@@ -81,30 +81,16 @@ public class ReactorCommandGateway implements ReactiveCommandGateway {
 
     @Override
     public <R> Mono<R> send(Object command) {
-        return Mono.<CommandMessage<?>>fromCallable(() -> GenericCommandMessage.asCommandMessage(command))
+        return Mono.<CommandMessage<?>>fromCallable(() -> GenericCommandMessage.asCommandMessage(command)) //TODO write tests for retry
                 .transform(this::processCommandInterceptors)
-                .flatMap(this::dispatchCommand)
-                .transform(this::processResultsInterceptors)
+                .flatMap(this::dispatchCommand)  //TODO retry callback
+                .flatMap(this::processResultsInterceptors)
                 .map(resultMessage -> (R) resultMessage.getPayload());
-        //TODO implement retry
     }
-
-    private <C> Mono<CommandResultMessage<?>> processResultsInterceptors(
-            Mono<Tuple2<CommandMessage<C>, Flux<CommandResultMessage<?>>>> commandResultTuple) {
-        return commandResultTuple.flatMap(t -> {
-            CommandMessage<?> commandMessage = t.getT1();
-            Flux<CommandResultMessage<?>> commandResultMessage = t.getT2();
-            return Flux.fromIterable(resultInterceptors)
-                       .reduce(commandResultMessage,
-                               (result, interceptor) -> interceptor.intercept(commandMessage, result))
-                       .flatMap(Flux::next);
-        });
-    }
-
 
     private <C, R> Mono<Tuple2<CommandMessage<C>, Flux<CommandResultMessage<? extends R>>>> dispatchCommand(
             CommandMessage<C> commandMessage) {
-        ReactivePublisherCallback<C, R> reactiveCommandCallback = new ReactivePublisherCallback<>();
+        ReactiveCallback<C, R> reactiveCommandCallback = new ReactiveCallback<>();
         commandBus.dispatch(commandMessage, reactiveCommandCallback);
         return Mono.just(commandMessage).zipWith(Mono.just(Flux.from(reactiveCommandCallback)));
     }
@@ -112,9 +98,17 @@ public class ReactorCommandGateway implements ReactiveCommandGateway {
     private Mono<CommandMessage<?>> processCommandInterceptors(Mono<CommandMessage<?>> commandMessage) {
         return Flux.fromIterable(dispatchInterceptors)
                    .reduce(commandMessage, (command, interceptor) -> interceptor.intercept(command))
-                   .flatMap(it -> it.then(it));
+                   .flatMap(Mono::from);
     }
 
+    private <C> Mono<? extends CommandResultMessage<?>> processResultsInterceptors(Tuple2<CommandMessage<C>, Flux<CommandResultMessage<?>>> t) {
+        CommandMessage<?> commandMessage = t.getT1();
+        Flux<CommandResultMessage<?>> commandResultMessage = t.getT2();
+        return Flux.fromIterable(resultInterceptors)
+                .reduce(commandResultMessage,
+                        (result, interceptor) -> interceptor.intercept(commandMessage, result))
+                .flatMap(Flux::next);
+    }
 
     @Override
     public Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {

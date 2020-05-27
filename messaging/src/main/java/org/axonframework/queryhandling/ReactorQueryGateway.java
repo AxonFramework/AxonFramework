@@ -16,26 +16,23 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.gateway.ReactorCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.IllegalPayloadAccessException;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ReactiveMessageDispatchInterceptor;
 import org.axonframework.messaging.ReactiveResultHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.messaging.GenericMessage.asMessage;
 
 /**
  * Implementation of the {@link ReactiveQueryGateway} that uses Project Reactor to achieve reactiveness.
@@ -94,26 +91,42 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
         return () -> resultInterceptors.remove(interceptor);
     }
 
-    private Mono<QueryMessage<?,?>> interceptedQuery(Mono<QueryMessage<?,?>> query){
-        Mono<QueryMessage<?,?>> q = query;
-        for (ReactiveMessageDispatchInterceptor<QueryMessage<?,?>> interceptor : dispatchInterceptors) {
-            q = interceptor.intercept(q);
-        }
-        return q;
-    }
-
-    private Flux<QueryResponseMessage<?>> interceptedResults(QueryMessage<?,?> query,
-                                                             Flux<QueryResponseMessage<?>> results){
-        Flux<QueryResponseMessage<?>> r = results;
-        for (ReactiveResultHandlerInterceptor<QueryMessage<?,?>,QueryResponseMessage<?>> interceptor : resultInterceptors) {
-            r = interceptor.intercept(query, r);
-        }
-        return r;
-    }
-
     @Override
     public <R, Q> Mono<R> query(String queryName, Q query, ResponseType<R> responseType) {
-        return null; //TODO
+        return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericQueryMessage<>(asMessage(query), queryName, responseType)) //TODO write tests for retry
+                .transform(this::processQueryInterceptors)
+                .flatMap(this::dispatchQuery)
+                .flatMapMany(this::processResultsInterceptors)
+                .map(it -> (R) it.getPayload())
+                .next();
+    }
+
+    private Mono<QueryMessage<?, ?>> processQueryInterceptors(Mono<QueryMessage<?, ?>> queryMessageMono) {
+        return Flux.fromIterable(dispatchInterceptors)
+                .reduce(queryMessageMono, (queryMessage, interceptor) -> interceptor.intercept(queryMessage))
+                .flatMap(Mono::from);
+    }
+
+    private Mono<Tuple2<QueryMessage<?, ?>, Flux<QueryResponseMessage<?>>>> dispatchQuery(QueryMessage<?, ?> queryMessage) {
+        Flux<QueryResponseMessage<?>> results = Flux.defer(() -> Mono.<QueryResponseMessage<?>>fromFuture(queryBus.query(queryMessage)))
+                .flatMap(this::mapResult);
+
+        return Mono.<QueryMessage<?, ?>>just(queryMessage)
+                .zipWith(Mono.just(results));
+    }
+
+    private Flux<? extends QueryResponseMessage<?>> mapResult(QueryResponseMessage<?> it) {
+        return it.isExceptional() ? Flux.error(it.exceptionResult()) : Flux.just(it);
+    }
+
+    private Flux<? extends QueryResponseMessage<?>> processResultsInterceptors(Tuple2<QueryMessage<?, ?>, Flux<QueryResponseMessage<?>>> tuple2) {
+        QueryMessage<?, ?> queryMessage = tuple2.getT1();
+        Flux<QueryResponseMessage<?>> queryResultMessage = tuple2.getT2();
+
+        return Flux.fromIterable(resultInterceptors)
+                .reduce(queryResultMessage,
+                        (result, interceptor) -> interceptor.intercept(queryMessage, result))
+                .flatMapMany(it -> it);
     }
 
     @Override
@@ -195,7 +208,7 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
          */
         @SafeVarargs
         public final Builder resultInterceptors(
-                ReactiveResultHandlerInterceptor<QueryMessage<?,?>, QueryResponseMessage<?>>... resultInterceptors) {
+                ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, QueryResponseMessage<?>>... resultInterceptors) {
             return resultInterceptors(asList(resultInterceptors));
         }
 
@@ -207,7 +220,7 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder resultInterceptors(
-                List<ReactiveResultHandlerInterceptor<QueryMessage<?,?>, QueryResponseMessage<?>>> resultInterceptors) {
+                List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, QueryResponseMessage<?>>> resultInterceptors) {
             this.resultInterceptors = resultInterceptors != null && resultInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(resultInterceptors)
                     : new CopyOnWriteArrayList<>();

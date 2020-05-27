@@ -37,17 +37,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author Stefan Dragisic
  */
-class ReactivePublisherCallbackTest {
+class ReactiveCallbackTest {
 
     private static final CommandMessage<Object> COMMAND_MESSAGE = GenericCommandMessage.asCommandMessage("Test");
     private static final CommandResultMessage<String> COMMAND_RESPONSE_MESSAGE =
             asCommandResultMessage("Hello reactive world");
-    private volatile ReactivePublisherCallback<Object, Object> testSubject;
+    private volatile ReactiveCallback<Object, Object> testSubject;
 
 
     @BeforeEach
     void setUp() {
-        testSubject = new ReactivePublisherCallback<>();
+        testSubject = new ReactiveCallback<>();
     }
 
 
