@@ -26,9 +26,9 @@ cache:
 # We switch JDK by setting the JAVA_HOME environment variable. All JDKs are under the same base directory.
 script:
   - mvn -version
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -B -P ossrh -Dsonar.projectKey=AxonFramework_AxonFramework
+  - mvn -B -Possrh -Pcoverage clean verify sonar:sonar -Dsonar.projectKey=AxonFramework_AxonFramework
   - JAVA_HOME=$(dirname ${JAVA_HOME})/openjdk11 mvn -version
-  - JAVA_HOME=$(dirname ${JAVA_HOME})/openjdk11 mvn clean verify -B -P ossrh
+  - JAVA_HOME=$(dirname ${JAVA_HOME})/openjdk11 mvn -B -Possrh clean verify
 
 notifications:
   slack:
