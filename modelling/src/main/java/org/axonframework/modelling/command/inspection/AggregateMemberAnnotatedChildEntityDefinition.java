@@ -17,18 +17,20 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.ForwardingMode;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.stream.Stream;
 
 /**
  * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
- * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entity.
+ * {@link AggregateMember}. If such a field or method is found a {@link ChildEntity} is created that delegates to the entity.
  *
  * @author Allard Buijze
  * @since 3.0
@@ -41,27 +43,39 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
     }
 
     @Override
+    protected boolean isMemberTypeSupported(Member member) {
+        Class<?> valueType = ReflectionUtils.getMemberValueType(member)
+                                            .orElseThrow(() -> new AxonConfigurationException(String.format(
+                                                    "Failed to retrieve [%s]'s return value type",
+                                                    member.getName())));
+        return !Iterable.class.isAssignableFrom(valueType) && !Map.class.isAssignableFrom(valueType);
+    }
+
+    @Override
     protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
-                                                              Map<String, Object> attributes,
-                                                              Field field) {
-        return declaringEntity.modelOf(field.getType());
+                                                              Map<String, Object> attributes, Member member) {
+        Class<?> aClass = ReflectionUtils.getMemberValueType(member)
+                                         .orElseThrow(() -> new AxonConfigurationException(String.format(
+                                                 "Failed to retrieve [%s]'s return value type of [%s]",
+                                                 member.getName(),
+                                                 declaringEntity.getClass())));
+        return declaringEntity.modelOf(aClass);
     }
 
     @Override
     protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
                                               T parent,
-                                              Field field,
+                                              Member member,
                                               EntityModel<Object> childEntityModel) {
-        return ReflectionUtils.getFieldValue(field, parent);
+        return ReflectionUtils.getMemberValue(member, parent);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected <T> Stream<Object> resolveEventTargets(EventMessage message,
                                                      T parentEntity,
-                                                     Field field,
+                                                     Member member,
                                                      ForwardingMode eventForwardingMode) {
-        Object fieldVal = ReflectionUtils.getFieldValue(field, parentEntity);
-        return fieldVal == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(fieldVal));
+        Object memberVal = ReflectionUtils.getMemberValue(member, parentEntity);
+        return memberVal == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(memberVal));
     }
 }

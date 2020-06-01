@@ -19,7 +19,7 @@ package org.axonframework.modelling.command;
 import org.axonframework.messaging.Message;
 import org.axonframework.modelling.command.inspection.EntityModel;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.stream.Stream;
 
 /**
@@ -34,12 +34,12 @@ public interface ForwardingMode<T extends Message<?>> {
     /**
      * Initializes an instance of a {@link ForwardingMode}.
      *
-     * @param field       The {@link java.lang.reflect.Field} to apply a ForwardingMode on. Provided to be able to check
+     * @param member      The {@link java.lang.reflect.Member} to apply a ForwardingMode on. Provided to be able to check
      *                    for annotations attributes which might assist in the forwarding process.
      * @param childEntity A {@link EntityModel} constructed from the
      *                    given {@code field}.
      */
-    default void initialize(Field field, EntityModel childEntity) {
+    default void initialize(Member member, EntityModel childEntity) {
     }
 
     /**

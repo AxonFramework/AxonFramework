@@ -335,6 +335,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                                    .ifPresent(attributes -> aggregateVersionMembers.add(field));
                 }
                 for (Method method : ReflectionUtils.methodsOf(type)) {
+                    childEntityDefinitions.forEach(def -> def.createChildDefinition(method, this).ifPresent(child -> {
+                        children.add(child);
+                        child.commandHandlers().forEach(handler -> addHandler(allCommandHandlers, type, handler));
+                    }));
                     AnnotationUtils.findAnnotationAttributes(method, EntityId.class)
                                    .ifPresent(attributes -> {
                                        assertValidValueProvidingMethod(method);

@@ -42,7 +42,7 @@ import java.lang.annotation.Target;
  * those may not be placed on an non-root Entity's constructor.
  */
 @Documented
-@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.FIELD,ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AggregateMember {
 

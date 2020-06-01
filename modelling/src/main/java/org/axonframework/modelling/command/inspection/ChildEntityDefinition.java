@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Optional;
 
 /**
@@ -29,14 +29,14 @@ import java.util.Optional;
 public interface ChildEntityDefinition {
 
     /**
-     * Inspect the given {@code field}, which is declared on the given {@code declaringEntity} for the presence of a
+     * Inspect the given {@code member}, which is declared on the given {@code declaringEntity} for the presence of a
      * Child Entity.
      *
-     * @param field           The field potentially containing a Child entity
+     * @param member          The member potentially containing a Child entity
      * @param declaringEntity The entity model declaring the field
      * @param <T>             The type of entity on which the field is declared
      * @return an optional that resolved to a ChildEntity if the field represents a child.
      */
-    <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity);
+    <T> Optional<ChildEntity<T>> createChildDefinition(Member member, EntityModel<T> declaringEntity);
 
 }

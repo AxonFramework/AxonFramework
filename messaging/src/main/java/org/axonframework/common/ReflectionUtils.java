@@ -16,9 +16,8 @@
 
 package org.axonframework.common;
 
-import static org.axonframework.common.ObjectUtils.getOrDefault;
-
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
@@ -34,6 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -338,6 +339,25 @@ public abstract class ReflectionUtils {
         return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
     }
 
+    /**
+     * Resolve a generic type parameter from a member declaration
+     *
+     * @param member           The member to find generic parameters for
+     * @param genericTypeIndex The index of the type
+     * @return an optional that contains the resolved type, if found
+     */
+    public static Optional<Class<?>> resolveMemberGenericType(Member member, int genericTypeIndex) {
+        final Type genericType = getMemberGenericType(member)
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Member type [%s] not supported",
+                                                                              ReflectionUtils
+                                                                                      .getMemberGenericString(member))));
+        if (!(genericType instanceof ParameterizedType)
+                || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
+            return Optional.empty();
+        }
+        return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
+    }
+
     @SuppressWarnings("unchecked")
     public static <R> R invokeAndGetMethodValue(Method method, Object target) {
         ensureAccessible(method);
@@ -348,6 +368,17 @@ public abstract class ReflectionUtils {
         }
     }
 
+    /**
+     * Returns the value of the given {@code member} in the given {@code object}, either by returning
+     * {@link Field} value or invoking the method. If necessary, the member is made accessible,
+     * assuming the security manager allows it. Supported members are {@link Field} and
+     * non-void {@link Method} without parameters
+     *
+     * @param member  The member containing or returning the value
+     * @param target  The object to retrieve the member's value from
+     * @return the value of the {@code member} in the {@code object}
+     * @throws IllegalStateException if the member is not supported
+     */
     @SuppressWarnings("unchecked")
     public static <R> R getMemberValue(Member member, Object target) {
         if (member instanceof Field) {
@@ -355,9 +386,16 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Method) {
             return (R) ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
         }
-        return null;
+        throw new IllegalStateException(String.format("Unsupported member [%s]", member.getClass().getName()));
     }
 
+    /**
+     * Returns the type of value of the given {@code member}, either by returning the type of
+     * {@link Field} or type of the return value of a {@link Method}.
+     *
+     * @param member  The member to be inspected
+     * @return the value of the {@code member} in the {@code object}
+     */
     public static Optional<Class<?>> getMemberValueType(Member member) {
         if (member instanceof Method) {
             final Method method = (Method) member;
@@ -367,6 +405,24 @@ public abstract class ReflectionUtils {
             return Optional.of(field.getType());
         }
         return Optional.empty();
+    }
+
+    public static Optional<Type> getMemberGenericType(Member member) {
+        if (member instanceof Field) {
+            return Optional.of(((Field) member).getGenericType());
+        } else if (member instanceof Method) {
+            return Optional.of(((Method) member).getGenericReturnType());
+        }
+        return Optional.empty();
+    }
+
+    public static String getMemberGenericString(Member member) {
+        if (member instanceof Field) {
+            return ((Field) member).toGenericString();
+        } else if (member instanceof Executable) {
+            return ((Executable) member).toGenericString();
+        }
+        throw new IllegalStateException(String.format("Unsupported member [%s]", member.getClass().getName()));
     }
 
     private ReflectionUtils() {
