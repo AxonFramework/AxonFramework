@@ -8,10 +8,10 @@ jobs:
   include:
     - name: "JDK 8"
       jdk: openjdk8
-      env: MVN_BUILD_SCRIPT=clean verify
+      env: MVN_BUILD_SCRIPT="clean verify"
     - name: "JDK 11 with Sonar analysis"
       jdk: openjdk11
-      env: MVN_BUILD_SCRIPT=-Pcoverage clean verify sonar:sonar -Dsonar.projectKey=AxonFramework_AxonFramework
+      env: MVN_BUILD_SCRIPT="-Pcoverage clean verify sonar:sonar -Dsonar.projectKey=AxonFramework_AxonFramework"
 
 before_install:
   - docker run -d -p 1521:1521 gautamsaggar/oracle11g:v2 || echo "WARNING - Unable to start Oracle 11g"
