@@ -34,6 +34,7 @@ class EntityEventForwardingModelInspectorTest {
 
     private static final String AGGREGATE_ID = "aggregateId";
     private static final String ENTITY_ID = "entityId";
+    private static final String ANOTHER_ENTITY_ID = "anotherEntityId";
 
     @Test
     void testExpectEventsToBeRoutedToNoEntityForForwardModeSetToNone() {
@@ -71,6 +72,24 @@ class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
+    void testExpectEventsToBeRoutedToRightEntityOnlyViaMethod() {
+        AggregateModel<SomeGetterEventForwardingEntityAggregate> inspector =
+                inspectAggregate(SomeGetterEventForwardingEntityAggregate.class);
+
+        SomeGetterEventForwardingEntityAggregate target = new SomeGetterEventForwardingEntityAggregate();
+
+        // Called once
+        AtomicLong aggregatePayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent(AGGREGATE_ID, aggregatePayload)), target);
+        // Called twice - by aggregate and entity
+        AtomicLong entityPayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent(ENTITY_ID, entityPayload)), target);
+
+        assertEquals(1L, aggregatePayload.get());
+        assertEquals(2L, entityPayload.get());
+    }
+
+    @Test
     void testExpectEventsToBeRoutedToRightEntityOnlyWithSpecificRoutingKey() {
         AggregateModel<SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey> inspector =
                 inspectAggregate(SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey.class);
@@ -90,11 +109,50 @@ class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
+    void testExpectEventsToBeRoutedToRightEntityOnlyWithSpecificRoutingKeyViaMethod() {
+        AggregateModel<SomeGetterEventForwardingEntityAggregateWithSpecificEventRoutingKey> inspector =
+                inspectAggregate(SomeGetterEventForwardingEntityAggregateWithSpecificEventRoutingKey.class);
+
+        SomeGetterEventForwardingEntityAggregateWithSpecificEventRoutingKey target =
+                new SomeGetterEventForwardingEntityAggregateWithSpecificEventRoutingKey();
+
+        // Called once
+        AtomicLong aggregatePayload = new AtomicLong();
+        inspector.publish(asEventMessage(new SomeOtherEntityRoutedEvent(AGGREGATE_ID, aggregatePayload)), target);
+        // Called twice - by aggregate and entity
+        AtomicLong entityPayload = new AtomicLong();
+        inspector.publish(asEventMessage(new SomeOtherEntityRoutedEvent(ENTITY_ID, entityPayload)), target);
+
+        assertEquals(1L, aggregatePayload.get());
+        assertEquals(2L, entityPayload.get());
+    }
+
+    @Test
     void testExpectEventsToBeRoutedToRightEntityOnlyForEntityCollection() {
         AggregateModel<SomeEventForwardingEntityCollectionAggregate> inspector =
                 inspectAggregate(SomeEventForwardingEntityCollectionAggregate.class);
 
         SomeEventForwardingEntityCollectionAggregate target = new SomeEventForwardingEntityCollectionAggregate();
+
+        // All called once, as there is an event per entity only
+        AtomicLong entityOnePayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent("entityId1", entityOnePayload)), target);
+        AtomicLong entityTwoPayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent("entityId2", entityTwoPayload)), target);
+        AtomicLong entityThreePayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent("entityId3", entityThreePayload)), target);
+
+        assertEquals(1L, entityOnePayload.get());
+        assertEquals(1L, entityTwoPayload.get());
+        assertEquals(1L, entityThreePayload.get());
+    }
+
+    @Test
+    void testExpectEventsToBeRoutedToRightEntityOnlyForEntityCollectionViaMethod() {
+        AggregateModel<SomeGetterEventForwardingEntityCollectionAggregate> inspector =
+                inspectAggregate(SomeGetterEventForwardingEntityCollectionAggregate.class);
+
+        SomeGetterEventForwardingEntityCollectionAggregate target = new SomeGetterEventForwardingEntityCollectionAggregate();
 
         // All called once, as there is an event per entity only
         AtomicLong entityOnePayload = new AtomicLong();
@@ -129,6 +187,48 @@ class EntityEventForwardingModelInspectorTest {
         assertEquals(1L, entityThreePayload.get());
     }
 
+    @Test
+    void testExpectEventsToBeRoutedToRightEntityOnlyForEntityMapViaMethod() {
+        AggregateModel<SomeGetterEventForwardingEntityMapAggregate> inspector =
+                inspectAggregate(SomeGetterEventForwardingEntityMapAggregate.class);
+
+        SomeGetterEventForwardingEntityMapAggregate target = new SomeGetterEventForwardingEntityMapAggregate();
+
+        // All called once, as there is an event per entity only
+        AtomicLong entityOnePayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent("entityId1", entityOnePayload)), target);
+        AtomicLong entityTwoPayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent("entityId2", entityTwoPayload)), target);
+        AtomicLong entityThreePayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent("entityId3", entityThreePayload)), target);
+
+        assertEquals(1L, entityOnePayload.get());
+        assertEquals(1L, entityTwoPayload.get());
+        assertEquals(1L, entityThreePayload.get());
+    }
+
+    @Test
+    void testExpectEventsToBeRoutedToRightEntityOnlyWithMultipleEntities() {
+        AggregateModel<SomeMixedEventForwardingEntityAggregate> inspector =
+                inspectAggregate(SomeMixedEventForwardingEntityAggregate.class);
+
+        SomeMixedEventForwardingEntityAggregate target = new SomeMixedEventForwardingEntityAggregate();
+
+        // Called once
+        AtomicLong aggregatePayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent(AGGREGATE_ID, aggregatePayload)), target);
+        // Called twice - by aggregate and entity via annotated but random method name. Not a standard named getter.
+        AtomicLong entityPayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent(ENTITY_ID, entityPayload)), target);
+        // Called twice - by aggregate and entity. Another entity, via annotated field.
+        AtomicLong anotherEntityPayload = new AtomicLong();
+        inspector.publish(asEventMessage(new EntityRoutedEvent(ANOTHER_ENTITY_ID, anotherEntityPayload)), target);
+
+        assertEquals(1L, aggregatePayload.get());
+        assertEquals(2L, entityPayload.get());
+        assertEquals(2L, anotherEntityPayload.get());
+    }
+
     private static class SomeNoneEventForwardingEntityAggregate {
 
         @AggregateIdentifier
@@ -157,6 +257,24 @@ class EntityEventForwardingModelInspectorTest {
         }
     }
 
+    private static class SomeGetterEventForwardingEntityAggregate {
+
+        @AggregateIdentifier
+        private String id = AGGREGATE_ID;
+
+        private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
+
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
+        public SomeEventForwardedEntity getEntity() {
+            return entity;
+        }
+
+        @EventHandler
+        public void handle(EntityRoutedEvent event) {
+            event.getValue().incrementAndGet();
+        }
+    }
+
     private static class SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey {
 
         @AggregateIdentifier
@@ -164,6 +282,24 @@ class EntityEventForwardingModelInspectorTest {
 
         @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class, routingKey = "someIdentifier")
         private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
+
+        @EventHandler
+        public void handle(SomeOtherEntityRoutedEvent event) {
+            event.getValue().incrementAndGet();
+        }
+    }
+
+    private static class SomeGetterEventForwardingEntityAggregateWithSpecificEventRoutingKey {
+
+        @AggregateIdentifier
+        private String id = AGGREGATE_ID;
+
+        private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
+
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class, routingKey = "someIdentifier")
+        public SomeEventForwardedEntity getEntity() {
+            return entity;
+        }
 
         @EventHandler
         public void handle(SomeOtherEntityRoutedEvent event) {
@@ -187,6 +323,26 @@ class EntityEventForwardingModelInspectorTest {
         }
     }
 
+    private static class SomeGetterEventForwardingEntityCollectionAggregate {
+
+        @AggregateIdentifier
+        private String id = AGGREGATE_ID;
+
+        private List<SomeEventForwardedEntity> entities;
+
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
+        public List<SomeEventForwardedEntity> getEntities() {
+            return entities;
+        }
+
+        SomeGetterEventForwardingEntityCollectionAggregate() {
+            this.entities = new ArrayList<>();
+            entities.add(new SomeEventForwardedEntity("entityId1"));
+            entities.add(new SomeEventForwardedEntity("entityId2"));
+            entities.add(new SomeEventForwardedEntity("entityId3"));
+        }
+    }
+
     private static class SomeEventForwardingEntityMapAggregate {
 
         @AggregateIdentifier
@@ -200,6 +356,47 @@ class EntityEventForwardingModelInspectorTest {
             entities.put("entityId1", new SomeEventForwardedEntity("entityId1"));
             entities.put("entityId2", new SomeEventForwardedEntity("entityId2"));
             entities.put("entityId3", new SomeEventForwardedEntity("entityId3"));
+        }
+    }
+
+    private static class SomeGetterEventForwardingEntityMapAggregate {
+
+        @AggregateIdentifier
+        private String id = AGGREGATE_ID;
+
+        private Map<String, SomeEventForwardedEntity> entities;
+
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
+        public Map<String, SomeEventForwardedEntity> getEntities() {
+            return entities;
+        }
+
+        SomeGetterEventForwardingEntityMapAggregate() {
+            this.entities = new HashMap<>();
+            entities.put("entityId1", new SomeEventForwardedEntity("entityId1"));
+            entities.put("entityId2", new SomeEventForwardedEntity("entityId2"));
+            entities.put("entityId3", new SomeEventForwardedEntity("entityId3"));
+        }
+    }
+
+    private static class SomeMixedEventForwardingEntityAggregate {
+
+        @AggregateIdentifier
+        private String id = AGGREGATE_ID;
+
+        private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
+
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
+        private SomeEventForwardedEntity anotherEntity = new SomeEventForwardedEntity(ANOTHER_ENTITY_ID);
+
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
+        public SomeEventForwardedEntity entityMethod() {
+            return entity;
+        }
+
+        @EventHandler
+        public void handle(EntityRoutedEvent event) {
+            event.getValue().incrementAndGet();
         }
     }
 
