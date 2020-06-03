@@ -358,11 +358,20 @@ public abstract class ReflectionUtils {
         return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
     }
 
+    /**
+     * Invokes and returns the return value of the given {@code method} in the given {@code object}. If necessary, the method is
+     * made accessible, assuming the security manager allows it.
+     * @param method The method to invoke
+     * @param object The target object to retrieve the field's value from
+     * @return the resulting value of invocation of the {@code method} in the {@code object}
+     * @throws IllegalStateException if the method is not accessible and the security manager doesn't allow it to be
+     *                               made accessible
+     */
     @SuppressWarnings("unchecked")
-    public static <R> R invokeAndGetMethodValue(Method method, Object target) {
+    public static <R> R invokeAndGetMethodValue(Method method, Object object) {
         ensureAccessible(method);
         try {
-            return (R) method.invoke(target);
+            return (R) method.invoke(object);
         } catch (IllegalAccessException | InvocationTargetException ex) {
             throw new IllegalStateException("Unable to access method for invocation.", ex);
         }
@@ -393,8 +402,8 @@ public abstract class ReflectionUtils {
      * Returns the type of value of the given {@code member}, either by returning the type of
      * {@link Field} or type of the return value of a {@link Method}.
      *
-     * @param member  The member to be inspected
-     * @return the value of the {@code member} in the {@code object}
+     * @param member The member to get the value type from
+     * @return the type of value of the {@code member}
      */
     public static Optional<Class<?>> getMemberValueType(Member member) {
         if (member instanceof Method) {
@@ -407,6 +416,13 @@ public abstract class ReflectionUtils {
         return Optional.empty();
     }
 
+    /**
+     * Returns the generic type of value of the given {@code member}, either by returning the generic type of
+     * {@link Field} or generic return type of a {@link Method}.
+     *
+     * @param member The member to get generic type of
+     * @return the generic type of value of the {@code member}
+     */
     public static Optional<Type> getMemberGenericType(Member member) {
         if (member instanceof Field) {
             return Optional.of(((Field) member).getGenericType());
@@ -416,6 +432,13 @@ public abstract class ReflectionUtils {
         return Optional.empty();
     }
 
+    /**
+     * Returns the generic string of the given {@code member}.
+     *
+     * @param member The member to get the generic string for
+     * @return the generic string of the {@code member}
+     * @throws IllegalStateException if the member is not supported
+     */
     public static String getMemberGenericString(Member member) {
         if (member instanceof Field) {
             return ((Field) member).toGenericString();
