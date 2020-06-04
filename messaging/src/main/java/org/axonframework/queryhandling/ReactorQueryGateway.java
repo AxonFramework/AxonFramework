@@ -22,13 +22,18 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.ReactiveMessageDispatchInterceptor;
 import org.axonframework.messaging.ReactiveResultHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -133,7 +138,19 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
     @SuppressWarnings("unchecked")
     public <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
                                         TimeUnit timeUnit) {
-        return null; //TODO
+        return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericQueryMessage<>(asMessage(query), queryName, responseType)) //TODO write tests for retry
+                .transform(this::processQueryInterceptors)
+                .flatMap(q -> dispatchScatterGatherQuery(q, timeout, timeUnit))
+                .flatMapMany(this::processResultsInterceptors)
+                .map(it -> (R) it.getPayload());
+    }
+
+    private Mono<Tuple2<QueryMessage<?, ?>, Flux<QueryResponseMessage<?>>>> dispatchScatterGatherQuery(QueryMessage<?, ?> queryMessage, long timeout, TimeUnit timeUnit) {
+        Flux<QueryResponseMessage<?>> results = Flux.defer(() -> Flux.<QueryResponseMessage<?>>fromStream(queryBus.scatterGather(queryMessage, timeout, timeUnit)))
+                .flatMap(this::mapResult);
+
+        return Mono.<QueryMessage<?, ?>>just(queryMessage)
+                .zipWith(Mono.just(results));
     }
 
     @Override
