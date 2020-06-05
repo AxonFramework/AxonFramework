@@ -296,16 +296,19 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryBus to use.
      */
     protected QueryBus defaultQueryBus(Configuration config) {
-        return SimpleQueryBus.builder()
-                             .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
-                             .transactionManager(config.getComponent(TransactionManager.class,
-                                                                     NoTransactionManager::instance))
-                             .errorHandler(config.getComponent(
-                                     QueryInvocationErrorHandler.class,
-                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
-                             ))
-                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                             .build();
+        QueryBus queryBus = SimpleQueryBus.builder()
+                                          .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
+                                          .transactionManager(config.getComponent(
+                                                  TransactionManager.class, NoTransactionManager::instance
+                                          ))
+                                          .errorHandler(config.getComponent(
+                                                  QueryInvocationErrorHandler.class,
+                                                  () -> LoggingQueryInvocationErrorHandler.builder().build()
+                                          ))
+                                          .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                                          .build();
+        queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+        return queryBus;
     }
 
     /**
@@ -351,12 +354,15 @@ public class DefaultConfigurer implements Configurer {
      * @return The default CommandBus to use.
      */
     protected CommandBus defaultCommandBus(Configuration config) {
-        SimpleCommandBus commandBus =
+        CommandBus commandBus =
                 SimpleCommandBus.builder()
-                                .transactionManager(config.getComponent(TransactionManager.class,
-                                                                        () -> NoTransactionManager.INSTANCE))
-                                .duplicateCommandHandlerResolver(config.getComponent(DuplicateCommandHandlerResolver.class,
-                                                                                     LoggingDuplicateCommandHandlerResolver::instance))
+                                .transactionManager(config.getComponent(
+                                        TransactionManager.class, () -> NoTransactionManager.INSTANCE
+                                ))
+                                .duplicateCommandHandlerResolver(config.getComponent(
+                                        DuplicateCommandHandlerResolver.class,
+                                        LoggingDuplicateCommandHandlerResolver::instance
+                                ))
                                 .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));

@@ -287,8 +287,9 @@ public class EventProcessingModule
                                   .filter(Objects::nonNull)
                                   .forEach(eventProcessor::registerHandlerInterceptor);
 
-        eventProcessor.registerHandlerInterceptor(new CorrelationDataInterceptor<>(configuration
-                                                                                           .correlationDataProviders()));
+        eventProcessor.registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(configuration.correlationDataProviders())
+        );
 
         return eventProcessor;
     }
