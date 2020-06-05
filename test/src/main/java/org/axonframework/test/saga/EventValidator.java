@@ -101,6 +101,7 @@ public class EventValidator implements EventMessageHandler {
             eventBus.subscribe(eventMessages -> eventMessages.forEach(this::handle));
             recording = true;
         }
+        publishedEvents.clear();
     }
 
     @SuppressWarnings({"unchecked"})
