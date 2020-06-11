@@ -66,6 +66,7 @@ public class JdbcAutoConfiguration {
                                      .upcasterChain(configuration.upcasterChain())
                                      .persistenceExceptionResolver(persistenceExceptionResolver)
                                      .eventSerializer(eventSerializer)
+                                     .snapshotFilter(configuration.snapshotFilter())
                                      .connectionProvider(connectionProvider)
                                      .transactionManager(transactionManager)
                                      .build();
