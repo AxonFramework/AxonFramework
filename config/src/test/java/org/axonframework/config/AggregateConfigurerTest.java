@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
@@ -139,6 +140,15 @@ public class AggregateConfigurerTest {
         configuration.shutdown();
     }
 
+    @Test
+    void testAggregateFactoryConfiguration() {
+        AggregateFactory<TestAggregate> expectedAggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
+
+        testSubject.configureAggregateFactory(configuration -> expectedAggregateFactory);
+
+        assertEquals(expectedAggregateFactory, testSubject.aggregateFactory());
+    }
+
     private static class TestAggregate {
 
         TestAggregate() {
@@ -147,6 +157,7 @@ public class AggregateConfigurerTest {
     }
 
     private static class CreateACommand {
+
         private final String id;
 
         private CreateACommand(String id) {
@@ -159,6 +170,7 @@ public class AggregateConfigurerTest {
     }
 
     private static class ACreatedEvent {
+
         private final String id;
 
         private ACreatedEvent(String id) {
@@ -171,6 +183,7 @@ public class AggregateConfigurerTest {
     }
 
     private static class CreateBCommand {
+
         private final String id;
 
         private CreateBCommand(String id) {
@@ -183,6 +196,7 @@ public class AggregateConfigurerTest {
     }
 
     private static class DoSomethingCommand {
+
         @TargetAggregateIdentifier
         private final String id;
 
@@ -196,6 +210,7 @@ public class AggregateConfigurerTest {
     }
 
     private static class BSpecificCommand {
+
         @TargetAggregateIdentifier
         private final String id;
 
