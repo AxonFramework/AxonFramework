@@ -23,24 +23,24 @@ import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Allard Buijze
+ * @author Henrique Sena
  */
 public class FullConcurrencyPolicyTest {
 
     @Test
     public void testSequencingIdentifier() {
-        // ok, pretty useless, but everything should be tested
         FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
-        assertNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
+        assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
     }
 
     private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
         return new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), (long) 0,
-                                                     new Object(), MetaData.emptyInstance());
+                new Object(), MetaData.emptyInstance());
     }
 }
