@@ -50,13 +50,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating auto configured snapshotting logic.
+ *
  * @author Steven van Beelen
  */
-@ContextConfiguration(classes = JpaEventStoreAutoConfigurationWithSnapshotFilter.TestContext.class)
+@ContextConfiguration(classes = JpaEventStoreAutoConfigurationWithSnapshotting.TestContext.class)
 @ExtendWith(SpringExtension.class)
 @EnableAutoConfiguration(exclude = {AxonServerAutoConfiguration.class})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-class JpaEventStoreAutoConfigurationWithSnapshotFilter {
+class JpaEventStoreAutoConfigurationWithSnapshotting {
 
     private static final String AGGREGATE_ID = "some-aggregate";
 
