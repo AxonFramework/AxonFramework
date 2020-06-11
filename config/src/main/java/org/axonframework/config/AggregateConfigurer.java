@@ -30,6 +30,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
@@ -70,12 +71,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<Cache> cache;
     private final Component<AggregateFactory<A>> aggregateFactory;
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
+    private final Component<SnapshotFilter> snapshotFilter;
     private final Component<CommandTargetResolver> commandTargetResolver;
     private final Component<AggregateModel<A>> metaModel;
     private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
     private final Set<Class<? extends A>> subtypes = new HashSet<>();
     private final List<Registration> registrations = new ArrayList<>();
+
     private Configuration parent;
 
     /**
@@ -160,8 +163,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     protected AggregateConfigurer(Class<A> aggregate) {
         this.aggregate = aggregate;
 
-        metaModel = new Component<>(() -> parent,
-                                    "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
+        metaModel = new Component<>(() -> parent, name("aggregateMetaModel"),
                                     c -> c.getComponent(
                                             AggregateMetaModelFactory.class,
                                             () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
@@ -176,18 +178,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         );
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
-        aggregateFactory = new Component<>(() -> parent,
-                                           name("aggregateFactory"),
+        snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> SnapshotFilter.keep());
+        aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
                                            c -> new GenericAggregateFactory<>(metaModel.get()));
-        cache =
-                new Component<>(() -> parent, name("aggregateCache"), c -> null);
-        eventStreamFilter =
-                new Component<>(() -> parent, "eventStreamFilter<" + aggregate.getSimpleName() + ">", c -> null);
-        filterEventsByType =
-                new Component<>(() -> parent, "filterByAggregateType<" + aggregate.getSimpleName() + ">", c -> false);
+        cache = new Component<>(() -> parent, name("aggregateCache"), c -> null);
+        eventStreamFilter = new Component<>(() -> parent, name("eventStreamFilter"), c -> null);
+        filterEventsByType = new Component<>(() -> parent, name("filterByAggregateType"), c -> false);
         repository = new Component<>(
-                () -> parent,
-                "Repository<" + aggregate.getSimpleName() + ">",
+                () -> parent, name("Repository"),
                 c -> {
                     state(c.eventBus() instanceof EventStore,
                           () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
@@ -220,7 +218,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                     }
                     return builder.build();
                 });
-        commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
+        commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
                                          c -> AggregateAnnotationCommandHandler.<A>builder()
                                                  .repository(repository.get())
                                                  .commandTargetResolver(commandTargetResolver.get())
@@ -313,6 +311,18 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
+     * Configure a {@link SnapshotFilter} for the Aggregate type under configuration. Note that {@code SnapshotFilter}
+     * instances will be combined and should return {@code true} if they handle a snapshot they wish to ignore.
+     *
+     * @param snapshotFilter the function creating the {@link SnapshotFilter}
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureSnapshotFilter(Function<Configuration, SnapshotFilter> snapshotFilter) {
+        this.snapshotFilter.update(snapshotFilter);
+        return this;
+    }
+
+    /**
      * Configures an event stream filter for the EventSourcingRepository for the Aggregate type under configuration. By
      * default, no filter is applied to the event stream.
      * <p>
@@ -394,9 +404,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         return aggregate;
     }
 
+    @Override
+    public SnapshotFilter snapshotFilter() {
+        return snapshotFilter.get();
+    }
+
     /**
-     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this
-     * subtypes will be considered part of this aggregate's handlers.
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtypes
+     * will be considered part of this aggregate's handlers.
      *
      * @param subtypes subtypes in this polymorphic hierarchy
      * @return this configurer for fluent interfacing
@@ -407,8 +422,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this
-     * subtypes will be considered part of this aggregate's handlers.
+     * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtypes
+     * will be considered part of this aggregate's handlers.
      *
      * @param subtypes subtypes in this polymorphic hierarchy
      * @return this configurer for fluent interfacing

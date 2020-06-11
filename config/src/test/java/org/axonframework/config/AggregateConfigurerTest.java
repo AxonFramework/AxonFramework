@@ -23,6 +23,7 @@ import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
@@ -137,6 +138,15 @@ public class AggregateConfigurerTest {
         assertEquals("bSpecific456", result3);
 
         configuration.shutdown();
+    }
+
+    @Test
+    void testSnapshotFilterConfiguration() {
+        SnapshotFilter testFilter = snapshotData -> true;
+
+        testSubject.configureSnapshotFilter(configuration -> testFilter);
+
+        assertEquals(testFilter, testSubject.snapshotFilter());
     }
 
     private static class TestAggregate {
