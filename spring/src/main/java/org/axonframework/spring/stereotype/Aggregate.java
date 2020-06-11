@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,12 @@ public @interface Aggregate {
      * for a bean named {@code "tradeRepository"}.
      */
     String snapshotTriggerDefinition() default "";
+
+    /**
+     * Sets the name of the bean providing the {@link org.axonframework.eventsourcing.snapshotting.SnapshotFilter}. If
+     * none is provided, all snapshots will be taken into account unless explicitly configured on the event store.
+     */
+    String snapshotFilter() default "";
 
     /**
      * Get the String representation of the aggregate's type. Optional. This defaults to the simple name of the
