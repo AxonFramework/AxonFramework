@@ -1047,13 +1047,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         }
 
         @Override
-        public Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public JdbcEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public Builder upcasterChain(EventUpcaster upcasterChain) {
+        public JdbcEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
@@ -1062,13 +1062,15 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * {@inheritDoc} Defaults to a {@link JdbcSQLErrorCodesResolver}.
          */
         @Override
-        public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+        public JdbcEventStorageEngine.Builder persistenceExceptionResolver(
+                PersistenceExceptionResolver persistenceExceptionResolver
+        ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
             return this;
         }
 
         @Override
-        public Builder eventSerializer(Serializer eventSerializer) {
+        public JdbcEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
@@ -1080,19 +1082,19 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          */
         @Override
         @Deprecated
-        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
+        public JdbcEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
 
         @Override
-        public Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+        public JdbcEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
 
         @Override
-        public Builder batchSize(int batchSize) {
+        public JdbcEventStorageEngine.Builder batchSize(int batchSize) {
             super.batchSize(batchSize);
             return this;
         }

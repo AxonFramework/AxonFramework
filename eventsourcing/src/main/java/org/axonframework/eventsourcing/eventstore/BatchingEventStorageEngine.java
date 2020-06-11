@@ -149,25 +149,27 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         private int batchSize = DEFAULT_BATCH_SIZE;
 
         @Override
-        public Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public BatchingEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public Builder upcasterChain(EventUpcaster upcasterChain) {
+        public BatchingEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
 
         @Override
-        public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+        public BatchingEventStorageEngine.Builder persistenceExceptionResolver(
+                PersistenceExceptionResolver persistenceExceptionResolver
+        ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
             return this;
         }
 
         @Override
-        public Builder eventSerializer(Serializer eventSerializer) {
+        public BatchingEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
@@ -179,13 +181,13 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
          */
         @Override
         @Deprecated
-        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
+        public BatchingEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
 
         @Override
-        public Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+        public BatchingEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
