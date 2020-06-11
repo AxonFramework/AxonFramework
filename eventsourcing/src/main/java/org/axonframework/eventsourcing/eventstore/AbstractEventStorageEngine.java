@@ -249,10 +249,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     public abstract static class Builder {
 
-        private Supplier<Serializer> snapshotSerializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> snapshotSerializer;
         protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private PersistenceExceptionResolver persistenceExceptionResolver;
-        private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> eventSerializer;
         private SnapshotFilter snapshotFilter = SnapshotFilter.keep();
 
         /**
@@ -345,7 +345,13 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            if (snapshotSerializer == null) {
+                snapshotSerializer = XStreamSerializer::defaultSerializer;
+            }
+
+            if (eventSerializer == null) {
+                eventSerializer = XStreamSerializer::defaultSerializer;
+            }
         }
     }
 }

@@ -95,6 +95,19 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
+    void testStartRecording_ClearsEventsAndCommands() {
+        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
+                                                       commandBus, StubSaga.class, AllFieldsFilter.instance());
+        testSubject.startRecording();
+        eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Command"));
+
+        testSubject.startRecording();
+        testSubject.expectPublishedEvents();
+        testSubject.expectNoDispatchedCommands();
+    }
+
+    @Test
     void testExpectPublishedEvents_WrongCount() {
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
 
