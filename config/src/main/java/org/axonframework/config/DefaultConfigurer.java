@@ -180,8 +180,9 @@ public class DefaultConfigurer implements Configurer {
      */
     public static Configurer defaultConfiguration(boolean autoLocateConfigurerModules) {
         DefaultConfigurer configurer = new DefaultConfigurer();
-        if(autoLocateConfigurerModules) {
-            ServiceLoader<ConfigurerModule> configurerModuleLoader = ServiceLoader.load(ConfigurerModule.class, configurer.getClass().getClassLoader());
+        if (autoLocateConfigurerModules) {
+            ServiceLoader<ConfigurerModule> configurerModuleLoader =
+                    ServiceLoader.load(ConfigurerModule.class, configurer.getClass().getClassLoader());
             List<ConfigurerModule> configurerModules = new ArrayList<>();
             configurerModuleLoader.forEach(configurerModules::add);
             configurerModules.sort(Comparator.comparingInt(ConfigurerModule::order));
@@ -213,6 +214,7 @@ public class DefaultConfigurer implements Configurer {
                                                           c.getComponent(PersistenceExceptionResolver.class)
                                                   )
                                                   .eventSerializer(c.eventSerializer())
+                                                  .snapshotFilter(c.snapshotFilter())
                                                   .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
                                                   .transactionManager(c.getComponent(TransactionManager.class))
                                                   .build()
@@ -852,7 +854,7 @@ public class DefaultConfigurer implements Configurer {
         UP("up"),
         SHUTTING_DOWN("shutdown");
 
-        private String description;
+        private final String description;
 
         LifecycleState(String description) {
             this.description = description;
