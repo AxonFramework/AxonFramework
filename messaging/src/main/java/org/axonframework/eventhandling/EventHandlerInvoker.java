@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
-
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
  *
@@ -73,7 +71,7 @@ public interface EventHandlerInvoker {
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      */
     default void performReset() {
-        performReset(NO_RESET_PAYLOAD);
+        performReset(null);
     }
 
     /**

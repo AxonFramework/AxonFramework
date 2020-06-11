@@ -18,8 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MessageHandler;
 
-import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
-
 /**
  * Interface to be implemented by classes that can handle events.
  *
@@ -45,7 +43,7 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
      * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
      */
     default void prepareReset() {
-        prepareReset(NO_RESET_PAYLOAD);
+        prepareReset(null);
     }
 
     /**

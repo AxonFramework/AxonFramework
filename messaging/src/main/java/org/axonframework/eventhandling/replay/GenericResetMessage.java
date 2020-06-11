@@ -52,12 +52,10 @@ public class GenericResetMessage<T> extends MessageDecorator<T> implements Reset
     }
 
     /**
-     * Instantiate a {@link GenericResetMessage} containing {@link ResetMessage#NO_RESET_PAYLOAD} and en empty {@link
-     * MetaData} instance.
+     * Instantiate a {@link GenericResetMessage} containing {@code null} payload and en empty {@link MetaData} instance.
      */
-    @SuppressWarnings("unchecked")
     public GenericResetMessage() {
-        this((T) ResetMessage.NO_RESET_PAYLOAD);
+        this((T) null);
     }
 
     /**

@@ -31,11 +31,6 @@ import java.util.Map;
 public interface ResetMessage<T> extends Message<T> {
 
     /**
-     * A {@code null} object to be used if no payload is required for a {@link ResetMessage}.
-     */
-    Object NO_RESET_PAYLOAD = null;
-
-    /**
      * Returns a copy of this {@link ResetMessage} with the given {@code metaData}. The payload remains unchanged.
      * <p/>
      * While the implementation returned may be different than the implementation of {@code this}, implementations must

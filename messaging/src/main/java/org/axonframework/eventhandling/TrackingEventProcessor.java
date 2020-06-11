@@ -67,7 +67,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ProcessUtils.executeWithRetry;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
-import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
 
 /**
  * EventProcessor implementation that tracks events from a {@link StreamableMessageSource}.
@@ -648,7 +647,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param startPosition the token representing the position to reset the processor to
      */
     public void resetTokens(TrackingToken startPosition) {
-        resetTokens(startPosition, NO_RESET_PAYLOAD);
+        resetTokens(startPosition, null);
     }
 
     /**

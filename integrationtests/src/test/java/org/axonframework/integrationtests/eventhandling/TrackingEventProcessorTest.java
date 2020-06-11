@@ -77,7 +77,6 @@ import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
-import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
@@ -91,6 +90,8 @@ import static org.mockito.Mockito.*;
  * @author Rene de Waele
  */
 class TrackingEventProcessorTest {
+
+    private static final Object NO_RESET_PAYLOAD = null;
 
     private TrackingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;

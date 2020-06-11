@@ -16,14 +16,12 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.replay.ResetMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import java.util.List;
 
-import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,6 +33,8 @@ import static org.mockito.Mockito.*;
  * @author Steven van Beelen
  */
 class MultiEventHandlerInvokerTest {
+
+    private static final Object NO_RESET_PAYLOAD = null;
 
     private MultiEventHandlerInvoker testSubject;
 

@@ -21,7 +21,6 @@ import org.mockito.*;
 
 import java.util.List;
 
-import static org.axonframework.eventhandling.replay.ResetMessage.NO_RESET_PAYLOAD;
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.mockito.Mockito.*;
@@ -32,6 +31,8 @@ import static org.mockito.Mockito.*;
  * @author Rene de Waele
  */
 class SimpleEventHandlerInvokerTest {
+
+    private static final Object NO_RESET_PAYLOAD = null;
 
     private EventMessageHandler mockHandler1;
     private EventMessageHandler mockHandler2;
