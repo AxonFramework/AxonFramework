@@ -19,21 +19,19 @@ package org.axonframework.queryhandling;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.ReactiveMessageDispatchInterceptor;
-import org.axonframework.messaging.ReactiveResultHandlerInterceptor;
+import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.reactive.ReactiveMessageDispatchInterceptor;
+import org.axonframework.messaging.reactive.ReactiveResultHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
-import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
+import java.util.function.Function;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -48,7 +46,7 @@ import static org.axonframework.messaging.GenericMessage.asMessage;
 public class ReactorQueryGateway implements ReactiveQueryGateway {
 
     private final List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors;
-    private final List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, QueryResponseMessage<?>>> resultInterceptors;
+    private final List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors;
 
     private final QueryBus queryBus;
 
@@ -91,76 +89,131 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
 
     @Override
     public Registration registerResultHandlerInterceptor(
-            ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, QueryResponseMessage<?>> interceptor) {
+            ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>> interceptor) {
         resultInterceptors.add(interceptor);
         return () -> resultInterceptors.remove(interceptor);
     }
 
     @Override
     public <R, Q> Mono<R> query(String queryName, Q query, ResponseType<R> responseType) {
-        return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericQueryMessage<>(asMessage(query), queryName, responseType)) //TODO write tests for retry
-                .transform(this::processQueryInterceptors)
+        return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericQueryMessage<>(asMessage(query),
+                                                                                     queryName,
+                                                                                     responseType))
+                .transform(this::processDispatchInterceptors)
                 .flatMap(this::dispatchQuery)
                 .flatMapMany(this::processResultsInterceptors)
-                .map(it -> (R) it.getPayload())
+                .<R>transform(this::getPayload)
                 .next();
     }
 
-    private Mono<QueryMessage<?, ?>> processQueryInterceptors(Mono<QueryMessage<?, ?>> queryMessageMono) {
-        return Flux.fromIterable(dispatchInterceptors)
-                .reduce(queryMessageMono, (queryMessage, interceptor) -> interceptor.intercept(queryMessage))
-                .flatMap(Mono::from);
-    }
-
-    private Mono<Tuple2<QueryMessage<?, ?>, Flux<QueryResponseMessage<?>>>> dispatchQuery(QueryMessage<?, ?> queryMessage) {
-        Flux<QueryResponseMessage<?>> results = Flux.defer(() -> Mono.<QueryResponseMessage<?>>fromFuture(queryBus.query(queryMessage)))
-                .flatMap(this::mapResult);
-
-        return Mono.<QueryMessage<?, ?>>just(queryMessage)
-                .zipWith(Mono.just(results));
-    }
-
-    private Flux<? extends QueryResponseMessage<?>> mapResult(QueryResponseMessage<?> it) {
-        return it.isExceptional() ? Flux.error(it.exceptionResult()) : Flux.just(it);
-    }
-
-    private Flux<? extends QueryResponseMessage<?>> processResultsInterceptors(Tuple2<QueryMessage<?, ?>, Flux<QueryResponseMessage<?>>> tuple2) {
-        QueryMessage<?, ?> queryMessage = tuple2.getT1();
-        Flux<QueryResponseMessage<?>> queryResultMessage = tuple2.getT2();
-
-        return Flux.fromIterable(resultInterceptors)
-                .reduce(queryResultMessage,
-                        (result, interceptor) -> interceptor.intercept(queryMessage, result))
-                .flatMapMany(it -> it);
-    }
-
     @Override
-    @SuppressWarnings("unchecked")
     public <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
                                         TimeUnit timeUnit) {
-        return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericQueryMessage<>(asMessage(query), queryName, responseType)) //TODO write tests for retry
-                .transform(this::processQueryInterceptors)
+        return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericQueryMessage<>(asMessage(query),
+                                                                                     queryName,
+                                                                                     responseType))
+                .transform(this::processDispatchInterceptors)
                 .flatMap(q -> dispatchScatterGatherQuery(q, timeout, timeUnit))
                 .flatMapMany(this::processResultsInterceptors)
-                .map(it -> (R) it.getPayload());
-    }
-
-    private Mono<Tuple2<QueryMessage<?, ?>, Flux<QueryResponseMessage<?>>>> dispatchScatterGatherQuery(QueryMessage<?, ?> queryMessage, long timeout, TimeUnit timeUnit) {
-        Flux<QueryResponseMessage<?>> results = Flux.defer(() -> Flux.<QueryResponseMessage<?>>fromStream(queryBus.scatterGather(queryMessage, timeout, timeUnit)))
-                .flatMap(this::mapResult);
-
-        return Mono.<QueryMessage<?, ?>>just(queryMessage)
-                .zipWith(Mono.just(results));
+                .transform(this::getPayload);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(String queryName, Q query,
                                                                            ResponseType<I> initialResponseType,
                                                                            ResponseType<U> updateResponseType,
                                                                            SubscriptionQueryBackpressure backpressure,
                                                                            int updateBufferSize) {
-        return null; //TODO
+
+        //noinspection unchecked
+        return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericSubscriptionQueryMessage<>(query,
+                                                                                                 initialResponseType,
+                                                                                                 updateResponseType))
+                .transform(this::processDispatchInterceptors)
+                .map(isq -> (SubscriptionQueryMessage<Q, U, I>) isq)
+                .flatMap(isq -> dispatchSubscriptionQuery(isq, backpressure, updateBufferSize))
+                .flatMap(processSubscriptionQueryResult());
+    }
+
+
+    private Mono<Tuple2<QueryMessage<?, ?>, Flux<ResultMessage<?>>>> dispatchQuery(QueryMessage<?, ?> queryMessage) {
+        Flux<ResultMessage<?>> results = Flux
+                .defer(() -> Mono.fromFuture(queryBus.query(queryMessage)));
+
+        return Mono.<QueryMessage<?, ?>>just(queryMessage)
+                .zipWith(Mono.just(results));
+    }
+
+    private Mono<Tuple2<QueryMessage<?, ?>, Flux<ResultMessage<?>>>> dispatchScatterGatherQuery(
+            QueryMessage<?, ?> queryMessage, long timeout, TimeUnit timeUnit) {
+        Flux<ResultMessage<?>> results = Flux
+                .defer(() -> Flux.fromStream(queryBus.scatterGather(queryMessage,
+                                                                    timeout,
+                                                                    timeUnit)));
+
+        return Mono.<QueryMessage<?, ?>>just(queryMessage)
+                .zipWith(Mono.just(results));
+    }
+
+    private <Q, I, U> Mono<Tuple2<QueryMessage<Q, I>, Mono<SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>>>> dispatchSubscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> queryMessage, SubscriptionQueryBackpressure backpressure,
+            int updateBufferSize) {
+        Mono<SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>> result = Mono
+                .fromCallable(() -> {
+                    System.out.println(Thread.currentThread() + " before dispatch");
+                    return queryBus.subscriptionQuery(queryMessage, backpressure, updateBufferSize);
+                });
+        return Mono.<QueryMessage<Q, I>>just(queryMessage)
+                .zipWith(Mono.just(result));
+    }
+
+    private Mono<QueryMessage<?, ?>> processDispatchInterceptors(Mono<QueryMessage<?, ?>> queryMessageMono) {
+        return Flux.fromIterable(dispatchInterceptors)
+                   .reduce(queryMessageMono, (queryMessage, interceptor) -> interceptor.intercept(queryMessage))
+                   .flatMap(Mono::from);
+    }
+
+    private Flux<ResultMessage<?>> processResultsInterceptors(
+            Tuple2<QueryMessage<?, ?>, Flux<ResultMessage<?>>> queryWithResponses) {
+        QueryMessage<?, ?> queryMessage = queryWithResponses.getT1();
+        Flux<ResultMessage<?>> queryResultMessage = queryWithResponses.getT2();
+
+        return Flux.fromIterable(resultInterceptors)
+                   .reduce(queryResultMessage,
+                           (result, interceptor) -> interceptor.intercept(queryMessage, result))
+                   .flatMapMany(it -> it);
+    }
+
+    private <Q, I, U> Function<Tuple2<QueryMessage<Q, U>,
+            Mono<SubscriptionQueryResult<QueryResponseMessage<U>, SubscriptionQueryUpdateMessage<I>>>>,
+            Mono<SubscriptionQueryResult<I, U>>> processSubscriptionQueryResult() {
+
+        return messageWithResult -> messageWithResult.getT2().map(sqr -> {
+            Mono<I> interceptedInitialResult = Mono.<QueryMessage<?, ?>>just(messageWithResult.getT1())
+                    .zipWith(Mono.just(Flux.<ResultMessage<?>>from(sqr.initialResult())))
+                    .flatMapMany(this::processResultsInterceptors)
+                    .<I>transform(this::getPayload)
+                    .next();
+
+            Flux<U> interceptedUpdates = Mono.<QueryMessage<?, ?>>just(messageWithResult.getT1())
+                    .zipWith(Mono.just(sqr.updates().<ResultMessage<?>>map(it -> it)))
+                    .flatMapMany(this::processResultsInterceptors)
+                    .transform(this::getPayload);
+
+            return new DefaultSubscriptionQueryResult<>(interceptedInitialResult, interceptedUpdates, sqr);
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private <R> Flux<R> getPayload(Flux<ResultMessage<?>> resultMessageFlux) {
+        return resultMessageFlux
+                .flatMap(this::mapResult)
+                .filter(r -> Objects.nonNull(r.getPayload()))
+                .map(it -> (R) it.getPayload());
+    }
+
+    private Flux<? extends ResultMessage<?>> mapResult(ResultMessage<?> response) {
+        return response.isExceptional() ? Flux.error(response.exceptionResult()) : Flux.just(response);
     }
 
     /**
@@ -174,7 +227,7 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
 
         private QueryBus queryBus;
         private List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-        private List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, QueryResponseMessage<?>>> resultInterceptors = new CopyOnWriteArrayList<>();
+        private List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors = new CopyOnWriteArrayList<>();
 
         /**
          * Sets the {@link QueryBus} used to dispatch queries.
@@ -225,7 +278,7 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
          */
         @SafeVarargs
         public final Builder resultInterceptors(
-                ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, QueryResponseMessage<?>>... resultInterceptors) {
+                ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>... resultInterceptors) {
             return resultInterceptors(asList(resultInterceptors));
         }
 
@@ -237,7 +290,7 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder resultInterceptors(
-                List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, QueryResponseMessage<?>>> resultInterceptors) {
+                List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors) {
             this.resultInterceptors = resultInterceptors != null && resultInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(resultInterceptors)
                     : new CopyOnWriteArrayList<>();

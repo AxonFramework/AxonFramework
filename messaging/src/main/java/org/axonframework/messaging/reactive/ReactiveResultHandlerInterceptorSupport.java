@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.reactive;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 
 /**
- * Interface marking components capable of registering a {@link ReactiveMessageDispatchInterceptor}. Generally, these are messaging
- * components injected into the sending end of the communication.
- *
  * @param <M>
  * @param <R>
  * @author Milan Savic
  * @since 4.4
  */
-public interface ReactiveMessageDispatchInterceptorSupport<M extends Message<?>, R extends ResultMessage<?>> {
-
-    /**
-     * Register the given {@link ReactiveMessageDispatchInterceptor}. After registration, the interceptor will be invoked for each
-     * message dispatched on the messaging component that it was registered to.
-     *
-     * @param interceptor The reactive interceptor to register
-     * @return a Registration, which may be used to unregister the interceptor
-     */
-    Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<M> interceptor);
-
+public interface ReactiveResultHandlerInterceptorSupport<M extends Message<?>, R extends ResultMessage<?>> {
 
     Registration registerResultHandlerInterceptor(ReactiveResultHandlerInterceptor<M, R> interceptor);
 }

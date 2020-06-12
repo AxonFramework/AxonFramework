@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling;
+package org.axonframework.messaging.reactive;
 
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ResultMessage;
-
-import java.util.Map;
+import reactor.core.publisher.Flux;
 
 /**
- * Message which holds incremental update of an subscription query.
- *
- * @param <U> type of incremental update
- * @author Milan Savic
- * @since 3.3
+ * @author Sara Pellegrini
+ * @since 4.4
  */
-public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
+@FunctionalInterface
+public interface ReactiveResultHandlerInterceptor<M extends Message<?>, R extends ResultMessage<?>> {
 
-    @Override
-    SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData);
-
-    @Override
-    SubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData);
+    Flux<R> intercept(M message, Flux<R> results);
 }

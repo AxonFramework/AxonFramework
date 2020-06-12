@@ -26,6 +26,7 @@ import reactor.core.publisher.FluxSink;
 
 /**
  * @author Stefan Dragisic
+ * @since 4.4
  */
 public class ReactiveCallback<C, R> implements Publisher<CommandResultMessage<? extends R>>
         , CommandCallback<C, R> {

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.reactive;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -44,7 +46,7 @@ public interface  ReactiveMessageDispatchInterceptor<M extends Message<?>> exten
     Mono<M> intercept(Mono<M> message);
 
     @Override
-    default BiFunction handle(List messages) {
-        return null; //TODO
+    default BiFunction<Integer, M, M> handle(List<? extends M> messages) {
+        return (position, message) -> intercept(Mono.just(message)).block();
     }
 }

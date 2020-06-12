@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -28,7 +27,6 @@ import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -51,6 +49,8 @@ class ReactorCommandGatewayTest {
     @BeforeEach
     void setUp() {
         CommandBus commandBus = AsynchronousCommandBus.builder().build();
+
+
         mockRetryScheduler = mock(RetryScheduler.class);
         commandMessageHandler = spy(new MessageHandler<CommandMessage<?>>() {
 

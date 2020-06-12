@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Generic {@link SubscriptionQueryUpdateMessage} which holds incremental update of an subscription query.
@@ -93,6 +94,18 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
      */
     protected GenericSubscriptionQueryUpdateMessage(Message<U> delegate) {
         super(delegate);
+    }
+
+    @Override
+    public boolean isExceptional() {
+        // TODO: 6/10/2020
+        return false;
+    }
+
+    @Override
+    public Optional<Throwable> optionalExceptionResult() {
+        // TODO: 6/10/2020
+        return Optional.empty();
     }
 
     @Override

@@ -25,6 +25,7 @@ import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -82,6 +83,16 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     @Override
     public Class<U> getPayloadType() {
         return serializedPayload.getType();
+    }
+
+    @Override
+    public boolean isExceptional() {
+        return false;
+    }
+
+    @Override
+    public Optional<Throwable> optionalExceptionResult() {
+        return Optional.empty();
     }
 
     @Override
