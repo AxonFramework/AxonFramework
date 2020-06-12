@@ -159,10 +159,7 @@ public class ReactorQueryGateway implements ReactiveQueryGateway {
             SubscriptionQueryMessage<Q, I, U> queryMessage, SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
         Mono<SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>> result = Mono
-                .fromCallable(() -> {
-                    System.out.println(Thread.currentThread() + " before dispatch");
-                    return queryBus.subscriptionQuery(queryMessage, backpressure, updateBufferSize);
-                });
+                .fromCallable(() -> queryBus.subscriptionQuery(queryMessage, backpressure, updateBufferSize));
         return Mono.<QueryMessage<Q, I>>just(queryMessage)
                 .zipWith(Mono.just(result));
     }
