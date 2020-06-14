@@ -16,6 +16,8 @@
 package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
@@ -47,6 +49,7 @@ import java.util.function.Function;
 public class GlobalMetricRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalMetricRegistry.class);
+    public static final String EVENT_PROCESSOR_METRICS_NAME = "eventProcessor";
 
     private final MeterRegistry registry;
 
@@ -94,7 +97,13 @@ public class GlobalMetricRegistry {
      */
     public MessageMonitor<? extends Message<?>> registerComponent(Class<?> componentType, String componentName) {
         if (EventProcessor.class.isAssignableFrom(componentType)) {
-            return registerEventProcessor(componentName);
+            // TODO This will introduce a breaking change on the metrics API level, as it will change the name of the metrics.
+            // The name of the metrics is fixed to "eventProcessor" now, and the processor name is not part/prefix of the metrics name any more. It is a meter tag/dimension now.
+            return registerEventProcessor(EVENT_PROCESSOR_METRICS_NAME,
+                                          message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG,
+                                                             message.getPayloadType().getSimpleName(),
+                                                             TagsUtil.PROCESSOR_NAME_TAG,
+                                                             componentName));
         }
         if (CommandBus.class.isAssignableFrom(componentType)) {
             return registerCommandBus(componentName);
@@ -118,12 +127,40 @@ public class GlobalMetricRegistry {
      * @param name the name under which the EventProcessor should be registered to the registry
      * @return MessageMonitor to monitor the behavior of an EventProcessor
      */
+    @Deprecated
     public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String name) {
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry);
         EventProcessorLatencyMonitor eventProcessorLatencyMonitor = EventProcessorLatencyMonitor.buildMonitor(name,
                                                                                                               registry);
         CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry);
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name, registry);
+
+        List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
+        monitors.add(messageTimerMonitor);
+        monitors.add(eventProcessorLatencyMonitor);
+        monitors.add(capacityMonitor);
+        monitors.add(messageCountingMonitor);
+        return new MultiMessageMonitor<>(monitors);
+    }
+
+    /**
+     * Registers new metrics to the registry to monitor an {@link EventProcessor}. The monitor will be registered with
+     * the registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
+     * on the event processor to initiate the monitoring.
+     *
+     * @param name        The name under which the EventProcessor should be registered to the registry
+     * @param tagsBuilder The function used to construct the list of micrometer tags, based on the ingested message
+     * @return The messageMonitor to monitor the behavior of an EventProcessor
+     */
+    public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String name,
+                                                                          Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry, tagsBuilder);
+        EventProcessorLatencyMonitor eventProcessorLatencyMonitor = EventProcessorLatencyMonitor.buildMonitor(name,
+                                                                                                              registry);
+        CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry, tagsBuilder);
+        MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name,
+                                                                                            registry,
+                                                                                            tagsBuilder);
 
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(messageTimerMonitor);

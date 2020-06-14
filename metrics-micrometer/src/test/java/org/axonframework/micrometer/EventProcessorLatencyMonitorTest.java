@@ -46,11 +46,14 @@ class EventProcessorLatencyMonitorTest {
     void testMessages() {
         EventProcessorLatencyMonitor testSubject = EventProcessorLatencyMonitor.buildMonitor(METER_NAME_PREFIX,
                                                                                              meterRegistry);
-        EventMessage<?> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
 
-        EventMessage<?> secondEventMessage = mock(EventMessage.class);
+        EventMessage<String> firstEventMessage = mock(EventMessage.class);
+        when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
+        when(firstEventMessage.getPayloadType()).thenReturn(String.class);
+
+        EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
+        when(secondEventMessage.getPayloadType()).thenReturn(Integer.class);
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
@@ -64,11 +67,13 @@ class EventProcessorLatencyMonitorTest {
     void testFailureMessage() {
         EventProcessorLatencyMonitor testSubject = EventProcessorLatencyMonitor.buildMonitor(METER_NAME_PREFIX,
                                                                                              meterRegistry);
-        EventMessage<?> firstEventMessage = mock(EventMessage.class);
+        EventMessage<String> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
+        when(firstEventMessage.getPayloadType()).thenReturn(String.class);
 
-        EventMessage<?> secondEventMessage = mock(EventMessage.class);
+        EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
+        when(secondEventMessage.getPayloadType()).thenReturn(Integer.class);
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
@@ -76,16 +81,5 @@ class EventProcessorLatencyMonitorTest {
 
         Gauge latencyGauge = Objects.requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".latency").gauge());
         assertEquals(1000, latencyGauge.value(), 0);
-    }
-
-    @Test
-    void testNullMessage() {
-        EventProcessorLatencyMonitor testSubject = EventProcessorLatencyMonitor.buildMonitor(METER_NAME_PREFIX,
-                                                                                             meterRegistry);
-        MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
-        monitorCallback.reportSuccess();
-
-        Gauge latencyGauge = Objects.requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".latency").gauge());
-        assertEquals(0, latencyGauge.value(), 0);
     }
 }
