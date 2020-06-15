@@ -839,8 +839,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         @Override
         public DomainEventStream readEvents(String identifier) {
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
-                throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture " +
-                                                      "to get the aggregate identifier to use");
+                String exceptionMessage = format(
+                        "The aggregate identifier used in the 'when' step does not resemble the aggregate identifier"
+                                + " used in the 'given' step. "
+                                + "Please make sure the when-identifier [%s] resembles the given-identifier [%s].",
+                        identifier, aggregateIdentifier
+                );
+                throw new EventStoreException(exceptionMessage);
             } else if (aggregateIdentifier == null) {
                 aggregateIdentifier = identifier;
                 injectAggregateIdentifier();

@@ -46,6 +46,11 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
+    void testIdentifierIsPresent() {
+        assertTrue(testSubject.retrieveStorageIdentifier().isPresent());
+    }
+
+    @Test
     void testInitializeTokensAtGivenPosition() {
         testSubject.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
 

@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hibernate.dialect.HSQLDialect;
@@ -55,6 +56,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -108,6 +110,28 @@ public class JpaTokenStoreTest {
         assertEquals(1, tokens.size());
         assertNotNull(tokens.get(0).getOwner());
         assertNull(tokens.get(0).getToken(XStreamSerializer.builder().build()));
+    }
+
+    @Transactional
+    @Test
+    void testIdentifierInitializedOnDemand() {
+        Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
+        assertTrue(id1.isPresent());
+        Optional<String> id2 = jpaTokenStore.retrieveStorageIdentifier();
+        assertTrue(id2.isPresent());
+        assertEquals(id1.get(), id2.get());
+    }
+    @Transactional
+    @Test
+    void testIdentifierReadIfAvailable() {
+        entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")), jpaTokenStore.serializer() ));
+        Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
+        assertTrue(id1.isPresent());
+        Optional<String> id2 = jpaTokenStore.retrieveStorageIdentifier();
+        assertTrue(id2.isPresent());
+        assertEquals(id1.get(), id2.get());
+
+        assertEquals("test", id1.get());
     }
 
     @Transactional

@@ -99,7 +99,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.*;
+import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.ACK;
+import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.QUERY;
+import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.numberOfResults;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -607,7 +609,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 StreamObserver<QueryProviderOutbound> subscriberStreamObserver = getSubscriberObserver(context);
                 subscribedQueries.forEach((queryDefinition, handlers) -> subscriberStreamObserver.onNext(
                         QueryProviderOutbound.newBuilder()
-                                             .setSubscribe(buildQuerySubscription(queryDefinition, handlers.size()))
+                                             .setSubscribe(buildQuerySubscription(queryDefinition))
                                              .build()
                 ));
             } catch (Exception ex) {
@@ -636,7 +638,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                          .setComponentName(componentName)
                                          .setQuery(queryName)
                                          .setResultName(responseType.getTypeName())
-                                         .setNrOfHandlers(registrations.size())
                                          .build()).build()
                 );
             } catch (Exception ex) {
@@ -777,7 +778,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             try {
                 getSubscriberObserver(context).onNext(
                         QueryProviderOutbound.newBuilder()
-                                             .setUnsubscribe(buildQuerySubscription(queryDefinition, 1))
+                                             .setUnsubscribe(buildQuerySubscription(queryDefinition))
                                              .build()
                 );
             } catch (Exception ignored) {
@@ -811,13 +812,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             }
         }
 
-        private QuerySubscription buildQuerySubscription(QueryDefinition queryDefinition, int nrHandlers) {
+        private QuerySubscription buildQuerySubscription(QueryDefinition queryDefinition) {
             return QuerySubscription.newBuilder()
                                     .setClientId(configuration.getClientId())
                                     .setMessageId(UUID.randomUUID().toString())
                                     .setComponentName(queryDefinition.componentName)
                                     .setQuery(queryDefinition.queryName)
-                                    .setNrOfHandlers(nrHandlers)
                                     .setResultName(queryDefinition.responseName)
                                     .build();
         }
