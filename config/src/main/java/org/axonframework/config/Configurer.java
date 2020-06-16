@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
@@ -445,6 +446,17 @@ public interface Configurer {
      * @return the current instance of the Configurer, for chaining purposes
      */
     Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
+
+    /**
+     * Registers a {@link Snapshotter} instance with this {@link Configurer}. Defaults to a {@link
+     * org.axonframework.eventsourcing.AggregateSnapshotter} implementation.
+     *
+     * @param snapshotterBuilder the builder function for the {@link Snapshotter}
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    default Configurer configureSnapshotter(Function<Configuration, Snapshotter> snapshotterBuilder) {
+        return registerComponent(Snapshotter.class, snapshotterBuilder);
+    }
 
     /**
      * Retrieve the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't

@@ -23,6 +23,7 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -334,6 +335,15 @@ public interface Configuration {
      */
     default DeadlineManager deadlineManager() {
         return getComponent(DeadlineManager.class);
+    }
+
+    /**
+     * Returns the {@link Snapshotter} defined in this Configuration.
+     *
+     * @return the {@link Snapshotter} defined in this Configuration
+     */
+    default Snapshotter snapshotter() {
+        return getComponent(Snapshotter.class);
     }
 
     /**
