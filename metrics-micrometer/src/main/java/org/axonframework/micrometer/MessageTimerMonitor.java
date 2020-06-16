@@ -73,7 +73,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
      * @param clock           The clock used to measure the process time per message
-     * @return the message timer monitor (with the default tag `payloadType`)
+     * @return the message timer monitor (with the default {@link Tag} `payloadType`)
      */
     public static MessageTimerMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, Clock clock) {
         return new MessageTimerMonitor(meterNamePrefix, meterRegistry, clock);

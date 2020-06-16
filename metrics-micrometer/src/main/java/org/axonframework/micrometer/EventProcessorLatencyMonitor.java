@@ -62,7 +62,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the created event processor latency monitor
+     * @return the created event processor latency monitor (with the default {@link Tag} `payloadType`)
      */
     public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
         return new EventProcessorLatencyMonitor(meterNamePrefix, meterRegistry);

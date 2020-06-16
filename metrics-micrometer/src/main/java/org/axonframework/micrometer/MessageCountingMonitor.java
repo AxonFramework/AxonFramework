@@ -63,7 +63,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the message counting monitor (with the default tag `payloadType`)
+     * @return the message counting monitor (with the default {@link Tag} `payloadType`)
      */
     public static MessageCountingMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
 

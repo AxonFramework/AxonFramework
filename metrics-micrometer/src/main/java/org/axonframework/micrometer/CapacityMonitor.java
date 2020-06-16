@@ -59,7 +59,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the created capacity monitor
+     * @return the created capacity monitor (with the default {@link Tag} `payloadType`)
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
         return buildMonitor(meterNamePrefix, meterRegistry, 10, TimeUnit.MINUTES);
@@ -85,7 +85,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @param meterRegistry   The meter registry used to create and register the meters
      * @param window          The length of the window to measure the capacity over
      * @param timeUnit        The temporal unit of the time window
-     * @return the created capacity monitor (with the default tag `payloadType`)
+     * @return the created capacity monitor (with the default {@link Tag} `payloadType`)
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
                                                TimeUnit timeUnit) {
@@ -116,7 +116,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @param window          The length of the window to measure the capacity over
      * @param timeUnit        The temporal unit of the time window
      * @param clock           The clock used to measure the process time per message
-     * @return the created capacity monitor (with the default tag `payloadType`)
+     * @return the created capacity monitor (with the default {@link Tag} `payloadType`)
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
                                                TimeUnit timeUnit, Clock clock) {
