@@ -69,7 +69,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     }
 
     /**
-     * Creates an event processor latency monitor
+     * Creates an event processor latency monitor.
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
