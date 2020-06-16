@@ -79,7 +79,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
     }
 
     /**
-     * Creates a capacity monitor with the default system clock
+     * Creates a capacity monitor with the default system clock.
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
