@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.Repository;
 
@@ -42,6 +43,13 @@ public interface AggregateConfiguration<A> extends ModuleConfiguration {
      * @return the type of Aggregate defined in this configuration
      */
     Class<A> aggregateType();
+
+    /**
+     * Returns the {@link AggregateFactory} defined in this configuration.
+     *
+     * @return the {@link AggregateFactory} defined in this configuration.
+     */
+    AggregateFactory<A> aggregateFactory();
 
     /**
      * Returns the {@link SnapshotFilter} defined in this configuration.

@@ -405,6 +405,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     @Override
+    public AggregateFactory<A> aggregateFactory() {
+        return aggregateFactory.get();
+    }
+
+    @Override
     public SnapshotFilter snapshotFilter() {
         return snapshotFilter.get();
     }

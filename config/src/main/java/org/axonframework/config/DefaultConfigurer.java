@@ -51,7 +51,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
@@ -728,21 +727,6 @@ public class DefaultConfigurer implements Configurer {
     }
 
     private class ConfigurationImpl implements Configuration {
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> Repository<T> repository(Class<T> aggregateType) {
-            return DefaultConfigurer.this.modules
-                    .stream()
-                    .filter(AggregateConfiguration.class::isInstance)
-                    .map(moduleConfig -> (AggregateConfiguration<T>) moduleConfig)
-                    .filter(aggregateConfig -> aggregateConfig.aggregateType().isAssignableFrom(aggregateType))
-                    .findFirst()
-                    .map(AggregateConfiguration::repository)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Aggregate " + aggregateType.getSimpleName() + " has not been configured"
-                    ));
-        }
 
         @Override
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
