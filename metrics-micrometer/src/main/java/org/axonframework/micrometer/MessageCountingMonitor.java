@@ -33,11 +33,11 @@ import java.util.function.Function;
  */
 public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
 
-    public static final String INGESTED_COUNTER = ".ingestedCounter";
-    public static final String SUCCESS_COUNTER = ".successCounter";
-    public static final String FAILURE_COUNTER = ".failureCounter";
-    public static final String PROCESSED_COUNTER = ".processedCounter";
-    public static final String IGNORED_COUNTER = ".ignoredCounter";
+    private static final String INGESTED_COUNTER = ".ingestedCounter";
+    private static final String SUCCESS_COUNTER = ".successCounter";
+    private static final String FAILURE_COUNTER = ".failureCounter";
+    private static final String PROCESSED_COUNTER = ".processedCounter";
+    private static final String IGNORED_COUNTER = ".ignoredCounter";
 
     private final String meterNamePrefix;
     private final MeterRegistry meterRegistry;
