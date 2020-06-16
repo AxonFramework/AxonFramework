@@ -35,6 +35,8 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @author Marijn van Zelst
  * @since 4.1
+ * @deprecated As of release 4.4, replaced by specific monitors {@link MessageCountingMonitor}, {@link CapacityMonitor},
+ * {@link EventProcessorLatencyMonitor}, {@link MessageCountingMonitor}
  */
 @Deprecated
 public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>>>

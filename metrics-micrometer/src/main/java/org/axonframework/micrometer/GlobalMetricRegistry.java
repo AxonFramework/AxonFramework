@@ -126,6 +126,8 @@ public class GlobalMetricRegistry {
      *
      * @param name the name under which the EventProcessor should be registered to the registry
      * @return MessageMonitor to monitor the behavior of an EventProcessor
+     *
+     * @deprecated As of release 4.4, replaced by {@link #registerEventProcessor(String, Function)}
      */
     @Deprecated
     public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String name) {
