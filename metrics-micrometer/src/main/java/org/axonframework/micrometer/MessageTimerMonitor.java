@@ -80,7 +80,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
     }
 
     /**
-     * Creates a message timer monitor
+     * Creates a message timer monitor.
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
