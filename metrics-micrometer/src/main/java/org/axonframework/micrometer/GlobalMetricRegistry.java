@@ -97,8 +97,6 @@ public class GlobalMetricRegistry {
      */
     public MessageMonitor<? extends Message<?>> registerComponent(Class<?> componentType, String componentName) {
         if (EventProcessor.class.isAssignableFrom(componentType)) {
-            // TODO This will introduce a breaking change on the metrics API level, as it will change the name of the metrics.
-            // The name of the metrics is fixed to "eventProcessor" now, and the processor name is not part/prefix of the metrics name any more. It is a meter tag/dimension now.
             return registerEventProcessor(EVENT_PROCESSOR_METRICS_NAME,
                                           message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG,
                                                              message.getPayloadType().getSimpleName(),
@@ -158,7 +156,8 @@ public class GlobalMetricRegistry {
                                                                           Function<Message<?>, Iterable<Tag>> tagsBuilder) {
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry, tagsBuilder);
         EventProcessorLatencyMonitor eventProcessorLatencyMonitor = EventProcessorLatencyMonitor.buildMonitor(name,
-                                                                                                              registry);
+                                                                                                              registry,
+                                                                                                              tagsBuilder);
         CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry, tagsBuilder);
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name,
                                                                                             registry,
