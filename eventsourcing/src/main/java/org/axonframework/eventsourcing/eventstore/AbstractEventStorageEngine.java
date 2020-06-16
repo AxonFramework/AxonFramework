@@ -319,7 +319,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          */
         @Deprecated
         public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            return snapshotFilter((SnapshotFilter) snapshotFilter::test);
+            return snapshotFilter(snapshotFilter::test);
         }
 
         /**

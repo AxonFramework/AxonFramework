@@ -18,6 +18,8 @@ package org.axonframework.eventsourcing.snapshotting;
 
 import org.axonframework.eventhandling.DomainEventData;
 
+import java.util.function.Predicate;
+
 /**
  * Functional interface defining a filter of snapshot data in the form of {@link DomainEventData}. When providing an
  * instance of this, take the following into account:
@@ -39,7 +41,7 @@ import org.axonframework.eventhandling.DomainEventData;
  * @since 4.4
  */
 @FunctionalInterface
-public interface SnapshotFilter {
+public interface SnapshotFilter extends Predicate<DomainEventData<?>> {
 
     /**
      * Function applied to filter out snapshot data in the form of a {@link DomainEventData}. Return {@code true} if the
@@ -49,6 +51,11 @@ public interface SnapshotFilter {
      * @return {@code true} if the data should be kept and {@code false} if it should be dropped
      */
     boolean filter(DomainEventData<?> snapshotData);
+
+    @Override
+    default boolean test(DomainEventData<?> snapshotData) {
+        return filter(snapshotData);
+    }
 
     /**
      * Combines {@code this} {@link SnapshotFilter} with the give {@code other} filter in an "AND" operation,
@@ -77,6 +84,8 @@ public interface SnapshotFilter {
      *
      * @return a new {@link SnapshotFilter} negating the outcome of {@code this}
      */
+    @Override
+    @SuppressWarnings("NullableProblems") // Correct override for Predicate#negate() in place, but warning persists.
     default SnapshotFilter negate() {
         return new NegateSnapshotFilter(this);
     }
