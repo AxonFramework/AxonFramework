@@ -172,14 +172,8 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
                                            .map(tag -> tag.getKey() + tag.getValue())
                                            .reduce(String::concat)
                                            .orElse("");
-        SlidingTimeWindowReservoir value;
-        if ((value = timeWindowedDurationMeasurementsMap.get(key)) == null) {
-            SlidingTimeWindowReservoir newValue = new SlidingTimeWindowReservoir(window, timeUnit, clock);
-            timeWindowedDurationMeasurementsMap.put(key, newValue);
-            return newValue;
-        }
-
-        return value;
+        timeWindowedDurationMeasurementsMap.putIfAbsent(key, new SlidingTimeWindowReservoir(window, timeUnit, clock));
+        return timeWindowedDurationMeasurementsMap.get(key);
     }
 
     @Override
