@@ -16,16 +16,19 @@
 
 package org.axonframework.eventhandling.async;
 
+import org.axonframework.eventhandling.EventMessage;
+
 /**
  * SequencingPolicy that does not enforce any sequencing requirements on event processing.
  *
  * @author Allard Buijze
+ * @author Henrique Sena
  * @since 0.3
  */
-public class FullConcurrencyPolicy implements SequencingPolicy<Object> {
+public class FullConcurrencyPolicy implements SequencingPolicy<EventMessage<?>> {
 
     @Override
-    public Object getSequenceIdentifierFor(Object event) {
-        return null;
+    public Object getSequenceIdentifierFor(EventMessage<?> event) {
+        return event.getIdentifier();
     }
 }

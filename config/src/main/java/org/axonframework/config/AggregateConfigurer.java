@@ -394,6 +394,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         return aggregate;
     }
 
+    @Override
+    public AggregateFactory<A> aggregateFactory() {
+        return aggregateFactory.get();
+    }
+
     /**
      * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this
      * subtypes will be considered part of this aggregate's handlers.
