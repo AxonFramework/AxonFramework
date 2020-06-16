@@ -96,6 +96,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -438,8 +439,11 @@ public class DefaultConfigurer implements Configurer {
      * @return the default {@link Snapshotter}
      */
     protected Snapshotter defaultSnapshotter(Configuration config) {
-        //noinspection rawtypes
-        List<AggregateConfiguration> aggregateConfigurations = config.findModules(AggregateConfiguration.class);
+        List<AggregateConfiguration<?>> aggregateConfigurations =
+                config.findModules(AggregateConfiguration.class)
+                      .stream()
+                      .map(aggregateConfiguration -> (AggregateConfiguration<?>) aggregateConfiguration)
+                      .collect(Collectors.toList());
         List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
         for (AggregateConfiguration<?> aggregateConfiguration : aggregateConfigurations) {
             aggregateFactories.add(aggregateConfiguration.aggregateFactory());
@@ -461,9 +465,8 @@ public class DefaultConfigurer implements Configurer {
      * latter to be to much of an edge case. Hence we assume users will use the same ClassLoader for differing
      * aggregates within a single configuration.
      */
-    @SuppressWarnings("rawtypes")
     private HandlerDefinition retrieveHandlerDefinition(Configuration configuration,
-                                                        List<AggregateConfiguration> aggregateConfigurations) {
+                                                        List<AggregateConfiguration<?>> aggregateConfigurations) {
         return configuration.handlerDefinition(aggregateConfigurations.get(0).aggregateType());
     }
 
