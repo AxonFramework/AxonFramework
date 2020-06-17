@@ -44,6 +44,10 @@ public class MetricsConfigurerModule implements ConfigurerModule {
 
     @Override
     public void configureModule(Configurer configurer) {
-        globalMetricRegistry.registerWithConfigurer(configurer);
+        if (useDimensions) {
+            globalMetricRegistry.registerWithConfigurerWithDefaultTags(configurer);
+        } else {
+            globalMetricRegistry.registerWithConfigurer(configurer);
+        }
     }
 }
