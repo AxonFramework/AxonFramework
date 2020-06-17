@@ -28,6 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class MetricsProperties {
 
     private AutoConfiguration autoConfiguration = new AutoConfiguration();
+    private Micrometer micrometer = new Micrometer();
 
     /**
      * Retrieves the AutoConfiguration settings for Metrics
@@ -45,6 +46,24 @@ public class MetricsProperties {
      */
     public void setAutoConfiguration(AutoConfiguration autoConfiguration) {
         this.autoConfiguration = autoConfiguration;
+    }
+
+    /**
+     * Retrieves the Micrometer specific settings for Metrics
+     *
+     * @return the Micrometer settings for Metrics
+     */
+    public Micrometer getMicrometer() {
+        return micrometer;
+    }
+
+    /**
+     * Defines the Micrometer settings for Metrics.
+     *
+     * @param micrometer the Micrometer settings for Metrics.
+     */
+    public void setMicrometer(Micrometer micrometer) {
+        this.micrometer = micrometer;
     }
 
     /**
@@ -74,6 +93,32 @@ public class MetricsProperties {
          */
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+    }
+
+    public static class Micrometer {
+
+        /**
+         * Enables Micrometer tags for this application.
+         */
+        private boolean dimensional = false;
+
+        /**
+         * Indicates whether the Micrometer Tags/Dimensions will be used
+         *
+         * @return true if the Micrometer Tags/Dimensions will be used, false if otherwise
+         */
+        public boolean isDimensional() {
+            return dimensional;
+        }
+
+        /**
+         * Disables (if {@code false}, default) or enables (if {@code true}) the usage of Micrometer Tags/Dimensions
+         *
+         * @param dimensional whether the Micrometer Tags/Dimensions will be used
+         */
+        public void setDimensional(boolean dimensional) {
+            this.dimensional = dimensional;
         }
     }
 }

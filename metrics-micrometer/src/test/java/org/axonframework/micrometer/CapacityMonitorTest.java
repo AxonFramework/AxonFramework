@@ -38,10 +38,42 @@ import static org.junit.jupiter.api.Assertions.*;
 class CapacityMonitorTest {
 
     @Test
-    void testCapacity() {
+    void testCapacityWithoutTags() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
-        CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1", meterRegistry, 1, TimeUnit.SECONDS, testClock);
+        CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1",
+                                                                   meterRegistry,
+                                                                   1,
+                                                                   TimeUnit.SECONDS,
+                                                                   testClock);
+
+        EventMessage<Object> foo = asEventMessage(1);
+        EventMessage<Object> bar = asEventMessage("bar");
+        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+                .onMessagesIngested(Arrays.asList(foo, bar));
+
+        testClock.addSeconds(1);
+
+        callbacks.get(foo).reportSuccess();
+        callbacks.get(bar).reportFailure(null);
+
+        Gauge capacityGauge = meterRegistry.get("1.capacity").gauge();
+        assertEquals(2, capacityGauge.value(), 0);
+    }
+
+    @Test
+    void testCapacityWithPayloadTypeAsCustomTag() {
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1",
+                                                                   meterRegistry,
+                                                                   1,
+                                                                   TimeUnit.SECONDS,
+                                                                   testClock,
+                                                                   message -> Tags
+                                                                           .of(TagsUtil.PAYLOAD_TYPE_TAG,
+                                                                               message.getPayloadType()
+                                                                                      .getSimpleName()));
 
         EventMessage<Object> foo = asEventMessage(1);
         EventMessage<Object> bar = asEventMessage("bar");
@@ -62,7 +94,7 @@ class CapacityMonitorTest {
     }
 
     @Test
-    void testCapacityWithCustomTags() {
+    void testCapacityWithMetadataAsCustomTag() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1",

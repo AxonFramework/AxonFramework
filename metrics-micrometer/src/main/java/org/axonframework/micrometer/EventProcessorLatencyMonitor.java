@@ -46,7 +46,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     private EventProcessorLatencyMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
         this(meterNamePrefix,
              meterRegistry,
-             message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()));
+             message -> Tags.empty());
     }
 
     private EventProcessorLatencyMonitor(String meterNamePrefix,
@@ -62,7 +62,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the created event processor latency monitor (with the default {@link Tag} `payloadType`)
+     * @return The created event processor latency monitor
      */
     public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
         return new EventProcessorLatencyMonitor(meterNamePrefix, meterRegistry);
@@ -73,8 +73,9 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @param tagsBuilder     The function used to construct the list of micrometer tags, based on the ingested message
-     * @return the created event processor latency monitor
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
+     * @return The created event processor latency monitor
      */
     public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
                                                             Function<Message<?>, Iterable<Tag>> tagsBuilder) {

@@ -59,7 +59,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the created capacity monitor (with the default {@link Tag} `payloadType`)
+     * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
         return buildMonitor(meterNamePrefix, meterRegistry, 10, TimeUnit.MINUTES);
@@ -70,8 +70,9 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @param tagsBuilder     The function used to construct the list of micrometer tags, based on the ingested message
-     * @return the created capacity monitor
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
+     * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
                                                Function<Message<?>, Iterable<Tag>> tagsBuilder) {
@@ -85,7 +86,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @param meterRegistry   The meter registry used to create and register the meters
      * @param window          The length of the window to measure the capacity over
      * @param timeUnit        The temporal unit of the time window
-     * @return the created capacity monitor (with the default {@link Tag} `payloadType`)
+     * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
                                                TimeUnit timeUnit) {
@@ -99,8 +100,9 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @param meterRegistry   The meter registry used to create and register the meters
      * @param window          The length of the window to measure the capacity over
      * @param timeUnit        The temporal unit of the time window
-     * @param tagsBuilder     The function used to construct the list of micrometer tags, based on the ingested message
-     * @return the created capacity monitor
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
+     * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
                                                TimeUnit timeUnit, Function<Message<?>, Iterable<Tag>> tagsBuilder) {
@@ -116,7 +118,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @param window          The length of the window to measure the capacity over
      * @param timeUnit        The temporal unit of the time window
      * @param clock           The clock used to measure the process time per message
-     * @return the created capacity monitor (with the default {@link Tag} `payloadType`)
+     * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
                                                TimeUnit timeUnit, Clock clock) {
@@ -133,8 +135,9 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @param window          The length of the window to measure the capacity over
      * @param timeUnit        The temporal unit of the time window
      * @param clock           The clock used to measure the process time per message
-     * @param tagsBuilder     The function used to construct the list of micrometer tags, based on the ingested message
-     * @return the created capacity monitor
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
+     * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
                                                TimeUnit timeUnit, Clock clock,
@@ -151,7 +154,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
              clock,
              meterNamePrefix,
              meterRegistry,
-             message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()));
+             message -> Tags.empty());
     }
 
     private CapacityMonitor(long window, TimeUnit timeUnit, Clock clock, String meterNamePrefix,

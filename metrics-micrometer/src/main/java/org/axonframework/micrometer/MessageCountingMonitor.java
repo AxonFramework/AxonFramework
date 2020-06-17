@@ -47,7 +47,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
 
         this(meterNamePrefix,
              meterRegistry,
-             message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()));
+             message -> Tags.empty());
     }
 
 
@@ -63,7 +63,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the message counting monitor (with the default {@link Tag} `payloadType`)
+     * @return The message counting monitor
      */
     public static MessageCountingMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
 
@@ -75,8 +75,9 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @param tagsBuilder     The function used to construct the list of micrometer tags, based on the ingested message
-     * @return the message counting monitor
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
+     * @return The message counting monitor
      */
     public static MessageCountingMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
                                                       Function<Message<?>, Iterable<Tag>> tagsBuilder) {

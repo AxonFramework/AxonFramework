@@ -31,9 +31,15 @@ import org.axonframework.config.ConfigurerModule;
 public class MetricsConfigurerModule implements ConfigurerModule {
 
     private final GlobalMetricRegistry globalMetricRegistry;
+    private final boolean useDimensions;
 
     public MetricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+        this(globalMetricRegistry, false);
+    }
+
+    public MetricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry, boolean useDimensions) {
         this.globalMetricRegistry = globalMetricRegistry;
+        this.useDimensions = useDimensions;
     }
 
     @Override

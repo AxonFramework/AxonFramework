@@ -33,22 +33,58 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
+
 
 class MessageTimerMonitorTest {
 
     private static final String PROCESSOR_NAME = "processorName";
 
     @Test
-    void testMessages() {
+    void testMessagesWithoutTags() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
         EventMessage<Object> foo = asEventMessage(1);
         EventMessage<Object> bar = asEventMessage("bar");
         EventMessage<Object> baz = asEventMessage("baz");
 
-        MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry, testClock);
+        MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME,
+                                                                           meterRegistry,
+                                                                           testClock);
+        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+                .onMessagesIngested(Arrays.asList(foo, bar, baz));
+        testClock.addSeconds(1);
+        callbacks.get(foo).reportSuccess();
+        callbacks.get(bar).reportFailure(null);
+        callbacks.get(baz).reportIgnored();
+
+        Timer all = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".allTimer").timer());
+        Timer successTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".successTimer").timer());
+        Timer failureTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".failureTimer").timer());
+        Timer ignoredTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".ignoredTimer").timer());
+
+        assertEquals(3, all.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(1, successTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(1, failureTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(1, ignoredTimer.totalTime(TimeUnit.SECONDS), 0);
+    }
+
+    @Test
+    void testMessagesWithPayloadTypeAsCustomTag() {
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
+        EventMessage<Object> foo = asEventMessage(1);
+        EventMessage<Object> bar = asEventMessage("bar");
+        EventMessage<Object> baz = asEventMessage("baz");
+
+        MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME,
+                                                                           meterRegistry,
+                                                                           testClock,
+                                                                           message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG,
+                                                                                              message.getPayloadType()
+                                                                                                     .getSimpleName()));
         Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar, baz));
         testClock.addSeconds(1);
@@ -92,7 +128,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testMessagesWithCustomTags() {
+    void testMessagesWithMetadataAsCustomTag() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
         EventMessage<Object> foo = asEventMessage("foo").withMetaData(Collections.singletonMap("myMetadataKey",

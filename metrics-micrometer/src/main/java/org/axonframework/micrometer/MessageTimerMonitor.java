@@ -48,7 +48,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the message timer monitor (with the default {@link Tag} `payloadType`)
+     * @return The message timer monitor
      */
     public static MessageTimerMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
         return buildMonitor(meterNamePrefix, meterRegistry, Clock.SYSTEM);
@@ -59,8 +59,9 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @param tagsBuilder     The function used to construct the list of micrometer tags, based on the ingested message
-     * @return the message timer monitor
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
+     * @return The message timer monitor
      */
     public static MessageTimerMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
                                                    Function<Message<?>, Iterable<Tag>> tagsBuilder) {
@@ -73,7 +74,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
      * @param clock           The clock used to measure the process time per message
-     * @return the message timer monitor (with the default {@link Tag} `payloadType`)
+     * @return The message timer monitor
      */
     public static MessageTimerMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, Clock clock) {
         return new MessageTimerMonitor(meterNamePrefix, meterRegistry, clock);
@@ -84,9 +85,10 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @param tagsBuilder     The function used to construct the list of micrometer tags, based on the ingested message
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
      * @param clock           The clock used to measure the process time per message
-     * @return the message timer monitor
+     * @return The message timer monitor
      */
     public static MessageTimerMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, Clock clock,
                                                    Function<Message<?>, Iterable<Tag>> tagsBuilder) {
@@ -117,7 +119,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
                                 Clock clock) {
         this(meterNamePrefix,
              meterRegistry,
-             message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()),
+             message -> Tags.empty(),
              clock);
     }
 
