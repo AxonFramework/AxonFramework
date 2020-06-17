@@ -114,19 +114,6 @@ import static java.util.stream.Collectors.toList;
  *
  * @author Allard Buijze
  * @since 3.0
- *
- * commandBus.counter.success=10
- * createOrder.commandBus.counter.success=1
- * updateOrder.commandBus.counter.success=9
- *
- *
- * commandBus.counter.success{payloadType=createOrder, ...}
- *
- * mojaSaga.counter.success=10
- * tvojaSaga.counter.success=14
- *
- *
- * eventProcessor.counter.success {paylodType=nesto, processorName=nesto}=24
  */
 public class DefaultConfigurer implements Configurer {
 
