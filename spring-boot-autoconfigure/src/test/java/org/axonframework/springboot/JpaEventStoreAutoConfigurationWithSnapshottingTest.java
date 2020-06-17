@@ -54,11 +54,11 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-@ContextConfiguration(classes = JpaEventStoreAutoConfigurationWithSnapshotting.TestContext.class)
+@ContextConfiguration(classes = JpaEventStoreAutoConfigurationWithSnapshottingTest.TestContext.class)
 @ExtendWith(SpringExtension.class)
 @EnableAutoConfiguration(exclude = {AxonServerAutoConfiguration.class})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-class JpaEventStoreAutoConfigurationWithSnapshotting {
+class JpaEventStoreAutoConfigurationWithSnapshottingTest {
 
     private static final String AGGREGATE_ID = "some-aggregate";
 
