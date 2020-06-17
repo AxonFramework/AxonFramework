@@ -34,9 +34,12 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
+import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -362,6 +365,37 @@ class DefaultConfigurerTest {
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(CachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
+    }
+
+    @Test
+    void testConfiguredSnapshotterDefaultsToAggregateSnapshotter() {
+        Snapshotter defaultSnapshotter = DefaultConfigurer.jpaConfiguration(() -> em)
+                                                          .configureAggregate(StubAggregate.class)
+                                                          .buildConfiguration().snapshotter();
+
+        assertTrue(defaultSnapshotter instanceof AggregateSnapshotter);
+    }
+
+    @Test
+    void testConfigureSnapshotterSetsCustomSnapshotter() {
+        Snapshotter expectedSnapshotter = mock(Snapshotter.class);
+
+        AggregateConfigurer<StubAggregate> aggregateConfigurer = defaultConfiguration(StubAggregate.class)
+                .configureSnapshotTrigger(configuration -> {
+                    Snapshotter resultSnapshotter = configuration.snapshotter();
+                    assertEquals(expectedSnapshotter, resultSnapshotter);
+                    return new EventCountSnapshotTriggerDefinition(resultSnapshotter, 42);
+                });
+
+        Configuration result = DefaultConfigurer.defaultConfiguration()
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .configureSnapshotter(configuration -> expectedSnapshotter)
+                                                .configureAggregate(aggregateConfigurer)
+                                                .buildConfiguration();
+        result.start();
+
+        assertEquals(expectedSnapshotter, result.snapshotter());
+        assertEquals(expectedSnapshotter, result.getComponent(Snapshotter.class));
     }
 
     @Test
