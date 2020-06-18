@@ -17,7 +17,6 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.command.AggregateMember;
@@ -44,21 +43,18 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
 
     @Override
     protected boolean isMemberTypeSupported(Member member) {
-        Class<?> valueType = ReflectionUtils.getMemberValueType(member)
-                                            .orElseThrow(() -> new AxonConfigurationException(String.format(
-                                                    "Failed to retrieve [%s]'s return value type",
-                                                    member.getName())));
-        return !Iterable.class.isAssignableFrom(valueType) && !Map.class.isAssignableFrom(valueType);
+        try {
+            Class<?> valueType = ReflectionUtils.getMemberValueType(member);
+            return !Iterable.class.isAssignableFrom(valueType) && !Map.class.isAssignableFrom(valueType);
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 
     @Override
     protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
                                                               Map<String, Object> attributes, Member member) {
-        Class<?> aClass = ReflectionUtils.getMemberValueType(member)
-                                         .orElseThrow(() -> new AxonConfigurationException(String.format(
-                                                 "Failed to retrieve [%s]'s return value type of [%s]",
-                                                 member.getName(),
-                                                 declaringEntity.getClass())));
+        Class<?> aClass = ReflectionUtils.getMemberValueType(member);
         return declaringEntity.modelOf(aClass);
     }
 

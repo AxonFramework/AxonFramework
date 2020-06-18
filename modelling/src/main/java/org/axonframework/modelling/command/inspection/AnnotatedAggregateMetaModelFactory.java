@@ -403,9 +403,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         private void assertIdentifierValidity(Member identifier) {
             if (identifier != null) {
-                final Class<?> idClazz = ReflectionUtils.getMemberValueType(identifier)
-                                                        .orElseThrow(() -> new AggregateModellingException(
-                                                                "Aggregate identifier is of unsupported type"));
+                final Class<?> idClazz = ReflectionUtils.getMemberValueType(identifier);
                 if (!IdentifierValidator.getInstance().isValidIdentifier(idClazz)) {
                     throw new AggregateModellingException(format(
                             "Aggregate identifier type [%s] should override Object.toString()",

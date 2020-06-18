@@ -347,10 +347,7 @@ public abstract class ReflectionUtils {
      * @return an optional that contains the resolved type, if found
      */
     public static Optional<Class<?>> resolveMemberGenericType(Member member, int genericTypeIndex) {
-        final Type genericType = getMemberGenericType(member)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Member type [%s] not supported",
-                                                                              ReflectionUtils
-                                                                                      .getMemberGenericString(member))));
+        final Type genericType = getMemberGenericType(member);
         if (!(genericType instanceof ParameterizedType)
                 || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
             return Optional.empty();
@@ -395,7 +392,7 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Method) {
             return (R) ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
         }
-        throw new IllegalStateException(String.format("Unsupported member [%s]", member.getClass().getName()));
+        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
     }
 
     /**
@@ -404,16 +401,17 @@ public abstract class ReflectionUtils {
      *
      * @param member The member to get the value type from
      * @return the type of value of the {@code member}
+     * @throws IllegalStateException if the member is not supported
      */
-    public static Optional<Class<?>> getMemberValueType(Member member) {
+    public static Class<?> getMemberValueType(Member member) {
         if (member instanceof Method) {
             final Method method = (Method) member;
-            return Optional.of(method.getReturnType());
+            return method.getReturnType();
         } else if (member instanceof Field) {
             final Field field = (Field) member;
-            return Optional.of(field.getType());
+            return field.getType();
         }
-        return Optional.empty();
+        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
     }
 
     /**
@@ -422,14 +420,15 @@ public abstract class ReflectionUtils {
      *
      * @param member The member to get generic type of
      * @return the generic type of value of the {@code member}
+     * @throws IllegalStateException if the member is not supported
      */
-    public static Optional<Type> getMemberGenericType(Member member) {
+    public static Type getMemberGenericType(Member member) {
         if (member instanceof Field) {
-            return Optional.of(((Field) member).getGenericType());
+            return ((Field) member).getGenericType();
         } else if (member instanceof Method) {
-            return Optional.of(((Method) member).getGenericReturnType());
+            return ((Method) member).getGenericReturnType();
         }
-        return Optional.empty();
+        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
     }
 
     /**
@@ -445,7 +444,7 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Executable) {
             return ((Executable) member).toGenericString();
         }
-        throw new IllegalStateException(String.format("Unsupported member [%s]", member.getClass().getName()));
+        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
     }
 
     private ReflectionUtils() {

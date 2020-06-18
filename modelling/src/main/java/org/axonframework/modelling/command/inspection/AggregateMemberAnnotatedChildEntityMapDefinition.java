@@ -49,11 +49,12 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
 
     @Override
     protected boolean isMemberTypeSupported(Member member) {
-        Class<?> memberValueType = ReflectionUtils.getMemberValueType(member)
-                                                  .orElseThrow(() -> new AxonConfigurationException(format(
-                                                          "Failed to retrieve [%s]'s return value type",
-                                                          member.getName())));
-        return Map.class.isAssignableFrom(memberValueType);
+        try {
+            Class<?> memberValueType = ReflectionUtils.getMemberValueType(member);
+            return Map.class.isAssignableFrom(memberValueType);
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 
     @Override

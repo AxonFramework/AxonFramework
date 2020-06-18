@@ -51,9 +51,12 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
 
     @Override
     protected boolean isMemberTypeSupported(Member member) {
-        return ReflectionUtils.getMemberValueType(member)
-                              .map(Iterable.class::isAssignableFrom)
-                              .orElse(false);
+        try {
+            return Iterable.class.isAssignableFrom(ReflectionUtils.getMemberValueType(member));
+        }
+        catch (IllegalStateException e) {
+            return false;
+        }
     }
 
     @Override
