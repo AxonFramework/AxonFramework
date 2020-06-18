@@ -25,11 +25,15 @@ import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
 
 /**
+ * Command Handler Callback that allows the dispatching thread to wait for the result of the callback, using the
+ * Project Reactor mechanisms. This callback allows the caller to synchronize calls when an asynchronous command bus is
+ * being used.
+ *
  * @author Stefan Dragisic
  * @since 4.4
  */
-public class ReactiveCallback<C, R> implements Publisher<CommandResultMessage<? extends R>>
-        , CommandCallback<C, R> {
+@SuppressWarnings("ReactiveStreamsPublisherImplementation")
+public class ReactiveCallback<C, R> implements Publisher<CommandResultMessage<? extends R>>, CommandCallback<C, R> {
 
     EmitterProcessor<CommandResultMessage<? extends R>> commandResultMessageEmitter = EmitterProcessor.create(1);
     FluxSink<CommandResultMessage<? extends R>> sink = commandResultMessageEmitter.sink();

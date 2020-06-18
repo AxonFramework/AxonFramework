@@ -90,6 +90,19 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
                 .map(resultMessage -> (R) resultMessage.getPayload());
     }
 
+    @Override
+    public Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
+    }
+
+    @Override
+    public Registration registerResultHandlerInterceptor(
+            ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>> interceptor) {
+        resultInterceptors.add(interceptor);
+        return () -> resultInterceptors.remove(interceptor);
+    }
+
     private Mono<CommandMessage<?>> processCommandInterceptors(Mono<CommandMessage<?>> commandMessage) {
         return Flux.fromIterable(dispatchInterceptors)
                    .reduce(commandMessage, (command, interceptor) -> interceptor.intercept(command))
@@ -115,19 +128,6 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
                    .reduce(commandResultMessages,
                            (result, interceptor) -> interceptor.intercept(commandMessage, result))
                    .flatMap(Flux::next); // command handlers provide only one result!
-    }
-
-    @Override
-    public Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
-        dispatchInterceptors.add(interceptor);
-        return () -> dispatchInterceptors.remove(interceptor);
-    }
-
-    @Override
-    public Registration registerResultHandlerInterceptor(
-            ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>> interceptor) {
-        resultInterceptors.add(interceptor);
-        return () -> resultInterceptors.remove(interceptor);
     }
 
     /**

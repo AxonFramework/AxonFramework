@@ -1,168 +1,213 @@
-/*
- * Copyright (c) 2010-2020. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.AsynchronousCommandBus;
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.MessageHandler;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link ReactorCommandGateway}.
+ * Unit tests for {@link DefaultReactorCommandGateway}.
  *
- * @author Milan Savic
+ * @author Sara Pellegrini
+ * @since 4.4
  */
-class DefaultReactorCommandGatewayTest {
+public class DefaultReactorCommandGatewayTest {
 
-    private DefaultReactorCommandGateway reactiveCommandGateway;
-    private MessageHandler<CommandMessage<?>> commandMessageHandler;
-    private RetryScheduler mockRetryScheduler;
+    private CommandBusStub commandBus;
+    private ReactorCommandGateway gateway;
 
     @BeforeEach
-    void setUp() {
-        CommandBus commandBus = AsynchronousCommandBus.builder().build();
-
-
-        mockRetryScheduler = mock(RetryScheduler.class);
-        commandMessageHandler = spy(new MessageHandler<CommandMessage<?>>() {
-
-            private final AtomicInteger count = new AtomicInteger();
-
-            @Override
-            public Object handle(CommandMessage<?> message) {
-                if ("backpressure".equals(message.getPayload())) {
-                    return count.incrementAndGet();
-                }
-                return "handled";
-            }
-        });
-        commandBus.subscribe(String.class.getName(), commandMessageHandler);
-        commandBus.subscribe(Integer.class.getName(), message -> {
-            throw new RuntimeException();
-        });
-        commandBus.subscribe(Boolean.class.getName(),
-                             message -> "" + message.getMetaData().getOrDefault("key1", "")
-                                     + message.getMetaData().getOrDefault("key2", ""));
-        reactiveCommandGateway = DefaultReactorCommandGateway.builder()
-                                                             .commandBus(commandBus)
-                                                             .retryScheduler(mockRetryScheduler)
-                                                             .build();
+    public void setUp() {
+        commandBus = new CommandBusStub();
+        gateway = DefaultReactorCommandGateway.builder()
+                                              .commandBus(commandBus)
+                                              .build();
     }
 
     @Test
-    void testSend() throws Exception {
-        Mono<String> result = reactiveCommandGateway.send("command");
-        verifyZeroInteractions(commandMessageHandler);
+    void testInterceptorOrder() {
+
+        // int 1 -> metadata on command k1 -> v1
+        Map<String, String> metadata1 = new HashMap<>();
+        metadata1.put("k1", "v1");
+        registerMessageMapping(gateway, command -> command.andMetaData(metadata1));
+
+        // int 2 -> copy metadata from command into results
+        registerResultMapping(gateway,
+                              (command, result) -> new GenericCommandResultMessage<>(command.getMetaData().get("k1")));
+
+        // int 3 -> metadata on command k1 -> v2
+        Map<String, String> metadata2 = new HashMap<>();
+        metadata1.put("k1", "v2");
+        registerMessageMapping(gateway, command -> command.andMetaData(metadata2));
+
+        //send
+        Mono<String> results = gateway.send("");
+
+        // verify -> results equals v2
+        StepVerifier.create(results)
+                    .expectNextMatches(result -> result.equals("v2"))
+                    .verifyComplete();
+
+        // verify -> command sent has k1 -> v2
+        CommandMessage<?> sentCommand = commandBus.lastSentCommand();
+        assertEquals("v2", sentCommand.getMetaData().get("k1"));
+    }
+
+    @Test
+    void testResultFiltering() {
+        registerResultsFilter(gateway, result -> result.getMetaData().containsKey("K"));
+        // int 1 -> flux of results is filtered
+
+        Mono<CommandResultMessage<?>> results = gateway.send("");
+        StepVerifier.create(results)
+                    .verifyComplete();
+        // verify -> command has been sent
+        assertEquals(1, commandBus.numberOfSentCommands());
+    }
+
+    @Test
+    void testCommandFiltering() {
+        registerMessageFilter(gateway, result -> result.getMetaData().containsKey("K"));
+        // int 1 -> flux of results is filtered
+
+        Mono<CommandResultMessage<?>> results = gateway.send("");
+        StepVerifier.create(results)
+                    .verifyComplete();
+        // verify -> command has not been sent
+        assertEquals(0, commandBus.numberOfSentCommands());
+    }
+
+    @Test
+    void testCommandDispatchAndResultHandlerInterceptor() {
+        // int 1 -> add Principal to command and results
+        Map<String, String> principalMetadata = new HashMap<>();
+        principalMetadata.put("username", "admin");
+        registerMapping(gateway,
+                        command -> command.andMetaData(principalMetadata),
+                        (command, result) -> result.andMetaData(principalMetadata));
+
+        // int 2 -> validate authorizations and results
+        registerMapping(gateway,
+                        command -> {
+                            assert command.getMetaData().get("username").equals("admin");
+                            return command;
+                        },
+                        (command, result) -> {
+                            assert result.getMetaData().get("username").equals("admin");
+                            return result;
+                        });
+
+        Mono<CommandResultMessage<?>> results = gateway.send("");
+
+        StepVerifier.create(results)
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+        assertEquals(1, commandBus.numberOfSentCommands());
+    }
+
+    @Test
+    void testCommandResultHandlerChain() {
+        // int 1 -> metadata on result k1 -> v1
+        Map<String, String> metadata1 = new HashMap<>();
+        metadata1.put("k1", "v1");
+        registerResultMapping(gateway, (command, result) -> result.andMetaData(metadata1));
+
+        // int 2 -> metadata on result k1 -> v2
+        Map<String, String> metadata2 = new HashMap<>();
+        metadata2.put("k1", "v2");
+        registerResultMapping(gateway, (command, result) -> result.andMetaData(metadata2));
+
+        // int 3 -> metadata on result k2 -> v3
+        Map<String, String> metadata3 = new HashMap<>();
+        metadata3.put("k2", "v3");
+        registerResultMapping(gateway, (command, result) -> result.andMetaData(metadata3));
+
+        Mono<CommandResultMessage<?>> results = gateway.send("");
+
+        // verify -> results have k1 -> v2 and k2 -> v3
+        StepVerifier.create(results)
+                    .expectNextMatches(result -> result.getMetaData().get("k1").equals("v2") &&
+                            result.getMetaData().get("k1").equals("v2"));
+    }
+
+    @Test
+    void testResultErrorMapping() {
+        commandBus = new CommandBusStub(GenericCommandResultMessage
+                                                .asCommandResultMessage(new RuntimeException("oops")));
+        gateway = DefaultReactorCommandGateway.builder()
+                                              .commandBus(commandBus)
+                                              .build();
+        gateway.registerResultHandlerInterceptor((command, results) -> results
+                .onErrorResume(t -> Flux.just(GenericCommandResultMessage.asCommandResultMessage(t.getMessage()))));
+
+        Mono<String> result = gateway.send("");
+
         StepVerifier.create(result)
-                    .expectNext("handled")
+                    .expectNext("oops")
                     .verifyComplete();
-        verify(commandMessageHandler).handle(any());
-        verifyZeroInteractions(mockRetryScheduler);
     }
 
     @Test
-    void testSendAll() throws Exception {
-        Flux<Object> commands = Flux.fromIterable(Arrays.asList("command1", 4, "command2", 5, true));
-
-        Flux<Object> result = reactiveCommandGateway.sendAll(commands);
-        verifyZeroInteractions(commandMessageHandler);
-
-        List<Throwable> exceptions = new ArrayList<>(2);
-        StepVerifier.create(result.onErrorContinue((t, o) -> exceptions.add(t)))
-                    .expectNext("handled", "handled", "")
+    void testCommandMessageAlteration() {
+        registerResultMapping(gateway, (command, result) ->
+                command.getMetaData()
+                       .containsKey("kX") ? new GenericCommandResultMessage<Object>("new Payload") : result);
+        Map<String, String> commandMetadata = new HashMap<>();
+        commandMetadata.put("kX", "vX");
+        GenericCommandMessage<String> myCommand = new GenericCommandMessage<>("");
+        Mono<String> resultsWithMetaData = gateway.send(myCommand.andMetaData(commandMetadata));
+        StepVerifier.create(resultsWithMetaData)
+                    .expectNextMatches("new Payload"::equals)
                     .verifyComplete();
-
-        assertEquals(2, exceptions.size());
-        assertTrue(exceptions.get(0) instanceof RuntimeException);
-        assertTrue(exceptions.get(1) instanceof RuntimeException);
-        verify(commandMessageHandler, times(2)).handle(any());
-    }
-
-    @Test
-    void testSendAllOrdering() throws Exception {
-        int numberOfCommands = 10_000;
-        Flux<String> commands = Flux.fromStream(IntStream.range(0, numberOfCommands)
-                                                         .mapToObj(i -> "backpressure"));
-        List<Integer> expectedResults = IntStream.range(1, numberOfCommands + 1)
-                                                 .boxed()
-                                                 .collect(toList());
-        Flux<Object> result = reactiveCommandGateway.sendAll(commands);
-        StepVerifier.create(result)
-                    .expectNext(expectedResults.toArray(new Integer[0]))
+        // command "MyCommandName" is sent
+        Mono<String> resultsWithoutMetaData = gateway.send(myCommand);
+        // verify that the metadata is in the results
+        StepVerifier.create(resultsWithoutMetaData)
+                    .expectNextMatches(""::equals)
                     .verifyComplete();
-        verify(commandMessageHandler, times(numberOfCommands)).handle(any());
     }
 
-    @Test
-    void testSendFails() {
-        StepVerifier.create(reactiveCommandGateway.send(5))
-                    .verifyError(RuntimeException.class);
-        verify(mockRetryScheduler).scheduleRetry(any(), any(), anyList(), any());
+    private void registerMessageMapping(
+            ReactorCommandGateway gateway,
+            Function<CommandMessage<?>, CommandMessage<?>> mapping) {
+        gateway.registerDispatchInterceptor(mono -> mono.map(mapping));
     }
 
-//    @Test
-//    void testSendWithDispatchInterceptor() {
-//        reactiveCommandGateway
-//                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
-//                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key1", "value1"))));
-//        Registration registration2 = reactiveCommandGateway
-//                .registerDispatchInterceptor(() -> cmdMono -> cmdMono
-//                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key2", "value2"))));
-//
-//        StepVerifier.create(reactiveCommandGateway.send(true))
-//                    .expectNext("value1value2")
-//                    .verifyComplete();
-//
-//        registration2.cancel();
-//
-//        StepVerifier.create(reactiveCommandGateway.send(true))
-//                    .expectNext("value1")
-//                    .verifyComplete();
-//    }
+    private void registerResultMapping(
+            ReactorCommandGateway gateway,
+            BiFunction<CommandMessage<?>, CommandResultMessage<?>, CommandResultMessage<?>> mapping) {
+        gateway.registerResultHandlerInterceptor((command, flux) -> flux.map(r -> mapping.apply(command, r)));
+    }
 
-//    @Test
-//    void testDispatchInterceptorThrowingAnException() {
-//        reactiveCommandGateway
-//                .registerDispatchInterceptor(() -> cmdMono -> {
-//                    throw new RuntimeException();
-//                });
-//        StepVerifier.create(reactiveCommandGateway.send(true))
-//                    .verifyError(RuntimeException.class);
-//    }
-//
-//    @Test
-//    void testDispatchInterceptorReturningErrorMono() {
-//        reactiveCommandGateway
-//                .registerDispatchInterceptor(() -> cmdMono -> Mono.error(new RuntimeException()));
-//        StepVerifier.create(reactiveCommandGateway.send(true))
-//                    .verifyError(RuntimeException.class);
-//    }
+    private void registerMapping(
+            ReactorCommandGateway gateway,
+            Function<CommandMessage<?>, CommandMessage<?>> commandMapping,
+            BiFunction<CommandMessage<?>, CommandResultMessage<?>, CommandResultMessage<?>> resultMapping) {
+        registerMessageMapping(gateway, commandMapping);
+        registerResultMapping(gateway, resultMapping);
+    }
+
+    private void registerMessageFilter(ReactorCommandGateway gateway,
+                                       Predicate<CommandMessage<?>> predicate) {
+        gateway.registerDispatchInterceptor(mono -> mono.filter(predicate));
+    }
+
+    private void registerResultsFilter(ReactorCommandGateway gateway,
+                                       Predicate<CommandResultMessage<?>> predicate) {
+        gateway.registerResultHandlerInterceptor((command, flux) -> flux.filter(predicate));
+    }
 }

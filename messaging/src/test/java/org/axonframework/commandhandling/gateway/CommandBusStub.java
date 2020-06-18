@@ -13,20 +13,22 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import java.util.LinkedList;
 
 /**
+ * A stub of {@link CommandBus} that captures sent commands.
+ *
  * @author Sara Pellegrini
  * @since 4.4
  */
-public class Sender implements CommandBus {
+public class CommandBusStub implements CommandBus {
 
     private final LinkedList<CommandMessage<?>> sent = new LinkedList<>();
 
     private final CommandResultMessage result;
 
-    public Sender() {
+    public CommandBusStub() {
         this(new GenericCommandResultMessage<Object>(""));
     }
 
-    public Sender(CommandResultMessage<?> result) {
+    public CommandBusStub(CommandResultMessage<?> result) {
         this.result = result;
     }
 
