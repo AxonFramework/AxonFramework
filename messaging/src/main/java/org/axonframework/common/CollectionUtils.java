@@ -126,7 +126,4 @@ public abstract class CollectionUtils {
         return result;
     }
 
-    public static <E> List<E> distinctList(List<E> list) {
-        return list.stream().distinct().collect(toList());
-    }
 }

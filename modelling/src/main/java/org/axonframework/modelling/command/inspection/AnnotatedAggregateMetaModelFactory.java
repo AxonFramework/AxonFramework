@@ -53,7 +53,7 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.common.CollectionUtils.distinctList;
+import static org.axonframework.common.ListUtils.distinct;
 
 /**
  * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the meta
@@ -357,7 +357,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 }
             }
 
-            findIdentifierMember(distinctList(entityIdMembers), distinctList(persistenceIdMembers))
+            findIdentifierMember(distinct(entityIdMembers), distinct(persistenceIdMembers))
                     .ifPresent(this::setIdentifierAndRoutingKey);
             if (!aggregateVersionMembers.isEmpty()) {
                 setVersionMember(aggregateVersionMembers.get(0));
