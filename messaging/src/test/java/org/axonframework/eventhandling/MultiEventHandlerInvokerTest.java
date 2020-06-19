@@ -128,16 +128,16 @@ class MultiEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetWithResetInfo() {
-        String resetInfo = "reset-info";
+    void testPerformResetWithResetContext() {
+        String resetContext = "reset-context";
 
         when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
         when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
 
-        testSubject.performReset(resetInfo);
+        testSubject.performReset(resetContext);
 
-        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(resetInfo));
-        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(resetInfo));
+        verify(mockedEventHandlerInvokerOne, times(1)).performReset(eq(resetContext));
+        verify(mockedEventHandlerInvokerTwo, never()).performReset(eq(resetContext));
     }
 
     @Test

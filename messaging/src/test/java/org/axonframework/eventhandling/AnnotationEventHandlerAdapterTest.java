@@ -56,10 +56,10 @@ class AnnotationEventHandlerAdapterTest {
     }
 
     @Test
-    void testInvokeResetHandlerWithResetInfo() {
-        testSubject.prepareReset("resetInfo");
+    void testInvokeResetHandlerWithResetContext() {
+        testSubject.prepareReset("resetContext");
 
-        assertTrue(annotatedEventListener.invocations.contains("resetWithInfo"));
+        assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }
 
     @SuppressWarnings("unused")
@@ -78,8 +78,8 @@ class AnnotationEventHandlerAdapterTest {
         }
 
         @ResetHandler
-        public void doResetWithInfo(String resetInfo, SomeResource someResource) {
-            invocations.add("resetWithInfo");
+        public void doResetWithContext(String resetContext, SomeResource someResource) {
+            invocations.add("resetWithContext");
         }
     }
 

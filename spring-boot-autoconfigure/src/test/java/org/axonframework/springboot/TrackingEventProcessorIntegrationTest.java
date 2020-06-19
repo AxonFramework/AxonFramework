@@ -120,7 +120,7 @@ public class TrackingEventProcessorIntegrationTest {
 
     @Test
     void testResetHandlerIsCalledOnResetTokens() {
-        String resetInfo = "reset-info";
+        String resetContext = "reset-context";
 
         Optional<TrackingEventProcessor> optionalSecondTep =
                 eventProcessingModule.eventProcessor("second", TrackingEventProcessor.class);
@@ -128,9 +128,9 @@ public class TrackingEventProcessorIntegrationTest {
 
         TrackingEventProcessor secondTep = optionalSecondTep.get();
         secondTep.shutDown();
-        secondTep.resetTokens(resetInfo);
+        secondTep.resetTokens(resetContext);
 
-        assertEquals(resetInfo, resetTriggeredReference.get());
+        assertEquals(resetContext, resetTriggeredReference.get());
     }
 
     private void publishEvent(String... events) {
@@ -195,8 +195,8 @@ public class TrackingEventProcessorIntegrationTest {
 
         @SuppressWarnings("unused")
         @ResetHandler
-        public void reset(String resetInfo) {
-            resetTriggeredReference.set(resetInfo);
+        public void reset(String resetContext) {
+            resetTriggeredReference.set(resetContext);
         }
     }
 }

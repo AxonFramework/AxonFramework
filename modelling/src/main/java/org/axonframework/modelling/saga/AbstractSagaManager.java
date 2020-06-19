@@ -191,7 +191,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void performReset(Object resetInfo) {
+    public void performReset(Object resetContext) {
         throw new ResetNotSupportedException("Sagas do no support resetting tokens");
     }
 

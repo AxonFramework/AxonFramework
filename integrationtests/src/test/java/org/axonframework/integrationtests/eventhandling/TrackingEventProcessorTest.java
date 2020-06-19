@@ -995,8 +995,8 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetTokensPassesOnResetInfo() throws Exception {
-        String resetInfo = "reset-info";
+    void testResetTokensPassesOnResetContext() throws Exception {
+        String resetContext = "reset-context";
         final List<String> handled = new CopyOnWriteArrayList<>();
 
         when(mockHandler.supportsReset()).thenReturn(true);
@@ -1014,10 +1014,10 @@ class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
 
         testSubject.shutDown();
-        testSubject.resetTokens(resetInfo);
+        testSubject.resetTokens(resetContext);
         testSubject.start();
 
-        verify(eventHandlerInvoker).performReset(resetInfo);
+        verify(eventHandlerInvoker).performReset(resetContext);
     }
 
     @Test

@@ -81,7 +81,7 @@ public interface Saga<T> extends EventMessageHandler {
     }
 
     @Override
-    default void prepareReset(Object resetInfo) {
+    default void prepareReset(Object resetContext) {
         throw new ResetNotSupportedException("Sagas do not support reset");
     }
 }

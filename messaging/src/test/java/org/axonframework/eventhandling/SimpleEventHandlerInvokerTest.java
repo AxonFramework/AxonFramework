@@ -85,12 +85,12 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetWithResetInfo() {
-        String resetInfo = "reset-info";
+    void testPerformResetWithResetContext() {
+        String resetContext = "reset-context";
 
-        testSubject.performReset(resetInfo);
+        testSubject.performReset(resetContext);
 
-        verify(mockHandler1).prepareReset(eq(resetInfo));
-        verify(mockHandler2).prepareReset(eq(resetInfo));
+        verify(mockHandler1).prepareReset(eq(resetContext));
+        verify(mockHandler2).prepareReset(eq(resetContext));
     }
 }

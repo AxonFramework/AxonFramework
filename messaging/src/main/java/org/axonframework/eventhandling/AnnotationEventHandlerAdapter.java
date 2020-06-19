@@ -105,9 +105,9 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public <R> void prepareReset(R resetInfo) {
+    public <R> void prepareReset(R resetContext) {
         try {
-            findAndHandle(GenericResetMessage.asResetMessage(resetInfo));
+            findAndHandle(GenericResetMessage.asResetMessage(resetContext));
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);
         }

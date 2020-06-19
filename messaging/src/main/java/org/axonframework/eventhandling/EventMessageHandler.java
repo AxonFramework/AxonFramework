@@ -49,10 +49,10 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
      *
-     * @param resetInfo a {@code R} used to support the reset operation
-     * @param <R>       the type of the provided {@code resetInfo}
+     * @param resetContext a {@code R} used to support the reset operation
+     * @param <R>          the type of the provided {@code resetContext}
      */
-    default <R> void prepareReset(R resetInfo) {
+    default <R> void prepareReset(R resetContext) {
     }
 
     /**

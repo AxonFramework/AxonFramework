@@ -154,9 +154,9 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public <R> void performReset(R resetInfo) {
+    public <R> void performReset(R resetContext) {
         for (EventMessageHandler eventHandler : wrappedEventHandlers) {
-            eventHandler.prepareReset(resetInfo);
+            eventHandler.prepareReset(resetContext);
         }
     }
 

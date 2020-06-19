@@ -77,9 +77,9 @@ public interface EventHandlerInvoker {
     /**
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      *
-     * @param resetInfo a {@code R} used to support the reset operation
-     * @param <R>       the type of the provided {@code resetInfo}
+     * @param resetContext a {@code R} used to support the reset operation
+     * @param <R>          the type of the provided {@code resetContext}
      */
-    default <R> void performReset(R resetInfo) {
+    default <R> void performReset(R resetContext) {
     }
 }
