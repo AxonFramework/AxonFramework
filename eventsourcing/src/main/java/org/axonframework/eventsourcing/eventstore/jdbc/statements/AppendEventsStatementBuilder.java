@@ -48,5 +48,5 @@ public interface AppendEventsStatementBuilder {
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     PreparedStatement build(Connection connection, EventSchema schema, Class<?> dataType,
-                            List<? extends EventMessage<?>> events, Serializer serializer) throws SQLException;
+                            List<? extends EventMessage<?>> events, Serializer serializer, TimestampWriter timestampWriter) throws SQLException;
 }

@@ -88,11 +88,12 @@ public abstract class JdbcEventStorageEngineStatements {
      * @param dataType   The serialized type of the payload and metadata.
      * @param events     The events to be added.
      * @param serializer The serializer for the payload and metadata.
+     * @param timestampWriter Writer responsible for writing timestamp in the correct format for the given database.
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     public static PreparedStatement appendEvents(Connection connection, EventSchema schema, Class<?> dataType,
-                                                 List<? extends EventMessage<?>> events, Serializer serializer)
+                                                 List<? extends EventMessage<?>> events, Serializer serializer, TimestampWriter timestampWriter)
             throws SQLException {
         final String sql = "INSERT INTO " + schema.domainEventTable() + " (" + schema.domainEventFields()
                 + ") VALUES (?,?,?,?,?,?,?,?,?)";
@@ -105,7 +106,7 @@ public abstract class JdbcEventStorageEngineStatements {
             statement.setString(2, event.getAggregateIdentifier());
             statement.setLong(3, event.getSequenceNumber());
             statement.setString(4, event.getType());
-            statement.setString(5, formatInstant(event.getTimestamp()));
+            timestampWriter.writeTimestamp(statement, 5, event.getTimestamp());
             statement.setString(6, payload.getType().getName());
             statement.setString(7, payload.getType().getRevision());
             statement.setObject(8, payload.getData());
@@ -186,11 +187,12 @@ public abstract class JdbcEventStorageEngineStatements {
      * @param dataType   The serialized type of the payload and metadata.
      * @param snapshot   The snapshot to be appended.
      * @param serializer The serializer for the payload and metadata.
+     * @param timestampWriter Writer responsible for writing timestamp in the correct format for the given database.
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     public static PreparedStatement appendSnapshot(Connection connection, EventSchema schema, Class<?> dataType,
-                                                   DomainEventMessage<?> snapshot, Serializer serializer)
+                                                   DomainEventMessage<?> snapshot, Serializer serializer, TimestampWriter timestampWriter)
             throws SQLException {
         final String sql = "INSERT INTO "
                 + schema.snapshotTable() + " (" + schema.domainEventFields() + ") VALUES (?,?,?,?,?,?,?,?,?)";
@@ -201,7 +203,7 @@ public abstract class JdbcEventStorageEngineStatements {
         statement.setString(2, snapshot.getAggregateIdentifier());
         statement.setLong(3, snapshot.getSequenceNumber());
         statement.setString(4, snapshot.getType());
-        statement.setString(5, formatInstant(snapshot.getTimestamp()));
+        timestampWriter.writeTimestamp(statement, 5, snapshot.getTimestamp());
         statement.setString(6, payload.getType().getName());
         statement.setString(7, payload.getType().getRevision());
         statement.setObject(8, payload.getData());

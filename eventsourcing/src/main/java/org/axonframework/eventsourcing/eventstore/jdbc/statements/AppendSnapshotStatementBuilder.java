@@ -47,5 +47,5 @@ public interface AppendSnapshotStatementBuilder {
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     PreparedStatement build(Connection connection, EventSchema schema, Class<?> dataType,
-                            DomainEventMessage<?> snapshot, Serializer serializer) throws SQLException;
+                            DomainEventMessage<?> snapshot, Serializer serializer, TimestampWriter timestampWriter) throws SQLException;
 }
