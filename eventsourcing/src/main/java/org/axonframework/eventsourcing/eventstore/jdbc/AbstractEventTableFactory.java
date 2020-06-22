@@ -42,7 +42,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.timestampColumn() + " " + timestampType() + " ,\n" +
                 "PRIMARY KEY (" + schema.globalIndexColumn() + "),\n" +
                 "UNIQUE (" + schema.aggregateIdentifierColumn() + ", " +
                 schema.sequenceNumberColumn() + "),\n" +
@@ -63,7 +63,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.timestampColumn() + " " + timestampType() + " ,\n" +
                 "PRIMARY KEY (" + schema.aggregateIdentifierColumn() + ", " +
                 schema.sequenceNumberColumn() + "),\n" +
                 "UNIQUE (" + schema.eventIdentifierColumn() + ")\n" +
@@ -84,4 +84,13 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
      * @return the sql for the payload column
      */
     protected abstract String payloadType();
+
+    /**
+     * Returns the sql to describe the type of timestamp column.
+     *
+     * @return the sql for the timestamp column
+     */
+    protected String timestampType() {
+        return " VARCHAR(255) NOT NULL ";
+    }
 }
