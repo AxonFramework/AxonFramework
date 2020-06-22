@@ -196,9 +196,9 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor an {@link EventProcessor}. The monitor will be registered with
-     * the registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
-     * on the event processor to initiate the monitoring.
+     * Registers new metrics to the registry to monitor an {@link EventProcessor} using {@link Tag}s through the given
+     * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the event processor to initiate the monitoring.
      *
      * @param name        The name under which the EventProcessor should be registered to the registry
      * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
@@ -240,9 +240,9 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor an {@link EventBus} using {@link Tag}s through the given {@code tagsBuilder}. The monitor will be registered with the
-     * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
-     * on the event bus to initiate the monitoring.
+     * Registers new metrics to the registry to monitor an {@link EventBus} using {@link Tag}s through the given {@code
+     * tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the event bus to initiate the monitoring.
      *
      * @param name        The name under which the eventBus should be registered to the registry
      * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
@@ -270,9 +270,9 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor a {@link CommandBus}. The monitor will be registered with the
-     * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
-     * on the command bus to initiate the monitoring.
+     * Registers new metrics to the registry to monitor a {@link CommandBus} using {@link Tag}s through the given {@code
+     * tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the command bus to initiate the monitoring.
      *
      * @param name        The name under which the commandBus should be registered to the registry
      * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
@@ -297,9 +297,9 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor a {@link QueryBus}. The monitor will be registered with the
-     * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
-     * on the command bus to initiate the monitoring.
+     * Registers new metrics to the registry to monitor a {@link QueryBus} using {@link Tag}s through the given {@code
+     * tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the command bus to initiate the monitoring.
      *
      * @param name        The name under which the commandBus should be registered to the registry
      * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
