@@ -32,6 +32,7 @@ import java.util.function.Function;
  * Measures the difference in message timestamps between the last ingested and the last processed message.
  *
  * @author Marijn van Zelst
+ * @author Ivan Dugalic
  * @since 4.1
  */
 public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>> {

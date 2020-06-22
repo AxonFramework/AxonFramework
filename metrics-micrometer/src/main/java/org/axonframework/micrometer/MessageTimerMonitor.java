@@ -33,6 +33,7 @@ import java.util.function.Function;
  * Times allTimer messages, successful and failed messages
  *
  * @author Marijn van Zelst
+ * @author Ivan Dugalic
  * @since 4.1
  */
 public class MessageTimerMonitor implements MessageMonitor<Message<?>> {

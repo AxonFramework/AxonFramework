@@ -29,6 +29,7 @@ import java.util.function.Function;
  * Counts the number of ingested, successful, failed and processed messages
  *
  * @author Marijn van Zelst
+ * @author Ivan Dugalic
  * @since 4.1
  */
 public class MessageCountingMonitor implements MessageMonitor<Message<?>> {

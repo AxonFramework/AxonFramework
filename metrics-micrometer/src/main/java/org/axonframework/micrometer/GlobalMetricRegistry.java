@@ -153,19 +153,13 @@ public class GlobalMetricRegistry {
                                                              componentName));
         }
         if (CommandBus.class.isAssignableFrom(componentType)) {
-            return registerCommandBus(componentName,
-                                      message -> Tags
-                                              .of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()));
+            return registerCommandBus(componentName, TagsUtil.PAYLOAD_TYPE_TAGGER_FUNCTION);
         }
         if (EventBus.class.isAssignableFrom(componentType)) {
-            return registerEventBus(componentName,
-                                    message -> Tags
-                                            .of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()));
+            return registerEventBus(componentName, TagsUtil.PAYLOAD_TYPE_TAGGER_FUNCTION);
         }
         if (QueryBus.class.isAssignableFrom(componentType)) {
-            return registerQueryBus(componentName,
-                                    message -> Tags
-                                            .of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName()));
+            return registerQueryBus(componentName, TagsUtil.PAYLOAD_TYPE_TAGGER_FUNCTION);
         }
         logger.warn("Cannot provide MessageMonitor for component [{}] of type [{}]. Returning No-Op instance.",
                     componentName, componentType.getSimpleName());

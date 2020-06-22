@@ -41,6 +41,7 @@ import java.util.function.Function;
  * that messages will have to wait to be processed.
  *
  * @author Marijn van Zelst
+ * @author Ivan Dugalic
  * @since 4.1
  */
 public class CapacityMonitor implements MessageMonitor<Message<?>> {
