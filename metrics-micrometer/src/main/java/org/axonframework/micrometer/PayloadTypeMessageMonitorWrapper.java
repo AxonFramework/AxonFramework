@@ -35,9 +35,8 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @author Marijn van Zelst
  * @since 4.1
- * @deprecated As of release 4.4, replaced by specific monitors {@link MessageCountingMonitor}, {@link CapacityMonitor},
- * {@link EventProcessorLatencyMonitor}, {@link MessageCountingMonitor} that can be used to register meters on Axon
- * components directly.
+ * @deprecated As of release 4.4, replaced by using {@link Tag}s on the monitor implementations.
+ * Use {@link org.axonframework.micrometer.GlobalMetricRegistry#registerWithConfigurerWithDefaultTags(Configurer) to achieve the same behavior as this implementation.
  */
 @Deprecated
 public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>>>
