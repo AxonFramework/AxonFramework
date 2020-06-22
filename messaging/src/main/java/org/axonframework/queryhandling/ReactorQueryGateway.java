@@ -17,8 +17,8 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.reactive.ReactiveMessageDispatchInterceptorSupport;
-import org.axonframework.messaging.reactive.ReactiveResultHandlerInterceptorSupport;
+import org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptorSupport;
+import org.axonframework.messaging.reactive.ReactorResultHandlerInterceptorSupport;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.reactivestreams.Publisher;
@@ -36,8 +36,8 @@ import java.util.function.Function;
  * @author Milan Savic
  * @since 4.4
  */
-public interface ReactorQueryGateway extends ReactiveMessageDispatchInterceptorSupport<QueryMessage<?, ?>>,
-        ReactiveResultHandlerInterceptorSupport<QueryMessage<?, ?>, ResultMessage<?>> {
+public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSupport<QueryMessage<?, ?>>,
+        ReactorResultHandlerInterceptorSupport<QueryMessage<?, ?>, ResultMessage<?>> {
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response with the given {@code responseType}

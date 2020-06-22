@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.reactive.ReactiveMessageDispatchInterceptor;
-import org.axonframework.messaging.reactive.ReactiveResultHandlerInterceptor;
+import org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor;
+import org.axonframework.messaging.reactive.ReactorResultHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,8 +45,8 @@ import static org.axonframework.messaging.GenericMessage.asMessage;
  */
 public class DefaultReactorQueryGateway implements ReactorQueryGateway {
 
-    private final List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors;
-    private final List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors;
+    private final List<ReactorMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors;
+    private final List<ReactorResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors;
 
     private final QueryBus queryBus;
 
@@ -82,14 +82,14 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
 
     @Override
     public Registration registerDispatchInterceptor(
-            ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
+            ReactorMessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
 
     @Override
     public Registration registerResultHandlerInterceptor(
-            ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>> interceptor) {
+            ReactorResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>> interceptor) {
         resultInterceptors.add(interceptor);
         return () -> resultInterceptors.remove(interceptor);
     }
@@ -223,8 +223,8 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
     public static class Builder {
 
         private QueryBus queryBus;
-        private List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-        private List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors = new CopyOnWriteArrayList<>();
+        private List<ReactorMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+        private List<ReactorResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors = new CopyOnWriteArrayList<>();
 
         /**
          * Sets the {@link QueryBus} used to dispatch queries.
@@ -239,7 +239,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
+         * Sets the {@link List} of {@link ReactorMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
          * when a query is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a query is being dispatched
@@ -247,19 +247,19 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
          */
         @SafeVarargs
         public final Builder dispatchInterceptors(
-                ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>... dispatchInterceptors) {
+                ReactorMessageDispatchInterceptor<QueryMessage<?, ?>>... dispatchInterceptors) {
             return dispatchInterceptors(asList(dispatchInterceptors));
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
+         * Sets the {@link List} of {@link ReactorMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
          * when a query is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a query is being dispatched
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder dispatchInterceptors(
-                List<ReactiveMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors) {
+                List<ReactorMessageDispatchInterceptor<QueryMessage<?, ?>>> dispatchInterceptors) {
             this.dispatchInterceptors = dispatchInterceptors != null && dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
                     : new CopyOnWriteArrayList<>();
@@ -267,7 +267,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Sets the {@link List} of {@link ReactorResultHandlerInterceptor}s for {@link CommandResultMessage}s.
          * Are invoked when a result has been received.
          *
          * @param resultInterceptors which are invoked when a result has been received
@@ -275,19 +275,19 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
          */
         @SafeVarargs
         public final Builder resultInterceptors(
-                ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>... resultInterceptors) {
+                ReactorResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>... resultInterceptors) {
             return resultInterceptors(asList(resultInterceptors));
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Sets the {@link List} of {@link ReactorResultHandlerInterceptor}s for {@link CommandResultMessage}s.
          * Are invoked when a result has been received.
          *
          * @param resultInterceptors which are invoked when a result has been received
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder resultInterceptors(
-                List<ReactiveResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors) {
+                List<ReactorResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors) {
             this.resultInterceptors = resultInterceptors != null && resultInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(resultInterceptors)
                     : new CopyOnWriteArrayList<>();

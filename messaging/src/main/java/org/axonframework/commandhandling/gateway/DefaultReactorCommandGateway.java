@@ -24,8 +24,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.ReactiveCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.reactive.ReactiveMessageDispatchInterceptor;
-import org.axonframework.messaging.reactive.ReactiveResultHandlerInterceptor;
+import org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor;
+import org.axonframework.messaging.reactive.ReactorResultHandlerInterceptor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -46,8 +46,8 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
-    private final List<ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>> resultInterceptors;
+    private final List<ReactorMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
+    private final List<ReactorResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>> resultInterceptors;
 
     /**
      * Creates an instance of {@link DefaultReactorCommandGateway} based on the fields contained in the {@link
@@ -91,14 +91,14 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
     }
 
     @Override
-    public Registration registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
+    public Registration registerDispatchInterceptor(ReactorMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
 
     @Override
     public Registration registerResultHandlerInterceptor(
-            ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>> interceptor) {
+            ReactorResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>> interceptor) {
         resultInterceptors.add(interceptor);
         return () -> resultInterceptors.remove(interceptor);
     }
@@ -141,8 +141,8 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
 
         private CommandBus commandBus;
         private RetryScheduler retryScheduler;
-        private List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-        private List<ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>> resultInterceptors = new CopyOnWriteArrayList<>();
+        private List<ReactorMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+        private List<ReactorResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>> resultInterceptors = new CopyOnWriteArrayList<>();
 
         /**
          * Sets the {@link CommandBus} used to dispatch commands.
@@ -169,7 +169,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveMessageDispatchInterceptor}s for {@link CommandMessage}s. Are invoked
+         * Sets the {@link List} of {@link ReactorMessageDispatchInterceptor}s for {@link CommandMessage}s. Are invoked
          * when a command is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a command is being dispatched
@@ -177,19 +177,19 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
          */
         @SafeVarargs
         public final Builder dispatchInterceptors(
-                ReactiveMessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
+                ReactorMessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
             return dispatchInterceptors(asList(dispatchInterceptors));
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveMessageDispatchInterceptor}s for {@link CommandMessage}s. Are invoked
+         * Sets the {@link List} of {@link ReactorMessageDispatchInterceptor}s for {@link CommandMessage}s. Are invoked
          * when a command is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a command is being dispatched
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder dispatchInterceptors(
-                List<ReactiveMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
+                List<ReactorMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
             this.dispatchInterceptors = dispatchInterceptors != null && dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
                     : new CopyOnWriteArrayList<>();
@@ -197,7 +197,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Sets the {@link List} of {@link ReactorResultHandlerInterceptor}s for {@link CommandResultMessage}s.
          * Are invoked when a result has been received.
          *
          * @param resultHandlerInterceptors which are invoked when a result has been received
@@ -205,19 +205,19 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
          */
         @SafeVarargs
         public final Builder resultHandlerInterceptors(
-                ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>... resultHandlerInterceptors) {
+                ReactorResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>... resultHandlerInterceptors) {
             return resultHandlerInterceptors(asList(resultHandlerInterceptors));
         }
 
         /**
-         * Sets the {@link List} of {@link ReactiveResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Sets the {@link List} of {@link ReactorResultHandlerInterceptor}s for {@link CommandResultMessage}s.
          * Are invoked when a result has been received.
          *
          * @param resultHandlerInterceptors which are invoked when a result has been received
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder resultHandlerInterceptors(
-                List<ReactiveResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>> resultHandlerInterceptors) {
+                List<ReactorResultHandlerInterceptor<CommandMessage<?>, CommandResultMessage<?>>> resultHandlerInterceptors) {
             this.resultInterceptors = resultHandlerInterceptors != null && resultHandlerInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(resultHandlerInterceptors)
                     : new CopyOnWriteArrayList<>();

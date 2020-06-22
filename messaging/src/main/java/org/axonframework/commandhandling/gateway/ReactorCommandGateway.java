@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.reactive.ReactiveMessageDispatchInterceptorSupport;
-import org.axonframework.messaging.reactive.ReactiveResultHandlerInterceptorSupport;
+import org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptorSupport;
+import org.axonframework.messaging.reactive.ReactorResultHandlerInterceptorSupport;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -37,8 +37,8 @@ import java.util.function.Function;
  * @since 4.4
  */
 public interface ReactorCommandGateway
-        extends ReactiveMessageDispatchInterceptorSupport<CommandMessage<?>>,
-        ReactiveResultHandlerInterceptorSupport<CommandMessage<?>, CommandResultMessage<?>> {
+        extends ReactorMessageDispatchInterceptorSupport<CommandMessage<?>>,
+        ReactorResultHandlerInterceptorSupport<CommandMessage<?>, CommandResultMessage<?>> {
 
     /**
      * Sends the given {@code command} once the caller subscribes to the command result. Returns immediately.

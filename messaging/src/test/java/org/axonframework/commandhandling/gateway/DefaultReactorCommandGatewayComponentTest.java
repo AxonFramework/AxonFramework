@@ -47,6 +47,7 @@ class DefaultReactorCommandGatewayComponentTest {
 
     private DefaultReactorCommandGateway reactiveCommandGateway;
     private MessageHandler<CommandMessage<?>> commandMessageHandler;
+    private MessageHandler<CommandMessage<?>> failingCommandHandler;
     private RetryScheduler mockRetryScheduler;
     private CommandBus commandBus;
 
@@ -68,9 +69,13 @@ class DefaultReactorCommandGatewayComponentTest {
             }
         });
         commandBus.subscribe(String.class.getName(), commandMessageHandler);
-        commandBus.subscribe(Integer.class.getName(), message -> {
-            throw new RuntimeException();
+        failingCommandHandler = spy(new MessageHandler<CommandMessage<?>>() {
+            @Override
+            public Object handle(CommandMessage<?> message) throws Exception {
+                throw new RuntimeException();
+            }
         });
+        commandBus.subscribe(Integer.class.getName(), failingCommandHandler);
         commandBus.subscribe(Boolean.class.getName(),
                              message -> "" + message.getMetaData().getOrDefault("key1", "")
                                      + message.getMetaData().getOrDefault("key2", ""));
@@ -123,10 +128,12 @@ class DefaultReactorCommandGatewayComponentTest {
     }
 
     @Test
-    void testSendFails() {
-        StepVerifier.create(reactiveCommandGateway.send(5))
+    void testDispatchFails() throws Exception {
+        StepVerifier.create(reactiveCommandGateway.send(5)
+                                                  .retry(5))
                     .verifyError(RuntimeException.class);
-        verify(mockRetryScheduler).scheduleRetry(any(), any(), anyList(), any());
+        verify(mockRetryScheduler, times(6)).scheduleRetry(any(), any(), anyList(), any());
+        verify(failingCommandHandler, times(6)).handle(any());
     }
 
     @Test

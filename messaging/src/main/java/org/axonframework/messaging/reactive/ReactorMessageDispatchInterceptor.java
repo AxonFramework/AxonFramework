@@ -34,11 +34,12 @@ import java.util.function.BiFunction;
  * @since 4.4
  */
 @FunctionalInterface
-public interface  ReactiveMessageDispatchInterceptor<M extends Message<?>> extends
+public interface ReactorMessageDispatchInterceptor<M extends Message<?>> extends
         MessageDispatchInterceptor<M> {
 
     /**
-     * Intercepts a message.
+     * Intercepts a message. It's possible to break the interceptor chain by returning {@link Mono#empty()} or {@link
+     * Mono#error(Throwable)} variations.
      *
      * @param message a {@link Mono} of a message to be intercepted
      * @return the message {@link Mono} to dispatch
