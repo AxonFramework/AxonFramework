@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Steven van Beelen
  * @since 4.4
  */
-public interface ResetMessage<T> extends Message<T> {
+public interface ResetMessage<T> extends EventMessage<T> {
 
     /**
      * Returns a copy of this {@link ResetMessage} with the given {@code metaData}. The payload remains unchanged.

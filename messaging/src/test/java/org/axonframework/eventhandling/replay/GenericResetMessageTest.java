@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.replay;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
@@ -37,27 +38,32 @@ class GenericResetMessageTest {
     @Test
     void testConstructor() {
         ResetMessage<Object> messageOne = asResetMessage(TEST_PAYLOAD);
+        ResetMessage<Object> messageTwo = asResetMessage(new GenericMessage<>(TEST_PAYLOAD));
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
-        ResetMessage<Object> messageTwo = new GenericResetMessage<>(TEST_PAYLOAD, metaDataMap);
+        ResetMessage<Object> messageThree = new GenericResetMessage<>(TEST_PAYLOAD, metaDataMap);
         MetaData metaData = MetaData.from(metaDataMap);
-        ResetMessage<Object> messageThree = new GenericResetMessage<>(TEST_PAYLOAD, metaData);
+        ResetMessage<Object> messageFour = new GenericResetMessage<>(TEST_PAYLOAD, metaData);
 
         assertSame(MetaData.emptyInstance(), messageOne.getMetaData());
         assertEquals(Object.class, messageOne.getPayload().getClass());
         assertEquals(Object.class, messageOne.getPayloadType());
 
-        assertNotSame(metaDataMap, messageTwo.getMetaData());
-        assertEquals(metaDataMap, messageTwo.getMetaData());
+        assertSame(MetaData.emptyInstance(), messageTwo.getMetaData());
         assertEquals(Object.class, messageTwo.getPayload().getClass());
         assertEquals(Object.class, messageTwo.getPayloadType());
 
-        assertSame(metaData, messageThree.getMetaData());
+        assertNotSame(metaDataMap, messageThree.getMetaData());
+        assertEquals(metaDataMap, messageThree.getMetaData());
         assertEquals(Object.class, messageThree.getPayload().getClass());
         assertEquals(Object.class, messageThree.getPayloadType());
 
-        assertNotEquals(messageOne.getIdentifier(), messageTwo.getIdentifier());
-        assertNotEquals(messageTwo.getIdentifier(), messageThree.getIdentifier());
-        assertNotEquals(messageThree.getIdentifier(), messageOne.getIdentifier());
+        assertSame(metaData, messageFour.getMetaData());
+        assertEquals(Object.class, messageFour.getPayload().getClass());
+        assertEquals(Object.class, messageFour.getPayloadType());
+
+        assertNotEquals(messageOne.getIdentifier(), messageThree.getIdentifier());
+        assertNotEquals(messageThree.getIdentifier(), messageFour.getIdentifier());
+        assertNotEquals(messageFour.getIdentifier(), messageOne.getIdentifier());
     }
 
     @Test

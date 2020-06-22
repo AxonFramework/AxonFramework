@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
+import org.axonframework.eventhandling.replay.ResetMessageHandlerDefinition;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -286,31 +287,39 @@ public class SpringAxonAutoConfigurerTest {
     @Test
     void testHandlerDefinitionAndHandlerEnhancerBeansRegistered() {
         MultiHandlerDefinition handlerDefinition = (MultiHandlerDefinition) axonConfig.handlerDefinition(getClass());
-        MultiHandlerEnhancerDefinition handlerEnhancerDefinition = (MultiHandlerEnhancerDefinition) handlerDefinition
-                .getHandlerEnhancerDefinition();
+        MultiHandlerEnhancerDefinition handlerEnhancerDefinition =
+                (MultiHandlerEnhancerDefinition) handlerDefinition.getHandlerEnhancerDefinition();
 
-        assertEquals(AnnotatedMessageHandlingMemberDefinition.class,
-                     handlerDefinition.getDelegates().get(0).getClass());
-        assertEquals(Context.HandlerDefinitionWithInjectedResource.class,
-                     handlerDefinition.getDelegates().get(1).getClass());
+        assertEquals(
+                AnnotatedMessageHandlingMemberDefinition.class, handlerDefinition.getDelegates().get(0).getClass()
+        );
+        assertEquals(
+                Context.HandlerDefinitionWithInjectedResource.class, handlerDefinition.getDelegates().get(1).getClass()
+        );
         assertEquals(MyHandlerDefinition.class, handlerDefinition.getDelegates().get(2).getClass());
         assertEquals(MyHandlerDefinition.class, handlerDefinition.getDelegates().get(3).getClass());
 
-        Set<Class> enhancerClasses = handlerEnhancerDefinition.getDelegates()
-                                                              .stream()
-                                                              .map(HandlerEnhancerDefinition::getClass)
-                                                              .collect(Collectors.toSet());
+        Set<Class<?>> enhancerClasses = handlerEnhancerDefinition.getDelegates()
+                                                                 .stream()
+                                                                 .map(HandlerEnhancerDefinition::getClass)
+                                                                 .collect(Collectors.toSet());
 
-        assertEquals(Sets.newSet(SagaMethodMessageHandlerDefinition.class,
-                                 MethodCommandHandlerInterceptorDefinition.class,
-                                 MethodCommandHandlerDefinition.class,
-                                 MethodCommandHandlerDefinition.class,
-                                 MethodQueryMessageHandlerDefinition.class,
-                                 ReplayAwareMessageHandlerWrapper.class,
-                                 DeadlineMethodMessageHandlerDefinition.class,
-                                 MethodCreationPolicyDefinition.class,
-                                 MethodCreationPolicyDefinition.class,
-                                 MyHandlerEnhancerDefinition.class), enhancerClasses);
+        assertEquals(
+                Sets.newSet(
+                        SagaMethodMessageHandlerDefinition.class,
+                        MethodCommandHandlerInterceptorDefinition.class,
+                        MethodCommandHandlerDefinition.class,
+                        MethodCommandHandlerDefinition.class,
+                        MethodQueryMessageHandlerDefinition.class,
+                        ReplayAwareMessageHandlerWrapper.class,
+                        DeadlineMethodMessageHandlerDefinition.class,
+                        MethodCreationPolicyDefinition.class,
+                        MethodCreationPolicyDefinition.class,
+                        MyHandlerEnhancerDefinition.class,
+                        ResetMessageHandlerDefinition.class
+                ),
+                enhancerClasses
+        );
     }
 
     @SuppressWarnings("unchecked")
