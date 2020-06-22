@@ -43,6 +43,7 @@ public interface AppendSnapshotStatementBuilder {
      * @param dataType   The serialized type of the payload and metadata.
      * @param snapshot   The snapshot to be appended.
      * @param serializer The serializer for the payload and metadata.
+     * @param timestampWriter Writer responsible for writing timestamp in the correct format for the given database.
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */

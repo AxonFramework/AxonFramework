@@ -44,6 +44,7 @@ public interface AppendEventsStatementBuilder {
      * @param dataType   The serialized type of the payload and metadata.
      * @param events     The events to be added.
      * @param serializer The serializer for the payload and metadata.
+     * @param timestampWriter Writer responsible for writing timestamp in the correct format for the given database.
      * @return the newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
