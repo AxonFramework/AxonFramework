@@ -7,6 +7,9 @@ import io.micrometer.core.instrument.Tag;
  * <p>
  * Contains 'static final' fields which represent the micrometer tag KEY that should be consistent across different
  * metrics.
+ *
+ * @author Ivan Dugalic
+ * @since 4.4
  */
 public class TagsUtil {
 
