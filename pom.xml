@@ -62,7 +62,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/target/site/jacoco-aggregate/jacoco.xml
+            ${project.basedir}/integrationtests/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
 
         <!-- dependency versions -->
@@ -636,7 +636,6 @@
                                 <phase>prepare-package</phase>
                                 <goals>
                                     <goal>report</goal>
-                                    <goal>report-aggregate</goal>
                                 </goals>
                             </execution>
                         </executions>
