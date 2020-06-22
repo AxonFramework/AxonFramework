@@ -196,24 +196,46 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
      * we suggest using the {@code QueryBus} instead.
      *
-     * @param query               The {@code query} to be sent
-     * @param resultType          The response type used for this query
-     * @param <Q>                 The type of the query
-     * @param <R>                 The type of the result (initial & updates)
+     * @param query      The {@code query} to be sent
+     * @param resultType The response type used for this query
+     * @param <Q>        The type of the query
+     * @param <R>        The type of the result (initial & updates)
+     * @return Flux which can be used to cancel receiving updates
+     *
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     */
+    default <Q, R> Flux<R> subscriptionQuery(Q query, ResponseType<R> resultType) {
+        return subscriptionQuery(query, resultType, resultType)
+                .flatMapMany(result -> result.initialResult()
+                                             .concatWith(result.updates())
+                                             .doFinally(signal -> result.close()));
+    }
+
+    /**
+     * Sends the given {@code query} over the {@link QueryBus}, returns initial result and keeps streaming
+     * incremental updates until subscriber unsubscribes from Flux.
+     * Should be used when response type of initial result and incremental update match.
+     * (received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting side).
+     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
+     * Flux}</b></p>
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
+     * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
+     *
+     * @param query      The {@code query} to be sent
+     * @param resultType The response type used for this query
+     * @param <Q>        The type of the query
+     * @param <R>        The type of the result (initial & updates)
      * @return Flux which can be used to cancel receiving updates
      *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, R> Flux<R> subscriptionQuery(Q query, Class<R> resultType) {
-        return subscriptionQuery(query,
-                                 ResponseTypes.instanceOf(resultType),
-                                 ResponseTypes.instanceOf(resultType))
-                .flatMapMany(result -> result.initialResult()
-                                             .concatWith(result.updates())
-                                             .doFinally(signal -> result.close()));
+        return subscriptionQuery(query, ResponseTypes.instanceOf(resultType));
     }
-
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, returns initial result and keeps streaming
@@ -228,10 +250,10 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
      * we suggest using the {@code QueryBus} instead.
      *
-     * @param query               The {@code query} to be sent
-     * @param resultType          The response type used for this query
-     * @param <Q>                 The type of the query
-     * @param <R>                 The type of the result (initial & updates)
+     * @param query      The {@code query} to be sent
+     * @param resultType The response type used for this query
+     * @param <Q>        The type of the query
+     * @param <R>        The type of the result (initial & updates)
      * @return Flux which can be used to cancel receiving updates
      *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
@@ -258,21 +280,43 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
      * we suggest using the {@code QueryBus} instead.
      *
-     * @param query               The {@code query} to be sent
-     * @param resultType          The response type used for this query
-     * @param <Q>                 The type of the query
-     * @param <R>                 The type of the result (updates)
+     * @param query      The {@code query} to be sent
+     * @param resultType The response type used for this query
+     * @param <Q>        The type of the query
+     * @param <R>        The type of the result (updates)
+     * @return Flux which can be used to cancel receiving updates
+     *
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     */
+    default <Q, R> Flux<R> queryUpdates(Q query, ResponseType<R> resultType) {
+        return subscriptionQuery(query, ResponseTypes.instanceOf(Void.class), resultType)
+                .flatMapMany(result -> result.updates()
+                                             .doFinally(signal -> result.close()));
+    }
+
+    /**
+     * Sends the given {@code query} over the {@link QueryBus}, and streams
+     * incremental updates until subscriber unsubscribes from Flux.
+     * Should be used when subscriber is interested only in updates.
+     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
+     * Flux}</b></p>
+     * <p>
+     * <b>Note</b>: Any {@code null} results, will be filtered out by the
+     * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
+     * we suggest using the {@code QueryBus} instead.
+     *
+     * @param query      The {@code query} to be sent
+     * @param resultType The response type used for this query
+     * @param <Q>        The type of the query
+     * @param <R>        The type of the result (updates)
      * @return Flux which can be used to cancel receiving updates
      *
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, R> Flux<R> queryUpdates(Q query, Class<R> resultType) {
-        return subscriptionQuery(query,
-                ResponseTypes.instanceOf(Void.class),
-                ResponseTypes.instanceOf(resultType))
-                .flatMapMany(result -> result.updates()
-                        .doFinally(signal -> result.close()));
+        return queryUpdates(query, ResponseTypes.instanceOf(resultType));
     }
 
     /**
