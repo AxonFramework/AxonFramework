@@ -240,7 +240,7 @@ public class GlobalMetricRegistry {
     }
 
     /**
-     * Registers new metrics to the registry to monitor an {@link EventBus}. The monitor will be registered with the
+     * Registers new metrics to the registry to monitor an {@link EventBus} using {@link Tag}s through the given {@code tagsBuilder}. The monitor will be registered with the
      * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
      * on the event bus to initiate the monitoring.
      *
