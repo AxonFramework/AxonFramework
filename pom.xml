@@ -622,6 +622,8 @@
 
                         <executions>
                             <execution>
+                                <id>prepare-agent</id>
+                                <phase>initialize</phase>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
