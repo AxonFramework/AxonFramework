@@ -9,7 +9,6 @@ jobs:
       matrix:
         java: [ 8, 11 ]
       name: Build and tests on JDK ${{ matrix.java }}
-      steps:
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK
