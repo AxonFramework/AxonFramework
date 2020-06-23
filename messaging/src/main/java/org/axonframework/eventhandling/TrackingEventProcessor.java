@@ -1451,7 +1451,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 return false;
             }
             Segment newSegment = status.getSegment().mergedWith(segmentToMergeWith);
-            tokenStore.deleteToken(getName(), otherSegment);
+            //we want to keep the token with the segmentId obtained by the merge operation, and to delete the other
+            int tokenToDelete = (newSegment.getSegmentId() == segmentId) ? otherSegment : segmentId;
+            tokenStore.deleteToken(getName(), tokenToDelete);
 
             TrackingToken mergedToken = otherSegment < segmentId
                     ? new MergedTrackingToken(otherToken, status.getInternalTrackingToken())

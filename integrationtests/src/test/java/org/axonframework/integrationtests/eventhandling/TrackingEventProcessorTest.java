@@ -1452,6 +1452,23 @@ class TrackingEventProcessorTest {
     }
 
     /**
+     * This test is a follow up from issue https://github.com/AxonIQ/axon-server-se/issues/135
+     */
+    @Test
+    @Timeout(value = 10)
+    void testMergeInvertedSegmentOrder() throws InterruptedException {
+        int numberOfSegments = 4;
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(numberOfSegments));
+        testSubject.start();
+        waitForActiveThreads(4);
+        int segmentId = 3;
+        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentId);
+        assertTrue(mergeResult.join(), "Expected merge to succeed");
+        verify(tokenStore).deleteToken("test", 3);
+        verify(tokenStore).storeToken(any(), eq("test"), eq(1));
+    }
+
+    /**
      * This test is a follow up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
      */
     @Test
