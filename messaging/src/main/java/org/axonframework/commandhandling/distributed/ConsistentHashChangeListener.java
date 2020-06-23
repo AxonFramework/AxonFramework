@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ package org.axonframework.commandhandling.distributed;
 public interface ConsistentHashChangeListener {
 
     /**
-     * Notification that a consistent hash has changed. Implementations should take into account that this listener
-     * my be called concurrently, and that multiple invocations do not necessarily reflect the order in which changes
-     * has occurred. If this is important to the implementation, they should verify the {@link ConsistentHash#version()}
+     * Notification that a consistent hash has changed. Implementations should take into account that this listener may
+     * be called concurrently, and that multiple invocations do not necessarily reflect the order in which changes have
+     * occurred. If this is order important to the implementation, it should verify the {@link ConsistentHash#version()}
      * of the given {@code newConsistentHash}.
      *
      * @param newConsistentHash The new consistent hash

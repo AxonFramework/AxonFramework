@@ -34,20 +34,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendEventsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendSnapshotStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CleanGapsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateHeadTokenStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateTailTokenStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateTokenAtStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.DeleteSnapshotsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.FetchTrackedEventsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.JdbcEventStorageEngineStatements;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.LastSequenceNumberForStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataForAggregateStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithGapsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithoutGapsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadSnapshotDataStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.*;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -222,7 +209,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected PreparedStatement appendEvents(Connection connection, List<? extends EventMessage<?>> events,
                                              Serializer serializer) throws SQLException {
-        return appendEvents.build(connection, schema, dataType, events, serializer);
+        return appendEvents.build(connection, schema, dataType, events, serializer, this::writeTimestamp);
     }
 
     /**
@@ -271,7 +258,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
                                                Serializer serializer) throws SQLException {
-        return appendSnapshot.build(connection, schema, dataType, snapshot, serializer);
+        return appendSnapshot.build(connection, schema, dataType, snapshot, serializer, this::writeTimestamp);
     }
 
     /**
