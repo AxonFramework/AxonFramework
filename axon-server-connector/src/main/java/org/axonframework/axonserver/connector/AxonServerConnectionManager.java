@@ -32,6 +32,7 @@ import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptors;
+import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -52,6 +53,7 @@ import org.axonframework.lifecycle.ShutdownHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,9 +72,10 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.net.ssl.SSLException;
 
-import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
+import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.ACK;
+import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.NODE_NOTIFICATION;
+import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.REQUEST_RECONNECT;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -208,7 +211,8 @@ public class AxonServerConnectionManager {
         checkConnectionState(context);
         final ManagedChannel channel = channels.get(context);
 
-        if (channel == null || channel.isShutdown()) {
+        ConnectivityState channelState = channel == null ? ConnectivityState.SHUTDOWN : channel.getState(false);
+        if (channelState != ConnectivityState.READY) {
             logger.info("Connecting using {}...",
                         axonServerConfiguration.isSslEnabled() ? "TLS" : "unencrypted connection");
 
@@ -282,7 +286,7 @@ public class AxonServerConnectionManager {
                     axonServerConfiguration.setSuppressDownloadMessage(true);
                     writeDownloadMessage();
                 }
-                scheduleReconnect(context, false);
+                scheduleReconnect(context, false, true);
                 throw new AxonServerException(ErrorCode.CONNECTION_FAILED.errorCode(),
                                               "No connection to AxonServer available");
             } else if (!axonServerConfiguration.getSuppressDownloadMessage()) {
@@ -297,7 +301,7 @@ public class AxonServerConnectionManager {
         Consumer<String> reconnect = (c) -> {
             notifyConnectionChange(disconnectListeners, c);
             requestStream.onCompleted();
-            scheduleReconnect(context, true);
+            scheduleReconnect(context, true, true);
         };
         for (Function<Consumer<String>, Consumer<String>> interceptor : reconnectInterceptors) {
             reconnect = interceptor.apply(reconnect);
@@ -428,7 +432,7 @@ public class AxonServerConnectionManager {
                                 return;
                             }
                         }
-                        scheduleReconnect(context, true);
+                        scheduleReconnect(context, true, false);
                     }
 
                     @Override
@@ -436,7 +440,7 @@ public class AxonServerConnectionManager {
                         logger.info("Closed instruction stream to [{}]", name);
                         completeRequestStream();
                         notifyConnectionChange(disconnectListeners, context);
-                        scheduleReconnect(context, true);
+                        scheduleReconnect(context, true, false);
                     }
                 })
         );
@@ -448,9 +452,15 @@ public class AxonServerConnectionManager {
         }
     }
 
-    private synchronized void scheduleReconnect(String context, boolean immediate) {
+    private synchronized void scheduleReconnect(String context, boolean immediate, boolean forceDisconnect) {
         ScheduledFuture<?> reconnectTask = reconnectTasks.get(context);
         if (!shutdown && (reconnectTask == null || reconnectTask.isDone())) {
+            if (!forceDisconnect) {
+                ManagedChannel channel = channels.get(context);
+                if (channel != null && channel.getState(false) == ConnectivityState.READY) {
+                    return;
+                }
+            }
             ManagedChannel channel = channels.remove(context);
             if (channel != null) {
                 try {
