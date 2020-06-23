@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
@@ -114,7 +115,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link Predicate} which returns {@code true} regardless.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
@@ -446,7 +447,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link Predicate} which returns {@code true} regardless.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
@@ -469,37 +470,51 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         private int gapCleaningThreshold = DEFAULT_GAP_CLEANING_THRESHOLD;
 
         @Override
-        public Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public JpaEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public Builder upcasterChain(EventUpcaster upcasterChain) {
+        public JpaEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
 
         @Override
-        public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+        public JpaEventStorageEngine.Builder persistenceExceptionResolver(
+                PersistenceExceptionResolver persistenceExceptionResolver
+        ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
             return this;
         }
 
         @Override
-        public Builder eventSerializer(Serializer eventSerializer) {
+        public JpaEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
+         */
         @Override
-        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
+        @Deprecated
+        public JpaEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
 
         @Override
-        public Builder batchSize(int batchSize) {
+        public JpaEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+            super.snapshotFilter(snapshotFilter);
+            return this;
+        }
+
+        @Override
+        public JpaEventStorageEngine.Builder batchSize(int batchSize) {
             super.batchSize(batchSize);
             return this;
         }

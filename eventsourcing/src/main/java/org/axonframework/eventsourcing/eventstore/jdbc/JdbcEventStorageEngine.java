@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,22 +31,10 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendEventsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendSnapshotStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CleanGapsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateHeadTokenStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateTailTokenStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateTokenAtStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.DeleteSnapshotsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.FetchTrackedEventsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.JdbcEventStorageEngineStatements;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.LastSequenceNumberForStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataForAggregateStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithGapsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithoutGapsStatementBuilder;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadSnapshotDataStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.*;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -165,7 +153,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link Predicate} which returns {@code true} regardless.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
      * <li>The {@link EventSchema} defaults to an {@link EventSchema#EventSchema()} call.</li>
@@ -221,7 +209,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected PreparedStatement appendEvents(Connection connection, List<? extends EventMessage<?>> events,
                                              Serializer serializer) throws SQLException {
-        return appendEvents.build(connection, schema, dataType, events, serializer);
+        return appendEvents.build(connection, schema, dataType, events, serializer, this::writeTimestamp);
     }
 
     /**
@@ -270,7 +258,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
                                                Serializer serializer) throws SQLException {
-        return appendSnapshot.build(connection, schema, dataType, snapshot, serializer);
+        return appendSnapshot.build(connection, schema, dataType, snapshot, serializer, this::writeTimestamp);
     }
 
     /**
@@ -825,7 +813,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link Predicate} which returns {@code true} regardless.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
      * <li>The {@link EventSchema} defaults to an {@link EventSchema#EventSchema()} call.</li>
@@ -1046,13 +1034,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         }
 
         @Override
-        public Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public JdbcEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public Builder upcasterChain(EventUpcaster upcasterChain) {
+        public JdbcEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
@@ -1061,25 +1049,39 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * {@inheritDoc} Defaults to a {@link JdbcSQLErrorCodesResolver}.
          */
         @Override
-        public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+        public JdbcEventStorageEngine.Builder persistenceExceptionResolver(
+                PersistenceExceptionResolver persistenceExceptionResolver
+        ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
             return this;
         }
 
         @Override
-        public Builder eventSerializer(Serializer eventSerializer) {
+        public JdbcEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
+         */
         @Override
-        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
+        @Deprecated
+        public JdbcEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
 
         @Override
-        public Builder batchSize(int batchSize) {
+        public JdbcEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+            super.snapshotFilter(snapshotFilter);
+            return this;
+        }
+
+        @Override
+        public JdbcEventStorageEngine.Builder batchSize(int batchSize) {
             super.batchSize(batchSize);
             return this;
         }

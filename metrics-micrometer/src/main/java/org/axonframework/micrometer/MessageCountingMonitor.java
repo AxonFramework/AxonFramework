@@ -18,30 +18,45 @@ package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
+
+import java.util.function.Function;
 
 /**
  * Counts the number of ingested, successful, failed and processed messages
  *
  * @author Marijn van Zelst
+ * @author Ivan Dugalic
  * @since 4.1
  */
 public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
 
-    private final Counter ingestedCounter;
-    private final Counter successCounter;
-    private final Counter failureCounter;
-    private final Counter processedCounter;
-    private final Counter ignoredCounter;
+    private static final String INGESTED_COUNTER = ".ingestedCounter";
+    private static final String SUCCESS_COUNTER = ".successCounter";
+    private static final String FAILURE_COUNTER = ".failureCounter";
+    private static final String PROCESSED_COUNTER = ".processedCounter";
+    private static final String IGNORED_COUNTER = ".ignoredCounter";
 
-    private MessageCountingMonitor(Counter ingestedCounter, Counter successCounter, Counter failureCounter,
-                                   Counter processedCounter, Counter ignoredCounter) {
-        this.ingestedCounter = ingestedCounter;
-        this.successCounter = successCounter;
-        this.failureCounter = failureCounter;
-        this.processedCounter = processedCounter;
-        this.ignoredCounter = ignoredCounter;
+    private final String meterNamePrefix;
+    private final MeterRegistry meterRegistry;
+    private final Function<Message<?>, Iterable<Tag>> tagsBuilder;
+
+    private MessageCountingMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
+
+        this(meterNamePrefix,
+             meterRegistry,
+             message -> Tags.empty());
+    }
+
+
+    private MessageCountingMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
+                                   Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        this.meterNamePrefix = meterNamePrefix;
+        this.meterRegistry = meterRegistry;
+        this.tagsBuilder = tagsBuilder;
     }
 
     /**
@@ -49,25 +64,40 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>> {
      *
      * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
      * @param meterRegistry   The meter registry used to create and register the meters
-     * @return the message counting monitor
+     * @return The message counting monitor
      */
     public static MessageCountingMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
-        Counter ingestedCounter = meterRegistry.counter(meterNamePrefix + ".ingestedCounter");
-        Counter successCounter = meterRegistry.counter(meterNamePrefix + ".successCounter");
-        Counter failureCounter = meterRegistry.counter(meterNamePrefix + ".failureCounter");
-        Counter processedCounter = meterRegistry.counter(meterNamePrefix + ".processedCounter");
-        Counter ignoredCounter = meterRegistry.counter(meterNamePrefix + ".ignoredCounter");
 
-        return new MessageCountingMonitor(ingestedCounter,
-                                          successCounter,
-                                          failureCounter,
-                                          processedCounter,
-                                          ignoredCounter);
+        return new MessageCountingMonitor(meterNamePrefix, meterRegistry);
+    }
+
+    /**
+     * Creates a message counting monitor
+     *
+     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
+     * @param meterRegistry   The meter registry used to create and register the meters
+     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                        message
+     * @return The message counting monitor
+     */
+    public static MessageCountingMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
+                                                      Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+
+        return new MessageCountingMonitor(meterNamePrefix, meterRegistry, tagsBuilder);
     }
 
     @Override
     public MonitorCallback onMessageIngested(Message<?> message) {
+
+        Iterable<Tag> tags = tagsBuilder.apply(message);
+        Counter ingestedCounter = meterRegistry.counter(meterNamePrefix + INGESTED_COUNTER, tags);
+        Counter successCounter = meterRegistry.counter(meterNamePrefix + SUCCESS_COUNTER, tags);
+        Counter failureCounter = meterRegistry.counter(meterNamePrefix + FAILURE_COUNTER, tags);
+        Counter processedCounter = meterRegistry.counter(meterNamePrefix + PROCESSED_COUNTER, tags);
+        Counter ignoredCounter = meterRegistry.counter(meterNamePrefix + IGNORED_COUNTER, tags);
+
         ingestedCounter.increment();
+
         return new MonitorCallback() {
             @Override
             public void reportSuccess() {

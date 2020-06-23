@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -147,6 +148,15 @@ public class AggregateConfigurerTest {
         testSubject.configureAggregateFactory(configuration -> expectedAggregateFactory);
 
         assertEquals(expectedAggregateFactory, testSubject.aggregateFactory());
+    }
+
+    @Test
+    void testSnapshotFilterConfiguration() {
+        SnapshotFilter testFilter = snapshotData -> true;
+
+        testSubject.configureSnapshotFilter(configuration -> testFilter);
+
+        assertEquals(testFilter, testSubject.snapshotFilter());
     }
 
     private static class TestAggregate {
