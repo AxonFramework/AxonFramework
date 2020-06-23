@@ -131,13 +131,8 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
     private <R> Mono<R> getPayload(Mono<? extends CommandResultMessage<?>> commandResultMessage) {
         //noinspection unchecked
         return commandResultMessage
-                .flatMap(this::mapResult)
                 .filter(r -> Objects.nonNull(r.getPayload()))
                 .map(it -> (R) it.getPayload());
-    }
-
-    private Mono<? extends ResultMessage<?>> mapResult(CommandResultMessage<?> response) {
-        return response.isExceptional() ? Mono.error(response.exceptionResult()) : Mono.just(response);
     }
 
     /**
