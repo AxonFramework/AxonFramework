@@ -228,6 +228,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                    .platformConnectionManager(axonServerConnectionManager)
                                    .snapshotSerializer(snapshotSerializer)
                                    .eventSerializer(eventSerializer)
+                                   .snapshotFilter(configuration.snapshotFilter())
                                    .upcasterChain(configuration.upcasterChain())
                                    .build();
     }

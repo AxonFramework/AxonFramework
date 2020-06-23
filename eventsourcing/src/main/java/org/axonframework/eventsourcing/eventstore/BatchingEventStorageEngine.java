@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 
@@ -138,42 +139,55 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * Abstract Builder class to instantiate a {@link BatchingEventStorageEngine}.
      * <p>
      * This implementation inherits the following defaults: The {@link Serializer} used for snapshots is defaulted to a
-     * {@link org.axonframework.serialization.xml.XStreamSerializer}, the {@link EventUpcaster} defaults to a
-     * {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}, the Serializer used for events is
-     * also defaulted to a XStreamSerializer and the {@code snapshotFilter} defaults to a {@link Predicate} which
-     * returns {@code true} regardless.
-     * The {@code batchSize} in this Builder implementation is defaulted to an integer of size {@code 100}.
+     * {@link org.axonframework.serialization.xml.XStreamSerializer}, the {@link EventUpcaster} defaults to a {@link
+     * org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}, the Serializer used for events is also
+     * defaulted to a XStreamSerializer and the {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()}
+     * instance. The {@code batchSize} in this Builder implementation is defaulted to an integer of size {@code 100}.
      */
     public abstract static class Builder extends AbstractEventStorageEngine.Builder {
 
         private int batchSize = DEFAULT_BATCH_SIZE;
 
         @Override
-        public Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public BatchingEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public Builder upcasterChain(EventUpcaster upcasterChain) {
+        public BatchingEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
 
         @Override
-        public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+        public BatchingEventStorageEngine.Builder persistenceExceptionResolver(
+                PersistenceExceptionResolver persistenceExceptionResolver
+        ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
             return this;
         }
 
         @Override
-        public Builder eventSerializer(Serializer eventSerializer) {
+        public BatchingEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
+         */
         @Override
-        public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
+        @Deprecated
+        public BatchingEventStorageEngine.Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
+            super.snapshotFilter(snapshotFilter);
+            return this;
+        }
+
+        @Override
+        public BatchingEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }

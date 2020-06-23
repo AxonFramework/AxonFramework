@@ -86,6 +86,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .messageMonitor(c.messageMonitor(AxonServerEventStore.class, "eventStore"))
                                    .snapshotSerializer(c.serializer())
                                    .eventSerializer(c.eventSerializer())
+                                   .snapshotFilter(c.snapshotFilter())
                                    .upcasterChain(c.upcasterChain())
                                    .build();
     }
