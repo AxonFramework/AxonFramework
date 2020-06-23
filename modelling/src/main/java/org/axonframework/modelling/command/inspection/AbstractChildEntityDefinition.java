@@ -76,6 +76,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      *
      * @param field a {@link java.lang.reflect.Field} containing a Child Entity
      * @return true if the type is as required by the implementation and false if it is not
+     * @deprecated
      */
     @Deprecated
     protected abstract boolean isFieldTypeSupported(Field field);
