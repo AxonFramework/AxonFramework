@@ -21,6 +21,7 @@ import java.util.Optional;
  */
 public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
 
+    private static final long serialVersionUID = -8926628997626431513L;
     private final ResponseType<R> expectedResponseType;
     private final QueryResponseMessage<?> responseMessage;
 
