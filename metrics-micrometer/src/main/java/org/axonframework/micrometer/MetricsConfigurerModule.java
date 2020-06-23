@@ -26,18 +26,29 @@ import org.axonframework.config.ConfigurerModule;
  *
  * @author Steven van Beelen
  * @author Marijn van Zelst
+ * @author Ivan Dugalic
  * @since 4.1
  */
 public class MetricsConfigurerModule implements ConfigurerModule {
 
     private final GlobalMetricRegistry globalMetricRegistry;
+    private final boolean useDimensions;
 
     public MetricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+        this(globalMetricRegistry, false);
+    }
+
+    public MetricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry, boolean useDimensions) {
         this.globalMetricRegistry = globalMetricRegistry;
+        this.useDimensions = useDimensions;
     }
 
     @Override
     public void configureModule(Configurer configurer) {
-        globalMetricRegistry.registerWithConfigurer(configurer);
+        if (useDimensions) {
+            globalMetricRegistry.registerWithConfigurerWithDefaultTags(configurer);
+        } else {
+            globalMetricRegistry.registerWithConfigurer(configurer);
+        }
     }
 }
