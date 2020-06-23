@@ -48,6 +48,7 @@ public abstract class ReflectionUtils {
      * A map of Primitive types to their respective wrapper types.
      */
     private static final Map<Type, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
+    public static final String UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE = "Unsupported member type [%s]";
 
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
@@ -392,7 +393,7 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Method) {
             return (R) ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
         }
-        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
+        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
     }
 
     /**
@@ -411,7 +412,7 @@ public abstract class ReflectionUtils {
             final Field field = (Field) member;
             return field.getType();
         }
-        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
+        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
     }
 
     /**
@@ -428,7 +429,7 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Method) {
             return ((Method) member).getGenericReturnType();
         }
-        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
+        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
     }
 
     /**
@@ -444,7 +445,7 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Executable) {
             return ((Executable) member).toGenericString();
         }
-        throw new IllegalStateException(String.format("Unsupported member type [%s]", member.getClass().getName()));
+        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
     }
 
     private ReflectionUtils() {
