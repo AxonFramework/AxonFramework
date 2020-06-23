@@ -98,6 +98,11 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
+    public void performReset() {
+        performReset(null);
+    }
+
+    @Override
     public <R> void performReset(R resetContext) {
         delegates.stream()
                  .filter(EventHandlerInvoker::supportsReset)

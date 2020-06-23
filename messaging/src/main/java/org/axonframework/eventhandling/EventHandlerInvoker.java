@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import java.util.Objects;
+
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
  *
@@ -71,7 +73,6 @@ public interface EventHandlerInvoker {
      * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
      */
     default void performReset() {
-        performReset(null);
     }
 
     /**
@@ -81,5 +82,12 @@ public interface EventHandlerInvoker {
      * @param <R>          the type of the provided {@code resetContext}
      */
     default <R> void performReset(R resetContext) {
+        if (Objects.isNull(resetContext)) {
+            performReset();
+        } else {
+            throw new UnsupportedOperationException(
+                    "EventHandlerInvoker#performRest(R) is not implemented for a non-null reset context."
+            );
+        }
     }
 }

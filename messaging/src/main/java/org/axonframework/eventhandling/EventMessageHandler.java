@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MessageHandler;
 
+import java.util.Objects;
+
 /**
  * Interface to be implemented by classes that can handle events.
  *
@@ -43,7 +45,6 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
      * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
      */
     default void prepareReset() {
-        prepareReset(null);
     }
 
     /**
@@ -53,6 +54,13 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
      * @param <R>          the type of the provided {@code resetContext}
      */
     default <R> void prepareReset(R resetContext) {
+        if (Objects.isNull(resetContext)) {
+            prepareReset();
+        } else {
+            throw new UnsupportedOperationException(
+                    "EventMessageHandler#prepareReset(R) is not implemented for a non-null reset context."
+            );
+        }
     }
 
     /**

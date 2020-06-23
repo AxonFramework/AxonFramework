@@ -105,6 +105,11 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
+    public void prepareReset() {
+        prepareReset(null);
+    }
+
+    @Override
     public <R> void prepareReset(R resetContext) {
         try {
             findAndHandle(GenericResetMessage.asResetMessage(resetContext));
