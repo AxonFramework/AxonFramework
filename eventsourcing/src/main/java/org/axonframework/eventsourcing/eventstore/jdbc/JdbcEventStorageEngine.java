@@ -166,7 +166,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#keep()} instance.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
      * <li>The {@link EventSchema} defaults to an {@link EventSchema#EventSchema()} call.</li>
@@ -826,7 +826,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#keep()} instance.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
      * <li>The {@link EventSchema} defaults to an {@link EventSchema#EventSchema()} call.</li>

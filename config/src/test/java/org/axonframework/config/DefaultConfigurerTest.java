@@ -424,7 +424,7 @@ class DefaultConfigurerTest {
                                                       .buildConfiguration();
 
         SnapshotFilter snapshotFilter = resultConfig.snapshotFilter();
-        boolean result = snapshotFilter.filter(mock(DomainEventData.class));
+        boolean result = snapshotFilter.allow(mock(DomainEventData.class));
         assertTrue(result);
         assertTrue(filteredFirst.get());
         assertTrue(filteredSecond.get());

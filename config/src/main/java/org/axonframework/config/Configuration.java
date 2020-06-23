@@ -466,13 +466,13 @@ public interface Configuration {
 
     /**
      * Returns the {@link SnapshotFilter} combining all defined filters per {@link AggregateConfigurer} in an {@link
-     * SnapshotFilter#and(SnapshotFilter)} operation.
+     * SnapshotFilter#combine(SnapshotFilter)} operation.
      *
      * @return the {@link SnapshotFilter}  combining all defined filters per {@link AggregateConfigurer}
      */
     default SnapshotFilter snapshotFilter() {
         return findModules(AggregateConfiguration.class).stream()
                                                         .map(AggregateConfiguration::snapshotFilter)
-                                                        .reduce(SnapshotFilter.keep(), SnapshotFilter::and);
+                                                        .reduce(SnapshotFilter.allowAll(), SnapshotFilter::combine);
     }
 }

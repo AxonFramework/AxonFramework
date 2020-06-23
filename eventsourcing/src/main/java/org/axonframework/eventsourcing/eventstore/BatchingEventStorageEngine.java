@@ -141,7 +141,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * This implementation inherits the following defaults: The {@link Serializer} used for snapshots is defaulted to a
      * {@link org.axonframework.serialization.xml.XStreamSerializer}, the {@link EventUpcaster} defaults to a {@link
      * org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}, the Serializer used for events is also
-     * defaulted to a XStreamSerializer and the {@code snapshotFilter} defaults to a {@link SnapshotFilter#keep()}
+     * defaulted to a XStreamSerializer and the {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()}
      * instance. The {@code batchSize} in this Builder implementation is defaulted to an integer of size {@code 100}.
      */
     public abstract static class Builder extends AbstractEventStorageEngine.Builder {

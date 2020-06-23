@@ -86,7 +86,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
         return readSnapshotData(aggregateIdentifier)
-                .filter(snapshotFilter::filter)
+                .filter(snapshotFilter::allow)
                 .map(snapshot -> upcastAndDeserializeDomainEvents(Stream.of(snapshot),
                                                                   snapshotSerializer,
                                                                   upcasterChain
@@ -245,7 +245,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * <p>
      * The {@link Serializer} used for snapshots is defaulted to a {@link XStreamSerializer}, the {@link EventUpcaster}
      * defaults to a {@link NoOpEventUpcaster}, the Serializer used for events is also defaulted to a XStreamSerializer
-     * and the {@code snapshotFilter} defaults to a {@link SnapshotFilter#keep()} instance.
+     * and the {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.
      */
     public abstract static class Builder {
 
@@ -253,7 +253,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private PersistenceExceptionResolver persistenceExceptionResolver;
         private Supplier<Serializer> eventSerializer;
-        private SnapshotFilter snapshotFilter = SnapshotFilter.keep();
+        private SnapshotFilter snapshotFilter = SnapshotFilter.allowAll();
 
         /**
          * Sets the {@link Serializer} used to serialize and deserialize snapshots. Defaults to a {@link
@@ -324,7 +324,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
         /**
          * Sets the {@code snapshotFilter} deciding whether to take a snapshot into account. Can be set to filter out
-         * specific snapshot revisions which should not be applied. Defaults to {@link SnapshotFilter#keep()}.
+         * specific snapshot revisions which should not be applied. Defaults to {@link SnapshotFilter#allowAll()}.
          * <p>
          * Note that {@link SnapshotFilter} instances can be combined and should return {@code true} if they handle a
          * snapshot they wish to ignore.

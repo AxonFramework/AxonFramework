@@ -115,7 +115,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#keep()} intance.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
@@ -447,7 +447,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
      * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#keep()} intance.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>

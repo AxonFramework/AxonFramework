@@ -269,8 +269,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         @Deprecated
         public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
-            snapshotFilter(snapshotFilter::test);
-            return this;
+            return snapshotFilter(snapshotFilter::test);
         }
 
         /**

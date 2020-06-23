@@ -17,6 +17,9 @@
 package org.axonframework.eventsourcing.snapshotting;
 
 import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,11 +28,36 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link AndSnapshotFilter}.
+ * Test class validating the {@link SnapshotFilter}.
  *
  * @author Steven van Beelen
  */
-class AndSnapshotFilterTest {
+class SnapshotFilterTest {
+
+    private static final DomainEventData<?> NO_SNAPSHOT_DATA = null;
+    private static final DomainEventData<?> MOCK_SNAPSHOT_DATA = mock(DomainEventData.class);
+    private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(
+            new GenericDomainEventMessage<>("some-type", "some-aggregate-id", 0, "some-payload"),
+            XStreamSerializer.defaultSerializer()
+    );
+
+    @Test
+    void testAllowAllReturnsTrue() {
+        SnapshotFilter testSubject = SnapshotFilter.allowAll();
+
+        assertTrue(testSubject.allow(NO_SNAPSHOT_DATA));
+        assertTrue(testSubject.allow(MOCK_SNAPSHOT_DATA));
+        assertTrue(testSubject.allow(TEST_SNAPSHOT_DATA));
+    }
+
+    @Test
+    void testRejectAllReturnsFalseOnAnyInput() {
+        SnapshotFilter testSubject = SnapshotFilter.rejectAll();
+
+        assertFalse(testSubject.allow(NO_SNAPSHOT_DATA));
+        assertFalse(testSubject.allow(MOCK_SNAPSHOT_DATA));
+        assertFalse(testSubject.allow(TEST_SNAPSHOT_DATA));
+    }
 
     @Test
     void testFilterInvokesBothFiltersOnTrueForFirstFilter() {
@@ -44,9 +72,9 @@ class AndSnapshotFilterTest {
             return false;
         };
 
-        AndSnapshotFilter testSubject = new AndSnapshotFilter(first, second);
+        SnapshotFilter testSubject = first.combine(second);
 
-        boolean result = testSubject.filter(mock(DomainEventData.class));
+        boolean result = testSubject.allow(mock(DomainEventData.class));
         assertFalse(result);
         assertTrue(invokedFirst.get());
         assertTrue(invokedSecond.get());
@@ -65,9 +93,9 @@ class AndSnapshotFilterTest {
             return true;
         };
 
-        AndSnapshotFilter testSubject = new AndSnapshotFilter(first, second);
+        SnapshotFilter testSubject = first.combine(second);
 
-        boolean result = testSubject.filter(mock(DomainEventData.class));
+        boolean result = testSubject.allow(mock(DomainEventData.class));
         assertFalse(result);
         assertTrue(invokedFirst.get());
         assertFalse(invokedSecond.get());

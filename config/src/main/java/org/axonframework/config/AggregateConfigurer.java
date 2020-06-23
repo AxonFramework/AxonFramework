@@ -178,7 +178,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         );
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
-        snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> SnapshotFilter.keep());
+        snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> SnapshotFilter.allowAll());
         aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
                                            c -> new GenericAggregateFactory<>(metaModel.get()));
         cache = new Component<>(() -> parent, name("aggregateCache"), c -> null);

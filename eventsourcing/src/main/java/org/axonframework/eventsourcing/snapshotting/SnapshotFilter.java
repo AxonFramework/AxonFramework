@@ -21,8 +21,8 @@ import org.axonframework.eventhandling.DomainEventData;
 import java.util.function.Predicate;
 
 /**
- * Functional interface defining a filter of snapshot data in the form of {@link DomainEventData}. When providing an
- * instance of this, take the following into account:
+ * Functional interface defining an {@link #allow(DomainEventData)} method to take snapshot data into account when
+ * loading an aggregate. When providing an instance of this, take the following into account:
  * <ol>
  *     <li> Only return {@code false} if the snapshot data belongs to the corresponding aggregate <b>and</b> it does no conform to the desired format.</li>
  *     <li> Return {@code true} if the snapshot data belongs to the corresponding aggregate and conforms to the desired format.</li>
@@ -50,61 +50,36 @@ public interface SnapshotFilter extends Predicate<DomainEventData<?>> {
      * @param snapshotData the snapshot data to verify for filtering
      * @return {@code true} if the data should be kept and {@code false} if it should be dropped
      */
-    boolean filter(DomainEventData<?> snapshotData);
-
-    @Override
-    default boolean test(DomainEventData<?> snapshotData) {
-        return filter(snapshotData);
+    default boolean allow(DomainEventData<?> snapshotData) {
+        return test(snapshotData);
     }
 
     /**
      * Combines {@code this} {@link SnapshotFilter} with the give {@code other} filter in an "AND" operation,
-     * effectively validating whether both return {@code true} on a {@link #filter(DomainEventData)} call.
+     * effectively validating whether both return {@code true} on a {@link #allow(DomainEventData)} call of each.
      *
      * @param other another {@link SnapshotFilter} instance to combine with {@code this} filter in an "AND" operation
      * @return a new {@link SnapshotFilter} combining the {@code this} and {@code other} filters in an "AND" operation
      */
-    default SnapshotFilter and(SnapshotFilter other) {
-        return new AndSnapshotFilter(this, other);
+    default SnapshotFilter combine(SnapshotFilter other) {
+        return snapshotData -> this.allow(snapshotData) && other.allow(snapshotData);
     }
 
     /**
-     * Combines {@code this} {@link SnapshotFilter} with the give {@code other} filter in an "OR" operation, effectively
-     * validating whether both return {@code true} on a {@link #filter(DomainEventData)} call.
+     * A {@link SnapshotFilter} implementation which allows all snapshots.
      *
-     * @param other another {@link SnapshotFilter} instance to combine with {@code this} filter in an "OR" operation
-     * @return a new {@link SnapshotFilter} combining the {@code this} and {@code other} filters in an "OR" operation
+     * @return {@link SnapshotFilter} implementation which allows all snapshots
      */
-    default SnapshotFilter or(SnapshotFilter other) {
-        return new OrSnapshotFilter(this, other);
-    }
-
-    /**
-     * Negates the outcome of {@code this} {@link SnapshotFilter}.
-     *
-     * @return a new {@link SnapshotFilter} negating the outcome of {@code this}
-     */
-    @Override
-    @SuppressWarnings("NullableProblems") // Correct override for Predicate#negate() in place, but warning persists.
-    default SnapshotFilter negate() {
-        return new NegateSnapshotFilter(this);
-    }
-
-    /**
-     * A {@link SnapshotFilter} implementation which filters out nothing.
-     *
-     * @return a {@link SnapshotFilter} implementation which filters out nothing
-     */
-    static SnapshotFilter keep() {
+    static SnapshotFilter allowAll() {
         return snapshotData -> true;
     }
 
     /**
-     * A {@link SnapshotFilter} implementation which filters everything.
+     * A {@link SnapshotFilter} implementation which rejects all snapshots.
      *
-     * @return a {@link SnapshotFilter} implementation which filters everything
+     * @return a {@link SnapshotFilter} implementation which rejects all snapshots
      */
-    static SnapshotFilter drop() {
+    static SnapshotFilter rejectAll() {
         return snapshotData -> false;
     }
 }
