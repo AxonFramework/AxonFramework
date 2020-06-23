@@ -48,6 +48,7 @@ class DefaultReactorCommandGatewayComponentTest {
     private DefaultReactorCommandGateway reactiveCommandGateway;
     private MessageHandler<CommandMessage<?>> commandMessageHandler;
     private MessageHandler<CommandMessage<?>> failingCommandHandler;
+    private MessageHandler<CommandMessage<?>> voidCommandHandler;
     private RetryScheduler mockRetryScheduler;
     private CommandBus commandBus;
 
@@ -75,10 +76,19 @@ class DefaultReactorCommandGatewayComponentTest {
                 throw new RuntimeException();
             }
         });
+
+        voidCommandHandler = spy(new MessageHandler<CommandMessage<?>>() {
+            @Override
+            public Object handle(CommandMessage<?> message) throws Exception {
+                return null;
+            }
+        });
+
         commandBus.subscribe(Integer.class.getName(), failingCommandHandler);
         commandBus.subscribe(Boolean.class.getName(),
                              message -> "" + message.getMetaData().getOrDefault("key1", "")
                                      + message.getMetaData().getOrDefault("key2", ""));
+        commandBus.subscribe(Long.class.getName(), voidCommandHandler);
         reactiveCommandGateway = DefaultReactorCommandGateway.builder()
                                                              .commandBus(commandBus)
                                                              .retryScheduler(mockRetryScheduler)
@@ -95,6 +105,18 @@ class DefaultReactorCommandGatewayComponentTest {
         verify(commandMessageHandler).handle(any());
         verifyZeroInteractions(mockRetryScheduler);
     }
+
+    @Test
+    void testSendVoidHandler() throws Exception {
+        Mono<String> result = reactiveCommandGateway.send(1L);
+        verifyZeroInteractions(voidCommandHandler);
+        StepVerifier.create(result)
+                .expectComplete()
+                .verify();
+        verify(voidCommandHandler).handle(any());
+        verifyZeroInteractions(mockRetryScheduler);
+    }
+
 
     @Test
     void testSendAll() throws Exception {

@@ -16,14 +16,11 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.ReactiveCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.reactive.ReactorResultHandlerInterceptor;
 import reactor.core.publisher.Flux;
@@ -31,6 +28,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Arrays.asList;
@@ -87,9 +85,9 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
                 .transform(this::processCommandInterceptors)
                 .flatMap(this::dispatchCommand)
                 .flatMap(this::processResultsInterceptors)
-                .map(resultMessage -> (R) resultMessage.getPayload());
+                .transform(this::getPayload);
     }
-
+    
     @Override
     public Registration registerDispatchInterceptor(ReactorMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
         dispatchInterceptors.add(interceptor);
@@ -128,6 +126,18 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
                    .reduce(commandResultMessages,
                            (result, interceptor) -> interceptor.intercept(commandMessage, result))
                    .flatMap(Flux::next); // command handlers provide only one result!
+    }
+
+    private <R> Mono<R> getPayload(Mono<? extends CommandResultMessage<?>> commandResultMessage) {
+        //noinspection unchecked
+        return commandResultMessage
+                .flatMap(this::mapResult)
+                .filter(r -> Objects.nonNull(r.getPayload()))
+                .map(it -> (R) it.getPayload());
+    }
+
+    private Mono<? extends ResultMessage<?>> mapResult(CommandResultMessage<?> response) {
+        return response.isExceptional() ? Mono.error(response.exceptionResult()) : Mono.just(response);
     }
 
     /**
