@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
@@ -37,8 +38,10 @@ import java.util.function.Supplier;
  */
 class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<U> {
 
+    private static final long serialVersionUID = 488652969630034329L;
     private final QueryUpdate queryUpdate;
     private final LazyDeserializingObject<U> serializedPayload;
+    private final Throwable exception;
     private final Supplier<MetaData> metaDataSupplier;
 
     /**
@@ -50,18 +53,26 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
      *                    given {@code queryUpdate}
      */
     public GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate, Serializer serializer) {
-        this(
-                queryUpdate,
-                new LazyDeserializingObject<>(new GrpcSerializedObject(queryUpdate.getPayload()), serializer),
-                new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer)
-        );
+        this.queryUpdate = queryUpdate;
+        this.serializedPayload = queryUpdate.hasPayload()
+                ? new LazyDeserializingObject<>(new GrpcSerializedObject(queryUpdate.getPayload()), serializer)
+                : null;
+        this.exception = queryUpdate.hasErrorMessage()
+                ? ErrorCode.getFromCode(queryUpdate.getErrorCode())
+                           .convert(queryUpdate.getErrorMessage(), serializedPayload == null
+                                   ? () -> null
+                                   : serializedPayload::getObject)
+                : null;
+        this.metaDataSupplier = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
     }
 
     private GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate,
                                          LazyDeserializingObject<U> serializedPayload,
+                                         Throwable exception,
                                          Supplier<MetaData> metaDataSupplier) {
         this.queryUpdate = queryUpdate;
         this.serializedPayload = serializedPayload;
+        this.exception = exception;
         this.metaDataSupplier = metaDataSupplier;
     }
 
@@ -77,7 +88,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Override
     public U getPayload() {
-        return serializedPayload.getObject();
+        return serializedPayload == null ? null : serializedPayload.getObject();
     }
 
     @Override
@@ -87,17 +98,17 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Override
     public boolean isExceptional() {
-        return false;
+        return exception != null;
     }
 
     @Override
     public Optional<Throwable> optionalExceptionResult() {
-        return Optional.empty();
+        return Optional.ofNullable(exception);
     }
 
     @Override
     public GrpcBackedQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData) {
-        return new GrpcBackedQueryUpdateMessage<>(queryUpdate, serializedPayload, () -> MetaData.from(metaData));
+        return new GrpcBackedQueryUpdateMessage<>(queryUpdate, serializedPayload, exception, () -> MetaData.from(metaData));
     }
 
     @Override

@@ -55,6 +55,7 @@ public class SubscriptionMessageSerializer {
     private final Serializer messageSerializer;
     private final Serializer serializer;
 
+    private final GrpcObjectSerializer<Object> exceptionDetailsSerializer;
     private final GrpcPayloadSerializer payloadSerializer;
     private final GrpcMetadataSerializer metadataSerializer;
     private final GrpcObjectSerializer<Object> responseTypeSerializer;
@@ -82,6 +83,7 @@ public class SubscriptionMessageSerializer {
         this.payloadSerializer = new GrpcPayloadSerializer(messageSerializer);
         this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(messageSerializer));
         this.responseTypeSerializer = new GrpcObjectSerializer<>(serializer);
+        this.exceptionDetailsSerializer = new GrpcObjectSerializer<>(messageSerializer);
     }
 
     /**
@@ -116,19 +118,28 @@ public class SubscriptionMessageSerializer {
         return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery, messageSerializer, serializer);
     }
 
-    QueryProviderOutbound serialize(QueryResponseMessage initialResult, String subscriptionId) {
-        QueryResponse queryResponse =
+    QueryProviderOutbound serialize(QueryResponseMessage<?> initialResult, String subscriptionId) {
+        QueryResponse.Builder responseBuilder =
                 QueryResponse.newBuilder()
-                             .setPayload(payloadSerializer.apply(initialResult))
                              .putAllMetaData(metadataSerializer.apply(initialResult.getMetaData()))
                              .setMessageIdentifier(initialResult.getIdentifier())
-                             .setRequestIdentifier(subscriptionId)
-                             .build();
+                             .setRequestIdentifier(subscriptionId);
+        if (initialResult.isExceptional()) {
+            Throwable exceptionResult = initialResult.exceptionResult();
+            responseBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorMessage(ExceptionSerializer
+                                                    .serialize(configuration.getClientId(), exceptionResult));
+            initialResult.exceptionDetails()
+                         .ifPresent(details -> responseBuilder
+                                 .setPayload(exceptionDetailsSerializer.apply(details)));
+        } else {
+            responseBuilder.setPayload(payloadSerializer.apply(initialResult));
+        }
 
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()
                                          .setSubscriptionIdentifier(subscriptionId)
-                                         .setInitialResult(queryResponse)
+                                         .setInitialResult(responseBuilder.build())
         ).build();
     }
 
@@ -138,19 +149,28 @@ public class SubscriptionMessageSerializer {
 
     QueryProviderOutbound serialize(SubscriptionQueryUpdateMessage<?> subscriptionQueryUpdateMessage,
                                     String subscriptionId) {
-        QueryUpdate queryUpdate =
+        QueryUpdate.Builder updateMessageBuilder =
                 QueryUpdate.newBuilder()
-                           .setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage))
                            .putAllMetaData(metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData()))
                            .setMessageIdentifier(subscriptionQueryUpdateMessage.getIdentifier())
                            .setClientId(configuration.getClientId())
-                           .setComponentName(configuration.getComponentName())
-                           .build();
+                           .setComponentName(configuration.getComponentName());
+        if (subscriptionQueryUpdateMessage.isExceptional()) {
+            Throwable exceptionResult = subscriptionQueryUpdateMessage.exceptionResult();
+            updateMessageBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            updateMessageBuilder.setErrorMessage(ExceptionSerializer
+                                                         .serialize(configuration.getClientId(), exceptionResult));
+            subscriptionQueryUpdateMessage.exceptionDetails()
+                                          .ifPresent(details -> updateMessageBuilder
+                                                  .setPayload(exceptionDetailsSerializer.apply(details)));
+        } else {
+            updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
+        }
 
         return newBuilder().setSubscriptionQueryResponse(
                 SubscriptionQueryResponse.newBuilder()
                                          .setSubscriptionIdentifier(subscriptionId)
-                                         .setUpdate(queryUpdate)
+                                         .setUpdate(updateMessageBuilder.build())
         ).build();
     }
 
