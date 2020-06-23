@@ -1,17 +1,20 @@
-name: Kotlin CI
+name: Kotlin Extension Build and Tests
 
 on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        java: [ 8, 11 ]
+      name: Build and tests on JDK ${{ matrix.java }}
+      steps:
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up JDK 1.8
+    - uses: actions/checkout@v2
+    - name: Set up JDK
       uses: actions/setup-java@v1
       with:
-        java-version: 1.8
-    - name: Build with Maven
-      run: mvn package --file pom.xml
+        java-version: ${{ matrix.java }}
+    - name: Build and verify
+      run: mvn clean verify
