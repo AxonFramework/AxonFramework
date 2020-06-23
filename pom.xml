@@ -61,6 +61,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.basedir}/integrationtests/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
 
         <!-- dependency versions -->
         <slf4j.version>1.7.28</slf4j.version>
@@ -622,6 +625,8 @@
 
                         <executions>
                             <execution>
+                                <id>prepare-agent</id>
+                                <phase>initialize</phase>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
