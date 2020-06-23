@@ -34,7 +34,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
-import org.axonframework.eventhandling.replay.ResetMessageHandlerDefinition;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -315,8 +314,7 @@ public class SpringAxonAutoConfigurerTest {
                         DeadlineMethodMessageHandlerDefinition.class,
                         MethodCreationPolicyDefinition.class,
                         MethodCreationPolicyDefinition.class,
-                        MyHandlerEnhancerDefinition.class,
-                        ResetMessageHandlerDefinition.class
+                        MyHandlerEnhancerDefinition.class
                 ),
                 enhancerClasses
         );

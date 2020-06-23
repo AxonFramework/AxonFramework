@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.replay.ResetMessage;
+import org.axonframework.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.annotation.MessageHandler;
 
 import java.lang.annotation.ElementType;
@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * @since 3.2
  */
 @Retention(RetentionPolicy.RUNTIME)
-@MessageHandler(messageType = ResetMessage.class)
+@MessageHandler(messageType = ResetContext.class)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface ResetHandler {
 

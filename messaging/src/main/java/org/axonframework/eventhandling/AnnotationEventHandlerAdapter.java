@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.replay.GenericResetMessage;
+import org.axonframework.eventhandling.replay.GenericResetContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -112,7 +112,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public <R> void prepareReset(R resetContext) {
         try {
-            findAndHandle(GenericResetMessage.asResetMessage(resetContext));
+            findAndHandle(GenericResetContext.asResetContext(resetContext));
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);
         }

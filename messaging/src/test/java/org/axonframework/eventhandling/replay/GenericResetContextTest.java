@@ -23,26 +23,26 @@ import org.junit.jupiter.api.*;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.axonframework.eventhandling.replay.GenericResetMessage.asResetMessage;
+import static org.axonframework.eventhandling.replay.GenericResetContext.asResetContext;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link GenericResetMessage}.
+ * Test class validating the {@link GenericResetContext}.
  *
  * @author Steven van Beelen
  */
-class GenericResetMessageTest {
+class GenericResetContextTest {
 
     private static final Object TEST_PAYLOAD = new Object();
 
     @Test
     void testConstructor() {
-        ResetMessage<Object> messageOne = asResetMessage(TEST_PAYLOAD);
-        ResetMessage<Object> messageTwo = asResetMessage(new GenericMessage<>(TEST_PAYLOAD));
+        ResetContext<Object> messageOne = asResetContext(TEST_PAYLOAD);
+        ResetContext<Object> messageTwo = asResetContext(new GenericMessage<>(TEST_PAYLOAD));
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
-        ResetMessage<Object> messageThree = new GenericResetMessage<>(TEST_PAYLOAD, metaDataMap);
+        ResetContext<Object> messageThree = new GenericResetContext<>(TEST_PAYLOAD, metaDataMap);
         MetaData metaData = MetaData.from(metaDataMap);
-        ResetMessage<Object> messageFour = new GenericResetMessage<>(TEST_PAYLOAD, metaData);
+        ResetContext<Object> messageFour = new GenericResetContext<>(TEST_PAYLOAD, metaData);
 
         assertSame(MetaData.emptyInstance(), messageOne.getMetaData());
         assertEquals(Object.class, messageOne.getPayload().getClass());
@@ -69,11 +69,10 @@ class GenericResetMessageTest {
     @Test
     void testWithMetaData() {
         MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
-        ResetMessage<Object> startMessage = new GenericResetMessage<>(TEST_PAYLOAD, metaData);
+        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_PAYLOAD, metaData);
 
-        ResetMessage<Object> messageOne =
-                startMessage.withMetaData(MetaData.emptyInstance());
-        ResetMessage<Object> messageTwo =
+        ResetContext<Object> messageOne = startMessage.withMetaData(MetaData.emptyInstance());
+        ResetContext<Object> messageTwo =
                 startMessage.withMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
 
         assertEquals(0, messageOne.getMetaData().size());
@@ -83,11 +82,10 @@ class GenericResetMessageTest {
     @Test
     void testAndMetaData() {
         MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
-        ResetMessage<Object> startMessage = new GenericResetMessage<>(TEST_PAYLOAD, metaData);
+        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_PAYLOAD, metaData);
 
-        ResetMessage<Object> messageOne =
-                startMessage.andMetaData(MetaData.emptyInstance());
-        ResetMessage<Object> messageTwo =
+        ResetContext<Object> messageOne = startMessage.andMetaData(MetaData.emptyInstance());
+        ResetContext<Object> messageTwo =
                 startMessage.andMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
 
         assertEquals(1, messageOne.getMetaData().size());
@@ -98,6 +96,6 @@ class GenericResetMessageTest {
 
     @Test
     void testDescribeType() {
-        assertEquals("GenericResetMessage", new GenericResetMessage<>(TEST_PAYLOAD).describeType());
+        assertEquals("GenericResetContext", new GenericResetContext<>(TEST_PAYLOAD).describeType());
     }
 }

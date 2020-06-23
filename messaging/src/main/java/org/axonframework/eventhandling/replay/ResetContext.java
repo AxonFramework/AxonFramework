@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 
 import java.util.Map;
 
@@ -28,10 +28,10 @@ import java.util.Map;
  * @author Steven van Beelen
  * @since 4.4
  */
-public interface ResetMessage<T> extends EventMessage<T> {
+public interface ResetContext<T> extends Message<T> {
 
     /**
-     * Returns a copy of this {@link ResetMessage} with the given {@code metaData}. The payload remains unchanged.
+     * Returns a copy of this {@link ResetContext} with the given {@code metaData}. The payload remains unchanged.
      * <p/>
      * While the implementation returned may be different than the implementation of {@code this}, implementations must
      * take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent errors
@@ -41,15 +41,15 @@ public interface ResetMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    ResetMessage<T> withMetaData(Map<String, ?> metaData);
+    ResetContext<T> withMetaData(Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this {@link ResetMessage} with it MetaData merged with the given {@code metaData}. The payload
+     * Returns a copy of this {@link ResetContext} with it MetaData merged with the given {@code metaData}. The payload
      * remains unchanged.
      *
      * @param metaData the MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
     @Override
-    ResetMessage<T> andMetaData(Map<String, ?> metaData);
+    ResetContext<T> andMetaData(Map<String, ?> metaData);
 }
