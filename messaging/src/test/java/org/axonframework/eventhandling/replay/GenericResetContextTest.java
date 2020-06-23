@@ -39,10 +39,12 @@ class GenericResetContextTest {
     void testConstructor() {
         ResetContext<Object> messageOne = asResetContext(TEST_PAYLOAD);
         ResetContext<Object> messageTwo = asResetContext(new GenericMessage<>(TEST_PAYLOAD));
+        ResetContext<Object> messageThree = asResetContext(new GenericResetContext<>(TEST_PAYLOAD));
+
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
-        ResetContext<Object> messageThree = new GenericResetContext<>(TEST_PAYLOAD, metaDataMap);
+        ResetContext<Object> messageFour = new GenericResetContext<>(TEST_PAYLOAD, metaDataMap);
         MetaData metaData = MetaData.from(metaDataMap);
-        ResetContext<Object> messageFour = new GenericResetContext<>(TEST_PAYLOAD, metaData);
+        ResetContext<Object> messageFive = new GenericResetContext<>(TEST_PAYLOAD, metaData);
 
         assertSame(MetaData.emptyInstance(), messageOne.getMetaData());
         assertEquals(Object.class, messageOne.getPayload().getClass());
@@ -52,18 +54,22 @@ class GenericResetContextTest {
         assertEquals(Object.class, messageTwo.getPayload().getClass());
         assertEquals(Object.class, messageTwo.getPayloadType());
 
-        assertNotSame(metaDataMap, messageThree.getMetaData());
-        assertEquals(metaDataMap, messageThree.getMetaData());
+        assertSame(MetaData.emptyInstance(), messageThree.getMetaData());
         assertEquals(Object.class, messageThree.getPayload().getClass());
         assertEquals(Object.class, messageThree.getPayloadType());
 
-        assertSame(metaData, messageFour.getMetaData());
+        assertNotSame(metaDataMap, messageFour.getMetaData());
+        assertEquals(metaDataMap, messageFour.getMetaData());
         assertEquals(Object.class, messageFour.getPayload().getClass());
         assertEquals(Object.class, messageFour.getPayloadType());
 
-        assertNotEquals(messageOne.getIdentifier(), messageThree.getIdentifier());
-        assertNotEquals(messageThree.getIdentifier(), messageFour.getIdentifier());
-        assertNotEquals(messageFour.getIdentifier(), messageOne.getIdentifier());
+        assertSame(metaData, messageFive.getMetaData());
+        assertEquals(Object.class, messageFive.getPayload().getClass());
+        assertEquals(Object.class, messageFive.getPayloadType());
+
+        assertNotEquals(messageOne.getIdentifier(), messageFour.getIdentifier());
+        assertNotEquals(messageFour.getIdentifier(), messageFive.getIdentifier());
+        assertNotEquals(messageFive.getIdentifier(), messageOne.getIdentifier());
     }
 
     @Test

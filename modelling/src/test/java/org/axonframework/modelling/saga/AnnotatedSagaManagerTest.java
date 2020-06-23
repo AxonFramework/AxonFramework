@@ -168,7 +168,11 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void testPerformResetThrowsResetNotSupportedException() {
-        assertThrows(ResetNotSupportedException.class, () -> testSubject.performReset());
+        AnnotatedSagaManager<MyTestSaga> spiedTestSubject = spy(testSubject);
+
+        assertThrows(ResetNotSupportedException.class, spiedTestSubject::performReset);
+
+        verify(spiedTestSubject).performReset(null);
     }
 
     @Test
