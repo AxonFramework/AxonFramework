@@ -37,8 +37,9 @@ import java.util.stream.Stream;
 public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChildEntityDefinition {
 
     @Override
+    @Deprecated
     protected boolean isFieldTypeSupported(Field field) {
-        return !Iterable.class.isAssignableFrom(field.getType()) && !Map.class.isAssignableFrom(field.getType());
+        return isMemberTypeSupported(field);
     }
 
     @Override
