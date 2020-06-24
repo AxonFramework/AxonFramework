@@ -33,8 +33,9 @@ import static org.axonframework.commandhandling.GenericCommandResultMessage.asCo
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Tests for {@link ReactiveCallback}.
+ *
  * @author Stefan Dragisic
- * @since 4.4
  */
 class ReactiveCallbackTest {
 
@@ -43,33 +44,31 @@ class ReactiveCallbackTest {
             asCommandResultMessage("Hello reactive world");
     private volatile ReactiveCallback<Object, Object> testSubject;
 
-
     @BeforeEach
     void setUp() {
         testSubject = new ReactiveCallback<>();
     }
-
 
     @Test
     public void testOnSuccessCallback() throws Exception {
         testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
 
         StepVerifier.create(Mono.from(testSubject))
-                .expectSubscription()
-                .expectNext(COMMAND_RESPONSE_MESSAGE)
-                .expectComplete()
-                .verify();
+                    .expectSubscription()
+                    .expectNext(COMMAND_RESPONSE_MESSAGE)
+                    .expectComplete()
+                    .verify();
     }
 
     @Test
-    public void testOnErrorCallback(){
+    public void testOnErrorCallback() {
         RuntimeException exception = new MockException();
         testSubject.onResult(COMMAND_MESSAGE, asCommandResultMessage(exception));
 
         StepVerifier.create(Mono.from(testSubject))
-                .expectSubscription()
-                .expectError(MockException.class)
-                .verify();
+                    .expectSubscription()
+                    .expectError(MockException.class)
+                    .verify();
     }
 
     @Test
@@ -78,8 +77,8 @@ class ReactiveCallbackTest {
         final CountDownLatch successCountDownLatch = new CountDownLatch(1);
 
         Mono.from(testSubject)
-                .delaySubscription(Duration.ofSeconds(2))
-                .subscribe(it -> successCountDownLatch.countDown());
+            .delaySubscription(Duration.ofSeconds(2))
+            .subscribe(it -> successCountDownLatch.countDown());
 
         assertTrue(successCountDownLatch.await(10, TimeUnit.SECONDS));
     }
@@ -90,18 +89,17 @@ class ReactiveCallbackTest {
         final CountDownLatch successCountDownLatch = new CountDownLatch(1);
 
         Mono.from(testSubject)
-                .delaySubscription(Duration.ofSeconds(2))
-                .subscribe(it -> successCountDownLatch.countDown());
+            .delaySubscription(Duration.ofSeconds(2))
+            .subscribe(it -> successCountDownLatch.countDown());
 
         assertFalse(successCountDownLatch.await(1, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testOnResultReturnsMessageWithTimeoutExceptionOnTimeout(){
+    public void testOnResultReturnsMessageWithTimeoutExceptionOnTimeout() {
         StepVerifier.create(Mono.from(testSubject).timeout(Duration.ofSeconds(1)))
-                .expectSubscription()
-                .expectError(TimeoutException.class)
-                .verify();
+                    .expectSubscription()
+                    .expectError(TimeoutException.class)
+                    .verify();
     }
-
 }
