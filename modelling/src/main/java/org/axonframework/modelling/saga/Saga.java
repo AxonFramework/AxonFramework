@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,11 @@ public interface Saga<T> extends EventMessageHandler {
 
     @Override
     default void prepareReset() {
+        prepareReset(null);
+    }
+
+    @Override
+    default void prepareReset(Object resetContext) {
         throw new ResetNotSupportedException("Sagas do not support reset");
     }
 }

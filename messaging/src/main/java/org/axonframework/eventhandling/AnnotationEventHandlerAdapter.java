@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -26,8 +28,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import java.util.Optional;
 
 /**
- * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
- * EventMessageHandler}.
+ * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link EventMessageHandler}.
  *
  * @author Allard Buijze
  * @see EventMessageHandler
@@ -49,8 +50,8 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     /**
-     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given
-     * {@code parameterResolverFactory} is used to resolve parameter values for handler methods.
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given {@code
+     * parameterResolverFactory} is used to resolve parameter values for handler methods.
      *
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
@@ -83,14 +84,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public Object handle(EventMessage<?> event) throws Exception {
-        Optional<MessageHandlingMember<? super Object>> handler =
-                inspector.getHandlers(listenerType)
-                         .filter(h -> h.canHandle(event))
-                         .findFirst();
-        if (handler.isPresent()) {
-            return handler.get().handle(event, annotatedEventListener);
-        }
-        return null;
+        return findAndHandle(event);
     }
 
     @Override
@@ -112,11 +106,23 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public void prepareReset() {
+        prepareReset(null);
+    }
+
+    @Override
+    public <R> void prepareReset(R resetContext) {
         try {
-            handle(GenericEventMessage.asEventMessage(new ResetTriggeredEvent()));
+            findAndHandle(GenericResetContext.asResetContext(resetContext));
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);
         }
+    }
+
+    private Object findAndHandle(Message<?> message) throws Exception {
+        Optional<MessageHandlingMember<? super Object>> optionalHandler = inspector.getHandlers(listenerType)
+                                                                                   .filter(h -> h.canHandle(message))
+                                                                                   .findFirst();
+        return optionalHandler.isPresent() ? optionalHandler.get().handle(message, annotatedEventListener) : null;
     }
 
     @Override

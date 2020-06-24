@@ -91,6 +91,8 @@ import static org.mockito.Mockito.*;
  */
 class TrackingEventProcessorTest {
 
+    private static final Object NO_RESET_PAYLOAD = null;
+
     private TrackingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;
     private TokenStore tokenStore;
@@ -750,19 +752,21 @@ class TrackingEventProcessorTest {
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong();
         eventBus.publish(createEvents(1));
 
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertFalse(testSubject.processingStatus().get(segmentId).isReplaying()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong()
-                                              > resetPositionAtReplay));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).isReplaying()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
+        ));
+        //noinspection OptionalGetWithoutIsPresent
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
+        ));
+
+        verify(eventHandlerInvoker, times(2)).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -800,19 +804,21 @@ class TrackingEventProcessorTest {
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getResetPosition().getAsLong();
         eventBus.publish(createEvents(1));
 
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertFalse(testSubject.processingStatus().get(segmentId).isReplaying()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong()
-                                              > resetPositionAtReplay));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).isReplaying()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
+        ));
+        //noinspection OptionalGetWithoutIsPresent
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
+        ));
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -867,19 +873,20 @@ class TrackingEventProcessorTest {
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getResetPosition().getAsLong();
         eventBus.publish(createEvents(1));
 
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertFalse(testSubject.processingStatus().get(segmentId).isReplaying()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()));
-        assertWithin(1,
-                     TimeUnit.SECONDS,
-                     () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong()
-                                              > resetPositionAtReplay));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).isReplaying()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
+        ));
+        //noinspection OptionalGetWithoutIsPresent
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
+        ));
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -908,6 +915,8 @@ class TrackingEventProcessorTest {
         assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > 0);
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @SuppressWarnings("unchecked")
@@ -952,6 +961,8 @@ class TrackingEventProcessorTest {
         assertTrue(replayRun.get(0) instanceof ReplayToken);
         assertTrue(replayRun.get(5) instanceof ReplayToken);
         assertEquals(GapAwareTrackingToken.newInstance(6, emptySortedSet()), replayRun.get(6));
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -984,6 +995,32 @@ class TrackingEventProcessorTest {
     }
 
     @Test
+    void testResetTokensPassesOnResetContext() throws Exception {
+        String resetContext = "reset-context";
+        final List<String> handled = new CopyOnWriteArrayList<>();
+
+        when(mockHandler.supportsReset()).thenReturn(true);
+
+
+        //noinspection Duplicates
+        doAnswer(i -> {
+            EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
+            return null;
+        }).when(mockHandler).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+
+        testSubject.shutDown();
+        testSubject.resetTokens(resetContext);
+        testSubject.start();
+
+        verify(eventHandlerInvoker).performReset(resetContext);
+    }
+
+    @Test
     void testWhenFailureDuringInit() throws InterruptedException {
         doThrow(new RuntimeException("Faking issue during fetchSegments"))
                 .doCallRealMethod()
@@ -1005,8 +1042,8 @@ class TrackingEventProcessorTest {
 
     @Test
     void testUpdateActiveSegmentsWhenBatchIsEmpty() throws Exception {
-        //noinspection unchecked
         int segmentId = 0;
+        //noinspection unchecked
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -1569,5 +1606,6 @@ class TrackingEventProcessorTest {
 
     private static class TestError extends Error {
 
+        private static final long serialVersionUID = -5579826202840099704L;
     }
 }

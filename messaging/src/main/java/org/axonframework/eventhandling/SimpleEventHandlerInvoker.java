@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,11 @@ import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EventListener;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -151,8 +155,13 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void performReset() {
+        performReset(null);
+    }
+
+    @Override
+    public <R> void performReset(R resetContext) {
         for (EventMessageHandler eventHandler : wrappedEventHandlers) {
-            eventHandler.prepareReset();
+            eventHandler.prepareReset(resetContext);
         }
     }
 
