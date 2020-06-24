@@ -68,9 +68,9 @@ public class MicrometerMetricsAutoConfiguration {
     @ConditionalOnMissingBean(MetricsConfigurerModule.class)
     @ConditionalOnBean(GlobalMetricRegistry.class)
     @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
-    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
-        return new MetricsConfigurerModule(globalMetricRegistry);
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry,
+                                                                  MetricsProperties metricsProperties) {
+        return new MetricsConfigurerModule(globalMetricRegistry, metricsProperties.getMicrometer().isDimensional());
     }
-
 }
 

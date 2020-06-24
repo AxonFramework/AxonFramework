@@ -26,7 +26,10 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -37,8 +40,12 @@ import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
+import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
@@ -47,12 +54,17 @@ import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -384,6 +396,87 @@ class DefaultConfigurerTest {
 
         assertEquals(expectedSnapshotter, result.snapshotter());
         assertEquals(expectedSnapshotter, result.getComponent(Snapshotter.class));
+    }
+
+    @Test
+    void testConfigurationSnapshotFilterContainsConfiguredSnapshotFilters() {
+        AtomicBoolean filteredFirst = new AtomicBoolean(false);
+        SnapshotFilter testFilterOne = snapshotData -> {
+            filteredFirst.set(true);
+            return true;
+        };
+        AggregateConfigurer<StubAggregate> aggregateConfigurerOne =
+                AggregateConfigurer.defaultConfiguration(StubAggregate.class)
+                                   .configureSnapshotFilter(configuration -> testFilterOne);
+
+        AtomicBoolean filteredSecond = new AtomicBoolean(false);
+        SnapshotFilter testFilterTwo = snapshotData -> {
+            filteredSecond.set(true);
+            return true;
+        };
+        AggregateConfigurer<StubAggregate> aggregateConfigurerTwo =
+                AggregateConfigurer.defaultConfiguration(StubAggregate.class)
+                                   .configureSnapshotFilter(configuration -> testFilterTwo);
+
+        Configuration resultConfig = DefaultConfigurer.defaultConfiguration()
+                                                      .configureAggregate(aggregateConfigurerOne)
+                                                      .configureAggregate(aggregateConfigurerTwo)
+                                                      .buildConfiguration();
+
+        SnapshotFilter snapshotFilter = resultConfig.snapshotFilter();
+        boolean result = snapshotFilter.allow(mock(DomainEventData.class));
+        assertTrue(result);
+        assertTrue(filteredFirst.get());
+        assertTrue(filteredSecond.get());
+    }
+
+    @Test
+    void testAggregateSnapshotFilterIsAddedToTheEventStore() {
+        AtomicBoolean filteredFirst = new AtomicBoolean(false);
+        SnapshotFilter testFilterOne = snapshotData -> {
+            filteredFirst.set(true);
+            return true;
+        };
+        AggregateConfigurer<StubAggregate> aggregateConfigurerOne =
+                AggregateConfigurer.defaultConfiguration(StubAggregate.class)
+                                   .configureSnapshotFilter(configuration -> testFilterOne);
+
+        AtomicBoolean filteredSecond = new AtomicBoolean(false);
+        SnapshotFilter testFilterTwo = snapshotData -> {
+            filteredSecond.set(true);
+            return true;
+        };
+        AggregateConfigurer<StubAggregate> aggregateConfigurerTwo =
+                AggregateConfigurer.defaultConfiguration(StubAggregate.class)
+                                   .configureSnapshotFilter(configuration -> testFilterTwo);
+
+        Serializer serializer = XStreamSerializer.defaultSerializer();
+        EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
+
+        DomainEventMessage<String> testDomainEvent =
+                new GenericDomainEventMessage<>("StubAggregate", "some-aggregate-id", 0, "some-payload");
+        DomainEventData<byte[]> snapshotData =
+                new AbstractSnapshotEventEntry<byte[]>(testDomainEvent, serializer, byte[].class) {
+                };
+        DomainEventData<byte[]> domainEventData = new DomainEventEntry(testDomainEvent, serializer);
+        // Firstly snapshot data will be retrieved (and filtered), secondly event data.
+        doReturn(
+                Stream.of(snapshotData),
+                Collections.singletonList(domainEventData)
+        ).when(transactionManager).fetchInTransaction(any());
+
+        Configuration resultConfig = DefaultConfigurer.jpaConfiguration(() -> em)
+                                                      .configureEventSerializer(configuration -> serializer)
+                                                      .configureTransactionManager(configuration -> transactionManager)
+                                                      .configureAggregate(aggregateConfigurerOne)
+                                                      .configureAggregate(aggregateConfigurerTwo)
+                                                      .buildConfiguration();
+
+        EventStore resultEventStore = resultConfig.eventStore();
+        resultEventStore.readEvents("some-aggregate-id");
+
+        assertTrue(filteredFirst.get());
+        assertTrue(filteredSecond.get());
     }
 
     @SuppressWarnings("unused")
