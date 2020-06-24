@@ -34,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link AnnotatedSaga}.
+ *
  * @author Allard Buijze
  * @author Sofia Guy Ang
  */
