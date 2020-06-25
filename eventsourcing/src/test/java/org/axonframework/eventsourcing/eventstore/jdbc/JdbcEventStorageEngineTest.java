@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,10 +109,11 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @DirtiesContext
     public void testCustomSchemaConfigTimestampColumn() {
         setTestSubject(testSubject = createTimestampEngine(new HsqlEventTableFactory() {
-                                                               @Override protected String timestampType() {
-                                                                   return "timestamp";
-                                                               }
-                                                           }));
+            @Override
+            protected String timestampType() {
+                return "timestamp";
+            }
+        }));
         testStoreAndLoadEvents();
     }
 
@@ -476,12 +477,15 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                                        .transactionManager(NoTransactionManager.INSTANCE);
 
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(builder) {
-            @Override protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
+            @Override
+            protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
                 Timestamp ts = resultSet.getTimestamp(columnName);
                 return ts.toInstant();
             }
 
-            @Override protected void writeTimestamp(PreparedStatement preparedStatement, int position, Instant timestamp) throws SQLException {
+            @Override
+            protected void writeTimestamp(PreparedStatement preparedStatement, int position, Instant timestamp)
+                    throws SQLException {
                 preparedStatement.setTimestamp(position, new Timestamp(timestamp.toEpochMilli()));
             }
         };
