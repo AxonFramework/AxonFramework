@@ -106,9 +106,42 @@ class SequenceEventStorageEngineTest {
         assertSame(event2, actual.peek());
         assertSame(event2, actual.next());
 
+        Long seq = actual.getLastSequenceNumber();
+        assertNotNull(seq);
+
         InOrder inOrder = Mockito.inOrder(historicStorage, activeStorage);
         inOrder.verify(historicStorage).readEvents("aggregate", 0);
         inOrder.verify(activeStorage).readEvents("aggregate", 0);
+
+        assertFalse(actual.hasNext());
+    }
+
+    @Test
+    void testAggregateEventsAreReadFromHistoricWhenNoActiveEventsAvailable() {
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
+        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1, event2));
+        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
+
+        DomainEventStream actual = testSubject.readEvents("aggregate", 0);
+        assertEquals(1L, (long) actual.getLastSequenceNumber());
+        verify(activeStorage, never()).readEvents(anyString(), anyLong());
+
+        assertSame(event1, actual.peek());
+        assertSame(event1, actual.next());
+
+        assertSame(event2, actual.peek());
+        assertSame(event2, actual.next());
+
+        verify(activeStorage, never()).readEvents(anyString(), anyLong());
+
+        assertFalse(actual.hasNext()); // this initializes second domainstream
+        verify(activeStorage).readEvents("aggregate", 2);
+        assertEquals(1L, (long) actual.getLastSequenceNumber());
+
+        InOrder inOrder = Mockito.inOrder(historicStorage, activeStorage);
+        inOrder.verify(historicStorage).readEvents("aggregate", 0);
+        inOrder.verify(activeStorage).readEvents("aggregate", 2);
 
         assertFalse(actual.hasNext());
     }
