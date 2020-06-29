@@ -25,8 +25,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.context.Context;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +62,8 @@ public class DefaultReactorQueryGatewayTest {
 
     @BeforeEach
     void setUp() {
+        Hooks.enableContextLossTracking();
+        Hooks.onOperatorDebug();
 
         queryBus = spy(SimpleQueryBus.builder().build());
 
@@ -108,12 +112,30 @@ public class DefaultReactorQueryGatewayTest {
 
     @Test
     void testQuery() throws Exception {
+
         Mono<String> result = reactiveQueryGateway.query("criteria", String.class);
         verifyZeroInteractions(queryMessageHandler1);
         verifyZeroInteractions(queryMessageHandler2);
         StepVerifier.create(result)
                     .expectNext("handled")
                     .verifyComplete();
+        verify(queryMessageHandler1).handle(any());
+    }
+
+    @Test
+    void testQueryWithContext() throws Exception {
+        Context context = Context.of("k1", "v1");
+
+        Mono<String> result = reactiveQueryGateway.query("criteria", String.class).subscriberContext(context);
+
+        verifyZeroInteractions(queryMessageHandler1);
+        verifyZeroInteractions(queryMessageHandler2);
+        StepVerifier.create(result)
+                .expectNext("handled")
+                .expectAccessibleContext()
+                .containsOnly(context)
+                .then()
+                .verifyComplete();
         verify(queryMessageHandler1).handle(any());
     }
 
@@ -184,6 +206,25 @@ public class DefaultReactorQueryGatewayTest {
         StepVerifier.create(reactiveQueryGateway.query(true, String.class))
                     .expectNext("value1")
                     .verifyComplete();
+    }
+
+    @Test
+    void testQueryWithDispatchInterceptorWithContext() {
+        Context context = Context.of("security", true);
+
+        reactiveQueryGateway
+                .registerDispatchInterceptor(queryMono -> queryMono
+                        .filterWhen(v-> Mono.subscriberContext()
+                                .filter(ctx-> ctx.hasKey("security"))
+                                .map(ctx-> ctx.get("security")))
+                        .map(query -> query.andMetaData(Collections.singletonMap("key1", "value1"))));
+
+        StepVerifier.create(reactiveQueryGateway.query(true, String.class).subscriberContext(context))
+                .expectNext("value1")
+                .expectAccessibleContext()
+                .containsOnly(context)
+                .then()
+                .verifyComplete();
     }
 
     @Test

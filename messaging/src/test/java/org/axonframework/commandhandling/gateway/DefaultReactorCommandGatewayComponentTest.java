@@ -24,8 +24,10 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.context.Context;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +56,9 @@ class DefaultReactorCommandGatewayComponentTest {
 
     @BeforeEach
     void setUp() {
+        Hooks.enableContextLossTracking();
+        Hooks.onOperatorDebug();
+
         commandBus = spy(AsynchronousCommandBus.builder().build());
 
         mockRetryScheduler = mock(RetryScheduler.class);
@@ -102,6 +107,23 @@ class DefaultReactorCommandGatewayComponentTest {
         StepVerifier.create(result)
                     .expectNext("handled")
                     .verifyComplete();
+        verify(commandMessageHandler).handle(any());
+        verifyZeroInteractions(mockRetryScheduler);
+    }
+
+    @Test
+    void testSendContext() throws Exception {
+        Mono<String> result = reactiveCommandGateway.send("command");
+        verifyZeroInteractions(commandMessageHandler);
+
+        Context context = Context.of("k1", "v1");
+
+        StepVerifier.create(result.subscriberContext(context))
+                .expectNext("handled")
+                .expectAccessibleContext()
+                .containsOnly(context)
+                .then()
+                .verifyComplete();
         verify(commandMessageHandler).handle(any());
         verifyZeroInteractions(mockRetryScheduler);
     }
@@ -176,6 +198,44 @@ class DefaultReactorCommandGatewayComponentTest {
         StepVerifier.create(reactiveCommandGateway.send(true))
                     .expectNext("value1")
                     .verifyComplete();
+    }
+
+    @Test
+    void testSendWithDispatchInterceptorWithContext() {
+        Context context = Context.of("security", true);
+
+        reactiveCommandGateway
+                .registerDispatchInterceptor(cmdMono -> cmdMono
+                        .filterWhen(v-> Mono.subscriberContext()
+                                .filter(it-> it.hasKey("security"))
+                                .map(it->it.get("security")))
+                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key1", "value1")))
+                );
+
+        StepVerifier.create(reactiveCommandGateway.send(true)
+                .subscriberContext(context))
+                .expectNext("value1")
+                .expectAccessibleContext()
+                .containsOnly(context)
+                .then()
+                .verifyComplete();
+    }
+
+    @Test
+    void testSendWithDispatchInterceptorWithContextFiltered() {
+        Context context = Context.of("security", false);
+
+        reactiveCommandGateway
+                .registerDispatchInterceptor(cmdMono -> cmdMono
+                        .filterWhen(v-> Mono.subscriberContext()
+                                .filter(it-> it.hasKey("security"))
+                                .map(it->it.get("security")))
+                        .map(cmd -> cmd.andMetaData(Collections.singletonMap("key1", "value1")))
+                );
+
+        StepVerifier.create(reactiveCommandGateway.send(true).subscriberContext(context))
+                .expectComplete()
+                .verify();
     }
 
     @Test
