@@ -118,17 +118,6 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    @DirtiesContext
-    public void testCustomSchemaConfigTimestampColumn() {
-        setTestSubject(testSubject = createTimestampEngine(new HsqlEventTableFactory() {
-                                                               @Override protected String timestampType() {
-                                                                   return "timestamp";
-                                                               }
-                                                           }));
-        testStoreAndLoadEvents();
-    }
-
-    @Test
     public void testGapsForVeryOldEventsAreNotIncluded() throws SQLException {
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
