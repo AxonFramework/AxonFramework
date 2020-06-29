@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.*;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.TimestampWriter;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -411,11 +412,12 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createTailToken() {
-        Long index = transactionManager.fetchInTransaction(
-                () -> executeQuery(getConnection(),
-                                   connection -> createTailToken(connection),
-                                   resultSet -> nextAndExtract(resultSet, 1, Long.class),
-                                   e -> new EventStoreException("Failed to get tail token", e)));
+        Long index = transactionManager.fetchInTransaction(() -> executeQuery(
+                getConnection(),
+                this::createTailToken,
+                resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                e -> new EventStoreException("Failed to get tail token", e)
+        ));
         return Optional.ofNullable(index)
                        .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
                        .orElse(null);
@@ -423,11 +425,12 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createHeadToken() {
-        Long index = transactionManager.fetchInTransaction(
-                () -> executeQuery(getConnection(),
-                                   connection -> createHeadToken(connection),
-                                   resultSet -> nextAndExtract(resultSet, 1, Long.class),
-                                   e -> new EventStoreException("Failed to get head token", e)));
+        Long index = transactionManager.fetchInTransaction(() -> executeQuery(
+                getConnection(),
+                this::createHeadToken,
+                resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                e -> new EventStoreException("Failed to get head token", e)
+        ));
         return Optional.ofNullable(index)
                        .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
                        .orElse(null);
@@ -881,7 +884,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         /**
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#appendEvents(Connection, List,
          * Serializer)} en}. Defaults to {@link JdbcEventStorageEngineStatements#appendEvents(Connection, EventSchema,
-         * Class, List, Serializer)}
+         * Class, List, Serializer, TimestampWriter)}.
          *
          * @return the current Builder instance, for fluent interfacing
          */
@@ -930,8 +933,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
         /**
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#appendSnapshot(Connection,
-         * DomainEventMessage, Serializer)}. Defaults to {@link JdbcEventStorageEngineStatements#appendSnapshot(Connection,
-         * EventSchema, Class, DomainEventMessage, Serializer)}
+         * DomainEventMessage, Serializer)}. Defaults to {@link JdbcEventStorageEngineStatements#appendEvents(Connection,
+         * EventSchema, Class, List, Serializer, TimestampWriter)}
          *
          * @return the current Builder instance, for fluent interfacing
          */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,34 @@ import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link SimpleEventHandlerInvoker}.
+ *
  * @author Rene de Waele
  */
 class SimpleEventHandlerInvokerTest {
 
+    private static final Object NO_RESET_PAYLOAD = null;
+
+    private EventMessageHandler mockHandler1;
+    private EventMessageHandler mockHandler2;
+
+    private SimpleEventHandlerInvoker testSubject;
+
+    @BeforeEach
+    void setUp() {
+        mockHandler1 = mock(EventMessageHandler.class);
+        mockHandler2 = mock(EventMessageHandler.class);
+        testSubject = SimpleEventHandlerInvoker.builder()
+                                               .eventHandlers("test", mockHandler1, mockHandler2)
+                                               .build();
+    }
+
     @Test
     void testSingleEventPublication() throws Exception {
-        EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
-        EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
-        SimpleEventHandlerInvoker subject =
-                SimpleEventHandlerInvoker.builder()
-                                         .eventHandlers("test", mockHandler1, mockHandler2)
-                                         .build();
-
         EventMessage<?> event = createEvent();
-        subject.handle(event, Segment.ROOT_SEGMENT);
+
+        testSubject.handle(event, Segment.ROOT_SEGMENT);
+
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
         inOrder.verify(mockHandler1).handle(event);
         inOrder.verify(mockHandler2).handle(event);
@@ -49,22 +62,35 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void testRepeatedEventPublication() throws Exception {
-        EventMessageHandler mockHandler1 = mock(EventMessageHandler.class);
-        EventMessageHandler mockHandler2 = mock(EventMessageHandler.class);
-        SimpleEventHandlerInvoker subject =
-                SimpleEventHandlerInvoker.builder()
-                                         .eventHandlers("test", mockHandler1, mockHandler2)
-                                         .build();
-
         List<? extends EventMessage<?>> events = createEvents(2);
+
         for (EventMessage<?> event : events) {
-            subject.handle(event, Segment.ROOT_SEGMENT);
+            testSubject.handle(event, Segment.ROOT_SEGMENT);
         }
+
         InOrder inOrder = inOrder(mockHandler1, mockHandler2);
         inOrder.verify(mockHandler1).handle(events.get(0));
         inOrder.verify(mockHandler2).handle(events.get(0));
         inOrder.verify(mockHandler1).handle(events.get(1));
         inOrder.verify(mockHandler2).handle(events.get(1));
         inOrder.verifyNoMoreInteractions();
+    }
+
+    @Test
+    void testPerformReset() {
+        testSubject.performReset();
+
+        verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD);
+        verify(mockHandler2).prepareReset(NO_RESET_PAYLOAD);
+    }
+
+    @Test
+    void testPerformResetWithResetContext() {
+        String resetContext = "reset-context";
+
+        testSubject.performReset(resetContext);
+
+        verify(mockHandler1).prepareReset(eq(resetContext));
+        verify(mockHandler2).prepareReset(eq(resetContext));
     }
 }
