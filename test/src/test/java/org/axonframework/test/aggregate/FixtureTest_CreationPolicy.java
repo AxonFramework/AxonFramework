@@ -30,12 +30,12 @@ import java.util.UUID;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 /**
- * Fixture tests for load or create command handler.
+ * Fixture tests for validating {@link CreationPolicy} annotated command handlers.
  *
  * @author Marc Gathier
  * @author Steven van Beelen
  */
-class FixtureTest_CreateOrUpdate {
+class FixtureTest_CreationPolicy {
 
     private static final ComplexAggregateId AGGREGATE_ID = new ComplexAggregateId(UUID.randomUUID(), 42);
 
@@ -63,10 +63,21 @@ class FixtureTest_CreateOrUpdate {
     }
 
     @Test
-    void testAlwaysCreatePolicy() {
+    void testAlwaysCreatePolicyWithoutResultReturnsAggregateId() {
         fixture.givenNoPriorActivity()
-               .when(new AlwaysCreateCommand(AGGREGATE_ID))
+               .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID))
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+               .expectResultMessagePayload(AGGREGATE_ID)
+               .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void testAlwaysCreatePolicyWithResultReturnsCommandHandlingResult() {
+        Object testResult = "some-result";
+        fixture.givenNoPriorActivity()
+               .when(new AlwaysCreateWithResultCommand(AGGREGATE_ID, testResult))
+               .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+               .expectResultMessagePayload(testResult)
                .expectSuccessfulHandlerExecution();
     }
 
@@ -106,17 +117,37 @@ class FixtureTest_CreateOrUpdate {
         }
     }
 
-    private static class AlwaysCreateCommand {
+    private static class AlwaysCreateWithoutResultCommand {
 
         @TargetAggregateIdentifier
         private final ComplexAggregateId id;
 
-        private AlwaysCreateCommand(ComplexAggregateId id) {
+        private AlwaysCreateWithoutResultCommand(ComplexAggregateId id) {
             this.id = id;
         }
 
         public ComplexAggregateId getId() {
             return id;
+        }
+    }
+
+    private static class AlwaysCreateWithResultCommand {
+
+        @TargetAggregateIdentifier
+        private final ComplexAggregateId id;
+        private final Object result;
+
+        private AlwaysCreateWithResultCommand(ComplexAggregateId id, Object result) {
+            this.id = id;
+            this.result = result;
+        }
+
+        public ComplexAggregateId getId() {
+            return id;
+        }
+
+        public Object getResult() {
+            return result;
         }
     }
 
@@ -276,8 +307,15 @@ class FixtureTest_CreateOrUpdate {
 
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
-        public void handle(AlwaysCreateCommand command) {
+        public void handle(AlwaysCreateWithoutResultCommand command) {
             apply(new AlwaysCreatedEvent(command.getId()));
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public Object handle(AlwaysCreateWithResultCommand command) {
+            apply(new AlwaysCreatedEvent(command.getId()));
+            return command.getResult();
         }
 
         @CommandHandler
