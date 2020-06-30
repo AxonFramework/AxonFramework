@@ -34,6 +34,7 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -400,8 +401,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                 resultReference.set(handler.handle(command, newInstance));
                 return newInstance;
             });
-            Object commandHandlingResult = resultReference.get();
-            return commandHandlingResult != null ? commandHandlingResult : resolveReturnValue(command, aggregate);
+            return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : resultReference.get();
+        }
+
+        public boolean handlerHasVoidReturnType() {
+            return handler.unwrap(Method.class)
+                          .map(Method::getReturnType)
+                          .filter(void.class::equals)
+                          .isPresent();
         }
 
         @Override

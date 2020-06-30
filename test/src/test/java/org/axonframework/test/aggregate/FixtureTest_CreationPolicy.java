@@ -82,6 +82,15 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
+    void testAlwaysCreatePolicyWithResultReturnsNullCommandHandlingResult() {
+        fixture.givenNoPriorActivity()
+               .when(new AlwaysCreateWithResultCommand(AGGREGATE_ID, null))
+               .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+               .expectResultMessagePayload(null)
+               .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
     void testNeverCreatePolicy() {
         fixture.given(new CreatedEvent(AGGREGATE_ID))
                .when(new ExecuteOnExistingCommand(AGGREGATE_ID))
