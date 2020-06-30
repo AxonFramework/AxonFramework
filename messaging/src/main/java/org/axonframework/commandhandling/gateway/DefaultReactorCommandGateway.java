@@ -55,7 +55,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
      * it is.
      * </p>
      *
-     * @param builder the {@link Builder} used to instantiated a {@link DefaultReactorCommandGateway} instance
+     * @param builder the {@link Builder} used to instantiate a {@link DefaultReactorCommandGateway} instance
      */
     protected DefaultReactorCommandGateway(Builder builder) {
         builder.validate();
@@ -69,7 +69,8 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
      * Instantiate a Builder to be able to create a {@link DefaultReactorCommandGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
+     * The {@code resultHandlerInterceptors} are defaulted to an empty list.
+     * The {@link CommandBus} is a <b>hard requirement</b> and as such should be provided.
      * </p>
      *
      * @return a Builder to be able to create a {@link DefaultReactorCommandGateway}
@@ -87,7 +88,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
                 .flatMap(this::processResultsInterceptors)
                 .transform(this::getPayload);
     }
-    
+
     @Override
     public Registration registerDispatchInterceptor(ReactorMessageDispatchInterceptor<CommandMessage<?>> interceptor) {
         dispatchInterceptors.add(interceptor);
@@ -139,6 +140,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
      * Builder class to instantiate {@link DefaultReactorCommandGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
+     * The {@code resultHandlerInterceptors} are defaulted to an empty list.
      * The {@link CommandBus} is a <b>hard requirement</b> and as such should be provided.
      * </p>
      */
@@ -174,8 +176,8 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link ReactorMessageDispatchInterceptor}s for {@link CommandMessage}s. Are invoked
-         * when a command is being dispatched.
+         * Sets {@link ReactorMessageDispatchInterceptor}s for {@link CommandMessage}s. Are invoked when a command
+         * is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a command is being dispatched
          * @return the current Builder instance, for fluent interfacing
@@ -195,7 +197,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
          */
         public Builder dispatchInterceptors(
                 List<ReactorMessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
-            this.dispatchInterceptors = dispatchInterceptors != null && dispatchInterceptors.isEmpty()
+            this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
                     : new CopyOnWriteArrayList<>();
             return this;

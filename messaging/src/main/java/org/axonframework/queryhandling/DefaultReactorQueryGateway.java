@@ -71,7 +71,8 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
      * Instantiate a Builder to be able to create a {@link DefaultReactorQueryGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link QueryBus} is a <b>hard requirements</b> and as such should be provided.
+     * The {@code resultHandlerInterceptors} are defaulted to an empty list.
+     * The {@link QueryBus} is a <b>hard requirement</b> and as such should be provided.
      * </p>
      *
      * @return a Builder to be able to create a {@link DefaultReactorQueryGateway}
@@ -239,7 +240,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link ReactorMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
+         * Sets {@link ReactorMessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked
          * when a query is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a query is being dispatched
@@ -267,7 +268,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link ReactorResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Sets {@link ReactorResultHandlerInterceptor}s for {@link CommandResultMessage}s.
          * Are invoked when a result has been received.
          *
          * @param resultInterceptors which are invoked when a result has been received
@@ -288,7 +289,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
          */
         public Builder resultInterceptors(
                 List<ReactorResultHandlerInterceptor<QueryMessage<?, ?>, ResultMessage<?>>> resultInterceptors) {
-            this.resultInterceptors = resultInterceptors != null && resultInterceptors.isEmpty()
+            this.resultInterceptors = resultInterceptors != null && !resultInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(resultInterceptors)
                     : new CopyOnWriteArrayList<>();
             return this;
