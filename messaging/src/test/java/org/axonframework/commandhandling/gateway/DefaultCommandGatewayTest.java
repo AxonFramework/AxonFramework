@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.*;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -136,7 +137,7 @@ class DefaultCommandGatewayTest {
         CompletableFuture<?> future = testSubject.send("Command");
 
         assertTrue(future.isDone());
-        assertEquals(future.get(), "returnValue");
+        assertEquals("returnValue", future.get());
     }
 
     @SuppressWarnings({"unchecked", "serial"})
@@ -289,6 +290,28 @@ class DefaultCommandGatewayTest {
         assertTrue(actual.isDone());
         assertTrue(actual.isCompletedExceptionally());
         assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
+    }
+
+    @Test
+    void testReactorDispatchInterceptor() {
+        mockCommandMessageTransformer = (ReactorMessageDispatchInterceptor<CommandMessage<?>>) message -> message.map(
+                commandMessage -> new GenericCommandMessage<>("intercepted" + commandMessage.getPayload()));
+        testSubject = DefaultCommandGateway.builder()
+                                           .commandBus(mockCommandBus)
+                                           .retryScheduler(mockRetryScheduler)
+                                           .dispatchInterceptors(mockCommandMessageTransformer)
+                                           .build();
+
+        doAnswer(invocation -> {
+            CommandMessage commandMessage = (CommandMessage) invocation.getArguments()[0];
+            ((CommandCallback) invocation.getArguments()[1])
+                    .onResult(commandMessage, asCommandResultMessage(commandMessage.getPayload()));
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        String result = (String) testSubject.send("Command").join();
+
+        assertEquals("interceptedCommand", result);
     }
 
     private static class RescheduleCommand implements Answer<Boolean> {

@@ -50,7 +50,7 @@ class ReactiveCallbackTest {
     }
 
     @Test
-    public void testOnSuccessCallback() throws Exception {
+    void testOnSuccessCallback() throws Exception {
         testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
 
         StepVerifier.create(Mono.from(testSubject))
@@ -61,7 +61,7 @@ class ReactiveCallbackTest {
     }
 
     @Test
-    public void testOnErrorCallback() {
+    void testOnErrorCallback() {
         RuntimeException exception = new MockException();
         testSubject.onResult(COMMAND_MESSAGE, asCommandResultMessage(exception));
 
@@ -72,7 +72,7 @@ class ReactiveCallbackTest {
     }
 
     @Test
-    public void testOnSuccessForLimitedTime_Timeout() throws Exception {
+    void testOnSuccessForLimitedTime_Timeout() throws Exception {
         testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         final CountDownLatch successCountDownLatch = new CountDownLatch(1);
 
@@ -84,7 +84,7 @@ class ReactiveCallbackTest {
     }
 
     @Test
-    public void testOnErrorForLimitedTime_Timeout() throws Exception {
+    void testOnErrorForLimitedTime_Timeout() throws Exception {
         testSubject.onResult(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         final CountDownLatch successCountDownLatch = new CountDownLatch(1);
 
@@ -96,7 +96,7 @@ class ReactiveCallbackTest {
     }
 
     @Test
-    public void testOnResultReturnsMessageWithTimeoutExceptionOnTimeout() {
+    void testOnResultReturnsMessageWithTimeoutExceptionOnTimeout() {
         StepVerifier.create(Mono.from(testSubject).timeout(Duration.ofSeconds(1)))
                     .expectSubscription()
                     .expectError(TimeoutException.class)

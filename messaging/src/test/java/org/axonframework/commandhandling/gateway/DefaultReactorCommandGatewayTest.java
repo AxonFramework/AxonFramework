@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Sara Pellegrini
  * @since 4.4
  */
-public class DefaultReactorCommandGatewayTest {
+class DefaultReactorCommandGatewayTest {
 
     private CommandBusStub commandBus;
     private ReactorCommandGateway gateway;

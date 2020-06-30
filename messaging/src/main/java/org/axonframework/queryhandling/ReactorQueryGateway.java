@@ -493,8 +493,8 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * @see #subscriptionQuery(String, Object, Class, Class)
      * @see Flux#concatMap(Function)
      */
-    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery(
-            Publisher<SubscriptionQueryMessage<?, ?, ?>> queries) {
+    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery( // NOSONAR
+                                                                   Publisher<SubscriptionQueryMessage<?, ?, ?>> queries) {
         return subscriptionQuery(queries, SubscriptionQueryBackpressure.defaultBackpressure());
     }
 
@@ -511,8 +511,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * @see #subscriptionQuery(String, Object, Class, Class)
      * @see Flux#concatMap(Function)
      */
-    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery(Publisher<SubscriptionQueryMessage<?, ?, ?>> queries,
-                                                                  SubscriptionQueryBackpressure backpressure) {
+    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery( // NOSONAR
+                                                                   Publisher<SubscriptionQueryMessage<?, ?, ?>> queries,
+                                                                   SubscriptionQueryBackpressure backpressure) {
         return subscriptionQuery(queries, backpressure, Queues.SMALL_BUFFER_SIZE);
     }
 
@@ -531,9 +532,10 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * @see #subscriptionQuery(String, Object, Class, Class)
      * @see Flux#concatMap(Function)
      */
-    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery(Publisher<SubscriptionQueryMessage<?, ?, ?>> queries,
-                                                                  SubscriptionQueryBackpressure backpressure,
-                                                                  int updateBufferSize) {
+    default Flux<SubscriptionQueryResult<?, ?>> subscriptionQuery( // NOSONAR
+                                                                   Publisher<SubscriptionQueryMessage<?, ?, ?>> queries,
+                                                                   SubscriptionQueryBackpressure backpressure,
+                                                                   int updateBufferSize) {
         return Flux.from(queries)
                    .concatMap(q -> subscriptionQuery(q.getQueryName(),
                                                      q.getPayload(),

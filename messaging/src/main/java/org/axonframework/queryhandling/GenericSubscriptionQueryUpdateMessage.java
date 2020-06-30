@@ -19,12 +19,10 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Generic {@link SubscriptionQueryUpdateMessage} which holds incremental update of an subscription query.
