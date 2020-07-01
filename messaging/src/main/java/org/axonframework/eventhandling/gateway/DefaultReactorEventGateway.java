@@ -77,8 +77,8 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
         return Flux.fromIterable(events)
                    .map(event -> Mono.<EventMessage<?>>just(GenericEventMessage.asEventMessage(event)))
                    .flatMap(this::processEventInterceptors)
-                   .map(this::publishEvent)
-                   .flatMap(this::getPayload);
+                   .flatMap(this::publishEvent)
+                   .transform(this::getPayload);
     }
 
     @Override
@@ -94,15 +94,11 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
     }
 
     private Mono<EventMessage<?>> publishEvent(EventMessage<?> eventMessage) {
-        try {
-            eventBus.publish(eventMessage);
-            return Mono.just(eventMessage);
-        } catch (Exception e) {
-            return Mono.error(e);
-        }
+        return Mono.fromRunnable(() -> eventBus.publish(eventMessage))
+                   .thenReturn(eventMessage);
     }
 
-    private Mono<?> getPayload(Mono<EventMessage<?>> eventMessage) {
+    private Flux<Object> getPayload(Flux<EventMessage<?>> eventMessage) {
         return eventMessage.filter(r -> Objects.nonNull(r.getPayload()))
                            .map(Message::getPayload);
     }
