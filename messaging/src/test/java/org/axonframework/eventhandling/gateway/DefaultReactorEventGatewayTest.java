@@ -53,7 +53,7 @@ class DefaultReactorEventGatewayTest {
 
     @Test
     void testPublish() {
-        Flux<?> result = gateway.publish("event");
+        Flux<Object> result = gateway.publish("event");
         verifyZeroInteractions(eventBus);
 
         StepVerifier.create(result)
@@ -82,7 +82,7 @@ class DefaultReactorEventGatewayTest {
         gateway.registerDispatchInterceptor(message -> message
                 .map(event -> GenericEventMessage.asEventMessage("intercepted" + event.getPayload())));
 
-        Flux<?> result = gateway.publish("event");
+        Flux<Object> result = gateway.publish("event");
         verifyZeroInteractions(eventBus);
 
         StepVerifier.create(result)
@@ -96,7 +96,7 @@ class DefaultReactorEventGatewayTest {
         EventMessage<Object> event1 = GenericEventMessage.asEventMessage("event1");
         EventMessage<Object> event2 = GenericEventMessage.asEventMessage("event2");
 
-        Flux<?> result = gateway.publish(event1, event2);
+        Flux<Object> result = gateway.publish(event1, event2);
         verifyZeroInteractions(eventBus);
 
         StepVerifier.create(result)
@@ -121,7 +121,7 @@ class DefaultReactorEventGatewayTest {
                 .when(eventBus)
                 .publish(any(EventMessage.class));
 
-        Flux<?> result = gateway.publishAll(events);
+        Flux<Object> result = gateway.publishAll(events);
         verifyZeroInteractions(eventBus);
 
         List<Throwable> exceptions = new ArrayList<>(3);

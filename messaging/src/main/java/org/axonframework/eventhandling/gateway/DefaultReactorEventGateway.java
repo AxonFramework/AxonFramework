@@ -73,7 +73,7 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
     }
 
     @Override
-    public Flux<?> publish(List<?> events) {
+    public Flux<Object> publish(List<?> events) {
         return Flux.fromIterable(events)
                    .map(event -> Mono.<EventMessage<?>>just(GenericEventMessage.asEventMessage(event)))
                    .flatMap(this::processEventInterceptors)

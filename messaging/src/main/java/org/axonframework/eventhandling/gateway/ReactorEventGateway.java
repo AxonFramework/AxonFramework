@@ -47,7 +47,7 @@ public interface ReactorEventGateway extends ReactorMessageDispatchInterceptorSu
      * they will be processed first, before returning events to the caller. The order of returned events is the same as
      * one provided as the input parameter.
      */
-    default Flux<?> publish(Object... events) { // NOSONAR
+    default Flux<Object> publish(Object... events) { // NOSONAR
         return publish(Arrays.asList(events));
     }
 
@@ -63,7 +63,7 @@ public interface ReactorEventGateway extends ReactorMessageDispatchInterceptorSu
      * they will be processed first, before returning events to the caller. The order of returned events is the same as
      * one provided as the input parameter.
      */
-    Flux<?> publish(List<?> events); // NOSONAR
+    Flux<Object> publish(List<?> events);
 
     /**
      * Publishes given {@code events} once the caller subscribes to the resulting Flux. Returns immediately.
@@ -77,7 +77,7 @@ public interface ReactorEventGateway extends ReactorMessageDispatchInterceptorSu
      * they will be processed first, before returning events to the caller. The order of returned events is the same as
      * one provided as the input parameter.
      */
-    default Flux<?> publishAll(Publisher<?> events) { // NOSONAR
+    default Flux<Object> publishAll(Publisher<?> events) {
         return Flux.from(events)
                    .concatMap(this::publish);
     }
