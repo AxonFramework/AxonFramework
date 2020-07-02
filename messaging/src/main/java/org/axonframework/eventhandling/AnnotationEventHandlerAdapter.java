@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.replay.ResetContext;
 import org.axonframework.eventhandling.replay.GenericResetContext;
+import org.axonframework.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -122,10 +122,13 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     public <R> void prepareReset(R resetContext) {
         try {
             ResetContext<?> resetMessage = GenericResetContext.asResetContext(resetContext);
-            inspector.getHandlers(listenerType)
-                     .filter(h -> h.canHandle(resetMessage))
-                     .findFirst()
-                     .ifPresent(handler -> handler.handle(resetMessage, annotatedEventListener));
+            Optional<MessageHandlingMember<? super Object>> handler =
+                    inspector.getHandlers(listenerType)
+                             .filter(h -> h.canHandle(resetMessage))
+                             .findFirst();
+            if (handler.isPresent()) {
+                handler.get().handle(resetMessage, annotatedEventListener);
+            }
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);
         }
