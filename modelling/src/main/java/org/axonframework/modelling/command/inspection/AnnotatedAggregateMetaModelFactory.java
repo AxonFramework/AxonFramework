@@ -318,32 +318,26 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private void inspectFieldsAndMethods() {
             ServiceLoader<ChildEntityDefinition> childEntityDefinitions =
                     ServiceLoader.load(ChildEntityDefinition.class, inspectedType.getClassLoader());
-            ArrayList<Member> entityIdMembers = new ArrayList<>();
-            ArrayList<Member> persistenceIdMembers = new ArrayList<>();
-            ArrayList<Member> aggregateVersionMembers = new ArrayList<>();
+            List<Member> entityIdMembers = new ArrayList<>();
+            List<Member> persistenceIdMembers = new ArrayList<>();
+            List<Member> aggregateVersionMembers = new ArrayList<>();
             for (Class<?> type : handlerInspector.getAllHandlers().keySet()) {
                 for (Field field : ReflectionUtils.fieldsOf(type)) {
-                    childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
-                        children.add(child);
-                        child.commandHandlers().forEach(handler -> addHandler(allCommandHandlers, type, handler));
-                    }));
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, type, field);
                     AnnotationUtils.findAnnotationAttributes(field, EntityId.class)
-                                   .ifPresent(attributes -> entityIdMembers.add(field));
+                            .ifPresent(attributes -> entityIdMembers.add(field));
                     AnnotationUtils.findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID)
-                                   .ifPresent(attributes -> persistenceIdMembers.add(field));
+                            .ifPresent(attributes -> persistenceIdMembers.add(field));
                     AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
                                    .ifPresent(attributes -> aggregateVersionMembers.add(field));
                 }
                 for (Method method : ReflectionUtils.methodsOf(type)) {
-                    childEntityDefinitions.forEach(def -> def.createChildDefinition(method, this).ifPresent(child -> {
-                        children.add(child);
-                        child.commandHandlers().forEach(handler -> addHandler(allCommandHandlers, type, handler));
-                    }));
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, type, method);
                     AnnotationUtils.findAnnotationAttributes(method, EntityId.class)
-                                   .ifPresent(attributes -> {
-                                       assertValidValueProvidingMethod(method);
-                                       entityIdMembers.add(method);
-                                   });
+                            .ifPresent(attributes -> {
+                                assertValidValueProvidingMethod(method);
+                                entityIdMembers.add(method);
+                            });
                     AnnotationUtils.findAnnotationAttributes(method, JAVAX_PERSISTENCE_ID)
                                    .ifPresent(attributes -> {
                                        assertValidValueProvidingMethod(method);
@@ -363,6 +357,15 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 setVersionMember(aggregateVersionMembers.get(0));
             }
             assertIdentifierValidity(identifierMember);
+        }
+
+        private void createChildDefinitionsAndAddHandlers(ServiceLoader<ChildEntityDefinition> childEntityDefinitions,
+                                                          Class<?> type,
+                                                          Member member) {
+            childEntityDefinitions.forEach(def -> def.createChildDefinition(member, this).ifPresent(child -> {
+                children.add(child);
+                child.commandHandlers().forEach(handler -> addHandler(allCommandHandlers, type, handler));
+            }));
         }
 
         private void setIdentifierAndRoutingKey(Member identifier) {

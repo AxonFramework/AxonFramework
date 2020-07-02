@@ -374,7 +374,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     void testGetterTypedAggregateIdentifier() {
         assertThrows(
                 AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class));
+                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(GetterTypedIdentifierAggregate.class));
     }
 
     @Test
