@@ -184,7 +184,7 @@ public class AnnotatedHandlerInspector<T> {
                                                                  registry,
                                                                  emptySet()))
                                 .collect(Collectors.toList());
-        AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<T>(inspectedType,
+        AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<>(inspectedType,
                                                                                   parents,
                                                                                   parameterResolverFactory,
                                                                                   handlerDefinition,

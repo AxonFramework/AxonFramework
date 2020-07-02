@@ -23,39 +23,37 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link AnnotatedHandlerInspector}.
+ * Tests validating the {@link AnnotatedHandlerInspector}.
  *
  * @author Milan Savic
  */
-public class AnnotatedHandlerInspectorTest {
+class AnnotatedHandlerInspectorTest {
 
     private static ParameterResolverFactory parameterResolverFactory;
     private AnnotatedHandlerInspector<A> inspector;
 
     @BeforeAll
-    public static void init() {
+    static void init() {
         parameterResolverFactory = ClasspathParameterResolverFactory.forClass(AnnotatedHandlerInspectorTest.class);
     }
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         inspector = AnnotatedHandlerInspector.inspectType(A.class,
                                                           parameterResolverFactory,
                                                           ClasspathHandlerDefinition.forClass(A.class),
@@ -63,7 +61,7 @@ public class AnnotatedHandlerInspectorTest {
     }
 
     @Test
-    public void testComplexHandlerHierarchy() throws NoSuchMethodException {
+    void testComplexHandlerHierarchy() throws NoSuchMethodException {
         AnnotatedMessageHandlingMember<pA> paHandle = new AnnotatedMessageHandlingMember<>(pA.class.getMethod(
                 "paHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
         AnnotatedMessageHandlingMember<A> aHandle = new AnnotatedMessageHandlingMember<>(A.class.getMethod(
@@ -84,8 +82,20 @@ public class AnnotatedHandlerInspectorTest {
         Map<Class<?>, SortedSet<MessageHandlingMember<? super A>>> allHandlers = inspector.getAllHandlers();
         assertEquals(5, allHandlers.size());
 
-        assertEquals(paHandle, allHandlers.get(pA.class).first().unwrap(AnnotatedMessageHandlingMember.class).get());
-        assertEquals(paHandle, inspector.getHandlers(pA.class).findFirst().flatMap(h -> h.unwrap(AnnotatedMessageHandlingMember.class)).get());
+        //noinspection OptionalGetWithoutIsPresent
+        assertEquals(
+                paHandle,
+                allHandlers.get(pA.class)
+                           .first()
+                           .unwrap(AnnotatedMessageHandlingMember.class).get()
+        );
+        //noinspection OptionalGetWithoutIsPresent
+        assertEquals(
+                paHandle,
+                inspector.getHandlers(pA.class)
+                         .findFirst()
+                         .flatMap(h -> h.unwrap(AnnotatedMessageHandlingMember.class)).get()
+        );
 
         assertEquals(asList(aOn, aHandle, paHandle), unwrapToList(allHandlers.get(A.class).stream()));
         assertEquals(asList(aOn, aHandle, paHandle), unwrapToList(inspector.getHandlers(A.class)));
@@ -96,16 +106,31 @@ public class AnnotatedHandlerInspectorTest {
         assertEquals(asList(aOn, cOn, aHandle, cHandle, paHandle), unwrapToList(allHandlers.get(C.class).stream()));
         assertEquals(asList(aOn, cOn, aHandle, cHandle, paHandle), unwrapToList(inspector.getHandlers(C.class)));
 
-        assertEquals(asList(aOn, bOn, aHandle, bHandle, dHandle, paHandle), unwrapToList(allHandlers.get(D.class).stream()));
-        assertEquals(asList(aOn, bOn, aHandle, bHandle, dHandle, paHandle), unwrapToList(inspector.getHandlers(D.class)));
+        assertEquals(
+                asList(aOn, bOn, aHandle, bHandle, dHandle, paHandle),
+                unwrapToList(allHandlers.get(D.class).stream())
+        );
+        assertEquals(
+                asList(aOn, bOn, aHandle, bHandle, dHandle, paHandle),
+                unwrapToList(inspector.getHandlers(D.class))
+        );
     }
 
-    private <T extends MessageHandlingMember<?>> List<AnnotatedMessageHandlingMember> unwrapToList(Stream<T> stream) {
-        return stream.map(e -> e.unwrap(AnnotatedMessageHandlingMember.class).get()).collect(Collectors.toList());
+    private <T extends MessageHandlingMember<?>> List<AnnotatedMessageHandlingMember<?>> unwrapToList(
+            Stream<T> stream
+    ) {
+        //noinspection OptionalGetWithoutIsPresent
+        return stream.map(e -> e.unwrap(AnnotatedMessageHandlingMember.class)
+                                .map(handler -> (AnnotatedMessageHandlingMember<?>) handler).get())
+                     .collect(Collectors.toList());
     }
 
     @Test
-    public void testInterceptors() throws Exception {
+    void testInterceptors() throws Exception {
+        D testTarget = new D();
+        EventMessage<Object> testEvent = asEventMessage("Hello");
+        EventMessage<Object> testEventTwo = asEventMessage(1);
+
         Map<Class<?>, SortedSet<MessageHandlingMember<? super A>>> interceptors = inspector.getAllInterceptors();
         assertEquals(5, interceptors.size());
         assertEquals(1, interceptors.get(pA.class).size());
@@ -116,13 +141,14 @@ public class AnnotatedHandlerInspectorTest {
 
         MessageHandlerInterceptorMemberChain<A> chain = inspector.chainedInterceptor(B.class);
 
-        chain.handle(asEventMessage("Hello"), new D(), inspector.getHandlers(pA.class).findFirst().get());
-        assertThrows(MockException.class, () ->
-                chain.handle(asEventMessage(1), new D(), inspector.getHandlers(pA.class).findFirst().get())
-        );
-
+        Optional<MessageHandlingMember<? super A>> optionalHandler = inspector.getHandlers(pA.class).findFirst();
+        assertTrue(optionalHandler.isPresent());
+        MessageHandlingMember<? super A> resultHandler = optionalHandler.get();
+        chain.handle(testEvent, testTarget, resultHandler);
+        assertThrows(MockException.class, () -> chain.handle(testEventTwo, testTarget, resultHandler));
     }
 
+    @SuppressWarnings("unused")
     private static class pA {
 
         @CommandHandler
@@ -135,6 +161,7 @@ public class AnnotatedHandlerInspectorTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class A extends pA {
 
         @CommandHandler
@@ -146,6 +173,7 @@ public class AnnotatedHandlerInspectorTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class B extends A {
 
         @CommandHandler
@@ -162,6 +190,7 @@ public class AnnotatedHandlerInspectorTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class C extends A {
 
         @CommandHandler
@@ -173,6 +202,7 @@ public class AnnotatedHandlerInspectorTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class D extends B {
 
         @CommandHandler
