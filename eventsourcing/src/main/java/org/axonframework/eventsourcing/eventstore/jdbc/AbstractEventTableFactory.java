@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * Abstract implementation of an {@link EventTableFactory} that provides Jdbc "create table" statements compatible
- * with most databases.
+ * Abstract implementation of an {@link EventTableFactory} that provides Jdbc "create table" statements compatible with
+ * most databases.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -42,7 +42,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.timestampColumn() + " " + timestampType() + " ,\n" +
                 "PRIMARY KEY (" + schema.globalIndexColumn() + "),\n" +
                 "UNIQUE (" + schema.aggregateIdentifierColumn() + ", " +
                 schema.sequenceNumberColumn() + "),\n" +
@@ -63,7 +63,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.timestampColumn() + " " + timestampType() + " ,\n" +
                 "PRIMARY KEY (" + schema.aggregateIdentifierColumn() + ", " +
                 schema.sequenceNumberColumn() + "),\n" +
                 "UNIQUE (" + schema.eventIdentifierColumn() + ")\n" +
@@ -84,4 +84,13 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
      * @return the sql for the payload column
      */
     protected abstract String payloadType();
+
+    /**
+     * Returns the sql to describe the type of timestamp column.
+     *
+     * @return the sql for the timestamp column
+     */
+    protected String timestampType() {
+        return " VARCHAR(255) NOT NULL ";
+    }
 }

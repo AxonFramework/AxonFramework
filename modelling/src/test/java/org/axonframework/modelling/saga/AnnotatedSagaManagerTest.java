@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -40,13 +41,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link AnnotatedSagaManager}.
+ *
  * @author Allard Buijze
  */
 public class AnnotatedSagaManagerTest {
 
     private AnnotatedSagaRepository<MyTestSaga> sagaRepository;
-    private AnnotatedSagaManager<MyTestSaga> manager;
     private InMemorySagaStore sagaStore;
+
+    private AnnotatedSagaManager<MyTestSaga> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -57,7 +61,7 @@ public class AnnotatedSagaManagerTest {
                         .sagaStore(sagaStore)
                         .build()
         );
-        manager = AnnotatedSagaManager.<MyTestSaga>builder()
+        testSubject = AnnotatedSagaManager.<MyTestSaga>builder()
                 .sagaRepository(sagaRepository)
                 .sagaType(MyTestSaga.class)
                 .sagaFactory(MyTestSaga::new)
@@ -162,9 +166,23 @@ public class AnnotatedSagaManagerTest {
         assertEquals(0, repositoryContents("12").size());
     }
 
+    @Test
+    void testPerformResetThrowsResetNotSupportedException() {
+        AnnotatedSagaManager<MyTestSaga> spiedTestSubject = spy(testSubject);
+
+        assertThrows(ResetNotSupportedException.class, spiedTestSubject::performReset);
+
+        verify(spiedTestSubject).performReset(null);
+    }
+
+    @Test
+    void testPerformResetWithResetInfoThrowsResetNotSupportedException() {
+        assertThrows(ResetNotSupportedException.class, () -> testSubject.performReset("reset-info"));
+    }
+
     private void handle(EventMessage<?> event) throws Exception {
         ResultMessage<?> resultMessage = DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
-            manager.handle(event, Segment.ROOT_SEGMENT);
+            testSubject.handle(event, Segment.ROOT_SEGMENT);
             return null;
         });
         if (resultMessage.isExceptional()) {
@@ -180,10 +198,12 @@ public class AnnotatedSagaManagerTest {
                         .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unused")
     public static class MyTestSaga {
 
         private static final long serialVersionUID = -1562911263884220240L;
-        private List<Object> capturedEvents = new LinkedList<>();
+
+        private final List<Object> capturedEvents = new LinkedList<>();
         private int specificHandlerInvocations = 0;
 
         @CustomStartingSagaEventHandler
@@ -232,9 +252,10 @@ public class AnnotatedSagaManagerTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static abstract class MyIdentifierEvent {
 
-        private String myIdentifier;
+        private final String myIdentifier;
 
         public MyIdentifierEvent(String myIdentifier) {
             this.myIdentifier = myIdentifier;
@@ -252,22 +273,7 @@ public class AnnotatedSagaManagerTest {
         }
     }
 
-    public static class OtherStartingEvent extends MyIdentifierEvent {
-
-        private final CountDownLatch countDownLatch;
-
-        protected OtherStartingEvent(String myIdentifier) {
-            this(myIdentifier, null);
-        }
-
-        public OtherStartingEvent(String id, CountDownLatch countDownLatch) {
-            super(id);
-            this.countDownLatch = countDownLatch;
-        }
-    }
-
     public static class SlowStartingEvent extends StartingEvent {
-
 
         private final CountDownLatch startCdl;
         private final long duration;
@@ -305,26 +311,6 @@ public class AnnotatedSagaManagerTest {
 
         public MiddleEvent(String myIdentifier) {
             super(myIdentifier);
-        }
-    }
-
-    private class HandleEventTask implements Runnable {
-
-        private final EventMessage<?> eventMessage;
-
-        public HandleEventTask(EventMessage<?> eventMessage) {
-            this.eventMessage = eventMessage;
-        }
-
-        @Override
-        public void run() {
-            try {
-                handle(eventMessage);
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                fail("The handler failed to handle the message");
-            }
         }
     }
 }

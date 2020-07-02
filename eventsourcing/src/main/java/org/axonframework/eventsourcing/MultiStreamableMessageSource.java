@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,14 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -138,7 +145,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
     public static class Builder {
 
         private Comparator<Map.Entry<String, TrackedEventMessage<?>>> trackedEventComparator = Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> t) -> t.getValue().getTimestamp());
-        private Map<String, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
+        private final Map<String, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
         private String longPollingSource = "";
 
         /**
@@ -348,7 +355,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         @Override
         public boolean hasNextAvailable() {
-            return messageStreams.stream().anyMatch(BlockingStream::hasNextAvailable);
+            return peekedMessage != null || messageStreams.stream().anyMatch(BlockingStream::hasNextAvailable);
         }
 
         /**
@@ -419,6 +426,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         @Override
         public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+            if (peekedMessage != null) {
+                return true;
+            }
             long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
             long longPollTime = unit.toMillis(timeout) / 10;
 
@@ -458,7 +468,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
             //Return peekedMessage if available.
             if (peekedMessage != null) {
-                TrackedEventMessage next = peekedMessage;
+                TrackedEventMessage<?> next = peekedMessage;
                 peekedMessage = null;
                 trackingToken = (MultiSourceTrackingToken) next.trackingToken();
                 return next;

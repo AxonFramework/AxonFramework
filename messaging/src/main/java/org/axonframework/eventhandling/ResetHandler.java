@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,24 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.annotation.MessageHandler;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation that can be placed on a method that is to be invoked when a reset is being prepared. Handlers may throw
- * an exception to veto against a reset.
+ * Annotation that can be placed on a method that is to be invoked when a reset is being prepared. Handlers may throw an
+ * exception to veto against a reset.
  *
  * @author Allard Buijze
  * @since 3.2
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@EventHandler(payloadType = ResetTriggeredEvent.class)
+@MessageHandler(messageType = ResetContext.class)
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface ResetHandler {
 
 }

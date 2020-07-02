@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.config;
 
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.Repository;
 
 /**
@@ -23,20 +25,36 @@ import org.axonframework.modelling.command.Repository;
  * components to retrieve the Repository used to load Aggregates of the type defined in this Configuration.
  *
  * @param <A> The type of Aggregate defined in this Configuration
+ * @author Allard Buijze
+ * @since 3.0
  */
 public interface AggregateConfiguration<A> extends ModuleConfiguration {
 
     /**
-     * Returns the repository defined to load instances of the Aggregate type defined in this configuration
+     * Returns the repository defined to load instances of the Aggregate type defined in this configuration.
      *
      * @return the repository to load aggregates
      */
     Repository<A> repository();
 
     /**
-     * Returns the type of Aggregate defined in this Configuration.
+     * Returns the type of Aggregate defined in this configuration.
      *
-     * @return the type of Aggregate defined in this Configuration
+     * @return the type of Aggregate defined in this configuration
      */
     Class<A> aggregateType();
+
+    /**
+     * Returns the {@link AggregateFactory} defined in this configuration.
+     *
+     * @return the {@link AggregateFactory} defined in this configuration.
+     */
+    AggregateFactory<A> aggregateFactory();
+
+    /**
+     * Returns the {@link SnapshotFilter} defined in this configuration.
+     *
+     * @return the {@link SnapshotFilter} defined in this configuration
+     */
+    SnapshotFilter snapshotFilter();
 }

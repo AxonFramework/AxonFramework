@@ -138,6 +138,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     public static final String AXON_CONFIGURER_BEAN = "org.axonframework.config.Configurer";
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAxonAutoConfigurer.class);
+
+    private static final String EMPTY_STRING = "";
+
     private ConfigurableListableBeanFactory beanFactory;
 
     @Override
@@ -290,14 +293,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
-            Class sagaType = beanFactory.getType(saga);
+            Class<?> sagaType = beanFactory.getType(saga);
             ProcessingGroup processingGroupAnnotation =
                     beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
-            if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
+            if (processingGroupAnnotation != null && nonEmptyBeanName(processingGroupAnnotation.value())) {
                 configurer.assignHandlerTypesMatching(processingGroupAnnotation.value(), sagaType::equals);
             }
             configurer.registerSaga(sagaType, sagaConfigurer -> {
-                if (sagaAnnotation != null && !"".equals(sagaAnnotation.sagaStore())) {
+                if (sagaAnnotation != null && nonEmptyBeanName(sagaAnnotation.sagaStore())) {
                     sagaConfigurer.configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
                 }
             });
@@ -361,19 +364,20 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             Class<A> aggregateType = (Class<A>) aggregate.getKey().getClassType();
             String aggregatePrototype = aggregate.getKey().getBeanName();
             Aggregate aggregateAnnotation = aggregateType.getAnnotation(Aggregate.class);
-            AggregateConfigurer<A> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
-            aggregateConf.withSubtypes(aggregate.getValue().keySet());
-            if ("".equals(aggregateAnnotation.repository())) {
+            AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(aggregateType);
+            aggregateConfigurer.withSubtypes(aggregate.getValue().keySet());
+
+            if (EMPTY_STRING.equals(aggregateAnnotation.repository())) {
                 String repositoryName = lcFirst(aggregateType.getSimpleName()) + "Repository";
                 String factoryName =
                         aggregatePrototype.substring(0, 1).toLowerCase()
                                 + aggregatePrototype.substring(1) + "AggregateFactory";
                 if (beanFactory.containsBean(repositoryName)) {
-                    aggregateConf.configureRepository(c -> beanFactory.getBean(repositoryName, Repository.class));
+                    aggregateConfigurer.configureRepository(c -> beanFactory.getBean(repositoryName, Repository.class));
                 } else {
                     registry.registerBeanDefinition(repositoryName,
                                                     genericBeanDefinition(RepositoryFactoryBean.class)
-                                                            .addConstructorArgValue(aggregateConf)
+                                                            .addConstructorArgValue(aggregateConfigurer)
                                                             .getBeanDefinition());
 
                     if (!registry.isBeanNameInUse(factoryName)) {
@@ -383,51 +387,72 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                                 .addConstructorArgValue(aggregate.getValue())
                                                                 .getBeanDefinition());
                     }
-                    aggregateConf
-                            .configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory.class));
-                    String triggerDefinition = aggregateAnnotation.snapshotTriggerDefinition();
-                    if (!"".equals(triggerDefinition)) {
-                        aggregateConf.configureSnapshotTrigger(
-                                c -> beanFactory.getBean(triggerDefinition, SnapshotTriggerDefinition.class));
+                    aggregateConfigurer.configureAggregateFactory(
+                            c -> beanFactory.getBean(factoryName, AggregateFactory.class)
+                    );
+
+                    String triggerDefinitionBeanName = aggregateAnnotation.snapshotTriggerDefinition();
+                    if (nonEmptyBeanName(triggerDefinitionBeanName)) {
+                        aggregateConfigurer.configureSnapshotTrigger(
+                                c -> beanFactory.getBean(triggerDefinitionBeanName, SnapshotTriggerDefinition.class)
+                        );
                     }
-                    String cache = aggregateAnnotation.cache();
-                    if (!"".equals(cache)) {
-                        aggregateConf.configureCache(c -> beanFactory.getBean(cache, Cache.class));
+
+                    String cacheBeanName = aggregateAnnotation.cache();
+                    if (nonEmptyBeanName(cacheBeanName)) {
+                        aggregateConfigurer.configureCache(c -> beanFactory.getBean(cacheBeanName, Cache.class));
                     }
+
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
-                        aggregateConf.configureRepository(
+                        aggregateConfigurer.configureRepository(
                                 c -> GenericJpaRepository.builder(aggregateType)
-                                        .parameterResolverFactory(c.parameterResolverFactory())
-                                        .handlerDefinition(c.handlerDefinition(aggregateType))
-                                        .lockFactory(c.getComponent(
-                                                LockFactory.class, () -> NullLockFactory.INSTANCE
-                                        ))
-                                        .entityManagerProvider(c.getComponent(
-                                                EntityManagerProvider.class,
-                                                () -> beanFactory.getBean(EntityManagerProvider.class)
-                                        ))
-                                        .eventBus(c.eventBus())
-                                        .repositoryProvider(c::repository)
-                                        .build());
+                                                         .parameterResolverFactory(c.parameterResolverFactory())
+                                                         .handlerDefinition(c.handlerDefinition(aggregateType))
+                                                         .lockFactory(c.getComponent(
+                                                                 LockFactory.class, () -> NullLockFactory.INSTANCE
+                                                         ))
+                                                         .entityManagerProvider(c.getComponent(
+                                                                 EntityManagerProvider.class,
+                                                                 () -> beanFactory.getBean(EntityManagerProvider.class)
+                                                         ))
+                                                         .eventBus(c.eventBus())
+                                                         .repositoryProvider(c::repository)
+                                                         .build()
+                        );
                     }
                 }
             } else {
-                aggregateConf.configureRepository(
-                        c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class));
+                aggregateConfigurer.configureRepository(
+                        c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class)
+                );
             }
 
-            aggregateConf.configureFilterEventsByType(c -> aggregateAnnotation.filterEventsByType());
+            String snapshotFilterBeanName = aggregateAnnotation.snapshotFilter();
+            if (nonEmptyBeanName(snapshotFilterBeanName)) {
+                aggregateConfigurer.configureSnapshotFilter(c -> getBean(snapshotFilterBeanName, c));
+            }
 
-            if (!"".equals(aggregateAnnotation.commandTargetResolver())) {
-                aggregateConf.configureCommandTargetResolver(c -> getBean(aggregateAnnotation.commandTargetResolver(),
-                                                                          c));
+            String commandTargetResolverBeanName = aggregateAnnotation.commandTargetResolver();
+            if (nonEmptyBeanName(commandTargetResolverBeanName)) {
+                aggregateConfigurer.configureCommandTargetResolver(
+                        c -> getBean(commandTargetResolverBeanName, c)
+                );
             } else {
-                findComponent(CommandTargetResolver.class).ifPresent(commandTargetResolver -> aggregateConf
-                        .configureCommandTargetResolver(c -> getBean(commandTargetResolver, c)));
+                findComponent(CommandTargetResolver.class).ifPresent(
+                        commandTargetResolver -> aggregateConfigurer.configureCommandTargetResolver(
+                                c -> getBean(commandTargetResolver, c)
+                        )
+                );
             }
 
-            configurer.configureAggregate(aggregateConf);
+            aggregateConfigurer.configureFilterEventsByType(c -> aggregateAnnotation.filterEventsByType());
+
+            configurer.configureAggregate(aggregateConfigurer);
         }
+    }
+
+    private boolean nonEmptyBeanName(String beanName) {
+        return !EMPTY_STRING.equals(beanName);
     }
 
     /**

@@ -25,6 +25,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -40,6 +42,7 @@ public class InMemoryTokenStore implements TokenStore {
     private static final GlobalSequenceTrackingToken NULL_TOKEN = new GlobalSequenceTrackingToken(-1);
 
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
+    private final String identifier = UUID.randomUUID().toString();
 
     @Override
     public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
@@ -107,6 +110,11 @@ public class InMemoryTokenStore implements TokenStore {
                      .distinct()
                      .mapToInt(Number::intValue)
                      .sorted().toArray();
+    }
+
+    @Override
+    public Optional<String> retrieveStorageIdentifier() {
+        return Optional.of(identifier);
     }
 
     private static class ProcessAndSegment {

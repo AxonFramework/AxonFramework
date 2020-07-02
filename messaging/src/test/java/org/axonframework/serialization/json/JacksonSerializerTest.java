@@ -18,7 +18,6 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -33,25 +32,18 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.UnknownSerializedType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -103,8 +95,7 @@ class JacksonSerializerTest {
 
     @Test
     void testSerializeAndDeserializeList() {
-        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, JsonTypeInfo.As.PROPERTY);
-
+        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -241,15 +232,38 @@ class JacksonSerializerTest {
 
     @Test
     void testSerializeMetaDataWithComplexObjects() {
-        // typing must be enabled for this (which we expect end-users to do
-        testSubject.getObjectMapper()
-                   .enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
+        // Typing must be enabled for this (which we expect end-users to do)
+        JacksonSerializer testSubject = JacksonSerializer.builder().defaultTyping().build();
 
         MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
         SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
         MetaData actual = testSubject.deserialize(serialized);
 
         assertEquals(metaData, actual);
+    }
+
+    /**
+     * Test case corresponding with a {@link org.axonframework.queryhandling.QueryHandler} annotated method which
+     * returns a {@link List} of {@link ComplexObject}. Upon deserialization, the type info is required by the {@link
+     * ObjectMapper} to <b>not</b> defer to an {@link ArrayList} of {@link java.util.LinkedHashMap}s. This can be
+     * enabled through {@link JacksonSerializer.Builder#defaultTyping()} or by providing an {@link ObjectMapper} which
+     * is configured with {@link ObjectMapper#enableDefaultTyping(ObjectMapper.DefaultTyping)}.
+     */
+    @Test
+    void testSerializeCollectionOfObjects() {
+        // Typing must be enabled for this (which we expect end-users to do)
+        JacksonSerializer testSubject = JacksonSerializer.builder().defaultTyping().build();
+
+        List<ComplexObject> objectToSerialize = new ArrayList<>();
+        objectToSerialize.add(new ComplexObject("String1", "String2", 3));
+        objectToSerialize.add(new ComplexObject("String4", "String5", 6));
+        objectToSerialize.add(new ComplexObject("String7", "String8", 9));
+
+        SerializedObject<String> serializedResult = testSubject.serialize(objectToSerialize, String.class);
+
+        List<ComplexObject> deserializedResult = testSubject.deserialize(serializedResult);
+
+        assertEquals(objectToSerialize, deserializedResult);
     }
 
     @Test

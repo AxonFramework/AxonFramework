@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -53,7 +54,7 @@ import javax.sql.DataSource;
 public class JdbcAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean({EventStorageEngine.class, EventStore.class})
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
     public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
@@ -65,6 +66,7 @@ public class JdbcAutoConfiguration {
                                      .upcasterChain(configuration.upcasterChain())
                                      .persistenceExceptionResolver(persistenceExceptionResolver)
                                      .eventSerializer(eventSerializer)
+                                     .snapshotFilter(configuration.snapshotFilter())
                                      .connectionProvider(connectionProvider)
                                      .transactionManager(transactionManager)
                                      .build();

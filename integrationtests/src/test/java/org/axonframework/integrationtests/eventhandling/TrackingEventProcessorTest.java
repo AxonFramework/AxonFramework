@@ -45,11 +45,8 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.InOrder;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
@@ -84,30 +81,8 @@ import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}.
@@ -115,6 +90,8 @@ import static org.mockito.Mockito.when;
  * @author Rene de Waele
  */
 class TrackingEventProcessorTest {
+
+    private static final Object NO_RESET_PAYLOAD = null;
 
     private TrackingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;
@@ -775,10 +752,21 @@ class TrackingEventProcessorTest {
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong();
         eventBus.publish(createEvents(1));
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(segmentId).isReplaying()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).isReplaying()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
+        ));
+        //noinspection OptionalGetWithoutIsPresent
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
+        ));
+
+        verify(eventHandlerInvoker, times(2)).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -816,10 +804,21 @@ class TrackingEventProcessorTest {
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getResetPosition().getAsLong();
         eventBus.publish(createEvents(1));
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(segmentId).isReplaying()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).isReplaying()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
+        ));
+        //noinspection OptionalGetWithoutIsPresent
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
+        ));
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -874,10 +873,20 @@ class TrackingEventProcessorTest {
         long resetPositionAtReplay = testSubject.processingStatus().get(segmentId).getResetPosition().getAsLong();
         eventBus.publish(createEvents(1));
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(segmentId).isReplaying()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).isReplaying()
+        ));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(
+                testSubject.processingStatus().get(segmentId).getResetPosition().isPresent()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent()
+        ));
+        //noinspection OptionalGetWithoutIsPresent
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
+        ));
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -906,6 +915,8 @@ class TrackingEventProcessorTest {
         assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > 0);
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @SuppressWarnings("unchecked")
@@ -950,6 +961,8 @@ class TrackingEventProcessorTest {
         assertTrue(replayRun.get(0) instanceof ReplayToken);
         assertTrue(replayRun.get(5) instanceof ReplayToken);
         assertEquals(GapAwareTrackingToken.newInstance(6, emptySortedSet()), replayRun.get(6));
+
+        verify(eventHandlerInvoker).performReset(NO_RESET_PAYLOAD);
     }
 
     @Test
@@ -982,6 +995,32 @@ class TrackingEventProcessorTest {
     }
 
     @Test
+    void testResetTokensPassesOnResetContext() throws Exception {
+        String resetContext = "reset-context";
+        final List<String> handled = new CopyOnWriteArrayList<>();
+
+        when(mockHandler.supportsReset()).thenReturn(true);
+
+
+        //noinspection Duplicates
+        doAnswer(i -> {
+            EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
+            return null;
+        }).when(mockHandler).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+
+        testSubject.shutDown();
+        testSubject.resetTokens(resetContext);
+        testSubject.start();
+
+        verify(eventHandlerInvoker).performReset(resetContext);
+    }
+
+    @Test
     void testWhenFailureDuringInit() throws InterruptedException {
         doThrow(new RuntimeException("Faking issue during fetchSegments"))
                 .doCallRealMethod()
@@ -1003,8 +1042,8 @@ class TrackingEventProcessorTest {
 
     @Test
     void testUpdateActiveSegmentsWhenBatchIsEmpty() throws Exception {
-        //noinspection unchecked
         int segmentId = 0;
+        //noinspection unchecked
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -1413,6 +1452,23 @@ class TrackingEventProcessorTest {
     }
 
     /**
+     * This test is a follow up from issue https://github.com/AxonIQ/axon-server-se/issues/135
+     */
+    @Test
+    @Timeout(value = 10)
+    void testMergeInvertedSegmentOrder() throws InterruptedException {
+        int numberOfSegments = 4;
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(numberOfSegments));
+        testSubject.start();
+        waitForActiveThreads(4);
+        int segmentId = 3;
+        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentId);
+        assertTrue(mergeResult.join(), "Expected merge to succeed");
+        verify(tokenStore).deleteToken("test", 3);
+        verify(tokenStore).storeToken(any(), eq("test"), eq(1));
+    }
+
+    /**
      * This test is a follow up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
      */
     @Test
@@ -1442,6 +1498,20 @@ class TrackingEventProcessorTest {
                 15, TimeUnit.SECONDS,
                 () -> assertTrue(thrownException.get() instanceof TestError)
         );
+    }
+
+    @Test
+    void retrievingStorageIdentifierWillCacheResults() {
+        String id = testSubject.getTokenStoreIdentifier();
+        InOrder inOrder = inOrder(mockTransactionManager, tokenStore);
+        inOrder.verify(mockTransactionManager).fetchInTransaction(any());
+        inOrder.verify(tokenStore, times(1)).retrieveStorageIdentifier();
+
+        String id2 = testSubject.getTokenStoreIdentifier();
+        // expect no extra invocations
+        verify(tokenStore, times(1)).retrieveStorageIdentifier();
+
+        assertEquals(id, id2);
     }
 
     private void waitForStatus(String description,
@@ -1479,7 +1549,8 @@ class TrackingEventProcessorTest {
 
     @SuppressWarnings("SameParameterValue")
     private EventTrackerStatus waitForProcessingStatus(int segmentId,
-                                                       Predicate<EventTrackerStatus> expectedStatus) throws InterruptedException {
+                                                       Predicate<EventTrackerStatus> expectedStatus)
+            throws InterruptedException {
         EventTrackerStatus status = testSubject.processingStatus().get(segmentId);
         while (!Optional.ofNullable(status)
                         .map(expectedStatus::test)
@@ -1535,5 +1606,6 @@ class TrackingEventProcessorTest {
 
     private static class TestError extends Error {
 
+        private static final long serialVersionUID = -5579826202840099704L;
     }
 }

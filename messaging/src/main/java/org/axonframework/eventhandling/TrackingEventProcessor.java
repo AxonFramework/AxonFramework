@@ -107,6 +107,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final String lastTokenResourceKey;
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
+    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
+
 
     private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
     private final boolean storeTokenBeforeProcessing;
@@ -230,6 +232,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.instructions.computeIfAbsent(segmentId, i -> new CopyOnWriteArrayList<>())
                          .add(new SplitSegmentInstruction(result, segmentId));
         return result;
+    }
+
+    /**
+     * Returns the unique identifier of the TokenStore used by this EventProcessor.
+     *
+     * @return
+     * @throws org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException if the tokenStore was
+     *                                                                                        unable to retrieve it
+     */
+    public String getTokenStoreIdentifier() {
+        return tokenStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
+    }
+
+    private String calculateIdentifier() {
+        return transactionManager.fetchInTransaction(
+                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        );
     }
 
     /**
@@ -562,6 +581,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
+     * Resets tokens to their initial state. This effectively causes a replay. The given {@code resetContext} will be
+     * used to support the (optional) reset operation in an Event Handling Component.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the same
+     * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
+     * processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param resetContext a {@code R} used to support the reset operation
+     * @param <R>          the type of the provided {@code resetContext}
+     */
+    public <R> void resetTokens(R resetContext) {
+        resetTokens(initialTrackingTokenBuilder, resetContext);
+    }
+
+    /**
      * Reset tokens to the position as return by the given {@code initialTrackingTokenSupplier}. This effectively causes
      * a replay since that position.
      * <p>
@@ -579,6 +613,28 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
+     * Reset tokens to the position as return by the given {@code initialTrackingTokenSupplier}. This effectively causes
+     * a replay since that position. The given {@code resetContext} will be used to support the (optional) reset
+     * operation in an Event Handling Component.
+     * <p>
+     * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the same
+     * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
+     * processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param initialTrackingTokenSupplier A function returning the token representing the position to reset to
+     * @param resetContext                 a {@code R} used to support the reset operation
+     * @param <R>                          the type of the provided {@code resetContext}
+     */
+    public <R> void resetTokens(
+            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
+            R resetContext
+    ) {
+        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
+    }
+
+    /**
      * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that
      * position.
      * <p>
@@ -588,9 +644,28 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
      * processor can only reset the tokens if it is able to claim them all.
      *
-     * @param startPosition The token representing the position to reset the processor to.
+     * @param startPosition the token representing the position to reset the processor to
      */
     public void resetTokens(TrackingToken startPosition) {
+        resetTokens(startPosition, null);
+    }
+
+    /**
+     * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that position.
+     * The given {@code resetContext} will be used to support the (optional) reset operation in an Event Handling
+     * Component.
+     * <p>
+     * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the same
+     * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
+     * processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param startPosition the token representing the position to reset the processor to
+     * @param resetContext  a {@code R} used to support the reset operation
+     * @param <R>           the type of the provided {@code resetContext}
+     */
+    public <R> void resetTokens(TrackingToken startPosition, R resetContext) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0,
                      () -> "TrackingProcessor must be shut down before triggering a reset");
@@ -601,7 +676,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 tokens[i] = tokenStore.fetchToken(getName(), segments[i]);
             }
             // we now have all tokens, hurray
-            eventHandlerInvoker().performReset();
+            eventHandlerInvoker().performReset(resetContext);
 
             for (int i = 0; i < tokens.length; i++) {
                 tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]);
@@ -1376,7 +1451,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 return false;
             }
             Segment newSegment = status.getSegment().mergedWith(segmentToMergeWith);
-            tokenStore.deleteToken(getName(), otherSegment);
+            //we want to keep the token with the segmentId obtained by the merge operation, and to delete the other
+            int tokenToDelete = (newSegment.getSegmentId() == segmentId) ? otherSegment : segmentId;
+            tokenStore.deleteToken(getName(), tokenToDelete);
 
             TrackingToken mergedToken = otherSegment < segmentId
                     ? new MergedTrackingToken(otherToken, status.getInternalTrackingToken())

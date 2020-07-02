@@ -22,7 +22,10 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -191,13 +194,45 @@ public interface Configuration {
     }
 
     /**
-     * Returns the Repository configured for the given {@code aggregateType}.
+     * Returns the {@link AggregateConfiguration} for the given {@code aggregateType}.
      *
-     * @param aggregateType The aggregate type to find the repository for
-     * @param <T>           The aggregate type
-     * @return the repository from which aggregates of the given type can be loaded
+     * @param aggregateType the aggregate type to find the {@link AggregateConfiguration} for
+     * @param <A>           the aggregate type
+     * @return the {@link AggregateConfiguration} for the given {@code aggregateType}
      */
-    <T> Repository<T> repository(Class<T> aggregateType);
+    default <A> AggregateConfiguration<A> aggregateConfiguration(Class<A> aggregateType) {
+        //noinspection unchecked
+        return findModules(AggregateConfiguration.class)
+                .stream()
+                .filter(aggregateConfig -> aggregateConfig.aggregateType().isAssignableFrom(aggregateType))
+                .findFirst()
+                .map(moduleConfig -> (AggregateConfiguration<A>) moduleConfig)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Aggregate " + aggregateType.getSimpleName() + " has not been configured"
+                ));
+    }
+
+    /**
+     * Returns the {@link Repository} configured for the given {@code aggregateType}.
+     *
+     * @param aggregateType the aggregate type to find the {@link Repository} for
+     * @param <A>           the aggregate type
+     * @return the {@link Repository} from which aggregates of the given {@code aggregateType} can be loaded
+     */
+    default <A> Repository<A> repository(Class<A> aggregateType) {
+        return aggregateConfiguration(aggregateType).repository();
+    }
+
+    /**
+     * Returns the {@link AggregateFactory} configured for the given {@code aggregateType}.
+     *
+     * @param aggregateType the aggregate type to find the {@link AggregateFactory} for
+     * @param <A>           the aggregate type
+     * @return the {@link AggregateFactory} which constructs aggregate of the given {@code aggregateType}
+     */
+    default <A> AggregateFactory<A> aggregateFactory(Class<A> aggregateType) {
+        return aggregateConfiguration(aggregateType).aggregateFactory();
+    }
 
     /**
      * Returns the Component declared under the given {@code componentType}, typically the interface the component
@@ -301,6 +336,15 @@ public interface Configuration {
      */
     default DeadlineManager deadlineManager() {
         return getComponent(DeadlineManager.class);
+    }
+
+    /**
+     * Returns the {@link Snapshotter} defined in this Configuration.
+     *
+     * @return the {@link Snapshotter} defined in this Configuration
+     */
+    default Snapshotter snapshotter() {
+        return getComponent(Snapshotter.class);
     }
 
     /**
@@ -419,4 +463,16 @@ public interface Configuration {
      * @return the EventUpcasterChain with all registered upcasters
      */
     EventUpcasterChain upcasterChain();
+
+    /**
+     * Returns the {@link SnapshotFilter} combining all defined filters per {@link AggregateConfigurer} in an {@link
+     * SnapshotFilter#combine(SnapshotFilter)} operation.
+     *
+     * @return the {@link SnapshotFilter}  combining all defined filters per {@link AggregateConfigurer}
+     */
+    default SnapshotFilter snapshotFilter() {
+        return findModules(AggregateConfiguration.class).stream()
+                                                        .map(AggregateConfiguration::snapshotFilter)
+                                                        .reduce(SnapshotFilter.allowAll(), SnapshotFilter::combine);
+    }
 }

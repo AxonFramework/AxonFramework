@@ -267,6 +267,7 @@ public class JacksonSerializer implements Serializer {
         private Converter converter = new ChainingConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
         private boolean lenientDeserialization = false;
+        private boolean defaultTyping = false;
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
@@ -317,7 +318,6 @@ public class JacksonSerializer implements Serializer {
          *
          * @param classLoader the {@link ClassLoader} used to load classes with when deserializing
          * @return the current Builder instance, for fluent interfacing
-         *
          * @see #objectMapper(ObjectMapper)
          * @see com.fasterxml.jackson.databind.type.TypeFactory#withClassLoader(ClassLoader)
          * @deprecated Ensure the ObjectMapper is configured with the correct class loader instead
@@ -329,14 +329,28 @@ public class JacksonSerializer implements Serializer {
 
         /**
          * Configures the underlying ObjectMapper to be lenient when deserializing JSON into Java objects. Specifically,
-         * enables the {@link DeserializationFeature#ACCEPT_SINGLE_VALUE_AS_ARRAY} and
-         * {@link DeserializationFeature#UNWRAP_SINGLE_VALUE_ARRAYS}, and disables
-         * {@link DeserializationFeature#FAIL_ON_UNKNOWN_PROPERTIES}.
+         * enables the {@link DeserializationFeature#ACCEPT_SINGLE_VALUE_AS_ARRAY} and {@link
+         * DeserializationFeature#UNWRAP_SINGLE_VALUE_ARRAYS}, and disables {@link DeserializationFeature#FAIL_ON_UNKNOWN_PROPERTIES}.
          *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder lenientDeserialization() {
             lenientDeserialization = true;
+            return this;
+        }
+
+        /**
+         * Configures the underlying {@link ObjectMapper} to include type information when serializing Java objects into
+         * JSON. Specifically, it calls {@link ObjectMapper#enableDefaultTyping(ObjectMapper.DefaultTyping)} method,
+         * using {@link ObjectMapper.DefaultTyping#NON_CONCRETE_AND_ARRAYS}. This can be toggled on to allow {@link
+         * java.util.Collection}s of objects, for example query {@link java.util.List} responses, to automatically
+         * include the types without require the use of {@link com.fasterxml.jackson.annotation.JsonTypeInfo} on the
+         * objects themselves.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultTyping() {
+            defaultTyping = true;
             return this;
         }
 
@@ -350,6 +364,9 @@ public class JacksonSerializer implements Serializer {
                 objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
                 objectMapper.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS);
                 objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            }
+            if (defaultTyping) {
+                objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
             }
             return new JacksonSerializer(this);
         }

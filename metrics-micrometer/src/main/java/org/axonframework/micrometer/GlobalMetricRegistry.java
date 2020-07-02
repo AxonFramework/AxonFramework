@@ -16,6 +16,8 @@
 package org.axonframework.micrometer;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
@@ -47,6 +49,7 @@ import java.util.function.Function;
 public class GlobalMetricRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalMetricRegistry.class);
+    public static final String EVENT_PROCESSOR_METRICS_NAME = "eventProcessor";
 
     private final MeterRegistry registry;
 
@@ -60,7 +63,7 @@ public class GlobalMetricRegistry {
     /**
      * Initializes a {@link GlobalMetricRegistry} delegating to the given {@code meterRegistry}.
      *
-     * @param meterRegistry the metric registry which will record the metrics
+     * @param meterRegistry The metric registry which will record the metrics
      */
     public GlobalMetricRegistry(MeterRegistry meterRegistry) {
         this.registry = meterRegistry;
@@ -71,8 +74,8 @@ public class GlobalMetricRegistry {
      * {@link Configurer#configureMessageMonitor(Function)}.
      * Components registered by the configurer will be added by invocation of {@link #registerComponent(Class, String)}.
      *
-     * @param configurer the application's configurer
-     * @return configurer with the new registration applied
+     * @param configurer The application's configurer
+     * @return Configurer with the new registration applied
      */
     @SuppressWarnings("unchecked")
     public Configurer registerWithConfigurer(Configurer configurer) {
@@ -82,12 +85,28 @@ public class GlobalMetricRegistry {
     }
 
     /**
+     * Registers the metric registry with the given {@code configurer} via
+     * {@link Configurer#configureMessageMonitor(Function)}.
+     * Components registered by the configurer will be added by invocation of {@link
+     * #registerComponentWithDefaultTags(Class, String)}.
+     *
+     * @param configurer The application's configurer
+     * @return Configurer with the new registration applied (with the default set of Micrometer {@link Tag}s/dimensions)
+     */
+    @SuppressWarnings("unchecked")
+    public Configurer registerWithConfigurerWithDefaultTags(Configurer configurer) {
+        return configurer.configureMessageMonitor(
+                configuration -> (componentType, componentName) -> (MessageMonitor<Message<?>>) registerComponentWithDefaultTags(
+                        componentType, componentName));
+    }
+
+    /**
      * Registers new metrics to the registry to monitor a component of given {@code type}. The monitor will be
      * registered with the registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
      * on the component to initiate the monitoring.
      *
-     * @param componentType the type of component to register
-     * @param componentName the name under which the component should be registered to the registry
+     * @param componentType The type of component to register
+     * @param componentName The name under which the component should be registered to the registry
      * @return MessageMonitor to monitor the behavior of a given type
      *
      * @throws IllegalArgumentException if the component type is not recognized
@@ -111,11 +130,48 @@ public class GlobalMetricRegistry {
     }
 
     /**
+     * Registers new metrics to the registry to monitor a component of given {@code type}. The monitor will be
+     * registered with the registry under the given {@code name} and the default set of Micrometer {@link Tag}s.
+     * The default set of Micrometer {@link Tag}s includes the 'message payload type' and additionally the 'processor
+     * name'
+     * for the event processors.
+     * The returned {@link MessageMonitor} can be installed on the component to initiate the monitoring.
+     *
+     * @param componentType The type of component to register
+     * @param componentName The name under which the component should be registered to the registry
+     * @return MessageMonitor (with Micrometer {@link Tag}s/dimensions enabled) to monitor the behavior of a given type
+     *
+     * @throws IllegalArgumentException if the component type is not recognized
+     */
+    public MessageMonitor<? extends Message<?>> registerComponentWithDefaultTags(Class<?> componentType,
+                                                                                 String componentName) {
+        if (EventProcessor.class.isAssignableFrom(componentType)) {
+            return registerEventProcessor(EVENT_PROCESSOR_METRICS_NAME,
+                                          message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG,
+                                                             message.getPayloadType().getSimpleName(),
+                                                             TagsUtil.PROCESSOR_NAME_TAG,
+                                                             componentName));
+        }
+        if (CommandBus.class.isAssignableFrom(componentType)) {
+            return registerCommandBus(componentName, TagsUtil.PAYLOAD_TYPE_TAGGER_FUNCTION);
+        }
+        if (EventBus.class.isAssignableFrom(componentType)) {
+            return registerEventBus(componentName, TagsUtil.PAYLOAD_TYPE_TAGGER_FUNCTION);
+        }
+        if (QueryBus.class.isAssignableFrom(componentType)) {
+            return registerQueryBus(componentName, TagsUtil.PAYLOAD_TYPE_TAGGER_FUNCTION);
+        }
+        logger.warn("Cannot provide MessageMonitor for component [{}] of type [{}]. Returning No-Op instance.",
+                    componentName, componentType.getSimpleName());
+        return NoOpMessageMonitor.instance();
+    }
+
+    /**
      * Registers new metrics to the registry to monitor an {@link EventProcessor}. The monitor will be registered with
      * the registry under the given {@code eventProcessorName}. The returned {@link MessageMonitor} can be installed
      * on the event processor to initiate the monitoring.
      *
-     * @param name the name under which the EventProcessor should be registered to the registry
+     * @param name The name under which the EventProcessor should be registered to the registry
      * @return MessageMonitor to monitor the behavior of an EventProcessor
      */
     public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String name) {
@@ -134,11 +190,40 @@ public class GlobalMetricRegistry {
     }
 
     /**
+     * Registers new metrics to the registry to monitor an {@link EventProcessor} using {@link Tag}s through the given
+     * {@code tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the event processor to initiate the monitoring.
+     *
+     * @param name        The name under which the EventProcessor should be registered to the registry
+     * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                    message
+     * @return The messageMonitor to monitor the behavior of an EventProcessor
+     */
+    public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String name,
+                                                                          Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry, tagsBuilder);
+        EventProcessorLatencyMonitor eventProcessorLatencyMonitor = EventProcessorLatencyMonitor.buildMonitor(name,
+                                                                                                              registry,
+                                                                                                              tagsBuilder);
+        CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry, tagsBuilder);
+        MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name,
+                                                                                            registry,
+                                                                                            tagsBuilder);
+
+        List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
+        monitors.add(messageTimerMonitor);
+        monitors.add(eventProcessorLatencyMonitor);
+        monitors.add(capacityMonitor);
+        monitors.add(messageCountingMonitor);
+        return new MultiMessageMonitor<>(monitors);
+    }
+
+    /**
      * Registers new metrics to the registry to monitor an {@link EventBus}. The monitor will be registered with the
      * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
      * on the event bus to initiate the monitoring.
      *
-     * @param name the name under which the eventBus should be registered to the registry
+     * @param name The name under which the eventBus should be registered to the registry
      * @return MessageMonitor to monitor the behavior of an EventBus
      */
     public MessageMonitor<? super EventMessage<?>> registerEventBus(String name) {
@@ -149,11 +234,29 @@ public class GlobalMetricRegistry {
     }
 
     /**
+     * Registers new metrics to the registry to monitor an {@link EventBus} using {@link Tag}s through the given {@code
+     * tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the event bus to initiate the monitoring.
+     *
+     * @param name        The name under which the eventBus should be registered to the registry
+     * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                    message
+     * @return MessageMonitor to monitor the behavior of an EventBus
+     */
+    public MessageMonitor<? super EventMessage<?>> registerEventBus(String name,
+                                                                    Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name, registry);
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry, tagsBuilder);
+
+        return new MultiMessageMonitor<>(Arrays.asList(messageCountingMonitor, messageTimerMonitor));
+    }
+
+    /**
      * Registers new metrics to the registry to monitor a {@link CommandBus}. The monitor will be registered with the
      * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
      * on the command bus to initiate the monitoring.
      *
-     * @param name the name under which the commandBus should be registered to the registry
+     * @param name The name under which the commandBus should be registered to the registry
      * @return MessageMonitor to monitor the behavior of a CommandBus
      */
     public MessageMonitor<? super CommandMessage<?>> registerCommandBus(String name) {
@@ -161,21 +264,62 @@ public class GlobalMetricRegistry {
     }
 
     /**
+     * Registers new metrics to the registry to monitor a {@link CommandBus} using {@link Tag}s through the given {@code
+     * tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the command bus to initiate the monitoring.
+     *
+     * @param name        The name under which the commandBus should be registered to the registry
+     * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                    message
+     * @return MessageMonitor to monitor the behavior of a CommandBus
+     */
+    public MessageMonitor<? super CommandMessage<?>> registerCommandBus(String name,
+                                                                        Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        return registerDefaultHandlerMessageMonitor(name, tagsBuilder);
+    }
+
+    /**
      * Registers new metrics to the registry to monitor a {@link QueryBus}. The monitor will be registered with the
      * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
      * on the command bus to initiate the monitoring.
      *
-     * @param name the name under which the commandBus should be registered to the registry
+     * @param name The name under which the commandBus should be registered to the registry
      * @return MessageMonitor to monitor the behavior of a QueryBus
      */
     public MessageMonitor<? super QueryMessage<?, ?>> registerQueryBus(String name) {
         return registerDefaultHandlerMessageMonitor(name);
     }
 
+    /**
+     * Registers new metrics to the registry to monitor a {@link QueryBus} using {@link Tag}s through the given {@code
+     * tagsBuilder}. The monitor will be registered with the registry under the given {@code name}.
+     * The returned {@link MessageMonitor} can be installed on the command bus to initiate the monitoring.
+     *
+     * @param name        The name under which the commandBus should be registered to the registry
+     * @param tagsBuilder The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     *                    message
+     * @return MessageMonitor to monitor the behavior of a QueryBus
+     */
+    public MessageMonitor<? super QueryMessage<?, ?>> registerQueryBus(String name,
+                                                                       Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        return registerDefaultHandlerMessageMonitor(name, tagsBuilder);
+    }
+
     private MessageMonitor<Message<?>> registerDefaultHandlerMessageMonitor(String name) {
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry);
         CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry);
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name, registry);
+
+        return new MultiMessageMonitor<>(messageTimerMonitor, capacityMonitor, messageCountingMonitor);
+    }
+
+    private MessageMonitor<Message<?>> registerDefaultHandlerMessageMonitor(String name,
+                                                                            Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.buildMonitor(name, registry, tagsBuilder);
+        CapacityMonitor capacityMonitor = CapacityMonitor.buildMonitor(name, registry, tagsBuilder);
+        MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(name,
+                                                                                            registry,
+                                                                                            tagsBuilder);
 
         return new MultiMessageMonitor<>(messageTimerMonitor, capacityMonitor, messageCountingMonitor);
     }

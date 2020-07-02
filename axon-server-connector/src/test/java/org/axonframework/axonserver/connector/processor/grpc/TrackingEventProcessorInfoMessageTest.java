@@ -20,21 +20,22 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.axonframework.eventhandling.Segment.ROOT_SEGMENT;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
- * Created by Sara Pellegrini on 01/08/2018.
- * sara.pellegrini@gmail.com
+ * Unit tests for {@link TrackingEventProcessorInfoMessage}.
+ *
+ * @author Sara Pellegrini
  */
 @ExtendWith(MockitoExtension.class)
 class TrackingEventProcessorInfoMessageTest {
@@ -50,6 +51,7 @@ class TrackingEventProcessorInfoMessageTest {
     @Test
     void instruction(@Mock TrackingEventProcessor trackingEventProcessor) {
         when(trackingEventProcessor.processingStatus()).thenReturn(processingStatus);
+        when(trackingEventProcessor.getTokenStoreIdentifier()).thenReturn("tokenStoreIdentifier");
         when(trackingEventProcessor.getName()).thenReturn("ProcessorName");
         when(trackingEventProcessor.activeProcessorThreads()).thenReturn(3);
         when(trackingEventProcessor.availableProcessorThreads()).thenReturn(5);
@@ -63,7 +65,8 @@ class TrackingEventProcessorInfoMessageTest {
         assertEquals(2, eventProcessorInfo.getSegmentStatusCount());
         assertFalse(eventProcessorInfo.getRunning());
         assertTrue(eventProcessorInfo.getError());
-        assertTrue(eventProcessorInfo.getAvailableThreads()>0);
+        assertEquals("tokenStoreIdentifier", eventProcessorInfo.getTokenStoreIdentifier());
+        assertTrue(eventProcessorInfo.getAvailableThreads() >0);
         EventProcessorInfo.SegmentStatus eventTrackersInfo1 = eventProcessorInfo.getSegmentStatus(0);
         assertEquals(0,eventTrackersInfo1.getSegmentId());
         assertEquals(2, eventTrackersInfo1.getOnePartOf());

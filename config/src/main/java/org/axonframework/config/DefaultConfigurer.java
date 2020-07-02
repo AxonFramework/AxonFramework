@@ -37,6 +37,9 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.AggregateSnapshotter;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -51,7 +54,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
@@ -94,6 +96,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -180,8 +183,9 @@ public class DefaultConfigurer implements Configurer {
      */
     public static Configurer defaultConfiguration(boolean autoLocateConfigurerModules) {
         DefaultConfigurer configurer = new DefaultConfigurer();
-        if(autoLocateConfigurerModules) {
-            ServiceLoader<ConfigurerModule> configurerModuleLoader = ServiceLoader.load(ConfigurerModule.class, configurer.getClass().getClassLoader());
+        if (autoLocateConfigurerModules) {
+            ServiceLoader<ConfigurerModule> configurerModuleLoader =
+                    ServiceLoader.load(ConfigurerModule.class, configurer.getClass().getClassLoader());
             List<ConfigurerModule> configurerModules = new ArrayList<>();
             configurerModuleLoader.forEach(configurerModules::add);
             configurerModules.sort(Comparator.comparingInt(ConfigurerModule::order));
@@ -213,6 +217,7 @@ public class DefaultConfigurer implements Configurer {
                                                           c.getComponent(PersistenceExceptionResolver.class)
                                                   )
                                                   .eventSerializer(c.eventSerializer())
+                                                  .snapshotFilter(c.snapshotFilter())
                                                   .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
                                                   .transactionManager(c.getComponent(TransactionManager.class))
                                                   .build()
@@ -266,6 +271,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(EventUpcaster.class, upcasterChain);
         components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
         components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
+        components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
     }
 
     /**
@@ -296,16 +302,19 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryBus to use.
      */
     protected QueryBus defaultQueryBus(Configuration config) {
-        return SimpleQueryBus.builder()
-                             .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
-                             .transactionManager(config.getComponent(TransactionManager.class,
-                                                                     NoTransactionManager::instance))
-                             .errorHandler(config.getComponent(
-                                     QueryInvocationErrorHandler.class,
-                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
-                             ))
-                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                             .build();
+        QueryBus queryBus = SimpleQueryBus.builder()
+                                          .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
+                                          .transactionManager(config.getComponent(
+                                                  TransactionManager.class, NoTransactionManager::instance
+                                          ))
+                                          .errorHandler(config.getComponent(
+                                                  QueryInvocationErrorHandler.class,
+                                                  () -> LoggingQueryInvocationErrorHandler.builder().build()
+                                          ))
+                                          .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                                          .build();
+        queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+        return queryBus;
     }
 
     /**
@@ -351,12 +360,15 @@ public class DefaultConfigurer implements Configurer {
      * @return The default CommandBus to use.
      */
     protected CommandBus defaultCommandBus(Configuration config) {
-        SimpleCommandBus commandBus =
+        CommandBus commandBus =
                 SimpleCommandBus.builder()
-                                .transactionManager(config.getComponent(TransactionManager.class,
-                                                                        () -> NoTransactionManager.INSTANCE))
-                                .duplicateCommandHandlerResolver(config.getComponent(DuplicateCommandHandlerResolver.class,
-                                                                                     LoggingDuplicateCommandHandlerResolver::instance))
+                                .transactionManager(config.getComponent(
+                                        TransactionManager.class, () -> NoTransactionManager.INSTANCE
+                                ))
+                                .duplicateCommandHandlerResolver(config.getComponent(
+                                        DuplicateCommandHandlerResolver.class,
+                                        LoggingDuplicateCommandHandlerResolver::instance
+                                ))
                                 .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
@@ -419,6 +431,45 @@ public class DefaultConfigurer implements Configurer {
                                 .revisionResolver(config.getComponent(RevisionResolver.class,
                                                                       AnnotationRevisionResolver::new))
                                 .build();
+    }
+
+    /**
+     * Provides the default {@link Snapshotter} implementation, defaulting to a {@link AggregateSnapshotter}. Subclasses
+     * may override this method to provide their own default.
+     *
+     * @param config the configuration based on which the {@link Snapshotter} will be initialized
+     * @return the default {@link Snapshotter}
+     */
+    protected Snapshotter defaultSnapshotter(Configuration config) {
+        List<AggregateConfiguration<?>> aggregateConfigurations =
+                config.findModules(AggregateConfiguration.class)
+                      .stream()
+                      .map(aggregateConfiguration -> (AggregateConfiguration<?>) aggregateConfiguration)
+                      .collect(Collectors.toList());
+        List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
+        for (AggregateConfiguration<?> aggregateConfiguration : aggregateConfigurations) {
+            aggregateFactories.add(aggregateConfiguration.aggregateFactory());
+        }
+        return AggregateSnapshotter.builder()
+                                   .eventStore(config.eventStore())
+                                   .transactionManager(config.getComponent(TransactionManager.class))
+                                   .aggregateFactories(aggregateFactories)
+                                   .repositoryProvider(config::repository)
+                                   .parameterResolverFactory(config.parameterResolverFactory())
+                                   .handlerDefinition(retrieveHandlerDefinition(config, aggregateConfigurations))
+                                   .build();
+    }
+
+    /**
+     * The class is required to be provided in case the {@code ClasspathHandlerDefinition is used to retrieve the {@link
+     * HandlerDefinition}. Ideally, a {@code HandlerDefinition} would be retrieved per aggregate class, as potentially
+     * users would be able to define different {@link ClassLoader} instances per aggregate. For now we have deduced the
+     * latter to be to much of an edge case. Hence we assume users will use the same ClassLoader for differing
+     * aggregates within a single configuration.
+     */
+    private HandlerDefinition retrieveHandlerDefinition(Configuration configuration,
+                                                        List<AggregateConfiguration<?>> aggregateConfigurations) {
+        return configuration.handlerDefinition(aggregateConfigurations.get(0).aggregateType());
     }
 
     @Override
@@ -722,21 +773,6 @@ public class DefaultConfigurer implements Configurer {
     private class ConfigurationImpl implements Configuration {
 
         @Override
-        @SuppressWarnings("unchecked")
-        public <T> Repository<T> repository(Class<T> aggregateType) {
-            return DefaultConfigurer.this.modules
-                    .stream()
-                    .filter(AggregateConfiguration.class::isInstance)
-                    .map(moduleConfig -> (AggregateConfiguration<T>) moduleConfig)
-                    .filter(aggregateConfig -> aggregateConfig.aggregateType().isAssignableFrom(aggregateType))
-                    .findFirst()
-                    .map(AggregateConfiguration::repository)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Aggregate " + aggregateType.getSimpleName() + " has not been configured"
-                    ));
-        }
-
-        @Override
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
             Object component = components.computeIfAbsent(
                     componentType,
@@ -846,7 +882,7 @@ public class DefaultConfigurer implements Configurer {
         UP("up"),
         SHUTTING_DOWN("shutdown");
 
-        private String description;
+        private final String description;
 
         LifecycleState(String description) {
             this.description = description;
