@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -24,6 +23,8 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,14 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     @Override
     public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().afterCommit(u -> doScheduleSnapshot(aggregateType, aggregateIdentifier));
+        } else {
+            doScheduleSnapshot(aggregateType, aggregateIdentifier);
+        }
+    }
+
+    private void doScheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
         executor.execute(new SilentTask(() -> transactionManager
                 .executeInTransaction(createSnapshotterTask(aggregateType, aggregateIdentifier))));
     }

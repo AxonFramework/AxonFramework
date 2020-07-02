@@ -16,6 +16,9 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.transaction.Transaction;
@@ -61,6 +64,9 @@ class AbstractSnapshotterTest {
         if (originalLogger != null) {
             replaceLogger(originalLogger);
         }
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
     @Test
@@ -69,6 +75,20 @@ class AbstractSnapshotterTest {
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenReturn(DomainEventStream.of(createEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+    }
+
+    @Test
+    void testScheduleSnapshotIsPostponedUntilUnitOfWorkAfterCommit() {
+        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        String aggregateIdentifier = "aggregateIdentifier";
+        when(mockEventStore.readEvents(aggregateIdentifier))
+                .thenReturn(DomainEventStream.of(createEvents(2)));
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        verify(mockEventStore, never()).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+
+        uow.commit();
+
         verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
     }
 

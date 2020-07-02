@@ -224,7 +224,8 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
             if (actual == null) {
                 return historic.getLastSequenceNumber();
             } else {
-                return actual.getLastSequenceNumber();
+                Long actualLastSequenceNumber = actual.getLastSequenceNumber();
+                return actualLastSequenceNumber != null ? actualLastSequenceNumber : historic.getLastSequenceNumber();
             }
         }
     }

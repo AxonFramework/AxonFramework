@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -462,4 +463,16 @@ public interface Configuration {
      * @return the EventUpcasterChain with all registered upcasters
      */
     EventUpcasterChain upcasterChain();
+
+    /**
+     * Returns the {@link SnapshotFilter} combining all defined filters per {@link AggregateConfigurer} in an {@link
+     * SnapshotFilter#combine(SnapshotFilter)} operation.
+     *
+     * @return the {@link SnapshotFilter}  combining all defined filters per {@link AggregateConfigurer}
+     */
+    default SnapshotFilter snapshotFilter() {
+        return findModules(AggregateConfiguration.class).stream()
+                                                        .map(AggregateConfiguration::snapshotFilter)
+                                                        .reduce(SnapshotFilter.allowAll(), SnapshotFilter::combine);
+    }
 }

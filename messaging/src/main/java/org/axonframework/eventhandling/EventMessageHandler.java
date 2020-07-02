@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MessageHandler;
+
+import java.util.Objects;
 
 /**
  * Interface to be implemented by classes that can handle events.
@@ -40,9 +42,25 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>> {
     Object handle(EventMessage<?> event) throws Exception;
 
     /**
-     * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
+     * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
      */
     default void prepareReset() {
+    }
+
+    /**
+     * Performs any activities that are required to reset the state managed by handlers assigned to this handler.
+     *
+     * @param resetContext a {@code R} used to support the reset operation
+     * @param <R>          the type of the provided {@code resetContext}
+     */
+    default <R> void prepareReset(R resetContext) {
+        if (Objects.isNull(resetContext)) {
+            prepareReset();
+        } else {
+            throw new UnsupportedOperationException(
+                    "EventMessageHandler#prepareReset(R) is not implemented for a non-null reset context."
+            );
+        }
     }
 
     /**

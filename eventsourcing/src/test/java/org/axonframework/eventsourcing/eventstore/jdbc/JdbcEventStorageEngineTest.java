@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,10 @@ import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -99,6 +102,18 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                           return "LONGVARCHAR";
                                                       }
                                                   }));
+        testStoreAndLoadEvents();
+    }
+
+    @Test
+    @DirtiesContext
+    public void testCustomSchemaConfigTimestampColumn() {
+        setTestSubject(testSubject = createTimestampEngine(new HsqlEventTableFactory() {
+            @Override
+            protected String timestampType() {
+                return "timestamp";
+            }
+        }));
         testStoreAndLoadEvents();
     }
 
@@ -453,11 +468,37 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                               .dataType(dataType)
                                                               .build();
 
+        return doCreateTables(tableFactory, result);
+    }
+
+    private JdbcEventStorageEngine createTimestampEngine(EventTableFactory eventTableFactory) {
+        JdbcEventStorageEngine.Builder builder = JdbcEventStorageEngine.builder()
+                                                                       .connectionProvider(dataSource::getConnection)
+                                                                       .transactionManager(NoTransactionManager.INSTANCE);
+
+        JdbcEventStorageEngine result = new JdbcEventStorageEngine(builder) {
+            @Override
+            protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
+                Timestamp ts = resultSet.getTimestamp(columnName);
+                return ts.toInstant();
+            }
+
+            @Override
+            protected void writeTimestamp(PreparedStatement preparedStatement, int position, Instant timestamp)
+                    throws SQLException {
+                preparedStatement.setTimestamp(position, new Timestamp(timestamp.toEpochMilli()));
+            }
+        };
+
+        return doCreateTables(eventTableFactory, result);
+    }
+
+    private JdbcEventStorageEngine doCreateTables(EventTableFactory eventTableFactory, JdbcEventStorageEngine result) {
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
             connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-            result.createSchema(tableFactory);
+            result.createSchema(eventTableFactory);
             return result;
         } catch (SQLException e) {
             throw new IllegalStateException(e);

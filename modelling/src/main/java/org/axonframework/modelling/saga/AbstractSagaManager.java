@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
                 && segment.matches(initializationPolicy.getInitialAssociationValue());
     }
 
-    private void startNewSaga(EventMessage event, AssociationValue associationValue, Segment segment) throws Exception {
+    private void startNewSaga(EventMessage<?> event, AssociationValue associationValue, Segment segment) throws Exception {
         Saga<T> newSaga = sagaRepository.createInstance(createSagaIdentifier(segment), sagaFactory);
         newSaga.getAssociationValues().add(associationValue);
         doInvokeSaga(event, newSaga);
@@ -164,7 +164,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      */
     protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event);
 
-    private boolean doInvokeSaga(EventMessage event, Saga<T> saga) throws Exception {
+    private boolean doInvokeSaga(EventMessage<?> event, Saga<T> saga) throws Exception {
         if (saga.canHandle(event)) {
             try {
                 saga.handle(event);
@@ -192,6 +192,11 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
     @Override
     public void performReset() {
+        performReset(null);
+    }
+
+    @Override
+    public void performReset(Object resetContext) {
         throw new ResetNotSupportedException("Sagas do no support resetting tokens");
     }
 
@@ -210,7 +215,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             String sagaIdentifier = ((SagaScopeDescriptor) scopeDescription).getIdentifier().toString();
             Saga<T> saga = sagaRepository.load(sagaIdentifier);
             if (saga != null) {
-                saga.handle((EventMessage) message);
+                saga.handle((EventMessage<?>) message);
             } else {
                 logger.debug("Saga (with id: [{}]) cannot be loaded, as it most likely already ended."
                                      + " Hence, message [{}] cannot be handled.", sagaIdentifier, message);

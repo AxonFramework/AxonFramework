@@ -39,14 +39,19 @@ public interface AppendEventsStatementBuilder {
     /**
      * Build a statement to be used at {@link JdbcEventStorageEngine#appendEvents(List, Serializer)}
      *
-     * @param connection The connection to the database.
-     * @param schema     The EventSchema to be used.
-     * @param dataType   The serialized type of the payload and metadata.
-     * @param events     The events to be added.
-     * @param serializer The serializer for the payload and metadata.
+     * @param connection      The connection to the database.
+     * @param schema          The EventSchema to be used.
+     * @param dataType        The serialized type of the payload and metadata.
+     * @param events          The events to be added.
+     * @param serializer      The serializer for the payload and metadata.
+     * @param timestampWriter Writer responsible for writing timestamp in the correct format for the given database.
      * @return the newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
-    PreparedStatement build(Connection connection, EventSchema schema, Class<?> dataType,
-                            List<? extends EventMessage<?>> events, Serializer serializer) throws SQLException;
+    PreparedStatement build(Connection connection,
+                            EventSchema schema,
+                            Class<?> dataType,
+                            List<? extends EventMessage<?>> events,
+                            Serializer serializer,
+                            TimestampWriter timestampWriter) throws SQLException;
 }
