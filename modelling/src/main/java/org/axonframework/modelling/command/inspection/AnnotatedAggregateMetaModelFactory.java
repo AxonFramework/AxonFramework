@@ -194,7 +194,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
     private class AnnotatedAggregateModel<T> implements AggregateModel<T> {
 
-        public static final String JAVAX_PERSISTENCE_ID = "javax.persistence.Id";
+        private static final String JAVAX_PERSISTENCE_ID = "javax.persistence.Id";
         private final Class<? extends T> inspectedType;
         private final List<ChildEntity<T>> children;
         private final AnnotatedHandlerInspector<T> handlerInspector;

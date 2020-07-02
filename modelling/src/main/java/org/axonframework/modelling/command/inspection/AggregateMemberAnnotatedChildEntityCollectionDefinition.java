@@ -100,9 +100,9 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
                                                      T parentEntity,
                                                      Member member,
                                                      ForwardingMode eventForwardingMode) {
-        Iterable<Object> fieldValue = ReflectionUtils.getMemberValue(member, parentEntity);
-        return fieldValue == null
+        Iterable<Object> memberValue = ReflectionUtils.getMemberValue(member, parentEntity);
+        return memberValue == null
                 ? Stream.empty()
-                : eventForwardingMode.filterCandidates(message, StreamSupport.stream(fieldValue.spliterator(), false));
+                : eventForwardingMode.filterCandidates(message, StreamSupport.stream(memberValue.spliterator(), false));
     }
 }

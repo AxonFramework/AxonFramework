@@ -94,9 +94,9 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
                                                      T parentEntity,
                                                      Member member,
                                                      ForwardingMode eventForwardingMode) {
-        Map<?, Object> fieldValue = ReflectionUtils.getMemberValue(member, parentEntity);
-        return fieldValue == null
+        Map<?, Object> memberValue = ReflectionUtils.getMemberValue(member, parentEntity);
+        return memberValue == null
                 ? Stream.empty()
-                : eventForwardingMode.filterCandidates(message, fieldValue.values().stream());
+                : eventForwardingMode.filterCandidates(message, memberValue.values().stream());
     }
 }

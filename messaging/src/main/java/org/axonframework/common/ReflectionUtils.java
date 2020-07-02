@@ -48,7 +48,7 @@ public abstract class ReflectionUtils {
      * A map of Primitive types to their respective wrapper types.
      */
     private static final Map<Type, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
-    public static final String UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE = "Unsupported member type [%s]";
+    private static final String UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE = "Unsupported member type [%s]";
 
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
@@ -360,7 +360,7 @@ public abstract class ReflectionUtils {
      * Invokes and returns the return value of the given {@code method} in the given {@code object}. If necessary, the method is
      * made accessible, assuming the security manager allows it.
      * @param method The method to invoke
-     * @param object The target object to retrieve the field's value from
+     * @param object the target object the given {@code method} is invoked on
      * @return the resulting value of invocation of the {@code method} in the {@code object}
      * @throws IllegalStateException if the method is not accessible and the security manager doesn't allow it to be
      *                               made accessible

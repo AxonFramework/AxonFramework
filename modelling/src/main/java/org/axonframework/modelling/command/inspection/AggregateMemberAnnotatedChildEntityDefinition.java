@@ -72,7 +72,7 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
                                                      T parentEntity,
                                                      Member member,
                                                      ForwardingMode eventForwardingMode) {
-        Object memberVal = ReflectionUtils.getMemberValue(member, parentEntity);
-        return memberVal == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(memberVal));
+        Object memberValue = ReflectionUtils.getMemberValue(member, parentEntity);
+        return memberValue == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(memberValue));
     }
 }

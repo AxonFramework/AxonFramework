@@ -110,6 +110,16 @@ public abstract class AnnotationUtils {
         return findAnnotationAttributes(element, annotationType.getName());
     }
 
+    /**
+     * Find the attribute of name {@code attributeName} of an annotation of type {@code annotationType}
+     * on the given {@code element}. The returned optional has a value present if the annotation has been found,
+     * either directly on the {@code element}, or as a meta-annotation, and if the named attribute exist.
+     *
+     * @param element        The element for find the annotation on
+     * @param annotationType The type of the annotation to find
+     * @param attributeName  The name of the attribute to find
+     * @return an optional that resolved to the attribute value, if the annotation is found and if the attribute exists
+     */
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> findAnnotationAttribute(AnnotatedElement element,
                                                           Class<? extends Annotation> annotationType,
