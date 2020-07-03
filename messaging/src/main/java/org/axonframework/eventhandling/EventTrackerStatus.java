@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,14 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 
+import java.util.Objects;
 import java.util.OptionalLong;
 
 /**
- * Interface describing the status of a Segment of a TrackingProcessor.
+ * Interface describing the status of a {@link Segment} of a {@link TrackingEventProcessor}.
+ *
+ * @author Allard Buijze
+ * @since 3.2
  */
 public interface EventTrackerStatus {
     /**
@@ -110,4 +114,51 @@ public interface EventTrackerStatus {
      * @return the relative position at which a reset was triggered for this Segment
      */
     OptionalLong getResetPosition();
+
+    /**
+     * Check whether {@code this} {@link EventTrackerStatus} is different from {@code that}.
+     *
+     * @param that              the other {@link EventTrackerStatus} to validate the difference with
+     * @param validatePositions flag dictating whether {@link #matchPositions(EventTrackerStatus)} should be taken into
+     *                          account when matching
+     * @return {@code true} if both {@link EventTrackerStatus}'s are different, {@code false} otherwise
+     */
+    default boolean isDifferent(EventTrackerStatus that, boolean validatePositions) {
+        if (this == that) {
+            return false;
+        }
+        if (that == null || this.getClass() != that.getClass()) {
+            return true;
+        }
+        boolean matchingStates = matchStates(that);
+        boolean matchingPositions = !validatePositions || matchPositions(that);
+        return !matchingStates || !matchingPositions;
+    }
+
+    /**
+     * Match the boolean state fields of {@code this} and {@code that}. This means {@link #isCaughtUp()}, {@link
+     * #isReplaying()}, {@link #isMerging()} and {@link #isErrorState()} are taken into account.
+     *
+     * @param that the other {@link EventTrackerStatus} to match with
+     * @return {@code true} if the boolean fields of {@code this} and {@code that} match, otherwise {@code false}
+     */
+    default boolean matchStates(EventTrackerStatus that) {
+        return Objects.equals(this.isCaughtUp(), that.isCaughtUp()) &&
+                Objects.equals(this.isReplaying(), that.isReplaying()) &&
+                Objects.equals(this.isMerging(), that.isMerging()) &&
+                Objects.equals(this.isErrorState(), that.isErrorState());
+    }
+
+    /**
+     * Match the position fields of {@code this} and {@code that}. This means {@link #getCurrentPosition()}, {@link
+     * #getResetPosition()} and {@link #mergeCompletedPosition()} ()} are taken into account.
+     *
+     * @param that the other {@link EventTrackerStatus} to match with
+     * @return {@code true} if the positions fields of {@code this} and {@code that} match, otherwise {@code false}
+     */
+    default boolean matchPositions(EventTrackerStatus that) {
+        return Objects.equals(this.getCurrentPosition(), that.getCurrentPosition()) &&
+                Objects.equals(this.getResetPosition(), that.getResetPosition()) &&
+                Objects.equals(this.mergeCompletedPosition(), that.mergeCompletedPosition());
+    }
 }
