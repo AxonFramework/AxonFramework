@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,12 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.FlowControl;
-import io.axoniq.axonserver.grpc.query.*;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
@@ -80,21 +85,20 @@ public class AxonServerSubscriptionQueryResult implements Supplier<SubscriptionQ
                                              int bufferSize,
                                              Runnable onDispose) {
         this.subscriptionQuery = subscriptionQuery;
+        this.onDispose = onDispose;
+        EmitterProcessor<QueryUpdate> processor = EmitterProcessor.create(bufferSize);
+        updateMessageFluxSink = processor.sink(backPressure.getOverflowStrategy());
 
         StreamObserver<SubscriptionQueryRequest> subscriptionStreamObserver = openStreamFn.apply(this);
         Function<FlowControl, SubscriptionQueryRequest> requestMapping =
                 flowControl -> newBuilder().setFlowControl(
                         SubscriptionQuery.newBuilder(this.subscriptionQuery)
-                                .setNumberOfPermits(flowControl.getPermits())
+                                         .setNumberOfPermits(flowControl.getPermits())
                 ).build();
         requestObserver = new FlowControllingStreamObserver<>(
                 subscriptionStreamObserver, configuration.getClientId(), configuration.getQueryFlowControl(), requestMapping, t -> false
         );
-        requestObserver.sendInitialPermits();
-        requestObserver.onNext(newBuilder().setSubscribe(this.subscriptionQuery).build());
 
-        EmitterProcessor<QueryUpdate> processor = EmitterProcessor.create(bufferSize);
-        updateMessageFluxSink = processor.sink(backPressure.getOverflowStrategy());
         updateMessageFluxSink.onDispose(requestObserver::onCompleted);
         Registration registration = () -> {
             updateMessageFluxSink.complete();
@@ -104,7 +108,8 @@ public class AxonServerSubscriptionQueryResult implements Supplier<SubscriptionQ
         Mono<QueryResponse> mono = Mono.create(sink -> initialResult(sink, requestObserver::onNext));
         result = new DefaultSubscriptionQueryResult<>(mono, processor.replay().autoConnect(), registration);
 
-        this.onDispose = onDispose;
+        requestObserver.sendInitialPermits();
+        requestObserver.onNext(newBuilder().setSubscribe(this.subscriptionQuery).build());
     }
 
     private void initialResult(MonoSink<QueryResponse> sink, Publisher<SubscriptionQueryRequest> publisher) {
