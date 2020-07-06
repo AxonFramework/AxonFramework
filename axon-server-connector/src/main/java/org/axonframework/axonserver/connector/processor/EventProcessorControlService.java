@@ -109,18 +109,18 @@ public class EventProcessorControlService {
     @SuppressWarnings("Duplicates")
     @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
-        this.axonServerConnectionManager.onOutboundInstruction(context, PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
-        this.axonServerConnectionManager.onOutboundInstruction(context, START_EVENT_PROCESSOR, this::startProcessor);
-        this.axonServerConnectionManager.onOutboundInstruction(context, RELEASE_SEGMENT, this::releaseSegment);
-        this.axonServerConnectionManager.onOutboundInstruction(
-                context, REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo
-        );
-        this.axonServerConnectionManager.onOutboundInstruction(
-                context, SPLIT_EVENT_PROCESSOR_SEGMENT, this::splitSegment
-        );
-        this.axonServerConnectionManager.onOutboundInstruction(
-                context, MERGE_EVENT_PROCESSOR_SEGMENT, this::mergeSegment
-        );
+//        this.axonServerConnectionManager.onOutboundInstruction(context, PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
+//        this.axonServerConnectionManager.onOutboundInstruction(context, START_EVENT_PROCESSOR, this::startProcessor);
+//        this.axonServerConnectionManager.onOutboundInstruction(context, RELEASE_SEGMENT, this::releaseSegment);
+//        this.axonServerConnectionManager.onOutboundInstruction(
+//                context, REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo
+//        );
+//        this.axonServerConnectionManager.onOutboundInstruction(
+//                context, SPLIT_EVENT_PROCESSOR_SEGMENT, this::splitSegment
+//        );
+//        this.axonServerConnectionManager.onOutboundInstruction(
+//                context, MERGE_EVENT_PROCESSOR_SEGMENT, this::mergeSegment
+//        );
     }
 
     private void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
@@ -147,7 +147,7 @@ public class EventProcessorControlService {
         String processorName = requestInfo.getProcessorName();
         try {
             EventProcessor processor = eventProcessorController.getEventProcessor(processorName);
-            axonServerConnectionManager.send(context, platformInboundMessageMapper.apply(processor).instruction());
+//            axonServerConnectionManager.send(context, platformInboundMessageMapper.apply(processor).instruction());
         } catch (Exception e) {
             logger.debug("Problem getting the information about Event Processor [{}]", processorName, e);
         }

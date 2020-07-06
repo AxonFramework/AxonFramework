@@ -109,7 +109,7 @@ public class CommandSerializer {
      * @param requestIdentifier    a {@link String} identifying where the original request came from
      * @return a {@link CommandProviderOutbound} based on the provided {@code commandResultMessage}
      */
-    public CommandProviderOutbound serialize(CommandResultMessage<?> commandResultMessage, String requestIdentifier) {
+    public CommandResponse serialize(CommandResultMessage<?> commandResultMessage, String requestIdentifier) {
         CommandResponse.Builder responseBuilder =
                 CommandResponse.newBuilder()
                                .setMessageIdentifier(
@@ -129,7 +129,7 @@ public class CommandSerializer {
             responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
         }
 
-        return CommandProviderOutbound.newBuilder().setCommandResponse(responseBuilder).build();
+        return responseBuilder.build();
     }
 
     /**

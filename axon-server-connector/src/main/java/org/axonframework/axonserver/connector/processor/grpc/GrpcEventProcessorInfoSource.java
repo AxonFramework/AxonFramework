@@ -65,10 +65,9 @@ public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
                                         String context) {
         this(
                 new EventProcessors(eventProcessingConfiguration),
-                instruction -> axonServerConnectionManager.send(context, instruction),
+                instruction -> axonServerConnectionManager.getConnection(context).controlChannel().sendInstruction(instruction),
                 new GrpcEventProcessorMapping()
         );
-        axonServerConnectionManager.addReconnectListener(context, lastProcessorsInfo::clear);
     }
 
     private GrpcEventProcessorInfoSource(EventProcessors eventProcessors,

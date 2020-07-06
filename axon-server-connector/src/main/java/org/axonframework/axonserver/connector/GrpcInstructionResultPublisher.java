@@ -32,7 +32,7 @@ public class GrpcInstructionResultPublisher implements InstructionResultPublishe
     public GrpcInstructionResultPublisher(AxonServerConnectionManager connectionManager,
                                           AxonServerConfiguration configuration) {
         this(configuration::getClientId,
-             instruction -> connectionManager.send(configuration.getContext(), instruction));
+             instruction -> connectionManager.getConnection(configuration.getContext()).controlChannel().sendInstruction(instruction));
     }
 
     /**

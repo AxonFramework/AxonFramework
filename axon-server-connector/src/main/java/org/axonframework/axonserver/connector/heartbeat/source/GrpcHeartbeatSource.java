@@ -19,7 +19,6 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
 
     private static final Logger logger = LoggerFactory.getLogger(GrpcHeartbeatSource.class);
 
-    private final Consumer<PlatformInboundInstruction> platformInstructionSender;
 
     /**
      * Creates a {@link GrpcHeartbeatSource} which uses an {@link AxonServerConnectionManager} to send heartbeats
@@ -29,7 +28,7 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
      * @param context           defines the (Bounded) Context for which heartbeats are sent
      */
     public GrpcHeartbeatSource(AxonServerConnectionManager connectionManager, String context) {
-        this.platformInstructionSender = instruction -> connectionManager.send(context, instruction);
+
     }
 
     /**
@@ -39,14 +38,5 @@ public class GrpcHeartbeatSource implements HeartbeatSource {
      */
     @Override
     public void pulse() {
-        try {
-            PlatformInboundInstruction instruction = PlatformInboundInstruction
-                    .newBuilder()
-                    .setHeartbeat(Heartbeat.newBuilder())
-                    .build();
-            platformInstructionSender.accept(instruction);
-        } catch (Exception e) {
-            logger.warn("Problem sending heartbeat to AxonServer.", e);
-        }
     }
 }

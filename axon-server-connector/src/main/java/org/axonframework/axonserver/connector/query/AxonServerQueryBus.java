@@ -138,108 +138,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
 
     /**
-     * Creates an instance of the Axon Server {@link QueryBus} client. Will connect to an Axon Server instance to submit
-     * and receive queries and query responses. The {@link TargetContextResolver} defaults to a lambda returning the
-     * output from {@link AxonServerConfiguration#getContext()}.
-     *
-     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} which creates the connection to an Axon
-     *                                    Server platform
-     * @param configuration               the {@link AxonServerConfiguration} containing specifics like the client and
-     *                                    component names used to identify the application in Axon Server among others
-     * @param updateEmitter               the {@link QueryUpdateEmitter} used to emits incremental updates to
-     *                                    subscription queries
-     * @param localSegment                a {@link QueryBus} handling the incoming queries for the local application
-     * @param messageSerializer           a {@link Serializer} used to de-/serialize the payload and metadata of query
-     *                                    messages and responses
-     * @param genericSerializer           a {@link Serializer} used for communication of other objects than query
-     *                                    message and response, payload and metadata
-     * @param priorityCalculator          a {@link QueryPriorityCalculator} calculating the request priority based on
-     *                                    the content, and adds this priority to the request
-     * @deprecated in favor of using the {@link Builder} (with the convenience {@link #builder()} method) to instantiate
-     * an Axon Server Query Bus
-     */
-    @Deprecated
-    public AxonServerQueryBus(AxonServerConnectionManager axonServerConnectionManager,
-                              AxonServerConfiguration configuration,
-                              QueryUpdateEmitter updateEmitter,
-                              QueryBus localSegment,
-                              Serializer messageSerializer,
-                              Serializer genericSerializer,
-                              QueryPriorityCalculator priorityCalculator) {
-        this(axonServerConnectionManager,
-             configuration,
-             updateEmitter,
-             localSegment,
-             messageSerializer,
-             genericSerializer,
-             priorityCalculator,
-             q -> configuration.getContext()
-        );
-    }
-
-    /**
-     * Creates an instance of the Axon Server {@link QueryBus} client. Will connect to an Axon Server instance to submit
-     * and receive queries and query responses.
-     *
-     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} which creates the connection to an Axon
-     *                                    Server platform
-     * @param configuration               the {@link AxonServerConfiguration} containing specifics like the client and
-     *                                    component names used to identify the application in Axon Server among others
-     * @param updateEmitter               the {@link QueryUpdateEmitter} used to emits incremental updates to
-     *                                    subscription queries
-     * @param localSegment                a {@link QueryBus} handling the incoming queries for the local application
-     * @param messageSerializer           a {@link Serializer} used to de-/serialize the payload and metadata of query
-     *                                    messages and responses
-     * @param genericSerializer           a {@link Serializer} used for communication of other objects than query
-     *                                    message and response, payload and metadata
-     * @param priorityCalculator          a {@link QueryPriorityCalculator} calculating the request priority based on
-     *                                    the content, and adds this priority to the request
-     * @param targetContextResolver       resolves the context a given query should be dispatched in
-     * @deprecated in favor of using the {@link Builder} (with the convenience {@link #builder()} method) to instantiate
-     * an Axon Server Query Bus
-     */
-    @Deprecated
-    public AxonServerQueryBus(AxonServerConnectionManager axonServerConnectionManager,
-                              AxonServerConfiguration configuration,
-                              QueryUpdateEmitter updateEmitter,
-                              QueryBus localSegment,
-                              Serializer messageSerializer,
-                              Serializer genericSerializer,
-                              QueryPriorityCalculator priorityCalculator,
-                              TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver) {
-        this.axonServerConnectionManager = axonServerConnectionManager;
-        this.configuration = configuration;
-        this.updateEmitter = updateEmitter;
-        this.localSegment = localSegment;
-        this.serializer = new QuerySerializer(messageSerializer, genericSerializer, configuration);
-        this.subscriptionSerializer =
-                new SubscriptionMessageSerializer(messageSerializer, genericSerializer, configuration);
-        this.priorityCalculator = priorityCalculator;
-        String context = configuration.getContext();
-        this.targetContextResolver = targetContextResolver.orElse(m -> context);
-
-        //noinspection unchecked
-        this.queryProcessor = new QueryProcessor(
-                context, configuration, ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder(),
-                so -> (StreamObserver<QueryProviderOutbound>) so.getRequestStream()
-        );
-        dispatchInterceptors = new DispatchInterceptors<>();
-
-        this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::publishSubscriptions);
-        this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
-
-        this.axonServerConnectionManager.addDisconnectListener(context, queryProcessor::unsubscribeAll);
-        this.axonServerConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
-        SubscriptionQueryRequestTarget target =
-                new SubscriptionQueryRequestTarget(localSegment, qpo -> publish(context, qpo), subscriptionSerializer);
-        this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
-        this.axonServerConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
-        this.instructionAckSource = new DefaultInstructionAckSource<>(ack -> QueryProviderOutbound.newBuilder()
-                                                                                                  .setAck(ack)
-                                                                                                  .build());
-    }
-
-    /**
      * Instantiate a {@link AxonServerQueryBus} based on the fields contained in the {@link Builder}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AxonServerQueryBus} instance
@@ -262,15 +160,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                  builder.requestStreamFactory);
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        this.axonServerConnectionManager.addReconnectListener(context, queryProcessor::publishSubscriptions);
         this.axonServerConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
 
-        this.axonServerConnectionManager.addDisconnectListener(context, queryProcessor::unsubscribeAll);
-        this.axonServerConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
         SubscriptionQueryRequestTarget target =
                 new SubscriptionQueryRequestTarget(localSegment, qpo -> publish(context, qpo), subscriptionSerializer);
         this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
-        this.axonServerConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
         this.instructionAckSource = builder.instructionAckSource;
     }
 
@@ -735,7 +629,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             ResubscribableStreamObserver<QueryProviderInbound> resubscribableStreamObserver =
                     new ResubscribableStreamObserver<>(queryProviderInboundStreamObserver, t -> reconnectQueryStream());
 
-            StreamObserver<QueryProviderOutbound> streamObserver = axonServerConnectionManager.getQueryStream(
+            StreamObserver<QueryProviderOutbound> streamObserver = axonServerConnectionManager.getConnection(context).getQueryStream(
                     context, resubscribableStreamObserver
             );
 
