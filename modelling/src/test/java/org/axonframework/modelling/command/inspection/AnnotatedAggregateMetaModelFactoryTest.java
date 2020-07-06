@@ -274,7 +274,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         assertEquals("SomeGetterIdAnnotatedHandlers", inspector.type());
         assertEquals("id", inspector.getIdentifier(new SomeGetterIdAnnotatedHandlers()));
-        assertEquals("getId", inspector.routingKey());
+        assertEquals("id", inspector.routingKey());
     }
 
     @Test
@@ -302,7 +302,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceGetterAnnotatedHandlers.class);
 
         assertEquals("id", inspector.getIdentifier(new JavaxPersistenceGetterAnnotatedHandlers()));
-        assertEquals("getId", inspector.routingKey());
+        assertEquals("id", inspector.routingKey());
     }
 
     @Test

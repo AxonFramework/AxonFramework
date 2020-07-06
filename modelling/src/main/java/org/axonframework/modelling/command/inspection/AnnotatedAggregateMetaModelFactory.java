@@ -371,7 +371,23 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private void setIdentifierAndRoutingKey(Member identifier) {
             identifierMember = identifier;
             routingKey = findRoutingKey((AccessibleObject) identifier)
-                    .orElseGet(identifier::getName);
+                    .orElseGet(() -> getMemberIdentifierName(identifier));
+        }
+
+        private String getMemberIdentifierName(Member identifier) {
+            String identifierName = identifier.getName();
+            if (identifier instanceof Method && isGetterByConvention(identifierName)) {
+                return stripGetterConvention(identifierName);
+            }
+            return identifierName;
+        }
+
+        private String stripGetterConvention(String identifierName) {
+            return identifierName.substring(3, 4).toLowerCase() + identifierName.substring(4);
+        }
+
+        private boolean isGetterByConvention(String identifierName) {
+            return identifierName.startsWith("get") && identifierName.length() >= 4 && Character.isUpperCase(identifierName.charAt(3));
         }
 
         private Optional<Member> findIdentifierMember(List<Member> entityIdMembers,
