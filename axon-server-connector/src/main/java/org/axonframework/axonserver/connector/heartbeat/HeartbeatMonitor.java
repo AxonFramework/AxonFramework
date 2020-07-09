@@ -16,8 +16,6 @@
 
 package org.axonframework.axonserver.connector.heartbeat;
 
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.heartbeat.connection.checker.HeartbeatConnectionChecker;
 import org.axonframework.axonserver.connector.util.Scheduler;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
@@ -49,22 +47,6 @@ public class HeartbeatMonitor {
     private final ConnectionSanityChecker connectionSanityCheck;
     private final long initialDelay;
     private final long delay;
-
-    /**
-     * Constructs an instance of {@link HeartbeatMonitor} that forces a disconnection
-     * when the AxonServer connection is no longer alive.
-     *
-     * @param connectionManager connectionManager to AxonServer
-     * @param context           the (Bounded) Context for which the heartbeat activity is monitored
-     */
-    public HeartbeatMonitor(AxonServerConnectionManager connectionManager,
-                            String context) {
-        this(() -> connectionManager.disconnectExceptionally(context, new RuntimeException("Inactivity timeout.")),
-             new HeartbeatConnectionChecker(connectionManager, context),
-             new DefaultScheduler(),
-             DEFAULT_INITIAL_DELAY,
-             DEFAULT_DELAY);
-    }
 
 
     /**

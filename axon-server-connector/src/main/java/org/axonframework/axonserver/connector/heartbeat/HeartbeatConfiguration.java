@@ -19,17 +19,10 @@ package org.axonframework.axonserver.connector.heartbeat;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.heartbeat.source.GrpcHeartbeatSource;
-import org.axonframework.config.Component;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ModuleConfiguration;
-import org.axonframework.lifecycle.Phase;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Supplier;
-
-import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.HEARTBEAT;
-import static java.util.Optional.ofNullable;
 
 /**
  * Module configuration that defines the components needed to enable heartbeat and monitor the availability of the
@@ -43,8 +36,6 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
     private final Function<Configuration, AxonServerConnectionManager> connectionManagerSupplier;
 
     private final Function<Configuration, AxonServerConfiguration> axonServerConfigurationSupplier;
-
-    private final AtomicReference<Component<HeartbeatMonitor>> heartbeatMonitor = new AtomicReference<>();
 
     /**
      * Default constructor for {@link HeartbeatConfiguration}, that uses {@link Configuration} in order to retrieve the
@@ -83,24 +74,6 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
      */
     @Override
     public void initialize(Configuration config) {
-        AxonServerConnectionManager connectionManager = connectionManagerSupplier.apply(config);
-        AxonServerConfiguration configuration = axonServerConfigurationSupplier.apply(config);
-        String context = configuration.getContext();
-
-        GrpcHeartbeatSource heartbeatSource = new GrpcHeartbeatSource(connectionManager, context);
-        connectionManager.onOutboundInstruction(context, HEARTBEAT, i -> heartbeatSource.pulse());
-
-        heartbeatMonitor.set(new Component<>(
-                config,
-                HeartbeatMonitor.class.getSimpleName(),
-                c -> new HeartbeatMonitor(connectionManager, context)
-        ));
-        config.onStart(Phase.INBOUND_EVENT_CONNECTORS, () -> heartbeatMonitor().get());
     }
 
-    private Component<HeartbeatMonitor> heartbeatMonitor() {
-        Supplier<RuntimeException> exceptionSupplier =
-                () -> new IllegalStateException("HeartbeatConfiguration not initialized.");
-        return ofNullable(heartbeatMonitor.get()).orElseThrow(exceptionSupplier);
-    }
 }

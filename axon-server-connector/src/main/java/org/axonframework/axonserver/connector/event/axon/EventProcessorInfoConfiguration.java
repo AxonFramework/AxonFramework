@@ -19,9 +19,6 @@ package org.axonframework.axonserver.connector.event.axon;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.EventProcessorControlService;
-import org.axonframework.axonserver.connector.processor.EventProcessorController;
-import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorInfoSource;
-import org.axonframework.axonserver.connector.processor.schedule.ScheduledEventProcessorInfoSource;
 import org.axonframework.config.Component;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfiguration;
@@ -46,7 +43,6 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
     private final Component<AxonServerConnectionManager> connectionManager;
     private final Component<AxonServerConfiguration> axonServerConfiguration;
     private final Component<EventProcessorControlService> eventProcessorControlService;
-    private final Component<ScheduledEventProcessorInfoSource> processorInfoSource;
 
     /**
      * Create an default EventProcessorInfoConfiguration, which uses the {@link Configuration} as a means to retrieve
@@ -84,28 +80,15 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
                 () -> config, "eventProcessorControlService",
                 c -> new EventProcessorControlService(
                         this.connectionManager.get(),
-                        new EventProcessorController(this.eventProcessingConfiguration.get())
+                        this.eventProcessingConfiguration.get(),
+                        this.axonServerConfiguration.get()
                 )
         );
-        this.processorInfoSource = new Component<>(() -> config, "eventProcessorInfoSource", c -> {
-            GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(
-                    this.eventProcessingConfiguration.get(),
-                    this.connectionManager.get(),
-                    this.axonServerConfiguration.get().getContext()
-            );
-            return new ScheduledEventProcessorInfoSource(
-                    this.axonServerConfiguration.get().getProcessorsNotificationInitialDelay(),
-                    this.axonServerConfiguration.get().getProcessorsNotificationRate(),
-                    infoSource);
-        });
     }
 
     @Override
     public void initialize(Configuration config) {
         this.config = config;
-        this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, () -> {
-            processorInfoSource.get();
-            eventProcessorControlService.get();
-        });
+        this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
     }
 }

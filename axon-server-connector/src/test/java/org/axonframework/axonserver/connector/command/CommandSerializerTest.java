@@ -18,20 +18,28 @@ package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.command.Command;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Author: marc
@@ -71,8 +79,8 @@ class CommandSerializerTest {
     void testSerializeResponse(CommandSerializer testSubject) {
         CommandResultMessage response = new GenericCommandResultMessage<>("response",
                                                                           MetaData.with("test", "testValue"));
-        CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
-        CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
+        CommandResponse outbound = testSubject.serialize(response, "requestIdentifier");
+        CommandResultMessage deserialize = testSubject.deserialize(outbound);
 
         assertEquals(response.getIdentifier(), deserialize.getIdentifier());
         assertEquals(response.getPayload(), deserialize.getPayload());
@@ -87,8 +95,8 @@ class CommandSerializerTest {
         RuntimeException exception = new RuntimeException("oops");
         CommandResultMessage response = new GenericCommandResultMessage<>(exception,
                                                                           MetaData.with("test", "testValue"));
-        CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
-        CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
+        CommandResponse outbound = testSubject.serialize(response, "requestIdentifier");
+        CommandResultMessage deserialize = testSubject.deserialize(outbound);
 
         assertEquals(response.getIdentifier(), deserialize.getIdentifier());
         assertEquals(response.getMetaData(), deserialize.getMetaData());
@@ -103,9 +111,9 @@ class CommandSerializerTest {
         Exception exception = new CommandExecutionException("oops", null, "Details");
         CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
                                                                              MetaData.with("test", "testValue"));
-        CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
-        assertEquals(response.getIdentifier(), outbound.getCommandResponse().getMessageIdentifier());
-        CommandResultMessage<?> deserialize = testSubject.deserialize(outbound.getCommandResponse());
+        CommandResponse outbound = testSubject.serialize(response, "requestIdentifier");
+        assertEquals(response.getIdentifier(), outbound.getMessageIdentifier());
+        CommandResultMessage<?> deserialize = testSubject.deserialize(outbound);
 
         assertEquals(response.getIdentifier(), deserialize.getIdentifier());
         assertEquals(response.getMetaData(), deserialize.getMetaData());

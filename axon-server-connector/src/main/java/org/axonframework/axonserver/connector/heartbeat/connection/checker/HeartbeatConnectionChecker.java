@@ -9,8 +9,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.HEARTBEAT;
-
 /**
  * Implementation of {@link ConnectionSanityChecker} which verifies that heartbeats are properly received.
  *
@@ -36,8 +34,8 @@ public class HeartbeatConnectionChecker implements ConnectionSanityChecker {
      * @param context           the (Bounded) Context for which is verified the AxonServer connection
      */
     public HeartbeatConnectionChecker(AxonServerConnectionManager connectionManager, String context) {
-        this(r -> connectionManager.onOutboundInstruction(context, HEARTBEAT, i -> r.run()),
-             new ActiveGrpcChannelChecker(connectionManager, context));
+        this(r -> {
+        }, new ActiveGrpcChannelChecker(connectionManager, context));
     }
 
     /**

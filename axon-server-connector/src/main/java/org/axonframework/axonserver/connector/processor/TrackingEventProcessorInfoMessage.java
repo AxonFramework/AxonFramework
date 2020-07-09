@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.processor.grpc;
+package org.axonframework.axonserver.connector.processor;
 
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo.SegmentStatus;
@@ -33,33 +33,18 @@ import static java.util.stream.Collectors.toList;
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage {
+public class TrackingEventProcessorInfoMessage  {
 
     private static final String EVENT_PROCESSOR_MODE = "Tracking";
 
-    private final TrackingEventProcessor eventProcessor;
-
-    /**
-     * Instantiate a {@link PlatformInboundInstruction} representing the status of the given
-     * {@link TrackingEventProcessor}
-     *
-     * @param eventProcessor a {@link TrackingEventProcessor} for which the status will be mapped to a
-     *                       {@link PlatformInboundInstruction}
-     */
-    TrackingEventProcessorInfoMessage(TrackingEventProcessor eventProcessor) {
-        this.eventProcessor = eventProcessor;
-    }
-
-    @Override
-    public PlatformInboundInstruction instruction() {
+    public static EventProcessorInfo describe(TrackingEventProcessor eventProcessor) {
         List<SegmentStatus> trackerInfo = eventProcessor.processingStatus()
                                                         .values()
                                                         .stream()
-                                                        .map(this::buildTrackerInfo)
+                                                        .map(TrackingEventProcessorInfoMessage::buildTrackerInfo)
                                                         .collect(toList());
 
-        EventProcessorInfo eventProcessorInfo =
-                EventProcessorInfo.newBuilder()
+        return EventProcessorInfo.newBuilder()
                                   .setProcessorName(eventProcessor.getName())
                                   .setMode(EVENT_PROCESSOR_MODE)
                                   .setActiveThreads(eventProcessor.activeProcessorThreads())
@@ -69,12 +54,10 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
                                   .addAllSegmentStatus(trackerInfo)
                                   .build();
 
-        return PlatformInboundInstruction.newBuilder()
-                                         .setEventProcessorInfo(eventProcessorInfo)
-                                         .build();
+
     }
 
-    private SegmentStatus buildTrackerInfo(EventTrackerStatus status) {
+    private static SegmentStatus buildTrackerInfo(EventTrackerStatus status) {
         return SegmentStatus.newBuilder()
                             .setSegmentId(status.getSegment().getSegmentId())
                             .setCaughtUp(status.isCaughtUp())
@@ -85,7 +68,7 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
                             .build();
     }
 
-    private long getPosition(TrackingToken trackingToken) {
+    private static long getPosition(TrackingToken trackingToken) {
         long position = 0;
         if (trackingToken != null) {
             position = trackingToken.position().orElse(0);
@@ -93,7 +76,7 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
         return position;
     }
 
-    private String buildErrorMessage(Throwable error) {
+    private static String buildErrorMessage(Throwable error) {
         return error.getClass().getName() + ": " + error.getMessage();
     }
 }

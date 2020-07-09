@@ -16,26 +16,27 @@
 
 package org.axonframework.axonserver.connector.processor;
 
-import io.axoniq.axonserver.grpc.control.EventProcessorReference;
-import io.axoniq.axonserver.grpc.control.EventProcessorSegmentReference;
+import io.axoniq.axonserver.connector.control.ControlChannel;
+import io.axoniq.axonserver.connector.control.ProcessorInstructionHandler;
+import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
-import org.axonframework.axonserver.connector.processor.grpc.PlatformInboundMessage;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.StartHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Function;
-
-import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when for example
- * requested by Axon Server. Will delegate the calls to the {@link AxonServerConnectionManager} and/or {@link
- * EventProcessorController} for further processing.
+ * requested by Axon Server. Will delegate the calls to the {@link AxonServerConnectionManager} for further processing.
  *
  * @author Sara Pellegrini
  * @since 4.0
@@ -43,50 +44,48 @@ import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.Requ
 public class EventProcessorControlService {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
+    private static final String SUBSCRIBING_EVENT_PROCESSOR_MODE = "Subscribing";
+    private static final String UNKNOWN_EVENT_PROCESSOR_MODE = "Unknown";
 
     private final AxonServerConnectionManager axonServerConnectionManager;
-    private final EventProcessorController eventProcessorController;
+    private final EventProcessingConfiguration eventProcessingConfiguration;
     private final String context;
-    private final Function<EventProcessor, PlatformInboundMessage> platformInboundMessageMapper;
 
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
-     * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. These Consumers typically leverage
-     * the {@link EventProcessorController} to issue operations to the {@link EventProcessor}s contained in this
-     * application. Uses the {@link AxonServerConnectionManager#getDefaultContext()} specified in the given
+     * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. Uses the {@link
+     * AxonServerConnectionManager#getDefaultContext()} specified in the given
      * {@code axonServerConnectionManager} as the context to dispatch operations in
      *
      * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
      *                                    {@link PlatformOutboundInstruction} have been received
-     * @param eventProcessorController    the {@link EventProcessorController} used to perform operations on the
-     *                                    {@link EventProcessor}s
+     * @param axonServerConfiguration     the {@link AxonServerConfiguration} used to retrieve the client identifier
      */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        EventProcessorController eventProcessorController) {
-        this(axonServerConnectionManager, eventProcessorController, axonServerConnectionManager.getDefaultContext());
+                                        EventProcessingConfiguration eventProcessingConfiguration,
+                                        AxonServerConfiguration axonServerConfiguration) {
+        this(axonServerConnectionManager,
+             eventProcessingConfiguration,
+             axonServerConfiguration.getContext());
     }
 
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
-     * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. These Consumers typically leverage
-     * the {@link EventProcessorController} to issue operations to the {@link EventProcessor}s contained in this
-     * application. Uses the {@link AxonServerConnectionManager#getDefaultContext()} specified in the given
+     * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. Uses the {@link
+     * AxonServerConnectionManager#getDefaultContext()} specified in the given
      * {@code axonServerConnectionManager} as the context to dispatch operations in
      *
      * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
      *                                    {@link PlatformOutboundInstruction} have been received
-     * @param eventProcessorController    the {@link EventProcessorController} used to perform operations on the
-     *                                    {@link EventProcessor}s
      * @param context                     the context of this application instance within which outbound instruction
      *                                    handlers should be specified on the given {@code axonServerConnectionManager}
      */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        EventProcessorController eventProcessorController,
+                                        EventProcessingConfiguration eventProcessingConfiguration,
                                         String context) {
         this.axonServerConnectionManager = axonServerConnectionManager;
-        this.eventProcessorController = eventProcessorController;
+        this.eventProcessingConfiguration = eventProcessingConfiguration;
         this.context = context;
-        this.platformInboundMessageMapper = new GrpcEventProcessorMapping();
     }
 
     /**
@@ -97,69 +96,139 @@ public class EventProcessorControlService {
     @SuppressWarnings("Duplicates")
     @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
-        this.axonServerConnectionManager.onOutboundInstruction(context, PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
-        this.axonServerConnectionManager.onOutboundInstruction(context, START_EVENT_PROCESSOR, this::startProcessor);
-        this.axonServerConnectionManager.onOutboundInstruction(context, RELEASE_SEGMENT, this::releaseSegment);
-        this.axonServerConnectionManager.onOutboundInstruction(
-                context, REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo
-        );
-        this.axonServerConnectionManager.onOutboundInstruction(
-                context, SPLIT_EVENT_PROCESSOR_SEGMENT, this::splitSegment
-        );
-        this.axonServerConnectionManager.onOutboundInstruction(
-                context, MERGE_EVENT_PROCESSOR_SEGMENT, this::mergeSegment
-        );
+        ControlChannel controlChannel = axonServerConnectionManager.getConnection(context)
+                                                                   .controlChannel();
+        eventProcessingConfiguration.eventProcessors().forEach((name, processor) -> {
+            controlChannel.registerEventProcessor(name, apply(processor), new AxonProcessorInstructionHandler(processor, name));
+        });
     }
 
-    private void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
-        EventProcessorReference pauseEventProcessor = platformOutboundInstruction.getPauseEventProcessor();
-        String processorName = pauseEventProcessor.getProcessorName();
-        eventProcessorController.pauseProcessor(processorName);
+    private <T> CompletableFuture<T> exceptionallyCompletedFuture(Exception e) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        future.completeExceptionally(e);
+        return future;
     }
 
-    private void startProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
-        EventProcessorReference startEventProcessor = platformOutboundInstruction.getStartEventProcessor();
-        String processorName = startEventProcessor.getProcessorName();
-        eventProcessorController.startProcessor(processorName);
-    }
-
-    private void releaseSegment(PlatformOutboundInstruction platformOutboundInstruction) {
-        EventProcessorSegmentReference releaseSegment = platformOutboundInstruction.getReleaseSegment();
-        String processorName = releaseSegment.getProcessorName();
-        int segmentIdentifier = releaseSegment.getSegmentIdentifier();
-        eventProcessorController.releaseSegment(processorName, segmentIdentifier);
-    }
-
-    private void getEventProcessorInfo(PlatformOutboundInstruction platformOutboundInstruction) {
-        EventProcessorReference requestInfo = platformOutboundInstruction.getRequestEventProcessorInfo();
-        String processorName = requestInfo.getProcessorName();
-        try {
-            EventProcessor processor = eventProcessorController.getEventProcessor(processorName);
-            axonServerConnectionManager.send(context, platformInboundMessageMapper.apply(processor).instruction());
-        } catch (Exception e) {
-            logger.debug("Problem getting the information about Event Processor [{}]", processorName, e);
+    public Supplier<EventProcessorInfo> apply(EventProcessor processor) {
+        if (processor instanceof TrackingEventProcessor) {
+            return () -> TrackingEventProcessorInfoMessage.describe((TrackingEventProcessor) processor);
+        } else if (processor instanceof SubscribingEventProcessor) {
+            return () -> subscribingProcessorInfo(processor);
+        } else {
+            return () -> unknownProcessorTypeInfo(processor);
         }
     }
 
-    private void splitSegment(PlatformOutboundInstruction platformOutboundInstruction) {
-        EventProcessorSegmentReference splitSegment = platformOutboundInstruction.getSplitEventProcessorSegment();
-        int segmentId = splitSegment.getSegmentIdentifier();
-        String processorName = splitSegment.getProcessorName();
-        try {
-            eventProcessorController.splitSegment(processorName, segmentId);
-        } catch (Exception e) {
-            logger.error("Failed to split segment [{}] for processor [{}]", segmentId, processorName, e);
-        }
+    private EventProcessorInfo subscribingProcessorInfo(EventProcessor eventProcessor) {
+        return EventProcessorInfo.newBuilder()
+                                 .setProcessorName(eventProcessor.getName())
+                                 .setMode(SUBSCRIBING_EVENT_PROCESSOR_MODE)
+                                 .build();
+
     }
 
-    private void mergeSegment(PlatformOutboundInstruction platformOutboundInstruction) {
-        EventProcessorSegmentReference mergeSegment = platformOutboundInstruction.getMergeEventProcessorSegment();
-        String processorName = mergeSegment.getProcessorName();
-        int segmentId = mergeSegment.getSegmentIdentifier();
-        try {
-            eventProcessorController.mergeSegment(processorName, segmentId);
-        } catch (Exception e) {
-            logger.error("Failed to merge segment [{}] for processor [{}]", segmentId, processorName, e);
+    private EventProcessorInfo unknownProcessorTypeInfo(EventProcessor eventProcessor) {
+        return EventProcessorInfo.newBuilder()
+                                 .setProcessorName(eventProcessor.getName())
+                                 .setMode(UNKNOWN_EVENT_PROCESSOR_MODE)
+                                 .build();
+
+    }
+
+
+    private class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
+        private final EventProcessor processor;
+        private final String name;
+
+        public AxonProcessorInstructionHandler(EventProcessor processor, String name) {
+            this.processor = processor;
+            this.name = name;
+        }
+
+        @Override
+        public CompletableFuture<Boolean> releaseSegment(int segmentId) {
+            try {
+                if (!(processor instanceof TrackingEventProcessor)) {
+                    logger.info("Release segment requested for processor [{}] which is not a Tracking Event Processor", name);
+                    return CompletableFuture.completedFuture(false);
+                } else {
+                    ((TrackingEventProcessor) processor).releaseSegment(segmentId);
+                }
+            } catch (Exception e) {
+                return exceptionallyCompletedFuture(e);
+            }
+            return CompletableFuture.completedFuture(true);
+        }
+
+        @Override
+        public CompletableFuture<Boolean> splitSegment(int segmentId) {
+            try {
+                if (!(processor instanceof TrackingEventProcessor)) {
+                    logger.info("Split segment requested for processor [{}] which is not a Tracking Event Processor",
+                                name);
+                    return CompletableFuture.completedFuture(false);
+                } else {
+                    return ((TrackingEventProcessor) processor)
+                            .splitSegment(segmentId)
+                            .thenApply(result -> {
+                                if (result) {
+                                    logger.info("Successfully split segment [{}] of processor [{}]",
+                                                segmentId, name);
+                                } else {
+                                    logger.warn("Was not able to split segment [{}] for processor [{}]",
+                                                segmentId, name);
+                                }
+                                return result;
+                            });
+                }
+            } catch (Exception e) {
+                return exceptionallyCompletedFuture(e);
+            }
+        }
+
+        @Override
+        public CompletableFuture<Boolean> mergeSegment(int segmentId) {
+            try {
+                if (!(processor instanceof TrackingEventProcessor)) {
+                    logger.warn("Merge segment request received for processor [{}] which is not a Tracking Event Processor", name);
+                    return CompletableFuture.completedFuture(false);
+                } else {
+                    return ((TrackingEventProcessor) processor)
+                            .mergeSegment(segmentId)
+                            .thenApply(result -> {
+                                if (result) {
+                                    logger.info("Successfully merged segment [{}] of processor [{}]",
+                                                segmentId, name);
+                                } else {
+                                    logger.warn("Was not able to merge segment [{}] for processor [{}]",
+                                                segmentId, name);
+                                }
+                                return result;
+                            });
+                }
+            } catch (Exception e) {
+                return exceptionallyCompletedFuture(e);
+            }
+        }
+
+        @Override
+        public CompletableFuture<Void> pauseProcessor() {
+            try {
+                processor.shutDown();
+                return CompletableFuture.completedFuture(null);
+            } catch (Exception e) {
+                return exceptionallyCompletedFuture(e);
+            }
+        }
+
+        @Override
+        public CompletableFuture<Void> startProcessor() {
+            try {
+                processor.start();
+                return CompletableFuture.completedFuture(null);
+            } catch (Exception e) {
+                return exceptionallyCompletedFuture(e);
+            }
         }
     }
 }

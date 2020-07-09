@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.processor.grpc;
+package org.axonframework.axonserver.connector.utils;
 
-import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
+import java.util.concurrent.CompletableFuture;
 
-/**
- * Supplier of {@link PlatformInboundInstruction}.
- *
- * @author Sara Pellegrini
- * @since 4.0
- */
-@FunctionalInterface
-public interface PlatformInboundMessage {
+public abstract class FutureUtils {
 
-    /**
-     * Supply a {@link PlatformInboundInstruction}.
-     *
-     * @return a {@link PlatformInboundInstruction}
-     */
-    PlatformInboundInstruction instruction();
+    private FutureUtils() {
+    }
+
+    public static <T> CompletableFuture<T> completedExceptionally(Exception e) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        future.completeExceptionally(e);
+        return future;
+    }
 }
