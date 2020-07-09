@@ -50,11 +50,8 @@ import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;

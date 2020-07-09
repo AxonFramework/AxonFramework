@@ -870,7 +870,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                                              Map<Integer, EventTrackerStatus> newSegments) {
         Set<Integer> newSegmentIds = new HashSet<>(newSegments.keySet());
         newSegmentIds.removeAll(oldSegments.keySet());
-        if (newSegmentIds.size() != 0) {
+        if (!newSegmentIds.isEmpty()) {
             return newSegmentIds.stream()
                                 .collect(Collectors.toMap(
                                         segmentId -> segmentId,
@@ -880,7 +880,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         Set<Integer> oldSegmentIds = new HashSet<>(oldSegments.keySet());
         oldSegmentIds.removeAll(newSegments.keySet());
-        if (oldSegmentIds.size() != 0) {
+        if (!oldSegmentIds.isEmpty()) {
             return oldSegmentIds.stream()
                                 .collect(Collectors.toMap(
                                         segmentId -> segmentId,
