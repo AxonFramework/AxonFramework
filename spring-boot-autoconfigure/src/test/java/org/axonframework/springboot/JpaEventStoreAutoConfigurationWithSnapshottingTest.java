@@ -31,16 +31,20 @@ import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -130,6 +134,12 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
                 SNAPSHOT_FILTER_INVOKED.set(true);
                 return true;
             };
+        }
+
+        @Bean
+        @Primary
+        public Serializer serializer() {
+            return TestSerializer.secureXStreamSerializer();
         }
 
         public static class CreateCommand {

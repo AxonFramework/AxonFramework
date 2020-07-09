@@ -19,17 +19,17 @@ package org.axonframework.integrationtests.modelling.command;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.EntityId;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.EntityId;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -45,11 +45,9 @@ class ComplexAggregateStructureTest {
     void testCommandsAreRoutedToCorrectEntity() throws Exception {
         AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
         EventBus mockEventBus = SimpleEventBus.builder().build();
-        mockEventBus.subscribe(m -> m.forEach(i -> System.out.println(i.getPayloadType().getName())));
-        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Callable<Book>) () ->
-                                                                                       new Book(new CreateBookCommand("book1")),
-                                                                               bookAggregateModel,
-                                                                               mockEventBus);
+        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize(
+                (Callable<Book>) () -> new Book(new CreateBookCommand("book1")), bookAggregateModel, mockEventBus
+        );
         bookAggregate.handle(command(new CreateBookCommand("book1")));
         bookAggregate.handle(command(new CreatePageCommand("book1")));
         bookAggregate.handle(command(new CreateParagraphCommand("book1", 0)));
@@ -63,17 +61,18 @@ class ComplexAggregateStructureTest {
                      bookAggregate.getAggregateRoot().getPages().get(0).getParagraphs().get(1).getText());
     }
 
-    private CommandMessage command(Object payload) {
+    private CommandMessage<Object> command(Object payload) {
         return GenericCommandMessage.asCommandMessage(payload);
     }
 
+    @SuppressWarnings("unused")
     public static class Book {
 
         @AggregateIdentifier
         private String bookId;
 
         @AggregateMember
-        private List<Page> pages = new ArrayList<>();
+        private final List<Page> pages = new ArrayList<>();
         private int lastPage = -1;
 
         public Book() {
@@ -109,13 +108,14 @@ class ComplexAggregateStructureTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Page {
 
         @EntityId
         private final int pageNumber;
 
         @AggregateMember
-        private List<Paragraph> paragraphs = new ArrayList<>();
+        private final List<Paragraph> paragraphs = new ArrayList<>();
 
         private int lastParagraphId = -1;
 
@@ -130,7 +130,6 @@ class ComplexAggregateStructureTest {
 
         @EventSourcingHandler
         protected void handle(ParagraphCreatedEvent event) {
-            System.out.println("Paragraph created in aggregate");
             this.lastParagraphId = event.getParagraphId();
             this.paragraphs.add(new Paragraph(event.getParagraphId()));
         }
@@ -144,6 +143,7 @@ class ComplexAggregateStructureTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Paragraph {
 
         @EntityId
@@ -217,6 +217,7 @@ class ComplexAggregateStructureTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class PageCreatedEvent {
 
         private final String bookId;
@@ -237,6 +238,7 @@ class ComplexAggregateStructureTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class CreateParagraphCommand {
 
         private final String bookId;
@@ -257,6 +259,7 @@ class ComplexAggregateStructureTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class ParagraphCreatedEvent {
 
         private final String bookId;
@@ -315,6 +318,7 @@ class ComplexAggregateStructureTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class ParagraphUpdatedEvent {
 
         private final String bookId;

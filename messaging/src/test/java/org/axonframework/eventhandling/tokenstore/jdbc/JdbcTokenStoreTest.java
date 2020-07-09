@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -337,7 +338,7 @@ public class JdbcTokenStoreTest {
         public JdbcTokenStore tokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(XStreamSerializer.builder().build())
+                                 .serializer(TestSerializer.XSTREAM.getSerializer())
                                  .build();
         }
 

@@ -23,6 +23,7 @@ import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
+import org.axonframework.integrationtests.utils.TestSerializer;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -46,6 +47,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                     QuartzDeadlineManager.builder()
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+                                         .serializer(TestSerializer.secureXStreamSerializer())
                                          .build();
             scheduler.start();
             return quartzDeadlineManager;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,17 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
+import org.mockito.quality.*;
 
 import java.util.Optional;
 
@@ -45,6 +42,11 @@ import static org.axonframework.commandhandling.distributed.DistributedCommandBu
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link DistributedCommandBus}.
+ *
+ * @author Allard Buijze
+ */
 @SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 class DistributedCommandBusTest {
@@ -54,7 +56,7 @@ class DistributedCommandBusTest {
     @Mock
     private CommandRouter mockCommandRouter;
     @Spy
-    private CommandBusConnector mockConnector = new StubCommandBusConnector();
+    private final CommandBusConnector mockConnector = new StubCommandBusConnector();
     @Mock
     private MessageMonitor<? super CommandMessage<?>> mockMessageMonitor;
     @Mock
@@ -77,7 +79,7 @@ class DistributedCommandBusTest {
     void testDispatchWithoutCallbackWithMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
-        testSubject.dispatch(testCommandMessage);
+        testSubject.dispatch(testCommandMessage, NoOpCallback.INSTANCE);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
@@ -105,7 +107,7 @@ class DistributedCommandBusTest {
     void testDispatchFailingCommandWithoutCallbackWithMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
 
-        testSubject.dispatch(testCommandMessage);
+        testSubject.dispatch(testCommandMessage, NoOpCallback.INSTANCE);
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
         verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
