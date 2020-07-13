@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Variation of {@link EventGateway}. Provides support for reactive return types such as {@link Flux} from Project
+ * Variation of the {@link EventGateway}, wrapping a {@link EventBus} for a friendlier API. Provides support for reactive return types such as {@link Flux} from Project
  * Reactor.
  *
  * @author Milan Savic
