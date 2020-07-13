@@ -33,7 +33,7 @@ import reactor.core.publisher.Mono;
  * @since 4.4
  */
 
-public class ReactiveCallback<C, R> extends Mono<CommandResultMessage<? extends R>> implements CommandCallback<C, R> {
+public class ReactorCallback<C, R> extends Mono<CommandResultMessage<? extends R>> implements CommandCallback<C, R> {
 
     EmitterProcessor<CommandResultMessage<? extends R>> commandResultMessageEmitter = EmitterProcessor.create(1);
     FluxSink<CommandResultMessage<? extends R>> sink = commandResultMessageEmitter.sink();

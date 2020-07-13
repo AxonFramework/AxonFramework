@@ -34,20 +34,20 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for {@link ReactiveCallback}.
+ * Tests for {@link ReactorCallback}.
  *
  * @author Stefan Dragisic
  */
-class ReactiveCallbackTest {
+class ReactorCallbackTest {
 
     private static final CommandMessage<Object> COMMAND_MESSAGE = GenericCommandMessage.asCommandMessage("Test");
     private static final CommandResultMessage<String> COMMAND_RESPONSE_MESSAGE =
             asCommandResultMessage("Hello reactive world");
-    private volatile ReactiveCallback<Object, Object> testSubject;
+    private volatile ReactorCallback<Object, Object> testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new ReactiveCallback<>();
+        testSubject = new ReactorCallback<>();
     }
 
     @Test

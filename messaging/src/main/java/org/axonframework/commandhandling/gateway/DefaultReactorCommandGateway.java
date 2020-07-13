@@ -17,10 +17,9 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.callbacks.ReactiveCallback;
+import org.axonframework.commandhandling.callbacks.ReactorCallback;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.reactive.ReactorResultHandlerInterceptor;
 import reactor.core.publisher.Flux;
@@ -110,13 +109,13 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
 
     private <C, R> Mono<Tuple2<CommandMessage<C>, Flux<CommandResultMessage<? extends R>>>> dispatchCommand(
             CommandMessage<C> commandMessage) {
-        ReactiveCallback<C, R> reactiveCallback = new ReactiveCallback<>();
-        CommandCallback<C, R> callback = reactiveCallback;
+        ReactorCallback<C, R> reactorCallback = new ReactorCallback<>();
+        CommandCallback<C, R> callback = reactorCallback;
         if (retryScheduler != null) {
             callback = new RetryingCallback<>(callback, retryScheduler, commandBus);
         }
         commandBus.dispatch(commandMessage, callback);
-        return Mono.just(commandMessage).zipWith(Mono.just(Flux.from(reactiveCallback)));
+        return Mono.just(commandMessage).zipWith(Mono.just(Flux.from(reactorCallback)));
     }
 
     private <C> Mono<? extends CommandResultMessage<?>> processResultsInterceptors(
