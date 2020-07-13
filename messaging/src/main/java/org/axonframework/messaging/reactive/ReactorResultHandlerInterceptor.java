@@ -38,8 +38,8 @@ public interface ReactorResultHandlerInterceptor<M extends Message<?>, R extends
      * {@link Flux#error(Throwable)} variations.
      *
      * @param message a message that was dispatched (and caused these {@code results})
-     * @param results results of a dispatched message
-     * @return intercepted results
+     * @param results the outcome of the dispatched {@code message}
+     * @return the intercepted {@code results}
      */
     Flux<R> intercept(M message, Flux<R> results);
 }
