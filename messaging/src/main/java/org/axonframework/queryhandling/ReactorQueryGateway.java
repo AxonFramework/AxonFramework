@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
- * Variation of {@link QueryGateway}. Provides support for reactive return types such as {@link Mono} and {@link Flux}
+ * Variation of the {@link QueryGateway}, wrapping a {@link QueryBus} for a friendlier API. Provides support for reactive return types such as {@link Mono} and {@link Flux}
  * from Project Reactor.
  *
  * @author Milan Savic
