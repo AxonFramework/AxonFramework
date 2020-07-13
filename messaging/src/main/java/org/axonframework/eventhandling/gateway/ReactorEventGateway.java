@@ -52,7 +52,7 @@ public interface ReactorEventGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Publishes given {@code events} once the caller subscribes to the resulting Flux. Returns immediately.
+     * Publishes the given {@code events} once the caller subscribes to the resulting {@link Flux}. Returns immediately.
      * <p/>
      * Given {@code events} are wrapped as payloads of a {@link EventMessage} that are eventually published on the
      * {@link EventBus}, unless {@code event} already implements {@link Message}. In that case, a {@code EventMessage}
