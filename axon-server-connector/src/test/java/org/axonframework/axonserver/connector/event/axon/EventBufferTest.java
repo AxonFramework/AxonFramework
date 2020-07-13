@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.axoniq.axonserver.connector.event.impl.BufferedEventStream;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
+import io.grpc.stub.ClientCallStreamObserver;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -29,12 +30,10 @@ import org.axonframework.serialization.upcasting.event.IntermediateEventRepresen
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.mockito.stubbing.Answer;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,6 +75,7 @@ class EventBufferTest {
         serializedObject = serializer.serialize("some object", byte[].class);
 
         stream = new BufferedEventStream(0, 100, 1, false);
+        stream.beforeStart(mock(ClientCallStreamObserver.class));
         testSubject = new EventBuffer(stream, stubUpcaster, serializer, false);
     }
 
@@ -111,32 +111,6 @@ class EventBufferTest {
         // a second attempt should still throw the exception
         assertThrows(RuntimeException.class, () ->
                 testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
-    }
-
-    @Test
-    @Timeout(value = 2)
-    void testNextAvailableDoesNotBlockIndefinitelyIfTheStreamIsClosedExceptionally()
-            throws InterruptedException {
-        RuntimeException expected = new RuntimeException("Some Exception");
-        AtomicReference<Exception> result = new AtomicReference<>();
-
-        // Create and start "nextAvailable" thread
-        Thread pollingThread = new Thread(() -> {
-            try {
-                testSubject.nextAvailable();
-            } catch (Exception e) {
-                result.set(e);
-            }
-        });
-        pollingThread.start();
-        // Sleep to give "pollingThread" time to enter event polling operation
-        Thread.sleep(50);
-        // Fail the EventBuffer, which should close the stream
-        stream.onError(expected);
-        // Wait for the pollingThread to be resolved due to the thrown RuntimeException
-        pollingThread.join();
-
-        assertEquals(expected, result.get());
     }
 
     private EventWithToken createEventData(long sequence) {

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,7 +61,6 @@ public class EventBuffer implements TrackingEventStream {
     private static final int DEFAULT_POLLING_TIME_MILLIS = 500;
 
     private final Serializer serializer;
-    private final EventUpcaster upcasterChain;
     private final EventStream delegate;
     private final boolean disableEventBlacklisting;
     private final Iterator<TrackedEventMessage<?>> eventStream;
@@ -82,7 +81,6 @@ public class EventBuffer implements TrackingEventStream {
      * @param disableEventBlacklisting
      */
     public EventBuffer(EventStream delegate, EventUpcaster upcasterChain, Serializer serializer, boolean disableEventBlacklisting) {
-        this.upcasterChain = upcasterChain;
         this.serializer = serializer;
         this.delegate = delegate;
         this.disableEventBlacklisting = disableEventBlacklisting;
@@ -149,10 +147,11 @@ public class EventBuffer implements TrackingEventStream {
     public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) {
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
-            while (peekEvent == null && System.currentTimeMillis() < deadline && !eventStream.hasNext()) {
+            do {
                 long waitTime = deadline - System.currentTimeMillis();
                 waitForData(waitTime);
-            }
+            } while (peekEvent == null && System.currentTimeMillis() < deadline && !eventStream.hasNext());
+
             return peekEvent != null || eventStream.hasNext();
         } catch (InterruptedException e) {
             logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
@@ -162,13 +161,20 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     private void waitForData(long timeout) throws InterruptedException {
-        lock.lock();
-        try {
-            if (delegate.peek() == null) {
-                dataAvailable.await(Math.min(500, timeout), TimeUnit.MILLISECONDS);
+        // a quick check before acquiring the lock
+        if (delegate.peek() != null) {
+            return;
+        }
+        if (timeout > 0) {
+            lock.lock();
+            try {
+                // check again for concurrency reasons
+                if (delegate.peek() == null) {
+                    dataAvailable.await(Math.min(500, timeout), TimeUnit.MILLISECONDS);
+                }
+            } finally {
+                lock.unlock();
             }
-        } finally {
-            lock.unlock();
         }
     }
 

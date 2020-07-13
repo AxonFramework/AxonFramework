@@ -16,6 +16,8 @@
 
 package org.axonframework.axonserver.connector.command;
 
+import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.command.CommandChannel;
 import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -75,11 +77,13 @@ class AxonServerCommandBusTest {
 
     private AxonServerConnectionManager axonServerConnectionManager;
     private AxonServerConfiguration configuration;
-    private SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
-    private Serializer serializer = XStreamSerializer.defaultSerializer();
-    private TargetContextResolver<CommandMessage<?>> targetContextResolver = spy(new TestTargetContextResolver<>());
+    private final SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
+    private final Serializer serializer = XStreamSerializer.defaultSerializer();
+    private final TargetContextResolver<CommandMessage<?>> targetContextResolver = spy(new TestTargetContextResolver<>());
 
     private AxonServerCommandBus testSubject;
+    private AxonServerConnection mockConnection;
+    private CommandChannel mockCommandChannel;
 
     @BeforeEach
     void setup() throws Exception {
@@ -94,6 +98,12 @@ class AxonServerCommandBusTest {
         configuration.setNewPermitsThreshold(10);
         configuration.setNrOfNewPermits(1000);
         configuration.setContext(BOUNDED_CONTEXT);
+
+        mockConnection = mock(AxonServerConnection.class);
+        mockCommandChannel = mock(CommandChannel.class);
+
+        when(mockConnection.commandChannel()).thenReturn(mockCommandChannel);
+
         axonServerConnectionManager = spy(AxonServerConnectionManager.builder()
                                                                      .axonServerConfiguration(configuration)
                                                                      .build());
@@ -137,7 +147,7 @@ class AxonServerCommandBusTest {
         assertEquals("this is the payload", resultHolder.get());
 
         verify(targetContextResolver).resolveContext(commandMessage);
-        verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
+        verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
     }
 
     @Test
@@ -174,7 +184,8 @@ class AxonServerCommandBusTest {
         CountDownLatch waiter = new CountDownLatch(1);
         AtomicBoolean failure = new AtomicBoolean(false);
         AtomicReference<Throwable> throwable = new AtomicReference<>();
-        when(axonServerConnectionManager.getChannel(anyString())).thenThrow(new RuntimeException("oops"));
+        when(axonServerConnectionManager.getConnection(anyString())).thenReturn(mockConnection);
+        when(mockCommandChannel.sendCommand(any())).thenThrow(new RuntimeException("oops"));
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
             if (result.isExceptional()) {
@@ -186,12 +197,12 @@ class AxonServerCommandBusTest {
 
         waiter.await();
         assertTrue(failure.get());
-        assertTrue(throwable.get() instanceof AxonServerCommandDispatchException);
+        assertEquals(AxonServerCommandDispatchException.class, throwable.get().getClass());
         assertEquals(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
                      ((AxonServerCommandDispatchException) throwable.get()).getErrorCode());
 
         verify(targetContextResolver).resolveContext(commandMessage);
-        verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
+        verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
     }
 
     @Test
@@ -214,7 +225,7 @@ class AxonServerCommandBusTest {
         assertTrue(failure.get());
 
         verify(targetContextResolver).resolveContext(commandMessage);
-        verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
+        verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
     }
 
     @Test
@@ -233,7 +244,7 @@ class AxonServerCommandBusTest {
         assertTrue(resultHolder.get().exceptionResult() instanceof ConcurrencyException);
 
         verify(targetContextResolver).resolveContext(commandMessage);
-        verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
+        verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
     }
 
     @Test
@@ -256,7 +267,7 @@ class AxonServerCommandBusTest {
         );
 
         verify(targetContextResolver).resolveContext(commandMessage);
-        verify(axonServerConnectionManager).getChannel(BOUNDED_CONTEXT);
+        verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
     }
 
     @Test
@@ -337,7 +348,7 @@ class AxonServerCommandBusTest {
         testSubject.shutdownDispatching();
 
         assertWithin(
-                50, TimeUnit.MILLISECONDS,
+                100, TimeUnit.MILLISECONDS,
                 () -> assertThrows(
                         ShutdownInProgressException.class,
                         () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))

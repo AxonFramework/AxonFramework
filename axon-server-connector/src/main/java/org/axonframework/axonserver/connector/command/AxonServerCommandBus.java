@@ -25,6 +25,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DefaultHandlers;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.Handlers;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
@@ -178,7 +179,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                   .whenComplete((r, e) -> commandInTransit.end());
         } catch (Exception e) {
             commandInTransit.end();
-            throw e;
+            commandCallback.onResult(commandMessage, GenericCommandResultMessage.asCommandResultMessage(new AxonServerCommandDispatchException(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
+                                                                                                                                               "Exception while dispatching a command to AxonServer",
+                                                                                                                                               e)));
         }
     }
 
@@ -221,7 +224,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      */
     @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public CompletableFuture<Void> disconnect() {
-        return axonServerConnectionManager.getConnection().commandChannel().prepareDisconnect();
+        if (axonServerConnectionManager.isConnected(axonServerConnectionManager.getDefaultContext())) {
+            return axonServerConnectionManager.getConnection().commandChannel().prepareDisconnect();
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -233,8 +239,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        // TODO cancel all local registrations
-        return CompletableFuture.runAsync(shutdownLatch::initiateShutdown);
+        return shutdownLatch.initiateShutdown();
     }
 
     private static class CommandProcessingTask implements Runnable {

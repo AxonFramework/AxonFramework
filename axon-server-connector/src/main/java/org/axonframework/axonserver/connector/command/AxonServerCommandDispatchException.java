@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.command;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -46,6 +47,13 @@ public class AxonServerCommandDispatchException extends CommandDispatchException
         this.errorCode = errorCode;
         this.server = errorMessage.getLocation();
         this.exceptionDescriptions = errorMessage.getDetailsList();
+    }
+
+    public AxonServerCommandDispatchException(String errorCode, String message, Throwable cause) {
+        super(message, cause);
+        this.errorCode = errorCode;
+        this.server = null;
+        this.exceptionDescriptions = Collections.emptyList();
     }
 
     /**

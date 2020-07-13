@@ -47,9 +47,7 @@ public class AxonServerSubscriptionQueryResult<I, U> implements SubscriptionQuer
      * the subscription query.
      */
     public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result, SubscriptionMessageSerializer subscriptionSerializer) {
-        logger.info("Created subscription query result");
         updates = Flux.<QueryUpdate>create(fluxSink -> {
-// TODO - Discover errors pushing data down to close upstream connection
             fluxSink.onRequest(count -> {
                 for (int i = 0; i < count; i++) {
                     QueryUpdate next = result.updates().nextIfAvailable();
@@ -64,34 +62,27 @@ public class AxonServerSubscriptionQueryResult<I, U> implements SubscriptionQuer
             });
 
             fluxSink.onDispose(() -> {
-                logger.info("Flux was disposed. Will close subscription query");
+                logger.debug("Flux was disposed. Will close subscription query");
                 result.updates().close();
             });
-
-            fluxSink.onCancel(() -> logger.info("Fluxsink cancelled. Not doing anything."));
 
             result.updates().onAvailable(() -> {
                 if (fluxSink.requestedFromDownstream() > 0) {
                     QueryUpdate next = result.updates().nextIfAvailable();
                     if (next != null) {
-                        logger.info("Sending data to flux");
                         fluxSink.next(next);
-                        logger.info("Sent data to flux");
                     }
                 } else {
-                    logger.info("Not sending update to Flux Sink. Not enough info requested");
+                    logger.trace("Not sending update to Flux Sink. Not enough info requested");
                 }
                 if (result.updates().isClosed()) {
-                    logger.info("Closing flux sink");
                     fluxSink.complete();
                 }
             });
 
         }).doOnError(e -> {
-            logger.warn("Error occurred sending updates downstream. Closing subscription.");
             result.updates().close();
-        })
-          .map(subscriptionSerializer::deserialize);
+        }).map(subscriptionSerializer::deserialize);
 
         this.initialResult = Mono.fromCompletionStage(result::initialResult).map(subscriptionSerializer::deserialize);
         this.result = result;

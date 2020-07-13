@@ -325,7 +325,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      */
     @ShutdownHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
     public void disconnect() {
-        axonServerConnectionManager.getConnection(context).queryChannel().prepareDisconnect();
+        if (axonServerConnectionManager.isConnected(context)) {
+            axonServerConnectionManager.getConnection(context).queryChannel().prepareDisconnect();
+        }
     }
 
     /**
