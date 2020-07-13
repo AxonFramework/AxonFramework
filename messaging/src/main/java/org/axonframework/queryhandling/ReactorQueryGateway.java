@@ -165,14 +165,14 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
                                  TimeUnit timeUnit);
 
     /**
-     * Uses given Publisher of queries to send incoming queries in scatter gather manner. Queries will be sent
-     * sequentially - once a result of Nth query arrives, (N + 1)th query is dispatched. All queries will be dispatched
+     * Uses the given {@link Publisher} of {@link QueryMessage}s to send incoming queries in scatter gather manner. Queries will be sent
+     * sequentially. Once the result of Nth query arrives, the (N + 1)th query is dispatched. All queries will be dispatched
      * using given {@code timeout} and {@code timeUnit}.
      *
-     * @param queries  a Publisher stream of queries to be dispatched
+     * @param queries  a {@link Publisher} stream of queries to be dispatched
      * @param timeout  A timeout of {@code long} for the query
      * @param timeUnit The selected {@link TimeUnit} for the given {@code timeout}
-     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries being
      * dispatched
      */
     default Flux<Object> scatterGather(Publisher<QueryMessage<?, ?>> queries, long timeout, TimeUnit timeUnit) {
