@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
+import io.axoniq.axonserver.connector.event.impl.BufferedEventStream;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
@@ -33,7 +34,6 @@ import org.mockito.stubbing.Answer;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -61,6 +61,7 @@ class EventBufferTest {
     private EventBuffer testSubject;
 
     private org.axonframework.serialization.SerializedObject<byte[]> serializedObject;
+    private BufferedEventStream stream;
 
     @BeforeEach
     void setUp() {
@@ -74,13 +75,14 @@ class EventBufferTest {
         serializer = XStreamSerializer.defaultSerializer();
         serializedObject = serializer.serialize("some object", byte[].class);
 
-        testSubject = new EventBuffer(stubUpcaster, serializer);
+        stream = new BufferedEventStream(0, 100, 1, false);
+        testSubject = new EventBuffer(stream, stubUpcaster, serializer, false);
     }
 
     @Test
     void testDataUpcastAndDeserialized() throws InterruptedException {
         assertFalse(testSubject.hasNextAvailable());
-        testSubject.push(createEventData(1L));
+        stream.onNext(createEventData(1L));
         assertTrue(testSubject.hasNextAvailable());
 
         TrackedEventMessage<?> peeked =
@@ -99,24 +101,9 @@ class EventBufferTest {
     }
 
     @Test
-    void testConsumptionIsRecorded() {
-        testSubject = new EventBuffer(stream -> stream.filter(i -> false), serializer);
-
-        testSubject.push(createEventData(1));
-        testSubject.push(createEventData(2));
-        testSubject.push(createEventData(3));
-
-        AtomicInteger consumed = new AtomicInteger();
-        testSubject.registerConsumeListener(consumed::addAndGet);
-
-        testSubject.peek(); // this should consume 3 incoming messages
-        assertEquals(3, consumed.get());
-    }
-
-    @Test
     void testHasNextAvailableThrowsExceptionWhenStreamFailed() throws InterruptedException {
         RuntimeException expected = new RuntimeException("Some Exception");
-        testSubject.fail(expected);
+        stream.onError(expected);
 
         assertThrows(RuntimeException.class, () ->
                 testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
@@ -145,7 +132,7 @@ class EventBufferTest {
         // Sleep to give "pollingThread" time to enter event polling operation
         Thread.sleep(50);
         // Fail the EventBuffer, which should close the stream
-        testSubject.fail(expected);
+        stream.onError(expected);
         // Wait for the pollingThread to be resolved due to the thrown RuntimeException
         pollingThread.join();
 

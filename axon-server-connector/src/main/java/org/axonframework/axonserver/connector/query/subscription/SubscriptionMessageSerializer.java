@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
@@ -84,13 +85,26 @@ public class SubscriptionMessageSerializer {
         this.responseTypeSerializer = new GrpcObjectSerializer<>(serializer);
     }
 
+    public QueryRequest serializeQuery(SubscriptionQueryMessage subscriptionQueryMessage) {
+        return  QueryRequest.newBuilder()
+                            .setTimestamp(System.currentTimeMillis())
+                            .setMessageIdentifier(subscriptionQueryMessage.getIdentifier())
+                            .setQuery(subscriptionQueryMessage.getQueryName())
+                            .setClientId(configuration.getClientId())
+                            .setComponentName(configuration.getComponentName())
+                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))
+                            .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.getResponseType()))
+                            .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.getMetaData()))
+                            .build();
+    }
+
     /**
      * Convert a {@link SubscriptionQueryMessage} into a {@link SubscriptionQuery}.
      *
      * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} to convert into a {@link SubscriptionQuery}
      * @return a {@link SubscriptionQuery} based on the provided {@code subscriptionQueryMessage}
      */
-    public SubscriptionQuery serialize(SubscriptionQueryMessage subscriptionQueryMessage) {
+    public SubscriptionQuery serialize(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
         QueryRequest queryRequest =
                 QueryRequest.newBuilder()
                             .setTimestamp(System.currentTimeMillis())
@@ -112,7 +126,11 @@ public class SubscriptionMessageSerializer {
                                 .setQueryRequest(queryRequest).build();
     }
 
-    <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery subscriptionQuery) {
+    public SerializedObject serializeUpdateType(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
+        return  responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType());
+    }
+
+    public <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery subscriptionQuery) {
         return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery, messageSerializer, serializer);
     }
 
@@ -136,25 +154,17 @@ public class SubscriptionMessageSerializer {
         return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
     }
 
-    QueryProviderOutbound serialize(SubscriptionQueryUpdateMessage<?> subscriptionQueryUpdateMessage,
-                                    String subscriptionId) {
-        QueryUpdate queryUpdate =
-                QueryUpdate.newBuilder()
-                           .setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage))
-                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData()))
-                           .setMessageIdentifier(subscriptionQueryUpdateMessage.getIdentifier())
-                           .setClientId(configuration.getClientId())
-                           .setComponentName(configuration.getComponentName())
-                           .build();
-
-        return newBuilder().setSubscriptionQueryResponse(
-                SubscriptionQueryResponse.newBuilder()
-                                         .setSubscriptionIdentifier(subscriptionId)
-                                         .setUpdate(queryUpdate)
-        ).build();
+    public QueryUpdate serialize(SubscriptionQueryUpdateMessage<?> subscriptionQueryUpdateMessage) {
+        return QueryUpdate.newBuilder()
+                  .setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage))
+                  .putAllMetaData(metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData()))
+                  .setMessageIdentifier(subscriptionQueryUpdateMessage.getIdentifier())
+                  .setClientId(configuration.getClientId())
+                  .setComponentName(configuration.getComponentName())
+                  .build();
     }
 
-    <U> SubscriptionQueryUpdateMessage<U> deserialize(QueryUpdate queryUpdate) {
+    public <U> SubscriptionQueryUpdateMessage<U> deserialize(QueryUpdate queryUpdate) {
         return new GrpcBackedQueryUpdateMessage<>(queryUpdate, messageSerializer);
     }
 

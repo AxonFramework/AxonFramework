@@ -21,11 +21,7 @@ import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ContextConnection;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
-import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
-import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.grpc.Channel;
-import io.grpc.ManagedChannel;
-import io.grpc.stub.StreamObserver;
 import io.netty.handler.ssl.SslContextBuilder;
 import org.axonframework.axonserver.connector.util.AxonFrameworkVersionResolver;
 import org.axonframework.common.AxonConfigurationException;
@@ -43,7 +39,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -159,6 +154,11 @@ public class AxonServerConnectionManager {
      */
     public String getDefaultContext() {
         return defaultContext;
+    }
+
+    @Deprecated
+    public Channel getChannel() {
+        return ((ContextConnection)getConnection(defaultContext)).getManagedChannel();
     }
 
     @Deprecated

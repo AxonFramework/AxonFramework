@@ -57,6 +57,18 @@ public abstract class ProcessingInstructionHelper {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.NR_OF_RESULTS);
     }
 
+    /**
+     * Retrieve the desired 'number of results' as a {@code long} from the given {@code processingInstructions}, by
+     * searching for the {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#NR_OF_RESULTS}.
+     *
+     * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the
+     *                               {@link ProcessingKey#NR_OF_RESULTS} from
+     * @return a {@code long} specifying the desired 'number of results' for a given operation
+     */
+    public static long timeout(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.TIMEOUT);
+    }
+
     private static long getProcessingInstructionNumber(List<ProcessingInstruction> processingInstructions,
                                                        ProcessingKey processingKey) {
         return processingInstructions.stream()

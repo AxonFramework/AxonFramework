@@ -17,21 +17,13 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
+import io.axoniq.axonserver.connector.event.AggregateEventStream;
+import io.axoniq.axonserver.connector.event.AppendEventsTransaction;
+import io.axoniq.axonserver.connector.event.EventChannel;
+import io.axoniq.axonserver.connector.event.EventStream;
 import io.axoniq.axonserver.grpc.event.Event;
-import io.axoniq.axonserver.grpc.event.EventWithToken;
-import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
-import io.axoniq.axonserver.grpc.event.GetAggregateSnapshotsRequest;
-import io.axoniq.axonserver.grpc.event.GetEventsRequest;
-import io.axoniq.axonserver.grpc.event.PayloadDescription;
-import io.axoniq.axonserver.grpc.event.QueryEventsRequest;
-import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
-import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
-import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.event.AppendEventTransaction;
-import org.axonframework.axonserver.connector.event.AxonServerEventStoreClient;
-import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -69,10 +61,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.Spliterators;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -81,7 +72,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.Spliterator.*;
+import static java.util.Spliterator.CONCURRENT;
+import static java.util.Spliterator.DISTINCT;
+import static java.util.Spliterator.NONNULL;
+import static java.util.Spliterator.ORDERED;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -322,15 +316,13 @@ public class AxonServerEventStore extends AbstractEventStore {
             assertNonNull(axonServerConnectionManager,
                           "The PlatformConnectionManager is a hard requirement and should be provided");
 
-            AxonServerEventStoreClient eventStoreClient = new AxonServerEventStoreClient(configuration,
-                                                                                         axonServerConnectionManager);
             super.storageEngine(AxonIQEventStorageEngine.builder()
                                                         .snapshotSerializer(snapshotSerializer.get())
                                                         .upcasterChain(upcasterChain)
                                                         .snapshotFilter(snapshotFilter)
                                                         .eventSerializer(eventSerializer.get())
                                                         .configuration(configuration)
-                                                        .eventStoreClient(eventStoreClient)
+                                                        .eventStoreClient(axonServerConnectionManager)
                                                         .converter(new GrpcMetaDataConverter(eventSerializer.get()))
                                                         .build());
         }
@@ -353,7 +345,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
 
         private final AxonServerConfiguration configuration;
-        private final AxonServerEventStoreClient eventStoreClient;
+        private final AxonServerConnectionManager connectionManager;
         private final GrpcMetaDataConverter converter;
         private final boolean snapshotFilterSet;
         private final Serializer snapshotSerializer;
@@ -374,7 +366,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             super(builder);
             this.snapshotFilterSet = builder.snapshotFilterSet;
             this.configuration = builder.configuration;
-            this.eventStoreClient = builder.eventStoreClient;
+            this.connectionManager = builder.connectionManager;
             this.converter = builder.converter;
 
             this.builder = builder;
@@ -398,31 +390,31 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         protected void appendEvents(List<? extends EventMessage<?>> events, Serializer serializer) {
-            AppendEventTransaction sender;
+            AppendEventsTransaction sender;
             if (CurrentUnitOfWork.isStarted()) {
                 sender = CurrentUnitOfWork.get().root().getOrComputeResource(APPEND_EVENT_TRANSACTION, k -> {
-                    AppendEventTransaction appendEventTransaction =
-                            eventStoreClient.createAppendEventConnection(context);
+                    AppendEventsTransaction appendEventTransaction =
+                            connectionManager.getConnection(context).eventChannel().startAppendEventsTransaction();
                     CurrentUnitOfWork.get().root().onRollback(
-                            u -> appendEventTransaction.rollback(u.getExecutionResult().getExceptionResult())
+                            u -> appendEventTransaction.rollback()
                     );
                     CurrentUnitOfWork.get().root().onCommit(u -> commit(appendEventTransaction));
                     return appendEventTransaction;
                 });
             } else {
-                sender = eventStoreClient.createAppendEventConnection(context);
+                sender = connectionManager.getConnection(context).eventChannel().startAppendEventsTransaction();
             }
             for (EventMessage<?> eventMessage : events) {
-                sender.append(map(eventMessage, serializer));
+                sender.appendEvent(map(eventMessage, serializer));
             }
             if (!CurrentUnitOfWork.isStarted()) {
                 commit(sender);
             }
         }
 
-        private void commit(AppendEventTransaction appendEventTransaction) {
+        private void commit(AppendEventsTransaction appendEventTransaction) {
             try {
-                appendEventTransaction.commit();
+                appendEventTransaction.commit().get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof RuntimeException) {
                     throw (RuntimeException) e.getCause();
@@ -460,7 +452,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-            eventStoreClient.appendSnapshot(context, map(snapshot, serializer)).whenComplete((c, e) -> {
+            connectionManager.getConnection(context).eventChannel().appendSnapshot(map(snapshot, serializer)).whenComplete((c, e) -> {
                 if (e != null) {
                     logger.warn("Error occurred while creating a snapshot", e);
                 } else if (c != null) {
@@ -477,132 +469,39 @@ public class AxonServerEventStore extends AbstractEventStore {
         protected Stream<? extends DomainEventData<?>> readEventData(String aggregateIdentifier,
                                                                      long firstSequenceNumber) {
             logger.debug("Reading events for aggregate id {}", aggregateIdentifier);
-            GetAggregateEventsRequest.Builder request = GetAggregateEventsRequest.newBuilder()
-                                                                                 .setAggregateId(aggregateIdentifier);
+            EventChannel eventChannel = connectionManager.getConnection(context).eventChannel();
+
+            AggregateEventStream aggregateStream;
             if (firstSequenceNumber > 0) {
-                request.setInitialSequence(firstSequenceNumber);
+                aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, firstSequenceNumber);
             } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && !snapshotFilterSet) {
-                request.setAllowSnapshots(true);
+                aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, true);
+            } else {
+                aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier);
             }
-            return eventStoreClient.listAggregateEvents(context, request.build()).map(GrpcBackedDomainEventData::new);
+
+            return aggregateStream.asStream().map(GrpcBackedDomainEventData::new);
         }
 
         public TrackingEventStream openStream(TrackingToken trackingToken) {
             Assert.isTrue(trackingToken == null || trackingToken instanceof GlobalSequenceTrackingToken,
                           () -> "Invalid tracking token type. Must be GlobalSequenceTrackingToken.");
             long nextToken = trackingToken == null
-                    ? 0
-                    : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex() + 1;
-            EventBuffer consumer = new EventBuffer(upcasterChain, getEventSerializer());
+                             ? -1
+                             : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
 
-            logger.info("open stream: {}", nextToken);
+            EventStream stream = connectionManager.getConnection(context)
+                                                  .eventChannel()
+                                                  .openStream(nextToken,
+                                                              configuration.getEventFlowControl().getInitialNrOfPermits(),
+                                                              configuration.getEventFlowControl().getNrOfNewPermits());
 
-            StreamObserver<GetEventsRequest> requestStream = eventStoreClient
-                    .listEvents(context, new StreamObserver<EventWithToken>() {
-                        @Override
-                        public void onNext(EventWithToken eventWithToken) {
-                            logger.debug("Received event with token: {}", eventWithToken.getToken());
-                            consumer.push(eventWithToken);
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                            consumer.fail(new EventStoreException(
-                                    "Error while reading events from the server", throwable
-                            ));
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                            consumer.fail(new EventStoreException("Error while reading events from the server",
-                                                                  new RuntimeException("Connection closed by server")));
-                        }
-                    });
-            boolean allowReadingEventsFromFollower = configuration.isAllowReadingEventsFromFollower();
-            FlowControllingStreamObserver<GetEventsRequest> observer = new FlowControllingStreamObserver<>(
-                    requestStream,
-                    configuration.getClientId(),
-                    configuration.getEventFlowControl(),
-                    t -> GetEventsRequest.newBuilder()
-                                         .setAllowReadingFromFollower(allowReadingEventsFromFollower)
-                                         .setNumberOfPermits(t.getPermits())
-                                         .build(),
-                    t -> false
-            );
-
-            GetEventsRequest request = GetEventsRequest.newBuilder()
-                                                       .setTrackingToken(nextToken)
-                                                       .setClientId(configuration.getClientId())
-                                                       .setComponentName(configuration.getComponentName())
-                                                       .setNumberOfPermits(configuration.getInitialNrOfPermits())
-                                                       .setAllowReadingFromFollower(allowReadingEventsFromFollower)
-                                                       .build();
-            observer.onNext(request);
-
-            consumer.registerCloseListener((eventConsumer) -> observer.onCompleted());
-            consumer.registerConsumeListener(observer::markConsumed);
-            if (!configuration.isDisableEventBlacklisting()) {
-                Set<PayloadDescription> blacklisted = new CopyOnWriteArraySet<>();
-                consumer.registerBlacklistListener(type -> {
-                    PayloadDescription payloadType = PayloadDescription.newBuilder()
-                                                                       .setRevision(getOrDefault(type.getRevision(), ""))
-                                                                       .setType(type.getName())
-                                                                       .build();
-                    if (blacklisted.add(payloadType)) {
-                        observer.onNext(GetEventsRequest.newBuilder()
-                                                        .addBlacklist(payloadType)
-                                                        .build());
-                    }
-                });
-            }
-            return consumer;
+            return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isDisableEventBlacklisting());
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {
-            QueryResultBuffer consumer = new QueryResultBuffer();
-
-            logger.debug("query: {}", query);
-            StreamObserver<QueryEventsRequest> requestStream = eventStoreClient
-                    .query(context, new StreamObserver<QueryEventsResponse>() {
-                        @Override
-                        public void onNext(QueryEventsResponse eventWithToken) {
-                            consumer.push(eventWithToken);
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                            logger.info("Failed to receive events - {}", throwable.getMessage());
-                            consumer.fail(new EventStoreException("Error while reading query results from the server",
-                                                                  throwable));
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                            consumer.close();
-                        }
-                    });
-            boolean allowReadingEventsFromFollower = configuration.isAllowReadingEventsFromFollower();
-            FlowControllingStreamObserver<QueryEventsRequest> observer = new FlowControllingStreamObserver<>(
-                    requestStream,
-                    configuration.getClientId(),
-                    configuration.getEventFlowControl(),
-                    t -> QueryEventsRequest.newBuilder()
-                                           .setNumberOfPermits(t.getPermits())
-                                           .setAllowReadingFromFollower(allowReadingEventsFromFollower)
-                                           .build(),
-                    t -> false
-            );
-
-            observer.onNext(QueryEventsRequest.newBuilder()
-                                              .setQuery(query)
-                                              .setAllowReadingFromFollower(allowReadingEventsFromFollower)
-                                              .setNumberOfPermits(configuration.getInitialNrOfPermits())
-                                              .setLiveEvents(liveUpdates)
-                                              .build());
-
-            consumer.registerCloseListener((eventConsumer) -> observer.onCompleted());
-            consumer.registerConsumeListener(observer::markConsumed);
-            return consumer;
+            // TODO - Implement
+            throw new UnsupportedOperationException("Not supported in this connector, yet");
         }
 
         @Override
@@ -639,15 +538,17 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
             try {
-                ReadHighestSequenceNrResponse lastSequenceNumber = eventStoreClient
-                        .lastSequenceNumberFor(context, aggregateIdentifier).get();
-                return lastSequenceNumber.getToSequenceNr() < 0
-                        ? Optional.empty()
-                        : Optional.of(lastSequenceNumber.getToSequenceNr());
+                Long lastSequenceNumber = connectionManager.getConnection(context)
+                                                           .eventChannel()
+                                                           .findHighestSequence(aggregateIdentifier)
+                                                           .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                return lastSequenceNumber == null || lastSequenceNumber < 0
+                       ? Optional.empty()
+                       : Optional.of(lastSequenceNumber);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new EventStoreException(e.getMessage(), e);
-            } catch (ExecutionException e) {
+            } catch (TimeoutException | ExecutionException e) {
                 throw new EventStoreException(e.getMessage(), e);
             }
         }
@@ -655,15 +556,15 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createTailToken() {
             try {
-                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getFirstToken(context).get();
-                if (token.getToken() < 0) {
-                    return null;
-                }
-                return new GlobalSequenceTrackingToken(token.getToken() - 1);
+                Long token = connectionManager.getConnection(context)
+                                              .eventChannel()
+                                              .getFirstToken()
+                                              .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new EventStoreException(e.getMessage(), e);
-            } catch (ExecutionException e) {
+            } catch (TimeoutException | ExecutionException e) {
                 throw new EventStoreException(e.getMessage(), e);
             }
         }
@@ -671,12 +572,15 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createHeadToken() {
             try {
-                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getLastToken(context).get();
-                return new GlobalSequenceTrackingToken(token.getToken());
+                Long token = connectionManager.getConnection(context)
+                                              .eventChannel()
+                                              .getLastToken()
+                                              .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new EventStoreException(e.getMessage(), e);
-            } catch (ExecutionException e) {
+            } catch (TimeoutException | ExecutionException e) {
                 throw new EventStoreException(e.getMessage(), e);
             }
         }
@@ -684,16 +588,15 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createTokenAt(Instant instant) {
             try {
-                io.axoniq.axonserver.grpc.event.TrackingToken token =
-                        eventStoreClient.getTokenAt(context, instant).get();
-                if (token.getToken() < 0) {
-                    return null;
-                }
-                return new GlobalSequenceTrackingToken(token.getToken() - 1);
+                Long token = connectionManager.getConnection(context)
+                                              .eventChannel()
+                                              .getTokenAt(instant.toEpochMilli())
+                                              .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new EventStoreException(e.getMessage(), e);
-            } catch (ExecutionException e) {
+            } catch (TimeoutException | ExecutionException e) {
                 throw new EventStoreException(e.getMessage(), e);
             }
         }
@@ -717,20 +620,17 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                                                                          | DISTINCT
                                                                                                          | CONCURRENT) {
                 private long sequenceNumber = Long.MAX_VALUE;
-                private List<DomainEventData> prefetched = new ArrayList<>();
+                private final List<DomainEventData<byte[]>> prefetched = new ArrayList<>();
 
                 @Override
                 public boolean tryAdvance(Consumer<? super DomainEventData<?>> action) {
                     if (prefetched.isEmpty() && sequenceNumber >= 0) {
-                        GetAggregateSnapshotsRequest request =
-                                GetAggregateSnapshotsRequest.newBuilder()
-                                                            .setAggregateId(aggregateIdentifier)
-                                                            .setMaxResults(configuration.getSnapshotPrefetch())
-                                                            .setMaxSequence(sequenceNumber)
-                                                            .build();
-                        eventStoreClient.listAggregateSnapshots(context, request)
-                                        .map(GrpcBackedDomainEventData::new)
-                                        .forEach(e -> prefetched.add(e));
+                        connectionManager.getConnection(context)
+                                         .eventChannel()
+                                         .loadSnapshots(aggregateIdentifier, sequenceNumber, configuration.getSnapshotPrefetch())
+                                         .asStream()
+                                         .map(GrpcBackedDomainEventData::new)
+                                         .forEach(prefetched::add);
                     }
 
                     if (prefetched.isEmpty()) {
@@ -749,7 +649,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
             private boolean snapshotFilterSet;
             private AxonServerConfiguration configuration;
-            private AxonServerEventStoreClient eventStoreClient;
+            private AxonServerConnectionManager connectionManager;
             private GrpcMetaDataConverter converter;
 
             @Override
@@ -812,9 +712,9 @@ public class AxonServerEventStore extends AbstractEventStore {
                 return this;
             }
 
-            private Builder eventStoreClient(AxonServerEventStoreClient eventStoreClient) {
+            private Builder eventStoreClient(AxonServerConnectionManager eventStoreClient) {
                 assertNonNull(eventStoreClient, "AxonServerEventStoreClient may not be null");
-                this.eventStoreClient = eventStoreClient;
+                this.connectionManager = eventStoreClient;
                 return this;
             }
 
@@ -832,7 +732,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             protected void validate() throws AxonConfigurationException {
                 assertNonNull(configuration,
                               "The AxonServerConfiguration is a hard requirement and should be provided");
-                assertNonNull(eventStoreClient,
+                assertNonNull(connectionManager,
                               "The AxonServerEventStoreClient is a hard requirement and should be provided");
                 assertNonNull(converter, "The GrpcMetaDataConverter is a hard requirement and should be provided");
             }

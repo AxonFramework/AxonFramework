@@ -17,9 +17,7 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
-import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import io.axoniq.axonserver.grpc.control.PlatformInfo;
-import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
@@ -33,17 +31,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.axonserver.connector.ErrorCode.UNSUPPORTED_INSTRUCTION;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
 
 /**
  * Unit tests for {@link AxonServerConnectionManager}.
@@ -81,7 +74,7 @@ class AxonServerConnectionManagerTest {
                                            .tagsConfiguration(tags)
                                            .build();
 
-        assertNotNull(axonServerConnectionManager.getChannel());
+        assertNotNull(axonServerConnectionManager.getChannel("default"));
 
         List<ClientIdentification> clientIdentificationRequests = stubServer.getPlatformService()
                                                                             .getClientIdentificationRequests();
@@ -148,54 +141,4 @@ class AxonServerConnectionManagerTest {
         assertEquals(version, receivedVersion);
     }
 
-    @Test
-    void unsupportedInstruction() {
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
-        TestStreamObserver<PlatformInboundInstruction> requestStream = new TestStreamObserver<>();
-        AxonServerConnectionManager axonServerConnectionManager =
-                spy(AxonServerConnectionManager.builder()
-                                               .axonServerConfiguration(configuration)
-                                               .requestStreamFactory(so -> requestStream)
-                                               .build());
-        AtomicReference<StreamObserver<PlatformOutboundInstruction>> outboundStreamObserverRef = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            outboundStreamObserverRef.set(invocationOnMock.getArgument(1));
-            return new TestStreamObserver<PlatformOutboundInstruction>();
-        }).when(axonServerConnectionManager).getPlatformStream(any(), any());
-
-        axonServerConnectionManager.getChannel();
-
-        String instructionId = "instructionId";
-        outboundStreamObserverRef.get().onNext(PlatformOutboundInstruction.newBuilder()
-                                                                          .setInstructionId(instructionId)
-                                                                          .build());
-        assertTrue(requestStream.sentMessages()
-                                .stream()
-                                .anyMatch(inbound -> inbound.getRequestCase()
-                                                            .equals(PlatformInboundInstruction.RequestCase.ACK)
-                                        && !inbound.getAck().getSuccess()
-                                        && inbound.getAck().getError().getErrorCode().equals(UNSUPPORTED_INSTRUCTION.errorCode())
-                                        && inbound.getAck().getInstructionId().equals(instructionId)));
-    }
-
-    @Test
-    void unsupportedInstructionWithoutInstructionId() {
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
-        TestStreamObserver<PlatformInboundInstruction> requestStream = new TestStreamObserver<>();
-        AxonServerConnectionManager axonServerConnectionManager =
-                spy(AxonServerConnectionManager.builder()
-                                               .axonServerConfiguration(configuration)
-                                               .requestStreamFactory(so -> requestStream)
-                                               .build());
-        AtomicReference<StreamObserver<PlatformOutboundInstruction>> outboundStreamObserverRef = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            outboundStreamObserverRef.set(invocationOnMock.getArgument(1));
-            return new TestStreamObserver<PlatformOutboundInstruction>();
-        }).when(axonServerConnectionManager).getPlatformStream(any(), any());
-
-        axonServerConnectionManager.getChannel();
-
-        outboundStreamObserverRef.get().onNext(PlatformOutboundInstruction.newBuilder().build());
-        assertEquals(0, requestStream.sentMessages().size());
-    }
 }

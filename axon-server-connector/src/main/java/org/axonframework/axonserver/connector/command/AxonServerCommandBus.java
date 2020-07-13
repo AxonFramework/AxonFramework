@@ -220,7 +220,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      * handlers. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
     @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
-    public CompletableFuture<?> disconnect() {
+    public CompletableFuture<Void> disconnect() {
         return axonServerConnectionManager.getConnection().commandChannel().prepareDisconnect();
     }
 
@@ -233,6 +233,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
+        // TODO cancel all local registrations
         return CompletableFuture.runAsync(shutdownLatch::initiateShutdown);
     }
 
