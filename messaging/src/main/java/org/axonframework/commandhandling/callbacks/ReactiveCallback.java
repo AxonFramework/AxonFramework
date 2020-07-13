@@ -19,10 +19,10 @@ package org.axonframework.commandhandling.callbacks;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
+import reactor.core.CoreSubscriber;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
 
 /**
  * Command Handler Callback that allows the dispatching thread to wait for the result of the callback, using the
@@ -32,8 +32,8 @@ import reactor.core.publisher.FluxSink;
  * @author Stefan Dragisic
  * @since 4.4
  */
-@SuppressWarnings("ReactiveStreamsPublisherImplementation")
-public class ReactiveCallback<C, R> implements Publisher<CommandResultMessage<? extends R>>, CommandCallback<C, R> {
+
+public class ReactiveCallback<C, R> extends Mono<CommandResultMessage<? extends R>> implements CommandCallback<C, R> {
 
     EmitterProcessor<CommandResultMessage<? extends R>> commandResultMessageEmitter = EmitterProcessor.create(1);
     FluxSink<CommandResultMessage<? extends R>> sink = commandResultMessageEmitter.sink();
@@ -49,9 +49,9 @@ public class ReactiveCallback<C, R> implements Publisher<CommandResultMessage<? 
         sink.complete();
     }
 
-
     @Override
-    public void subscribe(Subscriber<? super CommandResultMessage<? extends R>> s) {
-        commandResultMessageEmitter.subscribe(s);
+    public void subscribe(CoreSubscriber<? super CommandResultMessage<? extends R>> actual) {
+        commandResultMessageEmitter.subscribe(actual);
     }
+
 }
