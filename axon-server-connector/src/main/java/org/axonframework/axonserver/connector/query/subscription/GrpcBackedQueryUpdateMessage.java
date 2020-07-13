@@ -57,7 +57,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
         this.serializedPayload = queryUpdate.hasPayload()
                 ? new LazyDeserializingObject<>(new GrpcSerializedObject(queryUpdate.getPayload()), serializer)
                 : null;
-        Supplier<Object> details = serializedPayload == null
+        Supplier<Object> exceptionDetails = serializedPayload == null
                 ? () -> null
                 : serializedPayload::getObject;
         this.exception = queryUpdate.hasErrorMessage()
