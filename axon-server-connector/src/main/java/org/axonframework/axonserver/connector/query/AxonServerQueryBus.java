@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
@@ -184,7 +185,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                            .registerQueryHandler(
                                                    new QueryHandler() {
                                                        @Override
-                                                       public void handle(QueryRequest query, ResponseHandler responseHandler) {
+                                                       public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
                                                            queryExecutor.submit(new QueryProcessingTask(localSegment, query, responseHandler, serializer));
                                                        }
 
@@ -353,10 +354,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private final QueryBus localSegment;
         private final long priority;
         private final QueryRequest queryRequest;
-        private final QueryHandler.ResponseHandler responseHandler;
+        private final ReplyChannel<QueryResponse> responseHandler;
         private final QuerySerializer serializer;
 
-        private QueryProcessingTask(QueryBus localSegment, QueryRequest queryRequest, QueryHandler.ResponseHandler responseHandler, QuerySerializer serializer) {
+        private QueryProcessingTask(QueryBus localSegment, QueryRequest queryRequest, ReplyChannel<QueryResponse> responseHandler, QuerySerializer serializer) {
             this.localSegment = localSegment;
             this.priority = priority(queryRequest.getProcessingInstructionsList());
             this.queryRequest = queryRequest;
@@ -377,26 +378,26 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     localSegment.query(queryMessage).whenComplete((r, e) -> {
                         if (e != null) {
                             ErrorMessage ex = ExceptionSerializer.serialize("", e);
-                            responseHandler.sendLastResponse(QueryResponse.newBuilder()
-                                                                          .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                                                                          .setErrorMessage(ex)
-                                                                          .setRequestIdentifier(queryRequest.getMessageIdentifier()).build());
+                            responseHandler.sendLast(QueryResponse.newBuilder()
+                                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                                  .setErrorMessage(ex)
+                                                                  .setRequestIdentifier(queryRequest.getMessageIdentifier()).build());
                         } else {
-                            responseHandler.sendLastResponse(serializer.serializeResponse(r, queryRequest.getMessageIdentifier()));
+                            responseHandler.sendLast(serializer.serializeResponse(r, queryRequest.getMessageIdentifier()));
                         }
 
                     });
                 } else {
                     Stream<QueryResponseMessage<Object>> result = localSegment.scatterGather(queryMessage, ProcessingInstructionHelper.timeout(queryRequest.getProcessingInstructionsList()), TimeUnit.MILLISECONDS);
-                    result.forEach(r -> responseHandler.sendResponse(serializer.serializeResponse(r, queryRequest.getMessageIdentifier())));
+                    result.forEach(r -> responseHandler.send(serializer.serializeResponse(r, queryRequest.getMessageIdentifier())));
                     responseHandler.complete();
                 }
             } catch (RuntimeException | OutOfDirectMemoryError e) {
                 ErrorMessage ex = ExceptionSerializer.serialize("", e);
-                responseHandler.sendLastResponse(QueryResponse.newBuilder()
-                                                              .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                                                              .setErrorMessage(ex)
-                                                              .setRequestIdentifier(queryRequest.getMessageIdentifier()).build());
+                responseHandler.sendLast(QueryResponse.newBuilder()
+                                                      .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                      .setErrorMessage(ex)
+                                                      .setRequestIdentifier(queryRequest.getMessageIdentifier()).build());
                 logger.warn("Query Processor had an exception when processing query [{}]",
                             queryRequest.getQuery(),
                             e);
