@@ -27,7 +27,7 @@ cache:
 # We switch JDK by setting the JAVA_HOME environment variable. All JDKs are under the same base directory.
 script:
   - mvn -version
-  - mvn -B -Possrh $MVN_BUILD_SCRIPT
+  - mvn -B -U -Possrh $MVN_BUILD_SCRIPT
 
 notifications:
   slack:
