@@ -181,7 +181,7 @@ class AxonServerEventStoreTest {
         testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"));
         testSubject.openStream(null);
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, eventStore.getEventsRequests().size()));
-        assertFalse(eventStore.getEventsRequests().get(0).getForceReadFromLeader());
+        assertTrue(eventStore.getEventsRequests().get(0).getAllowReadingFromFollower());
     }
 
     @Disabled("No supported in new connector, yet.")
