@@ -340,7 +340,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         // TODO - Stop existing (outbound) subscription queries
-        return CompletableFuture.runAsync(shutdownLatch::initiateShutdown);
+        return shutdownLatch.initiateShutdown();
     }
 
     /**
