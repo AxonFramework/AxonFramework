@@ -73,7 +73,7 @@ class AxonServerEventStoreTest {
         upcasterChain = mock(EventUpcaster.class);
         when(upcasterChain.upcast(any())).thenAnswer(i -> i.getArgument(0));
         AxonServerConfiguration config = AxonServerConfiguration.builder()
-                                                                .allowReadingEventsFromFollower(true)
+                                                                .forceReadFromLeader(false)
                                                                 .servers("localhost:" + server.getPort())
                                                                 .componentName("JUNIT")
                                                                 .flowControl(2, 1, 1)
@@ -173,7 +173,7 @@ class AxonServerEventStoreTest {
         testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"));
         testSubject.openStream(null);
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, eventStore.getEventsRequests().size()));
-        assertTrue(eventStore.getEventsRequests().get(0).getAllowReadingFromFollower());
+        assertFalse(eventStore.getEventsRequests().get(0).getForceReadFromLeader());
     }
 
     @Test
@@ -182,6 +182,6 @@ class AxonServerEventStoreTest {
         testSubject.query("", true);
         assertWithin(1, TimeUnit.SECONDS,
                      () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
-        assertTrue(eventStore.getQueryEventsRequests().get(0).getAllowReadingFromFollower());
+        assertFalse(eventStore.getQueryEventsRequests().get(0).getForceReadFromLeader());
     }
 }

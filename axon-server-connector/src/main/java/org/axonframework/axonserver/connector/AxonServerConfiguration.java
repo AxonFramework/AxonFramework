@@ -213,13 +213,14 @@ public class AxonServerConfiguration {
     /**
      * Indicates whether it is OK to query events from the local Axon Server node - the node the client is currently
      * connected to. This means that the client will probably get stale events since all events my not be replicated to
-     * this node yet. Can be used when the criteria for eventual consistency is less strict. It will spread the load for querying
+     * this node yet. Can be used when the criteria for eventual consistency is less strict. It will spread the load for
+     * querying
      * events - not all requests will go to the leader of the cluster anymore.
      * <p>
      * If Axon Server SE is used, this property has no effect.
      * </p>
      */
-    private boolean allowReadingEventsFromFollower = false;
+    private boolean forceReadFromLeader = false;
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -475,12 +476,12 @@ public class AxonServerConfiguration {
         this.connectTimeout = connectTimeout;
     }
 
-    public boolean isAllowReadingEventsFromFollower() {
-        return allowReadingEventsFromFollower;
+    public boolean isForceReadFromLeader() {
+        return forceReadFromLeader;
     }
 
-    public void setAllowReadingEventsFromFollower(boolean allowReadingEventsFromFollower) {
-        this.allowReadingEventsFromFollower = allowReadingEventsFromFollower;
+    public void setForceReadFromLeader(boolean forceReadFromLeader) {
+        this.forceReadFromLeader = forceReadFromLeader;
     }
 
     public FlowControlConfiguration getEventFlowControl() {
@@ -622,8 +623,8 @@ public class AxonServerConfiguration {
             return this;
         }
 
-        public Builder allowReadingEventsFromFollower(boolean allowReadingEventsFromFollower) {
-            instance.allowReadingEventsFromFollower = allowReadingEventsFromFollower;
+        public Builder forceReadFromLeader(boolean forceReadFromLeader) {
+            instance.forceReadFromLeader = forceReadFromLeader;
             return this;
         }
 

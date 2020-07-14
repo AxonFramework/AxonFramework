@@ -518,13 +518,13 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                                   new RuntimeException("Connection closed by server")));
                         }
                     });
-            boolean allowReadingEventsFromFollower = configuration.isAllowReadingEventsFromFollower();
+            boolean forceReadFromLeader = configuration.isForceReadFromLeader();
             FlowControllingStreamObserver<GetEventsRequest> observer = new FlowControllingStreamObserver<>(
                     requestStream,
                     configuration.getClientId(),
                     configuration.getEventFlowControl(),
                     t -> GetEventsRequest.newBuilder()
-                                         .setAllowReadingFromFollower(allowReadingEventsFromFollower)
+                                         .setForceReadFromLeader(forceReadFromLeader)
                                          .setNumberOfPermits(t.getPermits())
                                          .build(),
                     t -> false
@@ -535,7 +535,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                                        .setClientId(configuration.getClientId())
                                                        .setComponentName(configuration.getComponentName())
                                                        .setNumberOfPermits(configuration.getInitialNrOfPermits())
-                                                       .setAllowReadingFromFollower(allowReadingEventsFromFollower)
+                                                       .setForceReadFromLeader(forceReadFromLeader)
                                                        .build();
             observer.onNext(request);
 
@@ -581,21 +581,21 @@ public class AxonServerEventStore extends AbstractEventStore {
                             consumer.close();
                         }
                     });
-            boolean allowReadingEventsFromFollower = configuration.isAllowReadingEventsFromFollower();
+            boolean forceReadFromLeader = configuration.isForceReadFromLeader();
             FlowControllingStreamObserver<QueryEventsRequest> observer = new FlowControllingStreamObserver<>(
                     requestStream,
                     configuration.getClientId(),
                     configuration.getEventFlowControl(),
                     t -> QueryEventsRequest.newBuilder()
                                            .setNumberOfPermits(t.getPermits())
-                                           .setAllowReadingFromFollower(allowReadingEventsFromFollower)
+                                           .setForceReadFromLeader(forceReadFromLeader)
                                            .build(),
                     t -> false
             );
 
             observer.onNext(QueryEventsRequest.newBuilder()
                                               .setQuery(query)
-                                              .setAllowReadingFromFollower(allowReadingEventsFromFollower)
+                                              .setForceReadFromLeader(forceReadFromLeader)
                                               .setNumberOfPermits(configuration.getInitialNrOfPermits())
                                               .setLiveEvents(liveUpdates)
                                               .build());
