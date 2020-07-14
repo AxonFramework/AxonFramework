@@ -139,7 +139,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testLoadSnapshotAndEventsWithMultiUpcaster() {
+    void testLoadSnapshotAndEventsWithMultiUpcaster() throws InterruptedException {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
             Stream<IntermediateEventRepresentation> si = invocation.getArgument(0);
@@ -149,6 +149,13 @@ class AxonServerEventStoreTest {
                             new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2"),
                             new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3"));
         testSubject.storeSnapshot(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Snapshot1"));
+
+        // snapshot storage is async, so we need to make sure the first event is the snapshot
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            DomainEventStream events = testSubject.readEvents("aggregateId");
+            assertTrue(events.hasNext());
+            assertEquals("Snapshot1", events.next().getPayload());
+        });
 
         DomainEventStream actual = testSubject.readEvents("aggregateId");
         assertTrue(actual.hasNext());
@@ -174,7 +181,7 @@ class AxonServerEventStoreTest {
         testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1"));
         testSubject.openStream(null);
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, eventStore.getEventsRequests().size()));
-        assertTrue(eventStore.getEventsRequests().get(0).getAllowReadingFromFollower());
+        assertFalse(eventStore.getEventsRequests().get(0).getForceReadFromLeader());
     }
 
     @Disabled("No supported in new connector, yet.")
