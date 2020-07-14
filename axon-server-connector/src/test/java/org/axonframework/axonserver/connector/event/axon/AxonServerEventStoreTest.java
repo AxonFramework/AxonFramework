@@ -191,6 +191,6 @@ class AxonServerEventStoreTest {
         testSubject.query("", true);
         assertWithin(1, TimeUnit.SECONDS,
                      () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
-        assertTrue(eventStore.getQueryEventsRequests().get(0).getAllowReadingFromFollower());
+        assertTrue(eventStore.getQueryEventsRequests().get(0).getForceReadFromLeader());
     }
 }
