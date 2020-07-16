@@ -117,8 +117,7 @@ class AxonServerQueryBusTest {
         when(axonServerConnectionManager.getConnection()).thenReturn(mockConnection);
 
         when(mockConnection.queryChannel()).thenReturn(mockQueryChannel);
-        when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(() -> {
-        });
+        when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(() -> CompletableFuture.completedFuture(null));
 
         when(localSegment.subscribe(any(), any(), any())).thenReturn(() -> true);
 
@@ -173,8 +172,7 @@ class AxonServerQueryBusTest {
     @Test
     void subscribeHandler() {
 
-        when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(() -> {
-        });
+        when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(() -> CompletableFuture.completedFuture(null));
 
         Registration result = testSubject.subscribe(TEST_QUERY, String.class, q -> "test: " + q.getPayloadType());
 

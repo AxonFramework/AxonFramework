@@ -108,10 +108,10 @@ class AxonServerCommandBusTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         dummyMessagePlatformServer.stop();
         axonServerConnectionManager.shutdown();
-        testSubject.disconnect();
+        testSubject.disconnect().get(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -140,7 +140,7 @@ class AxonServerCommandBusTest {
 
     @Test
     void fireAndForgetUsesDefaultCallback() throws InterruptedException {
-        testSubject.disconnect();
+        testSubject.disconnect().join();
         //noinspection unchecked
         CommandCallback<Object, Object> mockDefaultCommandCallback = mock(CommandCallback.class);
         testSubject = AxonServerCommandBus.builder()
@@ -325,22 +325,20 @@ class AxonServerCommandBusTest {
         testSubject.subscribe(testCommandOne, command -> "Done");
         testSubject.subscribe(testCommandTwo, command -> "Done");
 
-        testSubject.disconnect();
+        testSubject.disconnect().join();
 
-        assertWithin(2, TimeUnit.SECONDS, () -> dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
-        assertWithin(2, TimeUnit.SECONDS, () -> dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
+        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
+        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
     }
 
     @Test
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
         testSubject.shutdownDispatching();
 
-        assertWithin(
-                100, TimeUnit.MILLISECONDS,
-                () -> assertThrows(
-                        ShutdownInProgressException.class,
-                        () -> testSubject.dispatch(new GenericCommandMessage<>("some-command"))
-                )
+        GenericCommandMessage<String> command = new GenericCommandMessage<>("some-command");
+        assertThrows(
+                ShutdownInProgressException.class,
+                () -> testSubject.dispatch(command)
         );
     }
 
