@@ -15,7 +15,9 @@ public abstract class ListUtils {
         // prevent instantiation
     }
 
-    /** Returns a new list containing unique elements from the given {@code list}. Original list is not modified.
+    /** 
+     * Returns a new list containing unique elements from the given {@code list}. Original list is not modified.
+     *
      * @param list Original list that will not be modified
      * @param <E> The type of elements in the list
      * @return List with unique elements
