@@ -53,10 +53,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -78,7 +76,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private static final long DEFAULT_PRIORITY = 0;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
-    private final AxonServerConfiguration configuration;
     private final CommandBus localSegment;
     private final CommandSerializer serializer;
     private final RoutingStrategy routingStrategy;
@@ -90,8 +87,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private final Handlers<CommandProviderInbound.RequestCase, BiConsumer<CommandProviderInbound, StreamObserver<CommandProviderOutbound>>> commandHandlers = new DefaultHandlers<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
-    private final Map<String, ExecutorService> executorPerContext = new ConcurrentHashMap<>();
-    private final Map<String, Registration> subscribedHandlers = new ConcurrentHashMap<>();
     private final ExecutorService executorService;
 
     /**
@@ -118,7 +113,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     public AxonServerCommandBus(Builder builder) {
         builder.validate();
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
-        this.configuration = builder.configuration;
+        AxonServerConfiguration configuration = builder.configuration;
         this.localSegment = builder.localSegment;
         this.serializer = builder.buildSerializer();
         this.routingStrategy = builder.routingStrategy;

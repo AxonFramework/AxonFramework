@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,14 +23,11 @@ import io.axoniq.axonserver.connector.impl.ServerAddress;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
 import io.netty.handler.ssl.SslContextBuilder;
-import org.axonframework.axonserver.connector.util.AxonFrameworkVersionResolver;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
 import java.io.File;
@@ -39,8 +36,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -54,17 +49,16 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class AxonServerConnectionManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(AxonServerConnectionManager.class);
-
-    private final Map<String, AxonServerConnection> channels = new ConcurrentHashMap<>();
+    private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;
     private final String defaultContext;
 
     /**
-     * Instantiate a {@link AxonServerConnectionManager} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link AxonServerConnectionManager} based on the fields contained in the {@link Builder}, using
+     * the given {@code connectionFactory} to obtain connections to AxonServer.
      *
      * @param builder           the {@link Builder} used to instantiate a {@link AxonServerConnectionManager} instance
-     * @param connectionFactory
+     * @param connectionFactory a configured instance of the AxonServerConnectionFactory
      */
     protected AxonServerConnectionManager(Builder builder, AxonServerConnectionFactory connectionFactory) {
         this.connectionFactory = connectionFactory;
@@ -89,21 +83,7 @@ public class AxonServerConnectionManager {
     }
 
     public AxonServerConnection getConnection(String context) {
-        return channels.computeIfAbsent(context, connectionFactory::connect);
-    }
-
-    /**
-     * Registers an interceptor that may alter the behavior on an incoming "reconnect request" from the server. This
-     * request occurs when AxonServer requests connections to be established on another node than the current one.
-     * <p>
-     * The registered interceptor may deny these requests by blocking the call to the input Consumer.
-     *
-     * @param interceptor a function altering the original reconnect request
-     *
-     * @deprecated Reconnections are managed by the {@link AxonServerConnectionFactory}
-     */
-    @Deprecated
-    public void addReconnectInterceptor(Function<Consumer<String>, Consumer<String>> interceptor) {
+        return connections.computeIfAbsent(context, connectionFactory::connect);
     }
 
     /**
@@ -112,7 +92,7 @@ public class AxonServerConnectionManager {
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
-        AxonServerConnection channel = channels.get(context);
+        AxonServerConnection channel = connections.get(context);
         return channel != null && channel.isConnected();
     }
 
@@ -133,7 +113,7 @@ public class AxonServerConnectionManager {
      * @param context the context for which the connection must be disconnected
      */
     public void disconnect(String context) {
-        AxonServerConnection channel = channels.remove(context);
+        AxonServerConnection channel = connections.remove(context);
         if (channel != null) {
             channel.disconnect();
         }
@@ -143,8 +123,8 @@ public class AxonServerConnectionManager {
      * Disconnects any active connections, forcing a new connection to be established when one is requested.
      */
     public void disconnect() {
-        channels.forEach((context, channel) -> channel.disconnect());
-        channels.clear();
+        connections.forEach((context, channel) -> channel.disconnect());
+        connections.clear();
     }
 
     /**
@@ -171,8 +151,7 @@ public class AxonServerConnectionManager {
      * <p>
      * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the
      * {@link ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory}
-     * tied to it. The Axon Framework version resolver ({@link Supplier}<{@link String}>) is defaulted to
-     * {@link AxonFrameworkVersionResolver}. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as
+     * tied to it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as
      * such should be provided.
      */
     public static class Builder {
