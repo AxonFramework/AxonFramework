@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -27,10 +28,8 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.UUID;
 
@@ -65,18 +64,17 @@ class EventPublicationOrderTest {
         GenericDomainEventMessage<StubAggregateCreatedEvent> event =
                 new GenericDomainEventMessage<>("test", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
-        doAnswer(invocation -> {
-            System.out.println("Published event: " + invocation.getArguments()[0].toString());
-            return Void.class;
-        }).when(eventStore).publish(isA(EventMessage.class));
-        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)));
+        doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
+        commandBus.dispatch(
+                asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)), NoOpCallback.INSTANCE
+        );
         InOrder inOrder = inOrder(eventStore, eventStore, eventStore);
         inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));
         inOrder.verify(eventStore).publish(argThat(new NotADomainEventMatcher()));
         inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));
     }
 
-    private static class NotADomainEventMatcher implements ArgumentMatcher<EventMessage> {
+    private static class NotADomainEventMatcher implements ArgumentMatcher<EventMessage<?>> {
 
         @Override
         public boolean matches(EventMessage o) {

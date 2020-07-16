@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -36,8 +37,8 @@ import static org.mockito.Mockito.*;
  */
 class AsynchronousCommandBusTest {
 
-    private MessageHandlerInterceptor handlerInterceptor;
-    private MessageDispatchInterceptor dispatchInterceptor;
+    private MessageHandlerInterceptor<CommandMessage<?>> handlerInterceptor;
+    private MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor;
     private MessageHandler<CommandMessage<?>> commandHandler;
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
@@ -92,7 +93,7 @@ class AsynchronousCommandBusTest {
     void testDispatchWithoutCallback() throws Exception {
         MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
-        testSubject.dispatch(asCommandMessage(new Object()));
+        testSubject.dispatch(asCommandMessage(new Object()), NoOpCallback.INSTANCE);
 
         InOrder inOrder = inOrder(executorService, commandHandler, dispatchInterceptor, handlerInterceptor);
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
@@ -111,11 +112,12 @@ class AsynchronousCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     void testExceptionIsThrownWhenNoHandlerIsRegistered() {
-        CommandCallback callback = mock(CommandCallback.class);
+        CommandCallback<Object, Object> callback = mock(CommandCallback.class);
         CommandMessage<Object> command = asCommandMessage("test");
         testSubject.dispatch(command, callback);
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor = ArgumentCaptor.forClass(
-                CommandResultMessage.class);
+        //noinspection rawtypes
+        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(callback).onResult(eq(command), commandResultMessageCaptor.capture());
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,

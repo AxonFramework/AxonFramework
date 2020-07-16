@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package org.axonframework.integrationtests.loopbacktest;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.modelling.command.EntityId;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.jupiter.api.Test;
+import org.axonframework.modelling.command.EntityId;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
@@ -33,17 +33,19 @@ class NestedUowRollbackTest {
     @Test
     void testDispatchCommand() {
         Configuration c = DefaultConfigurer.defaultConfiguration()
-                .configureAggregate(TestAggregate.class)
-                .registerCommandHandler(x -> new Handler())
-                .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
-                .buildConfiguration();
+                                           .configureAggregate(TestAggregate.class)
+                                           .registerCommandHandler(x -> new Handler())
+                                           .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
+                                           .buildConfiguration();
 
         c.start();
         CommandGateway gw = c.commandGateway();
         gw.sendAndWait(new TestCommand());
     }
 
-    static class TestAggregate {
+    @SuppressWarnings("unused")
+    private static class TestAggregate {
+
         @EntityId
         String id;
 
@@ -70,7 +72,8 @@ class NestedUowRollbackTest {
         }
     }
 
-    static class Create {
+    private static class Create {
+
         @TargetAggregateIdentifier
         String id;
 
@@ -79,7 +82,8 @@ class NestedUowRollbackTest {
         }
     }
 
-    static class Crash {
+    private static class Crash {
+
         @TargetAggregateIdentifier
         String id;
 
@@ -88,7 +92,8 @@ class NestedUowRollbackTest {
         }
     }
 
-    static class Hello {
+    private static class Hello {
+
         @TargetAggregateIdentifier
         String id;
 
@@ -97,20 +102,22 @@ class NestedUowRollbackTest {
         }
     }
 
-    static class TestCommand {
+    private static class TestCommand {
+
     }
 
-    static class Handler {
+    @SuppressWarnings("unused")
+    private static class Handler {
+
         @CommandHandler
         public void handle(TestCommand cmd, CommandGateway gw) {
             gw.sendAndWait(new Create("1"));
             try {
                 gw.sendAndWait(new Crash("1"));
             } catch (RuntimeException e) {
-                System.out.println(e.getMessage());
+                // Unimportant
             }
             gw.sendAndWait(new Hello("1"));
         }
-
     }
 }
