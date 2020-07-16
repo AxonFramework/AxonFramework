@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
@@ -56,9 +57,9 @@ public class DummyMessagePlatformServer {
     private Server server;
     private final EventStoreImpl eventStore = new EventStoreImpl();
 
-    private Map<String, StreamObserver<?>> subscriptions = new ConcurrentHashMap<>();
-    private Map<String, CommandSubscription> commandSubscriptions = new ConcurrentHashMap<>();
-    private Set<String> unsubscribedCommands = new CopyOnWriteArraySet<>();
+    private final Map<String, StreamObserver<?>> subscriptions = new ConcurrentHashMap<>();
+    private final Map<String, CommandSubscription> commandSubscriptions = new ConcurrentHashMap<>();
+    private final Set<String> unsubscribedCommands = new CopyOnWriteArraySet<>();
 
     public DummyMessagePlatformServer() {
         this(TcpUtil.findFreePort());
@@ -146,6 +147,10 @@ public class DummyMessagePlatformServer {
                         case COMMAND_RESPONSE:
                         case REQUEST_NOT_SET:
                             break;
+                    }
+                    String instructionId = commandProviderOutbound.getInstructionId();
+                    if (!"".equals(instructionId)) {
+                        responseObserver.onNext(CommandProviderInbound.newBuilder().setAck(InstructionAck.newBuilder().setInstructionId(instructionId).setSuccess(true).build()).build());
                     }
                 }
 

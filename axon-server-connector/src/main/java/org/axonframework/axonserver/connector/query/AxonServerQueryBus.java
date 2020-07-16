@@ -203,6 +203,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                         .subscribe(sendUpdate::sendUpdate);
                                                            return () -> {
                                                                updateHandler.getRegistration().close();
+                                                               return CompletableFuture.completedFuture(null);
                                                            };
                                                        }
                                                    },
