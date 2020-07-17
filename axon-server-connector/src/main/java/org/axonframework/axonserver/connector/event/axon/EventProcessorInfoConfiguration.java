@@ -89,6 +89,9 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
     @Override
     public void initialize(Configuration config) {
         this.config = config;
-        this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
+        // if there are no event handlers registered, there is may be no EventProcessingConfiguration at all.
+        if (config.eventProcessingConfiguration() != null) {
+            this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
+        }
     }
 }

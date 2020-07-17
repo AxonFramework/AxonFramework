@@ -96,20 +96,19 @@ public class EventProcessorControlService {
     @SuppressWarnings("Duplicates")
     @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
-        ControlChannel controlChannel = axonServerConnectionManager.getConnection(context)
-                                                                   .controlChannel();
-        eventProcessingConfiguration.eventProcessors().forEach((name, processor) -> {
-            controlChannel.registerEventProcessor(name, apply(processor), new AxonProcessorInstructionHandler(processor, name));
-        });
+        if (axonServerConnectionManager != null && eventProcessingConfiguration != null) {
+            ControlChannel controlChannel = axonServerConnectionManager.getConnection(context)
+                                                                       .controlChannel();
+            eventProcessingConfiguration.eventProcessors()
+                                        .forEach(
+                                                (name, processor) ->
+                                                        controlChannel.registerEventProcessor(name,
+                                                                                              infoSupplier(processor),
+                                                                                              new AxonProcessorInstructionHandler(processor, name)));
+        }
     }
 
-    private <T> CompletableFuture<T> exceptionallyCompletedFuture(Exception e) {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        future.completeExceptionally(e);
-        return future;
-    }
-
-    public Supplier<EventProcessorInfo> apply(EventProcessor processor) {
+    public Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
         if (processor instanceof TrackingEventProcessor) {
             return () -> TrackingEventProcessorInfoMessage.describe((TrackingEventProcessor) processor);
         } else if (processor instanceof SubscribingEventProcessor) {
@@ -136,7 +135,7 @@ public class EventProcessorControlService {
     }
 
 
-    private class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
+    private static class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
         private final EventProcessor processor;
         private final String name;
 
@@ -171,7 +170,7 @@ public class EventProcessorControlService {
                     return ((TrackingEventProcessor) processor)
                             .splitSegment(segmentId)
                             .thenApply(result -> {
-                                if (result) {
+                                if (Boolean.TRUE.equals(result)) {
                                     logger.info("Successfully split segment [{}] of processor [{}]",
                                                 segmentId, name);
                                 } else {
@@ -196,7 +195,7 @@ public class EventProcessorControlService {
                     return ((TrackingEventProcessor) processor)
                             .mergeSegment(segmentId)
                             .thenApply(result -> {
-                                if (result) {
+                                if (Boolean.TRUE.equals(result)) {
                                     logger.info("Successfully merged segment [{}] of processor [{}]",
                                                 segmentId, name);
                                 } else {
@@ -230,5 +229,13 @@ public class EventProcessorControlService {
                 return exceptionallyCompletedFuture(e);
             }
         }
+
+        private <T> CompletableFuture<T> exceptionallyCompletedFuture(Exception e) {
+            CompletableFuture<T> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
+        }
+
+
     }
 }
