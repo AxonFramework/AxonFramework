@@ -20,11 +20,11 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.3.6-SNAPSHOT</version>
+        <version>4.3.5</version>
     </parent>
 
     <artifactId>axon-server-connector</artifactId>
-  <version>4.3.6-SNAPSHOT</version>
+  <version>4.3.5-beta2</version>
 
     <name>Axon Framework Connector for AxonServer</name>
     <description>
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>io.axoniq</groupId>
             <artifactId>axonserver-connector-java</artifactId>
-            <version>4.4-SNAPSHOT</version>
+            <version>4.4-M2</version>
         </dependency>
 
         <!-- OPTIONAL dependency on reactor -->
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-configuration</artifactId>
-            <version>4.3.6-SNAPSHOT</version>
+            <version>4.3.5</version>
             <optional>true</optional>
         </dependency>
 
@@ -110,4 +110,8 @@
             </plugin>
         </plugins>
     </build>
+
+  <scm>
+    <tag>axon-server-connector-4.3.5-beta2</tag>
+  </scm>
 </project>
