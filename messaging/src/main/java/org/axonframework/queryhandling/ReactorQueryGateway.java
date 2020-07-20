@@ -106,11 +106,11 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     <R, Q> Mono<R> query(String queryName, Q query, ResponseType<R> responseType);
 
     /**
-     * Uses given Publisher of query messages to send incoming queries away. Queries will be sent sequentially - once a
-     * result of Nth query arrives, (N + 1)th query is dispatched.
+     * Use the given {@link Publisher} of {@link QueryMessage}s to send the incoming queries away. Queries will be sent sequentially. Once the
+     * result of the Nth query arrives, the (N + 1)th query is dispatched.
      *
-     * @param queries a Publisher stream of queries to be dispatched
-     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * @param queries a {@link Publisher} stream of queries to be dispatched
+     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries being
      * dispatched
      *
      * @see #query(String, Object, ResponseType)
