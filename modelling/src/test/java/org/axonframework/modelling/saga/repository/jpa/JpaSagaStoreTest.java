@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.axonframework.modelling.saga.repository.StubSaga;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
@@ -45,9 +45,12 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import static org.axonframework.modelling.utils.TestSerializer.secureXStreamSerializer;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link JpaSagaStore}.
+ *
  * @author Allard Buijze
  */
 @ExtendWith(SpringExtension.class)
@@ -69,6 +72,7 @@ public class JpaSagaStoreTest {
     void setUp() {
         JpaSagaStore sagaStore = JpaSagaStore.builder()
                                              .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                             .serializer(secureXStreamSerializer())
                                              .build();
         repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
@@ -100,9 +104,9 @@ public class JpaSagaStoreTest {
         }
     }
 
-    @DirtiesContext
     @Test
-    void testAddingAnInactiveSagaDoesntStoreIt() throws Exception {
+    @DirtiesContext
+    void testAddingAnInactiveSagaDoesntStoreIt() {
         unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -121,24 +125,24 @@ public class JpaSagaStoreTest {
     }
 
 
-    @DirtiesContext
     @Test
-    void testAddAndLoadSaga_ByIdentifier() throws Exception {
+    @DirtiesContext
+    void testAddAndLoadSaga_ByIdentifier() {
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
                 IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
-                .getPayload();
+                                      .getPayload();
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute(() -> {
-            Saga loaded = repository.load(identifier);
+            Saga<StubSaga> loaded = repository.load(identifier);
             assertEquals(identifier, loaded.getSagaIdentifier());
             assertNotNull(entityManager.find(SagaEntry.class, identifier));
         });
     }
 
-    @DirtiesContext
     @Test
-    void testAddAndLoadSaga_ByAssociationValue() throws Exception {
+    @DirtiesContext
+    void testAddAndLoadSaga_ByAssociationValue() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -150,20 +154,22 @@ public class JpaSagaStoreTest {
         unitOfWork.execute(() -> {
             Set<String> loaded = repository.find(new AssociationValue("key", "value"));
             assertEquals(1, loaded.size());
-            Saga loadedSaga = repository.load(loaded.iterator().next());
+            Saga<StubSaga> loadedSaga = repository.load(loaded.iterator().next());
             assertEquals(identifier, loadedSaga.getSagaIdentifier());
             assertNotNull(entityManager.find(SagaEntry.class, identifier));
         });
     }
 
-
+    @Test
+    @DirtiesContext
     public void testLoadSaga_NotFound() {
         unitOfWork.execute(() -> assertNull(repository.load("123456")));
     }
 
-    @DirtiesContext
+
     @Test
-    void testLoadSaga_AssociationValueRemoved() throws Exception {
+    @DirtiesContext
+    void testLoadSaga_AssociationValueRemoved() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -179,13 +185,13 @@ public class JpaSagaStoreTest {
         entityManager.clear();
         startUnitOfWork();
         Set<String> found = unitOfWork.executeWithResult(() -> repository.find(new AssociationValue("key", "value")))
-                .getPayload();
+                                      .getPayload();
         assertEquals(0, found.size());
     }
 
-    @DirtiesContext
     @Test
-    void testEndSaga() throws Exception {
+    @DirtiesContext
+    void testEndSaga() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -207,11 +213,13 @@ public class JpaSagaStoreTest {
                                 .setParameter("id", identifier).getResultList().isEmpty());
     }
 
-    @DirtiesContext
     @Test
-    void testStoreSagaWithCustomEntity() throws Exception {
+    @DirtiesContext
+    void testStoreSagaWithCustomEntity() {
         JpaSagaStore sagaStore = new JpaSagaStore(
-                JpaSagaStore.builder().entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                JpaSagaStore.builder()
+                            .serializer(secureXStreamSerializer())
+                            .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
         ) {
             @Override
             protected AbstractSagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
@@ -231,9 +239,10 @@ public class JpaSagaStoreTest {
 
         repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
-        String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
-                IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
-                .getPayload();
+        String identifier = unitOfWork.executeWithResult(
+                () -> repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new)
+                                .getSagaIdentifier()
+        ).getPayload();
 
         assertFalse(entityManager.createQuery("SELECT e FROM CustomSagaEntry e").getResultList().isEmpty());
 

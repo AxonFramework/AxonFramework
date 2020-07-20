@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,34 +47,43 @@ class QueryEventHandlingTest {
         configuration.shutdown();
     }
 
-    class UserCreatedEvent {
+    @SuppressWarnings("unused")
+    private static class UserCreatedEvent {
 
         private final String userId;
 
         UserCreatedEvent(String userId) {
             this.userId = userId;
         }
+
+        public String getUserId() {
+            return userId;
+        }
     }
 
-    class FindUserQuery {
+    @SuppressWarnings("unused")
+    private static class FindUserQuery {
 
         private final String userId;
 
         FindUserQuery(String userId) {
             this.userId = userId;
         }
+
+        public String getUserId() {
+            return userId;
+        }
     }
 
-    class UserSummaryProjection {
+    @SuppressWarnings("unused")
+    private static class UserSummaryProjection {
 
         @EventHandler
         public void on(UserCreatedEvent event) {
-            System.out.println("User created event handled");
         }
 
         @QueryHandler
         public UserSummaryProjection handle(FindUserQuery query) {
-            System.out.println("User created query handled");
             return null;
         }
     }

@@ -28,12 +28,12 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -43,7 +43,6 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -83,9 +82,10 @@ class AxonServerQueryBusTest {
 
     private AxonServerConnectionManager axonServerConnectionManager;
     private AxonServerConfiguration configuration;
-    private QueryBus localSegment = SimpleQueryBus.builder().build();
-    private Serializer serializer = XStreamSerializer.defaultSerializer();
-    private TargetContextResolver<QueryMessage<?, ?>> targetContextResolver = spy(new TestTargetContextResolver<>());
+    private final QueryBus localSegment = SimpleQueryBus.builder().build();
+    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+    private final TargetContextResolver<QueryMessage<?, ?>> targetContextResolver =
+            spy(new TestTargetContextResolver<>());
 
     private AxonServerQueryBus testSubject;
 

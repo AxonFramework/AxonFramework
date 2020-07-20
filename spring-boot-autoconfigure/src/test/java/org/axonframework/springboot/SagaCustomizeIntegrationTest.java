@@ -20,20 +20,18 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.springboot.autoconfig.AxonAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +46,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -57,15 +56,15 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests customization of the event handlers on a Saga, updating the configuration through an autowired method.
- * Ensures that if there are multiple threads and a logging interceptor events are still received once.
+ * Tests customization of the event handlers on a Saga, updating the configuration through an autowired method. Ensures
+ * that if there are multiple threads and a logging interceptor events are still received once.
+ *
+ * @author Marc Gathier
  */
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
@@ -78,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SagaCustomizeIntegrationTest {
 
     @Autowired
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     private EventBus eventBus;
     @Autowired
     private TransactionManager transactionManager;
@@ -85,11 +85,6 @@ public class SagaCustomizeIntegrationTest {
     private AtomicInteger eventsReceived;
     @Autowired
     private EventProcessingModule eventProcessingModule;
-    @Autowired
-    private TokenStore tokenStore;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Test
     public void testPublishSomeEvents() throws InterruptedException {
@@ -130,6 +125,12 @@ public class SagaCustomizeIntegrationTest {
             return new AtomicInteger();
         }
 
+        @Bean
+        @Primary
+        public Serializer serializer() {
+            return TestSerializer.secureXStreamSerializer();
+        }
+
         @Autowired
         private void registerEventHandlers(
                 EventProcessingModule eventProcessingConfiguration,
@@ -141,14 +142,13 @@ public class SagaCustomizeIntegrationTest {
                 Class<?> aClass = Class.forName(bd.getBeanClassName());
                 String processorGroupName = eventProcessingConfiguration.sagaProcessingGroup(aClass);
                 if (!registeredProcessingGroups.contains(processorGroupName)) {
-                    StreamableMessageSource<TrackedEventMessage<?>> messageSource = eventStore;
-                    eventProcessingConfiguration.registerTrackingEventProcessor(processorGroupName, c -> messageSource,
-                                                                                c -> TrackingEventProcessorConfiguration
-                                                                                        .forParallelProcessing(2)
-                                                                                        .andInitialSegmentsCount(2));
+                    eventProcessingConfiguration.registerTrackingEventProcessor(
+                            processorGroupName,
+                            c -> eventStore,
+                            c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                                    .andInitialSegmentsCount(2)
+                    );
 
-                    eventProcessingConfiguration.registerHandlerInterceptor(processorGroupName,
-                                                                            c -> new LoggingInterceptor<>());
                     registeredProcessingGroups.add(processorGroupName);
                 }
             }
@@ -156,6 +156,7 @@ public class SagaCustomizeIntegrationTest {
     }
 
     @Saga
+    @SuppressWarnings("unused")
     public static class SimpleSaga {
 
         @Autowired
@@ -168,6 +169,7 @@ public class SagaCustomizeIntegrationTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class EchoEvent {
 
         private String id;

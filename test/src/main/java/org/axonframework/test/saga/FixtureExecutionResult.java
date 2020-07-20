@@ -268,35 +268,40 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled to be published after the
-     * given {@code duration}.
+     * given {@code durationToScheduledTime}.
      *
-     * @param duration the time at which no event matching the given {@code matcher} should be scheduled
-     * @param matcher  the matcher defining the event which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the event which should not be
+     *                                scheduled
+     * @param matcher                 the matcher defining the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEventMatching(Duration duration, Matcher<? super EventMessage<?>> matcher);
+    FixtureExecutionResult expectNoScheduledEventMatching(Duration durationToScheduledTime,
+                                                          Matcher<? super EventMessage<?>> matcher);
 
     /**
      * Asserts that <b>no</b> event equal to the given {@code event} has been scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}.
      * <p/>
      * Note that the source attribute of the event is ignored when comparing events. Events are compared using an
      * "equals" check on all fields in the events.
      *
-     * @param duration the time at which no event equal to the given {@code event} should be scheduled
-     * @param event    the event which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the event which should not be
+     *                                scheduled
+     * @param event                   the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEvent(Duration duration, Object event);
+    FixtureExecutionResult expectNoScheduledEvent(Duration durationToScheduledTime, Object event);
 
     /**
-     * Asserts that <b>no</b> event of the given {@code eventType} has been scheduled after the given {@code duration}.
+     * Asserts that <b>no</b> event of the given {@code eventType} has been scheduled after the given {@code
+     * durationToScheduledTime}.
      *
-     * @param duration  the time at which no event of {@code eventType} should be scheduled
-     * @param eventType the type of the event which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the event which should not be
+     *                                scheduled
+     * @param eventType               the type of the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEventOfType(Duration duration, Class<?> eventType);
+    FixtureExecutionResult expectNoScheduledEventOfType(Duration durationToScheduledTime, Class<?> eventType);
 
     /**
      * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled at the given {@code
@@ -347,7 +352,8 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectNoScheduledDeadlines();
 
     /**
-     * Asserts that <b>no</b> deadline matching the given {@code matcher} is scheduled.
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} is scheduled. Can be used to validate if a
+     * deadline has never been set or has been canceled.
      *
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
@@ -356,51 +362,60 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} should be scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      *
-     * @param duration the time at which no deadline matching the given {@code matcher} should be scheduled
-     * @param matcher  the matcher defining the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param matcher                 the matcher defining the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineMatching(Duration duration,
+    FixtureExecutionResult expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
                                                              Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      * <p/>
      * Note that the source attribute of the deadline is ignored when comparing deadlines. Deadlines are compared using
      * an "equals" check on all fields in the deadlines.
      *
-     * @param duration the time at which no deadline equal to the given {@code deadline} should be scheduled
-     * @param deadline the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param deadline                the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadline(Duration duration, Object deadline);
+    FixtureExecutionResult expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline of the given {@code deadlineType} has been scheduled at the given {@code
-     * scheduledTime}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      *
-     * @param duration     the time at which no deadline of {@code deadlineType} should be scheduled
-     * @param deadlineType the type of the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param deadlineType            the type of the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
+    FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      *
-     * @param duration     the time at which no deadline of {@code deadlineName} should be scheduled
-     * @param deadlineName the name of the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param deadlineName            the name of the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration duration, String deadlineName);
+    FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      * <p/>
      * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * TestExecutor#currentTime()} to get the time to use as "current time".
@@ -414,7 +429,8 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      * <p/>
      * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * TestExecutor#currentTime()} to get the time to use as "current time".
@@ -430,7 +446,8 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      *
      * @param scheduledTime the time at which no deadline of {@code deadlineType} should be scheduled
      * @param deadlineType  the type of the deadline which should not be scheduled
@@ -440,7 +457,8 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      *
      * @param scheduledTime the time at which no deadline of {@code deadlineName} should be scheduled
      * @param deadlineName  the name of the deadline which should not be scheduled
