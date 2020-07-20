@@ -518,15 +518,15 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Uses given Publisher of queries to send incoming queries away. Queries will be sent sequentially - once a result
-     * of Nth query arrives, (N + 1)th query is dispatched. All queries will be dispatched using given {@code
+     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will be sent sequentially. Once the result
+     * of Nth query arrives, the (N + 1)th query is dispatched. All queries will be dispatched using given {@code
      * backpressure} and {@code updateBufferSize}.
      *
-     * @param queries          a Publisher stream of queries to be dispatched
-     * @param backpressure     The backpressure mechanism to deal with producing of incremental updates
-     * @param updateBufferSize The size of buffer which accumulates updates before subscription to the {@code flux}
+     * @param queries          a {@link Publisher} stream of queries to be dispatched
+     * @param backpressure     the backpressure mechanism to deal with producing of incremental updates
+     * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux}
      *                         is made
-     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries being
      * dispatched
      *
      * @see #subscriptionQuery(String, Object, Class, Class)
