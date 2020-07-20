@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
 
 /**
- * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Collections of entities
- * (field type assignable to {@link Iterable}) annotated with {@link AggregateMember}. If such a field or method is found a {@link
+ * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Collections of entities (field type
+ * assignable to {@link Iterable}) annotated with {@link AggregateMember}. If such a field or method is found a {@link
  * ChildEntity} is created that delegates to the entities in the annotated collection.
  *
  * @author Allard Buijze
@@ -54,8 +54,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
     protected boolean isMemberTypeSupported(Member member) {
         try {
             return Iterable.class.isAssignableFrom(ReflectionUtils.getMemberValueType(member));
-        }
-        catch (IllegalStateException e) {
+        } catch (IllegalStateException e) {
             return false;
         }
     }

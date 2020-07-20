@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
 
 /**
  * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Maps with entities as values
- * annotated with {@link AggregateMember}. If such a field or method is found a {@link ChildEntity} is created that delegates to
- * the entities in the annotated Map.
+ * annotated with {@link AggregateMember}. If such a field or method is found a {@link ChildEntity} is created that
+ * delegates to the entities in the annotated Map.
  *
  * @author Allard Buijze
  * @since 3.0

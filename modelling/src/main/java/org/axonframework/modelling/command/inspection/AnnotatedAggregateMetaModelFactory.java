@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -231,7 +231,6 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             initializing.remove();
         }
 
-        @SuppressWarnings("unchecked")
         private void prepareHandlers() {
             for (Map.Entry<Class<?>, SortedSet<MessageHandlingMember<? super T>>> handlersPerType
                     : handlerInspector.getAllHandlers().entrySet()) {
@@ -325,19 +324,19 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 for (Field field : ReflectionUtils.fieldsOf(type)) {
                     createChildDefinitionsAndAddHandlers(childEntityDefinitions, type, field);
                     AnnotationUtils.findAnnotationAttributes(field, EntityId.class)
-                            .ifPresent(attributes -> entityIdMembers.add(field));
+                                   .ifPresent(attributes -> entityIdMembers.add(field));
                     AnnotationUtils.findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID)
-                            .ifPresent(attributes -> persistenceIdMembers.add(field));
+                                   .ifPresent(attributes -> persistenceIdMembers.add(field));
                     AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
                                    .ifPresent(attributes -> aggregateVersionMembers.add(field));
                 }
                 for (Method method : ReflectionUtils.methodsOf(type)) {
                     createChildDefinitionsAndAddHandlers(childEntityDefinitions, type, method);
                     AnnotationUtils.findAnnotationAttributes(method, EntityId.class)
-                            .ifPresent(attributes -> {
-                                assertValidValueProvidingMethod(method);
-                                entityIdMembers.add(method);
-                            });
+                                   .ifPresent(attributes -> {
+                                       assertValidValueProvidingMethod(method);
+                                       entityIdMembers.add(method);
+                                   });
                     AnnotationUtils.findAnnotationAttributes(method, JAVAX_PERSISTENCE_ID)
                                    .ifPresent(attributes -> {
                                        assertValidValueProvidingMethod(method);
@@ -387,7 +386,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         private boolean isGetterByConvention(String identifierName) {
-            return identifierName.startsWith("get") && identifierName.length() >= 4 && Character.isUpperCase(identifierName.charAt(3));
+            return identifierName.startsWith("get")
+                    && identifierName.length() >= 4
+                    && Character.isUpperCase(identifierName.charAt(3));
         }
 
         private Optional<Member> findIdentifierMember(List<Member> entityIdMembers,
@@ -540,7 +541,6 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          * @param targetClass the target class that handler should be executed on
          * @return the handler of the message if present on the model
          */
-        @SuppressWarnings("unchecked")
         protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, Class<?> targetClass) {
             return handlers(allEventHandlers, targetClass)
                     .filter(handler -> handler.canHandle(message))

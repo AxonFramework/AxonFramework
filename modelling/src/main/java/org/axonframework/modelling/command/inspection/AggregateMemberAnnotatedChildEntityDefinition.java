@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
- * {@link AggregateMember}. If such a field or method is found a {@link ChildEntity} is created that delegates to the entity.
+ * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with {@link
+ * AggregateMember}. If such a field or method is found a {@link ChildEntity} is created that delegates to the entity.
  *
  * @author Allard Buijze
  * @since 3.0
@@ -73,6 +73,8 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
                                                      Member member,
                                                      ForwardingMode eventForwardingMode) {
         Object memberValue = ReflectionUtils.getMemberValue(member, parentEntity);
-        return memberValue == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(memberValue));
+        return memberValue == null
+                ? Stream.empty()
+                : eventForwardingMode.filterCandidates(message, Stream.of(memberValue));
     }
 }

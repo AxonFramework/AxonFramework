@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -307,7 +307,7 @@ public abstract class ReflectionUtils {
     }
 
     private static void addMethodsOnDeclaredInterfaces(Class<?> currentClazz, List<Method> methods) {
-        for (Class iface : currentClazz.getInterfaces()) {
+        for (Class<?> iface : currentClazz.getInterfaces()) {
             methods.addAll(Arrays.asList(iface.getDeclaredMethods()));
             addMethodsOnDeclaredInterfaces(iface, methods);
         }
@@ -357,9 +357,10 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Invokes and returns the return value of the given {@code method} in the given {@code object}. If necessary, the method is
-     * made accessible, assuming the security manager allows it.
-     * @param method The method to invoke
+     * Invokes and returns the return value of the given {@code method} in the given {@code object}. If necessary, the
+     * method is made accessible, assuming the security manager allows it.
+     *
+     * @param method the method to invoke
      * @param object the target object the given {@code method} is invoked on
      * @return the resulting value of invocation of the {@code method} in the {@code object}
      * @throws IllegalStateException if the method is not accessible and the security manager doesn't allow it to be
@@ -376,13 +377,12 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the value of the given {@code member} in the given {@code object}, either by returning
-     * {@link Field} value or invoking the method. If necessary, the member is made accessible,
-     * assuming the security manager allows it. Supported members are {@link Field} and
-     * non-void {@link Method} without parameters
+     * Returns the value of the given {@code member} in the given {@code object}, either by returning {@link Field}
+     * value or invoking the method. If necessary, the member is made accessible, assuming the security manager allows
+     * it. Supported members are {@link Field} and non-void {@link Method} without parameters
      *
-     * @param member  The member containing or returning the value
-     * @param target  The object to retrieve the member's value from
+     * @param member the member containing or returning the value
+     * @param target the object to retrieve the member's value from
      * @return the value of the {@code member} in the {@code object}
      * @throws IllegalStateException if the member is not supported
      */
@@ -393,14 +393,16 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Method) {
             return (R) ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
         }
-        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
     }
 
     /**
-     * Returns the type of value of the given {@code member}, either by returning the type of
-     * {@link Field} or type of the return value of a {@link Method}.
+     * Returns the type of value of the given {@code member}, either by returning the type of {@link Field} or type of
+     * the return value of a {@link Method}.
      *
-     * @param member The member to get the value type from
+     * @param member the member to get the value type from
      * @return the type of value of the {@code member}
      * @throws IllegalStateException if the member is not supported
      */
@@ -412,14 +414,16 @@ public abstract class ReflectionUtils {
             final Field field = (Field) member;
             return field.getType();
         }
-        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
     }
 
     /**
-     * Returns the generic type of value of the given {@code member}, either by returning the generic type of
-     * {@link Field} or generic return type of a {@link Method}.
+     * Returns the generic type of value of the given {@code member}, either by returning the generic type of {@link
+     * Field} or generic return type of a {@link Method}.
      *
-     * @param member The member to get generic type of
+     * @param member the member to get generic type of
      * @return the generic type of value of the {@code member}
      * @throws IllegalStateException if the member is not supported
      */
@@ -429,13 +433,15 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Method) {
             return ((Method) member).getGenericReturnType();
         }
-        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
     }
 
     /**
      * Returns the generic string of the given {@code member}.
      *
-     * @param member The member to get the generic string for
+     * @param member the member to get the generic string for
      * @return the generic string of the {@code member}
      * @throws IllegalStateException if the member is not supported
      */
@@ -445,7 +451,9 @@ public abstract class ReflectionUtils {
         } else if (member instanceof Executable) {
             return ((Executable) member).toGenericString();
         }
-        throw new IllegalStateException(String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName()));
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
     }
 
     private ReflectionUtils() {
