@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.context.Context;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -306,8 +307,7 @@ class DefaultReactorQueryGatewayTest {
     void testScatterGather() throws Exception {
         Flux<String> result = reactiveQueryGateway.scatterGather("criteria",
                                                                  ResponseTypes.instanceOf(String.class),
-                                                                 1,
-                                                                 TimeUnit.SECONDS);
+                                                                 Duration.ofSeconds(1));
         verifyZeroInteractions(queryMessageHandler1);
         verifyZeroInteractions(queryMessageHandler2);
         StepVerifier.create(result)
@@ -326,7 +326,7 @@ class DefaultReactorQueryGatewayTest {
                 new GenericQueryMessage<>(5, ResponseTypes.instanceOf(Integer.class)),
                 new GenericQueryMessage<>(true, ResponseTypes.instanceOf(String.class))));
 
-        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, 1, TimeUnit.SECONDS);
+        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, Duration.ofSeconds(1));
         verifyZeroInteractions(queryMessageHandler1);
         verifyZeroInteractions(queryMessageHandler2);
 
@@ -348,7 +348,7 @@ class DefaultReactorQueryGatewayTest {
         List<Integer> expectedResults = IntStream.range(1, 2 * numberOfQueries + 1)
                                                  .boxed()
                                                  .collect(Collectors.toList());
-        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, 1, TimeUnit.SECONDS);
+        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, Duration.ofSeconds(1));
         StepVerifier.create(result)
                     .expectNext(expectedResults.toArray(new Integer[0]))
                     .verifyComplete();
@@ -358,10 +358,10 @@ class DefaultReactorQueryGatewayTest {
 
     @Test
     void testScatterGatherReturningNull() {
-        assertNull(reactiveQueryGateway.scatterGather(0L, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS)
+        assertNull(reactiveQueryGateway.scatterGather(0L, ResponseTypes.instanceOf(String.class), Duration.ofSeconds(1))
                                        .blockFirst());
         StepVerifier.create(reactiveQueryGateway
-                                    .scatterGather(0L, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS))
+                                    .scatterGather(0L, ResponseTypes.instanceOf(String.class), Duration.ofSeconds(1)))
                     .expectNext()
                     .verifyComplete();
     }
@@ -376,7 +376,7 @@ class DefaultReactorQueryGatewayTest {
                         .map(query -> query.andMetaData(Collections.singletonMap("key2", "value2"))));
 
         StepVerifier.create(reactiveQueryGateway
-                                    .scatterGather(true, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS))
+                                    .scatterGather(true, ResponseTypes.instanceOf(String.class), Duration.ofSeconds(1)))
                     .expectNext("value1value2")
                     .verifyComplete();
 
@@ -402,7 +402,7 @@ class DefaultReactorQueryGatewayTest {
                 new GenericQueryMessage<>(5, ResponseTypes.instanceOf(Integer.class)),
                 new GenericQueryMessage<>(true, ResponseTypes.instanceOf(String.class))));
 
-        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, 1, TimeUnit.SECONDS);
+        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, Duration.ofSeconds(1));
         verifyZeroInteractions(queryMessageHandler1);
         verifyZeroInteractions(queryMessageHandler2);
 
@@ -437,7 +437,7 @@ class DefaultReactorQueryGatewayTest {
                 new GenericQueryMessage<>(5, ResponseTypes.instanceOf(Integer.class)),
                 new GenericQueryMessage<>(Boolean.TRUE, ResponseTypes.instanceOf(String.class))));
 
-        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, 1, TimeUnit.SECONDS);
+        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, Duration.ofSeconds(1));
         verifyZeroInteractions(queryMessageHandler1);
         verifyZeroInteractions(queryMessageHandler2);
 
@@ -469,7 +469,7 @@ class DefaultReactorQueryGatewayTest {
                 new GenericQueryMessage<>(5, ResponseTypes.instanceOf(Integer.class)),
                 new GenericQueryMessage<>(true, ResponseTypes.instanceOf(String.class))));
 
-        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, 1, TimeUnit.SECONDS);
+        Flux<Object> result = reactiveQueryGateway.scatterGather(queries, Duration.ofSeconds(1));
         verifyZeroInteractions(queryMessageHandler1);
         verifyZeroInteractions(queryMessageHandler2);
 
@@ -489,7 +489,7 @@ class DefaultReactorQueryGatewayTest {
                     throw new RuntimeException();
                 });
         StepVerifier.create(reactiveQueryGateway
-                                    .scatterGather(true, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS))
+                                    .scatterGather(true, ResponseTypes.instanceOf(String.class), Duration.ofSeconds(1)))
                     .verifyError(RuntimeException.class);
     }
 
@@ -498,7 +498,7 @@ class DefaultReactorQueryGatewayTest {
         reactiveQueryGateway
                 .registerDispatchInterceptor(queryMono -> Mono.error(new RuntimeException()));
         StepVerifier.create(reactiveQueryGateway
-                                    .scatterGather(true, ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS))
+                                    .scatterGather(true, ResponseTypes.instanceOf(String.class), Duration.ofSeconds(1)))
                     .verifyError(RuntimeException.class);
     }
 
@@ -506,8 +506,7 @@ class DefaultReactorQueryGatewayTest {
     void testScatterGatherFails() {
         StepVerifier.create(reactiveQueryGateway.scatterGather(6,
                                                                ResponseTypes.instanceOf(Integer.class),
-                                                               1,
-                                                               TimeUnit.SECONDS))
+                                                               Duration.ofSeconds(1)))
                     .expectNextCount(0)
                     .verifyComplete();
     }
@@ -518,8 +517,7 @@ class DefaultReactorQueryGatewayTest {
 
         Flux<Integer> query = reactiveQueryGateway.scatterGather(6,
                                                                  ResponseTypes.instanceOf(Integer.class),
-                                                                 1,
-                                                                 TimeUnit.SECONDS).retry(5);
+                                                                 Duration.ofSeconds(1)).retry(5);
 
         StepVerifier.create(query)
                     .verifyError();

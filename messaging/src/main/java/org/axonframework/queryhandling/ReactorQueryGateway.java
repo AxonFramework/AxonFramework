@@ -26,6 +26,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -53,7 +54,7 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * @return A {@link Mono} containing the query result as dictated by the given {@code responseType}
      */
     default <R, Q> Mono<R> query(Q query, Class<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
+        return query(QueryMessage.queryName(query), query, responseType);
     }
 
     /**
@@ -87,7 +88,7 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * @return A {@link Mono} containing the query result as dictated by the given {@code responseType}
      */
     default <R, Q> Mono<R> query(Q query, ResponseType<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
+        return query(QueryMessage.queryName(query), query, responseType);
     }
 
     /**
@@ -126,29 +127,26 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all possible
      * results are received. The query name will be derived from the provided {@code query}. Execution may be
      * asynchronous, depending on the {@code QueryBus} implementation.
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Mono}</b></p>
      * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactorQueryGateway}. If you require
      * the {@code null} to be returned, we suggest using {@code QueryBus} instead.
      *
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
      * @param timeout      A timeout of {@code long} for the query
-     * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}
      */
-    default <R, Q> Flux<R> scatterGather(Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
-        return scatterGather(query.getClass().getName(), query, responseType, timeout, timeUnit);
+    default <R, Q> Flux<R> scatterGather(Q query, ResponseType<R> responseType, Duration timeout) {
+        return scatterGather(QueryMessage.queryName(query), query, responseType, timeout);
     }
 
     /**
      * Sends the given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
      * from several sources. The returned {@link Flux} is completed when a {@code timeout} occurs or when all results
      * are received. Execution may be asynchronous, depending on the {@code QueryBus} implementation.
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Mono}</b></p>
      * <b>Note</b>: Any {@code null} results will be filtered out by the {@link ReactorQueryGateway}. If you require
      * the {@code null} to be returned, we suggest using {@code QueryBus} instead.
      *
@@ -156,13 +154,11 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * @param query        The {@code query} to be sent
      * @param responseType The {@link ResponseType} used for this query
      * @param timeout      A timeout of {@code long} for the query
-     * @param timeUnit     The selected {@link TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A {@link Flux} containing the query results as dictated by the given {@code responseType}
      */
-    <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
-                                 TimeUnit timeUnit);
+    <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, Duration timeout);
 
     /**
      * Uses the given {@link Publisher} of {@link QueryMessage}s to send incoming queries in scatter gather manner. Queries will be sent
@@ -171,17 +167,15 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      *
      * @param queries  a {@link Publisher} stream of queries to be dispatched
      * @param timeout  A timeout of {@code long} for the query
-     * @param timeUnit The selected {@link TimeUnit} for the given {@code timeout}
-     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries being
-     * dispatched
+     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries
+     * being dispatched
      */
-    default Flux<Object> scatterGather(Publisher<QueryMessage<?, ?>> queries, long timeout, TimeUnit timeUnit) {
+    default Flux<Object> scatterGather(Publisher<QueryMessage<?, ?>> queries, Duration timeout) {
         return Flux.from(queries)
                    .concatMap(q -> scatterGather(q.getQueryName(),
                                                  q.getPayload(),
                                                  q.getResponseType(),
-                                                 timeout,
-                                                 timeUnit));
+                                                 timeout));
     }
 
     /**
@@ -343,7 +337,7 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      */
     default <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(Q query, Class<I> initialResponseType,
                                                                             Class<U> updateResponseType) {
-        return subscriptionQuery(query.getClass().getName(),
+        return subscriptionQuery(QueryMessage.queryName(query),
                                  query,
                                  initialResponseType,
                                  updateResponseType);
@@ -407,7 +401,7 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     default <Q, I, U> Mono<SubscriptionQueryResult<I, U>> subscriptionQuery(Q query,
                                                                             ResponseType<I> initialResponseType,
                                                                             ResponseType<U> updateResponseType) {
-        return subscriptionQuery(query.getClass().getName(),
+        return subscriptionQuery(QueryMessage.queryName(query),
                                  query,
                                  initialResponseType,
                                  updateResponseType,

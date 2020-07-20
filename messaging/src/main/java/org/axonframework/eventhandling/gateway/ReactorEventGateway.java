@@ -27,7 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Variation of the {@link EventGateway}, wrapping a {@link EventBus} for a friendlier API. Provides support for reactive return types such as {@link Flux} from Project
+ * Variation of the {@link EventGateway}, wrapping a {@link EventBus} for a friendlier API. Provides support for
+ * reactive return types such as {@link Flux} from Project
  * Reactor.
  *
  * @author Milan Savic
@@ -43,9 +44,9 @@ public interface ReactorEventGateway extends ReactorMessageDispatchInterceptorSu
      * is constructed from that message's payload and {@link org.axonframework.messaging.MetaData}.
      *
      * @param events events to be published
-     * @return events that were published. DO NOTE: if there were some interceptors registered to this {@code gateway},
-     * they will be processed first, before returning events to the caller. The order of returned events is the same as
-     * one provided as the input parameter.
+     * @return events that were published. DO NOTE: if there were some {@link org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor}s
+     * registered to this {@code gateway}, they will be processed first, before returning events to the caller. The
+     * order of returned events is the same as one provided as the input parameter.
      */
     default Flux<Object> publish(Object... events) { // NOSONAR
         return publish(Arrays.asList(events));
@@ -59,9 +60,9 @@ public interface ReactorEventGateway extends ReactorMessageDispatchInterceptorSu
      * is constructed from that message's payload and {@link org.axonframework.messaging.MetaData}.
      *
      * @param events the list of events to be published
-     * @return events that were published. DO NOTE: if there were some interceptors registered to this {@code gateway},
-     * they will be processed first, before returning events to the caller. The order of returned events is the same as
-     * one provided as the input parameter.
+     * @return events that were published. DO NOTE: if there were some {@link org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor}s
+     * registered to this {@code gateway}, they will be processed first, before returning events to the caller. The
+     * order of returned events is the same as one provided as the input parameter.
      */
     Flux<Object> publish(List<?> events);
 
@@ -73,9 +74,9 @@ public interface ReactorEventGateway extends ReactorMessageDispatchInterceptorSu
      * is constructed from that message's payload and {@link org.axonframework.messaging.MetaData}.
      *
      * @param events the publisher of events to be published
-     * @return events that were published. DO NOTE: if there were some interceptors registered to this {@code gateway},
-     * they will be processed first, before returning events to the caller. The order of returned events is the same as
-     * one provided as the input parameter.
+     * @return events that were published. DO NOTE: if there were some {@link org.axonframework.messaging.reactive.ReactorMessageDispatchInterceptor}s
+     * registered to this {@code gateway}, they will be processed first, before returning events to the caller. The
+     * order of returned events is the same as one provided as the input parameter.
      */
     default Flux<Object> publishAll(Publisher<?> events) {
         return Flux.from(events)

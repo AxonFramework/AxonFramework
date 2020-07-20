@@ -141,7 +141,7 @@ class DefaultReactorCommandGatewayTest {
         // verify -> results have k1 -> v2 and k2 -> v3
         StepVerifier.create(results)
                     .expectNextMatches(result -> result.getMetaData().get("k1").equals("v2") &&
-                            result.getMetaData().get("k1").equals("v2"));
+                            result.getMetaData().get("k2").equals("v3"));
     }
 
     @Test

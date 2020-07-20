@@ -27,6 +27,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -108,13 +109,12 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
     }
 
     @Override
-    public <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
-                                        TimeUnit timeUnit) {
+    public <R, Q> Flux<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, Duration timeout) {
         return Mono.<QueryMessage<?, ?>>fromCallable(() -> new GenericQueryMessage<>(asMessage(query),
                                                                                      queryName,
                                                                                      responseType))
                 .transform(this::processDispatchInterceptors)
-                .flatMap(q -> dispatchScatterGatherQuery(q, timeout, timeUnit))
+                .flatMap(q -> dispatchScatterGatherQuery(q, timeout.toMillis(), TimeUnit.MILLISECONDS))
                 .flatMapMany(this::processResultsInterceptors)
                 .transform(this::getPayload);
     }

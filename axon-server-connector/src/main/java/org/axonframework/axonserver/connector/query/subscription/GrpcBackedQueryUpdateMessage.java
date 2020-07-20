@@ -38,7 +38,6 @@ import java.util.function.Supplier;
  */
 class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<U> {
 
-    private static final long serialVersionUID = 488652969630034329L;
     private final QueryUpdate queryUpdate;
     private final LazyDeserializingObject<U> serializedPayload;
     private final Throwable exception;
@@ -62,7 +61,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                 : serializedPayload::getObject;
         this.exception = queryUpdate.hasErrorMessage()
                 ? ErrorCode.getFromCode(queryUpdate.getErrorCode())
-                           .convert(queryUpdate.getErrorMessage(), details)
+                           .convert(queryUpdate.getErrorMessage(), exceptionDetails)
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
     }

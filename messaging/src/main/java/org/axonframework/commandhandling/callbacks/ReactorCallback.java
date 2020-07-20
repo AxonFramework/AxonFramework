@@ -31,6 +31,9 @@ import reactor.core.publisher.Mono;
  *
  * @author Stefan Dragisic
  * @since 4.4
+ *
+ * @see CommandCallback
+ * @see org.axonframework.commandhandling.CommandBus
  */
 
 public class ReactorCallback<C, R> extends Mono<CommandResultMessage<? extends R>> implements CommandCallback<C, R> {
