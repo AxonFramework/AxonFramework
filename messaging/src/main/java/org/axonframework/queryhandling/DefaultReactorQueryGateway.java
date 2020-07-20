@@ -268,7 +268,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
         }
 
         /**
-         * Sets {@link ReactorResultHandlerInterceptor}s for {@link CommandResultMessage}s.
+         * Sets {@link ReactorResultHandlerInterceptor}s for {@link ResultMessage}s.
          * Are invoked when a result has been received.
          *
          * @param resultInterceptors which are invoked when a result has been received
