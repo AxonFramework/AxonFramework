@@ -179,7 +179,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
         return Flux.fromIterable(resultInterceptors)
                    .reduce(queryResultMessage,
                            (result, interceptor) -> interceptor.intercept(queryMessage, result))
-                   .flatMapMany(it -> it);
+                   .flatMapMany(Function.identity());
     }
 
     private <Q, I, U> Function<Tuple2<QueryMessage<Q, U>,
