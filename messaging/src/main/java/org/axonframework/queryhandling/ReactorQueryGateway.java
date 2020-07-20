@@ -483,11 +483,11 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
                                                                     int updateBufferSize);
 
     /**
-     * Uses given Publisher of queries to send incoming queries away. Queries will be sent sequentially - once a result
-     * of Nth query arrives, (N + 1)th query is dispatched.
+     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will be sent sequentially. Once the result
+     * of Nth query arrives, the (N + 1)th query is dispatched.
      *
-     * @param queries a Publisher stream of queries to be dispatched
-     * @return a Flux of query results. An ordering of query results corresponds to an ordering of queries being
+     * @param queries a {@link Publisher} stream of queries to be dispatched
+     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries being
      * dispatched
      *
      * @see #subscriptionQuery(String, Object, Class, Class)
