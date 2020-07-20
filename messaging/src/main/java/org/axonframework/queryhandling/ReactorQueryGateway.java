@@ -270,9 +270,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, and streams
-     * incremental updates until subscriber unsubscribes from Flux.
-     * Should be used when subscriber is interested only in updates.
+     * Sends the given {@code query} over the {@link QueryBus}, streaming
+     * incremental updates until the subscriber unsubscribes from the resulting {@link Flux}.
+     * Should be used when the subscriber is interested only in updates.
      * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Flux}</b></p>
      * <p>
