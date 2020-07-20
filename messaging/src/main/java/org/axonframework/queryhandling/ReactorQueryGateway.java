@@ -185,9 +185,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, returns initial result and keeps streaming
-     * incremental updates until subscriber unsubscribes from Flux.
-     * Should be used when response type of initial result and incremental update match.
+     * Sends the given {@code query} over the {@link QueryBus}, returning the initial result and a stream of
+     * incremental updates until the subscriber unsubscribes from the resulting {@link Flux}.
+     * Should be used when the response type of the initial result and incremental update match.
      * (received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting side).
      * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
      * Flux}</b></p>
