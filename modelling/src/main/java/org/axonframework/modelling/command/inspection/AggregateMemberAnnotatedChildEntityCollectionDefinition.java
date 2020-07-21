@@ -85,9 +85,9 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
 
         Object routingValue = commandHandlerRoutingKeys.get(msg.getCommandName())
                                                        .getValue(msg.getPayload());
-        Iterable<?> iterable = ReflectionUtils.getMemberValue(member, parent);
+        Iterable<?> memberValue = ReflectionUtils.getMemberValue(member, parent);
 
-        return StreamSupport.stream(iterable.spliterator(), false)
+        return StreamSupport.stream(memberValue.spliterator(), false)
                             .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i)))
                             .findFirst()
                             .orElse(null);

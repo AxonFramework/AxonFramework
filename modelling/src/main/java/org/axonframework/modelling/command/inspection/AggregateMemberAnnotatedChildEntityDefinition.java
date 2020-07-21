@@ -54,9 +54,10 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
 
     @Override
     protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
-                                                              Map<String, Object> attributes, Member member) {
-        Class<?> aClass = ReflectionUtils.getMemberValueType(member);
-        return declaringEntity.modelOf(aClass);
+                                                              Map<String, Object> attributes,
+                                                              Member member) {
+        Class<?> entityClass = ReflectionUtils.getMemberValueType(member);
+        return declaringEntity.modelOf(entityClass);
     }
 
     @Override
