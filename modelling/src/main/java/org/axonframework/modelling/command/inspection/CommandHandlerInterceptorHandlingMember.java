@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.MessageInterceptingMember;
 
 /**
  * Interface specifying a message handler capable of intercepting a command.
  *
  * @param <T> the type of entity to which the message handler will delegate tha actual interception
+ *
  * @author Milan Savic
  * @since 3.3
+ * @deprecated in favor of the more generic {@link MessageInterceptingMember}
  */
-public interface CommandHandlerInterceptorHandlingMember<T> extends MessageHandlingMember<T> {
+@Deprecated
+public interface CommandHandlerInterceptorHandlingMember<T> extends MessageInterceptingMember<T> {
 
     /**
      * Indicates whether interceptor chain (containing a command handler) should be invoked automatically or command

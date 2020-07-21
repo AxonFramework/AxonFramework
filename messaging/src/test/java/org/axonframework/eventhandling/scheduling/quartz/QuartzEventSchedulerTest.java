@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.serialization.TestSerializer;
 import org.axonframework.utils.AssertUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -49,6 +50,8 @@ import static org.mockito.Mockito.*;
 class QuartzEventSchedulerTest {
 
     private static final String GROUP_ID = "TestGroup";
+    private static final QuartzEventScheduler.DirectEventJobDataBinder JOB_DATA_BINDER =
+            new QuartzEventScheduler.DirectEventJobDataBinder(TestSerializer.XSTREAM.getSerializer());
 
     private Scheduler scheduler;
     private EventBus eventBus;
@@ -65,6 +68,7 @@ class QuartzEventSchedulerTest {
         testSubject = QuartzEventScheduler.builder()
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
+                                          .jobDataBinder(JOB_DATA_BINDER)
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
     }
@@ -99,6 +103,7 @@ class QuartzEventSchedulerTest {
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
                                           .transactionManager(transactionManager)
+                                          .jobDataBinder(JOB_DATA_BINDER)
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -131,6 +136,7 @@ class QuartzEventSchedulerTest {
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
                                           .transactionManager(transactionManager)
+                                          .jobDataBinder(JOB_DATA_BINDER)
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
 
@@ -173,6 +179,7 @@ class QuartzEventSchedulerTest {
         QuartzEventScheduler testSubject = QuartzEventScheduler.builder()
                                                                .scheduler(scheduler)
                                                                .eventBus(eventBus)
+                                                               .jobDataBinder(JOB_DATA_BINDER)
                                                                .build();
 
         assertThrows(SchedulingException.class, testSubject::shutdown);

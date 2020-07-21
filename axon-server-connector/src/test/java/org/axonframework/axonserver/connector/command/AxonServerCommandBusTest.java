@@ -30,6 +30,7 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestStreamObserver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
@@ -41,7 +42,6 @@ import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,9 +87,10 @@ class AxonServerCommandBusTest {
 
     private AxonServerConnectionManager axonServerConnectionManager;
     private AxonServerConfiguration configuration;
-    private SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
-    private Serializer serializer = XStreamSerializer.defaultSerializer();
-    private TargetContextResolver<CommandMessage<?>> targetContextResolver = spy(new TestTargetContextResolver<>());
+    private final SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
+    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+    private final TargetContextResolver<CommandMessage<?>> targetContextResolver =
+            spy(new TestTargetContextResolver<>());
 
     private AxonServerCommandBus testSubject;
 
@@ -506,7 +507,7 @@ class AxonServerCommandBusTest {
         CompletableFuture<Void> disconnected;
         try {
             inboundStreamObserverRef.get().onNext(testCommandMessage);
-            while(!commandArrived.get()) {
+            while (!commandArrived.get()) {
                 Thread.sleep(1);
             }
         } finally {

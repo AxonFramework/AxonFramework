@@ -26,6 +26,7 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -76,6 +77,7 @@ import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
+import static org.axonframework.config.utils.TestSerializer.secureXStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -177,6 +179,7 @@ class DefaultConfigurerTest {
                                           .persistenceExceptionResolver(c.getComponent(PersistenceExceptionResolver.class))
                                           .entityManagerProvider(() -> em)
                                           .transactionManager(c.getComponent(TransactionManager.class))
+                                          .eventSerializer(secureXStreamSerializer())
                                           .build()
         ).configureAggregate(
                 defaultConfiguration(StubAggregate.class).configureCommandTargetResolver(

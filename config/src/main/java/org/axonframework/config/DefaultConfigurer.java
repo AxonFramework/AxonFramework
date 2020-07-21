@@ -583,6 +583,14 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
+    public Configurer registerMessageHandler(Function<Configuration, Object> messageHandlerBuilder) {
+        registerCommandHandler(messageHandlerBuilder);
+        eventProcessing().registerEventHandler(messageHandlerBuilder);
+        registerQueryHandler(messageHandlerBuilder);
+        return this;
+    }
+
+    @Override
     public Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =

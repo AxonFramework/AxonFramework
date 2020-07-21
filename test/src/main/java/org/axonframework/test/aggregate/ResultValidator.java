@@ -276,7 +276,8 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectNoScheduledDeadlines();
 
     /**
-     * Asserts that <b>no</b> deadline matching the given {@code matcher} is scheduled.
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} is scheduled. Can be used to validate if a
+     * deadline has never been set or has been canceled.
      *
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
@@ -285,51 +286,60 @@ public interface ResultValidator<T> {
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} should be scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      *
-     * @param duration the time at which no deadline matching the given {@code matcher} should be scheduled
-     * @param matcher  the matcher defining the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param matcher                 the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineMatching(Duration duration,
+    ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
                                                          Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      * <p/>
      * Note that the source attribute of the deadline is ignored when comparing deadlines. Deadlines are compared using
      * an "equals" check on all fields in the deadlines.
      *
-     * @param duration the time at which no deadline equal to the given {@code deadline} should be scheduled
-     * @param deadline the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param deadline                the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadline(Duration duration, Object deadline);
+    ResultValidator<T> expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline of the given {@code deadlineType} has been scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      *
-     * @param duration     the time at which no deadline of {@code deadlineType} should be scheduled
-     * @param deadlineType the type of the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param deadlineType            the type of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
+    ResultValidator<T> expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled after the given {@code
-     * duration}.
+     * durationToScheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an
+     * <b>exact</b> moment in time.
      *
-     * @param duration     the time at which no deadline of {@code deadlineName} should be scheduled
-     * @param deadlineName the name of the deadline which should not be scheduled
+     * @param durationToScheduledTime the time to wait until the trigger point of the deadline which should not be
+     *                                scheduled
+     * @param deadlineName            the name of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineWithName(Duration duration, String deadlineName);
+    ResultValidator<T> expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      * <p/>
      * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * TestExecutor#currentTime()} to get the time to use as "current time".
@@ -343,7 +353,8 @@ public interface ResultValidator<T> {
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      * <p/>
      * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * TestExecutor#currentTime()} to get the time to use as "current time".
@@ -359,7 +370,8 @@ public interface ResultValidator<T> {
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      *
      * @param scheduledTime the time at which no deadline of {@code deadlineType} should be scheduled
      * @param deadlineType  the type of the deadline which should not be scheduled
@@ -369,7 +381,8 @@ public interface ResultValidator<T> {
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled at the given {@code
-     * scheduledTime}.
+     * scheduledTime}. Can be used to validate if a deadline has never been set or has been canceled at an exact moment
+     * in time.
      *
      * @param scheduledTime the time at which no deadline of {@code deadlineName} should be scheduled
      * @param deadlineName  the name of the deadline which should not be scheduled
