@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,10 @@
 package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -32,11 +34,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AnnotationQueryHandlerAdapterTest {
@@ -114,6 +124,22 @@ class AnnotationQueryHandlerAdapterTest {
         assertEquals(testResponse, result.size());
     }
 
+    @Test
+    void testInterceptMessages() throws Exception {
+        List<QueryMessage<?, ?>> withInterceptor = new ArrayList<>();
+        List<QueryMessage<?, ?>> withoutInterceptor = new ArrayList<>();
+        testSubject = new AnnotationQueryHandlerAdapter<>(new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor));
+
+        QueryMessage<String, String> testQueryMessage =
+                new GenericQueryMessage<>("Hi", "Hello", ResponseTypes.instanceOf(String.class));
+
+        String result = (String) testSubject.handle(testQueryMessage);
+
+        assertEquals("Hi", result);
+        assertEquals(Collections.singletonList(testQueryMessage), withInterceptor);
+        assertEquals(Collections.singletonList(testQueryMessage), withoutInterceptor);
+    }
+
     @SuppressWarnings("unused")
     private class MyQueryHandler {
 
@@ -162,5 +188,29 @@ class AnnotationQueryHandlerAdapterTest {
         @QueryHandler
         public void echo(String echo) {
         }
+    }
+
+    private class MyInterceptingQueryHandler extends MyQueryHandler {
+
+        private final List<QueryMessage<?, ?>> interceptedWithoutInterceptorChain;
+        private final List<QueryMessage<?, ?>> interceptedWithInterceptorChain;
+
+        private MyInterceptingQueryHandler(List<QueryMessage<?, ?>> interceptedWithoutInterceptorChain,
+                                           List<QueryMessage<?, ?>> interceptedWithInterceptorChain) {
+            this.interceptedWithoutInterceptorChain = interceptedWithoutInterceptorChain;
+            this.interceptedWithInterceptorChain = interceptedWithInterceptorChain;
+        }
+
+        @MessageHandlerInterceptor
+        public void interceptAny(QueryMessage<?, ?> query) {
+            interceptedWithoutInterceptorChain.add(query);
+        }
+
+        @MessageHandlerInterceptor
+        public Object interceptAny(QueryMessage<?, ?> query, InterceptorChain chain) throws Exception {
+            interceptedWithInterceptorChain.add(query);
+            return chain.proceed();
+        }
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,17 @@ package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.annotation.*;
-import org.axonframework.queryhandling.*;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.queryhandling.NoHandlerForQueryException;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryHandlerAdapter;
+import org.axonframework.queryhandling.QueryMessage;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -90,13 +99,12 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
 
     @Override
     public Object handle(QueryMessage<?, ?> message) throws Exception {
-        for (MessageHandlingMember<? super T> member : model.getHandlers()) {
-            if (member.canHandle(message)) {
-                return member.handle(message, target);
-            }
-        }
-        throw new NoHandlerForQueryException("No suitable handler was found for the query of type "
-                                                     + message.getPayloadType().getName());
+        MessageHandlingMember<? super T> handler =
+                model.getHandlers(target.getClass()).filter(m -> m.canHandle(message))
+                     .findFirst()
+                     .orElseThrow(() -> new NoHandlerForQueryException("No suitable handler was found for the query of type "
+                                                                               + message.getPayloadType().getName()));
+        return model.chainedInterceptor(target.getClass()).handle(message, target, handler);
     }
 
     @Override
