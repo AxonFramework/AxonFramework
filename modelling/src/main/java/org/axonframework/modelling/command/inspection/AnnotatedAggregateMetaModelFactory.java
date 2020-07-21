@@ -58,6 +58,9 @@ import static org.axonframework.common.ListUtils.distinct;
 /**
  * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the meta
  * model of the aggregate.
+ *
+ * @author Allard Buijze
+ * @since 3.1
  */
 public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFactory {
 
@@ -93,10 +96,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
      * Shorthand to create a factory instance and inspect the model for the given {@code aggregateType}, using given
      * {@code parameterResolverFactory} to resolve parameter values for annotated handlers.
      *
-     * @param aggregateType            The class of the aggregate to create the model for
+     * @param aggregateType            the class of the aggregate to create the model for
      * @param parameterResolverFactory to resolve parameter values of annotated handlers with
-     * @param <T>                      The type of aggregate described in the model
-     * @return The model describing the structure of the aggregate
+     * @param <T>                      the type of aggregate described in the model
+     * @return the model describing the structure of the aggregate
      */
     public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType,
                                                          ParameterResolverFactory parameterResolverFactory) {

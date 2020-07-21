@@ -35,7 +35,7 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
 
 /**
- * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Collections of entities (field type
+ * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Collections of entities (member type
  * assignable to {@link Iterable}) annotated with {@link AggregateMember}. If such a field or method is found a {@link
  * ChildEntity} is created that delegates to the entities in the annotated collection.
  *

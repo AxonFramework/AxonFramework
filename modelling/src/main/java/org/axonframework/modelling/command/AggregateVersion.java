@@ -22,8 +22,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation that indicates the field contains the value that represents the version of the Aggregate, used for
- * optimistic locking, as well as state validation for commands.
+ * {@link java.lang.reflect.Field} or {@link java.lang.reflect.Method}  annotation that indicates the member contains
+ * the value that represents the version of the Aggregate, used for optimistic locking, as well as state validation for
+ * commands.
  *
  * @author Allard Buijze
  * @since 2.0

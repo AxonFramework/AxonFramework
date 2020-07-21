@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation that identifies the field containing the identifier of the Aggregate.
+ * {@link java.lang.reflect.Field} or {@link java.lang.reflect.Method} annotation that identifies the member containing
+ * the identifier of the Aggregate.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -33,10 +34,14 @@ import java.lang.annotation.Target;
 public @interface AggregateIdentifier {
 
     /**
-     * Get the name of the routing key property on commands that provides the identifier that should be used
-     * to target the aggregate root with the annotated field.
+     * Get the name of the routing key property on commands and events that provides the identifier that should be used
+     * to target the aggregate root with the annotated member.
      * <p>
-     * Optional. If left empty this defaults to field name.
+     * Optional. If left empty this defaults to the member name. If the member was named in a "getter" style, the {@code
+     * "get"} will be removed.
+     * <p>
+     * Setting the {@code routingKey} is especially useful for annotated {@link java.lang.reflect.Method}s, which
+     * typically have a different naming scheme than a field in a command/event.
      */
     String routingKey() default "";
 }

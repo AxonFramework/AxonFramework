@@ -92,13 +92,12 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     protected abstract boolean isMemberTypeSupported(Member member);
 
     /**
-     * Extracts the Child Entity contained in the given {@code declaringEntity} as an {@link EntityModel}.
-     * The type of the Child Entity is defined through a key in the provided {@code attributes} or based on given
-     * {@link java.lang.reflect.Field}.
+     * Extracts the Child Entity contained in the given {@code declaringEntity} as an {@link EntityModel}. The type of
+     * the Child Entity is defined through a key in the provided {@code attributes} or based on given {@link Field}.
      *
      * @param declaringEntity the {@link EntityModel} declaring the given {@code field}
-     * @param attributes      a {@link java.util.Map} containing the {@link AggregateMember} attributes
-     * @param member          the {@link java.lang.reflect.Member} containing the Child Entity.
+     * @param attributes      a {@link Map} containing the {@link AggregateMember} attributes
+     * @param member          the {@link Member} containing the Child Entity.
      * @param <T>             the type {@code T} of the given {@code declaringEntity} {@link EntityModel}
      * @return the Child Entity contained in the {@code declaringEntity}
      */
@@ -123,16 +122,15 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     }
 
     /**
-     * Resolve the target of an incoming {@link org.axonframework.commandhandling.CommandMessage} to the right Child
-     * Entity. Returns the Child Entity the {@code msg} needs to be routed to.
+     * Resolve the target of an incoming {@link CommandMessage} to the right Child Entity. Returns the Child Entity the
+     * {@code msg} needs to be routed to.
      *
-     * @param msg              the {@link org.axonframework.commandhandling.CommandMessage} which is being resolved to a
-     *                         target entity
+     * @param msg              the {@link CommandMessage} which is being resolved to a target entity
      * @param parent           the {@code parent} Entity of type {@code T} of this Child Entity
-     * @param member           the {@link java.lang.reflect.Member} containing the Child Entity.
+     * @param member           the {@link Member} containing the Child Entity.
      * @param childEntityModel the {@link EntityModel} for the Child Entity
      * @param <T>              the type {@code T} of the given {@code parent} Entity
-     * @return the Child Entity which is the target of the incoming {@link org.axonframework.commandhandling.CommandMessage}.
+     * @return the Child Entity which is the target of the incoming {@link CommandMessage}.
      */
     protected abstract <T> Object resolveCommandTarget(CommandMessage<?> msg,
                                                        T parent,

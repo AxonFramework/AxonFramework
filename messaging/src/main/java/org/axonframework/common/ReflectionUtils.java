@@ -341,10 +341,10 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Resolve a generic type parameter from a member declaration
+     * Resolve a generic type parameter from a member declaration.
      *
-     * @param member           The member to find generic parameters for
-     * @param genericTypeIndex The index of the type
+     * @param member           the member to find generic parameters for
+     * @param genericTypeIndex the index of the type
      * @return an optional that contains the resolved type, if found
      */
     public static Optional<Class<?>> resolveMemberGenericType(Member member, int genericTypeIndex) {
@@ -379,7 +379,7 @@ public abstract class ReflectionUtils {
     /**
      * Returns the value of the given {@code member} in the given {@code object}, either by returning {@link Field}
      * value or invoking the method. If necessary, the member is made accessible, assuming the security manager allows
-     * it. Supported members are {@link Field} and non-void {@link Method} without parameters
+     * it. Supported members are {@link Field} and non-void {@link Method} without parameters.
      *
      * @param member the member containing or returning the value
      * @param target the object to retrieve the member's value from

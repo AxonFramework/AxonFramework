@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Utility class for locating annotations and attribute values on elements.
@@ -115,9 +114,9 @@ public abstract class AnnotationUtils {
     }
 
     /**
-     * Find the attribute of name {@code attributeName} of an annotation of type {@code annotationType} on the given
-     * {@code element}. The returned optional has a value present if the annotation has been found, either directly on
-     * the {@code element}, or as a meta-annotation, and if the named attribute exist.
+     * Find the {@code attributeName} of an annotation of type {@code annotationType} on the given {@code element}. The
+     * returned optional has a value present if the annotation has been found, either directly on the {@code element},
+     * or as a meta-annotation, <em>if</em> the named attribute exist.
      *
      * @param element        the element to find the annotation on
      * @param annotationType the type of the annotation to find
