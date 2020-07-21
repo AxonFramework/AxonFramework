@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
+import org.axonframework.modelling.command.AggregateVersion;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Documented;
@@ -57,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test case to validate all operations performed by the {@link AnnotatedAggregateMetaModelFactory}.
+ *
+ * @author Allard Buijze
  */
 class AnnotatedAggregateMetaModelFactoryTest {
 
@@ -367,34 +370,59 @@ class AnnotatedAggregateMetaModelFactoryTest {
     void typedAggregateIdentifier() {
         assertThrows(
                 AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class));
+                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class)
+        );
     }
 
     @Test
     void testGetterTypedAggregateIdentifier() {
         assertThrows(
                 AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(GetterTypedIdentifierAggregate.class));
+                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(GetterTypedIdentifierAggregate.class)
+        );
     }
 
     @Test
     void testIllegalDoubleIdentifiers() {
-        assertThrows(AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory
-                        .inspectAggregate(IllegalDoubleIdFieldsAnnotatedAggregate.class));
-        assertThrows(AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory
-                        .inspectAggregate(IllegalDoubleIdMixedAnnotatedAggregate.class));
-        assertThrows(AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory
-                        .inspectAggregate(IllegalDoubleIdMethodsAnnotatedAggregate.class));
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalDoubleIdFieldsAnnotatedAggregate.class)
+        );
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalDoubleIdMixedAnnotatedAggregate.class)
+        );
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalDoubleIdMethodsAnnotatedAggregate.class)
+        );
     }
 
     @Test
     void testVoidMethodIdentifier() {
-        assertThrows(AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory
-                        .inspectAggregate(IllegalVoidIdMethodAnnotatedAggregate.class));
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalVoidIdMethodAnnotatedAggregate.class)
+        );
+    }
+
+    @Test
+    void testAggregateVersionAnnotatedField() {
+        AggregateModel<AggregateWithAggregateVersionField> testSubject =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(AggregateWithAggregateVersionField.class);
+
+        assertEquals(42, testSubject.getVersion(new AggregateWithAggregateVersionField()));
+    }
+
+    @Test
+    void testAggregateVersionAnnotatedMethod() {
+        AggregateModel<AggregateWithAggregateVersionMethod> testSubject =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(AggregateWithAggregateVersionMethod.class);
+
+        assertEquals(9001, testSubject.getVersion(new AggregateWithAggregateVersionMethod()));
+    }
+
+    @Test
+    void testIllegalDoubleAggregateVersions() {
+        assertThrows(AggregateModellingException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalAggregateWithSeveralAggregateVersions.class)
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -906,6 +934,39 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         public int size() {
             return contents.size();
+        }
+    }
+
+
+    private static class AggregateWithAggregateVersionField {
+
+        @AggregateIdentifier
+        private final String aggregateIdentifier = "aggregateIdentifier";
+        @AggregateVersion
+        private final long aggregateVersion = 42L;
+    }
+
+    private static class AggregateWithAggregateVersionMethod {
+
+        @AggregateIdentifier
+        private final String aggregateIdentifier = "aggregateIdentifier";
+
+        @AggregateVersion
+        public long getAggregateVersion() {
+            return 9001L;
+        }
+    }
+
+    private static class IllegalAggregateWithSeveralAggregateVersions {
+
+        @AggregateIdentifier
+        private String aggregateIdentifier;
+        @AggregateVersion
+        private long fieldAggregateVersion;
+
+        @AggregateVersion
+        public long getMethodAggregateVersion() {
+            return 1337;
         }
     }
 }

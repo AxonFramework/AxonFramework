@@ -32,7 +32,10 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
 import org.axonframework.modelling.command.EntityId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -49,11 +52,13 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ListUtils.distinct;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the meta
@@ -63,6 +68,8 @@ import static org.axonframework.common.ListUtils.distinct;
  * @since 3.1
  */
 public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFactory {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Map<Class<?>, AnnotatedAggregateModel> registry;
     private final ParameterResolverFactory parameterResolverFactory;
@@ -198,6 +205,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
     private class AnnotatedAggregateModel<T> implements AggregateModel<T> {
 
         private static final String JAVAX_PERSISTENCE_ID = "javax.persistence.Id";
+
         private final Class<? extends T> inspectedType;
         private final List<ChildEntity<T>> children;
         private final AnnotatedHandlerInspector<T> handlerInspector;
@@ -312,9 +320,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         private String findDeclaredType(Class<?> type) {
-            return AnnotationUtils.findAnnotationAttributes(type, AggregateRoot.class)
-                                  .map(map -> (String) map.get("type")).filter(i -> i.length() > 0)
-                                  .orElse(type.getSimpleName());
+            return findAnnotationAttributes(type, AggregateRoot.class)
+                    .map(map -> (String) map.get("type")).filter(i -> i.length() > 0)
+                    .orElse(type.getSimpleName());
         }
 
         private void inspectFieldsAndMethods() {
@@ -323,83 +331,80 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             List<Member> entityIdMembers = new ArrayList<>();
             List<Member> persistenceIdMembers = new ArrayList<>();
             List<Member> aggregateVersionMembers = new ArrayList<>();
-            for (Class<?> type : handlerInspector.getAllHandlers().keySet()) {
-                for (Field field : ReflectionUtils.fieldsOf(type)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, type, field);
-                    AnnotationUtils.findAnnotationAttributes(field, EntityId.class)
-                                   .ifPresent(attributes -> entityIdMembers.add(field));
-                    AnnotationUtils.findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID)
-                                   .ifPresent(attributes -> persistenceIdMembers.add(field));
-                    AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
-                                   .ifPresent(attributes -> aggregateVersionMembers.add(field));
+            for (Class<?> handlerType : handlerInspector.getAllHandlers().keySet()) {
+                // Navigate fields for Axon related annotations
+                for (Field field : ReflectionUtils.fieldsOf(handlerType)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handlerType, field);
+                    findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> entityIdMembers.add(field));
+                    findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID).ifPresent(
+                            attributes -> persistenceIdMembers.add(field)
+                    );
+                    findAnnotationAttributes(field, AggregateVersion.class).ifPresent(
+                            attributes -> aggregateVersionMembers.add(field)
+                    );
                 }
-                for (Method method : ReflectionUtils.methodsOf(type)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, type, method);
-                    AnnotationUtils.findAnnotationAttributes(method, EntityId.class)
-                                   .ifPresent(attributes -> {
-                                       assertValidValueProvidingMethod(method);
-                                       entityIdMembers.add(method);
-                                   });
-                    AnnotationUtils.findAnnotationAttributes(method, JAVAX_PERSISTENCE_ID)
-                                   .ifPresent(attributes -> {
-                                       assertValidValueProvidingMethod(method);
-                                       persistenceIdMembers.add(method);
-                                   });
-                    AnnotationUtils.findAnnotationAttributes(method, AggregateVersion.class)
-                                   .ifPresent(attributes -> {
-                                       assertValidValueProvidingMethod(method);
-                                       aggregateVersionMembers.add(method);
-                                   });
+                // Navigate methods for Axon related annotations
+                for (Method method : ReflectionUtils.methodsOf(handlerType)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handlerType, method);
+                    findAnnotationAttributes(method, EntityId.class).ifPresent(attributes -> {
+                        assertValidValueProvidingMethod(method, EntityId.class.getSimpleName());
+                        entityIdMembers.add(method);
+                    });
+                    findAnnotationAttributes(method, JAVAX_PERSISTENCE_ID).ifPresent(attributes -> {
+                        assertValidValueProvidingMethod(method, JAVAX_PERSISTENCE_ID);
+                        persistenceIdMembers.add(method);
+                    });
+                    findAnnotationAttributes(method, AggregateVersion.class).ifPresent(attributes -> {
+                        assertValidValueProvidingMethod(method, AggregateVersion.class.getSimpleName());
+                        aggregateVersionMembers.add(method);
+                    });
                 }
             }
 
             findIdentifierMember(distinct(entityIdMembers), distinct(persistenceIdMembers))
                     .ifPresent(this::setIdentifierAndRoutingKey);
-            if (!aggregateVersionMembers.isEmpty()) {
-                setVersionMember(aggregateVersionMembers.get(0));
-            }
+            setVersionMember(aggregateVersionMembers);
             assertIdentifierValidity(identifierMember);
         }
 
         private void createChildDefinitionsAndAddHandlers(ServiceLoader<ChildEntityDefinition> childEntityDefinitions,
                                                           Class<?> type,
-                                                          Member member) {
-            childEntityDefinitions.forEach(def -> def.createChildDefinition(member, this).ifPresent(child -> {
-                children.add(child);
-                child.commandHandlers().forEach(handler -> addHandler(allCommandHandlers, type, handler));
-            }));
+                                                          Member entityMember) {
+            childEntityDefinitions.forEach(
+                    definition -> definition.createChildDefinition(entityMember, this)
+                                            .ifPresent(child -> {
+                                                children.add(child);
+                                                child.commandHandlers().forEach(
+                                                        handler -> addHandler(allCommandHandlers, type, handler)
+                                                );
+                                            })
+            );
         }
 
-        private void setIdentifierAndRoutingKey(Member identifier) {
-            identifierMember = identifier;
-            routingKey = findRoutingKey((AccessibleObject) identifier)
-                    .orElseGet(() -> getMemberIdentifierName(identifier));
-        }
-
-        private String getMemberIdentifierName(Member identifier) {
-            String identifierName = identifier.getName();
-            if (identifier instanceof Method && isGetterByConvention(identifierName)) {
-                return stripGetterConvention(identifierName);
+        private void assertValidValueProvidingMethod(Method method, String annotationName) {
+            if (method.getParameterCount() != 0) {
+                throw new AggregateModellingException(format(
+                        "Aggregate [%s] has an [%s] annotated method [%s] with parameters, "
+                                + "whilst none are allowed on such a method.",
+                        inspectedType, annotationName, method
+                ));
             }
-            return identifierName;
-        }
-
-        private String stripGetterConvention(String identifierName) {
-            return identifierName.substring(3, 4).toLowerCase() + identifierName.substring(4);
-        }
-
-        private boolean isGetterByConvention(String identifierName) {
-            return identifierName.startsWith("get")
-                    && identifierName.length() >= 4
-                    && Character.isUpperCase(identifierName.charAt(3));
+            if (method.getReturnType() == Void.TYPE) {
+                throw new AggregateModellingException(format(
+                        "Aggregate [%s] has an [%s] annotated method [%s] with void return type, "
+                                + "whilst a return value is required for such a method.",
+                        inspectedType, annotationName, method
+                ));
+            }
         }
 
         private Optional<Member> findIdentifierMember(List<Member> entityIdMembers,
                                                       List<Member> persistenceIdMembers) {
             if (entityIdMembers.size() > 1) {
                 throw new AggregateModellingException(format(
-                        "Aggregate [%s] has more than one identifier member",
-                        inspectedType));
+                        "Aggregate [%s] has more than one identifier member, while only a single member is allowed.",
+                        inspectedType
+                ));
             }
             if (!entityIdMembers.isEmpty()) {
                 return Optional.of(entityIdMembers.get(0));
@@ -409,19 +414,64 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             return Optional.empty();
         }
 
-        private void assertValidValueProvidingMethod(Method method) {
-            if (method.getParameterCount() != 0) {
-                throw new AggregateModellingException(format(
-                        "Aggregate [%s] has an annotated method [%s] with parameters",
-                        inspectedType,
-                        method));
+        private void setIdentifierAndRoutingKey(Member identifier) {
+            identifierMember = identifier;
+            routingKey = findRoutingKey((AccessibleObject) identifier).orElseGet(
+                    () -> getMemberIdentifierName(identifier)
+            );
+        }
+
+        private Optional<String> findRoutingKey(AccessibleObject accessibleObject) {
+            return AnnotationUtils.<String>findAnnotationAttribute(accessibleObject, EntityId.class, "routingKey")
+                    .filter(key -> !"".equals(key));
+        }
+
+        /**
+         * Return the given {@code identifierMember}'s {@link Member#getName()}. If the given {@code identifierMember}
+         * is of type {@link Method} and it resembles a regular getter method, the {@code "get"} will be stripped off.
+         *
+         * @param identifierMember the {@link Member} to retrieve the name for
+         * @return the identifier name tied to the given {@code identifierMember}
+         */
+        private String getMemberIdentifierName(Member identifierMember) {
+            String identifierName = identifierMember.getName();
+            return identifierMember instanceof Method && isGetterByConvention(identifierName)
+                    ? stripGetterConvention(identifierName)
+                    : identifierName;
+        }
+
+        private boolean isGetterByConvention(String identifierName) {
+            return identifierName.startsWith("get")
+                    && identifierName.length() >= 4
+                    && Character.isUpperCase(identifierName.charAt(3));
+        }
+
+        private String stripGetterConvention(String identifierName) {
+            return identifierName.substring(3, 4).toLowerCase() + identifierName.substring(4);
+        }
+
+        private void setVersionMember(List<Member> versionMembers) {
+            if (versionMembers.isEmpty()) {
+                logger.debug("No @AggregateVersion annotated Member found.");
+                return;
             }
-            if (method.getReturnType() == Void.TYPE) {
+            if (versionMembers.size() > 1) {
+                String versionMembersString = versionMembers.stream()
+                                                            .map(Member::getName)
+                                                            .collect(Collectors.joining(", "));
                 throw new AggregateModellingException(format(
-                        "Aggregate [%s] has an annotated method [%s] with void return type, but a return value is required",
-                        inspectedType,
-                        method));
+                        "Aggregate [%s] has two or more @AggregateVersion annotated members, "
+                                + "whilst only a single member is allowed.\n "
+                                + "The following version members have been found: %s",
+                        inspectedType, versionMembersString
+                ));
             }
+
+            logger.debug(
+                    "@AggregateVersion annotated Member [{}] has been found and set as the [{}] Aggregate Version.",
+                    versionMembers.get(0).getName(), inspectedType
+            );
+            this.versionMember = versionMembers.get(0);
         }
 
         private void assertIdentifierValidity(Member identifier) {
@@ -430,25 +480,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 if (!IdentifierValidator.getInstance().isValidIdentifier(idClazz)) {
                     throw new AggregateModellingException(format(
                             "Aggregate identifier type [%s] should override Object.toString()",
-                            idClazz.getName()));
+                            idClazz.getName()
+                    ));
                 }
             }
-        }
-
-        private void setVersionMember(Member member) {
-            if (versionMember != null && !member.equals(versionMember)) {
-                throw new AggregateModellingException(format(
-                        "Aggregate [%s] has two version fields [%s] and [%s].",
-                        inspectedType,
-                        versionMember,
-                        member));
-            }
-            versionMember = member;
-        }
-
-        private Optional<String> findRoutingKey(AccessibleObject accessibleObject) {
-            return AnnotationUtils.<String>findAnnotationAttribute(accessibleObject, EntityId.class, "routingKey")
-                    .filter(key -> !"".equals(key));
         }
 
         @SuppressWarnings("unchecked")
@@ -520,10 +555,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         @Override
         public Long getVersion(T target) {
-            if (versionMember != null) {
-                return ReflectionUtils.<Long>getMemberValue(versionMember, target);
-            }
-            return null;
+            return versionMember != null ? ReflectionUtils.<Long>getMemberValue(versionMember, target) : null;
         }
 
         @Override
@@ -569,17 +601,13 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         @Override
         public Object getIdentifier(T target) {
-            if (identifierMember == null) {
-                return null;
-            }
-            return ReflectionUtils.getMemberValue(identifierMember, target);
+            return identifierMember != null ? ReflectionUtils.getMemberValue(identifierMember, target) : null;
         }
 
         @Override
         public String routingKey() {
             return routingKey;
         }
-
 
         /**
          * Returns this instance when it it safe to read from. This is either if the current thread is already
