@@ -43,14 +43,14 @@ class EventTrackerStatusTest {
     @Test
     void testIsDifferentReturnsFalseForIdenticalObjects() {
         assertFalse(thisStatus.isDifferent(thisStatus, DO_NOT_VALIDATE_POSITIONS));
-        assertFalse(thisStatus.isDifferent(thisStatus, VALIDATE_POSITIONS));
+        assertFalse(thisStatus.isDifferent(thisStatus));
     }
 
     @Test
     void testIsDifferentReturnsTrueForDifferentEventTrackerStatusImplementations() {
         AddedTrackerStatus otherStatus = new AddedTrackerStatus(thatStatus);
         assertTrue(thisStatus.isDifferent(otherStatus, DO_NOT_VALIDATE_POSITIONS));
-        assertTrue(thisStatus.isDifferent(otherStatus, VALIDATE_POSITIONS));
+        assertTrue(thisStatus.isDifferent(otherStatus));
     }
 
     @Test

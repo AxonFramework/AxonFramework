@@ -28,6 +28,7 @@ import java.util.OptionalLong;
  * @since 3.2
  */
 public interface EventTrackerStatus {
+
     /**
      * The segment for which this status is valid.
      *
@@ -47,25 +48,27 @@ public interface EventTrackerStatus {
     /**
      * Indicates whether this Segment is still replaying previously processed Events.
      * <p>
-     * Note that this method will only recognize a replay if the tokens have been reset using
-     * {@link TrackingEventProcessor#resetTokens()}. Removing tokens directly from the underlying {@link TokenStore} will not be
-     * recognized as a replay.
+     * Note that this method will only recognize a replay if the tokens have been reset using {@link
+     * TrackingEventProcessor#resetTokens()}. Removing tokens directly from the underlying {@link TokenStore} will not
+     * be recognized as a replay.
      *
-     * @return {@code true} if this segment is replaying historic events after a {@link TrackingEventProcessor#resetTokens() reset}, otherwise {@code false}
+     * @return {@code true} if this segment is replaying historic events after a {@link
+     * TrackingEventProcessor#resetTokens() reset}, otherwise {@code false}
      */
     boolean isReplaying();
 
     /**
-     * Indicates whether this Segment is still merging two (or more) Segments. The merging process will be done once all Segments have reached the same position.
+     * Indicates whether this Segment is still merging two (or more) Segments. The merging process will be done once all
+     * Segments have reached the same position.
      *
      * @return {@code true} if this segment is merging Segments, otherwise {@code false}
      */
     boolean isMerging();
 
     /**
-     * Return the estimated relative token position this Segment will have after a merge operation is complete.
-     * Will return a non-empty result as long as {@link EventTrackerStatus#isMerging()} } returns true.
-     * In case no estimation can be given or no merge in progress, an {@code OptionalLong.empty()} will be returned.
+     * Return the estimated relative token position this Segment will have after a merge operation is complete. Will
+     * return a non-empty result as long as {@link EventTrackerStatus#isMerging()} } returns true. In case no estimation
+     * can be given or no merge in progress, an {@code OptionalLong.empty()} will be returned.
      *
      * @return return the estimated relative position this Segment will reach after a merge operation is complete.
      */
@@ -98,22 +101,32 @@ public interface EventTrackerStatus {
     Throwable getError();
 
     /**
-     * Return the estimated relative current token position this Segment represents.
-     * In case of replay is active, return the estimated relative position reached by merge operation.
-     * In case of merge is active, return the estimated relative position reached by merge operation.
-     * In case no estimation can be given, or no replay or merge in progress, an {@code OptionalLong.empty()} will be returned.
+     * Return the estimated relative current token position this Segment represents. In case of replay is active, return
+     * the estimated relative position reached by merge operation. In case of merge is active, return the estimated
+     * relative position reached by merge operation. In case no estimation can be given, or no replay or merge in
+     * progress, an {@code OptionalLong.empty()} will be returned.
      *
      * @return return the estimated relative current token position this Segment represents
      */
     OptionalLong getCurrentPosition();
 
     /**
-     * Return the relative position at which a reset was triggered for this Segment.
-     * In case a replay finished or no replay is active, an {@code OptionalLong.empty()} will be returned.
+     * Return the relative position at which a reset was triggered for this Segment. In case a replay finished or no
+     * replay is active, an {@code OptionalLong.empty()} will be returned.
      *
      * @return the relative position at which a reset was triggered for this Segment
      */
     OptionalLong getResetPosition();
+
+    /**
+     * Check whether {@code this} {@link EventTrackerStatus} is different from {@code that}.
+     *
+     * @param that the other {@link EventTrackerStatus} to validate the difference with
+     * @return {@code true} if both {@link EventTrackerStatus}'s are different, {@code false} otherwise
+     */
+    default boolean isDifferent(EventTrackerStatus that) {
+        return isDifferent(that, true);
+    }
 
     /**
      * Check whether {@code this} {@link EventTrackerStatus} is different from {@code that}.
