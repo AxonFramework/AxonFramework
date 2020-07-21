@@ -29,6 +29,7 @@ import reactor.util.function.Tuple2;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -104,7 +105,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
     private Mono<CommandMessage<?>> processCommandInterceptors(Mono<CommandMessage<?>> commandMessage) {
         return Flux.fromIterable(dispatchInterceptors)
                    .reduce(commandMessage, (command, interceptor) -> interceptor.intercept(command))
-                   .flatMap(Mono::from);
+                   .flatMap(Function.identity());
     }
 
     private <C, R> Mono<Tuple2<CommandMessage<C>, Flux<CommandResultMessage<? extends R>>>> dispatchCommand(
