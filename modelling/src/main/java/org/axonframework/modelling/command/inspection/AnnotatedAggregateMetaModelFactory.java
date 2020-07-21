@@ -254,11 +254,15 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                                     type));
                         }
                         addHandler(allCommandHandlers, type, handler);
-                    } else if (handler.unwrap(CommandHandlerInterceptorHandlingMember.class).isPresent()) {
-                        addHandler(allCommandHandlerInterceptors, type, handler);
                     } else {
                         addHandler(allEventHandlers, type, handler);
                     }
+                }
+            }
+            for (Map.Entry<Class<?>, SortedSet<MessageHandlingMember<? super T>>> interceptorsPerType : handlerInspector.getAllInterceptors().entrySet()) {
+                Class<?> type = interceptorsPerType.getKey();
+                for (MessageHandlingMember<? super T> handler : interceptorsPerType.getValue()) {
+                    addHandler(allCommandHandlerInterceptors, type, handler);
                 }
             }
             validateCommandHandlers();
@@ -529,7 +533,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private void doPublish(EventMessage<?> message, T target) {
             getHandler(message, target.getClass()).ifPresent(h -> {
                 try {
-                    h.handle(message, target);
+                    handlerInspector.chainedInterceptor(target.getClass())
+                                    .handle(message, target, h);
                 } catch (Exception e) {
                     throw new MessageHandlerInvocationException(
                             format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
@@ -579,7 +584,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, Class<?> targetClass) {
             return handlers(allEventHandlers, targetClass)
                     .filter(handler -> handler.canHandle(message))
-                    .findAny();
+                    .findFirst();
         }
 
         @Override
@@ -595,8 +600,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             while (!handlers.containsKey(type) && !type.equals(Object.class)) {
                 type = type.getSuperclass();
             }
-            return handlers.getOrDefault(type, new ArrayList<>())
-                           .stream();
+            return handlers.getOrDefault(type, Collections.emptyList()).stream();
         }
 
         @Override

@@ -17,11 +17,12 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.replay.GenericResetContext;
-import org.axonframework.messaging.Message;
+import org.axonframework.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -84,7 +85,15 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public Object handle(EventMessage<?> event) throws Exception {
-        return findAndHandle(event);
+        Optional<MessageHandlingMember<? super Object>> handler =
+                inspector.getHandlers(listenerType)
+                         .filter(h -> h.canHandle(event))
+                         .findFirst();
+        if (handler.isPresent()) {
+            MessageHandlerInterceptorMemberChain<Object> interceptor = inspector.chainedInterceptor(listenerType);
+            return interceptor.handle(event, annotatedEventListener, handler.get());
+        }
+        return null;
     }
 
     @Override
@@ -112,17 +121,17 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public <R> void prepareReset(R resetContext) {
         try {
-            findAndHandle(GenericResetContext.asResetContext(resetContext));
+            ResetContext<?> resetMessage = GenericResetContext.asResetContext(resetContext);
+            Optional<MessageHandlingMember<? super Object>> handler =
+                    inspector.getHandlers(listenerType)
+                             .filter(h -> h.canHandle(resetMessage))
+                             .findFirst();
+            if (handler.isPresent()) {
+                handler.get().handle(resetMessage, annotatedEventListener);
+            }
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);
         }
-    }
-
-    private Object findAndHandle(Message<?> message) throws Exception {
-        Optional<MessageHandlingMember<? super Object>> optionalHandler = inspector.getHandlers(listenerType)
-                                                                                   .filter(h -> h.canHandle(message))
-                                                                                   .findFirst();
-        return optionalHandler.isPresent() ? optionalHandler.get().handle(message, annotatedEventListener) : null;
     }
 
     @Override

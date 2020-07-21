@@ -16,16 +16,23 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.AxonException;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.interceptors.ExceptionHandler;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -36,12 +43,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnnotationEventHandlerAdapterTest {
 
     private SomeHandler annotatedEventListener;
+    private ParameterResolverFactory parameterResolverFactory;
     private AnnotationEventHandlerAdapter testSubject;
 
     @BeforeEach
     void setUp() {
         annotatedEventListener = new SomeHandler();
-        ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
+        parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(getClass()),
                 new SimpleResourceParameterResolverFactory(singletonList(new SomeResource()))
         );
@@ -62,10 +70,55 @@ class AnnotationEventHandlerAdapterTest {
         assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }
 
+    @Test
+    void testHandlerInterceptors() throws Exception {
+        SomeHandler annotatedEventListener = new SomeInterceptingHandler();
+        testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
+
+        testSubject.handle(asEventMessage("count"));
+        assertEquals(3, annotatedEventListener.invocations.stream().filter("count"::equals).count());
+    }
+
+    @Test
+    void testWrapExceptionInResultInterceptor() {
+        EventMessage<Object> testEventMessage =
+                asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
+
+        SomeExceptionHandler annotatedEventListener = new SomeExceptionHandler();
+        testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
+
+        try {
+            testSubject.handle(testEventMessage);
+            fail("Expected exception");
+        } catch (Exception e) {
+            assertEquals(RuntimeException.class, e.getClass());
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertEquals("testing", e.getCause().getMessage());
+            assertEquals("value", e.getMessage());
+        }
+    }
+
+    @Test
+    void testMismatchingExceptionTypeFromHandlerIgnored() {
+        EventMessage<Object> testEventMessage =
+                asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
+
+        SomeMismatchingExceptionHandler annotatedEventListener = new SomeMismatchingExceptionHandler();
+        testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
+
+        try {
+            testSubject.handle(testEventMessage);
+            fail("Expected exception");
+        } catch (Exception e) {
+            assertEquals(IllegalArgumentException.class, e.getClass());
+            assertEquals("testing", e.getMessage());
+        }
+    }
+
     @SuppressWarnings("unused")
     private static class SomeHandler {
 
-        private final List<String> invocations = new ArrayList<>();
+        final List<String> invocations = new ArrayList<>();
 
         @EventHandler
         public void handle(String event) {
@@ -80,6 +133,64 @@ class AnnotationEventHandlerAdapterTest {
         @ResetHandler
         public void doResetWithContext(String resetContext, SomeResource someResource) {
             invocations.add("resetWithContext");
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class SomeExceptionHandler {
+
+        @EventHandler
+        public void throwException(String msg) {
+            throw new IllegalArgumentException(msg);
+        }
+
+        @EventHandler
+        public void handleNormally(Long value) {
+            // noop
+        }
+
+        @ExceptionHandler(resultType = IllegalArgumentException.class)
+        public void handle(@MetaDataValue(value = "key", required = true) String value, Exception e) {
+            throw new RuntimeException(value, e);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class SomeMismatchingExceptionHandler {
+
+        @EventHandler
+        public void throwException(String msg) {
+            throw new IllegalArgumentException(msg);
+        }
+
+        @EventHandler
+        public void handleNormally(Long value) {
+            // noop
+        }
+
+        @ExceptionHandler
+        public void handle(@MetaDataValue(value = "key", required = true) String value, AxonException e) {
+            throw new RuntimeException(value, e);
+        }
+
+        @ExceptionHandler(resultType = NoSuchMethodException.class)
+        public void handle(Exception e) {
+            throw new RuntimeException("This should not have been invoked", e);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class SomeInterceptingHandler extends SomeHandler {
+
+        @MessageHandlerInterceptor
+        public void intercept(String event, InterceptorChain chain) throws Exception {
+            invocations.add(event);
+            chain.proceed();
+        }
+
+        @MessageHandlerInterceptor
+        public void intercept(Object any) {
+            invocations.add(any.toString());
         }
     }
 

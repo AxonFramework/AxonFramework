@@ -43,6 +43,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
@@ -314,7 +315,8 @@ public class SpringAxonAutoConfigurerTest {
                         DeadlineMethodMessageHandlerDefinition.class,
                         MethodCreationPolicyDefinition.class,
                         MethodCreationPolicyDefinition.class,
-                        MyHandlerEnhancerDefinition.class
+                        MyHandlerEnhancerDefinition.class,
+                        MessageHandlerInterceptorDefinition.class
                 ),
                 enhancerClasses
         );
