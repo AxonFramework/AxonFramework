@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,9 +178,10 @@ public class ReflectionUtilsTest {
     }
 
     @Test
-    void testGetMemberValueFromConstructor() {
-        assertThrows(IllegalStateException.class,
-                     () -> ReflectionUtils.getMemberValue(SomeType.class.getDeclaredConstructor(), new SomeSubType()));
+    void testGetMemberValueFromConstructor() throws NoSuchMethodException {
+        Constructor<SomeType> testConstructor = SomeType.class.getDeclaredConstructor();
+        SomeSubType testTarget = new SomeSubType();
+        assertThrows(IllegalStateException.class, () -> ReflectionUtils.getMemberValue(testConstructor, testTarget));
     }
 
     @Test
@@ -198,8 +199,9 @@ public class ReflectionUtilsTest {
     }
 
     @Test
-    void testGetMemberValueTypeFromConstructor() {
-        assertThrows(IllegalStateException.class, () -> getMemberValueType(SomeType.class.getDeclaredConstructor()));
+    void testGetMemberValueTypeFromConstructor() throws NoSuchMethodException {
+        Constructor<SomeType> testConstructor = SomeType.class.getDeclaredConstructor();
+        assertThrows(IllegalStateException.class, () -> getMemberValueType(testConstructor));
     }
 
     @Test

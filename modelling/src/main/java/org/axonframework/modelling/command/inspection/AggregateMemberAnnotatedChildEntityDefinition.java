@@ -36,6 +36,11 @@ import java.util.stream.Stream;
  */
 public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChildEntityDefinition {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated in favour of {@link #isMemberTypeSupported(Member)}
+     */
     @Override
     @Deprecated
     protected boolean isFieldTypeSupported(Field field) {

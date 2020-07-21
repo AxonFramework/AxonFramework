@@ -44,6 +44,11 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
  */
 public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends AbstractChildEntityDefinition {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated in favour of {@link #isMemberTypeSupported(Member)}
+     */
     @Override
     @Deprecated
     protected boolean isFieldTypeSupported(Field field) {
