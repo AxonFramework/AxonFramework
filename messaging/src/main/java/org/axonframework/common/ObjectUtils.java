@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package org.axonframework.common;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Miscellaneous object utility methods
+ * Miscellaneous object utility methods.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public abstract class ObjectUtils {
 
@@ -30,9 +34,9 @@ public abstract class ObjectUtils {
     /**
      * Returns the given instance, if not {@code null}, or otherwise the value provided by {@code defaultProvider}.
      *
-     * @param instance        The value to return, if not {@code null}
-     * @param defaultProvider To provide the value, when {@code instance} is {@code null}
-     * @param <T>             The type of value to return
+     * @param instance        the value to return, if not {@code null}
+     * @param defaultProvider to provide the value, when {@code instance} is {@code null}
+     * @param <T>             the type of value to return
      * @return {@code instance} if not {@code null}, otherwise the value provided by {@code defaultProvider}
      */
     public static <T> T getOrDefault(T instance, Supplier<T> defaultProvider) {
@@ -45,9 +49,9 @@ public abstract class ObjectUtils {
     /**
      * Returns the given instance, if not {@code null}, or otherwise the given {@code defaultValue}.
      *
-     * @param instance        The value to return, if not {@code null}
-     * @param defaultValue The value, when {@code instance} is {@code null}
-     * @param <T>             The type of value to return
+     * @param instance     the value to return, if not {@code null}
+     * @param defaultValue the value, when {@code instance} is {@code null}
+     * @param <T>          the type of value to return
      * @return {@code instance} if not {@code null}, otherwise {@code defaultValue}
      */
     public static <T> T getOrDefault(T instance, T defaultValue) {
@@ -56,12 +60,13 @@ public abstract class ObjectUtils {
         }
         return instance;
     }
+
     /**
      * Returns the given instance, if not {@code null} or of zero length, or otherwise the given {@code defaultValue}.
      *
-     * @param instance        The value to return, if not {@code null}
-     * @param defaultValue The value, when {@code instance} is {@code null}
-     * @param <T>             The type of value to return
+     * @param instance     the value to return, if not {@code null}
+     * @param defaultValue the value, when {@code instance} is {@code null}
+     * @param <T>          the type of value to return
      * @return {@code instance} if not {@code null}, otherwise {@code defaultValue}
      */
     public static <T extends CharSequence> T getNonEmptyOrDefault(T instance, T defaultValue) {
@@ -71,6 +76,31 @@ public abstract class ObjectUtils {
         return instance;
     }
 
+    /**
+     * Returns the result of the given {@code valueProvider} by ingesting the given {@code instance}, <em>if</em> the
+     * {@code instance} is not {@code null}. If it is, the {@code defaultValue} is returned.
+     *
+     * @param instance      the value to verify if it is not {@code null}. If it isn't, the given {@code valueProvider}
+     *                      will be invoked with this object
+     * @param valueProvider the function to return the result of by ingesting the {@code instance} if it is not null
+     * @param defaultValue  the value to return if the given {@code instance} is {@code null}
+     * @param <I>           the type of the {@code instance} to verify and use by the {@code valueProvider}
+     * @param <T>           the type of value to return
+     * @return the output of {@code valueProvider} by ingesting {@code instance} if it is not {@code null}, otherwise
+     * the {@code defaultValue}
+     */
+    public static <I, T> T getOrDefault(I instance, Function<I, T> valueProvider, T defaultValue) {
+        return instance != null ? valueProvider.apply(instance) : defaultValue;
+    }
+
+    /**
+     * Returns the type of the given {@code instance}, <em>if</em> it is not {@code null}. If it is {@code null}, {@link
+     * Void#getClass()} will be returned.
+     *
+     * @param instance the object to return the type for
+     * @param <T>      the generic type of the {@link Class} to return
+     * @return the type of the given {@code instance} if it is not {@code null}, otherwise {@link Void#getClass()}
+     */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> nullSafeTypeOf(T instance) {
         if (instance == null) {
