@@ -81,7 +81,9 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @deprecated in favour of {@link #isMemberTypeSupported(Member)}
      */
     @Deprecated
-    protected abstract boolean isFieldTypeSupported(Field field);
+    protected boolean isFieldTypeSupported(Field field) {
+        return isMemberTypeSupported(field);
+    }
 
     /**
      * Check whether the given {@link Member} is of a type supported by this definition.

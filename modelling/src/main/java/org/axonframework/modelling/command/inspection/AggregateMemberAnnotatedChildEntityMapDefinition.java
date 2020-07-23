@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.ForwardingMode;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -41,17 +40,6 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
  * @since 3.0
  */
 public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractChildEntityDefinition {
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated in favour of {@link #isMemberTypeSupported(Member)}
-     */
-    @Override
-    @Deprecated
-    protected boolean isFieldTypeSupported(Field field) {
-        return isMemberTypeSupported(field);
-    }
 
     @Override
     protected boolean isMemberTypeSupported(Member member) {
