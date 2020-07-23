@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,28 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Optional;
 
 /**
- * Interface describing the definition of a Child Entity. These definitions are automatically detected by the
- * {@link AnnotatedAggregateMetaModelFactory} if the definition's implementations is registered in the
- * {@code META-INF/services/org.axonframework.modelling.command.inspection.ChildEntityDefinition} file.
+ * Interface describing the definition of a Child Entity. These definitions are automatically detected by the {@link
+ * AnnotatedAggregateMetaModelFactory} if the definition's implementations is registered in the {@code
+ * META-INF/services/org.axonframework.modelling.command.inspection.ChildEntityDefinition} file.
  *
+ * @author Allard Buijze
  * @see java.util.ServiceLoader
+ * @since 3.0
  */
 public interface ChildEntityDefinition {
 
     /**
-     * Inspect the given {@code field}, which is declared on the given {@code declaringEntity} for the presence of a
+     * Inspect the given {@code member}, which is declared on the given {@code declaringEntity} for the presence of a
      * Child Entity.
      *
-     * @param field           The field potentially containing a Child entity
-     * @param declaringEntity The entity model declaring the field
-     * @param <T>             The type of entity on which the field is declared
-     * @return an optional that resolved to a ChildEntity if the field represents a child.
+     * @param member          the member potentially containing a Child entity
+     * @param declaringEntity the entity model declaring the field
+     * @param <T>             the type of entity on which the field is declared
+     * @return an optional that resolved to a ChildEntity if the field represents a child
      */
-    <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity);
-
+    <T> Optional<ChildEntity<T>> createChildDefinition(Member member, EntityModel<T> declaringEntity);
 }

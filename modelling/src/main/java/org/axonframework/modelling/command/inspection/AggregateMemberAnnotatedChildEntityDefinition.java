@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.ForwardingMode;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
- * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entity.
+ * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with {@link
+ * AggregateMember}. If such a field or method is found a {@link ChildEntity} is created that delegates to the entity.
  *
  * @author Allard Buijze
  * @since 3.0
@@ -36,32 +36,39 @@ import java.util.stream.Stream;
 public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChildEntityDefinition {
 
     @Override
-    protected boolean isFieldTypeSupported(Field field) {
-        return !Iterable.class.isAssignableFrom(field.getType()) && !Map.class.isAssignableFrom(field.getType());
+    protected boolean isMemberTypeSupported(Member member) {
+        try {
+            Class<?> valueType = ReflectionUtils.getMemberValueType(member);
+            return !Iterable.class.isAssignableFrom(valueType) && !Map.class.isAssignableFrom(valueType);
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 
     @Override
     protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
                                                               Map<String, Object> attributes,
-                                                              Field field) {
-        return declaringEntity.modelOf(field.getType());
+                                                              Member member) {
+        Class<?> entityClass = ReflectionUtils.getMemberValueType(member);
+        return declaringEntity.modelOf(entityClass);
     }
 
     @Override
     protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
                                               T parent,
-                                              Field field,
+                                              Member member,
                                               EntityModel<Object> childEntityModel) {
-        return ReflectionUtils.getFieldValue(field, parent);
+        return ReflectionUtils.getMemberValue(member, parent);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected <T> Stream<Object> resolveEventTargets(EventMessage message,
                                                      T parentEntity,
-                                                     Field field,
+                                                     Member member,
                                                      ForwardingMode eventForwardingMode) {
-        Object fieldVal = ReflectionUtils.getFieldValue(field, parentEntity);
-        return fieldVal == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(fieldVal));
+        Object memberValue = ReflectionUtils.getMemberValue(member, parentEntity);
+        return memberValue == null
+                ? Stream.empty()
+                : eventForwardingMode.filterCandidates(message, Stream.of(memberValue));
     }
 }

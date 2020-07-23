@@ -210,26 +210,28 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectNoScheduledDeadlineMatching(Duration duration,
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
                                                                 Matcher<? super DeadlineMessage<?>> matcher) {
-        Instant scheduledTime = deadlineManagerValidator.currentDateTime().plus(duration);
+        Instant scheduledTime = deadlineManagerValidator.currentDateTime().plus(durationToScheduledTime);
         return expectNoScheduledDeadlineMatching(scheduledTime, matcher);
     }
 
     @Override
-    public ResultValidator<T> expectNoScheduledDeadline(Duration duration, Object deadline) {
-        return expectNoScheduledDeadlineMatching(duration, messageWithPayload(equalTo(deadline, fieldFilter)));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineOfType(Duration duration, Class<?> deadlineType) {
-        return expectNoScheduledDeadlineMatching(duration, messageWithPayload(any(deadlineType)));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineWithName(Duration duration, String deadlineName) {
+    public ResultValidator<T> expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline) {
         return expectNoScheduledDeadlineMatching(
-                duration,
+                durationToScheduledTime, messageWithPayload(equalTo(deadline, fieldFilter))
+        );
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(durationToScheduledTime, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(
+                durationToScheduledTime,
                 matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
         );
     }

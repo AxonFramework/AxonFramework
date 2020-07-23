@@ -16,16 +16,21 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.Message;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,17 +47,19 @@ public class AnnotatedHandlerInspector<T> {
 
     private final Class<T> inspectedType;
     private final ParameterResolverFactory parameterResolverFactory;
-    private final Map<Class<?>, AnnotatedHandlerInspector> registry;
+    private final Map<Class<?>, AnnotatedHandlerInspector<?>> registry;
     private final List<AnnotatedHandlerInspector<? super T>> superClassInspectors;
     private final List<AnnotatedHandlerInspector<? extends T>> subClassInspectors;
     private final Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> handlers;
     private final HandlerDefinition handlerDefinition;
+    private final Map<Class<?>, MessageHandlerInterceptorMemberChain<T>> interceptorChains;
+    private final Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> interceptors;
 
     private AnnotatedHandlerInspector(Class<T> inspectedType,
                                       List<AnnotatedHandlerInspector<? super T>> superClassInspectors,
                                       ParameterResolverFactory parameterResolverFactory,
                                       HandlerDefinition handlerDefinition,
-                                      Map<Class<?>, AnnotatedHandlerInspector> registry,
+                                      Map<Class<?>, AnnotatedHandlerInspector<?>> registry,
                                       List<AnnotatedHandlerInspector<? extends T>> subClassInspectors) {
         this.inspectedType = inspectedType;
         this.parameterResolverFactory = parameterResolverFactory;
@@ -61,6 +68,8 @@ public class AnnotatedHandlerInspector<T> {
         this.handlers = new HashMap<>();
         this.handlerDefinition = handlerDefinition;
         this.subClassInspectors = subClassInspectors;
+        this.interceptorChains = new ConcurrentHashMap<>();
+        this.interceptors = new ConcurrentHashMap<>();
     }
 
     /**
@@ -129,10 +138,11 @@ public class AnnotatedHandlerInspector<T> {
                                declaredSubtypes);
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> AnnotatedHandlerInspector<T> createInspector(Class<? extends T> inspectedType,
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     HandlerDefinition handlerDefinition,
-                                                                    Map<Class<?>, AnnotatedHandlerInspector> registry,
+                                                                    Map<Class<?>, AnnotatedHandlerInspector<?>> registry,
                                                                     Set<Class<? extends T>> declaredSubtypes) {
         if (!registry.containsKey(inspectedType)) {
             registry.put(inspectedType,
@@ -143,17 +153,16 @@ public class AnnotatedHandlerInspector<T> {
                                                               declaredSubtypes));
         }
         //noinspection unchecked
-        return registry.get(inspectedType);
+        return (AnnotatedHandlerInspector<T>) registry.get(inspectedType);
     }
 
     private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,
-                                                               Map<Class<?>, AnnotatedHandlerInspector> registry,
+                                                               Map<Class<?>, AnnotatedHandlerInspector<?>> registry,
                                                                Set<Class<? extends T>> declaredSubtypes) {
         List<AnnotatedHandlerInspector<? super T>> parents = new ArrayList<>();
         for (Class<?> iFace : inspectedType.getInterfaces()) {
-            //noinspection unchecked
             parents.add(createInspector(iFace,
                                         parameterResolverFactory,
                                         handlerDefinition,
@@ -176,15 +185,16 @@ public class AnnotatedHandlerInspector<T> {
                                                                  emptySet()))
                                 .collect(Collectors.toList());
         AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<>(inspectedType,
-                                                                                 parents,
-                                                                                 parameterResolverFactory,
-                                                                                 handlerDefinition,
-                                                                                 registry,
-                                                                                 children);
+                                                                                  parents,
+                                                                                  parameterResolverFactory,
+                                                                                  handlerDefinition,
+                                                                                  registry,
+                                                                                  children);
         inspector.initializeMessageHandlers(parameterResolverFactory, handlerDefinition);
         return inspector;
     }
 
+    @SuppressWarnings("unchecked")
     private void initializeMessageHandlers(ParameterResolverFactory parameterResolverFactory,
                                            HandlerDefinition handlerDefinition) {
         handlers.put(inspectedType, new TreeSet<>(HandlerComparator.instance()));
@@ -194,22 +204,37 @@ public class AnnotatedHandlerInspector<T> {
         }
         for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
             handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory)
-                            .ifPresent(h -> registerHandler(inspectedType, h));
+                             .ifPresent(h -> registerHandler(inspectedType, h));
         }
 
+        // we need to consider handlers from parent/subclasses as well
         subClassInspectors.forEach(sci -> sci.getAllHandlers()
-                .forEach((key, value) -> value.forEach(h -> registerHandler(key, (MessageHandlingMember<T>) h))));
-
+                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key, (MessageHandlingMember<T>) h))));
         superClassInspectors.forEach(sci -> sci.getAllHandlers()
-                .forEach((key, value) -> value.forEach(h -> {
-                    registerHandler(key, h);
-                    registerHandler(inspectedType, h);
-                })));
+                                               .forEach((key, value) -> value.forEach(h -> {
+                                                   registerHandler(key, h);
+                                                   registerHandler(inspectedType, h);
+                                               })));
+
+        // we need to consider interceptors from parent/subclasses as well
+        subClassInspectors.forEach(sci -> sci.getAllInterceptors()
+                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key, (MessageHandlingMember<T>) h))));
+        superClassInspectors.forEach(sci -> sci.getAllInterceptors()
+                                               .forEach((key, value) -> value.forEach(h -> {
+                                                   registerHandler(key, h);
+                                                   registerHandler(inspectedType, h);
+                                               })));
     }
 
     private void registerHandler(Class<?> type, MessageHandlingMember<? super T> handler) {
-        handlers.computeIfAbsent(type, t -> new TreeSet<>(HandlerComparator.instance()))
-                .add(handler);
+        if (handler.unwrap(MessageInterceptingMember.class).isPresent()) {
+            interceptors.computeIfAbsent(type, t -> new TreeSet<>(HandlerComparator.instance()))
+                        .add(handler);
+
+        } else {
+            handlers.computeIfAbsent(type, t -> new TreeSet<>(HandlerComparator.instance()))
+                    .add(handler);
+        }
     }
 
     /**
@@ -218,6 +243,7 @@ public class AnnotatedHandlerInspector<T> {
      *
      * @param entityType the type of the handler to inspect
      * @param <C>        the handler's type
+     *
      * @return a new inspector for the given type
      */
     public <C> AnnotatedHandlerInspector<C> inspect(Class<? extends C> entityType) {
@@ -243,11 +269,31 @@ public class AnnotatedHandlerInspector<T> {
      * Returns a list of detected members of given {@code type} that are capable of handling certain messages.
      *
      * @param type a type of inspected entity
+     *
      * @return a stream of detected message handlers for given {@code type}
      */
     public Stream<MessageHandlingMember<? super T>> getHandlers(Class<?> type) {
         return handlers.getOrDefault(type, emptySortedSet())
                        .stream();
+    }
+
+    /**
+     * Returns an Interceptor Chain of annotated interceptor methods defined on the given
+     * {@code type}. The given chain will invoke all relevant interceptors in an order defined
+     * by the handler definition.
+     *
+     * @param type The type containing the handler definitions
+     *
+     * @return an interceptor chain that invokes the interceptor handlers defined on the inspected type
+     */
+    public MessageHandlerInterceptorMemberChain<T> chainedInterceptor(Class<?> type) {
+        return interceptorChains.computeIfAbsent(type, t -> {
+            Collection<MessageHandlingMember<? super T>> i = interceptors.getOrDefault(type, emptySortedSet());
+            if (i.isEmpty()) {
+                return NoMoreInterceptors.instance();
+            }
+            return new ChainedMessageHandlerInterceptorMember<>(t, i.iterator());
+        });
     }
 
     /**
@@ -257,5 +303,55 @@ public class AnnotatedHandlerInspector<T> {
      */
     public Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> getAllHandlers() {
         return Collections.unmodifiableMap(handlers);
+    }
+
+    /**
+     * Returns a Map of all registered interceptor methods per inspected type. Each entry
+     * contains the inspected type as key, and a SortedSet of interceptor methods defined
+     * on that type, in the order they are considered for invocation.
+     *
+     * @return a map of interceptors per type
+     */
+    public Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> getAllInterceptors() {
+        return Collections.unmodifiableMap(interceptors);
+    }
+
+    private static class ChainedMessageHandlerInterceptorMember<T> implements MessageHandlerInterceptorMemberChain<T> {
+        private final MessageHandlingMember<? super T> delegate;
+        private final MessageHandlerInterceptorMemberChain<T> next;
+
+        private ChainedMessageHandlerInterceptorMember(Class<?> targetType, Iterator<MessageHandlingMember<? super T>> iterator) {
+            this.delegate = iterator.next();
+            if (iterator.hasNext()) {
+                this.next = new ChainedMessageHandlerInterceptorMember<>(targetType, iterator);
+            } else {
+                this.next = NoMoreInterceptors.instance();
+            }
+        }
+
+        @Override
+        public Object handle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
+            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(() -> next.handle(message, target, handler),
+                                                                                     () -> doHandle(message, target, handler));
+        }
+
+        private Object doHandle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
+            if (delegate.canHandle(message)) {
+                return delegate.handle(message, target);
+            }
+            return next.handle(message, target, handler);
+        }
+    }
+
+    private static class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberChain<T> {
+
+        static <T> MessageHandlerInterceptorMemberChain<T> instance() {
+            return new NoMoreInterceptors<>();
+        }
+
+        @Override
+        public Object handle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
+            return handler.handle(message, target);
+        }
     }
 }

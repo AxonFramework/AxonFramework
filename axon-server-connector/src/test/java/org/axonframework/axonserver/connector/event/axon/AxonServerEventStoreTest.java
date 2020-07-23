@@ -22,6 +22,7 @@ import org.axonframework.axonserver.connector.PlatformService;
 import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
@@ -33,7 +34,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -74,7 +74,7 @@ class AxonServerEventStoreTest {
         upcasterChain = mock(EventUpcaster.class);
         when(upcasterChain.upcast(any())).thenAnswer(i -> i.getArgument(0));
         AxonServerConfiguration config = AxonServerConfiguration.builder()
-                                                                .allowReadingEventsFromFollower(true)
+                                                                .forceReadFromLeader(false)
                                                                 .servers("localhost:" + server.getPort())
                                                                 .componentName("JUNIT")
                                                                 .flowControl(2, 1, 1)
@@ -87,7 +87,7 @@ class AxonServerEventStoreTest {
                                           .platformConnectionManager(axonServerConnectionManager)
                                           .upcasterChain(upcasterChain)
                                           .eventSerializer(JacksonSerializer.defaultSerializer())
-                                          .snapshotSerializer(XStreamSerializer.defaultSerializer())
+                                          .snapshotSerializer(TestSerializer.secureXStreamSerializer())
                                           .build();
     }
 
@@ -191,6 +191,6 @@ class AxonServerEventStoreTest {
         testSubject.query("", true);
         assertWithin(1, TimeUnit.SECONDS,
                      () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
-        assertTrue(eventStore.getQueryEventsRequests().get(0).getForceReadFromLeader());
+        assertFalse(eventStore.getQueryEventsRequests().get(0).getForceReadFromLeader());
     }
 }

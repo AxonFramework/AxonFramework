@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,24 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +50,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link DefaultCommandGateway}.
+ *
  * @author Allard Buijze
  * @author Nakul Mishra
  */
@@ -51,7 +60,7 @@ class DefaultCommandGatewayTest {
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
     private RetryScheduler mockRetryScheduler;
-    private MessageDispatchInterceptor mockCommandMessageTransformer;
+    private MessageDispatchInterceptor<CommandMessage<?>> mockCommandMessageTransformer;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -68,23 +77,26 @@ class DefaultCommandGatewayTest {
                                            .build();
     }
 
-    @SuppressWarnings({"unchecked", "serial"})
+    @SuppressWarnings({"unchecked"})
     @Test
     void testSendWithCallbackCommandIsRetried() {
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1])
-                    .onResult((CommandMessage) invocation.getArguments()[0],
-                               asCommandResultMessage(new RuntimeException(new RuntimeException())));
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1])
+                    .onResult((CommandMessage<Object>) invocation.getArguments()[0],
+                              asCommandResultMessage(new RuntimeException(new RuntimeException())));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
                                               isA(Runnable.class)))
                 .thenAnswer(new RescheduleCommand())
                 .thenReturn(false);
+        //noinspection rawtypes
         final AtomicReference<CommandResultMessage> actualResult = new AtomicReference<>();
         testSubject.send("Command",
-                         (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> actualResult.set(commandResultMessage));
+                         (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> actualResult
+                                 .set(commandResultMessage));
         verify(mockCommandMessageTransformer).handle(isA(CommandMessage.class));
+        //noinspection rawtypes
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
         verify(mockRetryScheduler, times(2)).scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class),
                                                            captor.capture(), isA(Runnable.class));
@@ -96,13 +108,14 @@ class DefaultCommandGatewayTest {
         assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
     }
 
-    @SuppressWarnings({"unchecked", "serial"})
+    @SuppressWarnings({"unchecked"})
     @Test
     void testSendWithoutCallbackCommandIsRetried() {
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1])
-                    .onResult((CommandMessage) invocation.getArguments()[0],
-                               asCommandResultMessage(new RuntimeException(new RuntimeException())));
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0],
+                    asCommandResultMessage(new RuntimeException(new RuntimeException()))
+            );
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -113,6 +126,7 @@ class DefaultCommandGatewayTest {
         CompletableFuture<?> future = testSubject.send("Command");
 
         verify(mockCommandMessageTransformer).handle(isA(CommandMessage.class));
+        //noinspection rawtypes
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
         verify(mockRetryScheduler, times(2)).scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class),
                                                            captor.capture(), isA(Runnable.class));
@@ -124,12 +138,14 @@ class DefaultCommandGatewayTest {
         assertTrue(future.isCompletedExceptionally());
     }
 
-    @SuppressWarnings({"unchecked", "serial"})
+    @SuppressWarnings({"unchecked"})
     @Test
     void testSendWithoutCallback() throws ExecutionException, InterruptedException {
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1])
-                    .onResult((CommandMessage) invocation.getArguments()[0], asCommandResultMessage("returnValue"));
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0],
+                    asCommandResultMessage("returnValue")
+            );
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
@@ -139,13 +155,14 @@ class DefaultCommandGatewayTest {
         assertEquals(future.get(), "returnValue");
     }
 
-    @SuppressWarnings({"unchecked", "serial"})
+    @SuppressWarnings({"unchecked"})
     @Test
     void testSendAndWaitCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
-                                                                       asCommandResultMessage(failure));
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0], asCommandResultMessage(failure)
+            );
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -160,6 +177,7 @@ class DefaultCommandGatewayTest {
         }
 
         verify(mockCommandMessageTransformer).handle(isA(CommandMessage.class));
+        //noinspection rawtypes
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
         verify(mockRetryScheduler, times(2)).scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class),
                                                            captor.capture(), isA(Runnable.class));
@@ -169,13 +187,14 @@ class DefaultCommandGatewayTest {
         assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
     }
 
-    @SuppressWarnings({"unchecked", "serial"})
+    @SuppressWarnings({"unchecked"})
     @Test
     void testSendAndWaitWithTimeoutCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1]).onResult((CommandMessage) invocation.getArguments()[0],
-                                                                       asCommandResultMessage(failure));
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0], asCommandResultMessage(failure)
+            );
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -190,6 +209,7 @@ class DefaultCommandGatewayTest {
         }
 
         verify(mockCommandMessageTransformer).handle(isA(CommandMessage.class));
+        //noinspection rawtypes
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
         verify(mockRetryScheduler, times(2)).scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class),
                                                            captor.capture(), isA(Runnable.class));
@@ -275,8 +295,10 @@ class DefaultCommandGatewayTest {
     @Test
     void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         doAnswer(i -> {
-            CommandCallback<String,String> callback = i.getArgument(1);
+            CommandCallback<String, String> callback = i.getArgument(1);
             callback.onResult(i.getArgument(0), new GenericCommandResultMessage<String>("result") {
+                private static final long serialVersionUID = -5443344481326465863L;
+
                 @Override
                 public String getPayload() {
                     throw new MockException("Faking serialization problem");

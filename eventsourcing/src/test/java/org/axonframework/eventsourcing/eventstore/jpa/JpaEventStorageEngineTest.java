@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
@@ -62,10 +62,13 @@ import javax.sql.DataSource;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
+import static org.axonframework.eventsourcing.utils.TestSerializer.secureXStreamSerializer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link JpaEventStorageEngine}.
+ *
  * @author Rene de Waele
  */
 @ExtendWith(SpringExtension.class)
@@ -82,7 +85,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Autowired
     private DataSource dataSource;
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
-    private TransactionManager transactionManager = spy(new NoOpTransactionManager());
+    private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
 
     @BeforeEach
     public void setUp() throws SQLException {
@@ -313,6 +316,8 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                     .batchSize(batchSize)
                                     .entityManagerProvider(entityManagerProvider)
                                     .transactionManager(transactionManager)
+                                    .eventSerializer(secureXStreamSerializer())
+                                    .snapshotSerializer(secureXStreamSerializer())
                                     .build();
     }
 

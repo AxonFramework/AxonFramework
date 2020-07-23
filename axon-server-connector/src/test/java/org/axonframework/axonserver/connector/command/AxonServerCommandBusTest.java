@@ -24,6 +24,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
@@ -34,7 +35,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,10 +78,12 @@ class AxonServerCommandBusTest {
     private AxonServerConnectionManager axonServerConnectionManager;
     private AxonServerConfiguration configuration;
     private final SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
-    private final Serializer serializer = XStreamSerializer.defaultSerializer();
-    private final TargetContextResolver<CommandMessage<?>> targetContextResolver = spy(new TestTargetContextResolver<>());
+    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+    private final TargetContextResolver<CommandMessage<?>> targetContextResolver =
+            spy(new TestTargetContextResolver<>());
 
     private AxonServerCommandBus testSubject;
+
     private AxonServerConnection mockConnection;
     private CommandChannel mockCommandChannel;
 
