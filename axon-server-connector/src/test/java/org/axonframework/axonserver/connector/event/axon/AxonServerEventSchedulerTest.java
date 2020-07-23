@@ -36,19 +36,29 @@ import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Marc Gathier
@@ -57,7 +67,10 @@ public class AxonServerEventSchedulerTest {
 
     private static Server server;
     private static Map<String, Event> scheduled = new ConcurrentHashMap<>();
+    private static AtomicBoolean sendResponse = new AtomicBoolean(true);
     private AxonServerEventScheduler testSubject;
+    private AxonServerConnectionManager connectionManager;
+    private AxonServerConfiguration axonserverConfiguration;
 
     @BeforeAll
     static void startServer() throws Exception {
@@ -96,10 +109,12 @@ public class AxonServerEventSchedulerTest {
                                   @Override
                                   public void scheduleEvent(ScheduleEventRequest request,
                                                             StreamObserver<ScheduleToken> responseObserver) {
-                                      String id = UUID.randomUUID().toString();
-                                      scheduled.put(id, request.getEvent());
-                                      responseObserver.onNext(ScheduleToken.newBuilder().setToken(id).build());
-                                      responseObserver.onCompleted();
+                                      if (sendResponse.get()) {
+                                          String id = UUID.randomUUID().toString();
+                                          scheduled.put(id, request.getEvent());
+                                          responseObserver.onNext(ScheduleToken.newBuilder().setToken(id).build());
+                                          responseObserver.onCompleted();
+                                      }
                                   }
 
                                   @Override
@@ -150,14 +165,16 @@ public class AxonServerEventSchedulerTest {
 
     @BeforeEach
     void setUp() {
-        AxonServerConfiguration axonserverConfiguration = AxonServerConfiguration.builder()
-                                                                                 .servers("localhost:18024")
-                                                                                 .build();
+        sendResponse.set(true);
+        axonserverConfiguration = AxonServerConfiguration.builder()
+                                                         .servers("localhost:18024")
+                                                         .build();
+        connectionManager = AxonServerConnectionManager.builder()
+                                                       .axonServerConfiguration(
+                                                               axonserverConfiguration)
+                                                       .build();
         testSubject = AxonServerEventScheduler.builder()
-                                              .connectionManager(AxonServerConnectionManager.builder()
-                                                                                            .axonServerConfiguration(
-                                                                                                    axonserverConfiguration)
-                                                                                            .build())
+                                              .connectionManager(connectionManager)
                                               .configuration(axonserverConfiguration)
                                               .build();
         testSubject.start();
@@ -172,6 +189,24 @@ public class AxonServerEventSchedulerTest {
         assertTrue(token instanceof SimpleScheduleToken);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
+    }
+
+    @Test
+    void scheduleTimeout() {
+        sendResponse.set(false);
+        testSubject = AxonServerEventScheduler.builder()
+                                              .connectionManager(connectionManager)
+                                              .configuration(axonserverConfiguration)
+                                              .requestTimeout(500, TimeUnit.MILLISECONDS).build();
+        testSubject.start();
+
+        try {
+            testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
+            fail("Expected Exception");
+        } catch (Exception e) {
+            assertTrue(e instanceof AxonServerException);
+            assertTrue(e.getMessage().contains("Timeout"));
+        }
     }
 
     @Test
