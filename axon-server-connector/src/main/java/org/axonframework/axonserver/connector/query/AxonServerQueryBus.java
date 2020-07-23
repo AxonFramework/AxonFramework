@@ -199,6 +199,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                                                              .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode()).build());
                                                                             sendUpdate.complete();
                                                                         })
+                                                                        .doOnComplete(sendUpdate::complete)
                                                                         .map(subscriptionSerializer::serialize)
                                                                         .subscribe(sendUpdate::sendUpdate);
                                                            return () -> {

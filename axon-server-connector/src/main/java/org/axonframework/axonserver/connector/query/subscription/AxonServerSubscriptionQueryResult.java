@@ -35,7 +35,8 @@ import reactor.core.publisher.Mono;
  * @author Allard Buijze
  * @since 4.0
  */
-public class AxonServerSubscriptionQueryResult<I, U> implements SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> {
+public class AxonServerSubscriptionQueryResult<I, U>
+        implements SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> {
 
     private final Logger logger = LoggerFactory.getLogger(AxonServerSubscriptionQueryResult.class);
     private final Mono<QueryResponseMessage<I>> initialResult;
@@ -46,7 +47,9 @@ public class AxonServerSubscriptionQueryResult<I, U> implements SubscriptionQuer
      * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
      * the subscription query.
      */
-    public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result, SubscriptionMessageSerializer subscriptionSerializer) {
+    public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
+                                             SubscriptionMessageSerializer subscriptionSerializer) {
+
         updates = Flux.<QueryUpdate>create(fluxSink -> {
             fluxSink.onRequest(count -> {
                 for (int i = 0; i < count; i++) {
@@ -57,6 +60,7 @@ public class AxonServerSubscriptionQueryResult<I, U> implements SubscriptionQuer
                         if (result.updates().isClosed()) {
                             fluxSink.complete();
                         }
+                        break;
                     }
                 }
             });
@@ -79,10 +83,8 @@ public class AxonServerSubscriptionQueryResult<I, U> implements SubscriptionQuer
                     fluxSink.complete();
                 }
             });
-
-        }).doOnError(e -> {
-            result.updates().close();
-        }).map(subscriptionSerializer::deserialize);
+        }).doOnError(e -> result.updates().close())
+          .map(subscriptionSerializer::deserialize);
 
         this.initialResult = Mono.fromCompletionStage(result::initialResult).map(subscriptionSerializer::deserialize);
         this.result = result;
