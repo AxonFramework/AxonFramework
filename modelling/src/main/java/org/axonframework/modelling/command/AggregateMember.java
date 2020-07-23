@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker annotation for a field that references one or more Entities capable of handling Commands or Events. The
- * annotation may be placed on a field referencing a single Entity, a field referencing a Collection of Entities, or a
- * Map containing Entities mapped by their identifier.
+ * Marker annotation for a {@link java.lang.reflect.Field} or {@link java.lang.reflect.Method} that references one or
+ * more Entities capable of handling Commands or Events. The annotation may be placed on a member referencing a single
+ * Entity, a member referencing a Collection of Entities, or a Map containing Entities mapped by their identifier.
  * <p>
  * If the annotation is placed on a Collection of Entities, an Entity is selected for Command handling based on the
  * Entity's identifier and the value of the routing key property on the Command. See {@link EntityId} for more
@@ -40,9 +40,12 @@ import java.lang.annotation.Target;
  * <p>
  * Note that if the designated Aggregate member has {@link CommandHandler} annotations to handle Command message, that
  * those may not be placed on an non-root Entity's constructor.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 @Documented
-@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AggregateMember {
 
@@ -59,8 +62,8 @@ public @interface AggregateMember {
 
     /**
      * The property of the message to be used as a routing key towards this Aggregate Member. Defaults to {@code ""},
-     * which deeper down defaults to the {@link EntityId} annotated field or
-     * that annotation its {@code routingKey} property.
+     * which deeper down defaults to the {@link EntityId} annotated field or that annotation its {@code routingKey}
+     * property.
      */
     String routingKey() default "";
 

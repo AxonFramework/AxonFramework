@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation that indicates the field contains the value that represents the version of the Aggregate, used for
- * optimistic locking, as well as state validation for commands.
+ * {@link java.lang.reflect.Field} or {@link java.lang.reflect.Method}  annotation that indicates the member contains
+ * the value that represents the version of the Aggregate, used for optimistic locking, as well as state validation for
+ * commands.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AggregateVersion {
 
