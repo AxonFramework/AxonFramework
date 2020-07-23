@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
+import org.axonframework.modelling.command.AggregateVersion;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Documented;
@@ -57,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test case to validate all operations performed by the {@link AnnotatedAggregateMetaModelFactory}.
+ *
+ * @author Allard Buijze
  */
 class AnnotatedAggregateMetaModelFactoryTest {
 
@@ -238,6 +241,26 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
+    void testMethodIdentifierWithMethodParameters() {
+        assertThrows(AggregateModellingException.class,
+                     () -> AnnotatedAggregateMetaModelFactory
+                             .inspectAggregate(SomeIllegalAnnotatedIdMethodClass.class));
+        assertThrows(AggregateModellingException.class,
+                     () -> AnnotatedAggregateMetaModelFactory
+                             .inspectAggregate(SomeIllegalAnnotatedPersistenceIdMethodClass.class));
+    }
+
+    @Test
+    void testAggregateIdentifierPriority() {
+        AggregateModel<SomeDifferentDoubleIdAnnotatedHandler> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeDifferentDoubleIdAnnotatedHandler.class);
+
+        assertEquals("SomeDifferentDoubleIdAnnotatedHandler", inspector.type());
+        assertEquals("id", inspector.getIdentifier(new SomeDifferentDoubleIdAnnotatedHandler()));
+        assertEquals("id", inspector.routingKey());
+    }
+
+    @Test
     void testFindIdentifier() {
         AggregateModel<SomeAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
@@ -245,6 +268,26 @@ class AnnotatedAggregateMetaModelFactoryTest {
         assertEquals("SomeAnnotatedHandlers", inspector.type());
         assertEquals("id", inspector.getIdentifier(new SomeAnnotatedHandlers()));
         assertEquals("id", inspector.routingKey());
+    }
+
+    @Test
+    void testFindGetterIdentifier() {
+        AggregateModel<SomeGetterIdAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeGetterIdAnnotatedHandlers.class);
+
+        assertEquals("SomeGetterIdAnnotatedHandlers", inspector.type());
+        assertEquals("id", inspector.getIdentifier(new SomeGetterIdAnnotatedHandlers()));
+        assertEquals("id", inspector.routingKey());
+    }
+
+    @Test
+    void testFindMethodIdentifier() {
+        AggregateModel<SomeMethodIdAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeMethodIdAnnotatedHandlers.class);
+
+        assertEquals("SomeMethodIdAnnotatedHandlers", inspector.type());
+        assertEquals("id", inspector.getIdentifier(new SomeMethodIdAnnotatedHandlers()));
+        assertEquals("calculatedId", inspector.routingKey());
     }
 
     @Test
@@ -257,12 +300,39 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
+    void testFindJavaxPersistenceGetterIdentifier() {
+        AggregateModel<JavaxPersistenceGetterAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceGetterAnnotatedHandlers.class);
+
+        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceGetterAnnotatedHandlers()));
+        assertEquals("id", inspector.routingKey());
+    }
+
+    @Test
+    void testFindJavaxPersistenceMethodIdentifier() {
+        AggregateModel<JavaxPersistenceMethodIdAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceMethodIdAnnotatedHandlers.class);
+
+        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceMethodIdAnnotatedHandlers()));
+        assertEquals("calculatedId", inspector.routingKey());
+    }
+
+    @Test
     void testFindIdentifierInSuperClass() {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
         assertEquals("SomeOtherName", inspector.type());
         assertEquals("id", inspector.getIdentifier(new SomeSubclass()));
+    }
+
+    @Test
+    void testFindGetterIdentifierInSuperClass() {
+        AggregateModel<SomeGetterIdSubclass> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeGetterIdSubclass.class);
+
+        assertEquals("SomeOtherGetterName", inspector.type());
+        assertEquals("id", inspector.getIdentifier(new SomeGetterIdSubclass()));
     }
 
     @Test
@@ -292,14 +362,67 @@ class AnnotatedAggregateMetaModelFactoryTest {
     void testIllegalFactoryMethodThrowsExceptionClass() {
         assertThrows(
                 AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class));
+                () -> AnnotatedAggregateMetaModelFactory
+                        .inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class));
     }
 
     @Test
     void typedAggregateIdentifier() {
         assertThrows(
                 AxonConfigurationException.class,
-                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class));
+                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class)
+        );
+    }
+
+    @Test
+    void testGetterTypedAggregateIdentifier() {
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(GetterTypedIdentifierAggregate.class)
+        );
+    }
+
+    @Test
+    void testIllegalDoubleIdentifiers() {
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalDoubleIdFieldsAnnotatedAggregate.class)
+        );
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalDoubleIdMixedAnnotatedAggregate.class)
+        );
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalDoubleIdMethodsAnnotatedAggregate.class)
+        );
+    }
+
+    @Test
+    void testVoidMethodIdentifier() {
+        assertThrows(AxonConfigurationException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalVoidIdMethodAnnotatedAggregate.class)
+        );
+    }
+
+    @Test
+    void testAggregateVersionAnnotatedField() {
+        AggregateModel<AggregateWithAggregateVersionField> testSubject =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(AggregateWithAggregateVersionField.class);
+
+        assertEquals(42, testSubject.getVersion(new AggregateWithAggregateVersionField()));
+    }
+
+    @Test
+    void testAggregateVersionAnnotatedMethod() {
+        AggregateModel<AggregateWithAggregateVersionMethod> testSubject =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(AggregateWithAggregateVersionMethod.class);
+
+        assertEquals(9001, testSubject.getVersion(new AggregateWithAggregateVersionMethod()));
+    }
+
+    @Test
+    void testIllegalDoubleAggregateVersions() {
+        assertThrows(AggregateModellingException.class, () ->
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(IllegalAggregateWithSeveralAggregateVersions.class)
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -330,10 +453,67 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
+    private static class SomeDifferentDoubleIdAnnotatedHandler {
+
+        @AggregateIdentifier
+        private String id = "id";
+        @Id
+        private String javaxPersistenceId = "javaxPersistenceId";
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+
+    @SuppressWarnings("unused")
     private static class JavaxPersistenceAnnotatedHandlers {
 
         @Id
         private String id = "id";
+
+        @CommandHandler(commandName = "java.lang.String")
+        public boolean handle(CharSequence test) {
+            return test.equals("ok");
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class JavaxPersistenceGetterAnnotatedHandlers {
+
+        private String id = "id";
+
+        @Id
+        public String getId() {
+            return id;
+        }
+
+        @CommandHandler(commandName = "java.lang.String")
+        public boolean handle(CharSequence test) {
+            return test.equals("ok");
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class JavaxPersistenceMethodIdAnnotatedHandlers {
+
+        private String id = "id";
+
+        @Id
+        public String calculatedId() {
+            return id;
+        }
 
         @CommandHandler(commandName = "java.lang.String")
         public boolean handle(CharSequence test) {
@@ -364,8 +544,133 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
+    private static class SomeGetterIdAnnotatedHandlers {
+
+        private String id = "id";
+
+        @AggregateIdentifier
+        public String getId() {
+            return id;
+        }
+
+        @CommandHandler(commandName = "java.lang.String")
+        public boolean handle(CharSequence test) {
+            return test.equals("ok");
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class SomeMethodIdAnnotatedHandlers {
+
+        private String id = "id";
+
+        @AggregateIdentifier
+        public String calculatedId() {
+            return id;
+        }
+
+        @CommandHandler(commandName = "java.lang.String")
+        public boolean handle(CharSequence test) {
+            return test.equals("ok");
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class IllegalDoubleIdFieldsAnnotatedAggregate {
+
+        @AggregateIdentifier
+        private String id = "id";
+
+        @AggregateIdentifier
+        private String idTwo = "idTwo";
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class IllegalDoubleIdMixedAnnotatedAggregate {
+
+        @AggregateIdentifier
+        private String id = "id";
+
+        @AggregateIdentifier
+        public String getIdTwo() {
+            return "idTwo";
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class IllegalDoubleIdMethodsAnnotatedAggregate {
+
+        @AggregateIdentifier
+        public String getId() {
+            return "id";
+        }
+
+
+        @AggregateIdentifier
+        public String getIdTwo() {
+            return "idTwo";
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class IllegalVoidIdMethodAnnotatedAggregate {
+
+        @AggregateIdentifier
+        public void getId() {
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
+    }
+
+    @SuppressWarnings("unused")
     @AggregateRoot(type = "SomeOtherName")
     private static class SomeSubclass extends SomeAnnotatedHandlers {
+
+        @AggregateMember
+        private SomeOtherEntity entity = new SomeOtherEntity();
+
+        @MyCustomCommandHandler
+        public boolean handleInSubclass(String test) {
+            return test.contains("sub");
+        }
+
+        @MyCustomEventHandler
+        public void handle(AtomicLong value) {
+            value.incrementAndGet();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @AggregateRoot(type = "SomeOtherGetterName")
+    private static class SomeGetterIdSubclass extends SomeGetterIdAnnotatedHandlers {
 
         @AggregateMember
         private SomeOtherEntity entity = new SomeOtherEntity();
@@ -399,6 +704,27 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         @AggregateIdentifier
         private CustomIdentifier aggregateIdentifier = new CustomIdentifier();
+
+        @CommandHandler
+        public boolean handleInSubclass(String test) {
+            return test.contains("sub");
+        }
+
+        @EventHandler
+        public void handle(AtomicLong value) {
+            value.incrementAndGet();
+        }
+    }
+
+    @AggregateRoot
+    private static class GetterTypedIdentifierAggregate {
+
+        private CustomIdentifier aggregateIdentifier = new CustomIdentifier();
+
+        @AggregateIdentifier
+        public CustomIdentifier getAggregateIdentifier() {
+            return aggregateIdentifier;
+        }
 
         @CommandHandler
         public boolean handleInSubclass(String test) {
@@ -531,6 +857,44 @@ class AnnotatedAggregateMetaModelFactoryTest {
         }
     }
 
+    public static class SomeIllegalAnnotatedIdMethodClass {
+
+        private String id = "id";
+
+        @CommandHandler
+        SomeIllegalAnnotatedIdMethodClass(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        @AggregateIdentifier
+        public String calculatedIdMethod(String seed) {
+            return seed + id;
+        }
+    }
+
+    public static class SomeIllegalAnnotatedPersistenceIdMethodClass {
+
+        private String id = "id";
+
+        @CommandHandler
+        SomeIllegalAnnotatedPersistenceIdMethodClass(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        @Id
+        public String fancyCalculatedIdMethod(String seed) {
+            return seed + id;
+        }
+    }
+
     /**
      * Wrapper implementation to ensure that the @AggregateMember field is solely triggered by the fact it implements
      * Iterable, and doesn't depend on any other interface being declared. See issue #461.
@@ -570,6 +934,39 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         public int size() {
             return contents.size();
+        }
+    }
+
+
+    private static class AggregateWithAggregateVersionField {
+
+        @AggregateIdentifier
+        private final String aggregateIdentifier = "aggregateIdentifier";
+        @AggregateVersion
+        private final long aggregateVersion = 42L;
+    }
+
+    private static class AggregateWithAggregateVersionMethod {
+
+        @AggregateIdentifier
+        private final String aggregateIdentifier = "aggregateIdentifier";
+
+        @AggregateVersion
+        public long getAggregateVersion() {
+            return 9001L;
+        }
+    }
+
+    private static class IllegalAggregateWithSeveralAggregateVersions {
+
+        @AggregateIdentifier
+        private String aggregateIdentifier;
+        @AggregateVersion
+        private long fieldAggregateVersion;
+
+        @AggregateVersion
+        public long getMethodAggregateVersion() {
+            return 1337;
         }
     }
 }

@@ -20,7 +20,8 @@ import org.axonframework.common.property.Property;
 import org.axonframework.messaging.Message;
 import org.axonframework.modelling.command.inspection.EntityModel;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -43,9 +44,9 @@ public class ForwardMatchingInstances<T extends Message<?>> implements Forwardin
     private EntityModel childEntity;
 
     @Override
-    public void initialize(Field field, EntityModel childEntity) {
+    public void initialize(Member member, EntityModel childEntity) {
         this.childEntity = childEntity;
-        this.routingKey = findAnnotationAttributes(field, AggregateMember.class)
+        this.routingKey = findAnnotationAttributes((AnnotatedElement) member, AggregateMember.class)
                 .map(map -> (String) map.get("routingKey"))
                 .filter(key -> !Objects.equals(key, EMPTY_STRING))
                 .orElse(childEntity.routingKey());

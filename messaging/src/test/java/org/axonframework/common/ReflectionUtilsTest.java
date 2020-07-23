@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,18 @@
 
 package org.axonframework.common;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -147,6 +154,111 @@ public class ReflectionUtilsTest {
         assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
     }
 
+    @Test
+    void testGetMemberValueFromField() throws NoSuchFieldException, NoSuchMethodException {
+        assertEquals("field1",
+                     ReflectionUtils.getMemberValue(SomeType.class.getDeclaredField("field1"), new SomeSubType()));
+    }
+
+    @Test
+    void testGetMemberValueFromMethod() throws NoSuchMethodException {
+        assertEquals("field1",
+                     ReflectionUtils.getMemberValue(SomeType.class.getDeclaredMethod("getField1"), new SomeSubType()));
+        assertEquals("someMethodResult",
+                     ReflectionUtils.getMemberValue(SomeTypeWithMethods.class.getDeclaredMethod("someMethod"), new SomeTypeWithMethods()));
+    }
+
+    @Test
+    void testGetMemberValueFromVoidMethod() throws NoSuchMethodException {
+        SomeTypeWithMethods testObject = new SomeTypeWithMethods();
+        Object voidReturnValue = getMemberValue(SomeTypeWithMethods.class.getDeclaredMethod("someVoidMethod"),
+                                                testObject);
+        assertNull(voidReturnValue);
+        assertEquals(1, testObject.voidMethodInvocations.get());
+    }
+
+    @Test
+    void testGetMemberValueFromConstructor() throws NoSuchMethodException {
+        Constructor<SomeType> testConstructor = SomeType.class.getDeclaredConstructor();
+        SomeSubType testTarget = new SomeSubType();
+        assertThrows(IllegalStateException.class, () -> ReflectionUtils.getMemberValue(testConstructor, testTarget));
+    }
+
+    @Test
+    void testGetMemberValueTypeFromField() throws NoSuchFieldException {
+        Class<?> fieldType = getMemberValueType(SomeType.class.getDeclaredField("field1"));
+        assertEquals(String.class, fieldType);
+    }
+
+    @Test
+    void testGetMemberValueTypeFromMethod() throws NoSuchMethodException {
+        Class<?> methodValueType = getMemberValueType(SomeSubType.class.getDeclaredMethod("getField3"));
+        assertEquals(int.class, methodValueType);
+        Class<?> voidResultType = getMemberValueType(SomeTypeWithMethods.class.getDeclaredMethod("someVoidMethod"));
+        assertEquals(void.class, voidResultType);
+    }
+
+    @Test
+    void testGetMemberValueTypeFromConstructor() throws NoSuchMethodException {
+        Constructor<SomeType> testConstructor = SomeType.class.getDeclaredConstructor();
+        assertThrows(IllegalStateException.class, () -> getMemberValueType(testConstructor));
+    }
+
+    @Test
+    void testInvokeAndGetMethodValue() throws NoSuchMethodException {
+        assertEquals("field1",
+                     invokeAndGetMethodValue(SomeTypeWithMethods.class.getDeclaredMethod("getField1"), new SomeTypeWithMethods()));
+        assertEquals("someMethodResult",
+                     invokeAndGetMethodValue(SomeTypeWithMethods.class.getDeclaredMethod("someMethod"), new SomeTypeWithMethods()));
+
+        SomeTypeWithMethods testObject = new SomeTypeWithMethods();
+        Object voidMethodResult = invokeAndGetMethodValue(SomeTypeWithMethods.class.getDeclaredMethod("someVoidMethod"),
+                                                          testObject);
+        assertNull(voidMethodResult);
+        assertEquals(1, testObject.voidMethodInvocations.get());
+    }
+
+    @Test
+    void testMemberGenericTypeFromField() throws NoSuchFieldException {
+        Field field = SomeType.class.getDeclaredField("field1");
+        Type memberGenericType = getMemberGenericType(field);
+        assertEquals(field.getGenericType(), memberGenericType);
+    }
+
+    @Test
+    void testMemberGenericTypeFromMethod() throws NoSuchMethodException {
+        Method method = SomeTypeWithMethods.class.getDeclaredMethod("someMethod");
+        Type memberGenericType = getMemberGenericType(method);
+        assertEquals(method.getGenericReturnType(), memberGenericType);
+    }
+
+    @Test
+    void testMemberGenericTypeFromConstructor() throws NoSuchMethodException {
+        Constructor<SomeTypeWithMethods> constructor = SomeTypeWithMethods.class.getDeclaredConstructor();
+        assertThrows(IllegalStateException.class, () -> getMemberGenericType(constructor));
+    }
+
+    @Test
+    void testMemberGenericStringFromField() throws NoSuchFieldException {
+        Field field = SomeType.class.getDeclaredField("field1");
+        String memberGenericString = getMemberGenericString(field);
+        assertEquals(field.toGenericString(), memberGenericString);
+    }
+
+    @Test
+    void testMemberGenericStringFromMethod() throws NoSuchMethodException {
+        Method method = SomeTypeWithMethods.class.getDeclaredMethod("someMethod");
+        String memberGenericString = getMemberGenericString(method);
+        assertEquals(method.toGenericString(), memberGenericString);
+    }
+
+    @Test
+    void testMemberGenericStringFromConstructor() throws NoSuchMethodException {
+        Constructor<SomeTypeWithMethods> constructor = SomeTypeWithMethods.class.getDeclaredConstructor();
+        String memberGenericString = getMemberGenericString(constructor);
+        assertEquals(constructor.toGenericString(), memberGenericString);
+    }
+
     private static class SomeType implements SomeInterface {
 
         private String field1 = "field1";
@@ -205,6 +317,23 @@ public class ReflectionUtilsTest {
 
         public Set<String> getSetOfStrings() {
             return setOfStrings;
+        }
+    }
+    private static class SomeTypeWithMethods implements SomeInterface {
+
+        public AtomicInteger voidMethodInvocations = new AtomicInteger();
+
+        @Override
+        public String getField1() {
+            return "field1";
+        }
+
+        public String someMethod() {
+            return "someMethodResult";
+        }
+
+        public void someVoidMethod() {
+            voidMethodInvocations.incrementAndGet();
         }
     }
 }
