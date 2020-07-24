@@ -20,7 +20,6 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.connector.event.EventChannel;
 import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.event.Event;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
@@ -59,33 +58,40 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class AxonServerEventScheduler implements EventScheduler {
 
-    private final AxonServerConnectionManager axonServerConnectionManager;
-    private final AxonServerConfiguration axonServerConfiguration;
-    private final Serializer serializer;
-    private final GrpcMetaDataConverter converter;
-    private final AtomicBoolean started = new AtomicBoolean();
     private final long requestTimeout;
+    private final Serializer serializer;
+    private final AxonServerConnectionManager axonServerConnectionManager;
+    private final GrpcMetaDataConverter converter;
+
+    private final AtomicBoolean started = new AtomicBoolean();
+
+    /**
+     * Instantiate a Builder to be able to create a {@link AxonServerEventScheduler}.
+     * <p>
+     * The {@code requestTimeout} is defaulted to {@code 15000} millis and the {@link Serializer} to a {@link
+     * XStreamSerializer}. The {@link AxonServerConnectionManager} is a <b>hard requirement</b> and as such should be
+     * provided.
+     *
+     * @return a Builder to be able to create a {@link AxonServerEventScheduler}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
 
     /**
      * Instantiates an {@link AxonServerEventScheduler} using the given {@link Builder}.
+     * <p>
+     * Will assert that the {@link AxonServerConnectionManager} is not {@code null} and will throw an {@link
+     * AxonConfigurationException} if this is the case.
      *
      * @param builder the {@link Builder} used.
      */
     protected AxonServerEventScheduler(Builder builder) {
-        this.axonServerConnectionManager = builder.axonServerConnectionManager;
-        this.axonServerConfiguration = builder.axonServerConfiguration;
-        this.serializer = builder.eventSerializer.get();
+        builder.validate();
         this.requestTimeout = builder.requestTimeout;
+        this.serializer = builder.eventSerializer.get();
+        this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.converter = new GrpcMetaDataConverter(serializer);
-    }
-
-    /**
-     * Creates a builder to instantiate an {@link AxonServerEventScheduler}.
-     *
-     * @return a builder
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
     /**
@@ -96,6 +102,9 @@ public class AxonServerEventScheduler implements EventScheduler {
         started.set(true);
     }
 
+    /**
+     * Shuts down the Axon Server {@link EventScheduler} implementation.
+     */
     @ShutdownHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public void shutdownDispatching() {
         started.set(false);
@@ -113,7 +122,8 @@ public class AxonServerEventScheduler implements EventScheduler {
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         Assert.isTrue(started.get(), () -> "Cannot dispatch new events as this scheduler is being shutdown");
         try {
-            String response = eventChannel().scheduleEvent(triggerDateTime, toEvent(event)).get(requestTimeout, TimeUnit.MILLISECONDS);
+            String response = eventChannel().scheduleEvent(triggerDateTime, toEvent(event))
+                                            .get(requestTimeout, TimeUnit.MILLISECONDS);
             return new SimpleScheduleToken(response);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -128,8 +138,8 @@ public class AxonServerEventScheduler implements EventScheduler {
     /**
      * Schedules an event to be published after a specified amount of time.
      *
-     * @param triggerDuration The amount of time to wait before publishing the event
-     * @param event           The event to publish
+     * @param triggerDuration the amount of time to wait before publishing the event
+     * @param event           the event to publish
      * @return a token used to manage the schedule later
      */
     @Override
@@ -149,9 +159,11 @@ public class AxonServerEventScheduler implements EventScheduler {
                       () -> "Invalid tracking token type. Must be SimpleScheduleToken.");
         String token = ((SimpleScheduleToken) scheduleToken).getTokenId();
         try {
-            InstructionAck instructionAck = eventChannel().cancelSchedule(token).get(requestTimeout, TimeUnit.MILLISECONDS);
+            InstructionAck instructionAck = eventChannel().cancelSchedule(token)
+                                                          .get(requestTimeout, TimeUnit.MILLISECONDS);
             if (!instructionAck.getSuccess()) {
-                throw ErrorCode.getFromCode(instructionAck.getError().getErrorCode()).convert(instructionAck.getError());
+                throw ErrorCode.getFromCode(instructionAck.getError().getErrorCode())
+                               .convert(instructionAck.getError());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -167,8 +179,8 @@ public class AxonServerEventScheduler implements EventScheduler {
      * Changes the trigger time for a scheduled event.
      *
      * @param scheduleToken   the token returned when the event was scheduled, might be null
-     * @param triggerDuration The amount of time to wait before publishing the event
-     * @param event           The event to publish
+     * @param triggerDuration the amount of time to wait before publishing the event
+     * @param event           the event to publish
      * @return a token used to manage the schedule later
      */
     @Override
@@ -178,9 +190,10 @@ public class AxonServerEventScheduler implements EventScheduler {
                       () -> "Invalid tracking token type. Must be SimpleScheduleToken.");
         String token = scheduleToken == null ? "" : ((SimpleScheduleToken) scheduleToken).getTokenId();
         try {
-            String updatedScheduleToken = eventChannel().reschedule(token, Instant.now()
-                                                                                  .plus(triggerDuration),
-                                                                    toEvent(event)).get(requestTimeout, TimeUnit.MILLISECONDS);
+            String updatedScheduleToken = eventChannel().reschedule(token,
+                                                                    Instant.now().plus(triggerDuration),
+                                                                    toEvent(event))
+                                                        .get(requestTimeout, TimeUnit.MILLISECONDS);
             return new SimpleScheduleToken(updatedScheduleToken);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -227,16 +240,29 @@ public class AxonServerEventScheduler implements EventScheduler {
     }
 
     /**
-     * Builder class for an {@link AxonServerEventScheduler}.
-     * The {@link Serializer} defaults to the XStreamSerializer. The {@code configuration} and {@code connectionManager}
-     * are required.
+     * Builder class to instantiate an {@link AxonServerEventScheduler}.
+     * <p>
+     * The {@code requestTimeout} is defaulted to {@code 15000} millis and the {@link Serializer} to a {@link
+     * XStreamSerializer}. The {@link AxonServerConnectionManager} is a <b>hard requirement</b> and as such should be
+     * provided.
      */
     public static class Builder {
 
         private long requestTimeout = 15000;
-        private AxonServerConnectionManager axonServerConnectionManager;
-        private AxonServerConfiguration axonServerConfiguration;
         private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
+        private AxonServerConnectionManager axonServerConnectionManager;
+
+        /**
+         * Sets the timeout in which a confirmation of the scheduling interaction is expected. Defaults to 15 seconds.
+         *
+         * @param timeout the time to wait at most for a confirmation
+         * @param unit    the unit in which the timeout is expressed
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder requestTimeout(long timeout, TimeUnit unit) {
+            this.requestTimeout = unit.toMillis(timeout);
+            return this;
+        }
 
         /**
          * Sets the {@link Serializer} used to de-/serialize events.
@@ -250,39 +276,11 @@ public class AxonServerEventScheduler implements EventScheduler {
         }
 
         /**
-         * Sets the {@link AxonServerConfiguration} used to configure several components within the Axon Server Command
-         * Bus, like setting the client id or the number of command handling threads used.
-         *
-         * @param configuration an {@link AxonServerConfiguration} used to configure several components within the Axon
-         *                      Server Command Bus
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder configuration(AxonServerConfiguration configuration) {
-            assertNonNull(configuration, "AxonServerConfiguration may not be null");
-            this.axonServerConfiguration = configuration;
-            return this;
-        }
-
-        /**
-         * Sets the timeout in which a confirmation of the scheduling interaction is expected. Defaults to 15 seconds.
-         *
-         * @param timeout The time to wait at most for a confirmation
-         * @param unit    The unit in which the timeout is expressed
-         *
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder requestTimeout(long timeout, TimeUnit unit) {
-            this.requestTimeout = unit.toMillis(timeout);
-            return this;
-        }
-
-        /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
          * Server instance.
          *
          * @param axonServerConnectionManager an {@link AxonServerConnectionManager} used to create connections between
          *                                    this application and an Axon Server instance
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder connectionManager(AxonServerConnectionManager axonServerConnectionManager) {
@@ -297,13 +295,10 @@ public class AxonServerEventScheduler implements EventScheduler {
          * @return a {@link AxonServerEventScheduler} as specified through this Builder
          */
         public AxonServerEventScheduler build() {
-            validate();
             return new AxonServerEventScheduler(this);
         }
 
         protected void validate() throws AxonConfigurationException {
-            assertNonNull(axonServerConfiguration,
-                          "The AxonServerConfiguration is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The AxonServerConnectionManager is a hard requirement and should be provided");
         }
