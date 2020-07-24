@@ -34,6 +34,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -108,6 +109,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link SpringAxonAutoConfigurer}.
+ *
+ * @author Allard Buijze
+ */
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration
@@ -183,12 +189,11 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventProcessingConfiguration);
         assertEquals(eventProcessingConfiguration, axonConfig.eventProcessingConfiguration());
         assertTrue(eventBus instanceof EventStore, "Expected Axon to have configured an EventStore");
-
-        assertTrue(commandBus instanceof AsynchronousCommandBus, "Expected provided commandbus implementation");
-
+        assertTrue(commandBus instanceof AsynchronousCommandBus, "Expected provided CommandBus implementation");
         assertNotNull(axonConfig.repository(Context.MyAggregate.class));
         assertNotNull(tagsConfiguration);
         assertEquals(tagsConfiguration, axonConfig.tags());
+        assertNotNull(axonConfig.eventScheduler());
     }
 
     @Test
@@ -401,6 +406,11 @@ public class SpringAxonAutoConfigurerTest {
         @Qualifier("myCommandTargetResolver")
         public CommandTargetResolver myCommandTargetResolver() {
             return mock(CommandTargetResolver.class);
+        }
+
+        @Bean
+        public EventScheduler eventScheduler() {
+            return mock(EventScheduler.class);
         }
 
         @Bean

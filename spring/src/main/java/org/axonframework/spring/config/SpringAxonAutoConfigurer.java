@@ -39,6 +39,7 @@ import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -191,6 +192,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 () -> genericBeanDefinition(SpringResourceInjector.class).getBeanDefinition()
         );
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
+        registerComponent(EventScheduler.class, configurer, Configuration::eventScheduler);
         registerComponent(DeadlineManager.class, configurer, Configuration::deadlineManager);
 
         EventProcessingModule eventProcessingModule = new EventProcessingModule();
