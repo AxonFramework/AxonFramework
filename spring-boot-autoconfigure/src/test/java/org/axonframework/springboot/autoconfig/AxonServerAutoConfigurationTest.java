@@ -18,16 +18,18 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -40,8 +42,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -184,6 +185,17 @@ class AxonServerAutoConfigurationTest {
                                                  .hasSize(1);
                               assertThat(context).getBean(TargetContextResolver.class)
                                                  .isEqualTo(CUSTOM_TARGET_CONTEXT_RESOLVER);
+                          });
+    }
+
+    @Test
+    void testAxonServerEventSchedulerIsConfigured() {
+        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
+                          .run(context -> {
+                              assertThat(context).getBeanNames(EventScheduler.class)
+                                                 .hasSize(1);
+                              assertThat(context).getBean(EventScheduler.class)
+                                                 .isExactlyInstanceOf(AxonServerEventScheduler.class);
                           });
     }
 
