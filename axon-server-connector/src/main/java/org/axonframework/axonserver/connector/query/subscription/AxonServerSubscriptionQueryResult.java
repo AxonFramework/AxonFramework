@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -86,7 +87,9 @@ public class AxonServerSubscriptionQueryResult<I, U>
         }).doOnError(e -> result.updates().close())
           .map(subscriptionSerializer::deserialize);
 
-        this.initialResult = Mono.fromCompletionStage(result::initialResult).map(subscriptionSerializer::deserialize);
+        this.initialResult = Mono.fromCompletionStage(result::initialResult)
+                                 .onErrorMap(GrpcExceptionParser::parse)
+                                 .map(subscriptionSerializer::deserialize);
         this.result = result;
     }
 

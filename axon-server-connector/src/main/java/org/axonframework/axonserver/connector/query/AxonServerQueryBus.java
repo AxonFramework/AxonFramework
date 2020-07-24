@@ -78,6 +78,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -234,7 +235,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                             .queryChannel()
                                                                             .query(queryRequest);
 
-            result.onAvailable(() -> queryExecutor.submit(new ResponseProcessingTask<>(result, serializer, queryTransaction, priority, queryMessage.getResponseType())));
+            ResponseProcessingTask<R> responseProcessingTask = new ResponseProcessingTask<>(result, serializer, queryTransaction, priority, queryMessage.getResponseType());
+            result.onAvailable(() -> queryExecutor.submit(responseProcessingTask));
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -645,6 +647,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     private static class ResponseProcessingTask<R> implements Runnable {
+        private final AtomicBoolean singleExecutionCheck = new AtomicBoolean();
         private final ResultStream<QueryResponse> result;
         private final QuerySerializer serializer;
         private final CompletableFuture<QueryResponseMessage<R>> queryTransaction;
@@ -665,13 +668,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         @Override
         public void run() {
-            QueryResponse nextAvailable = result.nextIfAvailable();
-            if (nextAvailable != null) {
-                queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
-            } else
-            if (result.isClosed() && !queryTransaction.isDone()) {
-                // TODO - Find out which exception to throw here according to apis.
-                queryTransaction.completeExceptionally(new AxonServerQueryDispatchException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), "Query did not yield the expected number of results."));
+            if (singleExecutionCheck.compareAndSet(false, true)) {
+                QueryResponse nextAvailable = result.nextIfAvailable();
+                if (nextAvailable != null) {
+                    queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
+                } else if (result.isClosed() && !queryTransaction.isDone()) {
+                    // TODO - Find out which exception to throw here according to apis.
+                    queryTransaction.completeExceptionally(new AxonServerQueryDispatchException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), "Query did not yield the expected number of results."));
+                }
             }
         }
 
