@@ -37,7 +37,7 @@ public class GrpcExceptionParser {
                 return new UnsupportedOperationException(ex.getMessage(), ex);
             }
             Metadata trailer = statusRuntimeException.getTrailers();
-            String errorCode = trailer.get(ERROR_CODE_KEY);
+            String errorCode = trailer == null ? null : trailer.get(ERROR_CODE_KEY);
             if (errorCode != null) {
                 code = errorCode;
             }
