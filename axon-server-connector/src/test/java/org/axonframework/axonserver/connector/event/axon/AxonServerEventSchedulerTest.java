@@ -41,10 +41,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -54,23 +51,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link AxonServerEventScheduler}.
+ *
  * @author Marc Gathier
  */
 public class AxonServerEventSchedulerTest {
 
     private static Server server;
-    private static Map<String, Event> scheduled = new ConcurrentHashMap<>();
-    private static AtomicBoolean sendResponse = new AtomicBoolean(true);
-    private AxonServerEventScheduler testSubject;
     private AxonServerConnectionManager connectionManager;
-    private AxonServerConfiguration axonserverConfiguration;
+
+    private AxonServerEventScheduler testSubject;
+
+    private static final Map<String, Event> scheduled = new ConcurrentHashMap<>();
+    private static final AtomicBoolean sendResponse = new AtomicBoolean(true);
 
     @BeforeAll
     static void startServer() throws Exception {
@@ -79,82 +75,80 @@ public class AxonServerEventSchedulerTest {
                                   @Override
                                   public void getPlatformServer(ClientIdentification request,
                                                                 StreamObserver<PlatformInfo> responseObserver) {
-                                      responseObserver.onNext(PlatformInfo.newBuilder().setSameConnection(true)
-                                                                          .build());
+                                      responseObserver.onNext(
+                                              PlatformInfo.newBuilder().setSameConnection(true).build()
+                                      );
                                       responseObserver.onCompleted();
                                   }
 
                                   @Override
                                   public StreamObserver<PlatformInboundInstruction> openStream(
-                                          StreamObserver<PlatformOutboundInstruction> responseObserver) {
+                                          StreamObserver<PlatformOutboundInstruction> responseObserver
+                                  ) {
                                       return new StreamObserver<PlatformInboundInstruction>() {
                                           @Override
                                           public void onNext(PlatformInboundInstruction platformInboundInstruction) {
-
+                                              // Not needed
                                           }
 
                                           @Override
                                           public void onError(Throwable throwable) {
-
+                                              // Not needed
                                           }
 
                                           @Override
                                           public void onCompleted() {
-
+                                              // Not needed
                                           }
                                       };
                                   }
-                              })
-                              .addService(new EventSchedulerGrpc.EventSchedulerImplBase() {
-                                  @Override
-                                  public void scheduleEvent(ScheduleEventRequest request,
-                                                            StreamObserver<ScheduleToken> responseObserver) {
-                                      if (sendResponse.get()) {
-                                          String id = UUID.randomUUID().toString();
-                                          scheduled.put(id, request.getEvent());
-                                          responseObserver.onNext(ScheduleToken.newBuilder().setToken(id).build());
-                                          responseObserver.onCompleted();
-                                      }
-                                  }
+                              }).addService(new EventSchedulerGrpc.EventSchedulerImplBase() {
+                    @Override
+                    public void scheduleEvent(ScheduleEventRequest request,
+                                              StreamObserver<ScheduleToken> responseObserver) {
+                        if (sendResponse.get()) {
+                            String id = UUID.randomUUID().toString();
+                            scheduled.put(id, request.getEvent());
+                            responseObserver.onNext(ScheduleToken.newBuilder().setToken(id).build());
+                            responseObserver.onCompleted();
+                        }
+                    }
 
-                                  @Override
-                                  public void rescheduleEvent(RescheduleEventRequest request,
-                                                              StreamObserver<ScheduleToken> responseObserver) {
-                                      String token = request.getToken();
-                                      if (request.getToken().equals("")) {
-                                          token = UUID.randomUUID().toString();
-                                      }
-                                      scheduled.put(token, request.getEvent());
-                                      responseObserver.onNext(ScheduleToken.newBuilder()
-                                                                           .setToken(token)
-                                                                           .build());
-                                      responseObserver.onCompleted();
-                                  }
+                    @Override
+                    public void rescheduleEvent(RescheduleEventRequest request,
+                                                StreamObserver<ScheduleToken> responseObserver) {
+                        String token = request.getToken();
+                        if (request.getToken().equals("")) {
+                            token = UUID.randomUUID().toString();
+                        }
+                        scheduled.put(token, request.getEvent());
+                        responseObserver.onNext(ScheduleToken.newBuilder()
+                                                             .setToken(token)
+                                                             .build());
+                        responseObserver.onCompleted();
+                    }
 
-                                  @Override
-                                  public void cancelScheduledEvent(CancelScheduledEventRequest request,
-                                                                   StreamObserver<InstructionAck> responseObserver) {
-                                      if (!scheduled.containsKey(request.getToken())) {
-                                          responseObserver.onNext(InstructionAck.newBuilder()
-                                                                                .setSuccess(false)
-                                                                                .setError(ErrorMessage.newBuilder()
-                                                                                                      .setMessage(
-                                                                                                              "Schedule not found")
-                                                                                                      .addDetails(
-                                                                                                              "Detail1")
-                                                                                                      .addDetails(
-                                                                                                              "Detail2")
-                                                                                                      .setErrorCode(
-                                                                                                              "AXONIQ-2610")
-                                                                                                      .build())
-                                                                                .build());
-                                      } else {
-                                          scheduled.remove(request.getToken());
-                                          responseObserver.onNext(InstructionAck.newBuilder().setSuccess(true).build());
-                                      }
-                                      responseObserver.onCompleted();
-                                  }
-                              }).build();
+                    @Override
+                    public void cancelScheduledEvent(CancelScheduledEventRequest request,
+                                                     StreamObserver<InstructionAck> responseObserver) {
+                        if (!scheduled.containsKey(request.getToken())) {
+                            ErrorMessage errorMessage = ErrorMessage.newBuilder()
+                                                                    .setMessage("Schedule not found")
+                                                                    .addDetails("Detail1")
+                                                                    .addDetails("Detail2")
+                                                                    .setErrorCode("AXONIQ-2610")
+                                                                    .build();
+                            responseObserver.onNext(InstructionAck.newBuilder()
+                                                                  .setSuccess(false)
+                                                                  .setError(errorMessage)
+                                                                  .build());
+                        } else {
+                            scheduled.remove(request.getToken());
+                            responseObserver.onNext(InstructionAck.newBuilder().setSuccess(true).build());
+                        }
+                        responseObserver.onCompleted();
+                    }
+                }).build();
         server.start();
     }
 
@@ -166,26 +160,22 @@ public class AxonServerEventSchedulerTest {
     @BeforeEach
     void setUp() {
         sendResponse.set(true);
-        axonserverConfiguration = AxonServerConfiguration.builder()
-                                                         .servers("localhost:18024")
-                                                         .build();
+        AxonServerConfiguration axonserverConfiguration = AxonServerConfiguration.builder()
+                                                                                 .servers("localhost:18024")
+                                                                                 .build();
         connectionManager = AxonServerConnectionManager.builder()
-                                                       .axonServerConfiguration(
-                                                               axonserverConfiguration)
+                                                       .axonServerConfiguration(axonserverConfiguration)
                                                        .build();
         testSubject = AxonServerEventScheduler.builder()
                                               .connectionManager(connectionManager)
-                                              .configuration(axonserverConfiguration)
                                               .build();
         testSubject.start();
     }
 
     @Test
     void schedule() {
-        org.axonframework.eventhandling.scheduling.ScheduleToken token = testSubject.schedule(Instant.now()
-                                                                                                     .plus(Duration.ofMinutes(
-                                                                                                             5)),
-                                                                                              "TestEvent");
+        org.axonframework.eventhandling.scheduling.ScheduleToken token =
+                testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
         assertTrue(token instanceof SimpleScheduleToken);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
@@ -196,7 +186,6 @@ public class AxonServerEventSchedulerTest {
         sendResponse.set(false);
         testSubject = AxonServerEventScheduler.builder()
                                               .connectionManager(connectionManager)
-                                              .configuration(axonserverConfiguration)
                                               .requestTimeout(500, TimeUnit.MILLISECONDS).build();
         testSubject.start();
 
@@ -211,8 +200,8 @@ public class AxonServerEventSchedulerTest {
 
     @Test
     void scheduleWithDuration() {
-        org.axonframework.eventhandling.scheduling.ScheduleToken token = testSubject.schedule(Duration.ofMinutes(5),
-                                                                                              "TestEvent");
+        org.axonframework.eventhandling.scheduling.ScheduleToken token =
+                testSubject.schedule(Duration.ofMinutes(5), "TestEvent");
         assertTrue(token instanceof SimpleScheduleToken);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
         assertNotNull(scheduled.get(simpleScheduleToken.getTokenId()));
@@ -232,19 +221,19 @@ public class AxonServerEventSchedulerTest {
 
     @Test
     void cancelWithQuartzScheduleToken() {
-        assertThrows(IllegalArgumentException.class, () -> testSubject.cancelSchedule(new
-                                                                                              QuartzScheduleToken("job",
-                                                                                                                  "12345")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> testSubject.cancelSchedule(new QuartzScheduleToken("job", "12345"))
+        );
     }
 
     @Test
     void reschedule() {
         String token = "12345";
         scheduled.put(token, Event.newBuilder().build());
-        testSubject.reschedule(new SimpleScheduleToken(token), Duration.ofDays(1), new GenericEventMessage<>("Updated",
-                                                                                                             MetaData.with(
-                                                                                                                     "updated",
-                                                                                                                     "true")));
+        testSubject.reschedule(new SimpleScheduleToken(token),
+                               Duration.ofDays(1),
+                               new GenericEventMessage<>("Updated", MetaData.with("updated", "true")));
 
         assertNotNull(scheduled.get(token));
         assertEquals(1, scheduled.get(token).getMetaDataCount());

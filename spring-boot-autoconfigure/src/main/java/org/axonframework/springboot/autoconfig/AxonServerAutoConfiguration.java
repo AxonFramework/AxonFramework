@@ -23,6 +23,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
+import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.heartbeat.HeartbeatConfiguration;
@@ -34,6 +35,7 @@ import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -231,6 +233,16 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                    .snapshotFilter(configuration.snapshotFilter())
                                    .upcasterChain(configuration.upcasterChain())
                                    .build();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public EventScheduler eventScheduler(@Qualifier("eventSerializer") Serializer eventSerializer,
+                                         AxonServerConnectionManager connectionManager) {
+        return AxonServerEventScheduler.builder()
+                                       .eventSerializer(eventSerializer)
+                                       .connectionManager(connectionManager)
+                                       .build();
     }
 }
 
