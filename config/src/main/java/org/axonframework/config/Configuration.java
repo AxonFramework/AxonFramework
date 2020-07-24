@@ -22,6 +22,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -330,9 +331,18 @@ public interface Configuration {
     HandlerDefinition handlerDefinition(Class<?> inspectedType);
 
     /**
-     * Returns the Deadline Manager defined in this Configuration.
+     * Returns the {@link EventScheduler} defined in this {@link Configuration}.
      *
-     * @return the Deadline Manager defined in this Configuration
+     * @return the {@link EventScheduler} defined in this {@link Configuration}
+     */
+    default EventScheduler eventScheduler() {
+        return getComponent(EventScheduler.class);
+    }
+
+    /**
+     * Returns the {@link DeadlineManager} defined in this {@link Configuration}.
+     *
+     * @return the {@link DeadlineManager} defined in this {@link Configuration}
      */
     default DeadlineManager deadlineManager() {
         return getComponent(DeadlineManager.class);
