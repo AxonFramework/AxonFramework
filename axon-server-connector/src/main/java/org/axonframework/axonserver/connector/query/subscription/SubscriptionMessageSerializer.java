@@ -127,11 +127,11 @@ public class SubscriptionMessageSerializer {
         if (initialResult.isExceptional()) {
             Throwable exceptionResult = initialResult.exceptionResult();
             responseBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
-            responseBuilder.setErrorMessage(ExceptionSerializer
-                                                    .serialize(configuration.getClientId(), exceptionResult));
+            responseBuilder.setErrorMessage(
+                    ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
+            );
             initialResult.exceptionDetails()
-                         .ifPresent(details -> responseBuilder
-                                 .setPayload(exceptionDetailsSerializer.apply(details)));
+                         .ifPresent(details -> responseBuilder.setPayload(exceptionDetailsSerializer.apply(details)));
         } else {
             responseBuilder.setPayload(payloadSerializer.apply(initialResult));
         }

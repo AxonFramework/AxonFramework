@@ -169,6 +169,7 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
      * @param timeout  A timeout of {@code long} for the query
      * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries
      * being dispatched
+     * @see Flux#concatMap(Function)
      */
     default Flux<Object> scatterGather(Publisher<QueryMessage<?, ?>> queries, Duration timeout) {
         return Flux.from(queries)
@@ -179,12 +180,10 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, returning the initial result and a stream of
-     * incremental updates until the subscriber unsubscribes from the resulting {@link Flux}.
-     * Should be used when the response type of the initial result and incremental update match.
-     * (received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Flux}</b></p>
+     * Sends the given {@code query} over the {@link QueryBus}, returning the initial result and a stream of incremental
+     * updates, received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting
+     * side. Should be used when the response type of the initial result and incremental update match.
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Flux}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -207,12 +206,10 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, returns initial result and keeps streaming
-     * incremental updates until subscriber unsubscribes from Flux.
-     * Should be used when response type of initial result and incremental update match.
-     * (received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Flux}</b></p>
+     * Sends the given {@code query} over the {@link QueryBus}, returns initial result and keeps streaming incremental
+     * updates, received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting
+     * side. Should be used when response type of initial result and incremental update match.
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Flux}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -232,13 +229,11 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, returns initial result and keeps streaming
-     * incremental updates until subscriber unsubscribes from Flux.
-     * Should be used when initial result contains multiple instances of response type and needs to be flattened.
+     * Sends the given {@code query} over the {@link QueryBus}, returns initial result and keeps streaming incremental
+     * updates, received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting
+     * side. Should be used when initial result contains multiple instances of response type and needs to be flattened.
      * Response type of initial response and incremental updates needs to match.
-     * (received at the moment the query is sent, until it is cancelled by the caller or closed by the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Flux}</b></p>
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Flux}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -264,11 +259,10 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, streaming
-     * incremental updates until the subscriber unsubscribes from the resulting {@link Flux}.
+     * Sends the given {@code query} over the {@link QueryBus}, streaming incremental updates, received at the moment
+     * the query is sent, until it is cancelled by the caller or closed by the emitting side.
      * Should be used when the subscriber is interested only in updates.
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Flux}</b></p>
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Flux}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -290,11 +284,10 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Sends the given {@code query} over the {@link QueryBus}, streaming
-     * incremental updates until hte subscriber unsubscribes from the resulting {@link Flux}.
+     * Sends the given {@code query} over the {@link QueryBus}, streaming incremental updates, received at the moment
+     * the query is sent, until it is cancelled by the caller or closed by the emitting side.
      * Should be used when the subscriber is interested only in updates.
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Flux}</b></p>
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Flux}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -315,10 +308,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
 
     /**
      * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
-     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
-     * the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * incremental updates, received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side.
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -345,10 +337,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
 
     /**
      * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
-     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
-     * the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * incremental updates, received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side.
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -378,10 +369,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
 
     /**
      * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
-     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
-     * the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * incremental updates, received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side.
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -410,10 +400,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
 
     /**
      * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
-     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
-     * the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * incremental updates, received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side.
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -446,10 +435,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
 
     /**
      * Sends the given {@code query} over the {@link QueryBus} and returns result containing initial response and
-     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
-     * the emitting side).
-     * <p><b>Do note that the {@code query} will not be dispatched until there is a subscription to the resulting {@link
-     * Mono}</b></p>
+     * incremental updates, received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side.
+     * <p><b>{@code query} will not be dispatched until there is a subscription to the resulting {@link Mono}</b></p>
      * <p>
      * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * {@link ReactorQueryGateway}. If you require the {@code null} to be returned for the initial and update results,
@@ -477,12 +465,12 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
                                                                     int updateBufferSize);
 
     /**
-     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will be sent sequentially. Once the result
-     * of Nth query arrives, the (N + 1)th query is dispatched.
+     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will
+     * be sent sequentially. Once the result of Nth query arrives, the (N + 1)th query is dispatched.
      *
      * @param queries a {@link Publisher} stream of queries to be dispatched
-     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries being
-     * dispatched
+     * @return a {@link Flux} of query results. The ordering of query results corresponds to the ordering of queries
+     * being dispatched
      *
      * @see #subscriptionQuery(String, Object, Class, Class)
      * @see Flux#concatMap(Function)
@@ -493,9 +481,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will be sent sequentially. Once the result
-     * of Nth query arrives, the (N + 1)th query is dispatched. All queries will be dispatched using the given {@code
-     * backpressure}.
+     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will
+     * be sent sequentially. Once the result of Nth query arrives, the (N + 1)th query is dispatched. All queries will
+     * be dispatched using the given {@code backpressure}.
      *
      * @param queries      a {@link Publisher} stream of queries to be dispatched
      * @param backpressure the backpressure mechanism to deal with producing of incremental updates
@@ -512,9 +500,9 @@ public interface ReactorQueryGateway extends ReactorMessageDispatchInterceptorSu
     }
 
     /**
-     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will be sent sequentially. Once the result
-     * of Nth query arrives, the (N + 1)th query is dispatched. All queries will be dispatched using given {@code
-     * backpressure} and {@code updateBufferSize}.
+     * Uses the given {@link Publisher} of {@link SubscriptionQueryMessage}s to send incoming queries away. Queries will
+     * be sent sequentially. Once the result of Nth query arrives, the (N + 1)th query is dispatched. All queries will
+     * be dispatched using given {@code backpressure} and {@code updateBufferSize}.
      *
      * @param queries          a {@link Publisher} stream of queries to be dispatched
      * @param backpressure     the backpressure mechanism to deal with producing of incremental updates
