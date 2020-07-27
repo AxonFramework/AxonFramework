@@ -226,7 +226,9 @@ public class JdbcTokenStore implements TokenStore {
             );
 
             if (updatedTokens[0] == 0) {
-                // Update couldn't succeed, trying to first load the token and than update it instead.
+                logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
+                                     + "Trying load-then-save approach instead.",
+                             token, processorName, segment);
                 executeQuery(
                         connection,
                         c -> selectForUpdate(c, processorName, segment),

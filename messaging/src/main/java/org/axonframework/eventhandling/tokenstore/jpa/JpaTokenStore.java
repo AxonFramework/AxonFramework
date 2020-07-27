@@ -139,7 +139,9 @@ public class JpaTokenStore implements TokenStore {
                                          .executeUpdate();
 
         if (updatedTokens == 0) {
-            // Update couldn't succeed, trying to first load the token and than update it instead.
+            logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
+                                 + "Trying load-then-save approach instead.",
+                         token, processorName, segment);
             TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
             tokenEntry.updateToken(token, serializer);
         }
