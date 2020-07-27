@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.EventTrackerStatusChangeListener;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -85,7 +86,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link TrackingEventProcessor}.
+ * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
+ * module as it relies on both the {@code messaging} (where the {@code TrackingEventProcessor} resides) and {@code
+ * eventsourcing} modules.
  *
  * @author Rene de Waele
  */
@@ -1512,6 +1515,172 @@ class TrackingEventProcessorTest {
         verify(tokenStore, times(1)).retrieveStorageIdentifier();
 
         assertEquals(id, id2);
+    }
+
+    /**
+     * This test can spot three invocations of the {@link EventTrackerStatusChangeListener}, but asserts two:
+     * <ol>
+     *     <li> First call is when the single active {@link org.axonframework.eventhandling.Segment} is added.</li>
+     *     <li> Second call is when the status transitions to {@link EventTrackerStatus#isCaughtUp()}.</li>
+     *     <li>
+     *         The last not asserted call is when the {@link TrackingEventProcessor} is shutting down, which removes the
+     *         status. This isn't taking into account as it is part of the {@link #tearDown()}.
+     *     </li>
+     * </ol>
+     * <p>
+     * More changes occur on the {@link EventTrackerStatus}, but by default only complete additions, removals and {@code
+     * boolean} field updates are included as changes.
+     */
+    @Test
+    void testPublishedEventsUpdateStatusAndHitChangeListener() throws Exception {
+        CountDownLatch eventHandlingLatch = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            eventHandlingLatch.countDown();
+            return null;
+        }).when(mockHandler).handle(any());
+
+        CountDownLatch statusChangeLatch = new CountDownLatch(2);
+        AtomicInteger addedStatusCounter = new AtomicInteger(0);
+        AtomicInteger updatedStatusCounter = new AtomicInteger(0);
+        AtomicInteger removedStatusCounter = new AtomicInteger(0);
+        EventTrackerStatusChangeListener statusChangeListener = updatedTrackerStatus -> {
+            assertEquals(1, updatedTrackerStatus.size());
+            EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.get(0);
+            if (eventTrackerStatus.trackerAdded()) {
+                addedStatusCounter.getAndIncrement();
+            } else if (eventTrackerStatus.trackerRemoved()) {
+                removedStatusCounter.getAndIncrement();
+            } else {
+                updatedStatusCounter.getAndIncrement();
+            }
+            statusChangeLatch.countDown();
+        };
+
+        TrackingEventProcessorConfiguration tepConfiguration =
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                   .andEventTrackerStatusChangeListener(statusChangeListener);
+        initProcessor(tepConfiguration);
+
+        testSubject.start();
+        // Give it a bit of time to start
+        Thread.sleep(200);
+        publishEvents(2);
+
+        assertTrue(eventHandlingLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(statusChangeLatch.await(5, TimeUnit.SECONDS));
+        assertEquals(1, addedStatusCounter.get());
+        assertEquals(1, updatedStatusCounter.get());
+        assertEquals(0, removedStatusCounter.get());
+    }
+
+    /**
+     * This test can spot five invocations of the {@link EventTrackerStatusChangeListener}, but asserts four:
+     * <ol>
+     *     <li> First call is when the single active {@link org.axonframework.eventhandling.Segment} is added.</li>
+     *     <li> Second call is when the status transitions to {@link EventTrackerStatus#isCaughtUp()}.</li>
+     *     <li> Third call is when the {@link EventTrackerStatus#getCurrentPosition()} moves to 0.</li>
+     *     <li> Fourth call is when the {@link EventTrackerStatus#getCurrentPosition()} moves to 1.</li>
+     *     <li>
+     *         The last not asserted call is when the {@link TrackingEventProcessor} is shutting down, which removes the
+     *         status. This isn't taking into account as it is part of the {@link #tearDown()}.
+     *     </li>
+     * </ol>
+     */
+    @Test
+    void testPublishedEventsUpdateStatusAndHitChangeListenerIncludingPositions() throws Exception {
+        CountDownLatch eventHandlingLatch = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            eventHandlingLatch.countDown();
+            return null;
+        }).when(mockHandler).handle(any());
+
+        CountDownLatch statusChangeLatch = new CountDownLatch(4);
+        AtomicInteger addedStatusCounter = new AtomicInteger(0);
+        AtomicInteger updatedStatusCounter = new AtomicInteger(0);
+        AtomicInteger removedStatusCounter = new AtomicInteger(0);
+        EventTrackerStatusChangeListener statusChangeListener = new EventTrackerStatusChangeListener() {
+            @Override
+            public void onEventTrackerStatusChange(Map<Integer, EventTrackerStatus> updatedTrackerStatus) {
+                assertEquals(1, updatedTrackerStatus.size());
+                EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.get(0);
+                if (eventTrackerStatus.trackerAdded()) {
+                    addedStatusCounter.getAndIncrement();
+                } else if (eventTrackerStatus.trackerRemoved()) {
+                    removedStatusCounter.getAndIncrement();
+                } else {
+                    updatedStatusCounter.getAndIncrement();
+                }
+                statusChangeLatch.countDown();
+            }
+
+            @Override
+            public boolean validatePositions() {
+                return true;
+            }
+        };
+
+        TrackingEventProcessorConfiguration tepConfiguration =
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                   .andEventTrackerStatusChangeListener(statusChangeListener);
+        initProcessor(tepConfiguration);
+
+        testSubject.start();
+        // Give it a bit of time to start
+        Thread.sleep(200);
+        publishEvents(2);
+
+        assertTrue(eventHandlingLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(statusChangeLatch.await(5, TimeUnit.SECONDS));
+        assertEquals(1, addedStatusCounter.get());
+        assertEquals(3, updatedStatusCounter.get());
+        assertEquals(0, removedStatusCounter.get());
+    }
+
+    @Test
+    @Timeout(value = 10)
+    void testSplitAndMergeInfluenceOnChangeListenerInvocations() throws InterruptedException {
+        int firstSegment = 0;
+        int secondSegment = 1;
+
+        CountDownLatch addedStatusLatch = new CountDownLatch(4);
+        CountDownLatch updatedStatusLatch = new CountDownLatch(1);
+        CountDownLatch removedStatusLatch = new CountDownLatch(3);
+        EventTrackerStatusChangeListener statusChangeListener = updatedTrackerStatus -> {
+            assertEquals(1, updatedTrackerStatus.size());
+            EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.values().iterator().next();
+            if (eventTrackerStatus.trackerAdded()) {
+                addedStatusLatch.countDown();
+            } else if (eventTrackerStatus.trackerRemoved()) {
+                removedStatusLatch.countDown();
+            } else {
+                updatedStatusLatch.countDown();
+            }
+        };
+
+        TrackingEventProcessorConfiguration tepConfiguration =
+                TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                   .andEventTrackerStatusChangeListener(statusChangeListener);
+        initProcessor(tepConfiguration);
+        tokenStore.initializeTokenSegments(testSubject.getName(), 1);
+
+        publishEvents(2);
+        testSubject.start();
+        waitForSegmentStart(firstSegment);
+
+        assertTrue(testSubject.splitSegment(firstSegment).join(), "Expected split to succeed");
+        assertArrayEquals(new int[]{firstSegment, secondSegment}, tokenStore.fetchSegments(testSubject.getName()));
+        waitForSegmentStart(secondSegment);
+
+        assertWithin(
+                50, TimeUnit.MILLISECONDS,
+                () -> assertTrue(testSubject.mergeSegment(firstSegment).join(), "Expected merge to succeed")
+        );
+        assertArrayEquals(new int[]{firstSegment}, tokenStore.fetchSegments(testSubject.getName()));
+        waitForSegmentStart(firstSegment);
+
+        assertTrue(addedStatusLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(updatedStatusLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(removedStatusLatch.await(5, TimeUnit.SECONDS));
     }
 
     private void waitForStatus(String description,
