@@ -214,18 +214,16 @@ public class JdbcTokenStore implements TokenStore {
     public void storeToken(TrackingToken token, String processorName, int segment) throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
-            int[] updatedTokens = executeUpdates(
+            int updatedToken = executeUpdate(
                     connection,
-                    e -> {
-                        throw new JdbcException(format(
-                                "Could not store token [%s] for processor [%s] and segment [%d]",
-                                token, processorName, segment
-                        ), e);
-                    },
-                    c -> storeUpdate(connection, token, processorName, segment)
+                    c -> storeUpdate(connection, token, processorName, segment),
+                    e -> new JdbcException(format(
+                            "Could not store token [%s] for processor [%s] and segment [%d]",
+                            token, processorName, segment
+                    ), e)
             );
 
-            if (updatedTokens[0] == 0) {
+            if (updatedToken == 0) {
                 logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
                                      + "Trying load-then-save approach instead.",
                              token, processorName, segment);
