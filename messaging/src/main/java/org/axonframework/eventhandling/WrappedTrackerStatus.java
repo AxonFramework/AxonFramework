@@ -90,6 +90,16 @@ public abstract class WrappedTrackerStatus implements EventTrackerStatus {
     }
 
     @Override
+    public boolean addedTracker() {
+        return delegate.addedTracker();
+    }
+
+    @Override
+    public boolean removedTracker() {
+        return delegate.removedTracker();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

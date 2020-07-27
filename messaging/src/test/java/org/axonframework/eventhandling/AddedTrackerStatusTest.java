@@ -79,7 +79,7 @@ class AddedTrackerStatusTest {
 
     @Test
     void testGetTrackingToken() {
-        TrackingToken expectedTrackingToken =  new GlobalSequenceTrackingToken(0);
+        TrackingToken expectedTrackingToken = new GlobalSequenceTrackingToken(0);
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.getTrackingToken()).thenReturn(expectedTrackingToken);
 
@@ -148,5 +148,19 @@ class AddedTrackerStatusTest {
         OptionalLong result = testSubject.mergeCompletedPosition();
         assertTrue(result.isPresent());
         assertEquals(expectedMergeCompletedPosition, result.getAsLong());
+    }
+
+    @Test
+    void testAddedTracker() {
+        AddedTrackerStatus testSubject = new AddedTrackerStatus(mock(EventTrackerStatus.class));
+
+        assertTrue(testSubject.addedTracker());
+    }
+
+    @Test
+    void testRemovedTracker() {
+        AddedTrackerStatus testSubject = new AddedTrackerStatus(mock(EventTrackerStatus.class));
+
+        assertFalse(testSubject.removedTracker());
     }
 }

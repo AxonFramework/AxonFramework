@@ -35,6 +35,11 @@ public class AddedTrackerStatus extends WrappedTrackerStatus {
     }
 
     @Override
+    public boolean addedTracker() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         return "AddedTrackerStatus{" +
                 "segment=" + getSegment() +

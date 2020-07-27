@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.eventhandling;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.AddedTrackerStatus;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -30,7 +29,6 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.RemovedTrackerStatus;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -86,6 +84,9 @@ import static org.axonframework.integrationtests.utils.EventTestUtils.createEven
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+;
+;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
@@ -1548,9 +1549,9 @@ class TrackingEventProcessorTest {
         EventTrackerStatusChangeListener statusChangeListener = updatedTrackerStatus -> {
             assertEquals(1, updatedTrackerStatus.size());
             EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.get(0);
-            if (eventTrackerStatus instanceof AddedTrackerStatus) {
+            if (eventTrackerStatus.addedTracker()) {
                 addedStatusCounter.getAndIncrement();
-            } else if (eventTrackerStatus instanceof RemovedTrackerStatus) {
+            } else if (eventTrackerStatus.removedTracker()) {
                 removedStatusCounter.getAndIncrement();
             } else {
                 updatedStatusCounter.getAndIncrement();
@@ -1605,9 +1606,9 @@ class TrackingEventProcessorTest {
             public void onEventTrackerStatusChange(Map<Integer, EventTrackerStatus> updatedTrackerStatus) {
                 assertEquals(1, updatedTrackerStatus.size());
                 EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.get(0);
-                if (eventTrackerStatus instanceof AddedTrackerStatus) {
+                if (eventTrackerStatus.addedTracker()) {
                     addedStatusCounter.getAndIncrement();
-                } else if (eventTrackerStatus instanceof RemovedTrackerStatus) {
+                } else if (eventTrackerStatus.removedTracker()) {
                     removedStatusCounter.getAndIncrement();
                 } else {
                     updatedStatusCounter.getAndIncrement();
@@ -1644,15 +1645,15 @@ class TrackingEventProcessorTest {
         int firstSegment = 0;
         int secondSegment = 1;
 
-        CountDownLatch addedStatusLatch = new CountDownLatch(3);
-        CountDownLatch updatedStatusLatch = new CountDownLatch(3);
-        CountDownLatch removedStatusLatch = new CountDownLatch(2);
+        CountDownLatch addedStatusLatch = new CountDownLatch(4);
+        CountDownLatch updatedStatusLatch = new CountDownLatch(1);
+        CountDownLatch removedStatusLatch = new CountDownLatch(3);
         EventTrackerStatusChangeListener statusChangeListener = updatedTrackerStatus -> {
             assertEquals(1, updatedTrackerStatus.size());
-            EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.get(0);
-            if (eventTrackerStatus instanceof AddedTrackerStatus) {
+            EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.values().iterator().next();
+            if (eventTrackerStatus.addedTracker()) {
                 addedStatusLatch.countDown();
-            } else if (eventTrackerStatus instanceof RemovedTrackerStatus) {
+            } else if (eventTrackerStatus.removedTracker()) {
                 removedStatusLatch.countDown();
             } else {
                 updatedStatusLatch.countDown();

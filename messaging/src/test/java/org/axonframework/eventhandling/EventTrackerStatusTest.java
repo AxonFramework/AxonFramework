@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@code default} methods on the {@link EventTrackerStatus}.
@@ -112,5 +111,15 @@ class EventTrackerStatusTest {
         thatStatus.setResetPosition(42L);
         thatStatus.setMergeCompletedPosition(1337L);
         assertTrue(thisStatus.matchPositions(thatStatus));
+    }
+
+    @Test
+    void testAddedTracker() {
+        assertFalse(thisStatus.addedTracker());
+    }
+
+    @Test
+    void testRemovedTracker() {
+        assertFalse(thisStatus.removedTracker());
     }
 }

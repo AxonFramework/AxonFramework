@@ -119,6 +119,26 @@ public interface EventTrackerStatus {
     OptionalLong getResetPosition();
 
     /**
+     * Returns a {@code boolean} describing whether this {@link EventTrackerStatus} is starting it's progress for the
+     * first time. Particularly useful if the {@link EventTrackerStatusChangeListener} should react to added status'.
+     *
+     * @return {@code true} if this {@link EventTrackerStatus} just started, {@code false} otherwise
+     */
+    default boolean addedTracker() {
+        return false;
+    }
+
+    /**
+     * Returns a {@code boolean} describing whether this {@link EventTrackerStatus} has just stopped it's progress.
+     * Particularly useful if the {@link EventTrackerStatusChangeListener} should react to removed status'.
+     *
+     * @return {@code true} if this {@link EventTrackerStatus} was just removed, {@code false} otherwise
+     */
+    default boolean removedTracker() {
+        return false;
+    }
+
+    /**
      * Check whether {@code this} {@link EventTrackerStatus} is different from {@code that}.
      *
      * @param that the other {@link EventTrackerStatus} to validate the difference with

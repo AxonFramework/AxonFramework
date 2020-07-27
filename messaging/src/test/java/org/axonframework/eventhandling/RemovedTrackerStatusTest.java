@@ -149,4 +149,18 @@ class RemovedTrackerStatusTest {
         assertTrue(result.isPresent());
         assertEquals(expectedMergeCompletedPosition, result.getAsLong());
     }
+
+    @Test
+    void testAddedTracker() {
+        RemovedTrackerStatus testSubject = new RemovedTrackerStatus(mock(EventTrackerStatus.class));
+
+        assertFalse(testSubject.addedTracker());
+    }
+
+    @Test
+    void testRemovedTracker() {
+        RemovedTrackerStatus testSubject = new RemovedTrackerStatus(mock(EventTrackerStatus.class));
+
+        assertTrue(testSubject.removedTracker());
+    }
 }
