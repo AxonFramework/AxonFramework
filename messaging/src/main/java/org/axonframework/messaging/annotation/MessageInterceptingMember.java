@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package org.axonframework.messaging.annotation;
 
 /**
- * {@link java.lang.reflect.Field} or {@link java.lang.reflect.Method}  annotation that indicates the member contains
- * the value that represents the version of the Aggregate, used for optimistic locking, as well as state validation for
- * commands.
+ * Marker interface for {@link MessageHandlingMember} instances that need to be treated as interceptors, rather
+ * than regular members.
+ *
+ * @param <T> The type that the handler was declared on.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 4.4
  */
-@Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AggregateVersion {
+public interface MessageInterceptingMember<T> extends MessageHandlingMember<T> {
+
+    @Override
+    default int priority() {
+        return 100_000;
+    }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.InterceptorChainParameterResolverFactory;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.annotation.InterceptorChainParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -50,15 +50,10 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     @Override
     public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork, InterceptorChain interceptorChain)
             throws Exception {
-        InterceptorChainParameterResolverFactory.initialize(interceptorChain);
-
-        Object result = delegate.handle(unitOfWork.getMessage(), target);
-
-        if (delegate.unwrap(CommandHandlerInterceptorHandlingMember.class)
-                    .map(CommandHandlerInterceptorHandlingMember::shouldInvokeInterceptorChain).orElse(false)) {
-            result = interceptorChain.proceed();
-        }
-
-        return result;
+        return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
+                interceptorChain,
+                () -> delegate.canHandle(unitOfWork.getMessage())
+                      ? delegate.handle(unitOfWork.getMessage(), target)
+                      : interceptorChain.proceed());
     }
 }

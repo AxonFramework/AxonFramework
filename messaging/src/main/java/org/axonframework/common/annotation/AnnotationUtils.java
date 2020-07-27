@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Utility class for locating annotations and attribute values on elements.
@@ -41,7 +45,6 @@ public abstract class AnnotationUtils {
      * @param annotationType The type of annotation to find
      * @return {@code true} if such annotation is present.
      */
-    @SuppressWarnings("unchecked")
     public static boolean isAnnotationPresent(AnnotatedElement element, Class<? extends Annotation> annotationType) {
         return isAnnotationPresent(element, annotationType.getName());
     }
@@ -110,6 +113,25 @@ public abstract class AnnotationUtils {
         return findAnnotationAttributes(element, annotationType.getName());
     }
 
+    /**
+     * Find the {@code attributeName} of an annotation of type {@code annotationType} on the given {@code element}. The
+     * returned optional has a value present if the annotation has been found, either directly on the {@code element},
+     * or as a meta-annotation, <em>if</em> the named attribute exist.
+     *
+     * @param element        the element to find the annotation on
+     * @param annotationType the type of the annotation to find
+     * @param attributeName  the name of the attribute to find
+     * @return an optional that resolved to the attribute value, if the annotation is found and if the attribute exists
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<T> findAnnotationAttribute(AnnotatedElement element,
+                                                          Class<? extends Annotation> annotationType,
+                                                          String attributeName) {
+        return findAnnotationAttributes(element, annotationType.getName())
+                .map(attributes -> attributes.get(attributeName))
+                .map(attribute -> (T) attribute);
+    }
+
     private static boolean collectAnnotationAttributes(Class<? extends Annotation> target, String annotationType, HashSet<String> visited, Map<String, Object> attributes) {
         Annotation ann = getAnnotation(target, annotationType);
         if (ann == null && visited.add(target.getName())) {
@@ -155,20 +177,6 @@ public abstract class AnnotationUtils {
             return simpleName.substring(0, 1).toLowerCase(Locale.ENGLISH).concat(simpleName.substring(1));
         }
         return method.getName();
-    }
-
-    private static Annotation getAnnotation(Class<? extends Annotation> target, String annotationType,
-                                            Set<String> visited) {
-        Annotation ann = getAnnotation(target, annotationType);
-        if (ann == null && visited.add(target.getName())) {
-            for (Annotation metaAnn : target.getAnnotations()) {
-                ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
-                if (ann != null) {
-                    break;
-                }
-            }
-        }
-        return ann;
     }
 
     private AnnotationUtils() {

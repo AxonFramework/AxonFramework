@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,13 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Annotation used to mark methods on Aggregate members which can intercept commands. If a non-root entity of the
@@ -58,7 +62,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-@MessageHandler(messageType = CommandMessage.class)
+@MessageHandlerInterceptor(messageType = CommandMessage.class)
 public @interface CommandHandlerInterceptor {
 
     /**
@@ -67,4 +71,10 @@ public @interface CommandHandlerInterceptor {
      * @return pattern used to filter command names
      */
     String commandNamePattern() default ".*";
+
+    /**
+     * Specifies the type of message payload that can be handled by the member method. The payload of the message should
+     * be assignable to this type. Defaults to any {@link Object}.
+     */
+    Class<?> payloadType() default Object.class;
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,23 @@
 
 package org.axonframework.common;
 
-import java.lang.reflect.*;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.security.AccessController;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -34,6 +48,7 @@ public abstract class ReflectionUtils {
      * A map of Primitive types to their respective wrapper types.
      */
     private static final Map<Type, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
+    private static final String UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE = "Unsupported member type [%s]";
 
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
@@ -292,7 +307,7 @@ public abstract class ReflectionUtils {
     }
 
     private static void addMethodsOnDeclaredInterfaces(Class<?> currentClazz, List<Method> methods) {
-        for (Class iface : currentClazz.getInterfaces()) {
+        for (Class<?> iface : currentClazz.getInterfaces()) {
             methods.addAll(Arrays.asList(iface.getDeclaredMethods()));
             addMethodsOnDeclaredInterfaces(iface, methods);
         }
@@ -323,6 +338,122 @@ public abstract class ReflectionUtils {
             return Optional.empty();
         }
         return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
+    }
+
+    /**
+     * Resolve a generic type parameter from a member declaration.
+     *
+     * @param member           the member to find generic parameters for
+     * @param genericTypeIndex the index of the type
+     * @return an optional that contains the resolved type, if found
+     */
+    public static Optional<Class<?>> resolveMemberGenericType(Member member, int genericTypeIndex) {
+        final Type genericType = getMemberGenericType(member);
+        if (!(genericType instanceof ParameterizedType)
+                || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
+            return Optional.empty();
+        }
+        return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
+    }
+
+    /**
+     * Invokes and returns the return value of the given {@code method} in the given {@code object}. If necessary, the
+     * method is made accessible, assuming the security manager allows it.
+     *
+     * @param method the method to invoke
+     * @param object the target object the given {@code method} is invoked on
+     * @return the resulting value of invocation of the {@code method} in the {@code object}
+     * @throws IllegalStateException if the method is not accessible and the security manager doesn't allow it to be
+     *                               made accessible
+     */
+    @SuppressWarnings("unchecked")
+    public static <R> R invokeAndGetMethodValue(Method method, Object object) {
+        ensureAccessible(method);
+        try {
+            return (R) method.invoke(object);
+        } catch (IllegalAccessException | InvocationTargetException ex) {
+            throw new IllegalStateException("Unable to access method for invocation.", ex);
+        }
+    }
+
+    /**
+     * Returns the value of the given {@code member} in the given {@code object}, either by returning {@link Field}
+     * value or invoking the method. If necessary, the member is made accessible, assuming the security manager allows
+     * it. Supported members are {@link Field} and non-void {@link Method} without parameters.
+     *
+     * @param member the member containing or returning the value
+     * @param target the object to retrieve the member's value from
+     * @return the value of the {@code member} in the {@code object}
+     * @throws IllegalStateException if the member is not supported
+     */
+    @SuppressWarnings("unchecked")
+    public static <R> R getMemberValue(Member member, Object target) {
+        if (member instanceof Field) {
+            return (R) ReflectionUtils.getFieldValue((Field) member, target);
+        } else if (member instanceof Method) {
+            return (R) ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
+        }
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
+    }
+
+    /**
+     * Returns the type of value of the given {@code member}, either by returning the type of {@link Field} or type of
+     * the return value of a {@link Method}.
+     *
+     * @param member the member to get the value type from
+     * @return the type of value of the {@code member}
+     * @throws IllegalStateException if the member is not supported
+     */
+    public static Class<?> getMemberValueType(Member member) {
+        if (member instanceof Method) {
+            final Method method = (Method) member;
+            return method.getReturnType();
+        } else if (member instanceof Field) {
+            final Field field = (Field) member;
+            return field.getType();
+        }
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
+    }
+
+    /**
+     * Returns the generic type of value of the given {@code member}, either by returning the generic type of {@link
+     * Field} or generic return type of a {@link Method}.
+     *
+     * @param member the member to get generic type of
+     * @return the generic type of value of the {@code member}
+     * @throws IllegalStateException if the member is not supported
+     */
+    public static Type getMemberGenericType(Member member) {
+        if (member instanceof Field) {
+            return ((Field) member).getGenericType();
+        } else if (member instanceof Method) {
+            return ((Method) member).getGenericReturnType();
+        }
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
+    }
+
+    /**
+     * Returns the generic string of the given {@code member}.
+     *
+     * @param member the member to get the generic string for
+     * @return the generic string of the {@code member}
+     * @throws IllegalStateException if the member is not supported
+     */
+    public static String getMemberGenericString(Member member) {
+        if (member instanceof Field) {
+            return ((Field) member).toGenericString();
+        } else if (member instanceof Executable) {
+            return ((Executable) member).toGenericString();
+        }
+        throw new IllegalStateException(
+                String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
+        );
     }
 
     private ReflectionUtils() {
