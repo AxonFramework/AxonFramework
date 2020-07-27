@@ -114,12 +114,12 @@ class EventTrackerStatusTest {
     }
 
     @Test
-    void testAddedTracker() {
-        assertFalse(thisStatus.addedTracker());
+    void testTrackerAdded() {
+        assertFalse(thisStatus.trackerAdded());
     }
 
     @Test
-    void testRemovedTracker() {
-        assertFalse(thisStatus.removedTracker());
+    void testTrackerRemoved() {
+        assertFalse(thisStatus.trackerRemoved());
     }
 }

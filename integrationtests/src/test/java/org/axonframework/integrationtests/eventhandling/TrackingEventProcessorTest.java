@@ -85,9 +85,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-;
-;
-
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
  * module as it relies on both the {@code messaging} (where the {@code TrackingEventProcessor} resides) and {@code
@@ -1549,9 +1546,9 @@ class TrackingEventProcessorTest {
         EventTrackerStatusChangeListener statusChangeListener = updatedTrackerStatus -> {
             assertEquals(1, updatedTrackerStatus.size());
             EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.get(0);
-            if (eventTrackerStatus.addedTracker()) {
+            if (eventTrackerStatus.trackerAdded()) {
                 addedStatusCounter.getAndIncrement();
-            } else if (eventTrackerStatus.removedTracker()) {
+            } else if (eventTrackerStatus.trackerRemoved()) {
                 removedStatusCounter.getAndIncrement();
             } else {
                 updatedStatusCounter.getAndIncrement();
@@ -1606,9 +1603,9 @@ class TrackingEventProcessorTest {
             public void onEventTrackerStatusChange(Map<Integer, EventTrackerStatus> updatedTrackerStatus) {
                 assertEquals(1, updatedTrackerStatus.size());
                 EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.get(0);
-                if (eventTrackerStatus.addedTracker()) {
+                if (eventTrackerStatus.trackerAdded()) {
                     addedStatusCounter.getAndIncrement();
-                } else if (eventTrackerStatus.removedTracker()) {
+                } else if (eventTrackerStatus.trackerRemoved()) {
                     removedStatusCounter.getAndIncrement();
                 } else {
                     updatedStatusCounter.getAndIncrement();
@@ -1651,9 +1648,9 @@ class TrackingEventProcessorTest {
         EventTrackerStatusChangeListener statusChangeListener = updatedTrackerStatus -> {
             assertEquals(1, updatedTrackerStatus.size());
             EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.values().iterator().next();
-            if (eventTrackerStatus.addedTracker()) {
+            if (eventTrackerStatus.trackerAdded()) {
                 addedStatusLatch.countDown();
-            } else if (eventTrackerStatus.removedTracker()) {
+            } else if (eventTrackerStatus.trackerRemoved()) {
                 removedStatusLatch.countDown();
             } else {
                 updatedStatusLatch.countDown();

@@ -35,7 +35,7 @@ public class AddedTrackerStatus extends WrappedTrackerStatus {
     }
 
     @Override
-    public boolean addedTracker() {
+    public boolean trackerAdded() {
         return true;
     }
 

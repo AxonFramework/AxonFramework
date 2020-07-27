@@ -124,7 +124,7 @@ public interface EventTrackerStatus {
      *
      * @return {@code true} if this {@link EventTrackerStatus} just started, {@code false} otherwise
      */
-    default boolean addedTracker() {
+    default boolean trackerAdded() {
         return false;
     }
 
@@ -134,7 +134,7 @@ public interface EventTrackerStatus {
      *
      * @return {@code true} if this {@link EventTrackerStatus} was just removed, {@code false} otherwise
      */
-    default boolean removedTracker() {
+    default boolean trackerRemoved() {
         return false;
     }
 

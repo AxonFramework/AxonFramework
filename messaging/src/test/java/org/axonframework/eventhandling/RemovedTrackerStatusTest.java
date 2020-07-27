@@ -151,16 +151,16 @@ class RemovedTrackerStatusTest {
     }
 
     @Test
-    void testAddedTracker() {
+    void testTrackerAdded() {
         RemovedTrackerStatus testSubject = new RemovedTrackerStatus(mock(EventTrackerStatus.class));
 
-        assertFalse(testSubject.addedTracker());
+        assertFalse(testSubject.trackerAdded());
     }
 
     @Test
-    void testRemovedTracker() {
+    void testTrackerRemoved() {
         RemovedTrackerStatus testSubject = new RemovedTrackerStatus(mock(EventTrackerStatus.class));
 
-        assertTrue(testSubject.removedTracker());
+        assertTrue(testSubject.trackerRemoved());
     }
 }

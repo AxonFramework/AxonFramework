@@ -35,7 +35,7 @@ public class RemovedTrackerStatus extends WrappedTrackerStatus {
     }
 
     @Override
-    public boolean removedTracker() {
+    public boolean trackerRemoved() {
         return true;
     }
 
