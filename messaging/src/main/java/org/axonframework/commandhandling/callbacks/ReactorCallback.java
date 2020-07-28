@@ -35,11 +35,10 @@ import reactor.core.publisher.Mono;
  * @see CommandCallback
  * @see org.axonframework.commandhandling.CommandBus
  */
-
 public class ReactorCallback<C, R> extends Mono<CommandResultMessage<? extends R>> implements CommandCallback<C, R> {
 
-    EmitterProcessor<CommandResultMessage<? extends R>> commandResultMessageEmitter = EmitterProcessor.create(1);
-    FluxSink<CommandResultMessage<? extends R>> sink = commandResultMessageEmitter.sink();
+    private final EmitterProcessor<CommandResultMessage<? extends R>> commandResultMessageEmitter = EmitterProcessor.create(1);
+    private final FluxSink<CommandResultMessage<? extends R>> sink = commandResultMessageEmitter.sink();
 
     @Override
     public void onResult(CommandMessage<? extends C> commandMessage,

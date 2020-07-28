@@ -131,7 +131,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
                                                                                                  initialResponseType,
                                                                                                  updateResponseType))
                 .transform(this::processDispatchInterceptors)
-                .map(isq -> (SubscriptionQueryMessage<Q, U, I>) isq)
+                .map(interceptedQuery -> (SubscriptionQueryMessage<Q, U, I>) interceptedQuery)
                 .flatMap(isq -> dispatchSubscriptionQuery(isq, backpressure, updateBufferSize))
                 .flatMap(processSubscriptionQueryResult());
     }
@@ -186,19 +186,21 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
             Mono<SubscriptionQueryResult<QueryResponseMessage<U>, SubscriptionQueryUpdateMessage<I>>>>,
             Mono<SubscriptionQueryResult<I, U>>> processSubscriptionQueryResult() {
 
-        return messageWithResult -> messageWithResult.getT2().map(sqr -> {
+        return messageWithResult -> messageWithResult.getT2().map(subscriptionResult -> {
             Mono<I> interceptedInitialResult = Mono.<QueryMessage<?, ?>>just(messageWithResult.getT1())
-                    .zipWith(Mono.just(Flux.<ResultMessage<?>>from(sqr.initialResult())))
+                    .zipWith(Mono.just(Flux.<ResultMessage<?>>from(subscriptionResult.initialResult())))
                     .flatMapMany(this::processResultsInterceptors)
                     .<I>transform(this::getPayload)
                     .next();
 
             Flux<U> interceptedUpdates = Mono.<QueryMessage<?, ?>>just(messageWithResult.getT1())
-                    .zipWith(Mono.just(sqr.updates().<ResultMessage<?>>map(it -> it)))
+                    .zipWith(Mono.just(subscriptionResult.updates().<ResultMessage<?>>map(it -> it)))
                     .flatMapMany(this::processResultsInterceptors)
                     .transform(this::getPayload);
 
-            return new DefaultSubscriptionQueryResult<>(interceptedInitialResult, interceptedUpdates, sqr);
+            return new DefaultSubscriptionQueryResult<>(interceptedInitialResult,
+                                                        interceptedUpdates,
+                                                        subscriptionResult);
         });
     }
 

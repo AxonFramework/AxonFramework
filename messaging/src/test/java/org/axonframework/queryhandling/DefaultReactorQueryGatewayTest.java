@@ -726,7 +726,7 @@ class DefaultReactorQueryGatewayTest {
             queryUpdateEmitter.emit(String.class, q -> true, "3");
             queryUpdateEmitter.emit(String.class, q -> true, "4");
             queryUpdateEmitter.emit(String.class, q -> true, "5");
-            queryUpdateEmitter.complete(String.class, p -> true);
+            queryUpdateEmitter.complete(String.class, q -> true);
         });
         StepVerifier.create(result.doOnNext(s -> countDownLatch.countDown()))
                     .expectNext("handled")
@@ -744,7 +744,7 @@ class DefaultReactorQueryGatewayTest {
             queryUpdateEmitter.emit(String.class, q -> true, "3");
             queryUpdateEmitter.emit(String.class, q -> true, "4");
             queryUpdateEmitter.emit(String.class, q -> true, "5");
-            queryUpdateEmitter.complete(String.class, p -> true);
+            queryUpdateEmitter.complete(String.class, q -> true);
 
             return result;
         }).when(queryBus)
