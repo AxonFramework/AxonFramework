@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling.tokenstore.jpa;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.TrackingToken;
@@ -26,26 +24,28 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}
@@ -118,8 +118,33 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
-        tokenEntry.updateToken(token, serializer);
+        TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
+        byte[] tokenDataToStore =
+                getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, new byte[0]);
+        String tokenTypeToStore = getOrDefault(tokenToStore.getTokenType(), SerializedType::getName, null);
+
+        int updatedTokens = entityManager.createQuery("UPDATE TokenEntry te SET "
+                                                              + "te.token = :token, "
+                                                              + "te.tokenType = :tokenType, "
+                                                              + "te.timestamp = :timestamp "
+                                                              + "WHERE te.owner = :owner "
+                                                              + "AND te.processorName = :processorName "
+                                                              + "AND te.segment = :segment")
+                                         .setParameter("token", tokenDataToStore)
+                                         .setParameter("tokenType", tokenTypeToStore)
+                                         .setParameter("timestamp", tokenToStore.timestampAsString())
+                                         .setParameter("owner", nodeId)
+                                         .setParameter("processorName", processorName)
+                                         .setParameter("segment", segment)
+                                         .executeUpdate();
+
+        if (updatedTokens == 0) {
+            logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
+                                 + "Trying load-then-save approach instead.",
+                         token, processorName, segment);
+            TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
+            tokenEntry.updateToken(token, serializer);
+        }
     }
 
     @Override

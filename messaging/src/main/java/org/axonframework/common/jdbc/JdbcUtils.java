@@ -16,7 +16,11 @@
 
 package org.axonframework.common.jdbc;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -73,6 +77,28 @@ public class JdbcUtils {
     }
 
     /**
+     * Execute the update statement produced by the given {@code updateFunction}. Any errors will be handled by the
+     * given {@code errorHandler}.
+     *
+     * @param connection     connection to the underlying database that should be used for the update
+     * @param updateFunction the function that produce the update statement
+     * @param errorHandler   handles errors as result of executing the update
+     * @return the update count resulting from the given {@code updateFunction}
+     */
+    public static int executeUpdate(Connection connection,
+                                    SqlFunction updateFunction,
+                                    Function<SQLException, RuntimeException> errorHandler) {
+        PreparedStatement preparedStatement = createSqlStatement(connection, updateFunction);
+        try {
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw errorHandler.apply(e);
+        } finally {
+            closeQuietly(preparedStatement);
+        }
+    }
+
+    /**
      * Execute the update statements produced by the given {@code sqlFunctions}. Any errors will be handled by the given
      * {@code errorHandler}.
      *
@@ -81,7 +107,8 @@ public class JdbcUtils {
      * @param sqlFunctions the functions that produce the update statements
      * @return an array of update counts containing one element for each sql function
      */
-    public static int[] executeUpdates(Connection connection, Consumer<SQLException> errorHandler,
+    public static int[] executeUpdates(Connection connection,
+                                       Consumer<SQLException> errorHandler,
                                        SqlFunction... sqlFunctions) {
         try {
             int[] result = new int[sqlFunctions.length];

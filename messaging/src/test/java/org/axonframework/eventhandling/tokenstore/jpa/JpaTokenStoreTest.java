@@ -110,7 +110,7 @@ public class JpaTokenStoreTest {
                                                .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.get(0).getOwner());
-        assertNull(tokens.get(0).getToken(XStreamSerializer.builder().build()));
+        assertNull(tokens.get(0).getToken(TestSerializer.XSTREAM.getSerializer()));
     }
 
     @Transactional
