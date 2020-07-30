@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,11 @@ import java.util.Map;
  * DomainEventData implementation that retrieves its raw data from a protobuf {@link Event} message.
  * <p>
  * This implementation strictly breaks the contract of DomainEventData, in that the returned SerializedObject for
- * MetaData does not contain the byte array representation of the metadata, but the
- * {@link Event#getMetaDataMap() MetaDataMap} defined in the protobuf message.
+ * MetaData does not contain the byte array representation of the metadata, but the {@link Event#getMetaDataMap()
+ * MetaDataMap} defined in the protobuf message.
+ *
+ * @author Marc Gathier
+ * @since 4.0
  */
 public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
 
@@ -78,7 +81,7 @@ public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
      * Note that this implementation breaks the contract of {@link DomainEventData#getMetaData()}, in that it doesn't
      * return the serialized data as a byte array, but as a {@link Event#getMetaDataMap() MetaDataMap}
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public SerializedObject getMetaData() {
         return new SerializedMetaData(event.getMetaDataMap(), Map.class);
@@ -95,5 +98,4 @@ public class GrpcBackedDomainEventData implements DomainEventData<byte[]> {
     public boolean isSnapshot() {
         return event.getSnapshot();
     }
-
 }

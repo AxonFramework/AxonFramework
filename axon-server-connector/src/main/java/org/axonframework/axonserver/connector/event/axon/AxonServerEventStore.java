@@ -56,6 +56,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,10 +73,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.Spliterator.CONCURRENT;
-import static java.util.Spliterator.DISTINCT;
-import static java.util.Spliterator.NONNULL;
-import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterator.*;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -85,10 +83,11 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Zoltan Altfatter
  * @author Marc Gathier
  * @author Allard Buijze
+ * @since 4.0
  */
 public class AxonServerEventStore extends AbstractEventStore {
 
-    private static final Logger logger = LoggerFactory.getLogger(AxonServerEventStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
      * Instantiate a Builder to be able to create a {@link AxonServerEventStore}.
@@ -99,8 +98,8 @@ public class AxonServerEventStore extends AbstractEventStore {
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
      * The snapshot {@link Serializer} is defaulted to a {@link XStreamSerializer}, the event Serializer also defaults
-     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}.
-     * The {@link AxonServerConfiguration} and {@link AxonServerConnectionManager} are <b>hard requirements</b> if no
+     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}. The {@link
+     * AxonServerConfiguration} and {@link AxonServerConnectionManager} are <b>hard requirements</b> if no
      * EventStorageEngine is provided directly.
      *
      * @return a Builder to be able to create a {@link AxonServerEventStore}
@@ -112,10 +111,10 @@ public class AxonServerEventStore extends AbstractEventStore {
     /**
      * Instantiate a {@link AxonServerEventStore} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStorageEngine} is set. If not, the {@link AxonServerConfiguration} and
-     * {@link AxonServerConnectionManager} should minimally be provided to create an AxonServer specific
-     * EventStorageEngine implementation. If either of these {@code null} assertions fail, an
-     * {@link AxonConfigurationException} will be thrown.
+     * Will assert that the {@link EventStorageEngine} is set. If not, the {@link AxonServerConfiguration} and {@link
+     * AxonServerConnectionManager} should minimally be provided to create an AxonServer specific EventStorageEngine
+     * implementation. If either of these {@code null} assertions fail, an {@link AxonConfigurationException} will be
+     * thrown.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AxonServerEventStore} instance
      */
@@ -157,8 +156,8 @@ public class AxonServerEventStore extends AbstractEventStore {
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
      * The snapshot {@link Serializer} is defaulted to a {@link XStreamSerializer}, the event Serializer also defaults
-     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}.
-     * The {@link AxonServerConfiguration} and {@link AxonServerConnectionManager} are <b>hard requirements</b> if no
+     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}. The {@link
+     * AxonServerConfiguration} and {@link AxonServerConnectionManager} are <b>hard requirements</b> if no
      * EventStorageEngine is provided directly.
      */
     public static class Builder extends AbstractEventStore.Builder {
@@ -218,8 +217,8 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         /**
-         * Sets the {@link Serializer} used to serialize and deserialize snapshots. Defaults to a
-         * {@link XStreamSerializer}.
+         * Sets the {@link Serializer} used to serialize and deserialize snapshots. Defaults to a {@link
+         * XStreamSerializer}.
          * <p>
          * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
@@ -235,8 +234,8 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         /**
-         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and Meta Data
-         * with. Defaults to a {@link XStreamSerializer}.
+         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and Meta Data with.
+         * Defaults to a {@link XStreamSerializer}.
          * <p>
          * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
@@ -283,8 +282,8 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         /**
-         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a
-         * {@link NoOpEventUpcaster}.
+         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a {@link
+         * NoOpEventUpcaster}.
          * <p>
          * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
@@ -431,9 +430,9 @@ public class AxonServerEventStore extends AbstractEventStore {
         public Event map(EventMessage<?> eventMessage, Serializer serializer) {
             Event.Builder builder = Event.newBuilder();
             if (eventMessage instanceof GenericDomainEventMessage) {
-                builder.setAggregateIdentifier(((GenericDomainEventMessage) eventMessage).getAggregateIdentifier())
-                       .setAggregateSequenceNumber(((GenericDomainEventMessage) eventMessage).getSequenceNumber())
-                       .setAggregateType(((GenericDomainEventMessage) eventMessage).getType());
+                builder.setAggregateIdentifier(((GenericDomainEventMessage<?>) eventMessage).getAggregateIdentifier())
+                       .setAggregateSequenceNumber(((GenericDomainEventMessage<?>) eventMessage).getSequenceNumber())
+                       .setAggregateType(((GenericDomainEventMessage<?>) eventMessage).getType());
             }
             SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(serializer, byte[].class);
             builder.setMessageIdentifier(eventMessage.getIdentifier()).setPayload(
@@ -452,17 +451,21 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         @Override
         protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-            connectionManager.getConnection(context).eventChannel().appendSnapshot(map(snapshot, serializer)).whenComplete((c, e) -> {
-                if (e != null) {
-                    logger.warn("Error occurred while creating a snapshot", e);
-                } else if (c != null) {
-                    if (c.getSuccess()) {
-                        logger.info("Snapshot created");
-                    } else {
-                        logger.warn("Snapshot creation failed for unknown reason. Check server logs for details.");
-                    }
-                }
-            });
+            connectionManager.getConnection(context)
+                             .eventChannel()
+                             .appendSnapshot(map(snapshot, serializer))
+                             .whenComplete((c, e) -> {
+                                 if (e != null) {
+                                     logger.warn("Error occurred while creating a snapshot", e);
+                                 } else if (c != null) {
+                                     if (c.getSuccess()) {
+                                         logger.info("Snapshot created");
+                                     } else {
+                                         logger.warn("Snapshot creation failed for unknown reason. "
+                                                             + "Check server logs for details.");
+                                     }
+                                 }
+                             });
         }
 
         @Override
@@ -487,14 +490,15 @@ public class AxonServerEventStore extends AbstractEventStore {
             Assert.isTrue(trackingToken == null || trackingToken instanceof GlobalSequenceTrackingToken,
                           () -> "Invalid tracking token type. Must be GlobalSequenceTrackingToken.");
             long nextToken = trackingToken == null
-                             ? -1
-                             : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
+                    ? -1
+                    : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
 
-            EventStream stream = connectionManager.getConnection(context)
-                                                  .eventChannel()
-                                                  .openStream(nextToken,
-                                                              configuration.getEventFlowControl().getInitialNrOfPermits(),
-                                                              configuration.getEventFlowControl().getNrOfNewPermits());
+            EventStream stream =
+                    connectionManager.getConnection(context)
+                                     .eventChannel()
+                                     .openStream(nextToken,
+                                                 configuration.getEventFlowControl().getInitialNrOfPermits(),
+                                                 configuration.getEventFlowControl().getNrOfNewPermits());
 
             return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isDisableEventBlacklisting());
         }
@@ -512,17 +516,19 @@ public class AxonServerEventStore extends AbstractEventStore {
                         .peek(i -> lastSequenceNumber.getAndUpdate(seq -> Math.max(seq, i.getSequenceNumber())));
 
             return DomainEventStream.of(
-                    input.flatMap(ded -> upcastAndDeserializeDomainEvent(ded, isSnapshot(ded) ? snapshotSerializer : eventSerializer))
-                         .filter(Objects::nonNull), lastSequenceNumber::get);
+                    input.flatMap(ded -> upcastAndDeserializeDomainEvent(
+                            ded, isSnapshot(ded) ? snapshotSerializer : eventSerializer)
+                    ).filter(Objects::nonNull),
+                    lastSequenceNumber::get
+            );
         }
 
-        private Stream<? extends DomainEventMessage<?>> upcastAndDeserializeDomainEvent(DomainEventData<?> domainEventData,
-                                                                                        Serializer serializer) {
+        private Stream<? extends DomainEventMessage<?>> upcastAndDeserializeDomainEvent(
+                DomainEventData<?> domainEventData,
+                Serializer serializer
+        ) {
             DomainEventStream upcastedStream = EventStreamUtils.upcastAndDeserializeDomainEvents(
-                    Stream.of(domainEventData),
-                    serializer,
-                    upcasterChain
-
+                    Stream.of(domainEventData), serializer, upcasterChain
             );
             return upcastedStream.asStream();
         }
@@ -538,13 +544,14 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
             try {
-                Long lastSequenceNumber = connectionManager.getConnection(context)
-                                                           .eventChannel()
-                                                           .findHighestSequence(aggregateIdentifier)
-                                                           .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                Long lastSequenceNumber =
+                        connectionManager.getConnection(context)
+                                         .eventChannel()
+                                         .findHighestSequence(aggregateIdentifier)
+                                         .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
                 return lastSequenceNumber == null || lastSequenceNumber < 0
-                       ? Optional.empty()
-                       : Optional.of(lastSequenceNumber);
+                        ? Optional.empty()
+                        : Optional.of(lastSequenceNumber);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new EventStoreException(e.getMessage(), e);
@@ -627,7 +634,9 @@ public class AxonServerEventStore extends AbstractEventStore {
                     if (prefetched.isEmpty() && sequenceNumber >= 0) {
                         connectionManager.getConnection(context)
                                          .eventChannel()
-                                         .loadSnapshots(aggregateIdentifier, sequenceNumber, configuration.getSnapshotPrefetch())
+                                         .loadSnapshots(aggregateIdentifier,
+                                                        sequenceNumber,
+                                                        configuration.getSnapshotPrefetch())
                                          .asStream()
                                          .map(GrpcBackedDomainEventData::new)
                                          .forEach(prefetched::add);
@@ -740,11 +749,11 @@ public class AxonServerEventStore extends AbstractEventStore {
     }
 
     /**
-     * Wrapper around an {@link AxonIQEventStorageEngine} serving as a {@link StreamableMessageSource} of type
-     * {@link TrackedEventMessage}, delegating the calls towards the provided storage engine. Can be leveraged to create
-     * new StreamableMessageSources, each delegating towards a storage engine within a different Bounded Context.
+     * Wrapper around an {@link AxonIQEventStorageEngine} serving as a {@link StreamableMessageSource} of type {@link
+     * TrackedEventMessage}, delegating the calls towards the provided storage engine. Can be leveraged to create new
+     * StreamableMessageSources, each delegating towards a storage engine within a different Bounded Context.
      */
-    private class AxonServerMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
+    private static class AxonServerMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
 
         private final AxonIQEventStorageEngine eventStorageEngine;
 
