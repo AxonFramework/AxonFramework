@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,11 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.*;
+import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
+import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
+import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
+import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
 import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
@@ -31,8 +35,8 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
 
 /**
- * Converter between Axon Framework {@link QueryMessage} and {@link QueryResponseMessage} and Axon Server gRPC
- * {@link io.axoniq.axonserver.grpc.query.Query} and {@link QueryResponse} messages.
+ * Converter between Axon Framework {@link QueryMessage} and {@link QueryResponseMessage} and Axon Server gRPC {@link
+ * io.axoniq.axonserver.grpc.query.Query} and {@link QueryResponse} messages.
  *
  * @author Marc Gathier
  * @since 4.0
@@ -50,10 +54,9 @@ public class QuerySerializer {
 
     /**
      * Instantiate a serializer used to convert Axon {@link QueryMessage}s and {@link QueryResponseMessage}s into Axon
-     * Server gRPC messages and vice versa.
-     * The provided {@code messageSerializer} is used for converting a message's payload and metadata, whilst the
-     * {@code serializer} is used to convert a {@link QueryMessage}'s
-     * {@link org.axonframework.messaging.responsetypes.ResponseType}.
+     * Server gRPC messages and vice versa. The provided {@code messageSerializer} is used for converting a message's
+     * payload and metadata, whilst the {@code serializer} is used to convert a {@link QueryMessage}'s {@link
+     * org.axonframework.messaging.responsetypes.ResponseType}.
      *
      * @param messageSerializer a {@link Serializer} used to de-/serialize an Axon Server gRPC message into {@link
      *                          QueryMessage}s and {@link QueryResponseMessage}s and vice versa
@@ -98,7 +101,9 @@ public class QuerySerializer {
                            .setQuery(queryMessage.getQueryName())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
-                           .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType().forSerialization()))
+                           .setResponseType(responseTypeSerializer.apply(
+                                   queryMessage.getResponseType().forSerialization()
+                           ))
                            .setPayload(payloadSerializer.apply(queryMessage))
                            .addProcessingInstructions(
                                    ProcessingInstruction.newBuilder()
@@ -166,7 +171,10 @@ public class QuerySerializer {
      * @param <R>           a generic specifying the type of the {@link QueryResponseMessage} to convert to
      * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}
      */
-    public <R> QueryResponseMessage<R> deserializeResponse(QueryResponse queryResponse, ResponseType<R> expectedResponseType) {
-        return new ConvertingResponseMessage<>(expectedResponseType, new GrpcBackedResponseMessage<>(queryResponse, messageSerializer));
+    public <R> QueryResponseMessage<R> deserializeResponse(QueryResponse queryResponse,
+                                                           ResponseType<R> expectedResponseType) {
+        return new ConvertingResponseMessage<>(
+                expectedResponseType, new GrpcBackedResponseMessage<>(queryResponse, messageSerializer)
+        );
     }
 }

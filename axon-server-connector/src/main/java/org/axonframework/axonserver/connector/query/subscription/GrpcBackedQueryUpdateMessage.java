@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,12 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     private final Supplier<MetaData> metaDataSupplier;
 
     /**
-     * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided
-     * {@code serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided {@code
+     * serializer} to be able to retrieve the payload and {@link MetaData} from it.
      *
      * @param queryUpdate a {@link QueryUpdate} which is being wrapped as a {@link SubscriptionQueryUpdateMessage}
-     * @param serializer  a {@link Serializer} used to deserialize the payload and {@link MetaData} from the
-     *                    given {@code queryUpdate}
+     * @param serializer  a {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     *                    {@code queryUpdate}
      */
     public GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate, Serializer serializer) {
         this(

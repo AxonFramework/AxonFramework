@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,14 +25,17 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * A decorator of the {@link SubscriptionQueryUpdateMessage} to deserialize a {@link QueryResponseMessage} and
- * {@link QueryUpdate} messages.
+ * A decorator of the {@link SubscriptionQueryUpdateMessage} to deserialize a {@link QueryResponseMessage} and {@link
+ * QueryUpdate} messages.
  *
  * @param <I> a generic specifying the type of the initial result of the {@link SubscriptionQueryResult}
  * @param <U> a generic specifying the type of the subsequent updates of the {@link SubscriptionQueryResult}
  * @author Sara Pellegrini
  * @since 4.0
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class DeserializedResult<I, U> implements SubscriptionQueryResult<QueryResponseMessage<I>,
         SubscriptionQueryUpdateMessage<U>> {
 

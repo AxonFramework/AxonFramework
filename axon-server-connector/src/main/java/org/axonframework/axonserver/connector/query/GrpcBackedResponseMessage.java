@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,8 +45,8 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     private final Supplier<MetaData> metaDataSupplier;
 
     /**
-     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
-     * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided {@link
+     * Serializer} to be able to retrieve the payload and {@link MetaData} from it.
      *
      * @param queryResponse the {@link QueryResponse} which is being wrapped as a {@link QueryResponseMessage}
      * @param serializer    the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
@@ -54,12 +54,14 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
      */
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer serializer) {
         this.queryResponse = queryResponse;
-        this.serializedPayload = queryResponse.hasPayload() && !SerializedType.emptyType().getName().equalsIgnoreCase(queryResponse.getPayload().getType())
+        this.serializedPayload = queryResponse.hasPayload()
+                && !SerializedType.emptyType().getName().equalsIgnoreCase(queryResponse.getPayload().getType())
                 ? new LazyDeserializingObject<>(new GrpcSerializedObject(queryResponse.getPayload()), serializer)
                 : null;
         this.exception = queryResponse.hasErrorMessage()
-                ? ErrorCode.getFromCode(queryResponse.getErrorCode()).convert(queryResponse.getErrorMessage(),
-                                                                              serializedPayload == null ? () -> null : serializedPayload::getObject)
+                ? ErrorCode.getFromCode(queryResponse.getErrorCode())
+                           .convert(queryResponse.getErrorMessage(),
+                                    serializedPayload == null ? () -> null : serializedPayload::getObject)
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryResponse.getMetaDataMap(), serializer);
     }
