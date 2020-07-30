@@ -190,7 +190,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                        public void handle(QueryRequest query,
                                                                           ReplyChannel<QueryResponse> responseHandler) {
                                                            queryExecutor.submit(new QueryProcessingTask(
-                                                                   localSegment, query, responseHandler, serializer
+                                                                   localSegment, query, responseHandler, serializer,
+                                                                   configuration.getClientId()
                                                            ));
                                                        }
 
@@ -212,7 +213,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                         .doOnError(e -> {
                                                                             ErrorMessage error =
                                                                                     ExceptionSerializer.serialize(
-                                                                                            "", e
+                                                                                            configuration.getClientId(),
+                                                                                            e
                                                                                     );
                                                                             String errorCode =
                                                                                     ErrorCode.QUERY_EXECUTION_ERROR
@@ -311,7 +313,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backPressure,
-            int updateBufferSize) {
+            int updateBufferSize
+    ) {
         shutdownLatch.ifShuttingDown(String.format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
@@ -391,16 +394,18 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private final QueryRequest queryRequest;
         private final ReplyChannel<QueryResponse> responseHandler;
         private final QuerySerializer serializer;
+        private final String clientId;
 
         private QueryProcessingTask(QueryBus localSegment,
                                     QueryRequest queryRequest,
                                     ReplyChannel<QueryResponse> responseHandler,
-                                    QuerySerializer serializer) {
+                                    QuerySerializer serializer, String clientId) {
             this.localSegment = localSegment;
             this.priority = priority(queryRequest.getProcessingInstructionsList());
             this.queryRequest = queryRequest;
             this.responseHandler = responseHandler;
             this.serializer = serializer;
+            this.clientId = clientId;
         }
 
         public long getPriority() {
@@ -415,7 +420,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 if (ProcessingInstructionHelper.numberOfResults(queryRequest.getProcessingInstructionsList()) == 1) {
                     localSegment.query(queryMessage).whenComplete((r, e) -> {
                         if (e != null) {
-                            ErrorMessage ex = ExceptionSerializer.serialize("", e);
+                            ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                             QueryResponse response =
                                     QueryResponse.newBuilder()
                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
@@ -441,15 +446,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     responseHandler.complete();
                 }
             } catch (RuntimeException | OutOfDirectMemoryError e) {
-                ErrorMessage ex = ExceptionSerializer.serialize("", e);
+                ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                 responseHandler.sendLast(QueryResponse.newBuilder()
                                                       .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
                                                       .setErrorMessage(ex)
                                                       .setRequestIdentifier(queryRequest.getMessageIdentifier())
                                                       .build());
                 logger.warn("Query Processor had an exception when processing query [{}]",
-                            queryRequest.getQuery(),
-                            e);
+                            queryRequest.getQuery(), e);
             }
         }
     }

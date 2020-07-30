@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
@@ -38,6 +39,8 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
+
+import java.util.Map;
 
 import static io.axoniq.axonserver.grpc.query.QueryProviderOutbound.newBuilder;
 
@@ -107,11 +110,93 @@ public class SubscriptionMessageSerializer {
     }
 
     /**
+     * Serializes the given {@code subscriptionQueryMessage} into a {@link SerializedObject}.
+     *
+     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's {@link SubscriptionQueryMessage#getUpdateResponseType()}
+     *                                 to serialize into a {@link SerializedObject}
+     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its {@link
+     * SubscriptionQueryMessage#getUpdateResponseType()}
+     */
+    public SerializedObject serializeUpdateType(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
+        return responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType());
+    }
+
+    /**
+     * Serializes the given {@code subscriptionQueryUpdateMessage} into a {@link QueryUpdate}.
+     *
+     * @param subscriptionQueryUpdateMessage the {@link SubscriptionQueryUpdateMessage} to serialize into a {@link
+     *                                       QueryUpdate}
+     * @return the {@link QueryUpdate} based on the given {@link SubscriptionQueryUpdateMessage}
+     */
+    public QueryUpdate serialize(SubscriptionQueryUpdateMessage<?> subscriptionQueryUpdateMessage) {
+        QueryUpdate.Builder updateMessageBuilder = QueryUpdate.newBuilder();
+        if (subscriptionQueryUpdateMessage.isExceptional()) {
+            Throwable exceptionResult = subscriptionQueryUpdateMessage.exceptionResult();
+            updateMessageBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            updateMessageBuilder.setErrorMessage(
+                    ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
+            );
+            subscriptionQueryUpdateMessage.exceptionDetails()
+                                          .ifPresent(details -> updateMessageBuilder.setPayload(
+                                                  exceptionDetailsSerializer.apply(details)
+                                          ));
+        } else {
+            updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
+        }
+
+        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData());
+        return updateMessageBuilder.putAllMetaData(metaData)
+                                   .setMessageIdentifier(subscriptionQueryUpdateMessage.getIdentifier())
+                                   .setClientId(configuration.getClientId())
+                                   .setComponentName(configuration.getComponentName())
+                                   .build();
+    }
+
+    /**
+     * Deserializes the given {@code subscriptionQuery} into a {@link SubscriptionQueryMessage}.
+     *
+     * @param subscriptionQuery the {@link SubscriptionQuery} to deserialize into a {@link SubscriptionQueryMessage}
+     * @param <Q>               the query type of the {@link SubscriptionQueryMessage} to return
+     * @param <I>               the initial result type of the {@link SubscriptionQueryMessage} to return
+     * @param <U>               the update type of the {@link SubscriptionQueryMessage} to return
+     * @return the {@link SubscriptionQueryMessage} based on the given {@code subscriptionQuery}
+     */
+    public <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery subscriptionQuery) {
+        return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery, messageSerializer, serializer);
+    }
+
+    /**
+     * Deserializes the given {@code queryResponse} into a {@link QueryResponseMessage}. Typically used for the initial
+     * result of the subscription query.
+     *
+     * @param queryResponse the {@link QueryResponse} to deserialize into a {@link QueryResponseMessage}
+     * @param <I>           the response type of the {@link QueryResponseMessage} to return
+     * @return a {@link QueryResponseMessage} based on the given {@link QueryResponse}
+     */
+    public <I> QueryResponseMessage<I> deserialize(QueryResponse queryResponse) {
+        return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
+    }
+
+    /**
+     * Deserializes the given {@code queryUpdate} into a {@link SubscriptionQueryUpdateMessage}.
+     *
+     * @param queryUpdate the {@link QueryUpdate} to deserialize into a {@link SubscriptionQueryUpdateMessage}
+     * @param <U>         the update type of the {@link SubscriptionQueryUpdateMessage} to return
+     * @return a {@link SubscriptionQueryUpdateMessage} based on the given {@link QueryUpdate}
+     */
+    public <U> SubscriptionQueryUpdateMessage<U> deserialize(QueryUpdate queryUpdate) {
+        return new GrpcBackedQueryUpdateMessage<>(queryUpdate, messageSerializer);
+    }
+
+    /**
      * Convert a {@link SubscriptionQueryMessage} into a {@link SubscriptionQuery}.
      *
      * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} to convert into a {@link SubscriptionQuery}
      * @return a {@link SubscriptionQuery} based on the provided {@code subscriptionQueryMessage}
+     * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+     * connector</a>
      */
+    @Deprecated
     public SubscriptionQuery serialize(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
         QueryRequest queryRequest =
                 QueryRequest.newBuilder()
@@ -132,31 +217,6 @@ public class SubscriptionMessageSerializer {
                                         responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType())
                                 )
                                 .setQueryRequest(queryRequest).build();
-    }
-
-    /**
-     * Serializes the given {@code subscriptionQueryMessage} into a {@link SerializedObject}.
-     *
-     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's {@link SubscriptionQueryMessage#getUpdateResponseType()}
-     *                                 to serialize into a {@link SerializedObject}
-     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its {@link
-     * SubscriptionQueryMessage#getUpdateResponseType()}
-     */
-    public SerializedObject serializeUpdateType(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
-        return responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType());
-    }
-
-    /**
-     * Deserializes the given {@code subscriptionQuery} into a {@link SubscriptionQueryMessage}.
-     *
-     * @param subscriptionQuery the {@link SubscriptionQuery} to deserialize into a {@link SubscriptionQueryMessage}
-     * @param <Q>               the query type of the {@link SubscriptionQueryMessage} to return
-     * @param <I>               the initial result type of the {@link SubscriptionQueryMessage} to return
-     * @param <U>               the update type of the {@link SubscriptionQueryMessage} to return
-     * @return the {@link SubscriptionQueryMessage} based on the given {@code subscriptionQuery}
-     */
-    public <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery subscriptionQuery) {
-        return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery, messageSerializer, serializer);
     }
 
     /**
@@ -187,62 +247,6 @@ public class SubscriptionMessageSerializer {
                                          .setSubscriptionIdentifier(subscriptionId)
                                          .setInitialResult(responseBuilder.build())
         ).build();
-    }
-
-    /**
-     * Deserializes the given {@code queryResponse} into a {@link QueryResponseMessage}.
-     *
-     * @param queryResponse the {@link QueryResponse} to deserialize into a {@link QueryResponseMessage}
-     * @param <I>           the response type of the {@link QueryResponseMessage} to return
-     * @return a {@link QueryResponseMessage} based on the given {@link QueryResponse}
-     */
-    public <I> QueryResponseMessage<I> deserialize(QueryResponse queryResponse) {
-        return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
-    }
-
-    /**
-     * Serializes the given {@code subscriptionQueryUpdateMessage} into a {@link QueryUpdate}.
-     *
-     * @param subscriptionQueryUpdateMessage the {@link SubscriptionQueryUpdateMessage} to serialize into a {@link
-     *                                       QueryUpdate}
-     * @return the {@link QueryUpdate} based on the given {@link SubscriptionQueryUpdateMessage}
-     */
-    QueryProviderOutbound serialize(SubscriptionQueryUpdateMessage<?> subscriptionQueryUpdateMessage,
-                                    String subscriptionId) {
-        QueryUpdate.Builder updateMessageBuilder =
-                QueryUpdate.newBuilder()
-                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData()))
-                           .setMessageIdentifier(subscriptionQueryUpdateMessage.getIdentifier())
-                           .setClientId(configuration.getClientId())
-                           .setComponentName(configuration.getComponentName());
-        if (subscriptionQueryUpdateMessage.isExceptional()) {
-            Throwable exceptionResult = subscriptionQueryUpdateMessage.exceptionResult();
-            updateMessageBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
-            updateMessageBuilder.setErrorMessage(ExceptionSerializer
-                                                         .serialize(configuration.getClientId(), exceptionResult));
-            subscriptionQueryUpdateMessage.exceptionDetails()
-                                          .ifPresent(details -> updateMessageBuilder
-                                                  .setPayload(exceptionDetailsSerializer.apply(details)));
-        } else {
-            updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
-        }
-
-        return newBuilder().setSubscriptionQueryResponse(
-                SubscriptionQueryResponse.newBuilder()
-                                         .setSubscriptionIdentifier(subscriptionId)
-                                         .setUpdate(updateMessageBuilder.build())
-        ).build();
-    }
-
-    /**
-     * Deserializes the given {@code queryUpdate} into a {@link SubscriptionQueryUpdateMessage}.
-     *
-     * @param queryUpdate the {@link QueryUpdate} to deserialize into a {@link SubscriptionQueryUpdateMessage}
-     * @param <U>         the update type of the {@link SubscriptionQueryUpdateMessage} to return
-     * @return a {@link SubscriptionQueryUpdateMessage} based on the given {@link QueryUpdate}
-     */
-    public <U> SubscriptionQueryUpdateMessage<U> deserialize(QueryUpdate queryUpdate) {
-        return new GrpcBackedQueryUpdateMessage<>(queryUpdate, messageSerializer);
     }
 
     /**

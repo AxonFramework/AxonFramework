@@ -50,7 +50,6 @@ public class AxonServerSubscriptionQueryResult<I, U>
      */
     public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
                                              SubscriptionMessageSerializer subscriptionSerializer) {
-
         updates = Flux.<QueryUpdate>create(fluxSink -> {
             fluxSink.onRequest(count -> {
                 for (int i = 0; i < count; i++) {
