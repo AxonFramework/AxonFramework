@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,10 @@ import java.util.function.Consumer;
  * @param <V> the type of values passed through the stream
  * @author Milan Savic
  * @since 4.1.2
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class ResubscribableStreamObserver<V> implements StreamObserver<V> {
 
     private static final Logger logger = LoggerFactory.getLogger(ResubscribableStreamObserver.class);
@@ -45,8 +48,7 @@ public class ResubscribableStreamObserver<V> implements StreamObserver<V> {
      * @param delegate    the StreamObserver to delegate calls
      * @param resubscribe the re-subscription consumer - should implement the actual re-subscription
      */
-    public ResubscribableStreamObserver(StreamObserver<V> delegate,
-                                        Consumer<Throwable> resubscribe) {
+    public ResubscribableStreamObserver(StreamObserver<V> delegate, Consumer<Throwable> resubscribe) {
         this.delegate = delegate;
         this.resubscribe = resubscribe;
     }
@@ -65,8 +67,7 @@ public class ResubscribableStreamObserver<V> implements StreamObserver<V> {
         logger.warn("A problem occurred in the stream.", throwable);
         delegate.onError(throwable);
         if (throwable instanceof StatusRuntimeException
-                && ((StatusRuntimeException) throwable).getStatus().getCode()
-                                                       .equals(Status.UNAVAILABLE.getCode())) {
+                && ((StatusRuntimeException) throwable).getStatus().getCode().equals(Status.UNAVAILABLE.getCode())) {
             return;
         }
         logger.info("Resubscribing.");

@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2020. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,16 +29,24 @@ import io.grpc.MethodDescriptor;
  *
  * @author Marc Gathier
  * @since 4.0
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class ContextAddingInterceptor implements ClientInterceptor {
 
     private static final Metadata.Key<String> CONTEXT_TOKEN_KEY =
             Metadata.Key.of("AxonIQ-Context", Metadata.ASCII_STRING_MARSHALLER);
 
-    private final String token;
+    private final String context;
 
-    public ContextAddingInterceptor(String token) {
-        this.token = token;
+    /**
+     * Constructs a {@link ContextAddingInterceptor} to attach the given {@code context}.
+     *
+     * @param context the context to attach to outgoing messages
+     */
+    public ContextAddingInterceptor(String context) {
+        this.context = context;
     }
 
     @Override
@@ -49,8 +58,8 @@ public class ContextAddingInterceptor implements ClientInterceptor {
         ) {
             @Override
             public void start(Listener<RespT> responseListener, Metadata headers) {
-                if (token != null) {
-                    headers.put(CONTEXT_TOKEN_KEY, token);
+                if (context != null) {
+                    headers.put(CONTEXT_TOKEN_KEY, context);
                 }
                 super.start(responseListener, headers);
             }

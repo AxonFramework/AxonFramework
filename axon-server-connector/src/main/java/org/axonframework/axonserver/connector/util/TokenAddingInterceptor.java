@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2020. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +29,10 @@ import io.grpc.MethodDescriptor;
  *
  * @author Marc Gathier
  * @since 4.0
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class TokenAddingInterceptor implements ClientInterceptor {
 
     private static final Metadata.Key<String> ACCESS_TOKEN_KEY =
@@ -36,6 +40,11 @@ public class TokenAddingInterceptor implements ClientInterceptor {
 
     private final String token;
 
+    /**
+     * Constructs a {@link TokenAddingInterceptor} to attach the given {@code token}.
+     *
+     * @param token the token to attach to outgoing messages
+     */
     public TokenAddingInterceptor(String token) {
         this.token = token;
     }

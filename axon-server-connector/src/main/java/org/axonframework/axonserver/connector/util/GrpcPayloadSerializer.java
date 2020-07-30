@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,24 +28,29 @@ import java.util.function.Function;
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class GrpcPayloadSerializer implements Function<Message, io.axoniq.axonserver.grpc.SerializedObject> {
+public class GrpcPayloadSerializer implements Function<Message<?>, io.axoniq.axonserver.grpc.SerializedObject> {
 
-    private final GrpcObjectSerializer<Message> delegate;
+    private final GrpcObjectSerializer<Message<?>> delegate;
 
-    public GrpcPayloadSerializer(Serializer messageSerializer) {
-        this(new GrpcObjectSerializer.Serializer<Message>() {
+    /**
+     * Constructs a {@link GrpcPayloadSerializer} using the given {@code serializer} to serialize messages with
+     *
+     * @param serializer the {@link Serializer} used to serialize messages with
+     */
+    public GrpcPayloadSerializer(Serializer serializer) {
+        this(new GrpcObjectSerializer.Serializer<Message<?>>() {
             @Override
-            public <T> SerializedObject<T> serialize(Message object, Class<T> expectedRepresentation) {
-                return object.serializePayload(messageSerializer, expectedRepresentation);
+            public <T> SerializedObject<T> serialize(Message<?> object, Class<T> expectedRepresentation) {
+                return object.serializePayload(serializer, expectedRepresentation);
             }
         });
     }
 
-    private GrpcPayloadSerializer(GrpcObjectSerializer.Serializer<Message> messageSerializer) {
+    private GrpcPayloadSerializer(GrpcObjectSerializer.Serializer<Message<?>> messageSerializer) {
         this(new GrpcObjectSerializer<>(messageSerializer));
     }
 
-    private GrpcPayloadSerializer(GrpcObjectSerializer<Message> delegate) {
+    private GrpcPayloadSerializer(GrpcObjectSerializer<Message<?>> delegate) {
         this.delegate = delegate;
     }
 

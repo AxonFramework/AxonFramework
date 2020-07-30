@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 
 /**
- * Wrapper that allows clients to access a gRPC {@link io.axoniq.axonserver.grpc.SerializedObject} message as a
- * {@link SerializedObject}.
+ * Wrapper that allows clients to access a gRPC {@link io.axoniq.axonserver.grpc.SerializedObject} message as a {@link
+ * SerializedObject}.
  *
  * @author Sara Pellegrini
  * @since 4.0
@@ -34,8 +34,8 @@ public class GrpcSerializedObject implements SerializedObject<byte[]> {
      * Initialize a {@link GrpcSerializedObject}, wrapping a {@link io.axoniq.axonserver.grpc.SerializedObject} as a
      * {@link SerializedObject}.
      *
-     * @param serializedObject a {@link io.axoniq.axonserver.grpc.SerializedObject} which will be wrapped as a
-     *                         {@link SerializedObject}
+     * @param serializedObject a {@link io.axoniq.axonserver.grpc.SerializedObject} which will be wrapped as a {@link
+     *                         SerializedObject}
      */
     public GrpcSerializedObject(io.axoniq.axonserver.grpc.SerializedObject serializedObject) {
         this.payload = serializedObject;
