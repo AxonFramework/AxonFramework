@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,8 +39,8 @@ public class AxonServerException extends AxonException {
     /**
      * Initializes the exception using the given {@code code} and {@code errorMessage}.
      *
-     * @param code          The code of the error received from the Axon Server
-     * @param errorMessage  The grpc error message describing the error
+     * @param code         The code of the error received from the Axon Server
+     * @param errorMessage The grpc error message describing the error
      */
     public AxonServerException(String code, ErrorMessage errorMessage) {
         this(errorMessage.getMessage(), code, errorMessage.getLocation(), errorMessage.getDetailsList());
@@ -49,8 +49,8 @@ public class AxonServerException extends AxonException {
     /**
      * Initializes the exception using the given {@code code} and {@code message}.
      *
-     * @param code      The code of the error received from the Axon Server
-     * @param message   The message describing the exception
+     * @param code    The code of the error received from the Axon Server
+     * @param message The message describing the exception
      */
     public AxonServerException(String code, String message) {
         this(message, code, null, Collections.emptyList());
@@ -59,10 +59,10 @@ public class AxonServerException extends AxonException {
     /**
      * Initializes the exception using the given {@code message}, {@code code}, {@code source} and {@code details} .
      *
-     * @param message   The message describing the exception
-     * @param code      The code of the error received from the Axon Server
-     * @param source    The location that originally reported the error
-     * @param details   A {@link List} of {@link String}s, each describing a single "cause"
+     * @param message The message describing the exception
+     * @param code    The code of the error received from the Axon Server
+     * @param source  The location that originally reported the error
+     * @param details A {@link List} of {@link String}s, each describing a single "cause"
      */
     public AxonServerException(String message,
                                String code,
@@ -86,9 +86,7 @@ public class AxonServerException extends AxonException {
         return details;
     }
 
-    public ErrorCode errorCode(){
+    public ErrorCode errorCode() {
         return ErrorCode.getFromCode(code);
     }
-
-
 }

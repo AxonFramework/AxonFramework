@@ -41,8 +41,8 @@ import javax.net.ssl.SSLException;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * The component which manages all the connections which an Axon client can establish with an Axon Server instance.
- * Does so by creating {@link Channel}s per context and providing them as the means to dispatch/receive messages.
+ * The component which manages all the connections which an Axon client can establish with an Axon Server instance. Does
+ * so by creating {@link Channel}s per context and providing them as the means to dispatch/receive messages.
  *
  * @author Marc Gathier
  * @since 4.0
@@ -54,8 +54,8 @@ public class AxonServerConnectionManager {
     private final String defaultContext;
 
     /**
-     * Instantiate a {@link AxonServerConnectionManager} based on the fields contained in the {@link Builder}, using
-     * the given {@code connectionFactory} to obtain connections to AxonServer.
+     * Instantiate a {@link AxonServerConnectionManager} based on the fields contained in the {@link Builder}, using the
+     * given {@code connectionFactory} to obtain connections to AxonServer.
      *
      * @param builder           the {@link Builder} used to instantiate a {@link AxonServerConnectionManager} instance
      * @param connectionFactory a configured instance of the AxonServerConnectionFactory
@@ -68,9 +68,9 @@ public class AxonServerConnectionManager {
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerConnectionManager}.
      * <p>
-     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the
-     * {@link ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory}
-     * tied to it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the {@link
+     * ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory} tied to
+     * it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AxonServerConnectionManager}
      */
@@ -88,7 +88,9 @@ public class AxonServerConnectionManager {
 
     /**
      * Returns {@code true} if a gRPC channel for the specific context is opened between client and AxonServer.
-     * @param context the (Bounded) Context for for which is verified the AxonServer connection through the gRPC channel
+     *
+     * @param context the (Bounded) Context for for which is verified the AxonServer connection through the gRPC
+     *                channel
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
@@ -138,21 +140,20 @@ public class AxonServerConnectionManager {
 
     @Deprecated
     public Channel getChannel() {
-        return ((ContextConnection)getConnection(defaultContext)).getManagedChannel();
+        return ((ContextConnection) getConnection(defaultContext)).getManagedChannel();
     }
 
     @Deprecated
     public Channel getChannel(String context) {
-        return ((ContextConnection)getConnection(context)).getManagedChannel();
+        return ((ContextConnection) getConnection(context)).getManagedChannel();
     }
 
     /**
      * Builder class to instantiate an {@link AxonServerConnectionManager}.
      * <p>
-     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the
-     * {@link ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory}
-     * tied to it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as
-     * such should be provided.
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the {@link
+     * ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory} tied to
+     * it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -210,8 +211,9 @@ public class AxonServerConnectionManager {
         public AxonServerConnectionManager build() {
             validate();
 
-            AxonServerConnectionFactory.Builder builder = AxonServerConnectionFactory.forClient(axonServerConfiguration.getComponentName(),
-                                                                                                axonServerConfiguration.getClientId());
+            AxonServerConnectionFactory.Builder builder = AxonServerConnectionFactory.forClient(
+                    axonServerConfiguration.getComponentName(), axonServerConfiguration.getClientId()
+            );
             List<NodeInfo> routingServers = axonServerConfiguration.routingServers();
             if (!routingServers.isEmpty()) {
                 ServerAddress[] addresses = new ServerAddress[routingServers.size()];
@@ -225,7 +227,10 @@ public class AxonServerConnectionManager {
             if (axonServerConfiguration.isSslEnabled()) {
                 if (axonServerConfiguration.getCertFile() != null) {
                     try {
-                        builder.useTransportSecurity(SslContextBuilder.forClient().trustManager(new File(axonServerConfiguration.getCertFile())).build());
+                        File certificateFile = new File(axonServerConfiguration.getCertFile());
+                        builder.useTransportSecurity(SslContextBuilder.forClient()
+                                                                      .trustManager(certificateFile)
+                                                                      .build());
                     } catch (SSLException e) {
                         throw new AxonConfigurationException("Exception configuring Transport Security", e);
                     }
@@ -255,7 +260,6 @@ public class AxonServerConnectionManager {
             assertNonNull(
                     axonServerConfiguration, "The AxonServerConfiguration is a hard requirement and should be provided"
             );
-
         }
     }
 }

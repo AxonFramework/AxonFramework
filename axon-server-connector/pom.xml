@@ -15,7 +15,9 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.axonframework</groupId>
@@ -37,14 +39,14 @@
             <version>4.4-SNAPSHOT</version>
         </dependency>
 
-        <!-- OPTIONAL dependency on reactor -->
+        <!-- Optional dependency on reactor -->
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- OPTIONAL dependency on Spring -->
+        <!-- Optional dependency on Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -73,7 +75,7 @@
             </exclusions>
         </dependency>
 
-        <!-- OPTIONAL dependency on Axon Framework -->
+        <!-- Optional dependency on Axon Framework -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-configuration</artifactId>
@@ -109,5 +111,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
