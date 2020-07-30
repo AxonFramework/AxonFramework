@@ -25,6 +25,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
@@ -49,6 +50,7 @@ public class TrackingEventProcessorConfiguration {
     private Function<String, ThreadFactory> threadFactory;
     private long tokenClaimInterval;
     private int eventAvailabilityTimeout = 1000;
+    private EventTrackerStatusChangeListener eventTrackerStatusChangeListener = EventTrackerStatusChangeListener.noOp();
 
     /**
      * Initialize a configuration with single threaded processing.
@@ -165,6 +167,21 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * Sets the {@link EventTrackerStatusChangeListener} which will be called on {@link EventTrackerStatus} changes.
+     * Defaults to {@link EventTrackerStatusChangeListener#noOp()}.
+     *
+     * @param eventTrackerStatusChangeListener the {@link EventTrackerStatusChangeListener} to use
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andEventTrackerStatusChangeListener(
+            EventTrackerStatusChangeListener eventTrackerStatusChangeListener
+    ) {
+        assertNonNull(eventTrackerStatusChangeListener, "EventTrackerStatusChangeListener may not be null");
+        this.eventTrackerStatusChangeListener = eventTrackerStatusChangeListener;
+        return this;
+    }
+
+    /**
      * @return the maximum number of events to process in a single batch.
      */
     public int getBatchSize() {
@@ -219,5 +236,15 @@ public class TrackingEventProcessorConfiguration {
      */
     public long getTokenClaimInterval() {
         return tokenClaimInterval;
+    }
+
+    /**
+     * Returns the {@link EventTrackerStatusChangeListener} defined in this configuration, to be called whenever an
+     * {@link EventTrackerStatus} change occurs.
+     *
+     * @return the {@link EventTrackerStatusChangeListener} defined in this configuration
+     */
+    public EventTrackerStatusChangeListener getEventTrackerStatusChangeListener() {
+        return eventTrackerStatusChangeListener;
     }
 }

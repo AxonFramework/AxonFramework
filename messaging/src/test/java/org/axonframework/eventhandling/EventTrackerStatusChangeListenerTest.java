@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling;
+package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.ResultMessage;
+import org.junit.jupiter.api.*;
 
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 /**
- * Message which holds incremental update of an subscription query.
+ * Test class validating the default methods of the {@link EventTrackerStatusChangeListener}.
  *
- * @param <U> type of incremental update
- * @author Milan Savic
- * @since 3.3
+ * @author Steven van Beelen
  */
-public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
+class EventTrackerStatusChangeListenerTest {
 
-    @Override
-    SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData);
-
-    @Override
-    SubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData);
+    @Test
+    void testValidatePositionReturnsFalse() {
+        assertFalse(EventTrackerStatusChangeListener.noOp().validatePositions());
+    }
 }

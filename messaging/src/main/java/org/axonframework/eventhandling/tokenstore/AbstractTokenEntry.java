@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,20 @@ package org.axonframework.eventhandling.tokenstore;
 
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Lob;
-import javax.persistence.MappedSuperclass;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.Objects;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Lob;
+import javax.persistence.MappedSuperclass;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
@@ -118,14 +122,13 @@ public abstract class AbstractTokenEntry<T> {
     }
 
     /**
-     * Returns the {@link SerializedType} of the serialized token.
+     * Returns the {@link SerializedType} of the serialized token, or {@code null} if no token is stored by this entry.
      *
-     * @return the serialized type of the token
+     * @return the serialized type of the token, or {@code null} if no token is stored by this entry
      */
-    protected SerializedType getTokenType() {
-        return new SimpleSerializedType(tokenType, null);
+    public SerializedType getTokenType() {
+        return tokenType != null ? new SimpleSerializedType(tokenType, null) : null;
     }
-
 
     /**
      * Returns the storage timestamp of this token entry.

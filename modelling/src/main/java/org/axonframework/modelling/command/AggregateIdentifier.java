@@ -42,6 +42,11 @@ public @interface AggregateIdentifier {
      * <p>
      * Setting the {@code routingKey} is especially useful for annotated {@link java.lang.reflect.Method}s, which
      * typically have a different naming scheme than a field in a command/event.
+     *
+     * @deprecated this field is no longer used to route commands to an aggregate. The aggregate to route a command to
+     * will be resolved with the {@link TargetAggregateIdentifier} annotated field in the {@link
+     * org.axonframework.commandhandling.CommandMessage}'s payload itself.
      */
+    @Deprecated
     String routingKey() default "";
 }
