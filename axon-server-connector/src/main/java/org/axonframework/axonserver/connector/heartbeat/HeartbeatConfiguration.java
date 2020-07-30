@@ -30,7 +30,10 @@ import java.util.function.Function;
  *
  * @author Sara Pellegrini
  * @since 4.2.1
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class HeartbeatConfiguration implements ModuleConfiguration {
 
     private final Function<Configuration, AxonServerConnectionManager> connectionManagerSupplier;
@@ -75,5 +78,4 @@ public class HeartbeatConfiguration implements ModuleConfiguration {
     @Override
     public void initialize(Configuration config) {
     }
-
 }
