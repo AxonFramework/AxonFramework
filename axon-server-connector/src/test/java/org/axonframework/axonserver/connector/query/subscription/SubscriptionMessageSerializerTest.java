@@ -23,6 +23,7 @@ import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
@@ -43,6 +44,8 @@ import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Tests for {@link SubscriptionMessageSerializer}.
+ *
  * @author Sara Pellegrini
  */
 class SubscriptionMessageSerializerTest {
@@ -61,11 +64,9 @@ class SubscriptionMessageSerializerTest {
 
     @Test
     void testInitialResponse() {
-        Map<String, ?> metadata = new HashMap<String, Object>() {{
-            this.put("firstKey", "firstValue");
-            this.put("secondKey", "secondValue");
-        }};
-        QueryResponseMessage message = new GenericQueryResponseMessage<>(String.class, "Result", metadata);
+        MetaData metadata = MetaData.with("firstKey", "firstValue")
+                                    .mergedWith(MetaData.with("secondKey", "secondValue"));
+        QueryResponseMessage<String> message = new GenericQueryResponseMessage<>(String.class, "Result", metadata);
         QueryProviderOutbound grpcMessage = testSubject.serialize(message, "subscriptionId");
         assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
         QueryResponse initialResponse = grpcMessage.getSubscriptionQueryResponse().getInitialResult();
@@ -77,11 +78,28 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
+    void testExceptionalInitialResponse() {
+        MetaData metadata = MetaData.with("firstKey", "firstValue")
+                                    .mergedWith(MetaData.with("secondKey", "secondValue"));
+        QueryResponseMessage<String> message = new GenericQueryResponseMessage<>(String.class,
+                                                                                 new RuntimeException("oops"),
+                                                                                 metadata);
+        QueryProviderOutbound grpcMessage = testSubject.serialize(message, "subscriptionId");
+        assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
+        QueryResponse initialResponse = grpcMessage.getSubscriptionQueryResponse().getInitialResult();
+        QueryResponseMessage<Object> deserialized = testSubject.deserialize(initialResponse);
+        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
+        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertTrue(deserialized.isExceptional());
+        assertEquals("oops", deserialized.exceptionResult().getMessage());
+    }
+
+    @Test
     void testUpdate() {
         List<String> payload = new ArrayList<>();
         payload.add("A");
         payload.add("B");
-        SubscriptionQueryUpdateMessage message = new GenericSubscriptionQueryUpdateMessage<>(payload);
+        SubscriptionQueryUpdateMessage<List<String>> message = new GenericSubscriptionQueryUpdateMessage<>(payload);
         QueryProviderOutbound grpcMessage = testSubject.serialize(message, "subscriptionId");
         assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
         QueryUpdate update = grpcMessage.getSubscriptionQueryResponse().getUpdate();
@@ -90,6 +108,21 @@ class SubscriptionMessageSerializerTest {
         assertEquals(message.getPayload(), deserialized.getPayload());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
+    }
+
+    @Test
+    void testExceptionalUpdate() {
+        MetaData metaData = MetaData.with("k1", "v1");
+        SubscriptionQueryUpdateMessage<String> message =
+                new GenericSubscriptionQueryUpdateMessage<>(String.class, new RuntimeException("oops"), metaData);
+        QueryProviderOutbound grpcMessage = testSubject.serialize(message, "subscriptionId");
+        assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
+        QueryUpdate update = grpcMessage.getSubscriptionQueryResponse().getUpdate();
+        SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(update);
+        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
+        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertTrue(deserialized.isExceptional());
+        assertEquals("oops", deserialized.exceptionResult().getMessage());
     }
 
     @Test

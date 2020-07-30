@@ -17,9 +17,10 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 
@@ -30,7 +31,7 @@ import java.util.Map;
  * @author Milan Savic
  * @since 3.3
  */
-public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U>
+public class GenericSubscriptionQueryUpdateMessage<U> extends GenericResultMessage<U>
         implements SubscriptionQueryUpdateMessage<U> {
 
     private static final long serialVersionUID = 5872479410321475147L;
@@ -45,10 +46,19 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
      */
     @SuppressWarnings("unchecked")
     public static <T> SubscriptionQueryUpdateMessage<T> asUpdateMessage(Object payload) {
-        if (SubscriptionQueryUpdateMessage.class.isInstance(payload)) {
+        if (payload instanceof SubscriptionQueryUpdateMessage) {
             return (SubscriptionQueryUpdateMessage<T>) payload;
+        } else if (payload instanceof ResultMessage) {
+            ResultMessage<T> resultMessage = (ResultMessage<T>) payload;
+            if (resultMessage.isExceptional()) {
+                Throwable cause = resultMessage.exceptionResult();
+                return new GenericSubscriptionQueryUpdateMessage<>(resultMessage.getPayloadType(),
+                                                                   cause,
+                                                                   resultMessage.getMetaData());
+            }
+            return new GenericSubscriptionQueryUpdateMessage<>(resultMessage);
         } else if (payload instanceof Message) {
-            return new GenericSubscriptionQueryUpdateMessage<>((Message) payload);
+            return new GenericSubscriptionQueryUpdateMessage<>((Message<T>) payload);
         }
         return new GenericSubscriptionQueryUpdateMessage<>((T) payload);
     }
@@ -86,6 +96,18 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
     }
 
     /**
+     * Initialize the subscription query update message with given {@code declaredType}, {@code exception} and {@code
+     * metaData}.
+     *
+     * @param declaredType The declared type of the Subscription Query Update Message to be created
+     * @param exception    The exception describing the cause of an error
+     * @param metaData     The meta data to contain in the message
+     */
+    public GenericSubscriptionQueryUpdateMessage(Class<U> declaredType, Throwable exception, Map<String, ?> metaData) {
+        super(new GenericMessage<>(declaredType, null, metaData), exception);
+    }
+
+    /**
      * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for
      * the message's payload, metadata and identifier.
      *
@@ -96,12 +118,12 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
     }
 
     @Override
-    public SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData) {
+    public GenericSubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public SubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData) {
+    public GenericSubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().andMetaData(metaData));
     }
 

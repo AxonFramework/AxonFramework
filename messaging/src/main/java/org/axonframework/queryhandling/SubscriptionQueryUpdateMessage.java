@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ import java.util.Map;
  * @author Milan Savic
  * @since 3.3
  */
-public interface SubscriptionQueryUpdateMessage<U> extends Message<U> {
+public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
 
     @Override
     SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData);

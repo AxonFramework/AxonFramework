@@ -23,8 +23,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -152,7 +150,7 @@ class DefaultCommandGatewayTest {
         CompletableFuture<?> future = testSubject.send("Command");
 
         assertTrue(future.isDone());
-        assertEquals(future.get(), "returnValue");
+        assertEquals("returnValue", future.get());
     }
 
     @SuppressWarnings({"unchecked"})
