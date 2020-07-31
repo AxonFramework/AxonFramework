@@ -36,7 +36,7 @@
         <dependency>
             <groupId>io.axoniq</groupId>
             <artifactId>axonserver-connector-java</artifactId>
-            <version>4.4-SNAPSHOT</version>
+            <version>${axonserver-connector-java.version}</version>
         </dependency>
 
         <!-- Optional dependency on reactor -->
