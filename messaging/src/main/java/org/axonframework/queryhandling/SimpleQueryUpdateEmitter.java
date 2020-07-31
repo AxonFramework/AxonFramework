@@ -160,7 +160,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         } catch (Exception e) {
             logger.info("An error occurred while trying to emit an update to a query '{}'. " +
                                 "The subscription will be cancelled. Exception summary: {}",
-                        query.getQueryName(), e.toString(), logger.isDebugEnabled() ? e : "");
+                        query.getQueryName(), e.toString());
             monitorCallback.reportFailure(e);
             updateHandlers.remove(query);
             emitError(query, e, updateHandler);
@@ -202,14 +202,13 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
      * {@link UnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}. This is
-     * done to
-     * ensure any emitter calls made from a message handling function are executed in the
-     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
+     * done to ensure any emitter calls made from a message handling function are executed in the {@link
+     * UnitOfWork.Phase#AFTER_COMMIT} phase.
      * <p>
-     * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done
-     * to allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do
-     * this by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a
-     * different phase.
+     * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done to
+     * allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do this
+     * by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a different
+     * phase.
      *
      * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if {@link
      *                        SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
@@ -241,12 +240,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         return CurrentUnitOfWork.isStarted() && UnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
     }
 
-    /**
-     * Provides the set of running subscription queries. If there are changes to subscriptions they will be reflected in
-     * the returned set of this method.
-     *
-     * @return the set of running subscription queries
-     */
+    @Override
     public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
         return Collections.unmodifiableSet(updateHandlers.keySet());
     }

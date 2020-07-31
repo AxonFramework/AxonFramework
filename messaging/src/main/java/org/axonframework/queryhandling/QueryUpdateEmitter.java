@@ -18,6 +18,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -28,11 +30,10 @@ import java.util.function.Predicate;
  * lifecycle of the current {@link org.axonframework.messaging.unitofwork.UnitOfWork} to ensure correct order of
  * execution.
  * <p>
- * Added, implementations of this class should thus respect any current UnitOfWork in the
- * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED} phase for any of the emitting functions. If
- * this is the case then the emitter call action should be performed during the
- * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT}. Otherwise the operation can be executed
- * immediately.
+ * Added, implementations of this class should thus respect any current UnitOfWork in the {@link
+ * org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED} phase for any of the emitting functions. If this is
+ * the case then the emitter call action should be performed during the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT}.
+ * Otherwise the operation can be executed immediately.
  *
  * @author Milan Savic
  * @since 3.3
@@ -151,7 +152,8 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
     boolean queryUpdateHandlerRegistered(SubscriptionQueryMessage<?, ?, ?> query);
 
     /**
-     * Registers an Update Handler for given {@code query} with given {@code backpressure} and {@code updateBufferSize}.
+     * Registers an Update Handler for given {@code query} with given {@code backpressure} and {@code
+     * updateBufferSize}.
      *
      * @param query            the subscription query for which we register an Update Handler
      * @param backpressure     the backpressure mechanism to be used for emitting updates
@@ -163,4 +165,14 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
     <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
                                                            SubscriptionQueryBackpressure backpressure,
                                                            int updateBufferSize);
+
+    /**
+     * Provides the set of running subscription queries. If there are changes to subscriptions they will be reflected in
+     * the returned set of this method. Implementations should provide an unmodifiable set of the active subscriptions.
+     *
+     * @return the set of running subscription queries
+     */
+    default Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
+        return Collections.emptySet();
+    }
 }
