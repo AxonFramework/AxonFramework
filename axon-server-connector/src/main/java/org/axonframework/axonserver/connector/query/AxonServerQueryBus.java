@@ -180,7 +180,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                       Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
-        // TODO - Since we forward queries to the localSegment, we should register a queryName/responseType combination just once with the remote server
         io.axoniq.axonserver.connector.Registration serverRegistration =
                 axonServerConnectionManager.getConnection(context)
                                            .queryChannel()
@@ -378,7 +377,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        // TODO - Stop existing (outbound) subscription queries
         return shutdownLatch.initiateShutdown();
     }
 
@@ -720,7 +718,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 if (nextAvailable != null) {
                     queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
                 } else if (result.isClosed() && !queryTransaction.isDone()) {
-                    // TODO - Find out which exception to throw here according to apis.
                     queryTransaction.completeExceptionally(new AxonServerQueryDispatchException(
                             ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
                             "Query did not yield the expected number of results."

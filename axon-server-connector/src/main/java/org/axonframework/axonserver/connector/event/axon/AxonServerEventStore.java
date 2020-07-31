@@ -504,7 +504,6 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {
-            // TODO - Implement
             throw new UnsupportedOperationException("Not supported in this connector, yet");
         }
 
