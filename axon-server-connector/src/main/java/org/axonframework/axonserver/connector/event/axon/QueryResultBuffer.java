@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,8 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Client-side buffer of messages received from the server. Once consumed from this buffer, the client is notified
- * of a permit being consumed, potentially triggering a permit refresh, if flow control is enabled.
+ * Client-side buffer of messages received from the server. Once consumed from this buffer, the client is notified of a
+ * permit being consumed, potentially triggering a permit refresh, if flow control is enabled.
  * <p>
  * This class is intended for internal use. Be cautious.
  *
@@ -51,6 +51,9 @@ public class QueryResultBuffer implements QueryResultStream {
     };
     private List<String> columns;
 
+    /**
+     * Constructs a {@link QueryResultBuffer}
+     */
     public QueryResultBuffer() {
         queryResultQueue = new LinkedBlockingQueue<>();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,19 +41,17 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     private final Supplier<MetaData> metaDataSupplier;
 
     /**
-     * Instantiate a {@link GrpcBackedCommandMessage} with the given {@code command} and using the provided
-     * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * Instantiate a {@link GrpcBackedCommandMessage} with the given {@code command} and using the provided {@link
+     * Serializer} to be able to retrieve the payload and {@link MetaData} from it.
      *
      * @param command    the {@link Command} which is being wrapped as a {@link CommandMessage}
      * @param serializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
      *                   {@code command}
      */
     public GrpcBackedCommandMessage(Command command, Serializer serializer) {
-        this(
-                command,
-                new LazyDeserializingObject<>(new GrpcSerializedObject(command.getPayload()), serializer),
-                new GrpcMetaData(command.getMetaDataMap(), serializer)
-        );
+        this(command,
+             new LazyDeserializingObject<>(new GrpcSerializedObject(command.getPayload()), serializer),
+             new GrpcMetaData(command.getMetaDataMap(), serializer));
     }
 
     private GrpcBackedCommandMessage(Command command,

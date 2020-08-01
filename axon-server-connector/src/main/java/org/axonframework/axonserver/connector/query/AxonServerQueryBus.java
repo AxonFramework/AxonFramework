@@ -69,6 +69,7 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.Spliterator;
@@ -78,6 +79,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -95,7 +97,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
@@ -119,6 +121,22 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private final String context;
 
     /**
+     * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
+     * <p>
+     * The {@link QueryPriorityCalculator} is defaulted to {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}
+     * and the {@link TargetContextResolver} defaults to a lambda returning the {@link
+     * AxonServerConfiguration#getContext()} as the context. The {@link ExecutorServiceBuilder} defaults to {@link
+     * ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the {@link
+     * AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and generic
+     * {@link Serializer}s are <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link AxonServerQueryBus}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Instantiate a {@link AxonServerQueryBus} based on the fields contained in the {@link Builder}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AxonServerQueryBus} instance
@@ -140,29 +158,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(
                 QUERY_QUEUE_CAPACITY,
                 Comparator.comparingLong(
-                        r -> r instanceof QueryProcessingTask
-                             ? ((QueryProcessingTask) r).getPriority()
-                             : r instanceof ResponseProcessingTask ? ((ResponseProcessingTask) r).getPriority()
-                                                                   : DEFAULT_PRIORITY
+                        r -> r instanceof QueryProcessingTask ? ((QueryProcessingTask) r).getPriority() :
+                                r instanceof ResponseProcessingTask
+                                        ? ((ResponseProcessingTask<?>) r).getPriority()
+                                        : DEFAULT_PRIORITY
                 ).reversed()
         );
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
-    }
-
-    /**
-     * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
-     * <p>
-     * The {@link QueryPriorityCalculator} is defaulted to {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}
-     * and the {@link TargetContextResolver} defaults to a lambda returning the {@link
-     * AxonServerConfiguration#getContext()} as the context. The {@link ExecutorServiceBuilder} defaults to {@link
-     * ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the {@link
-     * AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and generic
-     * {@link Serializer}s are <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link AxonServerQueryBus}
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
     /**
@@ -178,27 +180,53 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                       Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
-        // TODO - Since we forward queries to the localSegment, we should register a queryName/responseType combination just once with the remote server
         io.axoniq.axonserver.connector.Registration serverRegistration =
                 axonServerConnectionManager.getConnection(context)
                                            .queryChannel()
                                            .registerQueryHandler(
                                                    new QueryHandler() {
                                                        @Override
-                                                       public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
-                                                           queryExecutor.submit(new QueryProcessingTask(localSegment, query, responseHandler, serializer));
+                                                       public void handle(QueryRequest query,
+                                                                          ReplyChannel<QueryResponse> responseHandler) {
+                                                           queryExecutor.submit(new QueryProcessingTask(
+                                                                   localSegment, query, responseHandler, serializer,
+                                                                   configuration.getClientId()
+                                                           ));
                                                        }
 
                                                        @Override
-                                                       public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query, UpdateHandler sendUpdate) {
-                                                           UpdateHandlerRegistration<Object> updateHandler = updateEmitter.registerUpdateHandler(subscriptionSerializer.deserialize(query), SubscriptionQueryBackpressure.defaultBackpressure(), 1024);
+                                                       public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(
+                                                               SubscriptionQuery query,
+                                                               UpdateHandler sendUpdate
+                                                       ) {
+                                                           SubscriptionQueryBackpressure backpressure =
+                                                                   SubscriptionQueryBackpressure.defaultBackpressure();
+                                                           UpdateHandlerRegistration<Object> updateHandler =
+                                                                   updateEmitter.registerUpdateHandler(
+                                                                           subscriptionSerializer.deserialize(query),
+                                                                           backpressure,
+                                                                           1024
+                                                                   );
+
                                                            updateHandler.getUpdates()
                                                                         .doOnError(e -> {
-                                                                            sendUpdate.sendUpdate(QueryUpdate.newBuilder()
-                                                                                                             .setErrorMessage(ExceptionSerializer.serialize("", e))
-                                                                                                             .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode()).build());
+                                                                            ErrorMessage error =
+                                                                                    ExceptionSerializer.serialize(
+                                                                                            configuration.getClientId(),
+                                                                                            e
+                                                                                    );
+                                                                            String errorCode =
+                                                                                    ErrorCode.QUERY_EXECUTION_ERROR
+                                                                                            .errorCode();
+                                                                            QueryUpdate queryUpdate =
+                                                                                    QueryUpdate.newBuilder()
+                                                                                               .setErrorMessage(error)
+                                                                                               .setErrorCode(errorCode)
+                                                                                               .build();
+                                                                            sendUpdate.sendUpdate(queryUpdate);
                                                                             sendUpdate.complete();
                                                                         })
+                                                                        .doOnComplete(sendUpdate::complete)
                                                                         .map(subscriptionSerializer::serialize)
                                                                         .subscribe(sendUpdate::sendUpdate);
                                                            return () -> {
@@ -207,10 +235,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                            };
                                                        }
                                                    },
-                                                   new QueryDefinition(queryName, responseType));
+                                                   new QueryDefinition(queryName, responseType)
+                                           );
 
         return new AxonServerRegistration(localRegistration, serverRegistration::cancel);
-
     }
 
     @Override
@@ -233,7 +261,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                             .queryChannel()
                                                                             .query(queryRequest);
 
-            result.onAvailable(() -> queryExecutor.submit(new ResponseProcessingTask<>(result, serializer, queryTransaction, priority, queryMessage.getResponseType())));
+            ResponseProcessingTask<R> responseProcessingTask = new ResponseProcessingTask<>(
+                    result, serializer, queryTransaction, priority, queryMessage.getResponseType()
+            );
+            result.onAvailable(() -> queryExecutor.submit(responseProcessingTask));
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -267,7 +298,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                                  .queryChannel()
                                                                                  .query(queryRequest);
 
-            return StreamSupport.stream(new QueryResponseSpliterator<>(queryMessage, queryResult, deadline, serializer), false);
+            return StreamSupport.stream(
+                    new QueryResponseSpliterator<>(queryMessage, queryResult, deadline, serializer), false
+            );
         } catch (Exception e) {
             logger.debug("There was a problem issuing a scatter-gather query {}.", interceptedQuery, e);
             queryInTransit.end();
@@ -279,7 +312,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backPressure,
-            int updateBufferSize) {
+            int updateBufferSize
+    ) {
         shutdownLatch.ifShuttingDown(String.format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
@@ -290,15 +324,17 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);
 
-        io.axoniq.axonserver.connector.query.SubscriptionQueryResult result = axonServerConnectionManager.getConnection(targetContext)
-                                                                                                         .queryChannel()
-                                                                                                         .subscriptionQuery(subscriptionSerializer.serializeQuery(interceptedQuery),
-                                                                                                                            subscriptionSerializer.serializeUpdateType(interceptedQuery),
-                                                                                                                            configuration.getQueryFlowControl().getInitialNrOfPermits(),
-                                                                                                                            configuration.getQueryFlowControl().getNrOfNewPermits());
+        io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
+                axonServerConnectionManager.getConnection(targetContext)
+                                           .queryChannel()
+                                           .subscriptionQuery(
+                                                   subscriptionSerializer.serializeQuery(interceptedQuery),
+                                                   subscriptionSerializer.serializeUpdateType(interceptedQuery),
+                                                   configuration.getQueryFlowControl().getInitialNrOfPermits(),
+                                                   configuration.getQueryFlowControl().getNrOfNewPermits()
+                                           );
         return new AxonServerSubscriptionQueryResult<>(result, subscriptionSerializer);
     }
-
 
     @Override
     public QueryUpdateEmitter queryUpdateEmitter() {
@@ -341,14 +377,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        // TODO - Stop existing (outbound) subscription queries
         return shutdownLatch.initiateShutdown();
     }
 
     /**
-     * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the
-     * query {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided {@link
-     * QueryRequest} and used to priorities this {@link QueryProcessingTask} among others of it's kind.
+     * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the query
+     * {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided {@link QueryRequest} and
+     * used to priorities this {@link QueryProcessingTask} among others of it's kind.
      */
     private static class QueryProcessingTask implements Runnable {
 
@@ -357,13 +392,18 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private final QueryRequest queryRequest;
         private final ReplyChannel<QueryResponse> responseHandler;
         private final QuerySerializer serializer;
+        private final String clientId;
 
-        private QueryProcessingTask(QueryBus localSegment, QueryRequest queryRequest, ReplyChannel<QueryResponse> responseHandler, QuerySerializer serializer) {
+        private QueryProcessingTask(QueryBus localSegment,
+                                    QueryRequest queryRequest,
+                                    ReplyChannel<QueryResponse> responseHandler,
+                                    QuerySerializer serializer, String clientId) {
             this.localSegment = localSegment;
             this.priority = priority(queryRequest.getProcessingInstructionsList());
             this.queryRequest = queryRequest;
             this.responseHandler = responseHandler;
             this.serializer = serializer;
+            this.clientId = clientId;
         }
 
         public long getPriority() {
@@ -378,30 +418,40 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 if (ProcessingInstructionHelper.numberOfResults(queryRequest.getProcessingInstructionsList()) == 1) {
                     localSegment.query(queryMessage).whenComplete((r, e) -> {
                         if (e != null) {
-                            ErrorMessage ex = ExceptionSerializer.serialize("", e);
-                            responseHandler.sendLast(QueryResponse.newBuilder()
-                                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
-                                                                  .setErrorMessage(ex)
-                                                                  .setRequestIdentifier(queryRequest.getMessageIdentifier()).build());
+                            ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
+                            QueryResponse response =
+                                    QueryResponse.newBuilder()
+                                                 .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                 .setErrorMessage(ex)
+                                                 .setRequestIdentifier(queryRequest.getMessageIdentifier())
+                                                 .build();
+                            responseHandler.sendLast(response);
                         } else {
-                            responseHandler.sendLast(serializer.serializeResponse(r, queryRequest.getMessageIdentifier()));
+                            responseHandler.sendLast(
+                                    serializer.serializeResponse(r, queryRequest.getMessageIdentifier())
+                            );
                         }
-
                     });
                 } else {
-                    Stream<QueryResponseMessage<Object>> result = localSegment.scatterGather(queryMessage, ProcessingInstructionHelper.timeout(queryRequest.getProcessingInstructionsList()), TimeUnit.MILLISECONDS);
-                    result.forEach(r -> responseHandler.send(serializer.serializeResponse(r, queryRequest.getMessageIdentifier())));
+                    Stream<QueryResponseMessage<Object>> result = localSegment.scatterGather(
+                            queryMessage,
+                            ProcessingInstructionHelper.timeout(queryRequest.getProcessingInstructionsList()),
+                            TimeUnit.MILLISECONDS
+                    );
+                    result.forEach(r -> responseHandler.send(
+                            serializer.serializeResponse(r, queryRequest.getMessageIdentifier())
+                    ));
                     responseHandler.complete();
                 }
             } catch (RuntimeException | OutOfDirectMemoryError e) {
-                ErrorMessage ex = ExceptionSerializer.serialize("", e);
+                ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                 responseHandler.sendLast(QueryResponse.newBuilder()
                                                       .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
                                                       .setErrorMessage(ex)
-                                                      .setRequestIdentifier(queryRequest.getMessageIdentifier()).build());
+                                                      .setRequestIdentifier(queryRequest.getMessageIdentifier())
+                                                      .build());
                 logger.warn("Query Processor had an exception when processing query [{}]",
-                            queryRequest.getQuery(),
-                            e);
+                            queryRequest.getQuery(), e);
             }
         }
     }
@@ -429,7 +479,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 q -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
-        @SuppressWarnings("unchecked")
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -564,6 +613,36 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         /**
+         * Sets the request stream factory that creates a request stream based on upstream. Defaults to {@link
+         * UpstreamAwareStreamObserver#getRequestStream()}.
+         *
+         * @param requestStreamFactory factory that creates a request stream based on upstream
+         * @return the current Builder instance, for fluent interfacing
+         * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer
+         * java connector</a>
+         */
+        @Deprecated
+        public Builder requestStreamFactory(
+                Function<UpstreamAwareStreamObserver<QueryProviderInbound>, StreamObserver<QueryProviderOutbound>> requestStreamFactory
+        ) {
+            return this;
+        }
+
+        /**
+         * Sets the instruction ack source used to send instruction acknowledgements. Defaults to {@link
+         * DefaultInstructionAckSource}.
+         *
+         * @param instructionAckSource used to send instruction acknowledgements
+         * @return the current Builder instance, for fluent interfacing
+         * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer
+         * java connector</a>
+         */
+        @Deprecated
+        public Builder instructionAckSource(InstructionAckSource<QueryProviderOutbound> instructionAckSource) {
+            return this;
+        }
+
+        /**
          * Initializes a {@link AxonServerQueryBus} as specified through this Builder.
          *
          * @return a {@link AxonServerQueryBus} as specified through this Builder
@@ -612,6 +691,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     private static class ResponseProcessingTask<R> implements Runnable {
+
+        private final AtomicBoolean singleExecutionCheck = new AtomicBoolean();
         private final ResultStream<QueryResponse> result;
         private final QuerySerializer serializer;
         private final CompletableFuture<QueryResponseMessage<R>> queryTransaction;
@@ -632,13 +713,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         @Override
         public void run() {
-            QueryResponse nextAvailable = result.nextIfAvailable();
-            if (nextAvailable != null) {
-                queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
-            } else
-            if (result.isClosed() && !queryTransaction.isDone()) {
-                // TODO - Find out which exception to throw here according to apis.
-                queryTransaction.completeExceptionally(new AxonServerQueryDispatchException(ErrorCode.QUERY_DISPATCH_ERROR.errorCode(), "Query did not yield the expected number of results."));
+            if (singleExecutionCheck.compareAndSet(false, true)) {
+                QueryResponse nextAvailable = result.nextIfAvailable();
+                if (nextAvailable != null) {
+                    queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
+                } else if (result.isClosed() && !queryTransaction.isDone()) {
+                    queryTransaction.completeExceptionally(new AxonServerQueryDispatchException(
+                            ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
+                            "Query did not yield the expected number of results."
+                    ));
+                }
             }
         }
 
@@ -648,12 +732,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     private static class QueryResponseSpliterator<Q, R> implements Spliterator<QueryResponseMessage<R>> {
+
         private final QueryMessage<Q, R> queryMessage;
         private final ResultStream<QueryResponse> queryResult;
         private final long deadline;
         private final QuerySerializer serializer;
 
-        public QueryResponseSpliterator(QueryMessage<Q, R> queryMessage, ResultStream<QueryResponse> queryResult, long deadline, QuerySerializer serializer) {
+        public QueryResponseSpliterator(QueryMessage<Q, R> queryMessage,
+                                        ResultStream<QueryResponse> queryResult,
+                                        long deadline,
+                                        QuerySerializer serializer) {
             this.queryMessage = queryMessage;
             this.queryResult = queryResult;
             this.deadline = deadline;

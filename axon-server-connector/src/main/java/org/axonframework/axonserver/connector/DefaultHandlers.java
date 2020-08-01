@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,10 @@ import java.util.stream.Collectors;
  * @param <Handler> the type of the handler
  * @author Sara Pellegrini, Milan Savic
  * @since 4.2.1
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class DefaultHandlers<Case, Handler> implements Handlers<Case, Handler> {
 
     private final Map<BiPredicate<String, Case>, Handler> handlerMap = new ConcurrentHashMap<>();

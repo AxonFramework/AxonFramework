@@ -23,6 +23,7 @@ import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
@@ -32,18 +33,17 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Tests for {@link SubscriptionMessageSerializer}.
+ *
  * @author Sara Pellegrini
  */
 class SubscriptionMessageSerializerTest {
@@ -62,11 +62,9 @@ class SubscriptionMessageSerializerTest {
 
     @Test
     void testInitialResponse() {
-        Map<String, ?> metadata = new HashMap<String, Object>() {{
-            this.put("firstKey", "firstValue");
-            this.put("secondKey", "secondValue");
-        }};
-        QueryResponseMessage message = new GenericQueryResponseMessage<>(String.class, "Result", metadata);
+        MetaData metadata = MetaData.with("firstKey", "firstValue")
+                                    .mergedWith(MetaData.with("secondKey", "secondValue"));
+        QueryResponseMessage<String> message = new GenericQueryResponseMessage<>(String.class, "Result", metadata);
         QueryProviderOutbound grpcMessage = testSubject.serialize(message, "subscriptionId");
         assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
         QueryResponse initialResponse = grpcMessage.getSubscriptionQueryResponse().getInitialResult();
@@ -78,13 +76,30 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
+    void testExceptionalInitialResponse() {
+        MetaData metadata = MetaData.with("firstKey", "firstValue")
+                                    .mergedWith(MetaData.with("secondKey", "secondValue"));
+        QueryResponseMessage<String> message = new GenericQueryResponseMessage<>(String.class,
+                                                                                 new RuntimeException("oops"),
+                                                                                 metadata);
+        QueryProviderOutbound grpcMessage = testSubject.serialize(message, "subscriptionId");
+        assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
+        QueryResponse initialResponse = grpcMessage.getSubscriptionQueryResponse().getInitialResult();
+        QueryResponseMessage<Object> deserialized = testSubject.deserialize(initialResponse);
+        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
+        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertTrue(deserialized.isExceptional());
+        assertEquals("oops", deserialized.exceptionResult().getMessage());
+    }
+
+    @Test
     void testUpdate() {
         List<String> payload = new ArrayList<>();
         payload.add("A");
         payload.add("B");
-        SubscriptionQueryUpdateMessage message = new GenericSubscriptionQueryUpdateMessage<>(payload);
-        QueryUpdate update = testSubject.serialize(message);
-        SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(update);
+        SubscriptionQueryUpdateMessage<List<String>> message = new GenericSubscriptionQueryUpdateMessage<>(payload);
+        QueryUpdate result = testSubject.serialize(message);
+        SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
         assertEquals(message.getPayload(), deserialized.getPayload());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());

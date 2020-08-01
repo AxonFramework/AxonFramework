@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2020. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,9 +21,16 @@ package org.axonframework.axonserver.connector;
  *
  * @author Sara Pellegrini
  * @since 4.0
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public interface Publisher<M> {
 
+    /**
+     * Publishes the given {@code message}
+     *
+     * @param message the message of type {@code M} to publish
+     */
     void publish(M message);
-
 }

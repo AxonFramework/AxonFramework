@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,12 +26,20 @@ import java.util.Map;
 
 /**
  * Wrapper around standard Axon Framework serializer that can deserialize Metadata from AxonServer events.
+ *
+ * @author Marc Gathier
+ * @since 4.0
  */
 class GrpcMetaDataAwareSerializer implements Serializer {
 
     private final Serializer delegate;
     private final GrpcMetaDataConverter metaDataConverter;
 
+    /**
+     * Constructs a {@link GrpcMetaDataAwareSerializer}, using the given {@code delegate} to delegate serialization to
+     *
+     * @param delegate the {@link Serializer} to delegate serialization to
+     */
     public GrpcMetaDataAwareSerializer(Serializer delegate) {
         this.metaDataConverter = new GrpcMetaDataConverter(delegate);
         this.delegate = delegate;
@@ -51,8 +59,10 @@ class GrpcMetaDataAwareSerializer implements Serializer {
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
         if (Map.class.equals(serializedObject.getContentType())) {
             // this is the MetaDataMap, deserialize differently
+            //noinspection unchecked
             Map<String, MetaDataValue> metaDataMap = (Map<String, MetaDataValue>) serializedObject.getData();
 
+            //noinspection unchecked
             return (T) metaDataConverter.convert(metaDataMap);
         }
         return delegate.deserialize(serializedObject);

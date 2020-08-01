@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,13 +21,30 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Author: marc
+ * Utility class used to serializer {@link Throwable}s into {@link ErrorMessage}s.
+ *
+ * @author Marc Gathier
+ * @since 4.0
  */
-public class ExceptionSerializer {
+public abstract class ExceptionSerializer {
 
-    public static ErrorMessage serialize(String client, Throwable t) {
-        ErrorMessage.Builder builder = ErrorMessage.newBuilder().setLocation(getOrDefault(client, "")).setMessage(
-                t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+    private ExceptionSerializer() {
+        // Utility class
+    }
+
+    /**
+     * Serializes a given {@link Throwable} into an {@link ErrorMessage}.
+     *
+     * @param clientLocation the name of the client were the {@link ErrorMessage} originates from
+     * @param t              the {@link Throwable} to base this {@link ErrorMessage} on
+     * @return the {@link ErrorMessage} originating from the given {@code clientLocation} and based on the {@link
+     * Throwable}
+     */
+    public static ErrorMessage serialize(String clientLocation, Throwable t) {
+        ErrorMessage.Builder builder =
+                ErrorMessage.newBuilder()
+                            .setLocation(getOrDefault(clientLocation, ""))
+                            .setMessage(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
         builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
         while (t.getCause() != null) {
             t = t.getCause();

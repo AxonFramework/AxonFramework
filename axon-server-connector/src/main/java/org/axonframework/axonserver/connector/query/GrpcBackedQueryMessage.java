@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,9 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
     private final Supplier<MetaData> metaDataSupplier;
 
     /**
-     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryRequest}, using the provided
-     * {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The
-     * {@code serializer} is solely used to deserialize the response type.
+     * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryRequest}, using the provided {@code
+     * messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The {@code serializer} is
+     * solely used to deserialize the response type.
      *
      * @param queryRequest      the {@link QueryRequest} which is being wrapped as a {@link QueryMessage}
      * @param messageSerializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the

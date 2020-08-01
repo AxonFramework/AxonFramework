@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -54,14 +54,13 @@ public class AxonServerConfiguration {
     private String servers = DEFAULT_SERVERS;
 
     /**
-     * clientId as it registers itself to AxonServer, must be unique
+     * Client identifier as it registers itself to AxonServer, must be unique.
      */
     private String clientId = ManagementFactory.getRuntimeMXBean().getName();
 
     /**
-     * application name, defaults to spring.application.name
-     * multiple instances of the same application share the same application name, but each must have
-     * a different clientId
+     * Application name, defaults to spring.application.name multiple instances of the same application share the same
+     * application name, but each must have a different clientId.
      */
     private String componentName;
 
@@ -76,31 +75,31 @@ public class AxonServerConfiguration {
     private String context = DEFAULT_CONTEXT;
 
     /**
-     * Certificate file for SSL
+     * Certificate file for SSL.
      */
     private String certFile;
 
     /**
-     * Use TLS for connection to AxonServer
+     * Use TLS for connection to AxonServer.
      */
     private boolean sslEnabled;
 
     /**
-     * Initial number of permits send for message streams (events, commands, queries)
+     * Initial number of permits send for message streams (events, commands, queries).
      */
     private Integer initialNrOfPermits = 5000;
 
     /**
-     * Additional number of permits send for message streams (events, commands, queries) when application
-     * is ready for more messages.
+     * Additional number of permits send for message streams (events, commands, queries) when application is ready for
+     * more messages.
      * <p>
-     * A value of {@code null}, 0, and negative values will have the client request the number of permits
-     * required to get from the "new-permits-threshold" to "initial-nr-of-permits".
+     * A value of {@code null}, 0, and negative values will have the client request the number of permits required to
+     * get from the "new-permits-threshold" to "initial-nr-of-permits".
      */
     private Integer nrOfNewPermits = null;
 
     /**
-     * Threshold at which application sends new permits to server
+     * Threshold at which application sends new permits to server.
      * <p>
      * A value of {@code null}, 0, and negative values will have the threshold set to 50% of "initial-nr-of-permits".
      */
@@ -109,49 +108,53 @@ public class AxonServerConfiguration {
     /**
      * Specific flow control settings for the event message stream.
      * <p>
-     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits en newPermitsThreshold
-     * will be used.
+     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits en
+     * newPermitsThreshold will be used.
      */
     private FlowControlConfiguration eventFlowControl;
 
     /**
-     * Specific flow control settings for the queue message stream
+     * Specific flow control settings for the queue message stream.
      */
     private FlowControlConfiguration queryFlowControl;
 
     /**
-     * Specific flow control settings for the command message stream
+     * Specific flow control settings for the command message stream.
      */
     private FlowControlConfiguration commandFlowControl;
 
     /**
-     * Number of threads executing commands
+     * Number of threads executing commands.
      */
     private int commandThreads = 10;
 
     /**
-     * Number of threads executing queries
+     * Number of threads executing queries.
      */
     private int queryThreads = 10;
 
     /**
-     * Interval (in ms.) application sends status updates on event processors to AxonServer
+     * Interval (in ms.) application sends status updates on event processors to AxonServer.
      */
     private int processorsNotificationRate = 500;
 
     /**
-     * Initial delay (in ms.) before application sends first status update on event processors to AxonServer
+     * Initial delay (in ms.) before application sends first status update on event processors to AxonServer.
      */
     private int processorsNotificationInitialDelay = 5000;
 
     /**
-     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to
-     * {@link EventCipher#EventCipher()}.
+     * An {@link EventCipher} which is used to encrypt and decrypt events and snapshots. Defaults to {@link
+     * EventCipher#EventCipher()}.
+     *
+     * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+     * connector</a>
      */
+    @Deprecated
     private EventCipher eventCipher = new EventCipher();
 
     /**
-     * Timeout (in ms) for keep alive requests
+     * Timeout (in ms) for keep alive requests.
      */
     private long keepAliveTimeout = 5000;
 
@@ -161,8 +164,8 @@ public class AxonServerConfiguration {
     private long keepAliveTime = 1_000;
 
     /**
-     * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to
-     * {@code 1}.
+     * An {@code int} indicating the maximum number of Aggregate snapshots which will be retrieved. Defaults to {@code
+     * 1}.
      */
     private int snapshotPrefetch = 1;
 
@@ -173,11 +176,12 @@ public class AxonServerConfiguration {
     private boolean suppressDownloadMessage = false;
 
     /**
-     * GRPC max inbound message size, 0 keeps default value
+     * GRPC max inbound message size, 0 keeps default value.
      */
     private int maxMessageSize = 0;
+
     /**
-     * Timeout (in milliseconds) to wait for response on commit
+     * Timeout (in milliseconds) to wait for response on commit.
      */
     private int commitTimeout = 10000;
 
@@ -186,7 +190,7 @@ public class AxonServerConfiguration {
      * as it requires all messages from AxonServer to be sent to clients, even if a Client is unable to process the
      * message.
      * <p>
-     * Default is to have blacklisting enabled
+     * Default is to have blacklisting enabled.
      */
     private boolean disableEventBlacklisting = false;
 
@@ -197,18 +201,28 @@ public class AxonServerConfiguration {
      */
     private int maxGrpcBufferedMessages = 500;
 
-
     /**
-     * It represents the fixed value of load factor sent to Axon Server for any command's subscription if
-     * no specific implementation of CommandLoadFactorProvider is configured. The default value is 100.
+     * It represents the fixed value of load factor sent to Axon Server for any command's subscription if no specific
+     * implementation of CommandLoadFactorProvider is configured. The default value is 100.
      */
     private int commandLoadFactor = 100;
 
     /**
-     * Represents the maximum time in milliseconds a request for the initial Axon Server connection may last.
-     * Defaults to 5000 (5 seconds).
+     * Represents the maximum time in milliseconds a request for the initial Axon Server connection may last. Defaults
+     * to 5000 (5 seconds).
      */
     private long connectTimeout = 5000;
+
+    /**
+     * Indicates whether it is OK to query events from the local Axon Server node - the node the client is currently
+     * connected to. This means that the client will probably get stale events since all events my not be replicated to
+     * this node yet. Can be used when the criteria for eventual consistency is less strict. It will spread the load for
+     * querying events - not all requests will go to the leader of the cluster anymore.
+     * <p>
+     * If Axon Server SE is used, this property has no effect.
+     * </p>
+     */
+    private boolean forceReadFromLeader = false;
 
     /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
@@ -464,6 +478,14 @@ public class AxonServerConfiguration {
         this.connectTimeout = connectTimeout;
     }
 
+    public boolean isForceReadFromLeader() {
+        return forceReadFromLeader;
+    }
+
+    public void setForceReadFromLeader(boolean forceReadFromLeader) {
+        this.forceReadFromLeader = forceReadFromLeader;
+    }
+
     public FlowControlConfiguration getEventFlowControl() {
         if (eventFlowControl == null) {
             return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
@@ -477,7 +499,7 @@ public class AxonServerConfiguration {
 
     public FlowControlConfiguration getQueryFlowControl() {
         if (queryFlowControl == null) {
-            return new FlowControlConfiguration(getInitialNrOfPermits(),getNrOfNewPermits(), getNewPermitsThreshold());
+            return new FlowControlConfiguration(getInitialNrOfPermits(), getNrOfNewPermits(), getNewPermitsThreshold());
         }
         return queryFlowControl;
     }
@@ -498,7 +520,7 @@ public class AxonServerConfiguration {
     }
 
     public FlowControlConfiguration getDefaultFlowControlConfiguration() {
-        return new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold);
+        return new FlowControlConfiguration(initialNrOfPermits, nrOfNewPermits, newPermitsThreshold);
     }
 
     /**
@@ -510,23 +532,24 @@ public class AxonServerConfiguration {
     public static class FlowControlConfiguration {
 
         /**
-         * Initial number of permits send for message streams (events, commands, queries)
+         * Initial number of permits send for message streams (events, commands, queries).
          */
         private Integer initialNrOfPermits = 5000;
 
         /**
-         * Additional number of permits send for message streams (events, commands, queries) when application
-         * is ready for more messages.
+         * Additional number of permits send for message streams (events, commands, queries) when application is ready
+         * for more messages.
          * <p>
-         * A value of {@code null}, 0, and negative values will have the client request the number of permits
-         * required to get from the "new-permits-threshold" to "initial-nr-of-permits".
+         * A value of {@code null}, 0, and negative values will have the client request the number of permits required
+         * to get from the "new-permits-threshold" to "initial-nr-of-permits".
          */
         private Integer nrOfNewPermits = null;
 
         /**
-         * Threshold at which application sends new permits to server
+         * Threshold at which application sends new permits to server.
          * <p>
-         * A value of {@code null}, 0, and negative values will have the threshold set to 50% of "initial-nr-of-permits".
+         * A value of {@code null}, 0, and negative values will have the threshold set to 50% of
+         * "initial-nr-of-permits".
          */
         private Integer newPermitsThreshold = null;
 
@@ -534,11 +557,14 @@ public class AxonServerConfiguration {
         }
 
         /**
-         * @param initialNrOfPermits    Initial nr of new permits
-         * @param nrOfNewPermits        Additional number of permits when applictation is ready for message
-         * @param newPermitsThreshold   Threshold at which application sends new permits to server
+         * Construct a {@link FlowControlConfiguration}.
+         *
+         * @param initialNrOfPermits  initial nr of new permits
+         * @param nrOfNewPermits      additional number of permits when application is ready for message
+         * @param newPermitsThreshold threshold at which application sends new permits to server
          */
-        public FlowControlConfiguration(Integer initialNrOfPermits, Integer nrOfNewPermits, Integer newPermitsThreshold) {
+        public FlowControlConfiguration(Integer initialNrOfPermits, Integer nrOfNewPermits,
+                                        Integer newPermitsThreshold) {
             this.initialNrOfPermits = initialNrOfPermits;
             this.nrOfNewPermits = nrOfNewPermits;
             this.newPermitsThreshold = newPermitsThreshold;
@@ -578,7 +604,7 @@ public class AxonServerConfiguration {
     @SuppressWarnings("unused")
     public static class Builder {
 
-        private AxonServerConfiguration instance;
+        private final AxonServerConfiguration instance;
 
         public Builder() {
             instance = new AxonServerConfiguration();
@@ -603,6 +629,11 @@ public class AxonServerConfiguration {
             return this;
         }
 
+        public Builder forceReadFromLeader(boolean forceReadFromLeader) {
+            instance.forceReadFromLeader = forceReadFromLeader;
+            return this;
+        }
+
         public Builder flowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
             instance.initialNrOfPermits = initialNrOfPermits;
             instance.nrOfNewPermits = nrOfNewPermits;
@@ -611,17 +642,23 @@ public class AxonServerConfiguration {
         }
 
         public Builder commandFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.setCommandFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
+            instance.setCommandFlowControl(new FlowControlConfiguration(initialNrOfPermits,
+                                                                        nrOfNewPermits,
+                                                                        newPermitsThreshold));
             return this;
         }
 
         public Builder queryFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.setQueryFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
+            instance.setQueryFlowControl(new FlowControlConfiguration(initialNrOfPermits,
+                                                                      nrOfNewPermits,
+                                                                      newPermitsThreshold));
             return this;
         }
 
         public Builder eventFlowControl(int initialNrOfPermits, int nrOfNewPermits, int newPermitsThreshold) {
-            instance.setEventFlowControl(new FlowControlConfiguration(initialNrOfPermits,nrOfNewPermits,newPermitsThreshold));
+            instance.setEventFlowControl(new FlowControlConfiguration(initialNrOfPermits,
+                                                                      nrOfNewPermits,
+                                                                      newPermitsThreshold));
             return this;
         }
 

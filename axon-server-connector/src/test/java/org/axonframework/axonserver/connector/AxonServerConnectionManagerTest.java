@@ -23,7 +23,9 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.config.TagsConfiguration;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -97,7 +99,7 @@ class AxonServerConnectionManagerTest {
     void testConnectionTimeout() throws IOException, InterruptedException {
         String version = "4.2.1";
         stubServer.shutdown();
-        stubServer = new StubServer(stubServer.getPort(), new PlatformService(secondNode.getPort()){
+        stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()){
             @Override
             public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
                 // ignore calls

@@ -46,8 +46,8 @@ import java.util.stream.StreamSupport;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Client-side buffer of messages received from the server. Once consumed from this buffer, the client is notified
- * of a permit being consumed, potentially triggering a permit refresh, if flow control is enabled.
+ * Client-side buffer of messages received from the server. Once consumed from this buffer, the client is notified of a
+ * permit being consumed, potentially triggering a permit refresh, if flow control is enabled.
  * <p>
  * This class is intended for internal use. Be cautious.
  *
@@ -70,17 +70,19 @@ public class EventBuffer implements TrackingEventStream {
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition dataAvailable = lock.newCondition();
 
-
-
     /**
      * Initializes an Event Buffer, passing messages through given {@code upcasterChain} and deserializing events using
      * given {@code serializer}.
-     * @param delegate
-     * @param upcasterChain the upcasterChain to translate serialized representations before deserializing
-     * @param serializer    the serializer capable of deserializing incoming messages
-     * @param disableEventBlacklisting
+     *
+     * @param delegate                 the {@link EventStream} to delegate operations to
+     * @param upcasterChain            the upcasterChain to translate serialized representations before deserializing
+     * @param serializer               the serializer capable of deserializing incoming messages
+     * @param disableEventBlacklisting specifying whether events should or should not be included in the buffer
      */
-    public EventBuffer(EventStream delegate, EventUpcaster upcasterChain, Serializer serializer, boolean disableEventBlacklisting) {
+    public EventBuffer(EventStream delegate,
+                       EventUpcaster upcasterChain,
+                       Serializer serializer,
+                       boolean disableEventBlacklisting) {
         this.serializer = serializer;
         this.delegate = delegate;
         this.disableEventBlacklisting = disableEventBlacklisting;
@@ -95,7 +97,7 @@ public class EventBuffer implements TrackingEventStream {
             lock.lock();
             try {
                 dataAvailable.signalAll();
-            }finally {
+            } finally {
                 lock.unlock();
             }
         });
@@ -115,14 +117,13 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     /**
-     * {@inheritDoc}
-     * ----
+     * {@inheritDoc} ----
      * <p>
-     * This implementation blacklists based on the payload type of the given message.
+     * This implementation removes events from the stream based on the payload type of the given message.
      */
     @Override
     public void blacklist(TrackedEventMessage<?> trackedEventMessage) {
-        if(!disableEventBlacklisting) {
+        if (!disableEventBlacklisting) {
             SerializedType serializedType;
             if (UnknownSerializedType.class.equals(trackedEventMessage.getPayloadType())) {
                 UnknownSerializedType unknownSerializedType = (UnknownSerializedType) trackedEventMessage.getPayload();
@@ -170,7 +171,7 @@ public class EventBuffer implements TrackingEventStream {
             try {
                 // check again for concurrency reasons
                 if (delegate.peek() == null) {
-                    dataAvailable.await(Math.min(500, timeout), TimeUnit.MILLISECONDS);
+                    dataAvailable.await(Math.min(DEFAULT_POLLING_TIME_MILLIS, timeout), TimeUnit.MILLISECONDS);
                 }
             } finally {
                 lock.unlock();

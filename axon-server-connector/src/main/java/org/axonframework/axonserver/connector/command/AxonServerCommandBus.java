@@ -17,16 +17,11 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.command.Command;
-import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.DefaultHandlers;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.Handlers;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
@@ -52,13 +47,13 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.function.BiConsumer;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -72,7 +67,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AxonServerCommandBus.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private static final long DEFAULT_PRIORITY = 0;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
@@ -85,19 +81,18 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors;
     private final TargetContextResolver<? super CommandMessage<?>> targetContextResolver;
     private final CommandCallback<Object, Object> defaultCommandCallback;
-    private final Handlers<CommandProviderInbound.RequestCase, BiConsumer<CommandProviderInbound, StreamObserver<CommandProviderOutbound>>> commandHandlers = new DefaultHandlers<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService executorService;
 
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerCommandBus}.
      * <p>
-     * The {@link CommandPriorityCalculator} is defaulted to
-     * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()} and the {@link TargetContextResolver}
-     * defaults to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
-     * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
-     * The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local {@link CommandBus},
-     * {@link Serializer} and the {@link RoutingStrategy} are a <b>hard requirements</b> and as such should be provided.
+     * The {@link CommandPriorityCalculator} is defaulted to {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()}
+     * and the {@link TargetContextResolver} defaults to a lambda returning the {@link
+     * AxonServerConfiguration#getContext()} as the context. The {@link ExecutorServiceBuilder} defaults to {@link
+     * ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the
+     * {@link AxonServerConfiguration}, the local {@link CommandBus}, {@link Serializer} and the {@link RoutingStrategy}
+     * are a <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AxonServerCommandBus}
      */
@@ -123,13 +118,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         String context = configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
-        this.executorService = builder.executorServiceBuilder.apply(builder.configuration,
-                                                                    new PriorityBlockingQueue<>(1000,
-                                                                                                Comparator.comparingLong(
-                                                                                                        r -> r instanceof CommandProcessingTask
-                                                                                                             ? ((CommandProcessingTask) r).getPriority()
-                                                                                                             : DEFAULT_PRIORITY)
-                                                                                                          .reversed()));
+        this.executorService = builder.executorServiceBuilder.apply(
+                builder.configuration,
+                new PriorityBlockingQueue<>(1000, Comparator.comparingLong(
+                        r -> r instanceof CommandProcessingTask
+                                ? ((CommandProcessingTask) r).getPriority()
+                                : DEFAULT_PRIORITY).reversed()
+                )
+        );
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }
@@ -174,9 +170,13 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                   .whenComplete((r, e) -> commandInTransit.end());
         } catch (Exception e) {
             commandInTransit.end();
-            commandCallback.onResult(commandMessage, GenericCommandResultMessage.asCommandResultMessage(new AxonServerCommandDispatchException(ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
-                                                                                                                                               "Exception while dispatching a command to AxonServer",
-                                                                                                                                               e)));
+            AxonServerCommandDispatchException dispatchException = new AxonServerCommandDispatchException(
+                    ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
+                    "Exception while dispatching a command to AxonServer", e
+            );
+            commandCallback.onResult(
+                    commandMessage, GenericCommandResultMessage.asCommandResultMessage(dispatchException)
+            );
         }
     }
 
@@ -184,14 +184,21 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> messageHandler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         Registration localRegistration = localSegment.subscribe(commandName, messageHandler);
-        io.axoniq.axonserver.connector.Registration serverRegistration = axonServerConnectionManager.getConnection()
-                                                                                                    .commandChannel()
-                                                                                                    .registerCommandHandler(
-                                                                                                            c -> {
-                                                                                                                CompletableFuture<CommandResponse> result = new CompletableFuture<>();
-                                                                                                                executorService.submit(new CommandProcessingTask(c, serializer, result, localSegment));
-                                                                                                                return result;
-                                                                                                            }, loadFactorProvider.getFor(commandName), commandName);
+        io.axoniq.axonserver.connector.Registration serverRegistration =
+                axonServerConnectionManager.getConnection()
+                                           .commandChannel()
+                                           .registerCommandHandler(
+                                                   c -> {
+                                                       CompletableFuture<CommandResponse> result =
+                                                               new CompletableFuture<>();
+                                                       executorService.submit(new CommandProcessingTask(
+                                                               c, serializer, result, localSegment
+                                                       ));
+                                                       return result;
+                                                   },
+                                                   loadFactorProvider.getFor(commandName),
+                                                   commandName
+                                           );
 
         return new AxonServerRegistration(localRegistration, serverRegistration::cancel);
     }
@@ -245,7 +252,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private final Command command;
         private final CommandSerializer serializer;
 
-        public CommandProcessingTask(Command command, CommandSerializer serializer, CompletableFuture<CommandResponse> result, CommandBus localSegment) {
+        public CommandProcessingTask(Command command,
+                                     CommandSerializer serializer,
+                                     CompletableFuture<CommandResponse> result,
+                                     CommandBus localSegment) {
             this.command = command;
             this.serializer = serializer;
             this.priority = ProcessingInstructionHelper.priority(command.getProcessingInstructionsList());
@@ -260,12 +270,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         @Override
         public void run() {
             try {
-                localSegment.dispatch(serializer.deserialize(command), new CommandCallback<Object, Object>() {
-                    @Override
-                    public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                        result.complete(serializer.serialize(commandResultMessage, command.getMessageIdentifier()));
-                    }
-                });
+                localSegment.dispatch(
+                        serializer.deserialize(command),
+                        (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> result.complete(
+                                serializer.serialize(commandResultMessage, command.getMessageIdentifier())
+                        )
+                );
             } catch (Exception e) {
                 result.completeExceptionally(e);
             }
@@ -275,12 +285,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     /**
      * Builder class to instantiate an {@link AxonServerCommandBus}.
      * <p>
-     * The {@link CommandPriorityCalculator} is defaulted to
-     * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()} and the {@link TargetContextResolver}
-     * defaults to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
-     * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
-     * The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local {@link CommandBus},
-     * {@link Serializer} and the {@link RoutingStrategy} are <b>hard requirements</b> and as such should be provided.
+     * The {@link CommandPriorityCalculator} is defaulted to {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()}
+     * and the {@link TargetContextResolver} defaults to a lambda returning the {@link
+     * AxonServerConfiguration#getContext()} as the context. The {@link ExecutorServiceBuilder} defaults to {@link
+     * ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the
+     * {@link AxonServerConfiguration}, the local {@link CommandBus}, {@link Serializer} and the {@link RoutingStrategy}
+     * are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -352,8 +362,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the {@link RoutingStrategy} used to correctly configure connections between Axon clients and
-         * Axon Server.
+         * Sets the {@link RoutingStrategy} used to correctly configure connections between Axon clients and Axon
+         * Server.
          *
          * @param routingStrategy a {@link RoutingStrategy}
          * @return the current Builder instance, for fluent interfacing
@@ -365,9 +375,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link #dispatch(CommandMessage)}. Defaults to a {@link NoOpCallback}. Passing {@code null} will result
-         * in a {@link NoOpCallback} being used.
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
+         * #dispatch(CommandMessage)}. Defaults to a {@link NoOpCallback}. Passing {@code null} will result in a {@link
+         * NoOpCallback} being used.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
@@ -379,8 +389,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
         /**
          * Sets the {@link CommandPriorityCalculator} used to deduce the priority of an incoming command among other
-         * commands, to give precedence over high(er) valued queries for example. Defaults to a
-         * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()}.
+         * commands, to give precedence over high(er) valued queries for example. Defaults to a {@link
+         * CommandPriorityCalculator#defaultCommandPriorityCalculator()}.
          *
          * @param priorityCalculator a {@link CommandPriorityCalculator} used to deduce the priority of an incoming
          *                           command among other commands
@@ -393,8 +403,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the {@link TargetContextResolver} used to resolve the target (bounded) context of an ingested
-         * {@link CommandMessage}. Defaults to returning the {@link AxonServerConfiguration#getContext()} on any type of
+         * Sets the {@link TargetContextResolver} used to resolve the target (bounded) context of an ingested {@link
+         * CommandMessage}. Defaults to returning the {@link AxonServerConfiguration#getContext()} on any type of
          * command message being ingested.
          *
          * @param targetContextResolver a {@link TargetContextResolver} used to resolve the target (bounded) context of
@@ -408,15 +418,15 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
-         * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
-         * to process incoming commands with. Defaults to a {@link ThreadPoolExecutor}, using the
-         * {@link AxonServerConfiguration#getCommandThreads()} for the pool size, a keep-alive-time of {@code 100ms},
-         * the given BlockingQueue as the work queue and an {@link AxonThreadFactory}.
+         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given {@link
+         * AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used to
+         * process incoming commands with. Defaults to a {@link ThreadPoolExecutor}, using the {@link
+         * AxonServerConfiguration#getCommandThreads()} for the pool size, a keep-alive-time of {@code 100ms}, the given
+         * BlockingQueue as the work queue and an {@link AxonThreadFactory}.
          * <p/>
-         * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensure the command's priority is taken into consideration.
-         * Defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
+         * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own {@code
+         * executorServiceBuilder}, as it ensure the command's priority is taken into consideration. Defaults to {@link
+         * ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
          *
          * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
          *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
@@ -429,10 +439,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the {@link CommandLoadFactorProvider} which provides the load factor values for all commands this
-         * client can handle. The load factor values are sent to AxonServer during command subscription. AxonServer
-         * uses these values to balance the dispatching of commands among the client instances.
-         * The default implementation of loadFactorProvider returns always {@link CommandLoadFactorProvider#DEFAULT_VALUE}
+         * Sets the {@link CommandLoadFactorProvider} which provides the load factor values for all commands this client
+         * can handle. The load factor values are sent to AxonServer during command subscription. AxonServer uses these
+         * values to balance the dispatching of commands among the client instances. The default implementation of
+         * loadFactorProvider returns always {@link CommandLoadFactorProvider#DEFAULT_VALUE}
          *
          * @param loadFactorProvider a {@link CommandLoadFactorProvider} used to get the load factor value for each
          *                           specific command that this client can handle

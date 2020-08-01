@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,13 +29,15 @@ import java.util.function.Predicate;
 
 /**
  * Wrapper around the standard StreamObserver that guarantees that the onNext calls are executed in a thread-safe
- * manner.
- * Also maintains flow control sending a new message with permits to AxonServer when it is ready to handle more
+ * manner. Also maintains flow control sending a new message with permits to AxonServer when it is ready to handle more
  * messages
  *
  * @author Marc Gathier
  * @since 4.0
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
 
     private final StreamObserver<T> wrappedStreamObserver;
@@ -50,33 +52,41 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
     private final Function<FlowControl, T> requestWrapper;
 
     /**
+     * Constructs a {@link FlowControllingStreamObserver}.
+     *
      * @param wrappedStreamObserver stream observer to send messages to AxonServer
      * @param configuration         AxonServer configuration for flow control
      * @param requestWrapper        Function to create a new permits request
      * @param isConfirmationMessage predicate to test if the message sent to AxonServer is a confirmation message
      */
-    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, AxonServerConfiguration configuration,
-                                         Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
+    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver,
+                                         AxonServerConfiguration configuration,
+                                         Function<FlowControl, T> requestWrapper,
+                                         Predicate<T> isConfirmationMessage) {
         this(wrappedStreamObserver,
-                configuration.getClientId(),
-                configuration.getDefaultFlowControlConfiguration(),
-                requestWrapper,
-                isConfirmationMessage);
+             configuration.getClientId(),
+             configuration.getDefaultFlowControlConfiguration(),
+             requestWrapper,
+             isConfirmationMessage);
     }
 
     /**
+     * Constructs a {@link FlowControllingStreamObserver}.
+     *
      * @param wrappedStreamObserver    stream observer to send messages to AxonServer
      * @param clientId                 ClientId in AxonServer configuration
      * @param flowControlConfiguration Flow control configuration
      * @param requestWrapper           Function to create a new permits request
      * @param isConfirmationMessage    predicate to test if the message sent to AxonServer is a confirmation message
      */
-    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, String clientId, FlowControlConfiguration flowControlConfiguration,
+    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, String clientId,
+                                         FlowControlConfiguration flowControlConfiguration,
                                          Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
         this.wrappedStreamObserver = wrappedStreamObserver;
         this.clientId = clientId;
         this.remainingPermits = new AtomicLong(
-                flowControlConfiguration.getInitialNrOfPermits().longValue() - flowControlConfiguration.getNewPermitsThreshold().longValue()
+                flowControlConfiguration.getInitialNrOfPermits().longValue() - flowControlConfiguration
+                        .getNewPermitsThreshold().longValue()
         );
         this.newPermits = flowControlConfiguration.getNrOfNewPermits();
         this.initialNrofPermits = flowControlConfiguration.getInitialNrOfPermits();
@@ -92,9 +102,9 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
 
     private FlowControl createRequest(long initialNrOfPermits) {
         return FlowControl.newBuilder()
-                .setClientId(clientId)
-                .setPermits(initialNrOfPermits)
-                .build();
+                          .setClientId(clientId)
+                          .setPermits(initialNrOfPermits)
+                          .build();
     }
 
     @Override
@@ -125,8 +135,8 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
     }
 
     /**
-     * notifies the stream observer that [@code consumed} messages are processed by the client.
-     * Triggers a new permits request when remaining permits is 0
+     * Notifies the stream observer that [@code consumed} messages are processed by the client. Triggers a new permits
+     * request when remaining permits is 0.
      *
      * @param consumed nr of messages consumed
      */

@@ -44,8 +44,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Configurer module which is auto-loadable by the {@link org.axonframework.config.DefaultConfigurer} that sets
- * sensible default to use when the AxonServer connector is available on the classpath.
+ * Configurer module which is auto-loadable by the {@link org.axonframework.config.DefaultConfigurer} that sets sensible
+ * default to use when the AxonServer connector is available on the classpath.
  *
  * @author Allard Buijze
  * @since 4.0
@@ -134,18 +134,18 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                               .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         return AxonServerQueryBus.builder()
-                         .axonServerConnectionManager(c.getComponent(AxonServerConnectionManager.class))
-                         .configuration(c.getComponent(AxonServerConfiguration.class))
-                         .localSegment(localSegment)
-                         .updateEmitter(c.queryUpdateEmitter())
-                         .messageSerializer(c.messageSerializer())
-                         .genericSerializer(c.serializer())
-                         .priorityCalculator(c.getComponent(
-                                  QueryPriorityCalculator.class,
-                                  QueryPriorityCalculator::defaultQueryPriorityCalculator
-                          ))
-                         .targetContextResolver(c.getComponent(TargetContextResolver.class))
-                         .build();
+                                 .axonServerConnectionManager(c.getComponent(AxonServerConnectionManager.class))
+                                 .configuration(c.getComponent(AxonServerConfiguration.class))
+                                 .localSegment(localSegment)
+                                 .updateEmitter(c.queryUpdateEmitter())
+                                 .messageSerializer(c.messageSerializer())
+                                 .genericSerializer(c.serializer())
+                                 .priorityCalculator(c.getComponent(
+                                         QueryPriorityCalculator.class,
+                                         QueryPriorityCalculator::defaultQueryPriorityCalculator
+                                 ))
+                                 .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                 .build();
     }
 
     @Override

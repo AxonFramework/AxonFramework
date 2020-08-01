@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 /**
  * Utility class for converting gRPC MetaData entries into a Java Map and vice versa.
  * <p>
- * To optimize communication and minimize the loss of data structure, the MetaDataValue entries used in gRPC
- * distinguish between numerical values (double or long), Strings, booleans and arbitrary objects. The latter group is
- * converted to and from a {@code byte[]} using the configured Serializer.
+ * To optimize communication and minimize the loss of data structure, the MetaDataValue entries used in gRPC distinguish
+ * between numerical values (double or long), Strings, booleans and arbitrary objects. The latter group is converted to
+ * and from a {@code byte[]} using the configured Serializer.
  *
  * @author Marc Gathier
  * @since 4.0

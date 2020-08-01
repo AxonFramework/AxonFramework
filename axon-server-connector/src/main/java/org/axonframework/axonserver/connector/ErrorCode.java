@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,6 @@ import java.util.function.Supplier;
 
 import static java.util.Arrays.stream;
 
-
 /**
  * Converts an Axon Server Error to the relevant Axon framework exception.
  *
@@ -50,6 +49,7 @@ public enum ErrorCode {
     AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", (code, error, details) -> new AxonServerException(code, error)),
     UNSUPPORTED_INSTRUCTION("AXONIQ-1002", (code, error, details) -> new AxonServerException(code, error)),
     INSTRUCTION_ACK_ERROR("AXONIQ-1003", (code, error, details) -> new AxonServerException(code, error)),
+    INSTRUCTION_EXECUTION_ERROR("AXONIQ-1004", (code, error, details) -> new AxonServerException(code, error)),
 
     //Event publishing errors
     INVALID_EVENT_SEQUENCE(
@@ -215,9 +215,9 @@ public enum ErrorCode {
     }
 
     /**
-     * Functional interface towards building an {@link AxonException} based on an {@code errorCode},
-     * {@link ErrorMessage} and the {@link Supplier} of an {@link Object}. This provides the option for users to
-     * specify more thorough exception messages when it is serialized from one Axon client to another.
+     * Functional interface towards building an {@link AxonException} based on an {@code errorCode}, {@link
+     * ErrorMessage} and the {@link Supplier} of an {@link Object}. This provides the option for users to specify more
+     * thorough exception messages when it is serialized from one Axon client to another.
      */
     @FunctionalInterface
     private interface ExceptionBuilder {

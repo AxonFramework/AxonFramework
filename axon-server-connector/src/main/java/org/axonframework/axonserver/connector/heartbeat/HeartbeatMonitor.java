@@ -33,7 +33,10 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Sara Pellegrini
  * @since 4.2.1
+ * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer java
+ * connector</a>
  */
+@Deprecated
 public class HeartbeatMonitor {
 
     private static final long DEFAULT_INITIAL_DELAY = 10_000;
@@ -52,11 +55,11 @@ public class HeartbeatMonitor {
     /**
      * Primary constructor of {@link HeartbeatMonitor}.
      *
-     * @param onInvalidConnection callback to be call when the connection is no longer alive
+     * @param onInvalidConnection   callback to be call when the connection is no longer alive
      * @param connectionSanityCheck sanity check which allows to verify if the connection is alive
-     * @param scheduler the {@link Scheduler} to use for scheduling the task
-     * @param initialDelay the initial delay, in milliseconds
-     * @param delay the scheduling period, in milliseconds
+     * @param scheduler             the {@link Scheduler} to use for scheduling the task
+     * @param initialDelay          the initial delay, in milliseconds
+     * @param delay                 the scheduling period, in milliseconds
      */
     public HeartbeatMonitor(Runnable onInvalidConnection, ConnectionSanityChecker connectionSanityCheck,
                             Scheduler scheduler, long initialDelay, long delay) {
@@ -68,8 +71,8 @@ public class HeartbeatMonitor {
     }
 
     /**
-     * Verify if the connection with AxonServer is still alive.
-     * If it is not, invoke a callback in order to react to the disconnection.
+     * Verify if the connection with AxonServer is still alive. If it is not, invoke a callback in order to react to the
+     * disconnection.
      */
     private void run() {
         try {

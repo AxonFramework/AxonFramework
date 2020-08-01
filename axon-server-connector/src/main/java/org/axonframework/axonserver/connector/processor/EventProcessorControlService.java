@@ -54,11 +54,11 @@ public class EventProcessorControlService {
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
      * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. Uses the {@link
-     * AxonServerConnectionManager#getDefaultContext()} specified in the given
-     * {@code axonServerConnectionManager} as the context to dispatch operations in
+     * AxonServerConnectionManager#getDefaultContext()} specified in the given {@code axonServerConnectionManager} as
+     * the context to dispatch operations in
      *
-     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
-     *                                    {@link PlatformOutboundInstruction} have been received
+     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when {@link
+     *                                    PlatformOutboundInstruction} have been received
      * @param axonServerConfiguration     the {@link AxonServerConfiguration} used to retrieve the client identifier
      */
     public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
@@ -72,11 +72,11 @@ public class EventProcessorControlService {
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
      * {@link AxonServerConnectionManager} on {@link PlatformOutboundInstruction}s. Uses the {@link
-     * AxonServerConnectionManager#getDefaultContext()} specified in the given
-     * {@code axonServerConnectionManager} as the context to dispatch operations in
+     * AxonServerConnectionManager#getDefaultContext()} specified in the given {@code axonServerConnectionManager} as
+     * the context to dispatch operations in
      *
-     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when
-     *                                    {@link PlatformOutboundInstruction} have been received
+     * @param axonServerConnectionManager a {@link AxonServerConnectionManager} used to add operations when {@link
+     *                                    PlatformOutboundInstruction} have been received
      * @param context                     the context of this application instance within which outbound instruction
      *                                    handlers should be specified on the given {@code axonServerConnectionManager}
      */
@@ -104,7 +104,9 @@ public class EventProcessorControlService {
                                                 (name, processor) ->
                                                         controlChannel.registerEventProcessor(name,
                                                                                               infoSupplier(processor),
-                                                                                              new AxonProcessorInstructionHandler(processor, name)));
+                                                                                              new AxonProcessorInstructionHandler(
+                                                                                                      processor,
+                                                                                                      name)));
         }
     }
 
@@ -123,7 +125,6 @@ public class EventProcessorControlService {
                                  .setProcessorName(eventProcessor.getName())
                                  .setMode(SUBSCRIBING_EVENT_PROCESSOR_MODE)
                                  .build();
-
     }
 
     private EventProcessorInfo unknownProcessorTypeInfo(EventProcessor eventProcessor) {
@@ -131,11 +132,11 @@ public class EventProcessorControlService {
                                  .setProcessorName(eventProcessor.getName())
                                  .setMode(UNKNOWN_EVENT_PROCESSOR_MODE)
                                  .build();
-
     }
 
 
     private static class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
+
         private final EventProcessor processor;
         private final String name;
 
@@ -148,7 +149,8 @@ public class EventProcessorControlService {
         public CompletableFuture<Boolean> releaseSegment(int segmentId) {
             try {
                 if (!(processor instanceof TrackingEventProcessor)) {
-                    logger.info("Release segment requested for processor [{}] which is not a Tracking Event Processor", name);
+                    logger.info("Release segment requested for processor [{}] which is not a Tracking Event Processor",
+                                name);
                     return CompletableFuture.completedFuture(false);
                 } else {
                     ((TrackingEventProcessor) processor).releaseSegment(segmentId);
@@ -189,7 +191,9 @@ public class EventProcessorControlService {
         public CompletableFuture<Boolean> mergeSegment(int segmentId) {
             try {
                 if (!(processor instanceof TrackingEventProcessor)) {
-                    logger.warn("Merge segment request received for processor [{}] which is not a Tracking Event Processor", name);
+                    logger.warn(
+                            "Merge segment request received for processor [{}] which is not a Tracking Event Processor",
+                            name);
                     return CompletableFuture.completedFuture(false);
                 } else {
                     return ((TrackingEventProcessor) processor)
@@ -235,7 +239,5 @@ public class EventProcessorControlService {
             future.completeExceptionally(e);
             return future;
         }
-
-
     }
 }
