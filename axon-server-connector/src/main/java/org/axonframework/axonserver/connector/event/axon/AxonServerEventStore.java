@@ -582,7 +582,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                               .eventChannel()
                                               .getLastToken()
                                               .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
-                return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
+                return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token-1);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new EventStoreException(e.getMessage(), e);
