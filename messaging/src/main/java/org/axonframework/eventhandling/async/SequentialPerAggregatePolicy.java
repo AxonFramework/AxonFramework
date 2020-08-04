@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different
@@ -32,6 +32,7 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessa
 
     /**
      * Return a singleton instance of the this Sequencing Policy.
+     *
      * @return a singleton SequentialPerAggregatePolicy instance
      */
     public static SequentialPerAggregatePolicy instance() {
