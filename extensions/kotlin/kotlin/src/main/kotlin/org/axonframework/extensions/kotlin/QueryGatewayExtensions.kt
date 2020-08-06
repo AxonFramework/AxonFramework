@@ -60,7 +60,7 @@ inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, quer
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.querySingle(query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q> QueryGateway.query(query: Q): CompletableFuture<R> {
     return this.query(query, ResponseTypes.instanceOf(R::class.java))
 }
 
@@ -75,7 +75,7 @@ inline fun <reified R, reified Q> QueryGateway.querySingle(query: Q): Completabl
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.querySingle(queryName: String, query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q> QueryGateway.query(queryName: String, query: Q): CompletableFuture<R> {
     return this.query(queryName, query, ResponseTypes.instanceOf(R::class.java))
 }
 
