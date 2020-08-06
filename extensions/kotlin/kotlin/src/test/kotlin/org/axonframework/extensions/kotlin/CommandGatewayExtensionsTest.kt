@@ -36,8 +36,6 @@ class CommandGatewayExtensionsTest {
     private val subjectGateway = mockk<CommandGateway>()
 
     private val exampleCommand = ExampleCommand("1")
-    private val timeoutInterval: Long = 30
-    private val defaultTimeUnit = TimeUnit.MILLISECONDS
 
     @Test
     fun `Send extension should invoke correct method on the gateway`() {
