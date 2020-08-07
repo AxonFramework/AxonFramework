@@ -174,7 +174,11 @@ public class EventBuffer implements TrackingEventStream {
         try {
             // Check again for concurrency reasons of available data.
             if (!peek().isPresent()) {
-                dataAvailable.await(Math.min(waitTime, MIN_AWAIT_AVAILABLE_DATA), TimeUnit.MILLISECONDS);
+                boolean await =
+                        dataAvailable.await(Math.min(waitTime, MIN_AWAIT_AVAILABLE_DATA), TimeUnit.MILLISECONDS);
+                logger.trace(
+                        await ? "Signaled new events are available" : "No signal received for new events, exiting await"
+                );
             }
         } finally {
             lock.unlock();
