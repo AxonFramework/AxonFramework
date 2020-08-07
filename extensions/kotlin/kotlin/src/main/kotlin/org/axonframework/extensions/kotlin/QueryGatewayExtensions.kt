@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForMultiple(query: Q): CompletableFuture<List<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> {
     return this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
 
@@ -46,7 +46,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForMultiple(query: Q): Compl
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForMultiple(queryName: String, query: Q): CompletableFuture<List<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, query: Q): CompletableFuture<List<R>> {
     return this.query(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
 
@@ -60,7 +60,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForMultiple(queryName: Strin
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForSingle(query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q> QueryGateway.query(query: Q): CompletableFuture<R> {
     return this.query(query, ResponseTypes.instanceOf(R::class.java))
 }
 
@@ -75,7 +75,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForSingle(query: Q): Complet
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForSingle(queryName: String, query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q> QueryGateway.query(queryName: String, query: Q): CompletableFuture<R> {
     return this.query(queryName, query, ResponseTypes.instanceOf(R::class.java))
 }
 
@@ -89,7 +89,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForSingle(queryName: String,
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForOptional(query: Q): CompletableFuture<Optional<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryOptional(query: Q): CompletableFuture<Optional<R>> {
     return this.query(query, ResponseTypes.optionalInstanceOf(R::class.java))
 }
 
@@ -104,6 +104,6 @@ inline fun <reified R, reified Q> QueryGateway.queryForOptional(query: Q): Compl
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
     return this.query(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java))
 }
