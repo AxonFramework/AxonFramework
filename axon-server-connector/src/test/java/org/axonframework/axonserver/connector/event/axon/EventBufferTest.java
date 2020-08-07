@@ -22,14 +22,14 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.grpc.stub.ClientCallStreamObserver;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.stubbing.Answer;
 
 import java.util.UUID;
@@ -55,12 +55,11 @@ import static org.mockito.Mockito.when;
 class EventBufferTest {
 
     private EventUpcaster stubUpcaster;
-    private XStreamSerializer serializer;
 
     private EventBuffer testSubject;
 
     private org.axonframework.serialization.SerializedObject<byte[]> serializedObject;
-    private BufferedEventStream stream;
+    private BufferedEventStream eventStream;
 
     @BeforeEach
     void setUp() {
@@ -71,18 +70,20 @@ class EventBufferTest {
                         (Stream<IntermediateEventRepresentation>) invocationOnMock.getArguments()[0]
                 );
 
-        serializer = XStreamSerializer.defaultSerializer();
+        XStreamSerializer serializer = TestSerializer.secureXStreamSerializer();
         serializedObject = serializer.serialize("some object", byte[].class);
 
-        stream = new BufferedEventStream(0, 100, 1, false);
-        stream.beforeStart(mock(ClientCallStreamObserver.class));
-        testSubject = new EventBuffer(stream, stubUpcaster, serializer, false);
+        eventStream = new BufferedEventStream(0, 100, 1, false);
+        //noinspection unchecked
+        eventStream.beforeStart(mock(ClientCallStreamObserver.class));
+        testSubject = new EventBuffer(eventStream, stubUpcaster, serializer, false);
     }
 
     @Test
-    void testDataUpcastAndDeserialized() throws InterruptedException {
+    @Timeout(value = 450, unit = TimeUnit.MILLISECONDS)
+    void testDataUpcastAndDeserialized() {
         assertFalse(testSubject.hasNextAvailable());
-        stream.onNext(createEventData(1L));
+        eventStream.onNext(createEventData(1L));
         assertTrue(testSubject.hasNextAvailable());
 
         TrackedEventMessage<?> peeked =
@@ -101,18 +102,17 @@ class EventBufferTest {
     }
 
     @Test
-    void testHasNextAvailableThrowsExceptionWhenStreamFailed() throws InterruptedException {
+    void testHasNextAvailableThrowsExceptionWhenStreamFailed() {
         RuntimeException expected = new RuntimeException("Some Exception");
-        stream.onError(expected);
+        eventStream.onError(expected);
 
-        assertThrows(RuntimeException.class, () ->
-                testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
+        assertThrows(RuntimeException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
 
         // a second attempt should still throw the exception
-        assertThrows(RuntimeException.class, () ->
-                testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
+        assertThrows(RuntimeException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
     }
 
+    @SuppressWarnings("SameParameterValue")
     private EventWithToken createEventData(long sequence) {
         SerializedObject payload = SerializedObject.newBuilder()
                                                    .setData(ByteString.copyFrom(serializedObject.getData()))

@@ -33,6 +33,7 @@ import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -57,14 +58,14 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class EventBuffer implements TrackingEventStream {
 
-    private static final Logger logger = LoggerFactory.getLogger(EventBuffer.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int DEFAULT_POLLING_TIME_MILLIS = 500;
+    private static final int MIN_AWAIT_AVAILABLE_DATA = 500;
 
-    private final Serializer serializer;
     private final EventStream delegate;
-    private final boolean disableEventBlacklisting;
     private final Iterator<TrackedEventMessage<?>> eventStream;
+    private final Serializer serializer;
+    private final boolean disableEventBlacklisting;
 
     private TrackedEventMessage<?> peekEvent;
 
@@ -84,15 +85,14 @@ public class EventBuffer implements TrackingEventStream {
                        EventUpcaster upcasterChain,
                        Serializer serializer,
                        boolean disableEventBlacklisting) {
-        this.serializer = serializer;
         this.delegate = delegate;
-        this.disableEventBlacklisting = disableEventBlacklisting;
-
         this.eventStream = EventUtils.upcastAndDeserializeTrackedEvents(
                 StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
                 new GrpcMetaDataAwareSerializer(serializer),
                 getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE)
         ).iterator();
+        this.serializer = serializer;
+        this.disableEventBlacklisting = disableEventBlacklisting;
 
         delegate.onAvailable(() -> {
             lock.lock();
@@ -102,14 +102,12 @@ public class EventBuffer implements TrackingEventStream {
                 lock.unlock();
             }
         });
+        logger.debug("Now, with adjusted poll operation!");
     }
 
     private TrackedEventData<byte[]> poll() {
         EventWithToken eventWithToken = delegate.nextIfAvailable();
-        if (eventWithToken == null) {
-            return null;
-        }
-        return convert(eventWithToken);
+        return eventWithToken == null ? null : convert(eventWithToken);
     }
 
     private TrackedEventData<byte[]> convert(EventWithToken eventWithToken) {
@@ -156,27 +154,30 @@ public class EventBuffer implements TrackingEventStream {
 
             return peekEvent != null || eventStream.hasNext();
         } catch (InterruptedException e) {
-            logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+            logger.warn("Event consumer thread was interrupted. Returning thread to event processor.", e);
             Thread.currentThread().interrupt();
             return false;
         }
     }
 
-    private void waitForData(long timeout) throws InterruptedException {
-        // a quick check before acquiring the lock
+    private void waitForData(long waitTime) throws InterruptedException {
+        // Quick check before acquiring the lock.
         if (delegate.peek() != null) {
             return;
         }
-        if (timeout > 0) {
-            lock.lock();
-            try {
-                // check again for concurrency reasons
-                if (delegate.peek() == null) {
-                    dataAvailable.await(Math.min(DEFAULT_POLLING_TIME_MILLIS, timeout), TimeUnit.MILLISECONDS);
-                }
-            } finally {
-                lock.unlock();
+        // No use spending lock/await work for zero wait time.
+        if (waitTime <= 0) {
+            return;
+        }
+
+        lock.lock();
+        try {
+            // Check again for concurrency reasons of available data.
+            if (!peek().isPresent()) {
+                dataAvailable.await(Math.min(waitTime, MIN_AWAIT_AVAILABLE_DATA), TimeUnit.MILLISECONDS);
             }
+        } finally {
+            lock.unlock();
         }
     }
 
