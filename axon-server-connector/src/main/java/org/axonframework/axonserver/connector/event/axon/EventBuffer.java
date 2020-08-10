@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.EventStream;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
+import org.axonframework.axonserver.connector.AxonServerException;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
@@ -145,14 +147,15 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) {
+        checkExceptionState();
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
             do {
                 long waitTime = deadline - System.currentTimeMillis();
                 waitForData(waitTime);
-            } while (peekEvent == null && System.currentTimeMillis() < deadline && !eventStream.hasNext());
+            } while (peekEvent == null && System.currentTimeMillis() < deadline);
 
-            return peekEvent != null || eventStream.hasNext();
+            return peekEvent != null;
         } catch (InterruptedException e) {
             logger.warn("Event consumer thread was interrupted. Returning thread to event processor.", e);
             Thread.currentThread().interrupt();
@@ -160,9 +163,16 @@ public class EventBuffer implements TrackingEventStream {
         }
     }
 
+    private void checkExceptionState() {
+        if (delegate.isClosed()) {
+            throw new AxonServerException(ErrorCode.OTHER.errorCode(),
+                                          "The Event Stream has been closed, so no further events can be retrieved");
+        }
+    }
+
     private void waitForData(long waitTime) throws InterruptedException {
         // Quick check before acquiring the lock.
-        if (delegate.peek() != null) {
+        if (peek().isPresent()) {
             return;
         }
         // No use spending lock/await work for zero wait time.

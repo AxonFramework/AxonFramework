@@ -22,6 +22,7 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.grpc.stub.ClientCallStreamObserver;
+import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -30,21 +31,15 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
-import org.mockito.stubbing.Answer;
+import org.mockito.stubbing.*;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class to verify the implementation of the {@link EventBuffer} class.
@@ -102,14 +97,13 @@ class EventBufferTest {
     }
 
     @Test
-    void testHasNextAvailableThrowsExceptionWhenStreamFailed() {
-        RuntimeException expected = new RuntimeException("Some Exception");
-        eventStream.onError(expected);
+    void testHasNextAvailableThrowsAxonServerExceptionWhenStreamFailed() {
+        eventStream.onError(new TestException());
 
-        assertThrows(RuntimeException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
+        assertThrows(AxonServerException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
 
         // a second attempt should still throw the exception
-        assertThrows(RuntimeException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
+        assertThrows(AxonServerException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -132,5 +126,10 @@ class EventBufferTest {
                              .setToken(sequence)
                              .setEvent(event)
                              .build();
+    }
+
+    private static class TestException extends Exception {
+
+        private static final long serialVersionUID = 5181730247751626376L;
     }
 }
