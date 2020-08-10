@@ -24,7 +24,6 @@ import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
 import io.netty.handler.ssl.SslContextBuilder;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
@@ -33,7 +32,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLException;
@@ -68,9 +66,8 @@ public class AxonServerConnectionManager {
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerConnectionManager}.
      * <p>
-     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the {@link
-     * ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory} tied to
-     * it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()}. The {@link
+     * AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AxonServerConnectionManager}
      */
@@ -151,9 +148,8 @@ public class AxonServerConnectionManager {
     /**
      * Builder class to instantiate an {@link AxonServerConnectionManager}.
      * <p>
-     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()} and the {@link
-     * ScheduledExecutorService} defaults to an instance using a single thread with an {@link AxonThreadFactory} tied to
-     * it. The {@link AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
+     * The {@link TagsConfiguration} is defaulted to {@link TagsConfiguration#TagsConfiguration()}. The {@link
+     * AxonServerConfiguration} is a <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
