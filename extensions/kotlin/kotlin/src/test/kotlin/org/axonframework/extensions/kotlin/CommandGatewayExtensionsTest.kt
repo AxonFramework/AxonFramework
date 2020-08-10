@@ -32,7 +32,7 @@ import kotlin.test.Test
  *
  * @author Stefan Andjelkovic
  */
-class CommandGatewayExtensionsTest {
+internal class CommandGatewayExtensionsTest {
     private val subjectGateway = mockk<CommandGateway>()
 
     private val exampleCommand = ExampleCommand("1")
