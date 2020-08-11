@@ -493,12 +493,14 @@ public class AxonServerEventStore extends AbstractEventStore {
                     ? -1
                     : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
 
-            EventStream stream =
-                    connectionManager.getConnection(context)
-                                     .eventChannel()
-                                     .openStream(nextToken,
-                                                 configuration.getEventFlowControl().getInitialNrOfPermits(),
-                                                 configuration.getEventFlowControl().getNrOfNewPermits());
+            EventStream stream = connectionManager.getConnection(context)
+                                                  .eventChannel()
+                                                  .openStream(
+                                                          nextToken,
+                                                          configuration.getEventFlowControl().getInitialNrOfPermits(),
+                                                          configuration.getEventFlowControl().getNrOfNewPermits(),
+                                                          configuration.isForceReadFromLeader()
+                                                  );
 
             return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isDisableEventBlacklisting());
         }
