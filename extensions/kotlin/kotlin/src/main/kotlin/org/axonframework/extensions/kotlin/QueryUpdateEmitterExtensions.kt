@@ -15,6 +15,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter
  * @param [Q]       the type of the query
  * @param [U]       the type of the update
  * @see org.axonframework.queryhandling.QueryUpdateEmitter.emit
+ * @author Stefan Andjelkovic
  */
 inline fun <reified Q, reified U : Any> QueryUpdateEmitter.emit(update: U, noinline filter: (Q) -> Boolean) =
         this.emit(Q::class.java, filter, update)
