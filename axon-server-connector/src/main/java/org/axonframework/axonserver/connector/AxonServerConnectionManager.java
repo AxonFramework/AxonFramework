@@ -241,15 +241,18 @@ public class AxonServerConnectionManager {
             }
 
             tagsConfiguration.getTags().forEach(builder::clientTag);
-            if (axonServerConfiguration.getMaxMessageSize() > 0 ) {
+            if (axonServerConfiguration.getMaxMessageSize() > 0) {
                 builder.maxInboundMessageSize(axonServerConfiguration.getMaxMessageSize());
             }
-            if( axonServerConfiguration.getKeepAliveTime() > 0) {
-                builder.usingKeepAlive(axonServerConfiguration.getKeepAliveTime(), axonServerConfiguration.getKeepAliveTimeout(),
-                                       TimeUnit.MILLISECONDS, true);
+            if (axonServerConfiguration.getKeepAliveTime() > 0) {
+                builder.usingKeepAlive(axonServerConfiguration.getKeepAliveTime(),
+                                       axonServerConfiguration.getKeepAliveTimeout(),
+                                       TimeUnit.MILLISECONDS,
+                                       true);
             }
-            if( axonServerConfiguration.getProcessorsNotificationRate() > 0) {
-                builder.processorInfoUpdateFrequency(axonServerConfiguration.getProcessorsNotificationRate(), TimeUnit.MILLISECONDS);
+            if (axonServerConfiguration.getProcessorsNotificationRate() > 0) {
+                builder.processorInfoUpdateFrequency(axonServerConfiguration.getProcessorsNotificationRate(),
+                                                     TimeUnit.MILLISECONDS);
             }
 
             AxonServerConnectionFactory connectionFactory = builder.build();
