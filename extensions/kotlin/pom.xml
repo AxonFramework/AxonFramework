@@ -15,16 +15,14 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <name>Axon Framework - Kotlin Extension - Parent</name>
   <description>Extension for Axon Framework that provides Kotlin utilities.</description>
 
   <groupId>org.axonframework.extensions.kotlin</groupId>
   <artifactId>axon-kotlin-parent</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -39,6 +37,9 @@
     <jackson-kotlin.version>2.10.0</jackson-kotlin.version>
     <mockk.version>1.9.3</mockk.version>
     <junit.jupiter.version>5.5.2</junit.jupiter.version>
+    <slf4j.version>1.7.30</slf4j.version>
+    <log4j.version>2.13.3</log4j.version>
+    <dokka.version>0.10.1</dokka.version>
   </properties>
 
   <dependencyManagement>
@@ -339,20 +340,18 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.4</version>
+        <groupId>org.jetbrains.dokka</groupId>
+        <artifactId>dokka-maven-plugin</artifactId>
+        <version>${dokka.version}</version>
         <executions>
           <execution>
-            <id>attach-javadoc</id>
-            <phase>deploy</phase>
+            <phase>prepare-package</phase>
             <goals>
-              <goal>jar</goal>
+              <goal>dokka</goal>
+              <goal>javadocJar</goal>
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <additionalparam>-Xdoclint:none</additionalparam>
-        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
@@ -468,6 +467,14 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </repository>
   </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>jcenter</id>
+      <name>JCenter</name>
+      <url>https://jcenter.bintray.com/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <!-- deploy and release configuration -->
   <distributionManagement>
