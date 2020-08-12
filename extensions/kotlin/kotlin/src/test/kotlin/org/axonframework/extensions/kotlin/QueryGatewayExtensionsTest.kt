@@ -35,7 +35,7 @@ import kotlin.test.assertTrue
  *
  * @author Stefan Andjelkovic
  */
-class QueryGatewayExtensionsTest {
+internal class QueryGatewayExtensionsTest {
 
     private val queryName = ExampleQuery::class.qualifiedName.toString()
     private val exampleQuery = ExampleQuery(2)
