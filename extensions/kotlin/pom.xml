@@ -24,7 +24,7 @@
 
   <groupId>org.axonframework.extensions.kotlin</groupId>
   <artifactId>axon-kotlin-parent</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -493,21 +493,21 @@
 
   <developers>
     <developer>
-      <name>Allard Buijze</name>
-      <email>allard.buijze@axoniq.io</email>
-      <organization>AxonIQ</organization>
-      <organizationUrl>https://axoniq.io</organizationUrl>
-      <roles>
-        <role>Project Owner</role>
-      </roles>
-    </developer>
-    <developer>
       <name>Stefan Andjelkovic</name>
       <email>stefan.andjelkovic@axoniq.io</email>
       <organization>AxonIQ</organization>
       <organizationUrl>https://axoniq.io</organizationUrl>
       <roles>
-        <role>developer</role>
+        <role>Developer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Steven van Beelen</name>
+      <email>steven.vanbeeelen@axoniq.io</email>
+      <organization>AxonIQ</organization>
+      <organizationUrl>https://axoniq.io</organizationUrl>
+      <roles>
+        <role>Lead Developer</role>
       </roles>
     </developer>
     <developer>
@@ -516,7 +516,7 @@
       <organization>Holisticon AG</organization>
       <organizationUrl>https://holisticon.de</organizationUrl>
       <roles>
-        <role>developer</role>
+        <role>Developer</role>
       </roles>
     </developer>
   </developers>
