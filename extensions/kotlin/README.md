@@ -1,5 +1,6 @@
 # Axon Framework - Kotlin Extension
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin)
 [![Open Source Helpers](https://www.codetriage.com/axonframework/extension-kotlin/badges/users.svg)](https://www.codetriage.com/axonframework/extension-kotlin)
 
 _Note:_ This extension is still in an experimental stage.
@@ -19,6 +20,26 @@ This repository provides an extension to the Axon Framework: Kotlin. It provides
 For more information on anything Axon, please visit our website, [http://axoniq.io](http://axoniq.io).
 
 ## Getting started
+
+### Dependencies
+
+**Maven**
+
+```
+<dependency>
+    <groupId>org.axonframework.extensions.kotlin</groupId>
+    <artifactId>axon-kotlin</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+**Gradle**
+
+```
+implementation("org.axonframework.extensions.kotlin:axon-kotlin:0.1.0")
+```
+
+
 
 ## Receiving help
 
