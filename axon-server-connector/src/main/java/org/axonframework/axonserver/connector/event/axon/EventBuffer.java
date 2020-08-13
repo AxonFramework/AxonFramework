@@ -62,7 +62,7 @@ public class EventBuffer implements TrackingEventStream {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int MIN_AWAIT_AVAILABLE_DATA = 500;
+    private static final int MAX_AWAIT_AVAILABLE_DATA = 500;
 
     private final EventStream delegate;
     private final Iterator<TrackedEventMessage<?>> eventStream;
@@ -104,7 +104,6 @@ public class EventBuffer implements TrackingEventStream {
                 lock.unlock();
             }
         });
-        logger.debug("Now, with adjusted poll operation!");
     }
 
     private TrackedEventData<byte[]> poll() {
@@ -139,10 +138,7 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public Optional<TrackedEventMessage<?>> peek() {
-        if (peekEvent == null && eventStream.hasNext()) {
-            peekEvent = eventStream.next();
-        }
-        return Optional.ofNullable(peekEvent);
+        return Optional.ofNullable(peekNullable());
     }
 
     @Override
@@ -150,12 +146,29 @@ public class EventBuffer implements TrackingEventStream {
         checkExceptionState();
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
-            do {
+            while (peekNullable() == null && System.currentTimeMillis() < deadline) {
                 long waitTime = deadline - System.currentTimeMillis();
-                waitForData(waitTime);
-            } while (peekEvent == null && System.currentTimeMillis() < deadline);
+                // Check if an event has arrived or if the wait time is zero. In both cases, we don't have to wait.
+                if (peekNullable() != null || waitTime <= 0) {
+                    continue;
+                }
 
-            return peekEvent != null;
+                lock.lock();
+                try {
+                    // Check again for concurrency reasons of available data.
+                    if (peekNullable() == null) {
+                        boolean await =
+                                dataAvailable.await(Math.min(waitTime, MAX_AWAIT_AVAILABLE_DATA),
+                                                    TimeUnit.MILLISECONDS);
+                        logger.trace(await ? "Signaled new events are available"
+                                             : "No signal received for new events, exiting await");
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            return peekNullable() != null;
         } catch (InterruptedException e) {
             logger.warn("Event consumer thread was interrupted. Returning thread to event processor.", e);
             Thread.currentThread().interrupt();
@@ -163,35 +176,17 @@ public class EventBuffer implements TrackingEventStream {
         }
     }
 
+    private TrackedEventMessage<?> peekNullable() {
+        if (peekEvent == null && eventStream.hasNext()) {
+            peekEvent = eventStream.next();
+        }
+        return peekEvent;
+    }
+
     private void checkExceptionState() {
         if (delegate.isClosed()) {
             throw new AxonServerException(ErrorCode.OTHER.errorCode(),
                                           "The Event Stream has been closed, so no further events can be retrieved");
-        }
-    }
-
-    private void waitForData(long waitTime) throws InterruptedException {
-        // Quick check before acquiring the lock.
-        if (peek().isPresent()) {
-            return;
-        }
-        // No use spending lock/await work for zero wait time.
-        if (waitTime <= 0) {
-            return;
-        }
-
-        lock.lock();
-        try {
-            // Check again for concurrency reasons of available data.
-            if (!peek().isPresent()) {
-                boolean await =
-                        dataAvailable.await(Math.min(waitTime, MIN_AWAIT_AVAILABLE_DATA), TimeUnit.MILLISECONDS);
-                logger.trace(
-                        await ? "Signaled new events are available" : "No signal received for new events, exiting await"
-                );
-            }
-        } finally {
-            lock.unlock();
         }
     }
 
