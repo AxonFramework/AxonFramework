@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package org.axonframework.eventhandling.async;
 
 /**
- * SequencingPolicy that requires serialized handling of all events delivered to an event handler. This is the default
- * policy for event handlers.
+ * SequencingPolicy that requires serialized handling of all events delivered to an event handler.
  *
  * @author Allard Buijze
  * @since 0.3
