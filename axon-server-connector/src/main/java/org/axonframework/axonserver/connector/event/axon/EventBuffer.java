@@ -88,12 +88,12 @@ public class EventBuffer implements TrackingEventStream {
                        Serializer serializer,
                        boolean disableEventBlacklisting) {
         this.delegate = delegate;
+        this.serializer = serializer;
         this.eventStream = EventUtils.upcastAndDeserializeTrackedEvents(
                 StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
                 new GrpcMetaDataAwareSerializer(serializer),
                 getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE)
         ).iterator();
-        this.serializer = serializer;
         this.disableEventBlacklisting = disableEventBlacklisting;
 
         delegate.onAvailable(() -> {
@@ -147,16 +147,11 @@ public class EventBuffer implements TrackingEventStream {
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
             while (peekNullable() == null && System.currentTimeMillis() < deadline) {
-                long waitTime = deadline - System.currentTimeMillis();
-                // Check if an event has arrived or if the wait time is zero. In both cases, we don't have to wait.
-                if (peekNullable() != null || waitTime <= 0) {
-                    continue;
-                }
-
                 lock.lock();
                 try {
-                    // Check again for concurrency reasons of available data.
-                    if (peekNullable() == null) {
+                    long waitTime = deadline - System.currentTimeMillis();
+                    // Check if an event has arrived or if the wait time is zero. In both cases, we don't have to wait.
+                    if (peekNullable() == null || waitTime <= 0) {
                         boolean await =
                                 dataAvailable.await(Math.min(waitTime, MAX_AWAIT_AVAILABLE_DATA),
                                                     TimeUnit.MILLISECONDS);
