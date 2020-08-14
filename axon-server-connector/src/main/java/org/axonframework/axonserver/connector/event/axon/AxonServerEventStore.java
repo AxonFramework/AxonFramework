@@ -493,12 +493,14 @@ public class AxonServerEventStore extends AbstractEventStore {
                     ? -1
                     : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
 
-            EventStream stream =
-                    connectionManager.getConnection(context)
-                                     .eventChannel()
-                                     .openStream(nextToken,
-                                                 configuration.getEventFlowControl().getInitialNrOfPermits(),
-                                                 configuration.getEventFlowControl().getNrOfNewPermits());
+            EventStream stream = connectionManager.getConnection(context)
+                                                  .eventChannel()
+                                                  .openStream(
+                                                          nextToken,
+                                                          configuration.getEventFlowControl().getInitialNrOfPermits(),
+                                                          configuration.getEventFlowControl().getNrOfNewPermits(),
+                                                          configuration.isForceReadFromLeader()
+                                                  );
 
             return new EventBuffer(stream, upcasterChain, eventSerializer, configuration.isDisableEventBlacklisting());
         }
@@ -566,7 +568,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                                               .eventChannel()
                                               .getFirstToken()
                                               .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
-                return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token-1);
+                return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new EventStoreException(e.getMessage(), e);
