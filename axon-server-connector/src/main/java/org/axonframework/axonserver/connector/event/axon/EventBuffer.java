@@ -150,8 +150,9 @@ public class EventBuffer implements TrackingEventStream {
                 lock.lock();
                 try {
                     long waitTime = deadline - System.currentTimeMillis();
-                    // Check if an event has arrived or if the wait time is zero. In both cases, we don't have to wait.
-                    if (peekNullable() == null || waitTime <= 0) {
+                    // Check if an event has arrived in the meantime and if wait time greater than zero.
+                    // Only then is it worth waiting.
+                    if (peekNullable() == null && waitTime > 0) {
                         boolean await =
                                 dataAvailable.await(Math.min(waitTime, MAX_AWAIT_AVAILABLE_DATA),
                                                     TimeUnit.MILLISECONDS);
