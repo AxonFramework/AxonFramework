@@ -22,29 +22,24 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.grpc.stub.ClientCallStreamObserver;
+import org.axonframework.axonserver.connector.AxonServerException;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.stubbing.Answer;
+import org.junit.jupiter.api.*;
+import org.mockito.stubbing.*;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class to verify the implementation of the {@link EventBuffer} class.
@@ -54,13 +49,32 @@ import static org.mockito.Mockito.when;
  */
 class EventBufferTest {
 
+    private final static XStreamSerializer SERIALIZER = TestSerializer.secureXStreamSerializer();
+
+    private static final org.axonframework.serialization.SerializedObject<byte[]> SERIALIZED_OBJECT =
+            SERIALIZER.serialize("some object", byte[].class);
+    private static final EventWithToken TEST_EVENT_WITH_TOKEN =
+            EventWithToken.newBuilder()
+                          .setToken(1L)
+                          .setEvent(Event.newBuilder()
+                                         .setPayload(SerializedObject.newBuilder()
+                                                                     .setData(ByteString.copyFrom(
+                                                                             SERIALIZED_OBJECT.getData()
+                                                                     ))
+                                                                     .setType(SERIALIZED_OBJECT.getType().getName())
+                                                                     .build())
+                                         .setMessageIdentifier(UUID.randomUUID().toString())
+                                         .setAggregateType("Test")
+                                         .setAggregateSequenceNumber(1L)
+                                         .setTimestamp(System.currentTimeMillis())
+                                         .setAggregateIdentifier("1235")
+                                         .build())
+                          .build();
+
     private EventUpcaster stubUpcaster;
-    private XStreamSerializer serializer;
+    private BufferedEventStream eventStream;
 
     private EventBuffer testSubject;
-
-    private org.axonframework.serialization.SerializedObject<byte[]> serializedObject;
-    private BufferedEventStream stream;
 
     @BeforeEach
     void setUp() {
@@ -71,18 +85,17 @@ class EventBufferTest {
                         (Stream<IntermediateEventRepresentation>) invocationOnMock.getArguments()[0]
                 );
 
-        serializer = XStreamSerializer.defaultSerializer();
-        serializedObject = serializer.serialize("some object", byte[].class);
-
-        stream = new BufferedEventStream(0, 100, 1, false);
-        stream.beforeStart(mock(ClientCallStreamObserver.class));
-        testSubject = new EventBuffer(stream, stubUpcaster, serializer, false);
+        eventStream = new BufferedEventStream(0, 100, 1, false);
+        //noinspection unchecked
+        eventStream.beforeStart(mock(ClientCallStreamObserver.class));
+        testSubject = new EventBuffer(eventStream, stubUpcaster, SERIALIZER, false);
     }
 
     @Test
-    void testDataUpcastAndDeserialized() throws InterruptedException {
+    @Timeout(value = 450, unit = TimeUnit.MILLISECONDS)
+    void testDataUpcastAndDeserialized() {
         assertFalse(testSubject.hasNextAvailable());
-        stream.onNext(createEventData(1L));
+        eventStream.onNext(TEST_EVENT_WITH_TOKEN);
         assertTrue(testSubject.hasNextAvailable());
 
         TrackedEventMessage<?> peeked =
@@ -101,36 +114,17 @@ class EventBufferTest {
     }
 
     @Test
-    void testHasNextAvailableThrowsExceptionWhenStreamFailed() throws InterruptedException {
-        RuntimeException expected = new RuntimeException("Some Exception");
-        stream.onError(expected);
+    void testHasNextAvailableThrowsAxonServerExceptionWhenStreamFailed() {
+        eventStream.onError(new TestException());
 
-        assertThrows(RuntimeException.class, () ->
-                testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
+        assertThrows(AxonServerException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
 
         // a second attempt should still throw the exception
-        assertThrows(RuntimeException.class, () ->
-                testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
+        assertThrows(AxonServerException.class, () -> testSubject.hasNextAvailable(0, TimeUnit.SECONDS));
     }
 
-    private EventWithToken createEventData(long sequence) {
-        SerializedObject payload = SerializedObject.newBuilder()
-                                                   .setData(ByteString.copyFrom(serializedObject.getData()))
-                                                   .setType(serializedObject.getType().getName())
-                                                   .build();
+    private static class TestException extends Exception {
 
-        Event event = Event.newBuilder()
-                           .setPayload(payload)
-                           .setMessageIdentifier(UUID.randomUUID().toString())
-                           .setAggregateType("Test")
-                           .setAggregateSequenceNumber(sequence)
-                           .setTimestamp(System.currentTimeMillis())
-                           .setAggregateIdentifier("1235")
-                           .build();
-
-        return EventWithToken.newBuilder()
-                             .setToken(sequence)
-                             .setEvent(event)
-                             .build();
+        private static final long serialVersionUID = 5181730247751626376L;
     }
 }
