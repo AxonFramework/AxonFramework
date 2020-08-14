@@ -22,7 +22,7 @@ import io.axoniq.axonserver.connector.impl.ContextConnection;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
-import io.netty.handler.ssl.SslContextBuilder;
+import io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Phase;
@@ -224,9 +224,9 @@ public class AxonServerConnectionManager {
                 if (axonServerConfiguration.getCertFile() != null) {
                     try {
                         File certificateFile = new File(axonServerConfiguration.getCertFile());
-                        builder.useTransportSecurity(SslContextBuilder.forClient()
-                                                                      .trustManager(certificateFile)
-                                                                      .build());
+                        builder.useTransportSecurity(GrpcSslContexts.forClient()
+                                                                    .trustManager(certificateFile)
+                                                                    .build());
                     } catch (SSLException e) {
                         throw new AxonConfigurationException("Exception configuring Transport Security", e);
                     }
