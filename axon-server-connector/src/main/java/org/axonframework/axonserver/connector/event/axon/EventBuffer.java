@@ -143,7 +143,6 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) {
-        checkExceptionState();
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
             while (peekNullable() == null && System.currentTimeMillis() < deadline) {
@@ -176,14 +175,12 @@ public class EventBuffer implements TrackingEventStream {
         if (peekEvent == null && eventStream.hasNext()) {
             peekEvent = eventStream.next();
         }
-        return peekEvent;
-    }
-
-    private void checkExceptionState() {
-        if (delegate.isClosed()) {
+        // If the peeked event still is null, the EventStream might've been closed.
+        if (peekEvent == null && delegate.isClosed()) {
             throw new AxonServerException(ErrorCode.OTHER.errorCode(),
                                           "The Event Stream has been closed, so no further events can be retrieved");
         }
+        return peekEvent;
     }
 
     @Override
