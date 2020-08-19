@@ -40,6 +40,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -222,6 +223,41 @@ class TrackingEventProcessorTest {
     void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
+    }
+
+    @Test
+    void testSequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
+        InMemoryEventStorageEngine historic = new InMemoryEventStorageEngine();
+        InMemoryEventStorageEngine active = new InMemoryEventStorageEngine();
+        SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
+
+        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder().storageEngine(sequenceEventStorageEngine).build();
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                         .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
+                      b -> {
+                          b.messageSource(sequenceEventBus);
+                          return b;
+                      });
+
+
+        historic.appendEvents(createEvent(1L), createEvent(2L));
+        active.appendEvents(createEvent(3L), createEvent(4L));
+
+        CountDownLatch countDownLatch = new CountDownLatch(4);
+        AtomicInteger counter = new AtomicInteger(0);
+        doAnswer(invocation -> {
+            countDownLatch.countDown();
+            int cnt = counter.incrementAndGet();
+            if (cnt > 4) {
+                throw new Error("Should only be called four times");
+            }
+            return null;
+        }).when(mockHandler).handle(any());
+
+        testSubject.start();
+        Thread.sleep(200);
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 4 published events");
+        assertEquals(4, counter.get(), "Handler should only receive each event once");
     }
 
     @Test
