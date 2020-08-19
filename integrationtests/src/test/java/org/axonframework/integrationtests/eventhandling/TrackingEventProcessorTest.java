@@ -40,14 +40,18 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
@@ -79,11 +83,34 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
+import static org.axonframework.integrationtests.utils.EventTestUtils.AGGREGATE;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
 import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
@@ -222,6 +249,44 @@ class TrackingEventProcessorTest {
     void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
+    }
+
+    @Test
+    void testSequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
+        InMemoryEventStorageEngine historic = new InMemoryEventStorageEngine();
+        InMemoryEventStorageEngine active = new InMemoryEventStorageEngine();
+        SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
+
+        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder().storageEngine(sequenceEventStorageEngine).build();
+
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                         .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
+                      b -> {
+                          b.messageSource(sequenceEventBus);
+                          return b;
+                      });
+
+        historic.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
+        // to make sure tracking tokens match, we need to append the same number of events in the active store
+        active.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
+        active.appendEvents(createEvent(AGGREGATE, 3L, "message3"), createEvent(AGGREGATE, 4L, "message4"),
+                            createEvent(AGGREGATE, 5L, "message5"));
+
+        int expectedEventCount = 5;
+
+        CountDownLatch countDownLatch = new CountDownLatch(expectedEventCount);
+        AtomicInteger counter = new AtomicInteger(0);
+        doAnswer(invocation -> {
+            int cnt = counter.incrementAndGet();
+            countDownLatch.countDown();
+            assertTrue(cnt <= expectedEventCount);
+            return null;
+        }).when(mockHandler).handle(any());
+
+        testSubject.start();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 4 published events");
+        assertEquals(expectedEventCount, counter.get(), "Handler should only receive each event once");
     }
 
     @Test

@@ -24,8 +24,11 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -35,8 +38,24 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SequenceEventStorageEngineTest {
     private EventStorageEngine activeStorage;
@@ -248,5 +267,37 @@ class SequenceEventStorageEngineTest {
         TrackingToken tokenAt = testSubject.createTokenAt(now);
 
         assertEquals(mockTrackingToken, tokenAt);
+    }
+
+    @Test
+    void testStreamFromPositionInActiveStorage() {
+        activeStorage = new InMemoryEventStorageEngine();
+        historicStorage = new InMemoryEventStorageEngine();
+
+        testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
+
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
+        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
+        DomainEventMessage<String> event3 = new GenericDomainEventMessage<>("type", "aggregate", 2, "test3");
+        historicStorage.appendEvents(event1);
+        activeStorage.appendEvents(event1, event2, event3);
+
+        Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
+        TrackedEventMessage<?> firstEvent = stream.findFirst().orElseThrow(IllegalStateException::new);
+        assertEquals("test1", firstEvent.getPayload());
+
+        Stream<? extends TrackedEventMessage<?>> stream2 = testSubject.readEvents(firstEvent.trackingToken(), true);
+        List<TrackedEventMessage<?>> secondBatch = stream2.collect(toList());
+        assertEquals(2, secondBatch.size());
+        assertEquals("test2", secondBatch.get(0).getPayload());
+        assertEquals("test3", secondBatch.get(1).getPayload());
+
+        Stream<? extends TrackedEventMessage<?>> stream3 = testSubject.readEvents(secondBatch.get(0).trackingToken(), true);
+        List<TrackedEventMessage<?>> thirdBatch = stream3.collect(toList());
+        assertEquals(1, thirdBatch.size());
+        assertEquals("test3", thirdBatch.get(0).getPayload());
+
+        Stream<? extends TrackedEventMessage<?>> stream4 = testSubject.readEvents(secondBatch.get(1).trackingToken(), true);
+        assertFalse(stream4.findFirst().isPresent());
     }
 }

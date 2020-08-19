@@ -82,6 +82,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         Spliterator<? extends TrackedEventMessage<?>> historicSpliterator =
                 historicStorage.readEvents(trackingToken, mayBlock).spliterator();
         Spliterator<? extends TrackedEventMessage<?>> merged = new ConcatenatingSpliterator(
+                trackingToken,
                 historicSpliterator,
                 mayBlock,
                 token -> activeStorage.readEvents(token, mayBlock).spliterator()
@@ -140,10 +141,12 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         private TrackingToken lastToken;
         private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
 
-        public ConcatenatingSpliterator(Spliterator<? extends TrackedEventMessage<?>> historicSpliterator,
+        public ConcatenatingSpliterator(TrackingToken initialToken,
+                                        Spliterator<? extends TrackedEventMessage<?>> historicSpliterator,
                                         boolean mayBlock,
                                         Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider) {
             super(Long.MAX_VALUE, Spliterator.ORDERED);
+            this.lastToken = initialToken;
             this.historicSpliterator = historicSpliterator;
             this.mayBlock = mayBlock;
             this.nextProvider = nextProvider;
@@ -159,7 +162,10 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
             } else if (active == null) {
                 active = nextProvider.apply(lastToken);
             }
-            return active.tryAdvance(action);
+            return active.tryAdvance(message -> {
+                lastToken = message.trackingToken();
+                action.accept(message);
+            });
         }
     }
 
