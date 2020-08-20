@@ -254,7 +254,7 @@ class TrackingEventProcessorTest {
     @Test
     void testSequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
         InMemoryEventStorageEngine historic = new InMemoryEventStorageEngine();
-        InMemoryEventStorageEngine active = new InMemoryEventStorageEngine();
+        InMemoryEventStorageEngine active = new InMemoryEventStorageEngine(2);
         SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
 
         EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder().storageEngine(sequenceEventStorageEngine).build();
@@ -267,8 +267,7 @@ class TrackingEventProcessorTest {
                       });
 
         historic.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
-        // to make sure tracking tokens match, we need to append the same number of events in the active store
-        active.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
+        // to make sure tracking tokens match, we need to offset the InMemoryEventStorageEngine
         active.appendEvents(createEvent(AGGREGATE, 3L, "message3"), createEvent(AGGREGATE, 4L, "message4"),
                             createEvent(AGGREGATE, 5L, "message5"));
 

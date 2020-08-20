@@ -271,8 +271,8 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void testStreamFromPositionInActiveStorage() {
-        activeStorage = new InMemoryEventStorageEngine();
         historicStorage = new InMemoryEventStorageEngine();
+        activeStorage = new InMemoryEventStorageEngine(1);
 
         testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
 
@@ -280,7 +280,8 @@ class SequenceEventStorageEngineTest {
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
         DomainEventMessage<String> event3 = new GenericDomainEventMessage<>("type", "aggregate", 2, "test3");
         historicStorage.appendEvents(event1);
-        activeStorage.appendEvents(event1, event2, event3);
+
+        activeStorage.appendEvents(event2, event3);
 
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
         TrackedEventMessage<?> firstEvent = stream.findFirst().orElseThrow(IllegalStateException::new);
