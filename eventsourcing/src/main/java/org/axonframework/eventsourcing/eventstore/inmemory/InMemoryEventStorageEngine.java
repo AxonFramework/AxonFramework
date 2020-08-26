@@ -56,6 +56,23 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private final NavigableMap<TrackingToken, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();
     private final Map<String, List<DomainEventMessage<?>>> snapshots = new ConcurrentHashMap<>();
+    private final long offset;
+
+    /**
+     * Initializes an InMemoryEventStorageEngine. The engine will be empty, and there is no offset for the first token.
+     */
+    public InMemoryEventStorageEngine() {
+        this(0L);
+    }
+
+    /**
+     * Initializes an InMemoryEventStorageEngine using given {@code offset} to initialize the tokens with.
+     *
+     * @param offset The value to use for the token of the first event appended
+     */
+    public InMemoryEventStorageEngine(long offset) {
+        this.offset = offset;
+    }
 
     @Override
     public void appendEvents(List<? extends EventMessage<?>> events) {
@@ -145,8 +162,8 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
      * @return the tracking token for the next event
      */
     protected GlobalSequenceTrackingToken nextTrackingToken() {
-        return events.isEmpty() ? new GlobalSequenceTrackingToken(0) :
-                ((GlobalSequenceTrackingToken) events.lastKey()).next();
+        return events.isEmpty() ? new GlobalSequenceTrackingToken(offset) :
+               ((GlobalSequenceTrackingToken) events.lastKey()).next();
     }
 
     private static class MapEntrySpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
