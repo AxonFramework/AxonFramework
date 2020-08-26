@@ -113,6 +113,17 @@ public class JdbcTokenStoreTest {
         transactionManager.executeInTransaction(() -> assertEquals(token, tokenStore.fetchToken("test", 0)));
     }
 
+    @Transactional
+    @Test
+    void testUpdateAndLoadNullToken() {
+        tokenStore.initializeTokenSegments("test", 1);
+        tokenStore.fetchToken("test", 0);
+
+        tokenStore.storeToken(null, "test", 0);
+
+        TrackingToken token = tokenStore.fetchToken("test", 0);
+        assertNull(token);
+    }
 
     @Transactional
     @Test
