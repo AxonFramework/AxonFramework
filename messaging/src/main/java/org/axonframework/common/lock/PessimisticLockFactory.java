@@ -19,6 +19,8 @@ package org.axonframework.common.lock;
 import org.axonframework.common.Assert;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -27,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.Collections.newSetFromMap;
-import static java.util.Collections.synchronizedMap;
+import static java.util.Collections.synchronizedSet;
 
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
@@ -47,7 +49,7 @@ import static java.util.Collections.synchronizedMap;
  */
 public class PessimisticLockFactory implements LockFactory {
 
-    private static final Set<PessimisticLockFactory> INSTANCES = newSetFromMap(synchronizedMap(new WeakHashMap<>()));
+    private static final Set<PessimisticLockFactory> INSTANCES = synchronizedSet(newSetFromMap(new WeakHashMap<>()));
 
     private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
     private final int acquireAttempts;
@@ -59,15 +61,19 @@ public class PessimisticLockFactory implements LockFactory {
     }
 
     private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockFactory> locksInUse) {
-        Set<Thread> waitingThreads = new HashSet<>();
-        for (PessimisticLockFactory lock : locksInUse) {
-            lock.locks.values().stream()
+        try {
+            Set<Thread> waitingThreads = new HashSet<>();
+            locksInUse.stream()
+                      .flatMap(lock -> lock.locks.values().stream())
                       .filter(disposableLock -> disposableLock.isHeldBy(owner))
                       .forEach(disposableLock -> disposableLock.queuedThreads().stream()
                                                                .filter(waitingThreads::add)
                                                                .forEach(thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
+            return waitingThreads;
+        } catch (ConcurrentModificationException e) {
+            // the GC may be cleaning up entries form the WeakHashMap. Nothing we can do about it. Let's assume there are no threads waiting. A new attempt will reveil issues.
+            return Collections.emptySet();
         }
-        return waitingThreads;
     }
 
     /**
@@ -128,12 +134,7 @@ public class PessimisticLockFactory implements LockFactory {
     }
 
     private DisposableLock lockFor(String identifier) {
-        DisposableLock lock = locks.get(identifier);
-        while (lock == null) {
-            locks.putIfAbsent(identifier, new DisposableLock(identifier));
-            lock = locks.get(identifier);
-        }
-        return lock;
+        return locks.computeIfAbsent(identifier, DisposableLock::new);
     }
 
     private static final class PubliclyOwnedReentrantLock extends ReentrantLock {
@@ -154,9 +155,9 @@ public class PessimisticLockFactory implements LockFactory {
      * Builder class for the {@link PessimisticLockFactory}.
      */
     public static class Builder {
-        private int acquireAttempts = 100;
+        private int acquireAttempts = 6000;
         private int maximumQueued = Integer.MAX_VALUE;
-        private int lockAttemptTimeout = 600;
+        private int lockAttemptTimeout = 10;
 
         /**
          * Default constructor
@@ -168,9 +169,10 @@ public class PessimisticLockFactory implements LockFactory {
          * Indicates howmany attempts should be done to acquire a lock. In combination with the
          * {@link #lockAttemptTimeout(int)}, this defines the total timeout of a lock acquisition.
          * <p>
-         * Defaults to 100.
+         * Defaults to 6000.
          *
          * @param acquireAttempts The number of attempts to acquire the lock
+         *
          * @return this Builder, for further configuration
          */
         public Builder acquireAttempts(int acquireAttempts) {
@@ -205,9 +207,10 @@ public class PessimisticLockFactory implements LockFactory {
          * The duration of a single attempt to acquire the internal lock. In combination with the
          * {@link #acquireAttempts(int)}, this defines the total timeout of an acquisition attempt.
          * <p>
-         * Defaults to 600ms.
+         * Defaults to 10ms.
          *
          * @param lockAttemptTimeout The duration of a single aqcuisition attempt of the internal lock, in milliseconds
+         *
          * @return this Builder, for further configuration
          */
         public Builder lockAttemptTimeout(int lockAttemptTimeout) {
