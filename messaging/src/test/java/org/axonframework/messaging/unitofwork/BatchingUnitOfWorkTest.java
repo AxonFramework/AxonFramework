@@ -16,12 +16,13 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.utils.MockException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
-import org.junit.jupiter.api.*;
+import org.axonframework.utils.MockException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,11 +32,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.AFTER_COMMIT;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.CLEANUP;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.COMMIT;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.PREPARE_COMMIT;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.ROLLBACK;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Rene de Waele
@@ -88,9 +96,17 @@ class BatchingUnitOfWorkTest {
     @Test
     void testSuppressedExceptionOnRollback() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
+        AtomicInteger cleanupCounter = new AtomicInteger();
         subject = new BatchingUnitOfWork<>(messages);
         MockException taskException = new MockException("task exception");
         MockException commitException = new MockException("commit exception");
+        MockException cleanupException = new MockException("cleanup exception");
+        subject.onCleanup(u -> cleanupCounter.incrementAndGet());
+        subject.onCleanup(u -> {
+            throw cleanupException;
+        });
+        subject.onCleanup(u -> cleanupCounter.incrementAndGet());
+
         try {
             subject.executeWithResult(() -> {
                 registerListeners(subject);
@@ -111,6 +127,7 @@ class BatchingUnitOfWorkTest {
         expectedResult.put(messages.get(2), new ExecutionResult(asResultMessage(taskException)));
         assertExecutionResults(expectedResult, subject.getExecutionResults());
         assertSame(commitException, taskException.getSuppressed()[0]);
+        assertEquals(2, cleanupCounter.get());
     }
 
     private void registerListeners(UnitOfWork<?> unitOfWork) {
