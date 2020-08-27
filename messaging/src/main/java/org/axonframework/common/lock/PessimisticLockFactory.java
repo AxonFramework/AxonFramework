@@ -259,7 +259,7 @@ public class PessimisticLockFactory implements LockFactory {
 
         public boolean lock() {
             if (lock.getQueueLength() >= maximumQueued) {
-                throw new LockAcquisitionFailedException("Failed to acquire lock for aggregate identifier " + identifier + ": too many queued threads.");
+                throw new LockAcquisitionFailedException("Failed to acquire lock for identifier " + identifier + ": too many queued threads.");
             }
             try {
                 if (!lock.tryLock(0, TimeUnit.NANOSECONDS)) {
@@ -269,12 +269,13 @@ public class PessimisticLockFactory implements LockFactory {
                         checkForDeadlock();
                         if (attempts < 1) {
                             throw new LockAcquisitionFailedException(
-                                    "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + acquireAttempts + ")"
+                                    "Failed to acquire lock for identifier(" + identifier + "), maximum attempts exceeded (" + acquireAttempts + ")"
                             );
                         }
                     } while (!lock.tryLock(lockAttemptTimeout, TimeUnit.MILLISECONDS));
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new LockAcquisitionFailedException("Thread was interrupted", e);
             }
             if (isClosed) {
