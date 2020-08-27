@@ -94,15 +94,11 @@ public class EventProcessingModule
     private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
 
-    // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
-    // if no annotation is present, the package name is used
-    private Function<Class<?>, String> typeFallback = c -> c.getSimpleName() + "Processor";
-    private final TypeProcessingGroupSelector defaultTypeSelector = TypeProcessingGroupSelector
-            .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElseGet(() -> typeFallback.apply(type)));
-
-    private Function<Object, String> instanceFallback = EventProcessingModule::packageOfObject;
-    private final InstanceProcessingGroupSelector defaultInstanceSelector = InstanceProcessingGroupSelector
-            .defaultSelector(o -> annotatedProcessingGroupOfType(o.getClass()).orElseGet(() -> instanceFallback.apply(o)));
+    // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
+    private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
+            .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
+    private TypeProcessingGroupSelector typeFallback = TypeProcessingGroupSelector.defaultSelector(c -> c.getSimpleName() + "Processor");
+    private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
 
     private Configuration configuration;
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -140,13 +136,13 @@ public class EventProcessingModule
             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
     );
     @SuppressWarnings("unchecked")
-    private Component<StreamableMessageSource<TrackedEventMessage<?>>> defaultStreamableSource =
+    private final Component<StreamableMessageSource<TrackedEventMessage<?>>> defaultStreamableSource =
             new Component<>(
                     () -> configuration,
                     "defaultStreamableMessageSource",
                     c -> (StreamableMessageSource<TrackedEventMessage<?>>) c.eventBus()
             );
-    private Component<SubscribableMessageSource<? extends EventMessage<?>>> defaultSubscribableSource =
+    private final Component<SubscribableMessageSource<? extends EventMessage<?>>> defaultSubscribableSource =
             new Component<>(
                     () -> configuration,
                     "defaultSubscribableMessageSource",
@@ -200,30 +196,39 @@ public class EventProcessingModule
     }
 
     private String selectProcessingGroupByType(Class<?> type) {
-        return typeSelectors.stream()
-                            .map(s -> s.select(type))
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .findFirst()
-                            .orElseGet(() -> defaultTypeSelector.select(type)
-                                                                .orElseThrow(IllegalStateException::new));
+        // when selecting on type,
+        List<TypeProcessingGroupSelector> selectors = new ArrayList<>(typeSelectors);
+        selectors.add(annotationGroupSelector);
+        selectors.add(typeFallback);
+
+        return selectors.stream()
+                        .map(s -> s.select(type))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .findFirst()
+                        .orElseThrow(IllegalStateException::new);
     }
 
     private void registerSimpleEventHandlerInvokers(
             Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
         Map<String, List<Object>> assignments = new HashMap<>();
+
+        // we combine the selectors in the order of precedence (instances, then types, then default instance, default types and fallbacks)
+        List<InstanceProcessingGroupSelector> selectors = new ArrayList<>(instanceSelectors);
+        typeSelectors.stream().map(InstanceToTypeProcessingGroupSelectorAdapter::new).forEach(selectors::add);
+        selectors.add(new InstanceToTypeProcessingGroupSelectorAdapter(annotationGroupSelector));
+        selectors.add(instanceFallbackSelector);
+
         eventHandlerBuilders.stream()
                             .map(Component::get)
                             .forEach(handler -> {
                                 String processingGroup =
-                                        instanceSelectors.stream()
-                                                         .map(s -> s.select(handler))
-                                                         .filter(Optional::isPresent)
-                                                         .map(Optional::get)
-                                                         .findFirst()
-                                                         .orElse(defaultInstanceSelector.select(handler)
-                                                                                        .orElse(selectProcessingGroupByType(
-                                                                                                handler.getClass())));
+                                        selectors.stream()
+                                                 .map(s -> s.select(handler))
+                                                 .filter(Optional::isPresent)
+                                                 .map(Optional::get)
+                                                 .findFirst()
+                                                 .orElseThrow(IllegalStateException::new);
                                 assignments.computeIfAbsent(processingGroup, k -> new ArrayList<>())
                                            .add(handler);
                             });
@@ -552,13 +557,13 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction) {
-        this.instanceFallback = assignmentFunction;
+        this.instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(assignmentFunction);
         return this;
     }
 
     @Override
     public EventProcessingConfigurer byDefaultAssignHandlerTypesTo(Function<Class<?>, String> assignmentFunction) {
-        this.typeFallback = assignmentFunction;
+        this.typeFallback = TypeProcessingGroupSelector.defaultSelector(assignmentFunction);
         return this;
     }
 
@@ -728,7 +733,7 @@ public class EventProcessingModule
     private static class InstanceProcessingGroupSelector extends ProcessingGroupSelector<Object> {
 
         private static InstanceProcessingGroupSelector defaultSelector(Function<Object, String> selectorFunction) {
-            return new InstanceProcessingGroupSelector(Integer.MIN_VALUE, selectorFunction.andThen(Optional::of));
+            return new InstanceProcessingGroupSelector(Integer.MIN_VALUE, selectorFunction.andThen(Optional::ofNullable));
         }
 
         private InstanceProcessingGroupSelector(int priority, Function<Object, Optional<String>> selectorFunction) {
@@ -743,7 +748,7 @@ public class EventProcessingModule
     private static class TypeProcessingGroupSelector extends ProcessingGroupSelector<Class<?>> {
 
         private static TypeProcessingGroupSelector defaultSelector(Function<Class<?>, String> selectorFunction) {
-            return new TypeProcessingGroupSelector(Integer.MIN_VALUE, selectorFunction.andThen(Optional::of));
+            return new TypeProcessingGroupSelector(Integer.MIN_VALUE, selectorFunction.andThen(Optional::ofNullable));
         }
 
         private TypeProcessingGroupSelector(int priority, Function<Class<?>, Optional<String>> selectorFunction) {
@@ -755,10 +760,18 @@ public class EventProcessingModule
         }
     }
 
+    private static class InstanceToTypeProcessingGroupSelectorAdapter extends InstanceProcessingGroupSelector {
+
+        private InstanceToTypeProcessingGroupSelectorAdapter(TypeProcessingGroupSelector delegate) {
+            super(delegate.getPriority(), i -> delegate.select(i.getClass()));
+        }
+    }
+
     private static class ProcessingGroupSelector<T> {
 
         private final int priority;
         private final Function<T, Optional<String>> function;
+
 
         private ProcessingGroupSelector(int priority, Function<T, Optional<String>> selectorFunction) {
             this.priority = priority;
