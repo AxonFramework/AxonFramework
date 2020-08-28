@@ -30,6 +30,8 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
@@ -38,8 +40,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -120,7 +120,7 @@ public class JpaTokenStore implements TokenStore {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
         byte[] tokenDataToStore =
-                getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, new byte[0]);
+                getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, null);
         String tokenTypeToStore = getOrDefault(tokenToStore.getTokenType(), SerializedType::getName, null);
 
         int updatedTokens = entityManager.createQuery("UPDATE TokenEntry te SET "
