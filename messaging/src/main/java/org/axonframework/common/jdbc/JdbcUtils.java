@@ -46,8 +46,8 @@ public class JdbcUtils {
      * @param sqlFunction        the function that returns a {@link PreparedStatement} to execute the query against
      * @param sqlResultConverter converts the result set to a value of type R
      * @param errorHandler       handles errors as result of executing the query or converting the result set
-     * @param <R>                the result of the query after conversion
-     * @return the query result
+     * @param <R>                the type result of the query
+     * @return the query result  the result of the query
      */
     public static <R> R executeQuery(Connection connection, SqlFunction sqlFunction,
                                      SqlResultConverter<R> sqlResultConverter,
@@ -64,9 +64,9 @@ public class JdbcUtils {
      * @param sqlFunction        the function that returns a {@link PreparedStatement} to execute the query against
      * @param sqlResultConverter converts the result set to a value of type R
      * @param errorHandler       handles errors as result of executing the query or converting the result set
-     * @param <R>                the result of the query after conversion
      * @param closeConnection    whether provided {@code connection} should be closed or not
-     * @return the query result
+     * @param <R>                the type result of the query
+     * @return the query result  the result of the query
      */
     public static <R> R executeQuery(Connection connection, SqlFunction sqlFunction,
                                      SqlResultConverter<R> sqlResultConverter,
