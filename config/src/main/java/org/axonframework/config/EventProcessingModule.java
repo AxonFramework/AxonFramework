@@ -206,7 +206,9 @@ public class EventProcessingModule
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .findFirst()
-                        .orElseThrow(IllegalStateException::new);
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Could not select a processing group for type [" + type.getSimpleName() + "]"
+                        ));
     }
 
     private void registerSimpleEventHandlerInvokers(
@@ -228,7 +230,10 @@ public class EventProcessingModule
                                                  .filter(Optional::isPresent)
                                                  .map(Optional::get)
                                                  .findFirst()
-                                                 .orElseThrow(IllegalStateException::new);
+                                                 .orElseThrow(() -> new IllegalStateException(
+                                                         "Could not select a processing group for handler ["
+                                                                 + handler.getClass().getSimpleName() + "]"
+                                                 ));
                                 assignments.computeIfAbsent(processingGroup, k -> new ArrayList<>())
                                            .add(handler);
                             });
