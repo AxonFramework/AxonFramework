@@ -310,7 +310,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @return the last sequence of any event published, or {@code null} if no events have been published yet
      */
     public Long lastSequence() {
-        return lastKnownSequence == -1 ? null : lastKnownSequence;
+        return lastKnownSequence == null || lastKnownSequence == -1 ? null : lastKnownSequence;
     }
 
     @Override
