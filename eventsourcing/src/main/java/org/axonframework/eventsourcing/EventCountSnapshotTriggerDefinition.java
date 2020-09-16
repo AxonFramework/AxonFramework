@@ -76,7 +76,7 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
 
         @Override
         public void eventHandled(EventMessage<?> msg) {
-            if (++counter >= threshold && msg instanceof DomainEventMessage) {
+            if (msg instanceof DomainEventMessage && ++counter >= threshold) {
                 if (CurrentUnitOfWork.isStarted()) {
                     CurrentUnitOfWork.get().onPrepareCommit(
                             u -> scheduleSnapshot((DomainEventMessage) msg));
