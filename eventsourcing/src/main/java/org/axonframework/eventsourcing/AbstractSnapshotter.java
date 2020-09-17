@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,14 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -40,6 +44,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.6
  */
 public abstract class AbstractSnapshotter implements Snapshotter {
+    
+    private static final String SCHEDULED_SNAPSHOT_SET = "SCHEDULED_SNAPSHOT_SET";
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSnapshotter.class);
 
@@ -64,7 +70,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     @Override
     public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
-        if (CurrentUnitOfWork.isStarted()) {
+        if (CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get().phase().isBefore(UnitOfWork.Phase.COMMIT)) {
             CurrentUnitOfWork.get().afterCommit(u -> doScheduleSnapshot(aggregateType, aggregateIdentifier));
         } else {
             doScheduleSnapshot(aggregateType, aggregateIdentifier);
@@ -72,6 +78,15 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     private void doScheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
+        if (CurrentUnitOfWork.isStarted()) {
+            Set<AggregateTypeId> scheduledSnapshotMap =
+                    CurrentUnitOfWork.get()
+                                     .root()
+                                     .getOrComputeResource(SCHEDULED_SNAPSHOT_SET, key -> new HashSet<>());
+            if (!scheduledSnapshotMap.add(new AggregateTypeId(aggregateType, aggregateIdentifier))) {
+                return;
+            }
+        }
         executor.execute(new SilentTask(() -> transactionManager
                 .executeInTransaction(createSnapshotterTask(aggregateType, aggregateIdentifier))));
     }
@@ -115,6 +130,34 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      */
     protected Executor getExecutor() {
         return executor;
+    }
+
+    private static class AggregateTypeId {
+        private final Class<?> aggregateType;
+        private final String aggregateIdentifier;
+
+        private AggregateTypeId(Class<?> aggregateType, String aggregateIdentifier) {
+            this.aggregateType = aggregateType;
+            this.aggregateIdentifier = aggregateIdentifier;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            AggregateTypeId that = (AggregateTypeId) o;
+            return Objects.equals(aggregateType, that.aggregateType) &&
+                    Objects.equals(aggregateIdentifier, that.aggregateIdentifier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(aggregateType, aggregateIdentifier);
+        }
     }
 
     /**

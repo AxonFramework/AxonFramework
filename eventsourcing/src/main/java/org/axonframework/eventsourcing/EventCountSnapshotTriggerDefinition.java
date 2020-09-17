@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,11 +62,13 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
 
     private static class EventCountSnapshotTrigger implements SnapshotTrigger, Serializable {
 
+        private static final long serialVersionUID = 4129616856823136473L;
         private final Class<?> aggregateType;
         private final int threshold;
 
         private transient Snapshotter snapshotter;
         private int counter = 0;
+        private boolean initialized = false;
 
         public EventCountSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, int threshold) {
             this.snapshotter = snapshotter;
@@ -78,22 +80,28 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
         public void eventHandled(EventMessage<?> msg) {
             if (msg instanceof DomainEventMessage && ++counter >= threshold) {
                 if (CurrentUnitOfWork.isStarted()) {
-                    CurrentUnitOfWork.get().onPrepareCommit(
-                            u -> scheduleSnapshot((DomainEventMessage) msg));
+                    if (initialized) {
+                        CurrentUnitOfWork.get().onPrepareCommit(
+                                u -> scheduleSnapshot((DomainEventMessage<?>) msg));
+                    } else {
+                        CurrentUnitOfWork.get().onCleanup(
+                                u -> scheduleSnapshot((DomainEventMessage<?>) msg));
+                    }
                 } else {
-                    scheduleSnapshot((DomainEventMessage) msg);
+                    scheduleSnapshot((DomainEventMessage<?>) msg);
                 }
                 counter = 0;
             }
         }
 
-        protected void scheduleSnapshot(DomainEventMessage msg) {
+        protected void scheduleSnapshot(DomainEventMessage<?> msg) {
             snapshotter.scheduleSnapshot(aggregateType, msg.getAggregateIdentifier());
             counter = 0;
         }
 
         @Override
         public void initializationFinished() {
+            initialized = true;
         }
 
         public void setSnapshotter(Snapshotter snapshotter) {

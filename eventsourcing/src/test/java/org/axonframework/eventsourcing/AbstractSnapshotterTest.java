@@ -93,6 +93,24 @@ class AbstractSnapshotterTest {
     }
 
     @Test
+    void testScheduleSnapshotOnlyOnce() {
+        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        String aggregateIdentifier = "aggregateIdentifier";
+        when(mockEventStore.readEvents(aggregateIdentifier))
+                .thenReturn(DomainEventStream.of(createEvents(2)));
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        verify(mockEventStore, never()).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+
+        uow.commit();
+
+        verify(mockEventStore, times(1)).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+    }
+
+    @Test
     void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
