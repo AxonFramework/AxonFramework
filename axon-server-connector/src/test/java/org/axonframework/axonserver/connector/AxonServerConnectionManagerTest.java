@@ -135,7 +135,7 @@ class AxonServerConnectionManagerTest {
         assertNotNull(connectionManager.getConnection(config.getContext()));
 
         assertWithin(
-                25, TimeUnit.MILLISECONDS,
+                250, TimeUnit.MILLISECONDS,
                 // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
                 () -> assertFalse(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
         );
