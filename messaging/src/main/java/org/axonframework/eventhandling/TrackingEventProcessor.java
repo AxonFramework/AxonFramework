@@ -399,7 +399,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
-            checkSegmentCaughtUp(segment, eventStream);
             TrackingToken lastToken;
             Collection<Segment> processingSegments;
             if (eventStream.hasNextAvailable(eventAvailabilityTimeout, MILLISECONDS)) {
@@ -467,6 +466,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             updateActiveSegments(() -> activeSegments.computeIfPresent(
                     segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken)
             ));
+            checkSegmentCaughtUp(segment, eventStream);
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();

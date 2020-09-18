@@ -47,10 +47,7 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.*;
 import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -1745,6 +1742,26 @@ class TrackingEventProcessorTest {
         assertTrue(addedStatusLatch.await(5, TimeUnit.SECONDS));
         assertTrue(updatedStatusLatch.await(5, TimeUnit.SECONDS));
         assertTrue(removedStatusLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void testCaughtUpSetToTrueAfterWaitingForEventAvailabilityTimeout() throws InterruptedException {
+        TrackingEventProcessorConfiguration tepConfiguration =
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                   .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
+        initProcessor(tepConfiguration);
+        testSubject.start();
+
+        Thread.sleep(75);
+        // This triggers the TrackingEventProcessor#processBatch to move past the if/else block,
+        //  and reach the TrackingEventProcessor#checkSegmentCaughtUp at the end to update the status'
+        publishEvents(1);
+
+        EventTrackerStatus trackerOneStatus = testSubject.processingStatus().get(0);
+        assertNotNull(trackerOneStatus);
+        assertFalse(trackerOneStatus.isCaughtUp());
+
+        assertWithin(25, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
     }
 
     private void waitForStatus(String description,
