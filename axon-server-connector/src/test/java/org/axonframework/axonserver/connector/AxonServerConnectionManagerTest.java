@@ -23,9 +23,7 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.config.TagsConfiguration;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,9 +32,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link AxonServerConnectionManager}.
@@ -122,5 +118,26 @@ class AxonServerConnectionManagerTest {
         } catch (AxonServerException e) {
             assertTrue(e.getMessage().contains("connection"));
         }
+    }
+
+    @Test
+    void testEnablingHeartbeatsEnsuresHeartbeatMessagesAreSent() {
+        AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .servers("localhost:" + stubServer.getPort())
+                                                                .build();
+        config.getHeartbeat().setEnabled(true);
+        AxonServerConnectionManager connectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
+        connectionManager.start();
+
+        assertNotNull(connectionManager.getConnection(config.getContext()));
+
+        assertWithin(
+                25, TimeUnit.MILLISECONDS,
+                // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
+                () -> assertFalse(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
+        );
     }
 }
