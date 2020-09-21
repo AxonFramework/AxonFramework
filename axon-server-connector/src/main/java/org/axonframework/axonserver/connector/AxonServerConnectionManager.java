@@ -22,6 +22,7 @@ import io.axoniq.axonserver.connector.impl.ContextConnection;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -155,6 +157,7 @@ public class AxonServerConnectionManager {
 
         private AxonServerConfiguration axonServerConfiguration;
         private TagsConfiguration tagsConfiguration = new TagsConfiguration();
+        private UnaryOperator<ManagedChannelBuilder<?>> channelCustomization;
 
         /**
          * Sets the {@link AxonServerConfiguration} used to correctly configure connections between Axon clients and
@@ -183,6 +186,21 @@ public class AxonServerConnectionManager {
         public Builder tagsConfiguration(TagsConfiguration tagsConfiguration) {
             assertNonNull(tagsConfiguration, "TagsConfiguration may not be null");
             this.tagsConfiguration = tagsConfiguration;
+            return this;
+        }
+
+        /**
+         * Registers the given {@code channelCustomization}, which configures the underling {@link ManagedChannelBuilder} used
+         * to set up connections to AxonServer.
+         * <p>
+         * This method may be used in case none of the operations on this Builder provide support for the required
+         * feature.
+         *
+         * @param channelCustomization A function defining the customization to make on the ManagedChannelBuilder
+         * @return this builder for further configuration
+         */
+        public Builder channelCustomizer(UnaryOperator<ManagedChannelBuilder<?>> channelCustomization) {
+            this.channelCustomization = channelCustomization;
             return this;
         }
 
@@ -253,6 +271,10 @@ public class AxonServerConnectionManager {
             if (axonServerConfiguration.getProcessorsNotificationRate() > 0) {
                 builder.processorInfoUpdateFrequency(axonServerConfiguration.getProcessorsNotificationRate(),
                                                      TimeUnit.MILLISECONDS);
+            }
+            
+            if (channelCustomization != null) {
+                builder.customize(channelCustomization);
             }
 
             AxonServerConnectionFactory connectionFactory = builder.build();
