@@ -40,6 +40,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
@@ -48,9 +49,10 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.*;
-import org.mockito.InOrder;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -79,35 +81,12 @@ import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
+import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
-import static org.axonframework.integrationtests.utils.EventTestUtils.AGGREGATE;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
+import static org.axonframework.integrationtests.utils.EventTestUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
@@ -1745,23 +1724,59 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testCaughtUpSetToTrueAfterWaitingForEventAvailabilityTimeout() throws InterruptedException {
+    void testCaughtUpSetToTrueAfterWaitingForEventAvailabilityTimeout() {
+        AtomicBoolean hasNextInvoked = new AtomicBoolean(false);
+        AtomicBoolean hasNextAvailableTimedOut = new AtomicBoolean(true);
         TrackingEventProcessorConfiguration tepConfiguration =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                    .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
-        initProcessor(tepConfiguration);
+        EventStore enhancedEventStore = new EmbeddedEventStore(
+                EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
+        ) {
+            @Override
+            public TrackingEventStream openStream(TrackingToken trackingToken) {
+                TrackingEventStream trackingEventStream = super.openStream(trackingToken);
+                return new TrackingEventStream() {
+                    @Override
+                    public Optional<TrackedEventMessage<?>> peek() {
+                        return trackingEventStream.peek();
+                    }
+
+                    @Override
+                    public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+                        hasNextInvoked.set(true);
+                        boolean result = trackingEventStream.hasNextAvailable(timeout, unit);
+                        hasNextAvailableTimedOut.set(false);
+                        // Add sleep to ensure switching hasNextAvailableTimedOut and it's assertion has precedence
+                        // over regular execution of the TrackingEventProcessor.
+                        Thread.sleep(5);
+                        return result;
+                    }
+
+                    @Override
+                    public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+                        return trackingEventStream.nextAvailable();
+                    }
+
+                    @Override
+                    public void close() {
+                        trackingEventStream.close();
+                    }
+                };
+            }
+        };
+        initProcessor(tepConfiguration, builder -> builder.messageSource(enhancedEventStore));
         testSubject.start();
 
-        Thread.sleep(75);
-        // This triggers the TrackingEventProcessor#processBatch to move past the if/else block,
-        //  and reach the TrackingEventProcessor#checkSegmentCaughtUp at the end to update the status'
-        publishEvents(1);
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(hasNextInvoked.get()));
 
-        EventTrackerStatus trackerOneStatus = testSubject.processingStatus().get(0);
-        assertNotNull(trackerOneStatus);
-        assertFalse(trackerOneStatus.isCaughtUp());
+        assertUntil(hasNextAvailableTimedOut::get, Duration.ofMillis(10), () -> {
+            EventTrackerStatus trackerOneStatus = testSubject.processingStatus().get(0);
+            assertNotNull(trackerOneStatus);
+            assertFalse(trackerOneStatus.isCaughtUp());
+        });
 
-        assertWithin(25, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
+        assertWithin(20, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
     }
 
     private void waitForStatus(String description,
