@@ -23,9 +23,7 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.config.TagsConfiguration;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,9 +32,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link AxonServerConnectionManager}.
@@ -67,7 +63,8 @@ class AxonServerConnectionManagerTest {
     @Test
     void checkWhetherConnectionPreferenceIsSent() {
         TagsConfiguration tags = new TagsConfiguration(Collections.singletonMap("key", "value"));
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers(
+                "localhost:" + stubServer.getPort()).build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(configuration)
@@ -99,7 +96,7 @@ class AxonServerConnectionManagerTest {
     void testConnectionTimeout() throws IOException, InterruptedException {
         String version = "4.2.1";
         stubServer.shutdown();
-        stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()){
+        stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()) {
             @Override
             public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
                 // ignore calls
@@ -107,13 +104,14 @@ class AxonServerConnectionManagerTest {
         });
         stubServer.start();
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
-                .servers("localhost:" + stubServer.getPort()).connectTimeout(50)
-                .build();
+                                                                       .servers("localhost:" + stubServer.getPort())
+                                                                       .connectTimeout(50)
+                                                                       .build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
-                        .axonServerConfiguration(configuration)
-                        .axonFrameworkVersionResolver(() -> version)
-                        .build();
+                                           .axonServerConfiguration(configuration)
+                                           .axonFrameworkVersionResolver(() -> version)
+                                           .build();
         try {
             AxonServerConnection connection = axonServerConnectionManager.getConnection();
             connection.commandChannel();
@@ -122,5 +120,47 @@ class AxonServerConnectionManagerTest {
         } catch (AxonServerException e) {
             assertTrue(e.getMessage().contains("connection"));
         }
+    }
+
+    @Test
+    void testEnablingHeartbeatsEnsuresHeartbeatMessagesAreSent() {
+        AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .servers("localhost:" + stubServer.getPort())
+                                                                .build();
+        config.getHeartbeat().setEnabled(true);
+        AxonServerConnectionManager connectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
+        connectionManager.start();
+
+        assertNotNull(connectionManager.getConnection(config.getContext()));
+
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
+                () -> assertFalse(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
+        );
+    }
+
+    @Test
+    void testDisablingHeartbeatsEnsuresNoHeartbeatMessagesAreSent() {
+        AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .servers("localhost:" + stubServer.getPort())
+                                                                .build();
+        config.getHeartbeat().setEnabled(false);
+        AxonServerConnectionManager connectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
+        connectionManager.start();
+
+        assertNotNull(connectionManager.getConnection(config.getContext()));
+
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
+                () -> assertTrue(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
+        );
     }
 }
