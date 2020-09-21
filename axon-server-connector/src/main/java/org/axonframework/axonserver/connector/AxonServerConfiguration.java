@@ -225,6 +225,12 @@ public class AxonServerConfiguration {
     private boolean forceReadFromLeader = false;
 
     /**
+     * Configuration specifics on sending heartbeat messages to ensure a fully operational end-to-end connection with
+     * Axon Server.
+     */
+    private HeartbeatConfiguration heartbeat = new HeartbeatConfiguration();
+
+    /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
      *
      * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
@@ -523,6 +529,14 @@ public class AxonServerConfiguration {
         return new FlowControlConfiguration(initialNrOfPermits, nrOfNewPermits, newPermitsThreshold);
     }
 
+    public HeartbeatConfiguration getHeartbeat() {
+        return heartbeat;
+    }
+
+    public void setHeartbeat(HeartbeatConfiguration heartbeat) {
+        this.heartbeat = heartbeat;
+    }
+
     /**
      * Configuration class for Flow Control of specific message types.
      *
@@ -598,6 +612,54 @@ public class AxonServerConfiguration {
 
         public void setNewPermitsThreshold(Integer newPermitsThreshold) {
             this.newPermitsThreshold = newPermitsThreshold;
+        }
+    }
+
+    public static class HeartbeatConfiguration {
+
+        private static final long DEFAULT_INTERVAL = 10_000;
+        private static final long DEFAULT_TIMEOUT = 7_500;
+
+        /**
+         * Enables heartbeat messages between a client and Axon Server. When enabled, the connection will be abandoned
+         * if a heartbeat message response <b>is not</b> returned in a timely manor. Defaults to {@code false}.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Interval between consecutive heartbeat message sent in milliseconds. Defaults to {@code 10_000}
+         * milliseconds.
+         */
+        private long interval = DEFAULT_INTERVAL;
+
+        /**
+         * The time window within which a response is expected in milliseconds. The connection times out if no response
+         * is returned within this window. Defaults to {@code 7_500} milliseconds.
+         */
+        private long timeout = DEFAULT_TIMEOUT;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public long getInterval() {
+            return interval;
+        }
+
+        public void setInterval(long interval) {
+            this.interval = interval;
+        }
+
+        public long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(long timeout) {
+            this.timeout = timeout;
         }
     }
 
