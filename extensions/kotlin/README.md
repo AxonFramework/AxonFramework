@@ -63,7 +63,7 @@ Prior to filing an issue, please verify that it's not already reported by someon
 
 When filing bugs:
 * A description of your setup and what's happening helps us figuring out what the issue might be
-* Do not forget to provide version you're using
+* Do not forget to provide the version you're using
 * If possible, share a stack trace, using the Markdown semantic ```
 
 When filing features:
@@ -72,6 +72,17 @@ When filing features:
 * If you have any thoughts on where to plug this into the framework, that would be very helpful too
 * Lastly, we value contributions to the framework highly. So please provide a Pull Request as well!
  
-## Credits
+## Building the extension
 
+If you want to build the extension locally, you need to check it out from GiHub and run the following command:
+
+    ./mvnw clean install
+    
+### Producing JavaDocs and Sources archive
+
+In order to build JavaDoc and Sources archives you will need JDK 8 installed on your machine. Please execute the following command line:
+
+    ./mvnw clean install -Pjavadoc-and-sources
+    
+ 
 ---
