@@ -46,12 +46,32 @@ public class JdbcUtils {
      * @param sqlFunction        the function that returns a {@link PreparedStatement} to execute the query against
      * @param sqlResultConverter converts the result set to a value of type R
      * @param errorHandler       handles errors as result of executing the query or converting the result set
-     * @param <R>                the result of the query after conversion
-     * @return the query result
+     * @param <R>                the type result of the query
+     * @return the query result  the result of the query
      */
     public static <R> R executeQuery(Connection connection, SqlFunction sqlFunction,
                                      SqlResultConverter<R> sqlResultConverter,
                                      Function<SQLException, RuntimeException> errorHandler) {
+        return executeQuery(connection, sqlFunction, sqlResultConverter, errorHandler, true);
+    }
+
+    /**
+     * Execute the query given by the {@code sqlFunction}. The {@link ResultSet} returned when the query is executed
+     * will be converted using the given {@code sqlResultConverter}. Any errors will be handled by the given {@code
+     * errorHandler}.
+     *
+     * @param connection         connection to the underlying database that should be used for the query
+     * @param sqlFunction        the function that returns a {@link PreparedStatement} to execute the query against
+     * @param sqlResultConverter converts the result set to a value of type R
+     * @param errorHandler       handles errors as result of executing the query or converting the result set
+     * @param closeConnection    whether provided {@code connection} should be closed or not
+     * @param <R>                the type result of the query
+     * @return the query result  the result of the query
+     */
+    public static <R> R executeQuery(Connection connection, SqlFunction sqlFunction,
+                                     SqlResultConverter<R> sqlResultConverter,
+                                     Function<SQLException, RuntimeException> errorHandler,
+                                     boolean closeConnection) {
         try {
             PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
             try {
@@ -72,7 +92,9 @@ public class JdbcUtils {
                 closeQuietly(preparedStatement);
             }
         } finally {
-            closeQuietly(connection);
+            if (closeConnection) {
+                closeQuietly(connection);
+            }
         }
     }
 
