@@ -9,6 +9,7 @@ import java.util.function.UnaryOperator;
  * @author Marc Gathier
  * @since 4.4.3
  */
+@FunctionalInterface
 public interface ManagedChannelCustomizer extends UnaryOperator<ManagedChannelBuilder<?>> {
 
     /**
