@@ -1,21 +1,22 @@
 root = true
 
 [*]
-# charset = utf-8
-# end_of_line = lf
-# indent_size = 2
-# indent_style = space
-# insert_final_newline = false
-# max_line_length = 180
-# tab_width = 2
-# ij_continuation_indent_size = 8
-# ij_formatter_off_tag = @formatter:off
-# ij_formatter_on_tag = @formatter:on
-# ij_formatter_tags_enabled = true
-# ij_smart_tabs = false
-# ij_wrap_on_typing = false
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = false
+max_line_length = 180
+tab_width = 4
+ij_continuation_indent_size = 8
+ij_formatter_off_tag = @formatter:off
+ij_formatter_on_tag = @formatter:on
+ij_formatter_tags_enabled = true
+ij_smart_tabs = false
+ij_wrap_on_typing = false
 
-[{*.ant,*.fxml,*.jhm,*.jnlp,*.jrxml,*.pom,*.rng,*.tld,*.wadl,*.wsdd,*.wsdl,*.xjb,*.xml,*.xsd,*.xsl,*.xslt,*.xul}]
+[{*.pom,*.xml}]
+indent_size = 2
 # ij_xml_align_attributes = true
 # ij_xml_align_text = false
 # ij_xml_attribute_wrap = normal
