@@ -63,7 +63,8 @@ class AxonServerConnectionManagerTest {
     @Test
     void checkWhetherConnectionPreferenceIsSent() {
         TagsConfiguration tags = new TagsConfiguration(Collections.singletonMap("key", "value"));
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers("localhost:" + stubServer.getPort()).build();
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder().servers(
+                "localhost:" + stubServer.getPort()).build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(configuration)
@@ -95,7 +96,7 @@ class AxonServerConnectionManagerTest {
     void testConnectionTimeout() throws IOException, InterruptedException {
         String version = "4.2.1";
         stubServer.shutdown();
-        stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()){
+        stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()) {
             @Override
             public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
                 // ignore calls
@@ -103,13 +104,14 @@ class AxonServerConnectionManagerTest {
         });
         stubServer.start();
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
-                .servers("localhost:" + stubServer.getPort()).connectTimeout(50)
-                .build();
+                                                                       .servers("localhost:" + stubServer.getPort())
+                                                                       .connectTimeout(50)
+                                                                       .build();
         AxonServerConnectionManager axonServerConnectionManager =
                 AxonServerConnectionManager.builder()
-                        .axonServerConfiguration(configuration)
-                        .axonFrameworkVersionResolver(() -> version)
-                        .build();
+                                           .axonServerConfiguration(configuration)
+                                           .axonFrameworkVersionResolver(() -> version)
+                                           .build();
         try {
             AxonServerConnection connection = axonServerConnectionManager.getConnection();
             connection.commandChannel();
@@ -138,6 +140,27 @@ class AxonServerConnectionManagerTest {
                 250, TimeUnit.MILLISECONDS,
                 // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
                 () -> assertFalse(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
+        );
+    }
+
+    @Test
+    void testDisablingHeartbeatsEnsuresNoHeartbeatMessagesAreSent() {
+        AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .servers("localhost:" + stubServer.getPort())
+                                                                .build();
+        config.getHeartbeat().setEnabled(false);
+        AxonServerConnectionManager connectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
+        connectionManager.start();
+
+        assertNotNull(connectionManager.getConnection(config.getContext()));
+
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
+                () -> assertTrue(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
         );
     }
 }
