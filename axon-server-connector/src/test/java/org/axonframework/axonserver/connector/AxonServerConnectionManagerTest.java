@@ -28,9 +28,7 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.config.TagsConfiguration;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -40,9 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link AxonServerConnectionManager}.
@@ -122,8 +118,6 @@ class AxonServerConnectionManagerTest {
                                            .axonServerConfiguration(configuration)
                                            .axonFrameworkVersionResolver(() -> version)
                                            .build();
-        List<ClientIdentification> clientIdentificationRequests = stubServer.getPlatformService()
-                                                                            .getClientIdentificationRequests();
         try {
             AxonServerConnection connection = axonServerConnectionManager.getConnection();
             connection.commandChannel();
@@ -135,7 +129,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testChannelCustomization()  {
+    void testChannelCustomization() {
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
                                                                        .servers("localhost:" + stubServer.getPort())
                                                                        .build();
@@ -159,5 +153,47 @@ class AxonServerConnectionManagerTest {
 
         assertNotNull(axonServerConnectionManager.getConnection());
         assertTrue(interceptorCalled.get());
+    }
+
+    @Test
+    void testEnablingHeartbeatsEnsuresHeartbeatMessagesAreSent() {
+        AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .servers("localhost:" + stubServer.getPort())
+                                                                .build();
+        config.getHeartbeat().setEnabled(true);
+        AxonServerConnectionManager connectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
+        connectionManager.start();
+
+        assertNotNull(connectionManager.getConnection(config.getContext()));
+
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
+                () -> assertFalse(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
+        );
+    }
+
+    @Test
+    void testDisablingHeartbeatsEnsuresNoHeartbeatMessagesAreSent() {
+        AxonServerConfiguration config = AxonServerConfiguration.builder()
+                                                                .servers("localhost:" + stubServer.getPort())
+                                                                .build();
+        config.getHeartbeat().setEnabled(false);
+        AxonServerConnectionManager connectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(config)
+                                           .build();
+        connectionManager.start();
+
+        assertNotNull(connectionManager.getConnection(config.getContext()));
+
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
+                () -> assertTrue(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
+        );
     }
 }
