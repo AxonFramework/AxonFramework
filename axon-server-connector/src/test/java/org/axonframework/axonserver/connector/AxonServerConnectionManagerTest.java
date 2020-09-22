@@ -129,33 +129,6 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testChannelCustomization() {
-        AxonServerConfiguration configuration = AxonServerConfiguration.builder()
-                                                                       .servers("localhost:" + stubServer.getPort())
-                                                                       .build();
-        AtomicBoolean interceptorCalled = new AtomicBoolean();
-        AxonServerConnectionManager axonServerConnectionManager =
-                AxonServerConnectionManager.builder()
-                                           .axonServerConfiguration(configuration)
-                                           .channelCustomizer(builder ->
-                                                                      builder.intercept(new ClientInterceptor() {
-                                                                          @Override
-                                                                          public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
-                                                                                  MethodDescriptor<ReqT, RespT> methodDescriptor,
-                                                                                  CallOptions callOptions,
-                                                                                  Channel channel) {
-                                                                              interceptorCalled.set(true);
-                                                                              return channel.newCall(methodDescriptor,
-                                                                                                     callOptions);
-                                                                          }
-                                                                      }))
-                                           .build();
-
-        assertNotNull(axonServerConnectionManager.getConnection());
-        assertTrue(interceptorCalled.get());
-    }
-
-    @Test
     void testEnablingHeartbeatsEnsuresHeartbeatMessagesAreSent() {
         AxonServerConfiguration config = AxonServerConfiguration.builder()
                                                                 .servers("localhost:" + stubServer.getPort())
@@ -195,5 +168,34 @@ class AxonServerConnectionManagerTest {
                 // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
                 () -> assertTrue(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
         );
+    }
+
+    @Test
+    void testChannelCustomization() {
+        AxonServerConfiguration configuration = AxonServerConfiguration.builder()
+                                                                       .servers("localhost:" + stubServer.getPort())
+                                                                       .build();
+        AtomicBoolean interceptorCalled = new AtomicBoolean();
+        AxonServerConnectionManager axonServerConnectionManager =
+                AxonServerConnectionManager.builder()
+                                           .axonServerConfiguration(configuration)
+                                           .channelCustomizer(
+                                                   builder -> builder.intercept(new ClientInterceptor() {
+                                                       @Override
+                                                       public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
+                                                               MethodDescriptor<ReqT, RespT> methodDescriptor,
+                                                               CallOptions callOptions,
+                                                               Channel channel
+                                                       ) {
+                                                           interceptorCalled.set(true);
+                                                           return channel.newCall(methodDescriptor,
+                                                                                  callOptions);
+                                                       }
+                                                   })
+                                           )
+                                           .build();
+
+        assertNotNull(axonServerConnectionManager.getConnection());
+        assertTrue(interceptorCalled.get());
     }
 }

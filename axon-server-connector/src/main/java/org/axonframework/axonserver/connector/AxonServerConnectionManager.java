@@ -223,8 +223,8 @@ public class AxonServerConnectionManager {
         }
 
         /**
-         * Registers the given {@code channelCustomization}, which configures the underling {@link ManagedChannelBuilder} used
-         * to set up connections to AxonServer.
+         * Registers the given {@code channelCustomization}, which configures the underling {@link
+         * ManagedChannelBuilder} used to set up connections to AxonServer.
          * <p>
          * This method may be used in case none of the operations on this Builder provide support for the required
          * feature.
@@ -305,7 +305,7 @@ public class AxonServerConnectionManager {
                 builder.processorInfoUpdateFrequency(axonServerConfiguration.getProcessorsNotificationRate(),
                                                      TimeUnit.MILLISECONDS);
             }
-            
+
             if (channelCustomization != null) {
                 builder.customize(channelCustomization);
             }
