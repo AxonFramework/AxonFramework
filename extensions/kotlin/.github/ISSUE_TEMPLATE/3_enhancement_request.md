@@ -1,8 +1,8 @@
 ---
-name: 'Feature request'
-about: 'Suggest a feature for Axon Framework - Extension Kotlin'
+name: 'Enhancement request'
+about: 'Suggest an enhancement to an existing feature for Axon Framework - Extension Kotlin'
 title:
-labels: 'type: feature'
+labels: 'type: enhancement'
 
 ---
 
