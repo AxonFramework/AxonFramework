@@ -39,7 +39,7 @@
     <junit.jupiter.version>5.5.2</junit.jupiter.version>
     <slf4j.version>1.7.30</slf4j.version>
     <log4j.version>2.13.3</log4j.version>
-    <dokka.version>0.10.1</dokka.version>
+    <dokka.version>1.4.10</dokka.version>
   </properties>
 
   <dependencyManagement>
