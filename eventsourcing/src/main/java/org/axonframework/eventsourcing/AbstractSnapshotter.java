@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,15 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -41,11 +46,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public abstract class AbstractSnapshotter implements Snapshotter {
 
+    private static final String SCHEDULED_SNAPSHOT_SET = "SCHEDULED_SNAPSHOT_SET";
+
     private static final Logger logger = LoggerFactory.getLogger(AbstractSnapshotter.class);
 
     private final EventStore eventStore;
     private final Executor executor;
     private final TransactionManager transactionManager;
+    private final Set<AggregateTypeId> snapshotsInProgress = ConcurrentHashMap.newKeySet();
 
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
@@ -64,7 +72,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     @Override
     public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
-        if (CurrentUnitOfWork.isStarted()) {
+        if (CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get().phase().isBefore(UnitOfWork.Phase.COMMIT)) {
             CurrentUnitOfWork.get().afterCommit(u -> doScheduleSnapshot(aggregateType, aggregateIdentifier));
         } else {
             doScheduleSnapshot(aggregateType, aggregateIdentifier);
@@ -72,8 +80,30 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     private void doScheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
-        executor.execute(new SilentTask(() -> transactionManager
-                .executeInTransaction(createSnapshotterTask(aggregateType, aggregateIdentifier))));
+        AggregateTypeId typeAndId = new AggregateTypeId(aggregateType, aggregateIdentifier);
+        if (CurrentUnitOfWork.isStarted()) {
+            Set<AggregateTypeId> scheduledSnapshotMap =
+                    CurrentUnitOfWork.get()
+                                     .root()
+                                     .getOrComputeResource(SCHEDULED_SNAPSHOT_SET, key -> new HashSet<>());
+            if (!scheduledSnapshotMap.add(typeAndId)) {
+                return;
+            }
+        }
+        if (snapshotsInProgress.add(typeAndId)) {
+            try {
+                executor.execute(
+                        silently(() -> transactionManager.executeInTransaction(createSnapshotterTask(aggregateType, aggregateIdentifier)))
+                                .andFinally(() -> snapshotsInProgress.remove(typeAndId)));
+            } catch (Exception e) {
+                snapshotsInProgress.remove(typeAndId);
+                throw e;
+            }
+        }
+    }
+
+    private SilentTask silently(Runnable r) {
+        return new SilentTask(r);
     }
 
     /**
@@ -81,6 +111,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @param aggregateType       The type of the aggregate to create a snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
+     *
      * @return the task containing snapshot creation logic
      */
     protected Runnable createSnapshotterTask(Class<?> aggregateType, String aggregateIdentifier) {
@@ -115,6 +146,34 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      */
     protected Executor getExecutor() {
         return executor;
+    }
+
+    private static class AggregateTypeId {
+        private final Class<?> aggregateType;
+        private final String aggregateIdentifier;
+
+        private AggregateTypeId(Class<?> aggregateType, String aggregateIdentifier) {
+            this.aggregateType = aggregateType;
+            this.aggregateIdentifier = aggregateIdentifier;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            AggregateTypeId that = (AggregateTypeId) o;
+            return Objects.equals(aggregateType, that.aggregateType) &&
+                    Objects.equals(aggregateIdentifier, that.aggregateIdentifier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(aggregateType, aggregateIdentifier);
+        }
     }
 
     /**
@@ -205,6 +264,32 @@ public abstract class AbstractSnapshotter implements Snapshotter {
                 }
             }
         }
+
+        public Runnable andFinally(Runnable r) {
+            return new RunnableAndFinally(this, r);
+        }
+
+    }
+
+    private static class RunnableAndFinally implements Runnable {
+        private final Runnable first;
+
+        private final Runnable then;
+
+        public RunnableAndFinally(Runnable first, Runnable then) {
+            this.first = first;
+            this.then = then;
+        }
+
+        @Override
+        public void run() {
+            try {
+                first.run();
+            } finally {
+                then.run();
+            }
+        }
+
     }
 
     private final class CreateSnapshotTask implements Runnable {

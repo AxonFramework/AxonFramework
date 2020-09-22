@@ -198,6 +198,10 @@ public abstract class AbstractEventBus implements EventBus {
 
     private void addStagedMessages(UnitOfWork<?> unitOfWork, List<EventMessage<?>> messages) {
         unitOfWork.parent().ifPresent(parent -> addStagedMessages(parent, messages));
+        if (unitOfWork.isRolledBack()) {
+            // staged messages are irrelevant if the UoW has been rolled back
+            return;
+        }
         List<EventMessage<?>> stagedEvents = unitOfWork.getOrDefaultResource(eventsKey, Collections.emptyList());
         for (EventMessage<?> stagedEvent : stagedEvents) {
             if (!messages.contains(stagedEvent)) {

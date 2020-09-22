@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,18 @@ import java.io.Serializable;
 
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. A snapshot is
- * triggered when the number of events applied on an aggregate exceeds the given threshold.
+ * triggered when the number of events applied on an aggregate exceeds the given {@code threshold}.
+ * <p>
+ * This number can exceed in two distinct scenarios:
+ * <ol>
+ *     <li> When initializing / event sourcing the aggregate in question.</li>
+ *     <li> When new events are being applied by the aggregate.</li>
+ * </ol>
+ * <p>
+ * If the definable {@code threshold} is met in situation one, the snapshot will be triggered regardless of the outcome
+ * of command handling. Thus also if command handling returns exceptionally. If the {@code threshold} is only reached
+ * once the aggregate has been fully initialized, than the snapshot will only be triggered if handling resolves
+ * successfully.
  *
  * @author Allard Buijze
  * @since 3.0
@@ -35,8 +46,8 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
     private final int threshold;
 
     /**
-     * Initialized the SnapshotTriggerDefinition to threshold snapshots using the given {@code snapshotter}
-     * when {@code threshold} events have been applied to an Aggregate instance
+     * Initialized the SnapshotTriggerDefinition to threshold snapshots using the given {@code snapshotter} when {@code
+     * threshold} events have been applied to an Aggregate instance
      *
      * @param snapshotter the snapshotter to notify when a snapshot needs to be taken
      * @param threshold   the number of events that will threshold the creation of a snapshot event
@@ -62,11 +73,13 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
 
     private static class EventCountSnapshotTrigger implements SnapshotTrigger, Serializable {
 
+        private static final long serialVersionUID = 4129616856823136473L;
         private final Class<?> aggregateType;
         private final int threshold;
 
         private transient Snapshotter snapshotter;
         private int counter = 0;
+        private boolean initialized = false;
 
         public EventCountSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, int threshold) {
             this.snapshotter = snapshotter;
@@ -76,24 +89,30 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
 
         @Override
         public void eventHandled(EventMessage<?> msg) {
-            if (++counter >= threshold && msg instanceof DomainEventMessage) {
+            if (msg instanceof DomainEventMessage && ++counter >= threshold) {
                 if (CurrentUnitOfWork.isStarted()) {
-                    CurrentUnitOfWork.get().onPrepareCommit(
-                            u -> scheduleSnapshot((DomainEventMessage) msg));
+                    if (initialized) {
+                        CurrentUnitOfWork.get().onPrepareCommit(
+                                u -> scheduleSnapshot((DomainEventMessage<?>) msg));
+                    } else {
+                        CurrentUnitOfWork.get().onCleanup(
+                                u -> scheduleSnapshot((DomainEventMessage<?>) msg));
+                    }
                 } else {
-                    scheduleSnapshot((DomainEventMessage) msg);
+                    scheduleSnapshot((DomainEventMessage<?>) msg);
                 }
                 counter = 0;
             }
         }
 
-        protected void scheduleSnapshot(DomainEventMessage msg) {
+        protected void scheduleSnapshot(DomainEventMessage<?> msg) {
             snapshotter.scheduleSnapshot(aggregateType, msg.getAggregateIdentifier());
             counter = 0;
         }
 
         @Override
         public void initializationFinished() {
+            initialized = true;
         }
 
         public void setSnapshotter(Snapshotter snapshotter) {
