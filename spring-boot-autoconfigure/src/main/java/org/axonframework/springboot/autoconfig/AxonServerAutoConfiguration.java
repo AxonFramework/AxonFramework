@@ -19,6 +19,7 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
@@ -91,11 +92,19 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public ManagedChannelCustomizer managedChannelCustomizer() {
+        return ManagedChannelCustomizer.identity();
+    }
+
+    @Bean
     public AxonServerConnectionManager platformConnectionManager(AxonServerConfiguration axonServerConfiguration,
-                                                                 TagsConfigurationProperties tagsConfigurationProperties) {
+                                                                 TagsConfigurationProperties tagsConfigurationProperties,
+                                                                 ManagedChannelCustomizer managedChannelCustomizer) {
         return AxonServerConnectionManager.builder()
                                           .axonServerConfiguration(axonServerConfiguration)
                                           .tagsConfiguration(tagsConfigurationProperties.toTagsConfiguration())
+                                          .channelCustomizer(managedChannelCustomizer)
                                           .build();
     }
 

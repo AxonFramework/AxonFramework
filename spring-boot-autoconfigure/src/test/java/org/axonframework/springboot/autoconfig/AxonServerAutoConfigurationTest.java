@@ -16,6 +16,8 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import io.grpc.ManagedChannelBuilder;
+import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
@@ -52,6 +54,8 @@ class AxonServerAutoConfigurationTest {
 
     private static final TargetContextResolver<Message<?>> CUSTOM_TARGET_CONTEXT_RESOLVER =
             m -> "some-custom-context-resolution";
+    private static final ManagedChannelCustomizer CUSTOM_MANAGED_CHANNEL_CUSTOMIZER =
+            ManagedChannelBuilder::directExecutor;
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
@@ -199,6 +203,19 @@ class AxonServerAutoConfigurationTest {
                           });
     }
 
+    @Test
+    void testCustomManagedChannelCustomizerIsConfigured() {
+        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
+                          .withUserConfiguration(ManagedChannelCustomizerConfiguration.class)
+                          .run(context -> {
+                              assertThat(context).getBeanNames(ManagedChannelCustomizer.class)
+                                                 .hasSize(1);
+                              assertThat(context).getBean(ManagedChannelCustomizer.class)
+                                                 .isEqualTo(CUSTOM_MANAGED_CHANNEL_CUSTOMIZER);
+                          });
+    }
+
+
     private static class ExplicitUserCommandBusConfiguration {
 
         @Bean
@@ -230,6 +247,14 @@ class AxonServerAutoConfigurationTest {
         @Bean
         public TargetContextResolver<Message<?>> customTargetContextResolver() {
             return CUSTOM_TARGET_CONTEXT_RESOLVER;
+        }
+    }
+
+    private static class ManagedChannelCustomizerConfiguration {
+
+        @Bean
+        public ManagedChannelCustomizer customManagedChannelCustomizer() {
+            return CUSTOM_MANAGED_CHANNEL_CUSTOMIZER;
         }
     }
 }
