@@ -380,7 +380,7 @@
       <plugin>
         <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>1.4.1</version>
+        <version>1.4.2.jenkins-1</version>
         <executions>
           <execution>
             <id>enforce-java</id>
