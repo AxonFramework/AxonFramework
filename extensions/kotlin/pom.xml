@@ -129,7 +129,7 @@
       <!-- Not pat of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
-      <version>2.3.0</version>
+      <version>2.3.1</version>
       <scope>test</scope>
     </dependency>
 
