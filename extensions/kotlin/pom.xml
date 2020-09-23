@@ -30,7 +30,7 @@
   </modules>
 
   <properties>
-    <axon.version>4.4.2</axon.version>
+    <axon.version>4.4.3</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>1.4.10</kotlin.version>
     <kotlin-logging.version>1.12.0</kotlin-logging.version>
