@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -79,7 +80,7 @@ class GrpcBackedResponseMessageTest {
     }
 
     @Test
-    void testGetPayloadReturnsNullIfTheQueryResponseMessageDidNotContainAnyPayload() {
+    void testGetPayloadThrowIllegalPayloadExceptionIfTheQueryResponseMessageDidNotContainAnyPayload() {
         QueryResponseMessage<TestQueryResponse> testQueryResponseMessage =
                 GenericQueryResponseMessage.asResponseMessage(
                         TestQueryResponse.class, new IllegalArgumentException("some-exception")
@@ -89,7 +90,7 @@ class GrpcBackedResponseMessageTest {
         GrpcBackedResponseMessage<TestQueryResponse> testSubject =
                 new GrpcBackedResponseMessage<>(testQueryResponse, serializer);
 
-        assertNull(testSubject.getPayload());
+        assertThrows(IllegalPayloadAccessException.class, testSubject::getPayload);
     }
 
     @Test

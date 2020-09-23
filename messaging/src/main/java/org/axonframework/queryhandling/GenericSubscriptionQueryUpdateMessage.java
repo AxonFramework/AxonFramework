@@ -64,6 +64,19 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends GenericResultMessa
     }
 
     /**
+     * Creates a {@link GenericSubscriptionQueryUpdateMessage} with the given {@code declaredType} and {@code exception}
+     * result.
+     *
+     * @param declaredType The declared type of the Subscription Query Update Message to be created
+     * @param exception    The exception describing the cause of an error
+     * @param <T>          type of the {@link GenericSubscriptionQueryUpdateMessage}
+     * @return a message containing exception result
+     */
+    public static <T> SubscriptionQueryUpdateMessage<T> asUpdateMessage(Class<T> declaredType, Throwable exception) {
+        return new GenericSubscriptionQueryUpdateMessage<>(declaredType, exception, MetaData.emptyInstance());
+    }
+
+    /**
      * Initializes {@link GenericSubscriptionQueryUpdateMessage} with incremental update.
      *
      * @param payload payload of the message which represent incremental update
