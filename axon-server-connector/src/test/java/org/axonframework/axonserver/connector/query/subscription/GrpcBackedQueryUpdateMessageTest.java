@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -27,9 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test all the functions provided on the {@link GrpcBackedQueryUpdateMessage}. The {@link QueryUpdate} to be passed to
@@ -94,6 +93,18 @@ class GrpcBackedQueryUpdateMessageTest {
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
         assertEquals(TestQueryUpdate.class, testSubject.getPayloadType());
+    }
+
+    @Test
+    void testGetPayloadThrowsIllegalPayloadExceptionWhenUpdateIsExceptional() {
+        SubscriptionQueryUpdateMessage<TestQueryUpdate> testSubscriptionQueryUpdateMessage =
+                GenericSubscriptionQueryUpdateMessage.asUpdateMessage(TestQueryUpdate.class, new RuntimeException());
+        QueryUpdate testQueryUpdate =
+                subscriptionMessageSerializer.serialize(testSubscriptionQueryUpdateMessage);
+        GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
+                new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
+
+        assertThrows(IllegalPayloadAccessException.class, testSubject::getPayload);
     }
 
     @Test

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2020. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,19 +23,17 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {
 
@@ -78,6 +76,16 @@ public class AnnotatedAggregateTest {
                 .equals(x.getPayloadType())));
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class
                 .equals(x.getPayloadType())));
+    }
+
+    // Test for issue #1506 - https://github.com/AxonFramework/AxonFramework/issues/1506
+    @Test
+    void testLastSequenceReturnsNullIfNoEventsHaveBeenPublishedYet() {
+        AnnotatedAggregate<AggregateRoot> testSubject = AnnotatedAggregate.initialize(
+                new AggregateRoot(), AnnotatedAggregateMetaModelFactory.inspectAggregate(AggregateRoot.class), eventBus
+        );
+
+        assertNull(testSubject.lastSequence());
     }
 
     private static class Command {

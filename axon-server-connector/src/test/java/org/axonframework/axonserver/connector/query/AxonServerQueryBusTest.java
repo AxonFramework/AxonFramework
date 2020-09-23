@@ -49,6 +49,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -144,6 +146,24 @@ class AxonServerQueryBusTest {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
 
         assertEquals("test", testSubject.query(testQuery).get().getPayload());
+
+        verify(targetContextResolver).resolveContext(testQuery);
+    }
+
+    @Test
+    void queryReportsDispatchException() throws Exception {
+        StubResultStream t = new StubResultStream(new RuntimeException("Faking problems"));
+        when(mockQueryChannel.query(any())).thenReturn(t);
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
+        try {
+            result.get();
+            fail("Expected exception");
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof AxonServerQueryDispatchException);
+            assertEquals("Faking problems", e.getCause().getMessage());
+        }
 
         verify(targetContextResolver).resolveContext(testQuery);
     }
@@ -309,12 +329,19 @@ class AxonServerQueryBusTest {
 
     private static class StubResultStream implements ResultStream<QueryResponse> {
 
-
         private final Iterator<QueryResponse> responses;
         private QueryResponse peeked;
         private boolean closed;
+        private final Throwable error;
+
+        public StubResultStream(Throwable error) {
+            this.error = error;
+            this.closed = true;
+            this.responses = Collections.emptyIterator();
+        }
 
         public StubResultStream(QueryResponse... responses) {
+            this.error = null;
             this.responses = Arrays.asList(responses).iterator();
         }
 
@@ -348,7 +375,7 @@ class AxonServerQueryBusTest {
 
         @Override
         public void onAvailable(Runnable r) {
-            if (peeked != null || responses.hasNext()) {
+            if (peeked != null || responses.hasNext() || isClosed()) {
                 r.run();
             }
         }
@@ -361,6 +388,11 @@ class AxonServerQueryBusTest {
         @Override
         public boolean isClosed() {
             return closed;
+        }
+
+        @Override
+        public Optional<Throwable> getError() {
+            return Optional.ofNullable(error);
         }
     }
 }

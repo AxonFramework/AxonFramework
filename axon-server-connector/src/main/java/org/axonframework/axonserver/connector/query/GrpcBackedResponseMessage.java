@@ -20,6 +20,7 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
+import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -88,6 +89,13 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public R getPayload() {
+        if (isExceptional()) {
+            throw new IllegalPayloadAccessException(
+                    "This result completed exceptionally, payload is not available. "
+                            + "Try calling 'exceptionResult' to see the cause of failure.",
+                    exception
+            );
+        }
         return serializedPayload == null ? null : serializedPayload.getObject();
     }
 

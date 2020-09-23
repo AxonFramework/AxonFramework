@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2020. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +17,7 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
+import io.axoniq.axonserver.grpc.control.Heartbeat;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import io.axoniq.axonserver.grpc.control.PlatformInfo;
@@ -28,16 +30,19 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Author: marc
+ * Stub platform service to tap into the {@link PlatformInboundInstruction} being sent.
+ *
+ * @author Marc Gathier
+ * @since 4.0
  */
 public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase {
 
     private final int port;
 
     private final List<ClientIdentification> clientIdentificationRequests = new CopyOnWriteArrayList<>();
+    private final List<Heartbeat> heartbeatMessages = new CopyOnWriteArrayList<>();
 
     public PlatformService(int port) {
-
         this.port = port;
     }
 
@@ -59,6 +64,10 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
         return Collections.unmodifiableList(clientIdentificationRequests);
     }
 
+    public List<Heartbeat> getHeartbeatMessages() {
+        return Collections.unmodifiableList(heartbeatMessages);
+    }
+
     @Override
     public StreamObserver<PlatformInboundInstruction> openStream(
             StreamObserver<PlatformOutboundInstruction> responseObserver) {
@@ -67,6 +76,8 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
             public void onNext(PlatformInboundInstruction platformInboundInstruction) {
                 if (platformInboundInstruction.hasRegister()) {
                     clientIdentificationRequests.add(platformInboundInstruction.getRegister());
+                } else if (platformInboundInstruction.hasHeartbeat()) {
+                    heartbeatMessages.add(platformInboundInstruction.getHeartbeat());
                 }
             }
 

@@ -58,6 +58,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     public void configureModule(Configurer configurer) {
         configurer.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration());
         configurer.registerComponent(AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
+        configurer.registerComponent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
         configurer.configureEventStore(this::buildEventStore);
         configurer.configureCommandBus(this::buildCommandBus);
         configurer.configureQueryBus(this::buildQueryBus);
@@ -76,6 +77,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                           .tagsConfiguration(
                                                   c.getComponent(TagsConfiguration.class, TagsConfiguration::new)
                                           )
+                                          .channelCustomizer(c.getComponent(ManagedChannelCustomizer.class))
                                           .build();
     }
 

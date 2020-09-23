@@ -718,10 +718,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 if (nextAvailable != null) {
                     queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
                 } else if (result.isClosed() && !queryTransaction.isDone()) {
-                    queryTransaction.completeExceptionally(new AxonServerQueryDispatchException(
-                            ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
-                            "Query did not yield the expected number of results."
-                    ));
+                    Exception exception = result.getError()
+                                                .map(ErrorCode.QUERY_DISPATCH_ERROR::convert)
+                                                .orElse(new AxonServerQueryDispatchException(
+                                                        ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
+                                                        "Query did not yield the expected number of results."
+                                                ));
+                    queryTransaction.completeExceptionally(exception);
                 }
             }
         }

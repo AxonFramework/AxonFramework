@@ -187,7 +187,8 @@ public class JdbcTokenStore implements TokenStore {
                                      } else {
                                          return null;
                                      }
-                                 }, e -> new UnableToRetrieveIdentifierException("Exception while attempting to retrieve the config token", e));
+                                 }, e -> new UnableToRetrieveIdentifierException("Exception while attempting to retrieve the config token", e),
+                                 false);
             try {
                 if (token == null) {
                     token = insertTokenEntry(connection, new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())), CONFIG_TOKEN_ID, CONFIG_SEGMENT);

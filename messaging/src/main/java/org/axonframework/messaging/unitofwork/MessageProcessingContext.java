@@ -68,7 +68,15 @@ public class MessageProcessingContext<T extends Message<?>> {
         }
         Deque<Consumer<UnitOfWork<T>>> l = handlers.getOrDefault(phase, EMPTY);
         while (!l.isEmpty()) {
-            l.remove().accept(unitOfWork);
+            try {
+                l.remove().accept(unitOfWork);
+            } catch (Exception e) {
+                if (phase.isSuppressHandlerErrors()) {
+                    LOGGER.info("An error occurred while executing a lifecycle phase handler for phase {}", phase, e);
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 

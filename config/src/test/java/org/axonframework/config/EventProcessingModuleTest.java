@@ -45,10 +45,11 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
-import org.mockito.junit.jupiter.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,7 +63,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class EventProcessingModuleTest {
@@ -100,6 +103,37 @@ class EventProcessingModuleTest {
         assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
+        assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
+        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
+        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
+    }
+
+    @Test
+    void testByTypeAssignmentRules() {
+        Map<String, StubEventProcessor> processors = new HashMap<>();
+        ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
+        AnnotatedBean annotatedBean = new AnnotatedBean();
+        AnnotatedBeanSubclass annotatedBeanSubclass = new AnnotatedBeanSubclass();
+
+        configurer.eventProcessing()
+                  .registerEventProcessorFactory((name, config, eventHandlerInvoker) -> {
+                      StubEventProcessor processor =
+                              new StubEventProcessor(name, eventHandlerInvoker);
+                      processors.put(name, processor);
+                      return processor;
+                  })
+                  .assignHandlerTypesMatching("special", ConcurrentHashMap.class::isAssignableFrom)
+                  .registerEventHandler(c -> new Object()) // --> java.lang
+                  .registerEventHandler(c -> "") // --> java.lang
+                  .registerEventHandler(c -> "concurrent") // --> java.lang
+                  .registerEventHandler(c -> map) // --> java.util.concurrent
+                  .registerEventHandler(c -> annotatedBean)
+                  .registerEventHandler(c -> annotatedBeanSubclass);
+        Configuration configuration = configurer.start();
+
+        assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
+        assertTrue(processors.get("java.lang").getEventHandlers().contains("concurrent"));
+        assertTrue(processors.get("special").getEventHandlers().contains(map));
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
@@ -187,6 +221,29 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    void testTypeAssignmentWithCustomDefault() {
+        configurer.eventProcessing()
+                  .assignHandlerTypesMatching("myGroup", String.class::equals)
+                  .byDefaultAssignHandlerTypesTo(t -> Object.class.equals(t) ? "obj" : t.getSimpleName() + "CustomProcessor")
+                  .registerSaga(Object.class)
+                  .registerSaga(ConcurrentMap.class)
+                  .registerSaga(String.class)
+                  .registerEventHandler(c -> new HashMap<>());
+        EventProcessingConfiguration configuration = configurer.start()
+                                                               .eventProcessingConfiguration();
+
+        assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
+        assertEquals("obj", configuration.sagaProcessingGroup(Object.class));
+        assertEquals("ConcurrentMapCustomProcessor", configuration.sagaProcessingGroup(ConcurrentMap.class));
+
+        assertEquals(4, configuration.eventProcessors().size());
+        assertTrue(configuration.eventProcessor("myGroup").isPresent());
+        assertTrue(configuration.eventProcessor("obj").isPresent());
+        assertTrue(configuration.eventProcessor("java.util").isPresent());
+        assertTrue(configuration.eventProcessor("ConcurrentMapCustomProcessor").isPresent());
+    }
+
+    @Test
     void testTypeAssignment() {
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myGroup", c -> "java.lang".equals(c.getPackage().getName()))
@@ -196,6 +253,10 @@ class EventProcessingModuleTest {
                   .registerEventHandler(c -> new HashMap<>());
         EventProcessingConfiguration configuration = configurer.start()
                                                                .eventProcessingConfiguration();
+
+        assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
+        assertEquals("myGroup", configuration.sagaProcessingGroup(Object.class));
+        assertEquals("ConcurrentMapProcessor", configuration.sagaProcessingGroup(ConcurrentMap.class));
 
         assertEquals(3, configuration.eventProcessors().size());
         assertTrue(configuration.eventProcessor("myGroup").isPresent());

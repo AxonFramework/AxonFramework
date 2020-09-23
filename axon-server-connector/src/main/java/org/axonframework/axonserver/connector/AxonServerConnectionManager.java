@@ -22,11 +22,13 @@ import io.axoniq.axonserver.connector.impl.ContextConnection;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownHandler;
+import org.axonframework.lifecycle.StartHandler;
 
 import java.io.File;
 import java.util.List;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -50,6 +53,9 @@ public class AxonServerConnectionManager {
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;
     private final String defaultContext;
+    private final boolean heartbeatEnabled;
+    private final long heartbeatInterval;
+    private final long heartbeatTimeout;
 
     /**
      * Instantiate a {@link AxonServerConnectionManager} based on the fields contained in the {@link Builder}, using the
@@ -61,6 +67,11 @@ public class AxonServerConnectionManager {
     protected AxonServerConnectionManager(Builder builder, AxonServerConnectionFactory connectionFactory) {
         this.connectionFactory = connectionFactory;
         this.defaultContext = builder.axonServerConfiguration.getContext();
+        AxonServerConfiguration.HeartbeatConfiguration heartbeatConfig =
+                builder.axonServerConfiguration.getHeartbeat();
+        this.heartbeatEnabled = heartbeatConfig.isEnabled();
+        this.heartbeatInterval = heartbeatConfig.getInterval();
+        this.heartbeatTimeout = heartbeatConfig.getTimeout();
     }
 
     /**
@@ -75,10 +86,34 @@ public class AxonServerConnectionManager {
         return new Builder();
     }
 
+    /**
+     * Starts the {@link AxonServerConnectionManager}. Will enable heartbeat messages to be send to the connected Axon
+     * Server instance in the {@link Phase#INSTRUCTION_COMPONENTS} phase, if this has been enabled through the {@link
+     * AxonServerConfiguration.HeartbeatConfiguration#isEnabled()}.
+     */
+    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
+    public void start() {
+        if (heartbeatEnabled) {
+            getConnection().controlChannel()
+                           .enableHeartbeat(heartbeatInterval, heartbeatTimeout, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * Retrieves the {@link AxonServerConnection} used for the default context of this application.
+     *
+     * @return the {@link AxonServerConnection} used for the default context of this application
+     */
     public AxonServerConnection getConnection() {
         return getConnection(getDefaultContext());
     }
 
+    /**
+     * Retrieves the {@link AxonServerConnection} used for the given {@code context} of this application.
+     *
+     * @param context the context for which to retrieve an {@link AxonServerConnection}
+     * @return the {@link AxonServerConnection} used for the given {@code context} of this application.
+     */
     public AxonServerConnection getConnection(String context) {
         return connections.computeIfAbsent(context, connectionFactory::connect);
     }
@@ -155,6 +190,7 @@ public class AxonServerConnectionManager {
 
         private AxonServerConfiguration axonServerConfiguration;
         private TagsConfiguration tagsConfiguration = new TagsConfiguration();
+        private UnaryOperator<ManagedChannelBuilder<?>> channelCustomization;
 
         /**
          * Sets the {@link AxonServerConfiguration} used to correctly configure connections between Axon clients and
@@ -183,6 +219,21 @@ public class AxonServerConnectionManager {
         public Builder tagsConfiguration(TagsConfiguration tagsConfiguration) {
             assertNonNull(tagsConfiguration, "TagsConfiguration may not be null");
             this.tagsConfiguration = tagsConfiguration;
+            return this;
+        }
+
+        /**
+         * Registers the given {@code channelCustomization}, which configures the underling {@link
+         * ManagedChannelBuilder} used to set up connections to AxonServer.
+         * <p>
+         * This method may be used in case none of the operations on this Builder provide support for the required
+         * feature.
+         *
+         * @param channelCustomization A function defining the customization to make on the ManagedChannelBuilder
+         * @return this builder for further configuration
+         */
+        public Builder channelCustomizer(UnaryOperator<ManagedChannelBuilder<?>> channelCustomization) {
+            this.channelCustomization = channelCustomization;
             return this;
         }
 
@@ -253,6 +304,10 @@ public class AxonServerConnectionManager {
             if (axonServerConfiguration.getProcessorsNotificationRate() > 0) {
                 builder.processorInfoUpdateFrequency(axonServerConfiguration.getProcessorsNotificationRate(),
                                                      TimeUnit.MILLISECONDS);
+            }
+
+            if (channelCustomization != null) {
+                builder.customize(channelCustomization);
             }
 
             AxonServerConnectionFactory connectionFactory = builder.build();
