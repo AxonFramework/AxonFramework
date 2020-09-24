@@ -113,7 +113,7 @@ internal class QueryGatewayExtensionsTest {
     fun `Query without queryName should handle nullable responses`() {
         val nullInstanceReturnValue: CompletableFuture<String?> = CompletableFuture.completedFuture(null)
         val nullableQueryGateway = mockk<QueryGateway> {
-            every { query(exampleQuery, match { i: AbstractResponseType<String?> -> i is InstanceResponseType }) } returns nullInstanceReturnValue
+            every { query(exampleQuery, matchInstanceResponseType<String?>()) } returns nullInstanceReturnValue
         }
 
         val queryResult = nullableQueryGateway.query<String?, ExampleQuery>(query = exampleQuery)
@@ -175,7 +175,7 @@ internal class QueryGatewayExtensionsTest {
     fun `Query should handle nullable responses`() {
         val nullInstanceReturnValue: CompletableFuture<String?> = CompletableFuture.completedFuture(null)
         val nullableQueryGateway = mockk<QueryGateway> {
-            every { query(queryName, exampleQuery, match { i: AbstractResponseType<String?> -> i is InstanceResponseType }) } returns nullInstanceReturnValue
+            every { query(queryName, exampleQuery, matchInstanceResponseType<String?>() ) } returns nullInstanceReturnValue
         }
 
         val queryResult = nullableQueryGateway.query<String?, ExampleQuery>(queryName = queryName, query = exampleQuery)
