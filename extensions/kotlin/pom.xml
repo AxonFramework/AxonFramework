@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <name>Axon Framework - Kotlin Extension - Parent</name>
   <description>Extension for Axon Framework that provides Kotlin utilities.</description>
@@ -126,7 +127,7 @@
       <artifactId>jackson-module-kotlin</artifactId>
     </dependency>
     <dependency>
-      <!-- Not pat of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
+      <!-- Not pat of Java 8 by default. Adding it as a dependency makes it compatible with Java 8 -->
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
       <version>2.3.1</version>
@@ -193,7 +194,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -217,7 +217,6 @@
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
             <version>0.8.6</version>
-
             <executions>
               <execution>
                 <goals>
@@ -254,211 +253,219 @@
           <artifactId>maven-install-plugin</artifactId>
           <version>2.5.2</version>
         </plugin>
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.2.0</version>
+          <configuration>
+            <encoding>UTF-8</encoding>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.6</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.8.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.6</version>
+        </plugin>       
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version>
+          <configuration>
+            <source>1.8</source>
+            <target>1.8</target>
+            <encoding>UTF-8</encoding>
+          </configuration>
+          <executions>
+            <!-- Replacing default-compile as it is treated specially by maven -->
+            <execution>
+              <id>default-compile</id>
+              <phase>none</phase>
+            </execution>
+            <!-- Replacing default-testCompile as it is treated specially by maven -->
+            <execution>
+              <id>default-testCompile</id>
+              <phase>none</phase>
+            </execution>
+            <execution>
+              <id>java-compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>java-test-compile</id>
+              <phase>test-compile</phase>
+              <goals>
+                <goal>testCompile</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.3.0</version>
+          <configuration>
+            <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
+            <archiverConfig>
+              <duplicateBehavior>skip</duplicateBehavior>
+            </archiverConfig>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5.3</version>
+          <configuration>
+            <mavenExecutorId>forked-path</mavenExecutorId>
+            <localCheckout>true</localCheckout>
+            <pushChanges>false</pushChanges>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.2</version>
+          <configuration>
+            <includes>
+              <include>**/*Test.java</include>
+              <include>**/*Tests.java</include>
+              <include>**/*Test_*.java</include>
+              <include>**/*Tests_*.java</include>
+            </includes>
+            <systemPropertyVariables>
+              <slf4j.version>${slf4j.version}</slf4j.version>
+              <log4j.version>${log4j.version}</log4j.version>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.jetbrains.dokka</groupId>
+          <artifactId>dokka-maven-plugin</artifactId>
+          <version>${dokka.version}</version>
+          <executions>
+            <execution>
+              <phase>prepare-package</phase>
+              <goals>
+                <goal>dokka</goal>
+                <goal>javadocJar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.2.0</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.2.1</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <phase>package</phase>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>1.4.2.jenkins-1</version>
+          <executions>
+            <execution>
+              <id>enforce-java</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireJavaVersion>
+                    <version>1.8</version>
+                  </requireJavaVersion>
+                  <requireMavenVersion>
+                    <version>3.5</version>
+                  </requireMavenVersion>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-maven-plugin</artifactId>
+          <version>${kotlin.version}</version>
+          <configuration>
+            <jvmTarget>1.8</jvmTarget>
+            <args>
+              <arg>-Xjsr305=strict</arg>
+            </args>
+            <compilerPlugins>
+              <plugin>no-arg</plugin>
+              <plugin>all-open</plugin>
+            </compilerPlugins>
+            <pluginOptions>
+              <!-- Axon specific classes -->
+              <option>all-open:annotation=org.axonframework.modelling.command.AggregateRoot</option>
+            </pluginOptions>
+          </configuration>
+          <executions>
+            <execution>
+              <id>compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <configuration>
+                <sourceDirs>
+                  <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                </sourceDirs>
+              </configuration>
+            </execution>
+            <execution>
+              <id>test-compile</id>
+              <phase>test-compile</phase>
+              <goals>
+                <goal>test-compile</goal>
+              </goals>
+              <configuration>
+                <sourceDirs>
+                  <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                </sourceDirs>
+              </configuration>
+            </execution>
+          </executions>
+          <dependencies>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-allopen</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.jetbrains.kotlin</groupId>
+              <artifactId>kotlin-maven-noarg</artifactId>
+              <version>${kotlin.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
       </plugins>
     </pluginManagement>
-    <plugins>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.2.0</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.8.2</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <encoding>UTF-8</encoding>
-        </configuration>
-        <executions>
-          <!-- Replacing default-compile as it is treated specially by maven -->
-          <execution>
-            <id>default-compile</id>
-            <phase>none</phase>
-          </execution>
-          <!-- Replacing default-testCompile as it is treated specially by maven -->
-          <execution>
-            <id>default-testCompile</id>
-            <phase>none</phase>
-          </execution>
-          <execution>
-            <id>java-compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>java-test-compile</id>
-            <phase>test-compile</phase>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.3.0</version>
-        <configuration>
-          <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
-          <archiverConfig>
-            <duplicateBehavior>skip</duplicateBehavior>
-          </archiverConfig>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.3</version>
-        <configuration>
-          <mavenExecutorId>forked-path</mavenExecutorId>
-          <localCheckout>true</localCheckout>
-          <pushChanges>false</pushChanges>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.22.2</version>
-        <configuration>
-          <includes>
-            <include>**/*Test.java</include>
-            <include>**/*Tests.java</include>
-            <include>**/*Test_*.java</include>
-            <include>**/*Tests_*.java</include>
-          </includes>
-          <systemPropertyVariables>
-            <slf4j.version>${slf4j.version}</slf4j.version>
-            <log4j.version>${log4j.version}</log4j.version>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.jetbrains.dokka</groupId>
-        <artifactId>dokka-maven-plugin</artifactId>
-        <version>${dokka.version}</version>
-        <executions>
-          <execution>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>dokka</goal>
-              <goal>javadocJar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.2.0</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>3.2.1</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>1.4.2.jenkins-1</version>
-        <executions>
-          <execution>
-            <id>enforce-java</id>
-            <phase>deploy</phase>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <requireJavaVersion>
-                  <version>1.8</version>
-                </requireJavaVersion>
-                <requireMavenVersion>
-                  <version>3.5</version>
-                </requireMavenVersion>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-maven-plugin</artifactId>
-        <version>${kotlin.version}</version>
-        <configuration>
-          <jvmTarget>1.8</jvmTarget>
-          <args>
-            <arg>-Xjsr305=strict</arg>
-          </args>
-          <compilerPlugins>
-            <plugin>no-arg</plugin>
-            <plugin>all-open</plugin>
-          </compilerPlugins>
-          <pluginOptions>
-            <!-- Axon specific classes -->
-            <option>all-open:annotation=org.axonframework.modelling.command.AggregateRoot</option>
-          </pluginOptions>
-        </configuration>
-        <executions>
-          <execution>
-            <id>compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <sourceDirs>
-                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-              </sourceDirs>
-            </configuration>
-          </execution>
-          <execution>
-            <id>test-compile</id>
-            <phase>test-compile</phase>
-            <goals>
-              <goal>test-compile</goal>
-            </goals>
-            <configuration>
-              <sourceDirs>
-                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-              </sourceDirs>
-            </configuration>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-allopen</artifactId>
-            <version>${kotlin.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-noarg</artifactId>
-            <version>${kotlin.version}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
-    </plugins>
   </build>
 
   <repositories>
