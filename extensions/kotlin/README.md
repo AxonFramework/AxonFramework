@@ -52,9 +52,10 @@ There are a couple of things to consider when you're traversing anything Axon:
  as the majority of possible scenarios you might encounter when using Axon should be covered there.
 * If the Reference Guide does not cover a specific topic you would've expected,
  we'd appreciate if you could file an [issue](https://github.com/AxonIQ/reference-guide/issues) about it for us. 
-* There is a a [public mailing list](https://groups.google.com/forum/#!forum/axonframework) to support you in the case 
- the reference guide did not sufficiently answer your question.
-* Next to the mailing list we also monitor Stack Overflow for any questions which are tagged with `axon`.
+* There is a [forum](https://discuss.axoniq.io/) to support you in the case the reference guide did not sufficiently answer your question.
+Axon Framework and Server developers will help out on a best effort basis.
+Know that any support from contributors on posted question is very much appreciated on the forum.
+* Next to the forum we also monitor Stack Overflow for any questions which are tagged with `axon`.
 
 ## Feature requests and issue reporting
 
