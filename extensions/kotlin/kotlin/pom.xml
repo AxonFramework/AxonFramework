@@ -15,25 +15,60 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <name>Axon Framework - Kotlin Extension</name>
-    <description>Module for the Kotlin Extension of Axon Framework</description>
+  <name>Axon Framework - Kotlin Extension</name>
+  <description>Module for the Kotlin Extension of Axon Framework</description>
 
-    <parent>
-        <groupId>org.axonframework.extensions.kotlin</groupId>
-        <artifactId>axon-kotlin-parent</artifactId>
-        <version>0.2.0-SNAPSHOT</version>
-    </parent>
+  <parent>
+    <groupId>org.axonframework.extensions.kotlin</groupId>
+    <artifactId>axon-kotlin-parent</artifactId>
+    <version>0.2.0-SNAPSHOT</version>
+  </parent>
 
-    <artifactId>axon-kotlin</artifactId>
+  <artifactId>axon-kotlin</artifactId>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-configuration</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>org.axonframework</groupId>
+      <artifactId>axon-configuration</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>javadoc-and-sources</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jetbrains.dokka</groupId>
+            <artifactId>dokka-maven-plugin</artifactId>
+          </plugin>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>

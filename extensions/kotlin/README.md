@@ -2,6 +2,7 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin)
 [![Open Source Helpers](https://www.codetriage.com/axonframework/extension-kotlin/badges/users.svg)](https://www.codetriage.com/axonframework/extension-kotlin)
+[![SonarCloud Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AxonFramework_extension-kotlin&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxonFramework_extension-kotlin)
 
 _Note:_ This extension is still in an experimental stage.
 
@@ -51,9 +52,10 @@ There are a couple of things to consider when you're traversing anything Axon:
  as the majority of possible scenarios you might encounter when using Axon should be covered there.
 * If the Reference Guide does not cover a specific topic you would've expected,
  we'd appreciate if you could file an [issue](https://github.com/AxonIQ/reference-guide/issues) about it for us. 
-* There is a a [public mailing list](https://groups.google.com/forum/#!forum/axonframework) to support you in the case 
- the reference guide did not sufficiently answer your question.
-* Next to the mailing list we also monitor Stack Overflow for any questions which are tagged with `axon`.
+* There is a [forum](https://discuss.axoniq.io/) to support you in the case the reference guide did not sufficiently answer your question.
+Axon Framework and Server developers will help out on a best effort basis.
+Know that any support from contributors on posted question is very much appreciated on the forum.
+* Next to the forum we also monitor Stack Overflow for any questions which are tagged with `axon`.
 
 ## Feature requests and issue reporting
 
@@ -63,7 +65,7 @@ Prior to filing an issue, please verify that it's not already reported by someon
 
 When filing bugs:
 * A description of your setup and what's happening helps us figuring out what the issue might be
-* Do not forget to provide version you're using
+* Do not forget to provide the version you're using
 * If possible, share a stack trace, using the Markdown semantic ```
 
 When filing features:
@@ -72,6 +74,17 @@ When filing features:
 * If you have any thoughts on where to plug this into the framework, that would be very helpful too
 * Lastly, we value contributions to the framework highly. So please provide a Pull Request as well!
  
-## Credits
+## Building the extension
 
+If you want to build the extension locally, you need to check it out from GiHub and run the following command:
+
+    ./mvnw clean install
+    
+### Producing JavaDocs and Sources archive
+
+In order to build JavaDoc and Sources archives you will need JDK 8 installed on your machine. Please execute the following command line:
+
+    ./mvnw clean install -Pjavadoc-and-sources
+    
+ 
 ---
