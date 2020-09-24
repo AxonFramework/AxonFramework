@@ -8,12 +8,25 @@ jobs:
     strategy:
       matrix:
         java: [ 8, 11 ]
+
     name: Build and tests on JDK ${{ matrix.java }}
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
+
+      - name: Cache .m2
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven
+
       - name: Build and verify
         run: mvn clean verify
