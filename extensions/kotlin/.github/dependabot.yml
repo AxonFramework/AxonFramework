@@ -5,3 +5,10 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  # Specify labels for pull requests
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+  # Add reviewers
+  reviewers:
+    - "sandjelkovic"
