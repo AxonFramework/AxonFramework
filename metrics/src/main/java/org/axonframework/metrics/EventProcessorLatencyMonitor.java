@@ -37,10 +37,11 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
 
     private final AtomicLong lastReceivedTime = new AtomicLong(-1);
     private final AtomicLong lastProcessedTime = new AtomicLong(-1);
+    private final AtomicLong processTime = new AtomicLong(0);
 
     @Override
     public MonitorCallback onMessageIngested(EventMessage<?> message) {
-        if(message == null){
+        if (message == null) {
             return NoOpMessageMonitorCallback.INSTANCE;
         }
         updateIfMaxValue(lastReceivedTime, message.getTimestamp().toEpochMilli());
@@ -60,7 +61,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
                 update();
             }
 
-            private void update(){
+            private void update() {
                 updateIfMaxValue(lastProcessedTime, message.getTimestamp().toEpochMilli());
             }
         };
@@ -68,20 +69,20 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
 
     @Override
     public Map<String, Metric> getMetrics() {
-        long lastProcessedTime = this.lastProcessedTime.longValue();
-        long lastReceivedTime = this.lastReceivedTime.longValue();
-        long processTime;
-        if(lastReceivedTime == -1 || lastProcessedTime == -1){
-            processTime = 0;
-        } else {
-            processTime = lastReceivedTime - lastProcessedTime;
-        }
         Map<String, Metric> metrics = new HashMap<>();
-        metrics.put("latency", (Gauge<Long>) () -> processTime);
+        metrics.put("latency", (Gauge<Long>) processTime::get); // NOSONAR
         return metrics;
     }
 
-    private void updateIfMaxValue(AtomicLong atomicLong, long timestamp){
-        atomicLong.accumulateAndGet(timestamp, (currentValue, newValue) -> newValue > currentValue ? newValue : currentValue);
+    private void updateIfMaxValue(AtomicLong atomicLong, long timestamp) {
+        atomicLong.accumulateAndGet(timestamp, (currentValue, newValue) -> Math.max(newValue, currentValue));
+
+        long lastProcessed = this.lastProcessedTime.longValue();
+        long lastReceived = this.lastReceivedTime.longValue();
+        if (lastReceived == -1 || lastProcessed == -1) {
+            processTime.set(0L);
+        } else {
+            processTime.set(lastReceived - lastProcessed);
+        }
     }
 }
