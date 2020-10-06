@@ -70,7 +70,7 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
 
     @Override
     public final T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
-        return postProcessInstance(fromSnapshot(firstEvent).orElse(doCreateAggregate(aggregateIdentifier, firstEvent)));
+        return postProcessInstance(fromSnapshot(firstEvent).orElseGet(() -> doCreateAggregate(aggregateIdentifier, firstEvent)));
     }
 
     @SuppressWarnings("unchecked")
