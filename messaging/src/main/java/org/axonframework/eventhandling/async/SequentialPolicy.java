@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.async;
 
 /**
- * SequencingPolicy that requires serialized handling of all events delivered to an event handler.
+ * SequencingPolicy that requires sequential handling of all events delivered to an event handler.
  *
  * @author Allard Buijze
  * @since 0.3
