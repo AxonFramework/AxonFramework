@@ -16,15 +16,17 @@
 
 package org.axonframework.eventsourcing;
 
+import java.io.Serializable;
+import java.time.Clock;
+import java.time.Instant;
+
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.io.Serializable;
-
 /**
- * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. A snapshot is
- * triggered when the number of events applied on an aggregate exceeds the given {@code threshold}.
+ * Snapshotter trigger mechanism that decides on the loading time of the Aggregate when to create a snapshot. A snapshot
+ * is triggered when loading the aggregate exceeds the given {@code loadTimeMillisThreshold} in milliseconds.
  * <p>
  * This number can exceed in two distinct scenarios:
  * <ol>
@@ -37,59 +39,60 @@ import java.io.Serializable;
  * once the aggregate has been fully initialized, than the snapshot will only be triggered if handling resolves
  * successfully.
  *
- * @author Allard Buijze
- * @since 3.0
+ * @author Yvonne Ceelie
+ * @since 4.4
  */
-public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
+public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
 
     private final Snapshotter snapshotter;
-    private final int threshold;
+    private final long loadTimeMillisThreshold;
+    static Clock clock = Clock.systemUTC();
+
 
     /**
-     * Initialized the SnapshotTriggerDefinition to threshold snapshots using the given {@code snapshotter} when {@code
-     * threshold} events have been applied to an Aggregate instance
+     * Initialized the SnapshotTriggerDefinition to threshold snapshots using the given {@code snapshotter} when loading
+     * the aggregate instance takes longer than {@code loadTimeMillisThreshold}
      *
      * @param snapshotter the snapshotter to notify when a snapshot needs to be taken
-     * @param threshold   the number of events that will threshold the creation of a snapshot event
+     * @param loadTimeMillisThreshold  the maximum time that loading an aggregate may take
      */
-    public EventCountSnapshotTriggerDefinition(Snapshotter snapshotter, int threshold) {
+    public AggregateLoadTimeSnapshotTriggerDefinition(Snapshotter snapshotter, long loadTimeMillisThreshold) {
         this.snapshotter = snapshotter;
-        this.threshold = threshold;
+        this.loadTimeMillisThreshold = loadTimeMillisThreshold;
     }
 
     @Override
     public SnapshotTrigger prepareTrigger(Class<?> aggregateType) {
-        return new EventCountSnapshotTrigger(snapshotter, aggregateType, threshold);
+        return new AggregateLoadTimeSnapshotTrigger(snapshotter, aggregateType, loadTimeMillisThreshold);
     }
 
     @Override
     public SnapshotTrigger reconfigure(Class<?> aggregateType, SnapshotTrigger trigger) {
-        if (trigger instanceof EventCountSnapshotTrigger) {
-            ((EventCountSnapshotTrigger) trigger).setSnapshotter(snapshotter);
+        if (trigger instanceof AggregateLoadTimeSnapshotTrigger) {
+            ((AggregateLoadTimeSnapshotTrigger) trigger).setSnapshotter(snapshotter);
             return trigger;
         }
-        return new EventCountSnapshotTrigger(snapshotter, aggregateType, threshold);
+        return new AggregateLoadTimeSnapshotTrigger(snapshotter, aggregateType, loadTimeMillisThreshold);
     }
 
-    private static class EventCountSnapshotTrigger extends AbstractSnapshotTrigger {
+    private static class AggregateLoadTimeSnapshotTrigger extends AbstractSnapshotTrigger {
 
-        private final int threshold;
-        private int counter = 0;
+        private final long loadTimeMillisThreshold;
+        private long startTime = clock.instant().toEpochMilli();
 
-        public EventCountSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, int threshold) {
+        public AggregateLoadTimeSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, long loadTimeMillisThreshold) {
             this.snapshotter = snapshotter;
             this.aggregateType = aggregateType;
-            this.threshold = threshold;
+            this.loadTimeMillisThreshold = loadTimeMillisThreshold;
             this.initialized = false;
         }
 
-        public boolean exceedsThreshold() {
-            return ++counter >= threshold;
+        public boolean exceedsThreshold(){
+            return (clock.instant().toEpochMilli() - startTime) > loadTimeMillisThreshold;
         }
 
         public void resetVariables() {
-            counter = 0;
+            startTime = clock.instant().toEpochMilli();
         }
-
     }
 }
