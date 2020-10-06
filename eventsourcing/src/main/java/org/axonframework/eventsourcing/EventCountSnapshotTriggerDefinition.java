@@ -16,12 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-
-import java.io.Serializable;
-
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. A snapshot is
  * triggered when the number of events applied on an aggregate exceeds the given {@code threshold}.

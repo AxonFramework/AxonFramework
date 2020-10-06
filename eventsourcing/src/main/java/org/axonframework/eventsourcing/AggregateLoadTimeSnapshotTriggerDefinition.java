@@ -16,13 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import java.io.Serializable;
 import java.time.Clock;
-import java.time.Instant;
-
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 /**
  * Snapshotter trigger mechanism that decides on the loading time of the Aggregate when to create a snapshot. A snapshot

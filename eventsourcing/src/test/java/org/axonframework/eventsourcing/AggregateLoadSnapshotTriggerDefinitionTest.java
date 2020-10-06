@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -151,7 +150,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     @Test
     void testSnapshotterNotTriggered() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
-        AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(900), ZoneId.of("UTC"));
+        AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1000), ZoneId.of("UTC"));
 
         GenericDomainEventMessage<String> msg = new GenericDomainEventMessage<>(
                 "type", aggregateIdentifier, 0, "Mock contents", MetaData.emptyInstance()
@@ -183,6 +182,19 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
 
         verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
+        verify(mockSnapshotter).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
+    }
+
+    @Test
+    void testScheduleANewSnapshotAfterCommitTrigger() {
+        SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
+        AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
+
+        GenericDomainEventMessage<String> msg = new GenericDomainEventMessage<>(
+                "type", aggregateIdentifier, 0, "Mock contents", MetaData.emptyInstance()
+        );
+        CurrentUnitOfWork.commit();
+        trigger.eventHandled(msg);
         verify(mockSnapshotter).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
     }
 }
