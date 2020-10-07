@@ -83,7 +83,7 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
             return (clock.instant().toEpochMilli() - startTime) > loadTimeMillisThreshold;
         }
 
-        public void resetVariables() {
+        public void reset() {
             startTime = clock.instant().toEpochMilli();
         }
     }

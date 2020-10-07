@@ -79,7 +79,7 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
             return ++counter >= threshold;
         }
 
-        public void resetVariables() {
+        public void reset() {
             counter = 0;
         }
 

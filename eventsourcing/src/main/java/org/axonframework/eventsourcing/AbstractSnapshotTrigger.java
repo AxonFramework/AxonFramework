@@ -30,7 +30,7 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
     public void eventHandled(EventMessage<?> msg) {
         if (msg instanceof DomainEventMessage && exceedsThreshold()) {
             prepareSnapshotScheduling((DomainEventMessage<?>) msg);
-            resetVariables();
+            reset();
         }
     }
 
@@ -71,6 +71,6 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
     /**
      * This method is used to reset all the variables that are used to check if a threshold has been exceeded
      */
-    protected abstract void resetVariables();
+    protected abstract void reset();
 
 }
