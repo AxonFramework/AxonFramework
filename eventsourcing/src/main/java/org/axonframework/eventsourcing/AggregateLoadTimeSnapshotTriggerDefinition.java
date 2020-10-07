@@ -75,10 +75,8 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
         private long startTime = clock.instant().toEpochMilli();
 
         public AggregateLoadTimeSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, long loadTimeMillisThreshold) {
-            this.snapshotter = snapshotter;
-            this.aggregateType = aggregateType;
+            super(snapshotter, aggregateType);
             this.loadTimeMillisThreshold = loadTimeMillisThreshold;
-            this.initialized = false;
         }
 
         public boolean exceedsThreshold(){

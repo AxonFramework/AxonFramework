@@ -71,10 +71,8 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
         private int counter = 0;
 
         public EventCountSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, int threshold) {
-            this.snapshotter = snapshotter;
-            this.aggregateType = aggregateType;
+            super(snapshotter, aggregateType);
             this.threshold = threshold;
-            this.initialized = false;
         }
 
         public boolean exceedsThreshold() {

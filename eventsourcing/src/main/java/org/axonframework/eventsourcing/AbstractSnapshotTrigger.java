@@ -15,10 +15,16 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
  */
 public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serializable {
 
-    static final long serialVersionUID = 4129616856823136473L;
-    transient Snapshotter snapshotter;
-    Class<?> aggregateType;
-    boolean initialized;
+    private static final long serialVersionUID = 4129616856823136473L;
+    private transient Snapshotter snapshotter;
+    private Class<?> aggregateType;
+    private boolean initialized;
+
+    protected AbstractSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType) {
+        this.snapshotter = snapshotter;
+        this.aggregateType = aggregateType;
+        this.initialized = false;
+    }
 
     @Override
     public void eventHandled(EventMessage<?> msg) {
