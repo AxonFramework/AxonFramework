@@ -59,12 +59,12 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
     /**
      * This method is used to determine if a new snapshot should be created
      */
-    abstract boolean exceedsThreshold();
+    protected abstract boolean exceedsThreshold();
 
 
     /**
      * This method is used to reset all the variables that are used to check if a threshold has been exceeded
      */
-    abstract void resetVariables();
+    protected abstract void resetVariables();
 
 }
