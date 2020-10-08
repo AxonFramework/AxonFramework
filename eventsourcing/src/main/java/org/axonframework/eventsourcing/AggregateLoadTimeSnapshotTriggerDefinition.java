@@ -22,7 +22,7 @@ import java.time.Clock;
  * A {@link SnapshotterTriggerDefinition} implementation which based on the loading time of an Aggregate decides when to trigger the creation of a snapshot. A snapshot
  * is triggered when loading the aggregate exceeds the given {@code loadTimeMillisThreshold} in milliseconds.
  * <p>
- * This number can exceed in two distinct scenarios:
+ * This threshold can be exceeded in two distinct scenarios:
  * <ol>
  *     <li> When initializing / event sourcing the aggregate in question.</li>
  *     <li> When new events are being applied by the aggregate.</li>
