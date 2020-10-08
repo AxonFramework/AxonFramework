@@ -11,7 +11,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
  * the Unit of Work. Actual logic when to schedule a snapshot should be provided by a subclass.
  *
  * @author Yvonne Ceelie
- * @since 4.4
+ * @since 4.4.4
  */
 public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serializable {
 
@@ -20,6 +20,12 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
     private Class<?> aggregateType;
     private boolean initialized;
 
+    /**
+     * Instantiate a {@link AbstractSnapshotTrigger} based on the {@link Snapshotter} and aggregateType {@link Class<?>}.
+     *
+     * @param snapshotter the {@link Snapshotter} for scheduling snapshots
+     * @param aggregateType the {@link Class<?> of the aggregate that is creating a snapshot}
+     */
     protected AbstractSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType) {
         this.snapshotter = snapshotter;
         this.aggregateType = aggregateType;
@@ -39,7 +45,7 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
         initialized = true;
     }
 
-    public void prepareSnapshotScheduling(DomainEventMessage<?> eventMessage) {
+    private void prepareSnapshotScheduling(DomainEventMessage<?> eventMessage) {
         if (CurrentUnitOfWork.isStarted()) {
             if (initialized) {
                 CurrentUnitOfWork.get().onPrepareCommit(
@@ -53,17 +59,22 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
         }
     }
 
-    void scheduleSnapshot(DomainEventMessage<?> eventMessage) {
+    private void scheduleSnapshot(DomainEventMessage<?> eventMessage) {
         snapshotter.scheduleSnapshot(aggregateType, eventMessage.getAggregateIdentifier());
     }
 
-
+    /**
+     * Sets the snapshotter
+     *
+     * @param snapshotter The {@link Snapshotter} for scheduling snapshots.
+     */
     public void setSnapshotter(Snapshotter snapshotter) {
         this.snapshotter = snapshotter;
     }
 
     /**
      * This method is used to determine if a new snapshot should be created
+     * @return true if the threshold has been exceeded
      */
     protected abstract boolean exceedsThreshold();
 

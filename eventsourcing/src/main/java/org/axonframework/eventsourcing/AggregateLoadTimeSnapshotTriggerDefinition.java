@@ -34,13 +34,13 @@ import java.time.Clock;
  * successfully.
  *
  * @author Yvonne Ceelie
- * @since 4.4
+ * @since 4.4.4
  */
 public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
 
     private final Snapshotter snapshotter;
     private final long loadTimeMillisThreshold;
-    static Clock clock = Clock.systemUTC();
+    public static Clock clock = Clock.systemUTC();
 
 
     /**
@@ -79,10 +79,12 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
             this.loadTimeMillisThreshold = loadTimeMillisThreshold;
         }
 
+        @Override
         public boolean exceedsThreshold(){
             return (clock.instant().toEpochMilli() - startTime) > loadTimeMillisThreshold;
         }
 
+        @Override
         public void reset() {
             startTime = clock.instant().toEpochMilli();
         }

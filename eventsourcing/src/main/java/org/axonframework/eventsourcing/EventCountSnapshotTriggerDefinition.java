@@ -75,10 +75,12 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
             this.threshold = threshold;
         }
 
+        @Override
         public boolean exceedsThreshold() {
             return ++counter >= threshold;
         }
 
+        @Override
         public void reset() {
             counter = 0;
         }
