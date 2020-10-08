@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import java.time.Clock;
 
 /**
- * Snapshotter trigger mechanism that decides on the loading time of the Aggregate when to create a snapshot. A snapshot
+ * A {@link SnapshotterTriggerDefinition} implementation which based on the loading time of an Aggregate decides when to trigger the creation of a snapshot. A snapshot
  * is triggered when loading the aggregate exceeds the given {@code loadTimeMillisThreshold} in milliseconds.
  * <p>
  * This number can exceed in two distinct scenarios:
@@ -44,8 +44,8 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
 
 
     /**
-     * Initialized the SnapshotTriggerDefinition to threshold snapshots using the given {@code snapshotter} when loading
-     * the aggregate instance takes longer than {@code loadTimeMillisThreshold}
+     * Initialize a {@link SnapshotTriggerDefinition} to trigger snapshot creation using the given {@code snapshotter} when loading
+     * the aggregate instance takes longer than the given {@code loadTimeMillisThreshold}.
      *
      * @param snapshotter the snapshotter to notify when a snapshot needs to be taken
      * @param loadTimeMillisThreshold  the maximum time that loading an aggregate may take
