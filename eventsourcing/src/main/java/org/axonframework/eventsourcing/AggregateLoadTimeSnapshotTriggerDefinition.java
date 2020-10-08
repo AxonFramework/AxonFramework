@@ -28,7 +28,7 @@ import java.time.Clock;
  *     <li> When new events are being applied by the aggregate.</li>
  * </ol>
  * <p>
- * If the definable {@code threshold} is met in situation one, the snapshot will be triggered regardless of the outcome
+ * If the definable {@code loadTimeMillisThreshold} is met in situation one, the snapshot will be triggered regardless of the outcome
  * of command handling. Thus also if command handling returns exceptionally. If the {@code threshold} is only reached
  * once the aggregate has been fully initialized, than the snapshot will only be triggered if handling resolves
  * successfully.
