@@ -44,8 +44,8 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
 
 
     /**
-     * Initialized the SnapshotTriggerDefinition to threshold snapshots using the given {@code snapshotter} when loading
-     * the aggregate instance takes longer than {@code loadTimeMillisThreshold}
+     * Initialize a {@link SnapshotTriggerDefinition} to trigger snapshot creation using the given {@code snapshotter} when loading
+     * the aggregate instance takes longer than the given {@code loadTimeMillisThreshold}.
      *
      * @param snapshotter the snapshotter to notify when a snapshot needs to be taken
      * @param loadTimeMillisThreshold  the maximum time that loading an aggregate may take
