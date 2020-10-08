@@ -19,8 +19,9 @@ package org.axonframework.eventsourcing;
 import java.time.Clock;
 
 /**
- * A {@link SnapshotterTriggerDefinition} implementation which based on the loading time of an Aggregate decides when to trigger the creation of a snapshot. A snapshot
- * is triggered when loading the aggregate exceeds the given {@code loadTimeMillisThreshold} in milliseconds.
+ * A Snapshotter trigger mechanism which based on the loading time of an Aggregate decides when to trigger the creation
+ * of a snapshot. A snapshot is triggered when loading the aggregate exceeds the given {@code loadTimeMillisThreshold}
+ * in milliseconds.
  * <p>
  * This threshold can be exceeded in two distinct scenarios:
  * <ol>
@@ -44,11 +45,11 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
 
 
     /**
-     * Initialize a {@link SnapshotTriggerDefinition} to trigger snapshot creation using the given {@code snapshotter} when loading
-     * the aggregate instance takes longer than the given {@code loadTimeMillisThreshold}.
+     * Initialize a {@link SnapshotTriggerDefinition} to trigger snapshot creation using the given {@code snapshotter}
+     * when loading the aggregate instance takes longer than the given {@code loadTimeMillisThreshold}.
      *
-     * @param snapshotter the snapshotter to notify when a snapshot needs to be taken
-     * @param loadTimeMillisThreshold  the maximum time that loading an aggregate may take
+     * @param snapshotter             the snapshotter to notify when a snapshot needs to be taken
+     * @param loadTimeMillisThreshold the maximum time that loading an aggregate may take
      */
     public AggregateLoadTimeSnapshotTriggerDefinition(Snapshotter snapshotter, long loadTimeMillisThreshold) {
         this.snapshotter = snapshotter;
@@ -74,13 +75,15 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
         private final long loadTimeMillisThreshold;
         private long startTime = clock.instant().toEpochMilli();
 
-        public AggregateLoadTimeSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, long loadTimeMillisThreshold) {
+        public AggregateLoadTimeSnapshotTrigger(Snapshotter snapshotter,
+                                                Class<?> aggregateType,
+                                                long loadTimeMillisThreshold) {
             super(snapshotter, aggregateType);
             this.loadTimeMillisThreshold = loadTimeMillisThreshold;
         }
 
         @Override
-        public boolean exceedsThreshold(){
+        public boolean exceedsThreshold() {
             return (clock.instant().toEpochMilli() - startTime) > loadTimeMillisThreshold;
         }
 
