@@ -225,7 +225,7 @@ public class Segment implements Comparable<Segment> {
     public Segment[] split() {
 
         if ((mask << 1) < 0) {
-            throw new IllegalArgumentException("Unable to split the given segmentId, as the mask exceeds the max mask size.");
+            throw new IllegalStateException("Unable to split the given segmentId, as the mask exceeds the max mask size.");
         }
 
         Segment[] segments = new Segment[2];
