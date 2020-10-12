@@ -98,7 +98,7 @@
         <hibernate-entitymanager.version>5.4.1.Final</hibernate-entitymanager.version>
         <byte-buddy.version>1.9.16</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
-        <commons-io.version>2.6</commons-io.version>
+        <commons-io.version>2.8.0</commons-io.version>
         <javassist.version>3.24.1-GA</javassist.version>
         <el-impl.version>2.2</el-impl.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
