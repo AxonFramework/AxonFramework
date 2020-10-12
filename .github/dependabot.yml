@@ -1,0 +1,17 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 5
+  # Specify labels for pull requests
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+  # Add reviewers
+  reviewers:
+    - "lfgcampos"
+    - "m1l4n54v1c"
+    - "saratry"
+    - "smcvb"
