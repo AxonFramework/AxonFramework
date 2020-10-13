@@ -93,7 +93,7 @@ class JdbcTokenStoreTest {
             } catch (SQLException e) {
                 throw new IllegalStateException("Failed to drop or create token table", e);
             }
-            tokenStore.createSchema(new GenericTokenTableFactory());
+            tokenStore.createSchema(GenericTokenTableFactory.INSTANCE);
         });
     }
 

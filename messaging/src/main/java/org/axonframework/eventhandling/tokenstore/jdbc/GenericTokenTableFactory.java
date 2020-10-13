@@ -27,6 +27,14 @@ import java.sql.SQLException;
  */
 public class GenericTokenTableFactory implements TokenTableFactory {
 
+    /**
+     * Creates a singleton reference the the GenericTokenTableFactory implementation.
+     */
+    public static final GenericTokenTableFactory INSTANCE = new GenericTokenTableFactory();
+
+    protected GenericTokenTableFactory() {
+    }
+
     @Override
     public PreparedStatement createTable(Connection connection, TokenSchema schema) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS " + schema.tokenTable() + " (\n" +
