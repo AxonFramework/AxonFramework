@@ -26,6 +26,15 @@ import java.sql.SQLException;
  * @author Rene de Waele
  */
 public class Oracle11TokenTableFactory implements TokenTableFactory {
+
+    /**
+     * Creates a singleton reference the the Oracle11TokenTableFactory implementation.
+     */
+    public static final Oracle11TokenTableFactory INSTANCE = new Oracle11TokenTableFactory();
+
+    protected Oracle11TokenTableFactory() {
+    }
+
     @Override
     public PreparedStatement createTable(Connection connection, TokenSchema schema) throws SQLException {
         String sql = "CREATE TABLE " + schema.tokenTable() + " (\n" +

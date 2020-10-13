@@ -23,6 +23,15 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
  */
 public class PostgresTokenTableFactory extends GenericTokenTableFactory {
 
+    /**
+     * Creates a singleton reference the the PostgresTokenTableFactory implementation.
+     */
+    public static final PostgresTokenTableFactory INSTANCE = new PostgresTokenTableFactory();
+
+    protected PostgresTokenTableFactory() {
+        super();
+    }
+
     @Override
     protected String tokenType() {
         return "bytea";
