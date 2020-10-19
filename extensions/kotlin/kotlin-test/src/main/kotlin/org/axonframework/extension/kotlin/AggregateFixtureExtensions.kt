@@ -17,14 +17,14 @@
 package org.axonframework.extension.kotlin
 
 import org.axonframework.test.aggregate.AggregateTestFixture
-import org.axonframework.test.aggregate.FixtureConfiguration
 import org.axonframework.test.aggregate.ResultValidator
 import kotlin.reflect.KClass
 
 /**
  * Creates an aggregate test fixture for aggregate [T].
- * @param [T] reified type of the aggregate.
+ * @param T reified type of the aggregate.
  * @return aggregate test fixture.
+ * @since 0.2.0
  */
 inline fun <reified T : Any> AggregateTestFixture<T>.aggregateTestFixture() =
         AggregateTestFixture(T::class.java)
@@ -32,8 +32,9 @@ inline fun <reified T : Any> AggregateTestFixture<T>.aggregateTestFixture() =
 /**
  * Alias for the `when` method to avoid name clash with Kotlin's `when`.
  * @param command command to pass to the when method.
- * @param [T] aggregate type.
+ * @param T aggregate type.
  * @return result validator.
+ * @since 0.2.0
  */
 fun <T : Any> AggregateTestFixture<T>.whenever(command: Any): ResultValidator<T> = this.`when`(command)
 
@@ -41,8 +42,9 @@ fun <T : Any> AggregateTestFixture<T>.whenever(command: Any): ResultValidator<T>
  * Alias for the `when` method to avoid name clash with Kotlin's `when`.
  * @param command command to pass to the when method.
  * @param metaData metadata map.
- * @param [T] aggregate type.
+ * @param T aggregate type.
  * @return result validator.
+ * @since 0.2.0
  */
 fun <T : Any> AggregateTestFixture<T>.whenever(command: Any, metaData: Map<String, Any>): ResultValidator<T> = this.`when`(command, metaData)
 
@@ -52,6 +54,7 @@ fun <T : Any> AggregateTestFixture<T>.whenever(command: Any, metaData: Map<Strin
  *
  * @param subtypes subtypes in this polymorphic hierarchy
  * @return the current FixtureConfiguration, for fluent interfacing
+ * @since 0.2.0
  */
 fun <T : Any> AggregateTestFixture<T>.withSubtypes(vararg subtypes: KClass<out T>) =
         this.withSubtypes(* subtypes.map { it.java }.toTypedArray())

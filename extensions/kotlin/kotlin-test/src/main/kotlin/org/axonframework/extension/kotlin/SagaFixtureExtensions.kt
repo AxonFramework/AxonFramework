@@ -20,27 +20,30 @@ import org.axonframework.test.saga.SagaTestFixture
 
 /**
  * Creates a saga test fixture for saga [T].
- * @param [T] reified type of the saga.
+ * @param T reified type of the saga.
  * @return saga test fixture.
+ * @since 0.2.0
  */
 inline fun <reified T : Any> SagaTestFixture<T>.sagaTestFixture() =
         SagaTestFixture(T::class.java)
 
 /**
  * Reified version of command gateway registration.
- * @param [T] saga type
- * @param [I] command gateway type.
+ * @param T saga type
+ * @param I command gateway type.
  * @return registered command gateway instance.
+ * @since 0.2.0
  */
 inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(): I =
         this.registerCommandGateway(I::class.java)
 
 /**
  * Reified version of command gateway registration.
- * @param [T] saga type
- * @param [I] command gateway type.
+ * @param T saga type
+ * @param I command gateway type.
  * @param stubImplementation stub implementation.
  * @return registered command gateway instance.
+ * @since 0.2.0
  */
 inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(stubImplementation: I): I =
         this.registerCommandGateway(I::class.java, stubImplementation)

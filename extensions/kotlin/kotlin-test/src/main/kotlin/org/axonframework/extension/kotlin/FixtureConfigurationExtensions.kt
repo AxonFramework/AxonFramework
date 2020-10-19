@@ -22,10 +22,11 @@ import org.axonframework.test.aggregate.FixtureConfiguration
  * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass}
  * is ignored when performing deep equality checks.
  *
- * @param [T] type of fixture target.
- * @param [F] filed type.
+ * @param T type of fixture target.
+ * @param F filed type.
  * @param fieldName The name of the field
  * @return the current FixtureConfiguration, for fluent interfacing
+ * @since 0.2.0
  */
 inline fun <T : Any, reified F : Any> FixtureConfiguration<T>.registerIgnoredField(fieldName: String): FixtureConfiguration<T> =
         this.registerIgnoredField(F::class.java, fieldName)
