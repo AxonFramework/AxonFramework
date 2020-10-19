@@ -69,13 +69,13 @@
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.13.3</log4j.version>
         <spring.version>5.2.9.RELEASE</spring.version>
-        <spring-security.version>5.1.4.RELEASE</spring-security.version>
-        <spring.boot.version>2.1.8.RELEASE</spring.boot.version>
+        <spring-security.version>5.4.1</spring-security.version>
+        <spring.boot.version>2.3.4.RELEASE</spring.boot.version>
         <mockito.version>3.5.13</mockito.version>
         <projectreactor.version>3.3.10.RELEASE</projectreactor.version>
         <micrometer.version>1.3.0</micrometer.version>
         <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
-        <jackson.version>2.9.8</jackson.version>
+        <jackson.version>2.11.3</jackson.version>
         <!--
             Please note that there are dependencies between the gRPC and Netty TcNative versions.
             gRPC is quite specific about the version of Netty TcNative, so check the dependencies on
@@ -86,7 +86,7 @@
         <javax.el-api.version>2.2.4</javax.el-api.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
-        <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
+        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <javax.jaxb-api.version>2.3.0</javax.jaxb-api.version>
         <disruptor.version>3.4.2</disruptor.version>
         <mysql-connector-java.version>8.0.21</mysql-connector-java.version>
@@ -95,24 +95,24 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
         <hibernate-validator.version>5.3.6.Final</hibernate-validator.version>
-        <hibernate-entitymanager.version>5.4.1.Final</hibernate-entitymanager.version>
+        <hibernate-entitymanager.version>5.4.22.Final</hibernate-entitymanager.version>
         <byte-buddy.version>1.10.17</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.8.0</commons-io.version>
-        <javassist.version>3.24.1-GA</javassist.version>
+        <javassist.version>3.27.0-GA</javassist.version>
         <el-impl.version>2.2</el-impl.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.3</dom4j.version>
-        <postgresql.version>42.2.8</postgresql.version>
+        <postgresql.version>42.2.17</postgresql.version>
         <junit4.version>4.13.1</junit4.version>
-        <junit.jupiter.version>5.5.2</junit.jupiter.version>
+        <junit.jupiter.version>5.7.0</junit.jupiter.version>
         <axonserver-connector-java.version>4.4.2</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
 
         <!-- plugin versions -->
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
 
-        <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -431,7 +431,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.0</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                 </configuration>
@@ -454,7 +454,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.3.0</version>
                 <configuration>
                     <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
                     <archiverConfig>
@@ -521,7 +521,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.0</version>
                 <configuration>
                     <archive>
                         <manifest>
