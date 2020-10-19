@@ -19,7 +19,6 @@ package org.axonframework.test.matchers;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 
 import java.util.List;
@@ -61,7 +60,6 @@ public abstract class Matchers {
      * @return a matcher that matches a number of matchers against a list
      */
     @SafeVarargs
-    @Factory
     public static <T> Matcher<List<T>> listWithAllOf(Matcher<T>... matchers) {
         return new ListWithAllOfMatcher<>(matchers);
     }
@@ -74,7 +72,6 @@ public abstract class Matchers {
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @SafeVarargs
-    @Factory
     public static <T> Matcher<List<T>> listWithAnyOf(Matcher<T>... matchers) {
         return new ListWithAnyOfMatcher<>(matchers);
     }
@@ -90,7 +87,6 @@ public abstract class Matchers {
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @SafeVarargs
-    @Factory
     public static <T> Matcher<List<T>> sequenceOf(Matcher<T>... matchers) {
         return new SequenceMatcher<>(matchers);
     }
@@ -111,7 +107,6 @@ public abstract class Matchers {
      * @return a matcher that matches a number of event-matchers against a list of events
      */
     @SafeVarargs
-    @Factory
     public static <T> Matcher<List<T>> exactSequenceOf(Matcher<T>... matchers) {
         return new ExactSequenceMatcher<>(matchers);
     }
@@ -147,7 +142,6 @@ public abstract class Matchers {
      *
      * @return a matcher that matches an empty list of events
      */
-    @Factory
     public static Matcher<List<EventMessage<?>>> noEvents() {
         return new EmptyCollectionMatcher<>("events");
     }
@@ -157,7 +151,6 @@ public abstract class Matchers {
      *
      * @return a matcher that matches an empty list of Commands
      */
-    @Factory
     public static Matcher<List<CommandMessage<?>>> noCommands() {
         return new EmptyCollectionMatcher<>("commands");
     }
@@ -172,7 +165,6 @@ public abstract class Matchers {
      * @param <T>      The type of event to match against
      * @return a matcher that matches based on the equality of field values
      */
-    @Factory
     public static <T> EqualFieldsMatcher<T> equalTo(T expected) {
         return new EqualFieldsMatcher<>(expected);
     }
@@ -188,7 +180,6 @@ public abstract class Matchers {
      * @param <T>      The type of event to match against
      * @return a matcher that matches based on the equality of field values
      */
-    @Factory
     public static <T> EqualFieldsMatcher<T> equalTo(T expected, FieldFilter filter) {
         return new EqualFieldsMatcher<>(expected, filter);
     }
@@ -199,7 +190,6 @@ public abstract class Matchers {
      *
      * @return a matcher that matches against "nothing".
      */
-    @Factory
     public static <T> Matcher<T> andNoMore() {
         return nothing();
     }
@@ -210,7 +200,6 @@ public abstract class Matchers {
      *
      * @return a matcher that matches against "nothing".
      */
-    @Factory
     public static <T> Matcher<T> nothing() {
         return new NullOrVoidMatcher<>();
     }
