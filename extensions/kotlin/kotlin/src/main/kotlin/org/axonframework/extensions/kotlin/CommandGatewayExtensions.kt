@@ -29,8 +29,8 @@ import org.axonframework.messaging.MetaData
  * @param [C] the type of payload of the command
  * @see CommandGateway.send
  */
-fun <C : Any, R : Any?> CommandGateway.send(
+inline fun <reified C : Any, reified R : Any?> CommandGateway.send(
     command: C,
-    onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
-    onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
+    noinline onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
+    noinline onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
 ): Unit = this.send(command, ResultDiscriminatorCommandCallback<C, R>(onSuccess, onError))
