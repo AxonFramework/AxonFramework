@@ -12,10 +12,11 @@ import org.axonframework.queryhandling.QueryUpdateEmitter
  *
  * @param update    incremental update
  * @param filter    predicate on query payload used to filter subscription queries
- * @param [Q]       the type of the query
- * @param [U]       the type of the update
+ * @param Q         the type of the query
+ * @param U         the type of the update
  * @see org.axonframework.queryhandling.QueryUpdateEmitter.emit
  * @author Stefan Andjelkovic
+ * @since 0.1.0
  */
 inline fun <reified Q, reified U : Any> QueryUpdateEmitter.emit(update: U, noinline filter: (Q) -> Boolean) =
         this.emit(Q::class.java, filter, update)

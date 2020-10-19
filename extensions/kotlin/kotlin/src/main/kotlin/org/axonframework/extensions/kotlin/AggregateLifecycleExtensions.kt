@@ -25,6 +25,7 @@ import org.axonframework.modelling.command.ApplyMore
  * Alias for [AggregateLifecycle.apply] method.
  * @param payload payload of the event message to be applied.
  * @return fluent instance to apply more.
+ * @since 0.2.0
  */
 fun applyEvent(payload: Any): ApplyMore = AggregateLifecycle.apply(payload)
 
@@ -33,12 +34,15 @@ fun applyEvent(payload: Any): ApplyMore = AggregateLifecycle.apply(payload)
  * @param payload payload of the event message to be applied.
  * @param metaData metadata to be included into the event message.
  * @return fluent instance to apply more.
+ * @since 0.2.0
  */
 fun applyEvent(payload: Any, metaData: MetaData): ApplyMore = AggregateLifecycle.apply(payload, metaData)
 
 /**
  * Create new aggregate instance.
- * @param [T] aggregate type.
+ * @param T aggregate type.
  * @param factoryMethod factory method.
+ * @return new instance of an aggregate.
+ * @since 0.2.0
  */
 inline fun <reified T : Any> createNew(noinline factoryMethod: () -> T): Aggregate<T> = AggregateLifecycle.createNew(T::class.java, factoryMethod)
