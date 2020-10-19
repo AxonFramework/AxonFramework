@@ -28,6 +28,7 @@
 
   <modules>
     <module>kotlin</module>
+    <module>kotlin-test</module>
   </modules>
 
   <properties>
