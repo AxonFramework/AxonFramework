@@ -22,6 +22,7 @@ import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.time.Instant;
@@ -135,5 +136,16 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
             metaData = new LazyDeserializingObject<>(metaDataUpcastFunction.apply(source.getMetaData().getObject()));
         }
         return metaData;
+    }
+
+    @Override
+    public <D> Boolean canConvertDataTo(Class<D> requiredType) {
+        return converter.canConvert(source.getData().getContentType(), requiredType);
+    }
+
+    @Override
+    public Serializer getSerializer() {
+        // upcasted representation has no serializer, ask the previous representation, until the InitialEventRepresentation answers the question.
+        return source.getSerializer();
     }
 }

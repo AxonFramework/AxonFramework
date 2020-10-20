@@ -148,4 +148,14 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     public LazyDeserializingObject<MetaData> getMetaData() {
         return metaData;
     }
+
+    @Override
+    public <D> Boolean canConvertDataTo(Class<D> requiredType) {
+        return serializer.getConverter().canConvert(data.getContentType(), requiredType);
+    }
+
+    @Override
+    public Serializer getSerializer() {
+        return serializer;
+    }
 }

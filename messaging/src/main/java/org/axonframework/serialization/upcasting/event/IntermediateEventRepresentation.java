@@ -21,6 +21,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -139,4 +140,18 @@ public interface IntermediateEventRepresentation {
      * @return the MetaData of the message wrapping the object to upcast, if available
      */
     LazyDeserializingObject<MetaData> getMetaData();
+
+    /**
+     * Checks if the data can be converted to required type.
+     *
+     * @param requiredType the type to convert to
+     * @return true, if the intermediate representation can be converted to desired type.
+     */
+    <D> Boolean canConvertDataTo(Class<D> requiredType);
+
+    /**
+     * Retrieves the serializer used to retrieve data.
+     * @return serializer configured for event serialization.
+     */
+    Serializer getSerializer();
 }
