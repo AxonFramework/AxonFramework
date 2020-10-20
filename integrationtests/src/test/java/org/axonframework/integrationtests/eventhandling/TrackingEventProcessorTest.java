@@ -40,6 +40,8 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -50,6 +52,7 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -78,9 +81,9 @@ import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
+import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
+import static org.axonframework.integrationtests.utils.EventTestUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -222,6 +225,43 @@ class TrackingEventProcessorTest {
     void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
+    }
+
+    @Test
+    void testSequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
+        InMemoryEventStorageEngine historic = new InMemoryEventStorageEngine();
+        InMemoryEventStorageEngine active = new InMemoryEventStorageEngine(2);
+        SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
+
+        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder().storageEngine(sequenceEventStorageEngine).build();
+
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                         .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
+                      b -> {
+                          b.messageSource(sequenceEventBus);
+                          return b;
+                      });
+
+        historic.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
+        // to make sure tracking tokens match, we need to offset the InMemoryEventStorageEngine
+        active.appendEvents(createEvent(AGGREGATE, 3L, "message3"), createEvent(AGGREGATE, 4L, "message4"),
+                            createEvent(AGGREGATE, 5L, "message5"));
+
+        int expectedEventCount = 5;
+
+        CountDownLatch countDownLatch = new CountDownLatch(expectedEventCount);
+        AtomicInteger counter = new AtomicInteger(0);
+        doAnswer(invocation -> {
+            int cnt = counter.incrementAndGet();
+            countDownLatch.countDown();
+            assertTrue(cnt <= expectedEventCount);
+            return null;
+        }).when(mockHandler).handle(any());
+
+        testSubject.start();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 4 published events");
+        assertEquals(expectedEventCount, counter.get(), "Handler should only receive each event once");
     }
 
     @Test
@@ -1681,6 +1721,62 @@ class TrackingEventProcessorTest {
         assertTrue(addedStatusLatch.await(5, TimeUnit.SECONDS));
         assertTrue(updatedStatusLatch.await(5, TimeUnit.SECONDS));
         assertTrue(removedStatusLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void testCaughtUpSetToTrueAfterWaitingForEventAvailabilityTimeout() {
+        AtomicBoolean hasNextInvoked = new AtomicBoolean(false);
+        AtomicBoolean hasNextAvailableTimedOut = new AtomicBoolean(true);
+        TrackingEventProcessorConfiguration tepConfiguration =
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                   .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
+        EventStore enhancedEventStore = new EmbeddedEventStore(
+                EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
+        ) {
+            @Override
+            public TrackingEventStream openStream(TrackingToken trackingToken) {
+                TrackingEventStream trackingEventStream = super.openStream(trackingToken);
+                return new TrackingEventStream() {
+                    @Override
+                    public Optional<TrackedEventMessage<?>> peek() {
+                        return trackingEventStream.peek();
+                    }
+
+                    @Override
+                    public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+                        hasNextInvoked.set(true);
+                        boolean result = trackingEventStream.hasNextAvailable(timeout, unit);
+                        hasNextAvailableTimedOut.set(false);
+                        // Add sleep to ensure switching hasNextAvailableTimedOut and it's assertion has precedence
+                        // over regular execution of the TrackingEventProcessor.
+                        Thread.sleep(5);
+                        return result;
+                    }
+
+                    @Override
+                    public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+                        return trackingEventStream.nextAvailable();
+                    }
+
+                    @Override
+                    public void close() {
+                        trackingEventStream.close();
+                    }
+                };
+            }
+        };
+        initProcessor(tepConfiguration, builder -> builder.messageSource(enhancedEventStore));
+        testSubject.start();
+
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(hasNextInvoked.get()));
+
+        assertUntil(hasNextAvailableTimedOut::get, Duration.ofMillis(10), () -> {
+            EventTrackerStatus trackerOneStatus = testSubject.processingStatus().get(0);
+            assertNotNull(trackerOneStatus);
+            assertFalse(trackerOneStatus.isCaughtUp());
+        });
+
+        assertWithin(20, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
     }
 
     private void waitForStatus(String description,

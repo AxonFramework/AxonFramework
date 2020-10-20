@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.async;
+package org.axonframework.axonserver.connector;
+
+import io.grpc.ManagedChannelBuilder;
+
+import java.util.function.UnaryOperator;
 
 /**
- * SequencingPolicy that requires serialized handling of all events delivered to an event handler.
+ * Customizer to add more customizations to a managed channel to Axon Server.
  *
- * @author Allard Buijze
- * @since 0.3
+ * @author Marc Gathier
+ * @since 4.4.3
  */
-public class SequentialPolicy implements SequencingPolicy<Object> {
+@FunctionalInterface
+public interface ManagedChannelCustomizer extends UnaryOperator<ManagedChannelBuilder<?>> {
 
-    private static final Object FULL_SEQUENTIAL_POLICY = new Object();
-
-    @Override
-    public Object getSequenceIdentifierFor(Object task) {
-        return FULL_SEQUENTIAL_POLICY;
+    /**
+     * Returns a no-op {@link ManagedChannelCustomizer}.
+     *
+     * @return a no-op {@link ManagedChannelCustomizer}
+     */
+    static ManagedChannelCustomizer identity() {
+        return c -> c;
     }
 }

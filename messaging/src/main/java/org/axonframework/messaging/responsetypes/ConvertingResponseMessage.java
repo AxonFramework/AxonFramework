@@ -1,5 +1,6 @@
 package org.axonframework.messaging.responsetypes;
 
+import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.SerializedObject;
@@ -74,6 +75,13 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public R getPayload() {
+        if (isExceptional()) {
+            throw new IllegalPayloadAccessException(
+                    "This result completed exceptionally, payload is not available. "
+                            + "Try calling 'exceptionResult' to see the cause of failure.",
+                    optionalExceptionResult().orElse(null)
+            );
+        }
         return expectedResponseType.convert(responseMessage.getPayload());
     }
 

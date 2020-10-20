@@ -24,14 +24,13 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands and
- * Events.
+ * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands, Events and
+ * Queries.
  * <p/>
- * Instead of implementing {@code Message} directly, consider implementing
- * {@link org.axonframework.commandhandling.CommandMessage {@code CommandMessage}} or {@link
- * EventMessage} instead.
+ * Instead of implementing {@code Message} directly, consider implementing {@link org.axonframework.commandhandling.CommandMessage
+ * {@code CommandMessage}}, {@link EventMessage} or {@link org.axonframework.queryhandling.QueryMessage} instead.
  *
- * @param <T> The type of payload contained in this Message
+ * @param <T> the type of payload contained in this Message
  * @author Allard Buijze
  * @see org.axonframework.commandhandling.CommandMessage {@code CommandMessage}
  * @see EventMessage
@@ -40,8 +39,8 @@ import java.util.Map;
 public interface Message<T> extends Serializable {
 
     /**
-     * Returns the identifier of this message. Two messages with the same identifiers should be interpreted as
-     * different representations of the same conceptual message. In such case, the meta-data may be different for both
+     * Returns the identifier of this message. Two messages with the same identifiers should be interpreted as different
+     * representations of the same conceptual message. In such case, the meta-data may be different for both
      * representations. The payload <em>may</em> be identical.
      *
      * @return the unique identifier of this message
@@ -49,25 +48,25 @@ public interface Message<T> extends Serializable {
     String getIdentifier();
 
     /**
-     * Returns the meta data for this event. This meta data is a collection of key-value pairs, where the key is a
+     * Returns the meta data for this message. This meta data is a collection of key-value pairs, where the key is a
      * String, and the value is a serializable object.
      *
-     * @return the meta data for this event
+     * @return the meta data for this message
      */
     MetaData getMetaData();
 
     /**
-     * Returns the payload of this Event. The payload is the application-specific information.
+     * Returns the payload of this message. The payload is the application-specific information.
      *
-     * @return the payload of this Event
+     * @return the payload of this message
      */
     T getPayload();
 
     /**
      * Returns the type of the payload.
      * <p/>
-     * Is semantically equal to {@code getPayload().getClass()}, but allows implementations to optimize by using
-     * lazy loading or deserialization.
+     * Is semantically equal to {@code getPayload().getClass()}, but allows implementations to optimize by using lazy
+     * loading or deserialization.
      *
      * @return the type of payload.
      */
@@ -76,9 +75,9 @@ public interface Message<T> extends Serializable {
     /**
      * Returns a copy of this Message with the given {@code metaData}. The payload remains unchanged.
      * <p/>
-     * While the implementation returned may be different than the implementation of {@code this}, implementations
-     * must take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent
-     * errors further downstream.
+     * While the implementation returned may be different than the implementation of {@code this}, implementations must
+     * take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent errors
+     * further downstream.
      *
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
@@ -86,8 +85,8 @@ public interface Message<T> extends Serializable {
     Message<T> withMetaData(Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this Message with it MetaData merged with the given {@code metaData}. The payload
-     * remains unchanged.
+     * Returns a copy of this Message with it MetaData merged with the given {@code metaData}. The payload remains
+     * unchanged.
      *
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData

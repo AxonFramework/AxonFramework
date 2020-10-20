@@ -399,7 +399,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
-            checkSegmentCaughtUp(segment, eventStream);
             TrackingToken lastToken;
             Collection<Segment> processingSegments;
             if (eventStream.hasNextAvailable(eventAvailabilityTimeout, MILLISECONDS)) {
@@ -437,6 +436,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     return;
                 }
             } else {
+                checkSegmentCaughtUp(segment, eventStream);
                 // Refresh claim on token
                 transactionManager.executeInTransaction(
                         () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
@@ -467,6 +467,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             updateActiveSegments(() -> activeSegments.computeIfPresent(
                     segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken)
             ));
+            checkSegmentCaughtUp(segment, eventStream);
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();
@@ -1200,19 +1201,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
          * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
          * <p/>
          * Note that setting this value influences the behavior for storing tokens either at the start or at the end of
-         * a batch.
-         * If a TransactionManager other than a {@link NoTransactionManager} is configured, the default behavior is to
-         * store the last token of the Batch to the Token Store before processing of events begins. If the
-         * {@link NoTransactionManager} is provided, the default is to extend the claim at the start of the unit of
-         * work, and update the token after processing Events.
-         * When tokens are stored at the start of a batch, a claim extension will be sent at the end of the batch if
-         * processing that batch took longer than the {@link
+         * a batch. If a TransactionManager other than a {@link NoTransactionManager} is configured, the default
+         * behavior is to store the last token of the Batch to the Token Store before processing of events begins. If
+         * the {@link NoTransactionManager} is provided, the default is to extend the claim at the start of the unit of
+         * work, and update the token after processing Events. When tokens are stored at the start of a batch, a claim
+         * extension will be sent at the end of the batch if processing that batch took longer than the {@link
          * TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit) tokenClaimUpdateInterval}.
          * <p>
          * Use {@link #storingTokensAfterProcessing()} to force storage of tokens at the end of a batch.
          *
          * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
-         *
          * @return the current Builder instance, for fluent interfacing
          * @see #storingTokensAfterProcessing()
          */
@@ -1252,10 +1250,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
          * <p>
          * The default behavior is to store the last token of the Batch to the Token Store before processing of events
          * begins, if a TransactionManager is configured. If the {@link NoTransactionManager} is provided, the default
-         * is to extend the claim at the start of the unit of work, and update the token after processing Events.
-         * When tokens are stored at the start of a batch, a claim extension will be sent at the end of the batch if
-         * processing that batch took longer than the {@link
-         * TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long, TimeUnit) tokenClaimUpdateInterval}.
+         * is to extend the claim at the start of the unit of work, and update the token after processing Events. When
+         * tokens are stored at the start of a batch, a claim extension will be sent at the end of the batch if
+         * processing that batch took longer than the {@link TrackingEventProcessorConfiguration#andEventAvailabilityTimeout(long,
+         * TimeUnit) tokenClaimUpdateInterval}.
          *
          * @return the current Builder instance, for fluent interfacing
          */

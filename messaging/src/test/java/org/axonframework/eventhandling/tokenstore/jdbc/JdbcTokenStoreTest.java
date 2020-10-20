@@ -34,7 +34,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -66,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ContextConfiguration
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class JdbcTokenStoreTest {
+class JdbcTokenStoreTest {
 
     @Inject
     private DataSource dataSource;
@@ -94,7 +93,7 @@ public class JdbcTokenStoreTest {
             } catch (SQLException e) {
                 throw new IllegalStateException("Failed to drop or create token table", e);
             }
-            tokenStore.createSchema(new GenericTokenTableFactory());
+            tokenStore.createSchema(GenericTokenTableFactory.INSTANCE);
         });
     }
 
@@ -113,10 +112,21 @@ public class JdbcTokenStoreTest {
         transactionManager.executeInTransaction(() -> assertEquals(token, tokenStore.fetchToken("test", 0)));
     }
 
+    @Transactional
+    @Test
+    void testUpdateAndLoadNullToken() {
+        tokenStore.initializeTokenSegments("test", 1);
+        tokenStore.fetchToken("test", 0);
+
+        tokenStore.storeToken(null, "test", 0);
+
+        TrackingToken token = tokenStore.fetchToken("test", 0);
+        assertNull(token);
+    }
 
     @Transactional
     @Test
-    public void testInitializeTokens() {
+    void testInitializeTokens() {
         tokenStore.initializeTokenSegments("test1", 7);
 
         int[] actual = tokenStore.fetchSegments("test1");
@@ -127,7 +137,7 @@ public class JdbcTokenStoreTest {
     @SuppressWarnings("Duplicates")
     @Transactional
     @Test
-    public void testInitializeTokensAtGivenPosition() {
+    void testInitializeTokensAtGivenPosition() {
         tokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
 
         int[] actual = tokenStore.fetchSegments("test1");
@@ -141,13 +151,13 @@ public class JdbcTokenStoreTest {
 
     @Transactional
     @Test
-    public void testInitializeTokensWhileAlreadyPresent() {
+    void testInitializeTokensWhileAlreadyPresent() {
         assertThrows(UnableToClaimTokenException.class, () -> tokenStore.fetchToken("test1", 1));
     }
 
     @Transactional
     @Test
-    public void testQuerySegments() {
+    void testQuerySegments() {
         transactionManager.executeInTransaction(() -> {
             tokenStore.initializeTokenSegments("test", 1);
             tokenStore.initializeTokenSegments("proc1", 2);
@@ -281,7 +291,7 @@ public class JdbcTokenStoreTest {
 
     @Transactional
     @Test
-    public void testDeleteTokenFailsWhenClaimedByOtherNode() {
+    void testDeleteTokenFailsWhenClaimedByOtherNode() {
         assertThrows(UnableToClaimTokenException.class, () -> concurrentTokenStore.fetchToken("test1", 1));
     }
 
@@ -326,7 +336,7 @@ public class JdbcTokenStoreTest {
             dataSource.setUrl("jdbc:hsqldb:mem:testdb");
             dataSource.setUser("sa");
             dataSource.setPassword("");
-            return new TransactionAwareDataSourceProxy(dataSource);
+            return dataSource;
         }
 
         @Bean

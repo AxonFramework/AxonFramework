@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.EventStream;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
+import org.axonframework.axonserver.connector.AxonServerException;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
@@ -33,6 +35,7 @@ import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -57,14 +60,14 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class EventBuffer implements TrackingEventStream {
 
-    private static final Logger logger = LoggerFactory.getLogger(EventBuffer.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int DEFAULT_POLLING_TIME_MILLIS = 500;
+    private static final int MAX_AWAIT_AVAILABLE_DATA = 500;
 
-    private final Serializer serializer;
     private final EventStream delegate;
-    private final boolean disableEventBlacklisting;
     private final Iterator<TrackedEventMessage<?>> eventStream;
+    private final Serializer serializer;
+    private final boolean disableEventBlacklisting;
 
     private TrackedEventMessage<?> peekEvent;
 
@@ -84,10 +87,9 @@ public class EventBuffer implements TrackingEventStream {
                        EventUpcaster upcasterChain,
                        Serializer serializer,
                        boolean disableEventBlacklisting) {
-        this.serializer = serializer;
         this.delegate = delegate;
+        this.serializer = serializer;
         this.disableEventBlacklisting = disableEventBlacklisting;
-
         this.eventStream = EventUtils.upcastAndDeserializeTrackedEvents(
                 StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
                 new GrpcMetaDataAwareSerializer(serializer),
@@ -106,10 +108,7 @@ public class EventBuffer implements TrackingEventStream {
 
     private TrackedEventData<byte[]> poll() {
         EventWithToken eventWithToken = delegate.nextIfAvailable();
-        if (eventWithToken == null) {
-            return null;
-        }
-        return convert(eventWithToken);
+        return eventWithToken == null ? null : convert(eventWithToken);
     }
 
     private TrackedEventData<byte[]> convert(EventWithToken eventWithToken) {
@@ -139,45 +138,49 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public Optional<TrackedEventMessage<?>> peek() {
-        if (peekEvent == null && eventStream.hasNext()) {
-            peekEvent = eventStream.next();
-        }
-        return Optional.ofNullable(peekEvent);
+        return Optional.ofNullable(peekNullable());
     }
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) {
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
-            do {
-                long waitTime = deadline - System.currentTimeMillis();
-                waitForData(waitTime);
-            } while (peekEvent == null && System.currentTimeMillis() < deadline && !eventStream.hasNext());
+            while (peekNullable() == null && System.currentTimeMillis() < deadline) {
+                lock.lock();
+                try {
+                    long waitTime = deadline - System.currentTimeMillis();
+                    // Check if an event has arrived in the meantime and if wait time greater than zero.
+                    // Only then is it worth waiting.
+                    if (peekNullable() == null && waitTime > 0) {
+                        boolean await =
+                                dataAvailable.await(Math.min(waitTime, MAX_AWAIT_AVAILABLE_DATA),
+                                                    TimeUnit.MILLISECONDS);
+                        logger.trace(await ? "Signaled new events are available"
+                                             : "No signal received for new events, exiting await");
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            }
 
-            return peekEvent != null || eventStream.hasNext();
+            return peekNullable() != null;
         } catch (InterruptedException e) {
-            logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+            logger.warn("Event consumer thread was interrupted. Returning thread to event processor.", e);
             Thread.currentThread().interrupt();
             return false;
         }
     }
 
-    private void waitForData(long timeout) throws InterruptedException {
-        // a quick check before acquiring the lock
-        if (delegate.peek() != null) {
-            return;
+    private TrackedEventMessage<?> peekNullable() {
+        if (peekEvent == null && eventStream.hasNext()) {
+            peekEvent = eventStream.next();
         }
-        if (timeout > 0) {
-            lock.lock();
-            try {
-                // check again for concurrency reasons
-                if (delegate.peek() == null) {
-                    dataAvailable.await(Math.min(DEFAULT_POLLING_TIME_MILLIS, timeout), TimeUnit.MILLISECONDS);
-                }
-            } finally {
-                lock.unlock();
-            }
+        // If the peeked event still is null, the EventStream might've been closed.
+        if (peekEvent == null && delegate.isClosed()) {
+            throw new AxonServerException(ErrorCode.OTHER.errorCode(),
+                                          "The Event Stream has been closed, so no further events can be retrieved");
         }
+        return peekEvent;
     }
 
     @Override

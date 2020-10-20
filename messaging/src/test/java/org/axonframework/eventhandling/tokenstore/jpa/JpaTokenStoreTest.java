@@ -58,11 +58,23 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -102,6 +114,7 @@ public class JpaTokenStoreTest {
     @Test
     public void testUpdateNullToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
+        jpaTokenStore.fetchToken("test", 0);
         jpaTokenStore.storeToken(null, "test", 0);
         List<TokenEntry> tokens = entityManager.createQuery("SELECT t FROM TokenEntry t " +
                                                                     "WHERE t.processorName = :processorName",
@@ -111,6 +124,19 @@ public class JpaTokenStoreTest {
         assertEquals(1, tokens.size());
         assertNotNull(tokens.get(0).getOwner());
         assertNull(tokens.get(0).getToken(TestSerializer.XSTREAM.getSerializer()));
+    }
+
+    @Transactional
+    @Test
+    void testUpdateAndLoadNullToken() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        jpaTokenStore.fetchToken("test", 0);
+        entityManager.flush();
+        jpaTokenStore.storeToken(null, "test", 0);
+        entityManager.flush();
+        entityManager.clear();
+        TrackingToken token = jpaTokenStore.fetchToken("test", 0);
+        assertNull(token);
     }
 
     @Transactional

@@ -16,10 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -27,18 +23,39 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.modelling.command.ConcurrencyException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.Executor;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -93,6 +110,24 @@ class AbstractSnapshotterTest {
     }
 
     @Test
+    void testScheduleSnapshotOnlyOnce() {
+        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        String aggregateIdentifier = "aggregateIdentifier";
+        when(mockEventStore.readEvents(aggregateIdentifier))
+                .thenReturn(DomainEventStream.of(createEvents(2)));
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        verify(mockEventStore, never()).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+
+        uow.commit();
+
+        verify(mockEventStore, times(1)).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+    }
+
+    @Test
     void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
@@ -143,6 +178,40 @@ class AbstractSnapshotterTest {
         inOrder.verify(mockEventStore).readEvents(anyString());
         inOrder.verify(mockEventStore).storeSnapshot(isA(DomainEventMessage.class));
         inOrder.verify(mockTransaction).commit();
+    }
+
+    @Test
+    void testScheduleSnapshot_IgnoredWhenSnapshotAlreadyScheduled() {
+        StubExecutor executor = new StubExecutor();
+        testSubject = TestSnapshotter.builder().eventStore(mockEventStore).executor(executor).build();
+
+        testSubject.scheduleSnapshot(Object.class, "id1");
+        testSubject.scheduleSnapshot(Object.class, "id1");
+
+        assertEquals(1, executor.size());
+        executor.executeNext();
+        assertEquals(0, executor.size());
+
+        testSubject.scheduleSnapshot(Object.class, "id1");
+
+        assertEquals(1, executor.size());
+    }
+
+    @Test
+    void testScheduleSnapshot_AcceptedWhenOtherSnapshotIsScheduled() {
+        StubExecutor executor = new StubExecutor();
+        testSubject = TestSnapshotter.builder().eventStore(mockEventStore).executor(executor).build();
+
+        testSubject.scheduleSnapshot(Object.class, "id1");
+        testSubject.scheduleSnapshot(Object.class, "id2");
+
+        assertEquals(2, executor.size());
+        executor.executeNext();
+        assertEquals(1, executor.size());
+
+        testSubject.scheduleSnapshot(Object.class, "id2");
+
+        assertEquals(1, executor.size());
     }
 
     private ArgumentMatcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
@@ -228,6 +297,29 @@ class AbstractSnapshotterTest {
         @Override
         public Transaction startTransaction() {
             return transaction;
+        }
+    }
+
+    private class StubExecutor implements Executor {
+
+        private final Queue<Runnable> tasks = new LinkedList<>();
+
+        @Override
+        public void execute(Runnable runnable) {
+            tasks.add(runnable);
+        }
+
+        public boolean executeNext() {
+            Runnable next = tasks.poll();
+            if (next != null) {
+                next.run();
+                return true;
+            }
+            return false;
+        }
+
+        public int size() {
+            return tasks.size();
         }
     }
 }
