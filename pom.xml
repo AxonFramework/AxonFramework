@@ -110,7 +110,7 @@
         <hamcrest.version>2.2</hamcrest.version>
 
         <!-- plugin versions -->
-        <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
+        <felix.bundle.plugin.version>5.1.1</felix.bundle.plugin.version>
 
         <jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
     </properties>
