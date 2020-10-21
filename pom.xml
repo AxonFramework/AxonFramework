@@ -82,7 +82,7 @@
             https://github.com/grpc/grpc-java/blob/master/SECURITY.md
         -->
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <javax.cache-api.version>1.0.0</javax.cache-api.version>
+        <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <javax.el-api.version>2.2.4</javax.el-api.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
