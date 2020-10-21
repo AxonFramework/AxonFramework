@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.junit.jupiter.api.Test;
 
@@ -43,24 +42,6 @@ class IntermediateRepresentationTest {
     private final static Serializer serializer = TestSerializer.XSTREAM.getSerializer();
 
     @Test
-    public void shouldDeliverSerializer() {
-        EventData<?> eventData = new TestDomainEventEntry(
-            new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
-        );
-        IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
-        EventUpcasterChain eventUpcasterChain = new EventUpcasterChain(
-            new IntermediateRepresentationTest.MyEventUpcaster(),
-            new IntermediateRepresentationTest.MyEventUpcaster(),
-            new IntermediateRepresentationTest.MyEventUpcaster()
-        );
-        List<IntermediateEventRepresentation> result = eventUpcasterChain.upcast(Stream.of(input)).collect(toList());
-        assertEquals(1, result.size());
-        IntermediateEventRepresentation output = result.get(0);
-        assertEquals(serializer, output.getSerializer());
-    }
-
-
-    @Test
     public void canConvertDataTo() {
         EventData<?> eventData = new TestDomainEventEntry(
             new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
@@ -78,10 +59,13 @@ class IntermediateRepresentationTest {
         assertEquals(1, result.size());
 
 
-        assertEquals(true, input.canConvertDataTo(String.class));
-        assertEquals(true, result.get(0).canConvertDataTo(String.class));
+        assertTrue(input.canConvertDataTo(String.class));
+        assertTrue(result.get(0).canConvertDataTo(String.class));
 
         verify(converter, atMostOnce()).canConvert(String.class, String.class);
+    }
+
+    private void assertTrue(boolean canConvertDataTo) {
     }
 
     private static class MyEventUpcaster extends SingleEventUpcaster {

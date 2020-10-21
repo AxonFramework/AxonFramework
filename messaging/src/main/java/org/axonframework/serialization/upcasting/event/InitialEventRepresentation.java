@@ -150,12 +150,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     }
 
     @Override
-    public <D> Boolean canConvertDataTo(Class<D> requiredType) {
+    public <D> boolean canConvertDataTo(Class<D> requiredType) {
         return serializer.getConverter().canConvert(data.getContentType(), requiredType);
-    }
-
-    @Override
-    public Serializer getSerializer() {
-        return serializer;
     }
 }

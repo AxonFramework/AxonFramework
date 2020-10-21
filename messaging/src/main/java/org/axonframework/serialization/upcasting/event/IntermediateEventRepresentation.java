@@ -148,12 +148,5 @@ public interface IntermediateEventRepresentation {
      * @param <D> class of the required type.
      * @return true, if the intermediate representation's data can be converted to desired type, false otherwise
      */
-    <D> Boolean canConvertDataTo(Class<D> requiredType);
-
-    /**
-     * Retrieve the {@link Serializer} used to convert the contained {@link #getData()} and to deserialize the contained {@link #getMetaData()}.
-     *
-     * @return serializer used to convert and deserialize the the contained {@link #getData()} and  {@link #getMetaData()} respectively
-     */
-    Serializer getSerializer();
+    <D> boolean canConvertDataTo(Class<D> requiredType);
 }
