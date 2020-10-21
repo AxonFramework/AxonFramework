@@ -142,10 +142,10 @@ public interface IntermediateEventRepresentation {
     LazyDeserializingObject<MetaData> getMetaData();
 
     /**
-     * Checks if the data can be converted to required type.
+     * Checks if the data can be converted to the given {@code requiredType}.
      *
-     * @param requiredType the type to convert to
-     * @return true, if the intermediate representation can be converted to desired type.
+     * @param requiredType the type to validate if the contained data can be converted to
+     * @return true, if the intermediate representation's data can be converted to desired type, false otherwise
      */
     <D> Boolean canConvertDataTo(Class<D> requiredType);
 
