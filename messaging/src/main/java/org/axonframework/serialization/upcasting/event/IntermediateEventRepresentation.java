@@ -150,8 +150,9 @@ public interface IntermediateEventRepresentation {
     <D> Boolean canConvertDataTo(Class<D> requiredType);
 
     /**
-     * Retrieves the serializer used to retrieve data.
-     * @return serializer configured for event serialization.
+     * Retrieve the {@link Serializer} used to convert the contained {@link #getData()} and to deserialize the contained {@link #getMetaData()}.
+     *
+     * @return serializer used to convert and deserialize the the contained {@link #getData()} and  {@link #getMetaData()} respectively
      */
     Serializer getSerializer();
 }
