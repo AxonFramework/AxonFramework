@@ -138,7 +138,7 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     }
 
     @Override
-    public <D> boolean canConvertDataTo(Class<D> requiredType) {
+    public boolean canConvertDataTo(Class<?> requiredType) {
         return converter.canConvert(source.getData().getContentType(), requiredType);
     }
 }
