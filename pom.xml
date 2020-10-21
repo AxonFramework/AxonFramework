@@ -73,7 +73,7 @@
         <spring.boot.version>2.3.4.RELEASE</spring.boot.version>
         <mockito.version>3.5.15</mockito.version>
         <projectreactor.version>3.3.10.RELEASE</projectreactor.version>
-        <micrometer.version>1.3.0</micrometer.version>
+        <micrometer.version>1.5.5</micrometer.version>
         <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
         <jackson.version>2.11.3</jackson.version>
         <!--
@@ -82,12 +82,12 @@
             https://github.com/grpc/grpc-java/blob/master/SECURITY.md
         -->
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <javax.cache-api.version>1.0.0</javax.cache-api.version>
+        <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-        <javax.jaxb-api.version>2.3.0</javax.jaxb-api.version>
+        <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.2</disruptor.version>
         <mysql-connector-java.version>8.0.22</mysql-connector-java.version>
         <ehcache.version>2.10.6</ehcache.version>
@@ -110,7 +110,7 @@
         <hamcrest.version>2.2</hamcrest.version>
 
         <!-- plugin versions -->
-        <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
+        <felix.bundle.plugin.version>5.1.1</felix.bundle.plugin.version>
 
         <jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
     </properties>

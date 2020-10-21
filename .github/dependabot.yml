@@ -15,4 +15,4 @@ updates:
     - "m1l4n54v1c"
     - "saratry"
     - "smcvb"
-  default_milestone: "Release 4.5"
+  milestone: 50
