@@ -144,7 +144,8 @@ public interface IntermediateEventRepresentation {
     /**
      * Checks if the data can be converted to the given {@code requiredType}.
      *
-     * @param requiredType the type to validate if the contained data can be converted to
+     * @param requiredType the type to validate if the contained data can be converted to.
+     * @param <D> class of the required type.
      * @return true, if the intermediate representation's data can be converted to desired type, false otherwise
      */
     <D> Boolean canConvertDataTo(Class<D> requiredType);

@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.junit.jupiter.api.Test;
@@ -37,12 +38,12 @@ import static org.mockito.Mockito.*;
  *
  * @author Simon Zambrovski
  */
-public class IntermediateRepresentationTest {
+class IntermediateRepresentationTest {
 
-    private final static Serializer serializer = XStreamSerializer.defaultSerializer();
+    private final static Serializer serializer = TestSerializer.XSTREAM.getSerializer();
 
     @Test
-    public void should_deliver_serializer() {
+    public void shouldDeliverSerializer() {
         EventData<?> eventData = new TestDomainEventEntry(
             new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
         );
@@ -60,7 +61,7 @@ public class IntermediateRepresentationTest {
 
 
     @Test
-    public void can_convert_data_to() {
+    public void canConvertDataTo() {
         EventData<?> eventData = new TestDomainEventEntry(
             new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
         );
