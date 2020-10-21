@@ -94,7 +94,7 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
-        <hibernate-validator.version>5.3.6.Final</hibernate-validator.version>
+        <hibernate-validator.version>6.1.6.Final</hibernate-validator.version>
         <hibernate-entitymanager.version>5.4.22.Final</hibernate-entitymanager.version>
         <byte-buddy.version>1.10.17</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
