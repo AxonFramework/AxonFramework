@@ -15,16 +15,10 @@
  */
 package org.axonframework.extensions.kotlin
 
-import io.mockk.Runs
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.axonframework.commandhandling.CommandCallback
-import org.axonframework.commandhandling.CommandMessage
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.MetaData
-import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 
 /**
@@ -41,7 +35,11 @@ internal class CommandGatewayExtensionsTest {
     fun `Send extension should invoke correct method on the gateway`() {
         every { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) } just Runs
 
-        subjectGateway.send<ExampleCommand, Any>(command = exampleCommand, onError = { _, _, _ -> }, onSuccess = { _, _, _ -> })
+        subjectGateway.send(
+            command = exampleCommand,
+            onError = { _, _, _ -> },
+            onSuccess = { _, _: Any, _ -> }
+        )
 
         verify { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) }
     }
@@ -52,8 +50,8 @@ internal class CommandGatewayExtensionsTest {
 
         subjectGateway.send(
             command = exampleCommand,
-            onError = { _: Any, _: Throwable, _: MetaData -> },
-            onSuccess = { _: CommandMessage<out ExampleCommand>, _: Any, _: MetaData -> }
+            onError = { _, _: Throwable, _: MetaData -> },
+            onSuccess = { _, _: Any, _: MetaData -> }
         )
 
         verify { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) }
