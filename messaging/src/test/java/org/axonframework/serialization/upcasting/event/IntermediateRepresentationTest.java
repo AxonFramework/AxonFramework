@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -62,10 +63,7 @@ class IntermediateRepresentationTest {
         assertTrue(input.canConvertDataTo(String.class));
         assertTrue(result.get(0).canConvertDataTo(String.class));
 
-        verify(converter, atMostOnce()).canConvert(String.class, String.class);
-    }
-
-    private void assertTrue(boolean canConvertDataTo) {
+        verify(converter).canConvert(String.class, String.class);
     }
 
     private static class MyEventUpcaster extends SingleEventUpcaster {

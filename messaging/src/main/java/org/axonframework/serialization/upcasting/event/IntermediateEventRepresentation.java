@@ -21,7 +21,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
 
 import java.time.Instant;
 import java.util.Optional;
