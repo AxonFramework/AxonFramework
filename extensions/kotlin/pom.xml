@@ -34,13 +34,13 @@
     <axon.version>4.4.3</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>1.4.10</kotlin.version>
-    <kotlin-logging.version>1.12.0</kotlin-logging.version>
+    <kotlin-logging.version>2.0.3</kotlin-logging.version>
     <jackson-kotlin.version>2.11.3</jackson-kotlin.version>
     <mockk.version>1.10.2</mockk.version>
     <junit.jupiter.version>5.7.0</junit.jupiter.version>
     <slf4j.version>1.7.30</slf4j.version>
     <log4j.version>2.13.3</log4j.version>
-    <dokka.version>1.4.10</dokka.version>
+    <dokka.version>1.4.10.2</dokka.version>
   </properties>
 
   <dependencyManagement>
@@ -71,16 +71,9 @@
       </dependency>
       <dependency>
         <groupId>io.github.microutils</groupId>
-        <artifactId>kotlin-logging</artifactId>
+        <artifactId>kotlin-logging-jvm</artifactId>
         <version>${kotlin-logging.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
-
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
