@@ -41,6 +41,12 @@
     <slf4j.version>1.7.30</slf4j.version>
     <log4j.version>2.13.3</log4j.version>
     <dokka.version>1.4.10.2</dokka.version>
+    <!--
+    Deactivate dokka by default, and make the build faster for all projects.
+    The dokka.skip will be set to true on relevant projects only containing Kotlin code
+    (for example there is no reason to produce KDoc for example modules or empty javadoc archives for pom-only modules)
+    -->
+    <dokka.skip>true</dokka.skip>
   </properties>
 
   <dependencyManagement>
@@ -240,6 +246,26 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>docs-and-sources</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jetbrains.dokka</groupId>
+            <artifactId>dokka-maven-plugin</artifactId>
+          </plugin>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
 
   </profiles>
 
@@ -354,6 +380,10 @@
           <groupId>org.jetbrains.dokka</groupId>
           <artifactId>dokka-maven-plugin</artifactId>
           <version>${dokka.version}</version>
+          <configuration>
+            <!-- Conditionally set per maven module, deactivated by default, to speed up and avoid unneeded empty docs archive -->
+            <skip>${dokka.skip}</skip>
+          </configuration>
           <executions>
             <execution>
               <phase>prepare-package</phase>
