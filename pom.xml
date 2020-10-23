@@ -486,7 +486,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>
