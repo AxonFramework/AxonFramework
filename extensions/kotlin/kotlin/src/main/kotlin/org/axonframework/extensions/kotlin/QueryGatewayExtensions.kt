@@ -121,6 +121,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForOptional(queryName: Strin
  * @return [Stream] a stream of results
  * @see QueryGateway.scatterGather
  * @see ResponseTypes
+ * @since 0.2.0
  */
 @ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(query: Q, timeout: Long,
@@ -140,6 +141,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(query: Q, 
  * @return [Stream] a stream of results
  * @see QueryGateway.scatterGather
  * @see ResponseTypes
+ * @since 0.2.0
  */
 @ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(queryName: String, query: Q, timeout: Long,
@@ -158,6 +160,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(queryName:
  * @return [Stream] a stream of results
  * @see QueryGateway.scatterGather
  * @see ResponseTypes
+ * @since 0.2.0
  */
 @ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(query: Q, timeout: Long,
@@ -177,6 +180,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(query: Q
  * @return [Stream] a stream of results
  * @see QueryGateway.scatterGather
  * @see ResponseTypes
+ * @since 0.2.0
  */
 @ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(queryName: String, query: Q, timeout: Long,
@@ -195,6 +199,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(queryNam
  * @return [Stream] a stream of results
  * @see QueryGateway.scatterGather
  * @see ResponseTypes
+ * @since 0.2.0
  */
 @ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(query: Q, timeout: Long,
@@ -214,6 +219,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(query: Q
  * @return [Stream] a stream of results
  * @see QueryGateway.scatterGather
  * @see ResponseTypes
+ * @since 0.2.0
  */
 @ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(queryName: String, query: Q, timeout: Long,
