@@ -25,9 +25,10 @@ import org.axonframework.messaging.MetaData
  * @param command The command to send
  * @param onError Callback to handle failed execution
  * @param onSuccess Callback to handle successful execution
- * @param [R] the type of result of the command handling
- * @param [C] the type of payload of the command
+ * @param R the type of result of the command handling
+ * @param C the type of payload of the command
  * @see CommandGateway.send
+ * @since 0.1.0
  */
 inline fun <reified C : Any, reified R : Any?> CommandGateway.send(
     command: C,

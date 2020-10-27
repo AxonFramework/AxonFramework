@@ -20,15 +20,17 @@ import org.axonframework.modelling.command.GenericJpaRepository
 
 /**
  * Reified version of the static builder for event souring repository.
- * @param [T] aggregate type.
+ * @param T aggregate type.
  * @return event sourcing repository builder for aggregate [T]
+ * @since 0.2.0
  */
 inline fun <reified T : Any> eventSourcingRepositoryBuilder() = EventSourcingRepository.builder(T::class.java)
 
 
 /**
  * Reified version of the static builder for JPA repository.
- * @param [T] aggregate type.
+ * @param T aggregate type.
  * @return Generic JPA repository builder for aggregate [T]
+ * @since 0.2.0
  */
 inline fun <reified T : Any> genericJpaRepositoryBuilder() = GenericJpaRepository.builder(T::class.java)
