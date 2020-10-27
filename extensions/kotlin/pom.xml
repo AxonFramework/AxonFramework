@@ -34,13 +34,20 @@
     <axon.version>4.4.3</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>1.4.10</kotlin.version>
-    <kotlin-logging.version>1.12.0</kotlin-logging.version>
+    <kotlin-logging.version>2.0.3</kotlin-logging.version>
     <jackson-kotlin.version>2.11.3</jackson-kotlin.version>
     <mockk.version>1.10.2</mockk.version>
     <junit.jupiter.version>5.7.0</junit.jupiter.version>
     <slf4j.version>1.7.30</slf4j.version>
     <log4j.version>2.13.3</log4j.version>
     <dokka.version>1.4.10.2</dokka.version>
+
+    <!--
+    Deactivate dokka by default, and make the build faster for all projects.
+    The dokka.skip will be set to true on relevant projects only containing Kotlin code
+    (for example there is no reason to produce KDoc for example modules or empty javadoc archives for pom-only modules)
+    -->
+    <dokka.skip>true</dokka.skip>
   </properties>
 
   <dependencyManagement>
@@ -71,16 +78,9 @@
       </dependency>
       <dependency>
         <groupId>io.github.microutils</groupId>
-        <artifactId>kotlin-logging</artifactId>
+        <artifactId>kotlin-logging-jvm</artifactId>
         <version>${kotlin-logging.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
-
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
@@ -106,6 +106,12 @@
         <groupId>io.mockk</groupId>
         <artifactId>mockk</artifactId>
         <version>${mockk.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${slf4j.version}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -160,6 +166,12 @@
       <artifactId>mockk</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <!-- License Stuff -->
@@ -231,6 +243,26 @@
                 </goals>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>docs-and-sources</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jetbrains.dokka</groupId>
+            <artifactId>dokka-maven-plugin</artifactId>
+          </plugin>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
           </plugin>
         </plugins>
       </build>
@@ -349,6 +381,10 @@
           <groupId>org.jetbrains.dokka</groupId>
           <artifactId>dokka-maven-plugin</artifactId>
           <version>${dokka.version}</version>
+          <configuration>
+            <!-- Conditionally set per maven module, deactivated by default, to speed up and avoid unneeded empty docs archive -->
+            <skip>${dokka.skip}</skip>
+          </configuration>
           <executions>
             <execution>
               <phase>prepare-package</phase>

@@ -30,6 +30,10 @@
 
   <artifactId>axon-kotlin</artifactId>
 
+  <properties>
+    <dokka.skip>false</dokka.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.axonframework</groupId>
@@ -46,29 +50,5 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>javadoc-and-sources</id>
-      <activation>
-        <property>
-          <name>performRelease</name>
-          <value>true</value>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jetbrains.dokka</groupId>
-            <artifactId>dokka-maven-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.0.1</version>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
 </project>

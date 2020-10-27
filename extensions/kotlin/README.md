@@ -82,7 +82,7 @@ If you want to build the extension locally, you need to check it out from GiHub 
     
 ### Producing JavaDocs and Sources archive
 
-In order to build JavaDoc and Sources archives you will need JDK 8 installed on your machine. Please execute the following command line:
+Please execute the following command line if you are interested in producing KDoc and Source archives:
 
     ./mvnw clean install -Pjavadoc-and-sources
     
