@@ -19,9 +19,8 @@ import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
-import kotlin.time.DurationUnit
-import kotlin.time.ExperimentalTime
 
 /**
  * Reified version of [QueryGateway.query]
@@ -115,7 +114,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForOptional(queryName: Strin
  * which expects an Stream object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
  * @param query Query to send
  * @param timeout a timeout for the query
- * @param durationUnit the selected DurationUnit for the given timeout
+ * @param timeUnit the selected TimeUnit for the given timeout
  * @param [Q] the type of payload of the query
  * @param [R] the response class contained in the given responseType
  * @return [Stream] a stream of results
@@ -123,10 +122,9 @@ inline fun <reified R, reified Q> QueryGateway.queryForOptional(queryName: Strin
  * @see ResponseTypes
  * @since 0.2.0
  */
-@ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(query: Q, timeout: Long,
-                                                                      durationUnit: DurationUnit): Stream<R> {
-    return this.scatterGather(query, ResponseTypes.instanceOf(R::class.java), timeout, durationUnit)
+                                                                      timeUnit: TimeUnit): Stream<R> {
+    return this.scatterGather(query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
 
 /**
@@ -135,7 +133,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(query: Q, 
  * @param query Query to send
  * @param queryName Name of the query
  * @param timeout a timeout for the query
- * @param durationUnit the selected DurationUnit for the given timeout
+ * @param timeUnit the selected TimeUnit for the given timeout
  * @param [Q] the type of payload of the query
  * @param [R] the response class contained in the given responseType
  * @return [Stream] a stream of results
@@ -143,10 +141,9 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(query: Q, 
  * @see ResponseTypes
  * @since 0.2.0
  */
-@ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(queryName: String, query: Q, timeout: Long,
-                                                                      durationUnit: DurationUnit): Stream<R> {
-    return this.scatterGather(queryName, query, ResponseTypes.instanceOf(R::class.java), timeout, durationUnit)
+                                                                      timeUnit: TimeUnit): Stream<R> {
+    return this.scatterGather(queryName, query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
 
 /**
@@ -154,7 +151,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(queryName:
  * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
  * @param query Query to send
  * @param timeout a timeout for the query
- * @param durationUnit the selected DurationUnit for the given timeout
+ * @param timeUnit the selected TimeUnit for the given timeout
  * @param [Q] the type of payload of the query
  * @param [R] the response class contained in the given responseType
  * @return [Stream] a stream of results
@@ -162,10 +159,9 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(queryName:
  * @see ResponseTypes
  * @since 0.2.0
  */
-@ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(query: Q, timeout: Long,
-                                                                        durationUnit: DurationUnit): Stream<List<R>> {
-    return this.scatterGather(query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, durationUnit)
+                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+    return this.scatterGather(query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
 
 /**
@@ -174,7 +170,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(query: Q
  * @param query Query to send
  * @param queryName Name of the query
  * @param timeout a timeout for the query
- * @param durationUnit the selected DurationUnit for the given timeout
+ * @param timeUnit the selected TimeUnit for the given timeout
  * @param [Q] the type of payload of the query
  * @param [R] the response class contained in the given responseType
  * @return [Stream] a stream of results
@@ -182,10 +178,9 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(query: Q
  * @see ResponseTypes
  * @since 0.2.0
  */
-@ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(queryName: String, query: Q, timeout: Long,
-                                                                        durationUnit: DurationUnit): Stream<List<R>> {
-    return this.scatterGather(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, durationUnit)
+                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+    return this.scatterGather(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
 
 /**
@@ -193,7 +188,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(queryNam
  * which expects a collection as a response using [org.axonframework.messaging.responsetypes.OptionalResponseType]
  * @param query Query to send
  * @param timeout a timeout for the query
- * @param durationUnit the selected DurationUnit for the given timeout
+ * @param timeUnit the selected TimeUnit for the given timeout
  * @param [Q] the type of payload of the query
  * @param [R] the response class contained in the given responseType
  * @return [Stream] a stream of results
@@ -201,10 +196,9 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(queryNam
  * @see ResponseTypes
  * @since 0.2.0
  */
-@ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(query: Q, timeout: Long,
-                                                                        durationUnit: DurationUnit): Stream<Optional<R>> {
-    return this.scatterGather(query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, durationUnit)
+                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+    return this.scatterGather(query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
 
 /**
@@ -213,7 +207,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(query: Q
  * @param query Query to send
  * @param queryName Name of the query
  * @param timeout a timeout for the query
- * @param durationUnit the selected DurationUnit for the given timeout
+ * @param timeUnit the selected TimeUnit for the given timeout
  * @param [Q] the type of payload of the query
  * @param [R] the response class contained in the given responseType
  * @return [Stream] a stream of results
@@ -221,8 +215,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(query: Q
  * @see ResponseTypes
  * @since 0.2.0
  */
-@ExperimentalTime
 inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(queryName: String, query: Q, timeout: Long,
-                                                                        durationUnit: DurationUnit): Stream<Optional<R>> {
-    return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, durationUnit)
+                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+    return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
