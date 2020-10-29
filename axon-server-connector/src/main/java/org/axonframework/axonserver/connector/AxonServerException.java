@@ -57,7 +57,7 @@ public class AxonServerException extends AxonException {
     }
 
     /**
-     * Initializes the exception using the given {@code message}, {@code code}, {@code source} and {@code details} .
+     * Initializes the exception using the given {@code message}, {@code code}, {@code source} and {@code details}.
      *
      * @param message The message describing the exception
      * @param code    The code of the error received from the Axon Server
@@ -75,7 +75,6 @@ public class AxonServerException extends AxonException {
     }
 
     /**
-     * /**
      * Initializes the exception using the given {@code message}, {@code code}, and {@code cause}.
      *
      * @param message The message describing the exception
