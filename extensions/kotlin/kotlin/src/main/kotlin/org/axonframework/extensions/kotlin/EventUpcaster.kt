@@ -23,6 +23,7 @@ import kotlin.reflect.KClass
 
 /**
  * Helpers for event upcaster.
+ * @since 0.1.0
  */
 object EventUpcaster {
     /**

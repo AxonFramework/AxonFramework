@@ -25,11 +25,12 @@ import java.util.concurrent.CompletableFuture
  * Reified version of [QueryGateway.query]
  * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
  * @param query Query to send
- * @param [Q] the type of payload of the query
- * @param [R] the type of result of the query
+ * @param Q the type of payload of the query
+ * @param R the type of result of the query
  * @return [CompletableFuture] wrapping the result of the query
  * @see QueryGateway.query
  * @see ResponseTypes
+ * @since 0.1.0
  */
 inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> {
     return this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
@@ -40,11 +41,12 @@ inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableF
  * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
  * @param queryName Name of the query
  * @param query Query to send
- * @param [Q] the type of payload of the query
- * @param [R] the type of result of the query
+ * @param Q the type of payload of the query
+ * @param R the type of result of the query
  * @return [CompletableFuture] wrapping the result of the query
  * @see QueryGateway.query
  * @see ResponseTypes
+ * @since 0.1.0
  */
 inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, query: Q): CompletableFuture<List<R>> {
     return this.query(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java))
@@ -54,11 +56,12 @@ inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, quer
  * Reified version of [QueryGateway.query]
  * which expects a single object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
  * @param query Query to send
- * @param [Q] the type of payload of the query
- * @param [R] the type of result of the query
+ * @param Q the type of payload of the query
+ * @param R the type of result of the query
  * @return [CompletableFuture] wrapping the result of the query
  * @see QueryGateway.query
  * @see ResponseTypes
+ * @since 0.1.0
  */
 inline fun <reified R, reified Q> QueryGateway.query(query: Q): CompletableFuture<R> {
     return this.query(query, ResponseTypes.instanceOf(R::class.java))
@@ -69,11 +72,12 @@ inline fun <reified R, reified Q> QueryGateway.query(query: Q): CompletableFutur
  * which expects a single object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
  * @param queryName Name of the query
  * @param query Query to send
- * @param [Q] the type of payload of the query
- * @param [R] the type of result of the query
+ * @param Q the type of payload of the query
+ * @param R the type of result of the query
  * @return [CompletableFuture] wrapping the result of the query
  * @see QueryGateway.query
  * @see ResponseTypes
+ * @since 0.1.0
  */
 inline fun <reified R, reified Q> QueryGateway.query(queryName: String, query: Q): CompletableFuture<R> {
     return this.query(queryName, query, ResponseTypes.instanceOf(R::class.java))
@@ -83,11 +87,12 @@ inline fun <reified R, reified Q> QueryGateway.query(queryName: String, query: Q
  * Reified version of [QueryGateway.query]
  * which expects an Optional object as a response using [org.axonframework.messaging.responsetypes.OptionalResponseType]
  * @param query Query to send
- * @param [Q] the type of payload of the query
- * @param [R] the type of result of the query
+ * @param Q the type of payload of the query
+ * @param R the type of result of the query
  * @return [CompletableFuture] wrapping the result of the query
  * @see QueryGateway.query
  * @see ResponseTypes
+ * @since 0.1.0
  */
 inline fun <reified R, reified Q> QueryGateway.queryOptional(query: Q): CompletableFuture<Optional<R>> {
     return this.query(query, ResponseTypes.optionalInstanceOf(R::class.java))
@@ -98,11 +103,12 @@ inline fun <reified R, reified Q> QueryGateway.queryOptional(query: Q): Completa
  * which expects an Optional object as a response using [org.axonframework.messaging.responsetypes.OptionalResponseType]
  * @param queryName Name of the query
  * @param query Query to send
- * @param [Q] the type of payload of the query
- * @param [R] the type of result of the query
+ * @param Q the type of payload of the query
+ * @param R the type of result of the query
  * @return [CompletableFuture] wrapping the result of the query
  * @see QueryGateway.query
  * @see ResponseTypes
+ * @since 0.1.0
  */
 inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
     return this.query(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java))

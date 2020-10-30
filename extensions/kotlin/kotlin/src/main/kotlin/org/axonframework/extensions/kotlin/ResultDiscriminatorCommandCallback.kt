@@ -28,6 +28,7 @@ import org.axonframework.messaging.MetaData
  * @param [C] the type of payload of the command
  * @see CommandCallback
  * @author Stefan Andjelkovic
+ * @since 0.1.0
  */
 class ResultDiscriminatorCommandCallback<C, R>(
     val onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit,
