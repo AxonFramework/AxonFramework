@@ -19,6 +19,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -27,6 +28,7 @@ import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +36,12 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -45,8 +52,20 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SimpleQueryBusTest {
 
@@ -58,7 +77,7 @@ class SimpleQueryBusTest {
     private QueryInvocationErrorHandler errorHandler;
     private MessageMonitor.MonitorCallback monitorCallback;
 
-    private ResponseType<String> singleStringResponse = ResponseTypes.instanceOf(String.class);
+    private final ResponseType<String> singleStringResponse = ResponseTypes.instanceOf(String.class);
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -76,6 +95,24 @@ class SimpleQueryBusTest {
         MessageHandlerInterceptor<QueryMessage<?, ?>> correlationDataInterceptor =
                 new CorrelationDataInterceptor<>(new MessageOriginProvider(CORRELATION_ID, TRACE_ID));
         testSubject.registerHandlerInterceptor(correlationDataInterceptor);
+    }
+
+    @Test
+    public void testHandlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
+        testSubject.subscribe("test", String.class, q -> q.getPayload().toString());
+
+        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<QueryMessage<?, ?>>() {
+            @Override
+            public Object handle(UnitOfWork<? extends QueryMessage<?, ?>> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+                throw new RuntimeException("Faking");
+            }
+        });
+
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(new GenericQueryMessage<>("hello", "test", ResponseTypes.instanceOf(String.class)));
+
+        assertTrue(result.isDone());
+        assertTrue(result.get().isExceptional());
+
     }
 
     @Test

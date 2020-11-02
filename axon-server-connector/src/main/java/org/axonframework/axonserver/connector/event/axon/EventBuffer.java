@@ -178,7 +178,8 @@ public class EventBuffer implements TrackingEventStream {
         // If the peeked event still is null, the EventStream might've been closed.
         if (peekEvent == null && delegate.isClosed()) {
             throw new AxonServerException(ErrorCode.OTHER.errorCode(),
-                                          "The Event Stream has been closed, so no further events can be retrieved");
+                                          "The Event Stream has been closed, so no further events can be retrieved",
+                                          delegate.getError().orElse(null));
         }
         return peekEvent;
     }

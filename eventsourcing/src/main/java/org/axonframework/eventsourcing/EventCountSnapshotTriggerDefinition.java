@@ -16,12 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-
-import java.io.Serializable;
-
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. A snapshot is
  * triggered when the number of events applied on an aggregate exceeds the given {@code threshold}.
@@ -71,52 +65,25 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
         return new EventCountSnapshotTrigger(snapshotter, aggregateType, threshold);
     }
 
-    private static class EventCountSnapshotTrigger implements SnapshotTrigger, Serializable {
+    private static class EventCountSnapshotTrigger extends AbstractSnapshotTrigger {
 
-        private static final long serialVersionUID = 4129616856823136473L;
-        private final Class<?> aggregateType;
         private final int threshold;
-
-        private transient Snapshotter snapshotter;
         private int counter = 0;
-        private boolean initialized = false;
 
         public EventCountSnapshotTrigger(Snapshotter snapshotter, Class<?> aggregateType, int threshold) {
-            this.snapshotter = snapshotter;
-            this.aggregateType = aggregateType;
+            super(snapshotter, aggregateType);
             this.threshold = threshold;
         }
 
         @Override
-        public void eventHandled(EventMessage<?> msg) {
-            if (msg instanceof DomainEventMessage && ++counter >= threshold) {
-                if (CurrentUnitOfWork.isStarted()) {
-                    if (initialized) {
-                        CurrentUnitOfWork.get().onPrepareCommit(
-                                u -> scheduleSnapshot((DomainEventMessage<?>) msg));
-                    } else {
-                        CurrentUnitOfWork.get().onCleanup(
-                                u -> scheduleSnapshot((DomainEventMessage<?>) msg));
-                    }
-                } else {
-                    scheduleSnapshot((DomainEventMessage<?>) msg);
-                }
-                counter = 0;
-            }
-        }
-
-        protected void scheduleSnapshot(DomainEventMessage<?> msg) {
-            snapshotter.scheduleSnapshot(aggregateType, msg.getAggregateIdentifier());
-            counter = 0;
+        public boolean exceedsThreshold() {
+            return ++counter >= threshold;
         }
 
         @Override
-        public void initializationFinished() {
-            initialized = true;
+        public void reset() {
+            counter = 0;
         }
 
-        public void setSnapshotter(Snapshotter snapshotter) {
-            this.snapshotter = snapshotter;
-        }
     }
 }
