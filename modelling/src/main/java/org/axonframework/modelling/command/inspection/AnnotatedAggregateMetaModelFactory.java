@@ -207,7 +207,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private static final String JAVAX_PERSISTENCE_ID = "javax.persistence.Id";
 
         private final Class<? extends T> inspectedType;
-        private final List<ChildEntity<T>> children;
+        private final Map<Class<?>, ChildEntity<T>> children;
         private final AnnotatedHandlerInspector<T> handlerInspector;
         private final Map<Class<?>, List<MessageHandlingMember<? super T>>> allCommandHandlerInterceptors;
         private final Map<Class<?>, List<MessageHandlingMember<? super T>>> allCommandHandlers;
@@ -229,7 +229,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             this.allCommandHandlerInterceptors = new HashMap<>();
             this.allCommandHandlers = new HashMap<>();
             this.allEventHandlers = new HashMap<>();
-            this.children = new ArrayList<>();
+            this.children = new HashMap<>();
             this.handlerInspector = handlerInspector;
         }
 
@@ -377,7 +377,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             childEntityDefinitions.forEach(
                     definition -> definition.createChildDefinition(entityMember, this)
                                             .ifPresent(child -> {
-                                                children.add(child);
+                                                children.put(child.childEntityClass(), child);
                                                 child.commandHandlers().forEach(
                                                         handler -> addHandler(allCommandHandlers, type, handler)
                                                 );
@@ -540,7 +540,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                             format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
                 }
             });
-            children.forEach(i -> i.publish(message, target));
+            children.values().forEach(childEntity -> childEntity.publish(message, target));
         }
 
         @Override
