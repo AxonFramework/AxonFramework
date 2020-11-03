@@ -335,10 +335,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             List<Member> entityIdMembers = new ArrayList<>();
             List<Member> persistenceIdMembers = new ArrayList<>();
             List<Member> aggregateVersionMembers = new ArrayList<>();
-            for (Class<?> handlerType : handlerInspector.getAllHandlers().keySet()) {
+            for (Class<?> inspectedType : handlerInspector.getAllHandlers().keySet()) {
                 // Navigate fields for Axon related annotations
-                for (Field field : ReflectionUtils.fieldsOf(handlerType)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handlerType, field);
+                for (Field field : ReflectionUtils.fieldsOf(inspectedType)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, inspectedType, field);
                     findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> entityIdMembers.add(field));
                     findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID).ifPresent(
                             attributes -> persistenceIdMembers.add(field)
@@ -348,8 +348,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                     );
                 }
                 // Navigate methods for Axon related annotations
-                for (Method method : ReflectionUtils.methodsOf(handlerType)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handlerType, method);
+                for (Method method : ReflectionUtils.methodsOf(inspectedType)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, inspectedType, method);
                     findAnnotationAttributes(method, EntityId.class).ifPresent(attributes -> {
                         assertValidValueProvidingMethod(method, EntityId.class.getSimpleName());
                         entityIdMembers.add(method);

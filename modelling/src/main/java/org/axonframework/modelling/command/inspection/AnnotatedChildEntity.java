@@ -31,8 +31,10 @@ import java.util.stream.Stream;
  * Implementation of a {@link ChildEntity} that uses annotations on a target entity to resolve event and command
  * handlers.
  *
- * @param <P> the parent entity type.
- * @param <C> the child entity type.
+ * @param <P> the parent entity type
+ * @param <C> the child entity type
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
@@ -41,15 +43,14 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     private final BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver;
 
     /**
-     * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command
-     * and event handling to an annotated child entity.
+     * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command and
+     * event handling to an annotated child entity.
      *
-     * @param entityModel           A {@link EntityModel} describing the entity.
-     * @param forwardCommands       Flag indicating whether commands should be forwarded to the entity.
-     * @param commandTargetResolver Resolver for command handler methods on the target.
-     * @param eventTargetResolver   Resolver for event handler methods on the target.
+     * @param entityModel           a {@link EntityModel} describing the entity.
+     * @param forwardCommands       flag indicating whether commands should be forwarded to the entity.
+     * @param commandTargetResolver resolver for command handler methods on the target.
+     * @param eventTargetResolver   resolver for event handler methods on the target.
      */
-    @SuppressWarnings("unchecked")
     public AnnotatedChildEntity(EntityModel<C> entityModel,
                                 boolean forwardCommands,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
@@ -58,19 +59,20 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new ArrayList<>();
         if (forwardCommands) {
-            entityModel.commandHandlers()
-                       .stream()
+            entityModel.commandHandlers(entityModel.entityClass())
                        .filter(eh -> eh.unwrap(CommandMessageHandlingMember.class).isPresent())
-                       .forEach(
-                    (childHandler) -> commandHandlers
-                            .add(new ChildForwardingCommandMessageHandlingMember<>(
-                                    entityModel.commandHandlerInterceptors(),
-                                    childHandler,
-                                    commandTargetResolver)));
+                       .map(childHandler -> (ChildForwardingCommandMessageHandlingMember<? super P, C>)
+                               new ChildForwardingCommandMessageHandlingMember<>(
+                                       entityModel.commandHandlerInterceptors(entityModel.entityClass())
+                                                  .collect(Collectors.toList()),
+                                       childHandler,
+                                       commandTargetResolver
+                               )
+                       )
+                       .forEach(commandHandlers::add);
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void publish(EventMessage<?> msg, P declaringInstance) {
         eventTargetResolver.apply(msg, declaringInstance)

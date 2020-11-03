@@ -24,22 +24,24 @@ import java.util.List;
 /**
  * Interface describing en entity that is a child of another entity.
  *
- * @param <T>
+ * @param <T> defining the parent class this {@link ChildEntity} belongs to
+ * @author Allard Buijze
+ * @since 3.0
  */
 public interface ChildEntity<T> {
 
     /**
-     * Publish the given {@code msg} to the appropriate handlers on the given {@code declaringInstance}
+     * Publish the given {@code msg} to the appropriate handlers on the given {@code declaringInstance}.
      *
-     * @param msg               The message to publish
-     * @param declaringInstance The instance of this entity to invoke handlers on
+     * @param msg               the message to publish
+     * @param declaringInstance the instance of this entity to invoke handlers on
      */
     void publish(EventMessage<?> msg, T declaringInstance);
 
     /**
-     * Returns the command handlers declared in this entity
+     * Returns the command handlers declared in this entity.
      *
-     * @return a list of message handling members that are capable of processing command messages
+     * @return a list of {@link MessageHandlingMember}s that are capable of processing command messages
      */
     List<MessageHandlingMember<? super T>> commandHandlers();
 
