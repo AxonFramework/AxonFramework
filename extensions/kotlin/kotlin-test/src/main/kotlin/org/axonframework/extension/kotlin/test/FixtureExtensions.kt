@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.kotlin
+package org.axonframework.extension.kotlin.test
 
 import org.axonframework.test.aggregate.AggregateTestFixture
+import org.axonframework.test.aggregate.FixtureConfiguration
 import org.axonframework.test.aggregate.ResultValidator
+import org.axonframework.test.saga.SagaTestFixture
 import kotlin.reflect.KClass
 
 /**
@@ -58,3 +60,47 @@ fun <T : Any> AggregateTestFixture<T>.whenever(command: Any, metaData: Map<Strin
  */
 fun <T : Any> AggregateTestFixture<T>.withSubtypes(vararg subtypes: KClass<out T>) =
         this.withSubtypes(* subtypes.map { it.java }.toTypedArray())
+
+/**
+ * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass}
+ * is ignored when performing deep equality checks.
+ *
+ * @param T type of fixture target.
+ * @param F filed type.
+ * @param fieldName The name of the field
+ * @return the current FixtureConfiguration, for fluent interfacing
+ * @since 0.2.0
+ */
+inline fun <T : Any, reified F : Any> FixtureConfiguration<T>.registerIgnoredField(fieldName: String): FixtureConfiguration<T> =
+        this.registerIgnoredField(F::class.java, fieldName)
+
+/**
+ * Creates a saga test fixture for saga [T].
+ * @param T reified type of the saga.
+ * @return saga test fixture.
+ * @since 0.2.0
+ */
+inline fun <reified T : Any> SagaTestFixture<T>.sagaTestFixture() =
+        SagaTestFixture(T::class.java)
+
+/**
+ * Reified version of command gateway registration.
+ * @param T saga type
+ * @param I command gateway type.
+ * @return registered command gateway instance.
+ * @since 0.2.0
+ */
+inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(): I =
+        this.registerCommandGateway(I::class.java)
+
+/**
+ * Reified version of command gateway registration.
+ * @param T saga type
+ * @param I command gateway type.
+ * @param stubImplementation stub implementation.
+ * @return registered command gateway instance.
+ * @since 0.2.0
+ */
+inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(stubImplementation: I): I =
+        this.registerCommandGateway(I::class.java, stubImplementation)
+
