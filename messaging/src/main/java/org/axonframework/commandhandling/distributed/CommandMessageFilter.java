@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.commandfilter.AndCommandMessageFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.NegateCommandMessageFilter;
@@ -24,18 +25,20 @@ import org.axonframework.commandhandling.distributed.commandfilter.OrCommandMess
 import java.io.Serializable;
 
 /**
- * Interface describing a filter that can be applied to commands to describe the type of commands supported by a node
- * in a cluster.
+ * Interface describing a filter that can be applied to commands to describe the type of commands supported by a node in
+ * a cluster.
  *
  * @author Allard Buijze
  * @since 4.0
  */
+@FunctionalInterface
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "className")
 public interface CommandMessageFilter extends Serializable {
 
     /**
      * Indicates whether the given {@code commandMessage} matches this filter.
      *
-     * @param commandMessage The message to match
+     * @param commandMessage the message to match
      * @return {@code true} if the command matches, otherwise {@code false}
      */
     boolean matches(CommandMessage<?> commandMessage);
@@ -43,7 +46,7 @@ public interface CommandMessageFilter extends Serializable {
     /**
      * Returns a filter that matches when both this instance and the given {@code other} match.
      *
-     * @param other The other filter to match against
+     * @param other the other filter to match against
      * @return a filter that matches when both this instance and the other match
      */
     default CommandMessageFilter and(CommandMessageFilter other) {
@@ -68,5 +71,4 @@ public interface CommandMessageFilter extends Serializable {
     default CommandMessageFilter or(CommandMessageFilter other) {
         return new OrCommandMessageFilter(this, other);
     }
-
 }

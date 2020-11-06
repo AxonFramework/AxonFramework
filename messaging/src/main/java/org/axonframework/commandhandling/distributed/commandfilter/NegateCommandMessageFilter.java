@@ -16,11 +16,17 @@
 
 package org.axonframework.commandhandling.distributed.commandfilter;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
+import java.beans.ConstructorProperties;
+import java.util.Objects;
+
 /**
- * Filter that negates the result of another matcher
+ * A {@link CommandMessageFilter} implementation that negates the result of another {@link CommandMessageFilter}
+ * instance.
  *
  * @author Allard Buijze
  * @since 4.0
@@ -30,16 +36,46 @@ public class NegateCommandMessageFilter implements CommandMessageFilter {
     private final CommandMessageFilter filter;
 
     /**
-     * Initialize a filter that negates results of the the given {@code filter}.
+     * Initialize a {@link CommandMessageFilter} that negates results of the the given {@code filter}.
      *
-     * @param filter The filter to negate
+     * @param filter the filter to negate
      */
-    public NegateCommandMessageFilter(CommandMessageFilter filter) {
+    @ConstructorProperties("filter")
+    public NegateCommandMessageFilter(@JsonProperty("filter") CommandMessageFilter filter) {
         this.filter = filter;
     }
 
     @Override
     public boolean matches(CommandMessage<?> commandMessage) {
         return !filter.matches(commandMessage);
+    }
+
+    @JsonGetter
+    private CommandMessageFilter getFilter() {
+        return filter;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        NegateCommandMessageFilter that = (NegateCommandMessageFilter) o;
+        return Objects.equals(filter, that.filter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filter);
+    }
+
+    @Override
+    public String toString() {
+        return "NegateCommandMessageFilter{" +
+                "filter=" + filter +
+                '}';
     }
 }
