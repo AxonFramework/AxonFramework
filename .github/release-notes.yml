@@ -1,0 +1,20 @@
+releasenotes:
+  sections:
+    - title: "Features"
+      emoji: ":star:"
+      labels: [ "Type: Feature" ]
+    - title: "Enhancements"
+      emoji: ":chart_with_upwards_trend:"
+      labels: [ "Type: Enhancement" ]
+    - title: "Bug Fixes"
+      emoji: ":beetle:"
+      labels: [ "Type: Bug" ]
+    - title: "Dependency Upgrade"
+      emoji: ":hammer_and_wrench:"
+      labels: [ "Type: Dependency Upgrade" ]
+  issues:
+    exclude:
+      labels: [ "Type: Incorrect Repository", "Type: Question" ]
+  contributors:
+    exclude:
+      names: [ "dependabot" ]
