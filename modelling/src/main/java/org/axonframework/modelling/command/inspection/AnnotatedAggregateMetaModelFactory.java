@@ -58,6 +58,7 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ListUtils.distinct;
+import static org.axonframework.common.ReflectionUtils.NOT_RECURSIVE;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
@@ -207,7 +208,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private static final String JAVAX_PERSISTENCE_ID = "javax.persistence.Id";
 
         private final Class<? extends T> inspectedType;
-        private final Map<Class<?>, ChildEntity<T>> children;
+        private final List<ChildEntity<T>> children;
         private final AnnotatedHandlerInspector<T> handlerInspector;
         private final Map<Class<?>, List<MessageHandlingMember<? super T>>> allCommandHandlerInterceptors;
         private final Map<Class<?>, List<MessageHandlingMember<? super T>>> allCommandHandlers;
@@ -229,7 +230,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             this.allCommandHandlerInterceptors = new HashMap<>();
             this.allCommandHandlers = new HashMap<>();
             this.allEventHandlers = new HashMap<>();
-            this.children = new HashMap<>();
+            this.children = new ArrayList<>();
             this.handlerInspector = handlerInspector;
         }
 
@@ -335,9 +336,9 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             List<Member> entityIdMembers = new ArrayList<>();
             List<Member> persistenceIdMembers = new ArrayList<>();
             List<Member> aggregateVersionMembers = new ArrayList<>();
-            for (Class<?> inspectedType : handlerInspector.getAllHandlers().keySet()) {
+            for (Class<?> inspectedType : handlerInspector.getAllInspectedTypes()) {
                 // Navigate fields for Axon related annotations
-                for (Field field : ReflectionUtils.fieldsOf(inspectedType)) {
+                for (Field field : ReflectionUtils.fieldsOf(inspectedType, NOT_RECURSIVE)) {
                     createChildDefinitionsAndAddHandlers(childEntityDefinitions, inspectedType, field);
                     findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> entityIdMembers.add(field));
                     findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID).ifPresent(
@@ -348,7 +349,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                     );
                 }
                 // Navigate methods for Axon related annotations
-                for (Method method : ReflectionUtils.methodsOf(inspectedType)) {
+                for (Method method : ReflectionUtils.methodsOf(inspectedType, NOT_RECURSIVE)) {
                     createChildDefinitionsAndAddHandlers(childEntityDefinitions, inspectedType, method);
                     findAnnotationAttributes(method, EntityId.class).ifPresent(attributes -> {
                         assertValidValueProvidingMethod(method, EntityId.class.getSimpleName());
@@ -377,7 +378,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             childEntityDefinitions.forEach(
                     definition -> definition.createChildDefinition(entityMember, this)
                                             .ifPresent(child -> {
-                                                children.put(child.childEntityClass(), child);
+                                                children.add(child);
                                                 child.commandHandlers().forEach(
                                                         handler -> addHandler(allCommandHandlers, type, handler)
                                                 );
@@ -540,7 +541,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                             format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
                 }
             });
-            children.values().forEach(childEntity -> childEntity.publish(message, target));
+            children.forEach(childEntity -> childEntity.publish(message, target));
         }
 
         @Override
