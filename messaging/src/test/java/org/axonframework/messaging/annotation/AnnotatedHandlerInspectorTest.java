@@ -24,11 +24,13 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.mockito.internal.util.collections.*;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -146,6 +148,14 @@ class AnnotatedHandlerInspectorTest {
         MessageHandlingMember<? super A> resultHandler = optionalHandler.get();
         chain.handle(testEvent, testTarget, resultHandler);
         assertThrows(MockException.class, () -> chain.handle(testEventTwo, testTarget, resultHandler));
+    }
+
+    @Test
+    void testGetAllInspectedTypes() {
+        Set<Class<?>> expectedInspectedTypes = Sets.newSet(pA.class, A.class, B.class, C.class, D.class);
+
+        inspector.getAllInspectedTypes()
+                 .forEach(inspectedType -> assertTrue(expectedInspectedTypes.contains(inspectedType)));
     }
 
     @SuppressWarnings("unused")

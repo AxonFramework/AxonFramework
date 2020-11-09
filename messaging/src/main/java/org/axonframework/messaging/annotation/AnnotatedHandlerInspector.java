@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -314,6 +315,23 @@ public class AnnotatedHandlerInspector<T> {
      */
     public Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> getAllInterceptors() {
         return Collections.unmodifiableMap(interceptors);
+    }
+
+    /**
+     * Returns a {@link Set} of all types which have been expected for handlers.
+     *
+     * @return a {@link Set} of all types which have been expected for handlers
+     */
+    public Set<Class<?>> getAllInspectedTypes() {
+        Set<Class<?>> inspectedTypes = new HashSet<>();
+        inspectedTypes.add(inspectedType);
+        subClassInspectors.stream()
+                          .map(AnnotatedHandlerInspector::getAllInspectedTypes)
+                          .forEach(inspectedTypes::addAll);
+        superClassInspectors.stream()
+                            .map(AnnotatedHandlerInspector::getAllInspectedTypes)
+                            .forEach(inspectedTypes::addAll);
+        return Collections.unmodifiableSet(inspectedTypes);
     }
 
     private static class ChainedMessageHandlerInterceptorMember<T> implements MessageHandlerInterceptorMemberChain<T> {
