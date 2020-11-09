@@ -5,7 +5,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.modelling.command.AggregateMember;
 import org.junit.jupiter.api.*;
+import org.mockito.internal.util.collections.*;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,20 +26,8 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
     /**
      * The hierarchy of the Aggregate, is as follows:
      * <p>
-     * +--------------+
-     * |Root Aggregate|
-     * |   +------+   |
-     * |   |Member|   |
-     * |   +------+   |
-     * +--------------+
-     *        v
-     * +------+-------+
-     * |Node Aggregate|
-     * +------+-------+
-     *        v
-     * +------+-------+
-     * |Leaf Aggregate|
-     * +--------------+
+     * +--------------+ |Root Aggregate| |   +------+   | |   |Member|   | |   +------+   | +--------------+ v
+     * +------+-------+ |Node Aggregate| +------+-------+ v +------+-------+ |Leaf Aggregate| +--------------+
      * <p>
      * On all levels an AggregateEvent handler is present. Only the Member has the MemberEvent handler. In such a set up
      * we would assume the AggregateEvent handler to be invoked once in the root (which encompasses the root, node and
@@ -55,6 +45,26 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
 
         AggregateModel<LeafAggregate> testSubject =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(LeafAggregate.class);
+
+        testSubject.publish(testAggregateEvent, testModel);
+        assertEquals(expectedNumberOfAggregateEventHandlerInvocations, aggregateEventCounter.get());
+        testSubject.publish(testMemberEvent, testModel);
+        assertEquals(expectedNumberOfMemberEventHandlerInvocations, memberEventCounter.get());
+    }
+
+    @Test
+    void testCreateAggregateModelDoesNotDuplicateRootLevelAggregateMembersForPolymorphicAggregates() {
+        int expectedNumberOfAggregateEventHandlerInvocations = 2;
+        int expectedNumberOfMemberEventHandlerInvocations = 1;
+
+        EventMessage<AggregateEvent> testAggregateEvent = GenericEventMessage.asEventMessage(new AggregateEvent());
+        EventMessage<MemberEvent> testMemberEvent = GenericEventMessage.asEventMessage(new MemberEvent());
+        LeafAggregate testModel = new LeafAggregate();
+
+        //noinspection unchecked
+        Set<Class<? extends RootAggregate>> subtypes = Sets.newSet(LeafAggregate.class, OtherLeafAggregate.class);
+        AggregateModel<RootAggregate> testSubject =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(RootAggregate.class, subtypes);
 
         testSubject.publish(testAggregateEvent, testModel);
         assertEquals(expectedNumberOfAggregateEventHandlerInvocations, aggregateEventCounter.get());
@@ -83,6 +93,14 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
     }
 
     private static class LeafAggregate extends NodeAggregate {
+
+        @EventHandler
+        public void on(AggregateEvent event) {
+            aggregateEventCounter.incrementAndGet();
+        }
+    }
+
+    private static class OtherLeafAggregate extends NodeAggregate {
 
         @EventHandler
         public void on(AggregateEvent event) {
