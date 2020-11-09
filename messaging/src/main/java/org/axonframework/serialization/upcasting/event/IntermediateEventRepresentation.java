@@ -139,4 +139,12 @@ public interface IntermediateEventRepresentation {
      * @return the MetaData of the message wrapping the object to upcast, if available
      */
     LazyDeserializingObject<MetaData> getMetaData();
+
+    /**
+     * Checks if the data can be converted to the given {@code requiredType}.
+     *
+     * @param requiredType the type to validate if the contained data can be converted to.
+     * @return true, if the intermediate representation's data can be converted to desired type, false otherwise
+     */
+    boolean canConvertDataTo(Class<?> requiredType);
 }
