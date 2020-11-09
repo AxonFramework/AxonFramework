@@ -6,7 +6,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.modelling.command.AggregateMember;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class AnnotatedRootMembersAggregateMetaModelFactoryTest {
+class AnnotatedRootMemberAggregateMetaModelFactoryTest {
 
     private static final AtomicInteger aggregateEventCounter = new AtomicInteger(0);
     private static final AtomicInteger memberEventCounter = new AtomicInteger(0);
@@ -54,9 +53,8 @@ class AnnotatedRootMembersAggregateMetaModelFactoryTest {
         EventMessage<MemberEvent> testMemberEvent = GenericEventMessage.asEventMessage(new MemberEvent());
         LeafAggregate testModel = new LeafAggregate();
 
-        AggregateModel<RootAggregate> testSubject = AnnotatedAggregateMetaModelFactory.inspectAggregate(
-                RootAggregate.class, Collections.singleton(LeafAggregate.class)
-        );
+        AggregateModel<LeafAggregate> testSubject =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(LeafAggregate.class);
 
         testSubject.publish(testAggregateEvent, testModel);
         assertEquals(expectedNumberOfAggregateEventHandlerInvocations, aggregateEventCounter.get());
