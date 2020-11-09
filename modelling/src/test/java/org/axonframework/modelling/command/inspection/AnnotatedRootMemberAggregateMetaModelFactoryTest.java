@@ -26,8 +26,20 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
     /**
      * The hierarchy of the Aggregate, is as follows:
      * <p>
-     * +--------------+ |Root Aggregate| |   +------+   | |   |Member|   | |   +------+   | +--------------+ v
-     * +------+-------+ |Node Aggregate| +------+-------+ v +------+-------+ |Leaf Aggregate| +--------------+
+     *          +--------------+
+     *          |Root Aggregate|
+     *          |   +------+   |
+     *          |   |Member|   |
+     *          |   +------+   |
+     *          +--------------+
+     *                 v
+     *          +------+-------+
+     *          |Node Aggregate|
+     *          +------+-------+
+     *          v              v
+     * +--------+-----+ +------+-------------+
+     * |Leaf Aggregate| |Other Leaf Aggregate|
+     * +--------------+ +--------------------+
      * <p>
      * On all levels an AggregateEvent handler is present. Only the Member has the MemberEvent handler. In such a set up
      * we would assume the AggregateEvent handler to be invoked once in the root (which encompasses the root, node and
