@@ -84,9 +84,4 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     public List<MessageHandlingMember<? super P>> commandHandlers() {
         return commandHandlers;
     }
-
-    @Override
-    public Class<?> childEntityClass() {
-        return entityModel.entityClass();
-    }
 }

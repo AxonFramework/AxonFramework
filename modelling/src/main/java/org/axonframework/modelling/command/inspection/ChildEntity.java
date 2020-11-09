@@ -44,11 +44,4 @@ public interface ChildEntity<T> {
      * @return a list of {@link MessageHandlingMember}s that are capable of processing command messages
      */
     List<MessageHandlingMember<? super T>> commandHandlers();
-
-    /**
-     * Returns the {@link Class} of this child entity.
-     *
-     * @return the {@link Class} of this child entity
-     */
-    Class<?> childEntityClass();
 }
