@@ -24,19 +24,17 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link ReflectionUtils}.
+ *
  * @author Allard Buijze
- * @since 0.7
  */
-public class ReflectionUtilsTest {
+class ReflectionUtilsTest {
 
     @Test
     void testFindFieldsInClass() {
@@ -54,12 +52,27 @@ public class ReflectionUtilsTest {
                 case 1:
                 case 2:
                     assertTrue("field1".equals(actual.getName()) || "field2".equals(actual.getName()),
-                            "Expected either field1 or field2, but got " + actual.getName()
-                                                        + " declared in " + actual.getDeclaringClass().getName());
+                               "Expected either field1 or field2, but got " + actual.getName()
+                                       + " declared in " + actual.getDeclaringClass().getName());
                     break;
             }
         }
         assertTrue(t >= 2);
+    }
+
+    @Test
+    void testNonRecursivelyFindFieldsInClass() {
+        Iterable<Field> actualFields = ReflectionUtils.fieldsOf(SomeSubType.class, NOT_RECURSIVE);
+        int t = 0;
+        for (Field actual : actualFields) {
+            if (actual.isSynthetic()) {
+                // this test is probably running with ByteCode manipulation. We ignore synthetic fields.
+                continue;
+            }
+            assertEquals("field3", actual.getName());
+            t++;
+        }
+        assertTrue(t >= 1);
     }
 
     @Test
@@ -82,8 +95,8 @@ public class ReflectionUtilsTest {
                 case 2:
                 case 3:
                     assertTrue("getField1".equals(actual.getName()) || "getField2".equals(actual.getName()),
-                            "Expected either getField1 or getField2, but got " + actual.getName()
-                                                           + " declared in " + actual.getDeclaringClass().getName());
+                               "Expected either getField1 or getField2, but got " + actual.getName()
+                                       + " declared in " + actual.getDeclaringClass().getName());
                     break;
                 case 4:
                     assertEquals("SomeInterface", actual.getDeclaringClass().getSimpleName());
@@ -91,6 +104,28 @@ public class ReflectionUtilsTest {
             }
         }
         assertTrue(t >= 4);
+    }
+
+    @Test
+    void testNonRecursivelyFindMethodsInClass() {
+        Iterable<Method> actualMethods = ReflectionUtils.methodsOf(SomeSubType.class, NOT_RECURSIVE);
+        int t = 0;
+        for (Method actual : actualMethods) {
+            if (actual.isSynthetic()) {
+                //  this test is probably running with bytecode manipulation. We ignore synthetic methods.
+                continue;
+            }
+            switch (t++) {
+                case 0:
+                    assertEquals("getField3", actual.getName());
+                    break;
+                case 1:
+                    assertEquals("getField3", actual.getName());
+                    assertEquals("SomeSubInterface", actual.getDeclaringClass().getSimpleName());
+                    break;
+            }
+        }
+        assertTrue(t >= 2);
     }
 
     @Test
@@ -131,7 +166,7 @@ public class ReflectionUtilsTest {
         assertFalse(hasEqualsMethod(SomeType.class));
     }
 
-    @SuppressWarnings("RedundantStringConstructorCall")
+    @SuppressWarnings("StringOperationCanBeSimplified")
     @Test
     void testExplicitlyUnequal_ComparableValues() {
         assertFalse(explicitlyUnequal("value", new String("value")));
@@ -155,7 +190,7 @@ public class ReflectionUtilsTest {
     }
 
     @Test
-    void testGetMemberValueFromField() throws NoSuchFieldException, NoSuchMethodException {
+    void testGetMemberValueFromField() throws NoSuchFieldException {
         assertEquals("field1",
                      ReflectionUtils.getMemberValue(SomeType.class.getDeclaredField("field1"), new SomeSubType()));
     }
@@ -259,10 +294,11 @@ public class ReflectionUtilsTest {
         assertEquals(constructor.toGenericString(), memberGenericString);
     }
 
+    @SuppressWarnings("FieldCanBeLocal")
     private static class SomeType implements SomeInterface {
 
-        private String field1 = "field1";
-        private String field2 = "field2";
+        private final String field1 = "field1";
+        private final String field2 = "field2";
 
         @Override
         public String getField1() {
@@ -275,12 +311,14 @@ public class ReflectionUtilsTest {
     }
 
     public interface SomeInterface {
+
+        @SuppressWarnings("unused")
         String getField1();
     }
 
     public interface SomeSubInterface {
-        int getField3();
 
+        int getField3();
     }
 
     public static class SomeSubType extends SomeType implements SomeSubInterface {
@@ -291,34 +329,8 @@ public class ReflectionUtilsTest {
         public int getField3() {
             return field3;
         }
-
     }
 
-    public static class ContainsCollectionsType extends SomeType {
-
-        private List<String> listOfStrings;
-        private Map<String, String> mapOfStringToString;
-        private Set<String> setOfStrings;
-
-        public ContainsCollectionsType(List<String> listOfStrings, Map<String, String> mapOfStringToString,
-                                       Set<String> setOfStrings) {
-            this.listOfStrings = listOfStrings;
-            this.mapOfStringToString = mapOfStringToString;
-            this.setOfStrings = setOfStrings;
-        }
-
-        public List<String> getListOfStrings() {
-            return listOfStrings;
-        }
-
-        public Map<String, String> getMapOfStringToString() {
-            return mapOfStringToString;
-        }
-
-        public Set<String> getSetOfStrings() {
-            return setOfStrings;
-        }
-    }
     private static class SomeTypeWithMethods implements SomeInterface {
 
         public AtomicInteger voidMethodInvocations = new AtomicInteger();
