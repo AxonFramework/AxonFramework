@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 /**
- * A command filter that denies all {@link CommandMessage}s.
+ * A {@link CommandMessageFilter} that denies all {@link CommandMessage}s.
  *
  * @author Koen Lavooij
  * @since 3.0
