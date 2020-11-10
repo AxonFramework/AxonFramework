@@ -16,14 +16,18 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.ResetHandler;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -48,11 +52,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -70,7 +78,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
-        AxonServerAutoConfiguration.class})
+        AxonServerAutoConfiguration.class
+})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class TrackingEventProcessorIntegrationTest {
 
@@ -80,40 +89,59 @@ public class TrackingEventProcessorIntegrationTest {
     @Autowired
     private TransactionManager transactionManager;
     @Autowired
-    private CountDownLatch countDownLatch1;
-    @Autowired
-    private CountDownLatch countDownLatch2;
-    @Autowired
-    private AtomicReference<String> resetTriggeredReference;
-    @Autowired
     private EventProcessingModule eventProcessingModule;
     @Autowired
     private TokenStore tokenStore;
-
     @PersistenceContext
     private EntityManager entityManager;
 
+    private static CountDownLatch countDownLatch1;
+    private static CountDownLatch countDownLatch2;
+    private static AtomicBoolean resetTriggered;
+    private static AtomicReference<String> resetTriggeredWithContext;
+    private static AtomicReference<Set<TrackedEventMessage<?>>> ignoredMessages;
+
+    @BeforeEach
+    void setUp() {
+        countDownLatch1 = new CountDownLatch(3);
+        countDownLatch2 = new CountDownLatch(3);
+        resetTriggered = new AtomicBoolean(false);
+        resetTriggeredWithContext = new AtomicReference<>();
+        ignoredMessages = new AtomicReference<>(new HashSet<>());
+
+        eventProcessingModule.eventProcessors().values().forEach(EventProcessor::start);
+    }
+
+    @AfterEach
+    void tearDown() {
+        eventProcessingModule.eventProcessors().values().forEach(EventProcessor::shutDown);
+
+        transactionManager.executeInTransaction(
+                () -> {
+                    entityManager.createQuery("DELETE FROM TokenEntry t").executeUpdate();
+                    entityManager.createQuery("DELETE FROM DomainEventEntry e").executeUpdate();
+                }
+        );
+    }
+
     @Test
     public void testPublishSomeEvents() throws InterruptedException {
-        publishEvent("test1", "test2");
+        publishEvent(UsedEvent.INSTANCE, UsedEvent.INSTANCE);
         transactionManager.executeInTransaction(() -> {
             entityManager.createQuery("DELETE FROM TokenEntry t").executeUpdate();
             tokenStore.initializeTokenSegments("first", 1);
             tokenStore.initializeTokenSegments("second", 1);
-            tokenStore.storeToken(GapAwareTrackingToken.newInstance(1, new TreeSet<>(Collections.singleton(0L))),
-                                  "first",
-                                  0);
+            tokenStore.storeToken(
+                    GapAwareTrackingToken.newInstance(1, new TreeSet<>(Collections.singleton(0L))), "first", 0
+            );
             tokenStore.storeToken(GapAwareTrackingToken.newInstance(0, new TreeSet<>()), "second", 0);
         });
 
         assertFalse(countDownLatch1.await(1, TimeUnit.SECONDS));
-        publishEvent("test3");
-        publishEvent("test4");
+        publishEvent(UsedEvent.INSTANCE);
+        publishEvent(UsedEvent.INSTANCE);
         assertTrue(countDownLatch1.await(2, TimeUnit.SECONDS), "Expected all 4 events to have been delivered");
         assertTrue(countDownLatch2.await(2, TimeUnit.SECONDS), "Expected all 4 events to have been delivered");
-
-        eventProcessingModule.eventProcessors()
-                             .forEach((name, ep) -> assertFalse(((TrackingEventProcessor) ep).isError()));
 
         eventProcessingModule.eventProcessors()
                              .forEach((name, ep) -> assertFalse(
@@ -125,6 +153,17 @@ public class TrackingEventProcessorIntegrationTest {
     void testResetHandlerIsCalledOnResetTokens() {
         String resetContext = "reset-context";
 
+        Optional<TrackingEventProcessor> optionalFirstTep =
+                eventProcessingModule.eventProcessor("first", TrackingEventProcessor.class);
+        assertTrue(optionalFirstTep.isPresent());
+
+        TrackingEventProcessor firstTep = optionalFirstTep.get();
+        firstTep.shutDown();
+        firstTep.resetTokens();
+        firstTep.start();
+
+        assertTrue(resetTriggered.get());
+
         Optional<TrackingEventProcessor> optionalSecondTep =
                 eventProcessingModule.eventProcessor("second", TrackingEventProcessor.class);
         assertTrue(optionalSecondTep.isPresent());
@@ -132,17 +171,32 @@ public class TrackingEventProcessorIntegrationTest {
         TrackingEventProcessor secondTep = optionalSecondTep.get();
         secondTep.shutDown();
         secondTep.resetTokens(resetContext);
+        secondTep.start();
 
-        assertEquals(resetContext, resetTriggeredReference.get());
+        assertEquals(resetContext, resetTriggeredWithContext.get());
     }
 
-    private void publishEvent(String... events) {
+    @Test
+    void testUnhandledEventsAreFilteredOutOfTheBlockingStream() throws InterruptedException {
+        publishEvent(UsedEvent.INSTANCE, UnusedEvent.INSTANCE, UsedEvent.INSTANCE, UsedEvent.INSTANCE);
+
+        assertTrue(countDownLatch1.await(2, TimeUnit.SECONDS));
+
+        Set<Class<?>> ignoredClasses = ignoredMessages.get().stream()
+                                                      .map(TrackedEventMessage::getPayloadType)
+                                                      .collect(Collectors.toSet());
+
+        assertFalse(ignoredClasses.contains(UsedEvent.class));
+        assertTrue(ignoredClasses.contains(UnusedEvent.class));
+    }
+
+    private void publishEvent(Object... events) {
         DefaultUnitOfWork.startAndGet(null).execute(
                 () -> {
                     Transaction tx = transactionManager.startTransaction();
                     CurrentUnitOfWork.get().onRollback(u -> tx.rollback());
                     CurrentUnitOfWork.get().onCommit(u -> tx.commit());
-                    for (String event : events) {
+                    for (Object event : events) {
                         eventBus.publish(asEventMessage(event));
                     }
                 });
@@ -152,38 +206,74 @@ public class TrackingEventProcessorIntegrationTest {
     public static class Context {
 
         @Bean
-        public CountDownLatch countDownLatch1() {
-            return new CountDownLatch(3);
-        }
-
-        @Bean
-        public CountDownLatch countDownLatch2() {
-            return new CountDownLatch(3);
-        }
-
-        @Bean
-        public AtomicReference<String> resetTriggeredReference() {
-            return new AtomicReference<>();
-        }
-
-        @Bean
         @Primary
         public Serializer serializer() {
             return TestSerializer.secureXStreamSerializer();
         }
+
+        @Autowired
+        public void configureCustomStreamableMessageSource(EventProcessingConfigurer configurer) {
+            configurer.configureDefaultStreamableMessageSource(config -> trackingToken -> new FilteringBlockingStream(
+                    config.eventStore().openStream(trackingToken), ignoredMessages
+            ));
+        }
     }
 
+    private static class FilteringBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
+
+        private final BlockingStream<TrackedEventMessage<?>> delegate;
+        private final AtomicReference<Set<TrackedEventMessage<?>>> ignoredMessages;
+
+        private FilteringBlockingStream(BlockingStream<TrackedEventMessage<?>> delegate,
+                                        AtomicReference<Set<TrackedEventMessage<?>>> ignoredMessages) {
+            this.delegate = delegate;
+            this.ignoredMessages = ignoredMessages;
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return delegate.peek();
+        }
+
+        @Override
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+            return delegate.hasNextAvailable(timeout, unit);
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            return delegate.nextAvailable();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public void blacklist(TrackedEventMessage<?> ignoredMessage) {
+            ignoredMessages.updateAndGet(ignoredSet -> {
+                ignoredSet.add(ignoredMessage);
+                return ignoredSet;
+            });
+        }
+    }
+
+    @SuppressWarnings("unused")
     @Component
     @ProcessingGroup("first")
     public static class FirstHandler {
 
-        @Autowired
-        private CountDownLatch countDownLatch1;
-
         @SuppressWarnings("unused")
         @EventHandler
-        public void handle(String event) {
+        public void handle(UsedEvent event) {
             countDownLatch1.countDown();
+        }
+
+        @SuppressWarnings("unused")
+        @ResetHandler
+        public void reset() {
+            resetTriggered.set(true);
         }
     }
 
@@ -191,21 +281,26 @@ public class TrackingEventProcessorIntegrationTest {
     @ProcessingGroup("second")
     public static class SecondHandler {
 
-        @Autowired
-        private CountDownLatch countDownLatch2;
-        @Autowired
-        private AtomicReference<String> resetTriggeredReference;
-
         @SuppressWarnings("unused")
         @EventHandler
-        public void handle(String event) {
+        public void handle(UsedEvent event) {
             countDownLatch2.countDown();
         }
 
         @SuppressWarnings("unused")
         @ResetHandler
         public void reset(String resetContext) {
-            resetTriggeredReference.set(resetContext);
+            resetTriggeredWithContext.set(resetContext);
         }
+    }
+
+    private static class UsedEvent {
+
+        private static final UsedEvent INSTANCE = new UsedEvent();
+    }
+
+    private static class UnusedEvent {
+
+        private static final UnusedEvent INSTANCE = new UnusedEvent();
     }
 }
