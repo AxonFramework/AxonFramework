@@ -156,7 +156,7 @@ class AnnotationEventHandlerAdapterTest {
 
         @EventHandler
         public void handleNormally(Long value) {
-            // noop
+            // No-op
         }
 
         @ExceptionHandler(resultType = IllegalArgumentException.class)
@@ -175,7 +175,7 @@ class AnnotationEventHandlerAdapterTest {
 
         @EventHandler
         public void handleNormally(Long value) {
-            // noop
+            // No-op
         }
 
         @ExceptionHandler
@@ -209,17 +209,17 @@ class AnnotationEventHandlerAdapterTest {
 
         @EventHandler
         public void handle(Long event) {
-
+            // No-op
         }
 
         @ResetHandler
         public void reset() {
-
+            // No-op
         }
 
         @ResetHandler
         public void resetWithContext(String resetContext, SomeResource someResource) {
-
+            // No-op
         }
     }
 
