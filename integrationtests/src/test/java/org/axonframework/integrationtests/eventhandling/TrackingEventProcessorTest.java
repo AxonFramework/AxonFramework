@@ -1683,13 +1683,17 @@ class TrackingEventProcessorTest {
         int secondSegment = 1;
 
         CountDownLatch addedStatusLatch = new CountDownLatch(4);
+        CountDownLatch updatedStatusLatch = new CountDownLatch(1);
         CountDownLatch removedStatusLatch = new CountDownLatch(3);
         EventTrackerStatusChangeListener statusChangeListener = updatedTrackerStatus -> {
+            assertEquals(1, updatedTrackerStatus.size());
             EventTrackerStatus eventTrackerStatus = updatedTrackerStatus.values().iterator().next();
             if (eventTrackerStatus.trackerAdded()) {
                 addedStatusLatch.countDown();
             } else if (eventTrackerStatus.trackerRemoved()) {
                 removedStatusLatch.countDown();
+            } else {
+                updatedStatusLatch.countDown();
             }
         };
 
@@ -1715,6 +1719,7 @@ class TrackingEventProcessorTest {
         waitForSegmentStart(firstSegment);
 
         assertTrue(addedStatusLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(updatedStatusLatch.await(5, TimeUnit.SECONDS));
         assertTrue(removedStatusLatch.await(5, TimeUnit.SECONDS));
     }
 
