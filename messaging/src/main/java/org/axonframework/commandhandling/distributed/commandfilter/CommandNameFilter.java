@@ -16,9 +16,12 @@
 
 package org.axonframework.commandhandling.distributed.commandfilter;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
+import java.beans.ConstructorProperties;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -27,10 +30,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A filter for CommandMessages which filters CommandMessages by a Command Name. It can be combined with other
- * CommandNameFilters in an efficient manner.
+ * A {@link CommandMessageFilter} implementation which filters {@link CommandMessage}s by the {@link
+ * CommandMessage#getCommandName()}. It can be combined with other {@link CommandMessageFilter} instances in an
+ * efficient manner.
  *
  * @author Koen Lavooij
+ * @since 3.0
  */
 public class CommandNameFilter implements CommandMessageFilter {
 
@@ -41,7 +46,8 @@ public class CommandNameFilter implements CommandMessageFilter {
      *
      * @param commandNames commands that can be handled
      */
-    public CommandNameFilter(Set<String> commandNames) {
+    @ConstructorProperties("commandNames")
+    public CommandNameFilter(@JsonProperty("commandNames") Set<String> commandNames) {
         this.commandNames = new HashSet<>(commandNames);
     }
 
@@ -88,10 +94,19 @@ public class CommandNameFilter implements CommandMessageFilter {
         }
     }
 
+    @JsonGetter
+    private Set<String> getCommandNames() {
+        return commandNames;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CommandNameFilter that = (CommandNameFilter) o;
         return Objects.equals(commandNames, that.commandNames);
     }

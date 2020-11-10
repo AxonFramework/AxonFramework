@@ -20,14 +20,15 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 /**
- * A command filter that accepts all CommandMessages
+ * A command filter that accepts all {@link CommandMessage}s.
  *
  * @author Koen Lavooij
+ * @since 3.0
  */
 public enum AcceptAll implements CommandMessageFilter {
 
     /**
-     * Singleton instance of the {@link AcceptAll} filter
+     * Singleton instance of the {@link AcceptAll} filter.
      */
     INSTANCE;
 

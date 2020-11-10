@@ -16,9 +16,12 @@
 
 package org.axonframework.commandhandling.distributed.commandfilter;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
+import java.beans.ConstructorProperties;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -27,14 +30,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A Predicate for CommandMessage's that can deny commands based on their name. It can be combined with other
- * DenyCommandNameFilters in an efficient manner.
+ * A {@link CommandMessageFilter} implementation which denies {@link CommandMessage}s based on their {@link
+ * CommandMessage#getCommandName()}. It can be combined with other {@link CommandMessageFilter} instances in an
+ * efficient manner.
  *
  * @author Koen Lavooij
  * @author Allard Buijze
- * @since 4.0
+ * @since 3.0
  */
 public class DenyCommandNameFilter implements CommandMessageFilter {
+
     private final Set<String> commandNames;
 
     /**
@@ -43,13 +48,14 @@ public class DenyCommandNameFilter implements CommandMessageFilter {
      *
      * @param commandNames the names of commands blocked by this filter
      */
-    public DenyCommandNameFilter(Set<String> commandNames) {
+    @ConstructorProperties("commandNames")
+    public DenyCommandNameFilter(@JsonProperty("commandNames") Set<String> commandNames) {
         this.commandNames = new HashSet<>(commandNames);
     }
 
     /**
-     * Initializes a {@link DenyCommandNameFilter} for a single {@code commandName}. Commands with a name equal
-     * to the given commandName will be blocked by this filter.
+     * Initializes a {@link DenyCommandNameFilter} for a single {@code commandName}. Commands with a name equal to the
+     * given commandName will be blocked by this filter.
      *
      * @param commandName the name of the command blocked by this filter
      */
@@ -58,7 +64,7 @@ public class DenyCommandNameFilter implements CommandMessageFilter {
     }
 
     @Override
-    public boolean matches(CommandMessage commandMessage) {
+    public boolean matches(CommandMessage<?> commandMessage) {
         return !commandNames.contains(commandMessage.getCommandName());
     }
 
@@ -82,6 +88,11 @@ public class DenyCommandNameFilter implements CommandMessageFilter {
         } else {
             return new OrCommandMessageFilter(this, other);
         }
+    }
+
+    @JsonGetter
+    private Set<String> getCommandNames() {
+        return commandNames;
     }
 
     @Override
