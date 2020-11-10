@@ -50,6 +50,15 @@ public abstract class ReflectionUtils {
     private static final Map<Type, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
     private static final String UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE = "Unsupported member type [%s]";
 
+    /**
+     * Specifying a reflection operation should be performed recursive.
+     */
+    public static final boolean RECURSIVE = true;
+    /**
+     * Specifying a reflection operation should not be performed recursive.
+     */
+    public static final boolean NOT_RECURSIVE = false;
+
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
         primitiveWrapperTypeMap.put(byte.class, Byte.class);
@@ -199,16 +208,31 @@ public abstract class ReflectionUtils {
      * Returns an {@link Iterable} of all the fields declared on the given class and its super classes. The iterator
      * will always return fields declared in a subtype before returning fields declared in a super type.
      *
-     * @param clazz The class to return fields for
+     * @param clazz the class to return fields for
      * @return an {@code Iterable} providing access to all declared fields in the class hierarchy
      */
     public static Iterable<Field> fieldsOf(Class<?> clazz) {
+        return fieldsOf(clazz, RECURSIVE);
+    }
+
+    /**
+     * Returns an {@link Iterable} of all the fields declared on the given class.
+     * <p>
+     * Will include the given {@code clazz}' super classes if {@code recursive} has been set. The iterator will always
+     * return fields declared in a subtype before returning fields declared in a super type.
+     *
+     * @param clazz     the class to return fields for
+     * @param recursive defining whether fields should be found recursively on super classes as well
+     * @return an {@code Iterable} providing access to all declared fields in the class, including the hierarchy if
+     * {@code recursive} was set
+     */
+    public static Iterable<Field> fieldsOf(Class<?> clazz, boolean recursive) {
         List<Field> fields = new LinkedList<>();
         Class<?> currentClazz = clazz;
         do {
             fields.addAll(Arrays.asList(currentClazz.getDeclaredFields()));
             currentClazz = currentClazz.getSuperclass();
-        } while (currentClazz != null);
+        } while (currentClazz != null && recursive);
         return Collections.unmodifiableList(fields);
     }
 
@@ -234,17 +258,32 @@ public abstract class ReflectionUtils {
      * Returns an {@link Iterable} of all the methods declared on the given class and its super classes. The iterator
      * will always return methods declared in a subtype before returning methods declared in a super type.
      *
-     * @param clazz The class to return methods for
+     * @param clazz the class to return methods for
      * @return an {@code Iterable} providing access to all declared methods in the class hierarchy
      */
     public static Iterable<Method> methodsOf(Class<?> clazz) {
+        return methodsOf(clazz, RECURSIVE);
+    }
+
+    /**
+     * Returns an {@link Iterable} of all the methods declared on the given class.
+     * <p>
+     * Will include the given {@code clazz}' super classes if {@code recursive} has been set. The iterator will always
+     * return fields declared in a subtype before returning fields declared in a super type.
+     *
+     * @param clazz     the class to return methods for
+     * @param recursive defining whether methods should be found recursively on super classes as well
+     * @return an {@code Iterable} providing access to all declared methods in the class, including the hierarchy if
+     * {@code recursive} was set
+     */
+    public static Iterable<Method> methodsOf(Class<?> clazz, boolean recursive) {
         List<Method> methods = new LinkedList<>();
         Class<?> currentClazz = clazz;
         do {
             methods.addAll(Arrays.asList(currentClazz.getDeclaredMethods()));
             addMethodsOnDeclaredInterfaces(currentClazz, methods);
             currentClazz = currentClazz.getSuperclass();
-        } while (currentClazz != null);
+        } while (currentClazz != null && recursive);
         return Collections.unmodifiableList(methods);
     }
 
@@ -386,12 +425,11 @@ public abstract class ReflectionUtils {
      * @return the value of the {@code member} in the {@code object}
      * @throws IllegalStateException if the member is not supported
      */
-    @SuppressWarnings("unchecked")
     public static <R> R getMemberValue(Member member, Object target) {
         if (member instanceof Field) {
-            return (R) ReflectionUtils.getFieldValue((Field) member, target);
+            return ReflectionUtils.getFieldValue((Field) member, target);
         } else if (member instanceof Method) {
-            return (R) ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
+            return ReflectionUtils.invokeAndGetMethodValue((Method) member, target);
         }
         throw new IllegalStateException(
                 String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
