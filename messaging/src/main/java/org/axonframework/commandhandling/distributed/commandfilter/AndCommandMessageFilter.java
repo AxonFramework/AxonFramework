@@ -16,11 +16,17 @@
 
 package org.axonframework.commandhandling.distributed.commandfilter;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
+import java.beans.ConstructorProperties;
+import java.util.Objects;
+
 /**
- * Filter that matches whenever both supplied filters match
+ * A {@link CommandMessageFilter} implementation that matches whenever both supplied {@link CommandMessageFilter}
+ * instances match.
  *
  * @author Allard Buijze
  * @since 4.0
@@ -33,10 +39,12 @@ public class AndCommandMessageFilter implements CommandMessageFilter {
     /**
      * Initialize the filter to match when both the {@code first} and the {@code second} filter match.
      *
-     * @param first  The first filter to match
-     * @param second The second filter to match
+     * @param first  the first filter to match
+     * @param second the second filter to match
      */
-    public AndCommandMessageFilter(CommandMessageFilter first, CommandMessageFilter second) {
+    @ConstructorProperties({"first", "second"})
+    public AndCommandMessageFilter(@JsonProperty("first") CommandMessageFilter first,
+                                   @JsonProperty("second") CommandMessageFilter second) {
         this.first = first;
         this.second = second;
     }
@@ -44,5 +52,41 @@ public class AndCommandMessageFilter implements CommandMessageFilter {
     @Override
     public boolean matches(CommandMessage<?> commandMessage) {
         return first.matches(commandMessage) && second.matches(commandMessage);
+    }
+
+    @JsonGetter
+    private CommandMessageFilter getFirst() {
+        return first;
+    }
+
+    @JsonGetter
+    private CommandMessageFilter getSecond() {
+        return second;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AndCommandMessageFilter that = (AndCommandMessageFilter) o;
+        return Objects.equals(first, that.first) &&
+                Objects.equals(second, that.second);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(first, second);
+    }
+
+    @Override
+    public String toString() {
+        return "AndCommandMessageFilter{" +
+                "first=" + first +
+                ", second=" + second +
+                '}';
     }
 }
