@@ -336,10 +336,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             List<Member> entityIdMembers = new ArrayList<>();
             List<Member> persistenceIdMembers = new ArrayList<>();
             List<Member> aggregateVersionMembers = new ArrayList<>();
-            for (Class<?> inspectedType : handlerInspector.getAllInspectedTypes()) {
+            for (Class<?> handledType : handlerInspector.getAllInspectedTypes()) {
                 // Navigate fields for Axon related annotations
-                for (Field field : ReflectionUtils.fieldsOf(inspectedType, NOT_RECURSIVE)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, inspectedType, field);
+                for (Field field : ReflectionUtils.fieldsOf(handledType, NOT_RECURSIVE)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handledType, field);
                     findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> entityIdMembers.add(field));
                     findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID).ifPresent(
                             attributes -> persistenceIdMembers.add(field)
@@ -349,8 +349,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                     );
                 }
                 // Navigate methods for Axon related annotations
-                for (Method method : ReflectionUtils.methodsOf(inspectedType, NOT_RECURSIVE)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, inspectedType, method);
+                for (Method method : ReflectionUtils.methodsOf(handledType, NOT_RECURSIVE)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handledType, method);
                     findAnnotationAttributes(method, EntityId.class).ifPresent(attributes -> {
                         assertValidValueProvidingMethod(method, EntityId.class.getSimpleName());
                         entityIdMembers.add(method);
