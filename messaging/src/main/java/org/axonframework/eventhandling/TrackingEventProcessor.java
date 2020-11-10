@@ -42,8 +42,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,9 +59,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -332,9 +330,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         logger.warn("Error occurred. Starting retry mode.", e);
                     }
                     logger.warn("Releasing claim on token and preparing for retry in {}s", errorWaitTime);
-                    updateActiveSegments(() -> activeSegments.computeIfPresent(
-                            segment.getSegmentId(), (k, status) -> status.markError(e)
-                    ));
+                    TrackerStatus trackerStatus = activeSegments.get(segment.getSegmentId());
+                    if (!trackerStatus.isErrorState()) {
+                        TrackerStatus errorStatus = activeSegments.computeIfPresent(segment.getSegmentId(),
+                                                                                    (k, v) -> v.markError(e));
+                        trackerStatusChangeListener.onEventTrackerStatusChange(
+                                singletonMap(segment.getSegmentId(), errorStatus));
+                    }
                     releaseToken(segment);
                     closeQuietly(eventStream);
                     eventStream = null;
@@ -430,9 +432,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     transactionManager.executeInTransaction(
                             () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
                     );
-                    updateActiveSegments(() -> activeSegments.computeIfPresent(
-                            segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken)
-                    ));
+                    TrackerStatus old = activeSegments.get(segment.getSegmentId());
+                    TrackerStatus newStatus = activeSegments.computeIfPresent(segment.getSegmentId(),
+                                                                              (k, v) -> v
+                                                                                      .advancedTo(finalLastToken));
+                    if (old.isDifferent(newStatus, trackerStatusChangeListener.validatePositions())) {
+                        trackerStatusChangeListener.onEventTrackerStatusChange(singletonMap(segment.getSegmentId(),
+                                                                                            newStatus));
+                    }
                     return;
                 }
             } else {
@@ -464,9 +471,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
             processInUnitOfWork(batch, unitOfWork, processingSegments);
 
-            updateActiveSegments(() -> activeSegments.computeIfPresent(
-                    segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken)
-            ));
+            TrackerStatus old = activeSegments.get(segment.getSegmentId());
+            TrackerStatus newStatus = activeSegments.computeIfPresent(segment.getSegmentId(),
+                                                                      (k, v) -> v
+                                                                              .advancedTo(finalLastToken));
+            if (old.isDifferent(newStatus, trackerStatusChangeListener.validatePositions())) {
+                trackerStatusChangeListener.onEventTrackerStatusChange(singletonMap(segment.getSegmentId(),
+                                                                                    newStatus));
+            }
             checkSegmentCaughtUp(segment, eventStream);
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
@@ -520,7 +532,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private void checkSegmentCaughtUp(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) {
         if (!eventStream.hasNextAvailable()) {
-            updateActiveSegments(() -> activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.caughtUp()));
+            TrackerStatus prevStatus = activeSegments.get(segment.getSegmentId());
+            if (!prevStatus.isCaughtUp()) {
+                TrackerStatus newStatus = activeSegments.computeIfPresent(segment.getSegmentId(),
+                                                                          (k, v) -> v.caughtUp());
+                trackerStatusChangeListener.onEventTrackerStatusChange(singletonMap(segment.getSegmentId(),
+                                                                                    newStatus));
+            }
         }
     }
 
@@ -854,50 +872,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             shutDown();
             Thread.currentThread().interrupt();
         }
-    }
-
-    private void updateActiveSegments(Runnable segmentUpdater) {
-        Map<Integer, EventTrackerStatus> oldSegments = new HashMap<>(activeSegments);
-        segmentUpdater.run();
-        Map<Integer, EventTrackerStatus> newSegments = new HashMap<>(activeSegments);
-
-        Map<Integer, EventTrackerStatus> adjustedSegments = compareSegments(oldSegments, newSegments);
-        if (adjustedSegments.size() > 0) {
-            trackerStatusChangeListener.onEventTrackerStatusChange(adjustedSegments);
-        }
-    }
-
-    private Map<Integer, EventTrackerStatus> compareSegments(Map<Integer, EventTrackerStatus> oldSegments,
-                                                             Map<Integer, EventTrackerStatus> newSegments) {
-        Set<Integer> newSegmentIds = new HashSet<>(newSegments.keySet());
-        newSegmentIds.removeAll(oldSegments.keySet());
-        if (!newSegmentIds.isEmpty()) {
-            return newSegmentIds.stream()
-                                .collect(Collectors.toMap(
-                                        segmentId -> segmentId,
-                                        segmentId -> new AddedTrackerStatus(newSegments.get(segmentId))
-                                ));
-        }
-
-        Set<Integer> oldSegmentIds = new HashSet<>(oldSegments.keySet());
-        oldSegmentIds.removeAll(newSegments.keySet());
-        if (!oldSegmentIds.isEmpty()) {
-            return oldSegmentIds.stream()
-                                .collect(Collectors.toMap(
-                                        segmentId -> segmentId,
-                                        segmentId -> new RemovedTrackerStatus(oldSegments.get(segmentId))
-                                ));
-        }
-
-        Map<Integer, EventTrackerStatus> updatedSegments = new HashMap<>();
-        for (Map.Entry<Integer, EventTrackerStatus> oldSegment : oldSegments.entrySet()) {
-            Integer segmentId = oldSegment.getKey();
-            EventTrackerStatus newSegment = newSegments.get(segmentId);
-            if (oldSegment.getValue().isDifferent(newSegment, trackerStatusChangeListener.validatePositions())) {
-                updatedSegments.put(segmentId, newSegment);
-            }
-        }
-        return updatedSegments;
     }
 
     /**
@@ -1327,7 +1301,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 state.set(State.PAUSED_ERROR);
                 throw e;
             } finally {
-                updateActiveSegments(() -> activeSegments.remove(segment.getSegmentId()));
+                TrackerStatus removed = activeSegments.remove(segment.getSegmentId());
+                if (removed != null) {
+                    trackerStatusChangeListener.onEventTrackerStatusChange(singletonMap(segment.getSegmentId(),
+                                                                                        new RemovedTrackerStatus(removed)));
+                }
                 logger.info("Worker for segment {} stopped.", segment);
                 if (availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
                     logger.info("No Worker Launcher active. Using current thread to assign segments.");
@@ -1391,18 +1369,32 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                 int[] segmentIds = tokenStore.fetchSegments(processorName);
                                 Segment segment = Segment.computeSegment(segmentId, segmentIds);
                                 logger.info("Worker assigned to segment {} for processing", segment);
-                                updateActiveSegments(
-                                        () -> activeSegments.putIfAbsent(segmentId, new TrackerStatus(segment, token))
-                                );
+                                TrackerStatus newStatus = new TrackerStatus(segment, token);
+                                TrackerStatus prevStatus = activeSegments.putIfAbsent(segmentId, newStatus);
+
+                                if (prevStatus == null) {
+                                    trackerStatusChangeListener.onEventTrackerStatusChange(
+                                            singletonMap(segmentId, new AddedTrackerStatus(newStatus)));
+                                }
                             });
                         } catch (UnableToClaimTokenException ucte) {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process",
                                          segmentId);
-                            updateActiveSegments(() -> activeSegments.remove(segmentId));
+
+                            TrackerStatus removed = activeSegments.remove(segmentId);
+                            if (removed != null) {
+                                trackerStatusChangeListener.onEventTrackerStatusChange(
+                                        singletonMap(segmentId, new RemovedTrackerStatus(removed)));
+                            }
+
                             continue;
                         } catch (Exception e) {
-                            updateActiveSegments(() -> activeSegments.remove(segmentId));
+                            TrackerStatus removed = activeSegments.remove(segmentId);
+                            if (removed != null) {
+                                trackerStatusChangeListener.onEventTrackerStatusChange(
+                                        singletonMap(segmentId, new RemovedTrackerStatus(removed)));
+                            }
                             if (AxonNonTransientException.isCauseOf(e)) {
                                 logger.error(
                                         "An unrecoverable error has occurred wile attempting to claim a token "
@@ -1509,7 +1501,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             TrackerStatus[] newStatus = status.split();
             int newSegmentId = newStatus[1].getSegment().getSegmentId();
             tokenStore.initializeSegment(newStatus[1].getTrackingToken(), getName(), newSegmentId);
-            updateActiveSegments(() -> activeSegments.put(segmentId, newStatus[0]));
+            activeSegments.put(segmentId, newStatus[0]);
+            //We don't invoke the eventTrackerStatusChangeListener because segment's size changes are not taken into account.
             return true;
         }
     }
