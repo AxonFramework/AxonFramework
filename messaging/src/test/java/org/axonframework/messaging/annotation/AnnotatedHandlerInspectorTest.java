@@ -154,8 +154,10 @@ class AnnotatedHandlerInspectorTest {
     void testGetAllInspectedTypes() {
         Set<Class<?>> expectedInspectedTypes = Sets.newSet(pA.class, A.class, B.class, C.class, D.class);
 
-        inspector.getAllInspectedTypes()
-                 .forEach(inspectedType -> assertTrue(expectedInspectedTypes.contains(inspectedType)));
+        Set<Class<?>> resultInspectedTypes = inspector.getAllInspectedTypes();
+
+        resultInspectedTypes.forEach(resultType -> assertTrue(expectedInspectedTypes.contains(resultType)));
+        expectedInspectedTypes.forEach(expectedType -> assertTrue(resultInspectedTypes.contains(expectedType)));
     }
 
     @SuppressWarnings("unused")
