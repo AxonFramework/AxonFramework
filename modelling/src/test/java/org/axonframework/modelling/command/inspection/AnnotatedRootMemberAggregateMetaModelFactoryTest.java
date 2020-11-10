@@ -15,37 +15,42 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test class validating an annotated aggregate model with {@link AggregateMember}s on the root level of a polymorphic
  * aggregate behaves as desired when a meta model is created with the {@link AnnotatedAggregateMetaModelFactory}.
+  *<p>
+ * The hierarchy of the Aggregate, is as follows:
+ * <p>
+ *          +--------------+
+ *          |Root Aggregate|
+ *          |   +------+   |
+ *          |   |Member|   |
+ *          |   +------+   |
+ *          +--------------+
+ *                 v
+ *          +------+-------+
+ *          |Node Aggregate|
+ *          +------+-------+
+ *          v              v
+ * +--------+-----+ +------+-------------+
+ * |Leaf Aggregate| |Other Leaf Aggregate|
+ * +--------------+ +--------------------+
+ * <p>
+ * On all levels an AggregateEvent handler is present. Only the Member has the MemberEvent handler. In such a set up
+ * we would assume the AggregateEvent handler to be invoked once in the root (which encompasses the root, node and
+ * leaf aggregate) and once in the member. Furthermore we would anticipate the MemberEvent handler to be invoked
+ * once too, since there only is a single occurrence of the member in the entire set up.
  *
  * @author Steven van Beelen
  */
 class AnnotatedRootMemberAggregateMetaModelFactoryTest {
 
-    private static final AtomicInteger aggregateEventCounter = new AtomicInteger(0);
-    private static final AtomicInteger memberEventCounter = new AtomicInteger(0);
+    private AtomicInteger aggregateEventCounter ;
+    private AtomicInteger memberEventCounter ;
 
-    /**
-     * The hierarchy of the Aggregate, is as follows:
-     * <p>
-     *          +--------------+
-     *          |Root Aggregate|
-     *          |   +------+   |
-     *          |   |Member|   |
-     *          |   +------+   |
-     *          +--------------+
-     *                 v
-     *          +------+-------+
-     *          |Node Aggregate|
-     *          +------+-------+
-     *          v              v
-     * +--------+-----+ +------+-------------+
-     * |Leaf Aggregate| |Other Leaf Aggregate|
-     * +--------------+ +--------------------+
-     * <p>
-     * On all levels an AggregateEvent handler is present. Only the Member has the MemberEvent handler. In such a set up
-     * we would assume the AggregateEvent handler to be invoked once in the root (which encompasses the root, node and
-     * leaf aggregate) and once in the member. Furthermore we would anticipate the MemberEvent handler to be invoked
-     * once too, since there only is a single occurrence of the member in the entire set up.
-     */
+    @BeforeEach
+    void setUp() {
+        aggregateEventCounter = new AtomicInteger(0);
+        memberEventCounter = new AtomicInteger(0);
+    }
+
     @Test
     void testCreateAggregateModelDoesNotDuplicateRootLevelAggregateMembers() {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
@@ -85,7 +90,7 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
-    private abstract static class RootAggregate {
+    private abstract class RootAggregate {
 
         @AggregateMember
         private final Member member = new Member();
@@ -96,7 +101,7 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
         }
     }
 
-    private abstract static class NodeAggregate extends RootAggregate {
+    private abstract class NodeAggregate extends RootAggregate {
 
         @EventHandler
         public void on(AggregateEvent event) {
@@ -104,7 +109,7 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
         }
     }
 
-    private static class LeafAggregate extends NodeAggregate {
+    private class LeafAggregate extends NodeAggregate {
 
         @EventHandler
         public void on(AggregateEvent event) {
@@ -112,7 +117,7 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
         }
     }
 
-    private static class OtherLeafAggregate extends NodeAggregate {
+    private class OtherLeafAggregate extends NodeAggregate {
 
         @EventHandler
         public void on(AggregateEvent event) {
@@ -121,7 +126,7 @@ class AnnotatedRootMemberAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
-    private static class Member {
+    private class Member {
 
         @EventHandler
         public void on(AggregateEvent event) {
