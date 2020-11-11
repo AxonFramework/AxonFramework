@@ -16,16 +16,19 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.replay.GenericResetContext;
 import org.axonframework.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
+import java.lang.reflect.Executable;
 import java.util.Optional;
 
 /**
@@ -105,8 +108,25 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public boolean canHandleType(Class<?> payloadType) {
         return inspector.getHandlers(listenerType)
-                        .filter(messageHandler -> !messageHandler.hasAnnotation(ResetHandler.class))
+                        .filter(messageHandler -> !handlesResetContext(messageHandler))
                         .anyMatch(handler -> handler.canHandleType(payloadType));
+    }
+
+    /**
+     * Validate whether the given {@code messageHandler} can handle the {@link ResetContext} by checking the attributes
+     * on the {@link MessageHandler} annotation.
+     *
+     * @param messageHandler the {@link MessageHandlingMember} to validate if it handles messages of type {@link
+     *                       ResetContext}
+     * @return {@code true} if it handles messages of type {@link ResetContext}, {@code false} otherwise
+     */
+    private Boolean handlesResetContext(MessageHandlingMember<? super Object> messageHandler) {
+        return messageHandler.unwrap(Executable.class)
+                             .map(handler -> AnnotationUtils.findAnnotationAttributes(handler, MessageHandler.class))
+                             .map(Optional::get)
+                             .map(attributes -> attributes.get("messageType"))
+                             .map(messageType -> messageType.equals(ResetContext.class))
+                             .orElse(false);
     }
 
     @Override
