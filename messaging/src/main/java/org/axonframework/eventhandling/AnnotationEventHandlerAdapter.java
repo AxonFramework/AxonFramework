@@ -124,7 +124,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     private Boolean handlesEventMessage(MessageHandlingMember<? super Object> messageHandler) {
         return messageHandler.annotationAttributes(MessageHandler.class)
                              .map(attributes -> attributes.get("messageType"))
-                             .map(messageType -> messageType.equals(EventMessage.class))
+                             .map(messageType -> EventMessage.class.isAssignableFrom((Class<?>) messageType))
                              .orElse(false);
     }
 
