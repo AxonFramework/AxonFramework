@@ -17,8 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -329,7 +328,7 @@ class SegmentTest {
     @Test
     void testSegmentSplitBeyondBoundary() {
         final Segment segment = new Segment(0, Integer.MAX_VALUE);
-        assertThrows(IllegalArgumentException.class, segment::split);
+        assertThrows(IllegalStateException.class, segment::split);
     }
 
     @Test

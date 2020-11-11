@@ -106,7 +106,7 @@
         <postgresql.version>42.2.8</postgresql.version>
         <junit4.version>4.12</junit4.version>
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
-        <axonserver-connector-java.version>4.4.3</axonserver-connector-java.version>
+        <axonserver-connector-java.version>4.4.4</axonserver-connector-java.version>
 
         <!-- plugin versions -->
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
