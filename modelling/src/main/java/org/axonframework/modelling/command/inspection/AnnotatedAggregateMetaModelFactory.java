@@ -58,6 +58,7 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ListUtils.distinct;
+import static org.axonframework.common.ReflectionUtils.NOT_RECURSIVE;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
@@ -335,10 +336,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             List<Member> entityIdMembers = new ArrayList<>();
             List<Member> persistenceIdMembers = new ArrayList<>();
             List<Member> aggregateVersionMembers = new ArrayList<>();
-            for (Class<?> handlerType : handlerInspector.getAllHandlers().keySet()) {
+            for (Class<?> handledType : handlerInspector.getAllInspectedTypes()) {
                 // Navigate fields for Axon related annotations
-                for (Field field : ReflectionUtils.fieldsOf(handlerType)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handlerType, field);
+                for (Field field : ReflectionUtils.fieldsOf(handledType, NOT_RECURSIVE)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handledType, field);
                     findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> entityIdMembers.add(field));
                     findAnnotationAttributes(field, JAVAX_PERSISTENCE_ID).ifPresent(
                             attributes -> persistenceIdMembers.add(field)
@@ -348,8 +349,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                     );
                 }
                 // Navigate methods for Axon related annotations
-                for (Method method : ReflectionUtils.methodsOf(handlerType)) {
-                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handlerType, method);
+                for (Method method : ReflectionUtils.methodsOf(handledType, NOT_RECURSIVE)) {
+                    createChildDefinitionsAndAddHandlers(childEntityDefinitions, handledType, method);
                     findAnnotationAttributes(method, EntityId.class).ifPresent(attributes -> {
                         assertValidValueProvidingMethod(method, EntityId.class.getSimpleName());
                         entityIdMembers.add(method);
@@ -540,7 +541,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                             format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
                 }
             });
-            children.forEach(i -> i.publish(message, target));
+            children.forEach(childEntity -> childEntity.publish(message, target));
         }
 
         @Override

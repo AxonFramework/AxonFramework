@@ -19,12 +19,18 @@ package org.axonframework.commandhandling.distributed.commandfilter;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.GenericMessage;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the filtering process of the {@link AcceptAll}, {@link DenyAll}, {@link CommandNameFilter} and
+ * {@link DenyCommandNameFilter}.
+ *
+ * @author Koen Lavooij
+ */
 class CommandFilterTest {
+
     @Test
     void testAcceptAll() {
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(new Object());
@@ -47,7 +53,8 @@ class CommandFilterTest {
 
     @Test
     void testCommandNameFilter() {
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
+        CommandMessage<Object> testCommand =
+                new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
 
         CommandNameFilter filterAcceptable = new CommandNameFilter("acceptable");
         CommandNameFilter filterOther = new CommandNameFilter("other");
@@ -76,7 +83,8 @@ class CommandFilterTest {
 
     @Test
     void testDenyCommandNameFilter() {
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
+        CommandMessage<Object> testCommand =
+                new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
 
         DenyCommandNameFilter filterAcceptable = new DenyCommandNameFilter("acceptable");
         DenyCommandNameFilter filterOther = new DenyCommandNameFilter("other");
@@ -102,5 +110,4 @@ class CommandFilterTest {
         assertFalse(filterAcceptable.and(DenyAll.INSTANCE).matches(testCommand));
         assertFalse(filterAcceptable.and(AcceptAll.INSTANCE).matches(testCommand));
     }
-
 }

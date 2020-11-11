@@ -115,6 +115,16 @@ class AnnotationEventHandlerAdapterTest {
         }
     }
 
+    @Test
+    void testCanHandleTypeDoesNotReturnResetHandlers() {
+        SomeResetHandlerWithContext annotatedEventListener = new SomeResetHandlerWithContext();
+        testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
+
+        assertTrue(testSubject.canHandleType(Long.class));
+        assertFalse(testSubject.canHandleType(String.class));
+        assertFalse(testSubject.canHandleType(Integer.class));
+    }
+
     @SuppressWarnings("unused")
     private static class SomeHandler {
 
@@ -146,7 +156,7 @@ class AnnotationEventHandlerAdapterTest {
 
         @EventHandler
         public void handleNormally(Long value) {
-            // noop
+            // No-op
         }
 
         @ExceptionHandler(resultType = IllegalArgumentException.class)
@@ -165,7 +175,7 @@ class AnnotationEventHandlerAdapterTest {
 
         @EventHandler
         public void handleNormally(Long value) {
-            // noop
+            // No-op
         }
 
         @ExceptionHandler
@@ -191,6 +201,25 @@ class AnnotationEventHandlerAdapterTest {
         @MessageHandlerInterceptor
         public void intercept(Object any) {
             invocations.add(any.toString());
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class SomeResetHandlerWithContext {
+
+        @EventHandler
+        public void handle(Long event) {
+            // No-op
+        }
+
+        @ResetHandler
+        public void reset() {
+            // No-op
+        }
+
+        @ResetHandler
+        public void resetWithContext(String resetContext, SomeResource someResource) {
+            // No-op
         }
     }
 

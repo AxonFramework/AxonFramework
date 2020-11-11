@@ -21,6 +21,7 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Abstract AggregateFactory implementation that is aware of snapshot events. If an incoming event is not a snapshot
@@ -36,25 +37,42 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
     private final AggregateModel<T> aggregateModel;
 
     /**
-     * Initialize an Aggregate Factory for the given {@code aggregateBaseType}. If a first event is an instance of this
-     * {@code aggregateBaseType}, it is recognised as a snapshot event. Otherwise, the subclass is asked to instantiate
-     * a new aggregate root instance based on the first event.
+     * Initialize an {@link AggregateFactory} for the given {@code aggregateBaseType}.
+     * <p>
+     * If a first event is an instance of this {@code aggregateBaseType}, it is recognised as a snapshot event.
+     * Otherwise, the subclass is asked to instantiate a new aggregate root instance based on the first event.
      *
-     * @param aggregateBaseType The base type of the aggregate roots created by this instance.
+     * @param aggregateBaseType the base type of the aggregate roots created by this instance
      */
     protected AbstractAggregateFactory(Class<T> aggregateBaseType) {
-        this.aggregateBaseType = aggregateBaseType;
-        this.aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateBaseType);
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateBaseType));
     }
 
     /**
-     * Initializes an Aggregate Factory for the given {@code aggregateModel}. If a first event is an instance of any
-     * aggregate root within this {@code aggregateModel}, it is recognised as a snapshot event. Otherwise, the subclass
-     * is asked to instantiate a new aggregate root instance based on the first event.
+     * Initialize an {@link AggregateFactory} for the given polymorphic {@code aggregateBaseType} and it's {@code
+     * aggregateSubTypes}.
+     * <p>
+     * If a first event is an instance of this {@code aggregateBaseType}, it is recognised as a snapshot event.
+     * Otherwise, the subclass is asked to instantiate a new aggregate root instance based on the first event.
      *
-     * @param aggregateModel The model of aggregate to be created by this factory
+     * @param aggregateBaseType the base type of the aggregate roots created by this instance
+     * @param aggregateSubTypes a {@link Set} of sub types of the given {@code aggregateBaseType}
+     */
+    protected AbstractAggregateFactory(Class<T> aggregateBaseType, Set<Class<? extends T>> aggregateSubTypes) {
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateBaseType, aggregateSubTypes));
+    }
+
+    /**
+     * Initializes an {@link AggregateFactory} for the given {@code aggregateModel}.
+     * <p>
+     * If a first event is an instance of any aggregate root within this {@code aggregateModel}, it is recognised as a
+     * snapshot event. Otherwise, the subclass is asked to instantiate a new aggregate root instance based on the first
+     * event.
+     *
+     * @param aggregateModel the model of aggregate to be created by this factory
      */
     protected AbstractAggregateFactory(AggregateModel<T> aggregateModel) {
+        //noinspection unchecked
         this.aggregateBaseType = (Class<T>) aggregateModel.entityClass();
         this.aggregateModel = aggregateModel;
     }
@@ -82,8 +100,8 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
     }
 
     /**
-     * Perform any processing that must be done on an aggregate instance that was reconstructed from a Snapshot
-     * Event. Implementations may choose to modify the existing instance, or return a new instance.
+     * Perform any processing that must be done on an aggregate instance that was reconstructed from a Snapshot Event.
+     * Implementations may choose to modify the existing instance, or return a new instance.
      * <p/>
      * This method can be safely overridden. This implementation does nothing.
      *
@@ -95,8 +113,8 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
     }
 
     /**
-     * Create an uninitialized Aggregate instance with the given {@code aggregateIdentifier}. The given
-     * {@code firstEvent} can be used to define the requirements of the aggregate to create.
+     * Create an uninitialized Aggregate instance with the given {@code aggregateIdentifier}. The given {@code
+     * firstEvent} can be used to define the requirements of the aggregate to create.
      * <p/>
      * The given {@code firstEvent} is never a snapshot event.
      *
