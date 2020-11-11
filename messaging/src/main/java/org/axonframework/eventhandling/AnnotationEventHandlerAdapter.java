@@ -122,8 +122,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      * @return {@code true} if it handles messages of type {@link ResetContext}, {@code false} otherwise
      */
     private Boolean handlesEventMessage(MessageHandlingMember<? super Object> messageHandler) {
-        return messageHandler.unwrap(Executable.class)
-                             .flatMap(handler -> findAnnotationAttributes(handler, MessageHandler.class))
+        return messageHandler.annotationAttributes(MessageHandler.class)
                              .map(attributes -> attributes.get("messageType"))
                              .map(messageType -> messageType.equals(EventMessage.class))
                              .orElse(false);
