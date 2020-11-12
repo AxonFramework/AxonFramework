@@ -109,23 +109,8 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public boolean canHandleType(Class<?> payloadType) {
         return inspector.getHandlers(listenerType)
-                        .filter(this::handlesEventMessage)
+                        .filter(messageHandlingMember -> messageHandlingMember.canHandleMessageType(EventMessage.class))
                         .anyMatch(handler -> handler.canHandleType(payloadType));
-    }
-
-    /**
-     * Validate whether the given {@code messageHandler} can handle a message of type {@link EventMessage} by checking
-     * the attributes on the {@link MessageHandler} annotation.
-     *
-     * @param messageHandler the {@link MessageHandlingMember} to validate if it handles messages of type {@link
-     *                       ResetContext}
-     * @return {@code true} if it handles messages of type {@link ResetContext}, {@code false} otherwise
-     */
-    private boolean handlesEventMessage(MessageHandlingMember<? super Object> messageHandler) {
-        return messageHandler.annotationAttributes(MessageHandler.class)
-                             .map(attributes -> attributes.get("messageType"))
-                             .map(messageType -> EventMessage.class.isAssignableFrom((Class<?>) messageType))
-                             .orElse(false);
     }
 
     @Override
