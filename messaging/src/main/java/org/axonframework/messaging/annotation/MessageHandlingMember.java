@@ -74,6 +74,19 @@ public interface MessageHandlingMember<T> {
     }
 
     /**
+     * Checks if this handlers is capable of handling {@link Message} implementations of the given {@code messageType}.
+     * <p>
+     * It is recommended to suppress the raw type use validation of the {@code messageType} parameter when implementing
+     * this method, as usage of this method with a {@code Message} generic would required reflection or casting
+     * otherwise.
+     *
+     * @param messageType the {@link Message}'s type to check if it can be handled by this handler
+     * @return {@code true} if this handler can handle the given {@code messageType}, {@code false} otherwise
+     */
+    @SuppressWarnings("rawtypes")
+    boolean canHandleMessageType(Class<? extends Message> messageType);
+
+    /**
      * Handles the given {@code message} by invoking the appropriate method on given {@code target}. This may result in
      * an exception if the given target is not capable of handling the message or if an exception is thrown during
      * invocation of the method.
@@ -126,7 +139,6 @@ public interface MessageHandlingMember<T> {
      * Checks whether the method of the target entity contains the given {@code annotationType}.
      *
      * @param annotationType Annotation to check for on the target method
-     *
      * @return {@code true} if the annotation is present on the target method, {@code false} otherwise
      */
     boolean hasAnnotation(Class<? extends Annotation> annotationType);

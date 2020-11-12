@@ -66,6 +66,12 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
         return delegate.canHandleType(payloadType);
     }
 
+    @Override
+    @SuppressWarnings("rawtypes")
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
+        return delegate.canHandleMessageType(messageType);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <HT> Optional<HT> unwrap(Class<HT> handlerType) {

@@ -34,6 +34,8 @@ import java.util.Optional;
  * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on the target type.
  *
  * @param <T> the target type
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<T> {
 
@@ -95,6 +97,12 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     @Override
     public boolean canHandleType(Class<?> payloadType) {
         return this.payloadType.isAssignableFrom(payloadType);
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
+        return this.messageType.isAssignableFrom(messageType);
     }
 
     /**
