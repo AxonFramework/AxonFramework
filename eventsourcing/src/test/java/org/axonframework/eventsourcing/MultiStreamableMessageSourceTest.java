@@ -72,8 +72,8 @@ class MultiStreamableMessageSourceTest {
 
         eventStoreA.publish(publishedEvent);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTailToken());
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                testSubject.openStream(testSubject.createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
         assertEquals(publishedEvent.getPayload(), singleEventStream.nextAvailable().getPayload());
@@ -107,8 +107,8 @@ class MultiStreamableMessageSourceTest {
         EventMessage<?> publishedEvent = new GenericDomainEventMessage<>("Aggregate", "id", 0, "Event1");
 
         eventStoreA.publish(publishedEvent);
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTailToken());
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                testSubject.openStream(testSubject.createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
         TrackedEventMessage<?> actual = singleEventStream.nextAvailable();
@@ -151,8 +151,8 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void longPoll() throws InterruptedException {
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTokenAt(Instant.now()));
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                testSubject.openStream(testSubject.createTokenAt(Instant.now()));
 
         long beforePollTime = System.currentTimeMillis();
         assertFalse(singleEventStream.hasNextAvailable(100, TimeUnit.MILLISECONDS));
