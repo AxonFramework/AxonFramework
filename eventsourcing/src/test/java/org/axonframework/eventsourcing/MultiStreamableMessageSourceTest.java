@@ -29,27 +29,24 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link MultiStreamableMessageSource}.
+ *
+ * @author Greg Woods
+ */
 class MultiStreamableMessageSourceTest {
 
     private MultiStreamableMessageSource testSubject;
@@ -71,11 +68,12 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void simplePublishAndConsume() throws InterruptedException {
-        EventMessage publishedEvent = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> publishedEvent = GenericEventMessage.asEventMessage("Event1");
 
         eventStoreA.publish(publishedEvent);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject.createTailToken());
+        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
+                                                                                                  .createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
         assertEquals(publishedEvent.getPayload(), singleEventStream.nextAvailable().getPayload());
@@ -83,6 +81,7 @@ class MultiStreamableMessageSourceTest {
         singleEventStream.close();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void testConnectionsAreClosedWhenOpeningFails() {
         StreamableMessageSource<TrackedEventMessage<?>> source1 = mock(StreamableMessageSource.class);
@@ -108,7 +107,8 @@ class MultiStreamableMessageSourceTest {
         EventMessage<?> publishedEvent = new GenericDomainEventMessage<>("Aggregate", "id", 0, "Event1");
 
         eventStoreA.publish(publishedEvent);
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject.createTailToken());
+        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
+                                                                                                  .createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
         TrackedEventMessage<?> actual = singleEventStream.nextAvailable();
@@ -166,10 +166,10 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void longPollMessageImmediatelyAvailable() throws InterruptedException {
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTokenAt(Instant.now()));
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                testSubject.openStream(testSubject.createTokenAt(Instant.now()));
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event1");
         eventStoreB.publish(pubToStreamB);
 
         long beforePollTime = System.currentTimeMillis();
@@ -183,16 +183,16 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void multiPublishAndConsume() throws InterruptedException {
-        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTokenAt(Instant.now()));
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                testSubject.openStream(testSubject.createTokenAt(recentTimeStamp()));
 
         assertTrue(singleEventStream.hasNextAvailable());
 
@@ -206,12 +206,12 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void peek() throws InterruptedException {
-        EventMessage publishedEvent = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> publishedEvent = GenericEventMessage.asEventMessage("Event1");
 
         eventStoreA.publish(publishedEvent);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTokenAt(Instant.now()));
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                testSubject.openStream(testSubject.createTokenAt(recentTimeStamp()));
 
         assertTrue(singleEventStream.peek().isPresent());
         assertEquals(publishedEvent.getPayload(), singleEventStream.peek().get().getPayload());
@@ -224,19 +224,19 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void peekWithMultipleStreams() throws InterruptedException {
-        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = testSubject.openStream(testSubject
-                                                                                                  .createTokenAt(Instant.now()));
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                testSubject.openStream(testSubject.createTokenAt(recentTimeStamp()));
 
         assertTrue(singleEventStream.peek().isPresent());
-        TrackedEventMessage peekedMessageA = singleEventStream.peek().get();
+        TrackedEventMessage<?> peekedMessageA = singleEventStream.peek().get();
         MultiSourceTrackingToken tokenA = (MultiSourceTrackingToken) peekedMessageA.trackingToken();
         assertEquals(pubToStreamA.getPayload(), peekedMessageA.getPayload());
 
@@ -245,7 +245,7 @@ class MultiStreamableMessageSourceTest {
 
         //peek and consume another
         assertTrue(singleEventStream.peek().isPresent());
-        TrackedEventMessage peekedMessageB = singleEventStream.peek().get();
+        TrackedEventMessage<?> peekedMessageB = singleEventStream.peek().get();
         MultiSourceTrackingToken tokenB = (MultiSourceTrackingToken) peekedMessageB.trackingToken();
         assertEquals(pubToStreamB.getPayload(), peekedMessageB.getPayload());
 
@@ -257,74 +257,103 @@ class MultiStreamableMessageSourceTest {
         singleEventStream.close();
     }
 
+    /**
+     * Create a timestamp a bit prior to {@link Instant#now()}. This can for example be used on {@link
+     * StreamableMessageSource#createTokenAt(Instant)} right after the insertion of some events, so that the created
+     * token will take in these new events. Simply using {@link Instant#now()} allows for a window of opportunity which
+     * misses these recent events.
+     *
+     * @return a timestamp a bit prior to {@link Instant#now()}
+     */
+    private static Instant recentTimeStamp() {
+        return Instant.now().minusMillis(1000);
+    }
+
     @Test
     void createTailToken() {
-        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         MultiSourceTrackingToken tailToken = testSubject.createTailToken();
 
-        assertEquals(-1L, tailToken.getTokenForStream("eventStoreA").position().getAsLong());
-        assertEquals(-1L, tailToken.getTokenForStream("eventStoreB").position().getAsLong());
+        OptionalLong storeAPosition = tailToken.getTokenForStream("eventStoreA").position();
+        assertTrue(storeAPosition.isPresent());
+        assertEquals(-1L, storeAPosition.getAsLong());
+        OptionalLong storeBPosition = tailToken.getTokenForStream("eventStoreB").position();
+        assertTrue(storeBPosition.isPresent());
+        assertEquals(-1L, storeBPosition.getAsLong());
     }
 
     @Test
     void createHeadToken() {
-        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
         eventStoreB.publish(pubToStreamB);
 
         MultiSourceTrackingToken headToken = testSubject.createHeadToken();
 
-        assertEquals(0L, headToken.getTokenForStream("eventStoreA").position().getAsLong());
-        assertEquals(1L, headToken.getTokenForStream("eventStoreB").position().getAsLong());
+        OptionalLong storeAPosition = headToken.getTokenForStream("eventStoreA").position();
+        assertTrue(storeAPosition.isPresent());
+        assertEquals(0L, storeAPosition.getAsLong());
+        OptionalLong storeBPosition = headToken.getTokenForStream("eventStoreB").position();
+        assertTrue(storeBPosition.isPresent());
+        assertEquals(1L, storeBPosition.getAsLong());
     }
 
     @Test
     void createTokenAt() throws InterruptedException {
-        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
-        MultiSourceTrackingToken createdAtToken = testSubject.createTokenAt(Instant.now().minus(10, ChronoUnit.MILLIS));
-        //token should track events in eventStoreB and skip those in eventStoreA
-        assertNull(createdAtToken.getTokenForStream("eventStoreA"));
-        assertEquals(-1L, createdAtToken.getTokenForStream("eventStoreB").position().getAsLong());
+        // Token should track events in eventStoreB and skip those in eventStoreA
+        MultiSourceTrackingToken createdAtToken = testSubject.createTokenAt(Instant.now().minusMillis(10));
+
+        // storeA's token resembles an storeA head token since the create token at timestamp is after all its events
+        assertEquals(eventStoreA.createHeadToken(), createdAtToken.getTokenForStream("eventStoreA"));
+        OptionalLong storeBPosition = createdAtToken.getTokenForStream("eventStoreB").position();
+        assertTrue(storeBPosition.isPresent());
+        assertEquals(-1L, storeBPosition.getAsLong());
     }
 
     @Test
     void createTokenSince() throws InterruptedException {
-        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
+        // Token should track events in eventStoreB and skip those in eventStoreA
         MultiSourceTrackingToken createdSinceToken = testSubject.createTokenSince(Duration.ofMillis(10));
-        //token should track events in eventStoreB and skip those in eventStoreA
-        assertNull(createdSinceToken.getTokenForStream("eventStoreA"));
-        assertEquals(-1L, createdSinceToken.getTokenForStream("eventStoreB").position().getAsLong());
+
+        // storeA's token resembles an storeA head token since the create token at timestamp is after all its events
+        assertEquals(eventStoreA.createHeadToken(), createdSinceToken.getTokenForStream("eventStoreA"));
+        OptionalLong storeBPosition = createdSinceToken.getTokenForStream("eventStoreB").position();
+        assertTrue(storeBPosition.isPresent());
+        assertEquals(-1L, storeBPosition.getAsLong());
     }
 
     @Test
     void configuredDifferentComparator() throws InterruptedException {
         Comparator<Map.Entry<String, TrackedEventMessage<?>>> eventStoreAPriority =
-                Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA")).
-                        thenComparing(e -> e.getValue().getTimestamp());
+                Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA"))
+                          .
+                                  thenComparing(e -> e.getValue().getTimestamp());
 
         EmbeddedEventStore eventStoreC = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
                                                            .build();
@@ -337,17 +366,17 @@ class MultiStreamableMessageSourceTest {
                                             .trackedEventComparator(eventStoreAPriority)
                                             .build();
 
-        EventMessage pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage pubToStreamC = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamC = GenericEventMessage.asEventMessage("Event2");
         eventStoreC.publish(pubToStreamC);
 
         Thread.sleep(5);
 
-        EventMessage pubToStreamB = GenericEventMessage.asEventMessage("Event3");
+        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event3");
         eventStoreB.publish(pubToStreamB);
 
         BlockingStream<TrackedEventMessage<?>> singleEventStream = prioritySourceTestSubject.openStream(
@@ -356,7 +385,7 @@ class MultiStreamableMessageSourceTest {
         singleEventStream.nextAvailable();
         singleEventStream.nextAvailable();
         singleEventStream.nextAvailable();
-        assertTrue(singleEventStream.nextAvailable().getPayload().equals(pubToStreamC.getPayload()));
-        assertTrue(singleEventStream.nextAvailable().getPayload().equals(pubToStreamB.getPayload()));
+        assertEquals(pubToStreamC.getPayload(), singleEventStream.nextAvailable().getPayload());
+        assertEquals(pubToStreamB.getPayload(), singleEventStream.nextAvailable().getPayload());
     }
 }
