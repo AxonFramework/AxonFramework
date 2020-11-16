@@ -16,14 +16,19 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.Test;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.Optional;
+
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the specifics around a {@link BatchingEventStorageEngine}.
+ *
  * @author Rene de Waele
  */
 @Transactional
@@ -32,17 +37,17 @@ public abstract class BatchingEventStorageEngineTest extends AbstractEventStorag
     private BatchingEventStorageEngine testSubject;
 
     @Test
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testLoad_LargeAmountOfEvents() {
+    void testLoadLargeAmountOfEvents() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
         assertEquals(eventCount, testSubject.readEvents(AGGREGATE).asStream().count());
-        assertEquals(eventCount - 1,
-                     testSubject.readEvents(AGGREGATE).asStream().reduce((a, b) -> b).get().getSequenceNumber());
+        Optional<? extends DomainEventMessage<?>> resultEventMessage =
+                testSubject.readEvents(AGGREGATE).asStream().reduce((a, b) -> b);
+        assertTrue(resultEventMessage.isPresent());
+        assertEquals(eventCount - 1, resultEventMessage.get().getSequenceNumber());
     }
 
     protected void setTestSubject(BatchingEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }
-
 }
