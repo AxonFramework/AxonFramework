@@ -231,6 +231,22 @@ public abstract class EventStorageEngineTest {
         assertEventStreamsById(Arrays.asList(event3, event4, event5), readEvents);
     }
 
+    @Test
+    void testCreateTokenAtTimeAfterLastEvent() {
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+
+        testSubject.appendEvents(event1, event2, event3);
+
+        TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2008-12-03T10:15:30.00Z"));
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(tokenAt, false)
+                                                      .collect(toList());
+
+        assertTrue(readEvents.isEmpty());
+    }
+
     protected void setTestSubject(EventStorageEngine testSubject) {
         this.testSubject = testSubject;
     }
