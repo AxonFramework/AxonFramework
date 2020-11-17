@@ -436,7 +436,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createHeadToken() {
-        return createToken(mostRecentToken());
+        return createToken(mostRecentIndex());
     }
 
     @Override
@@ -447,10 +447,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                 resultSet -> nextAndExtract(resultSet, 1, Long.class),
                 e -> new EventStoreException(format("Failed to get token at [%s]", dateTime), e)
         ));
-        return index != null ? createToken(index) : createToken(mostRecentToken());
+        return index != null ? createToken(index) : createToken(mostRecentIndex());
     }
 
-    private Long mostRecentToken() {
+    private Long mostRecentIndex() {
         return transactionManager.fetchInTransaction(() -> executeQuery(
                 getConnection(),
                 this::createHeadToken,

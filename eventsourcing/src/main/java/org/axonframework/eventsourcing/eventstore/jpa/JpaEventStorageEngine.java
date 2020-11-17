@@ -325,7 +325,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createHeadToken() {
-        return createToken(mostRecentToken());
+        return createToken(mostRecentIndex());
     }
 
     @Override
@@ -338,10 +338,10 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                 .setParameter("dateTime", formatInstant(dateTime))
                 .getResultList();
 
-        return noTokenFound(results) ? createToken(mostRecentToken()) : createToken(results);
+        return noTokenFound(results) ? createToken(mostRecentIndex()) : createToken(results);
     }
 
-    private List<Long> mostRecentToken() {
+    private List<Long> mostRecentIndex() {
         return entityManager()
                 .createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
                 .getResultList();

@@ -352,8 +352,7 @@ class MultiStreamableMessageSourceTest {
     void configuredDifferentComparator() throws InterruptedException {
         Comparator<Map.Entry<String, TrackedEventMessage<?>>> eventStoreAPriority =
                 Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA"))
-                          .
-                                  thenComparing(e -> e.getValue().getTimestamp());
+                          .thenComparing(e -> e.getValue().getTimestamp());
 
         EmbeddedEventStore eventStoreC = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
                                                            .build();
