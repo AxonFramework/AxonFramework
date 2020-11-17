@@ -355,7 +355,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     private boolean noTokenFound(List<Long> tokens) {
-        return tokens.size() == 0 || tokens.get(0) == null;
+        return tokens.isEmpty() || tokens.get(0) == null;
     }
 
     /**
