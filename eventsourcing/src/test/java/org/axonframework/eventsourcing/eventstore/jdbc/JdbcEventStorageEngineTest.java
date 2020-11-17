@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -30,6 +29,7 @@ import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
@@ -48,7 +48,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -58,16 +57,19 @@ import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link JdbcEventStorageEngine}.
+ *
  * @author Rene de Waele
  */
-public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
+class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     private JDBCDataSource dataSource;
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
     private JdbcEventStorageEngine testSubject;
 
     @BeforeEach
-    public void setUp() throws SQLException {
+    void setUp() throws SQLException {
         dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
@@ -76,13 +78,13 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testStoreTwoExactSameSnapshots() {
+    void testStoreTwoExactSameSnapshots() {
         testSubject.storeSnapshot(createEvent(1));
         testSubject.storeSnapshot(createEvent(1));
     }
 
     @Test
-    public void testLoadLastSequenceNumber() {
+    void testLoadLastSequenceNumber() {
         String aggregateId = UUID.randomUUID().toString();
         testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));
@@ -91,7 +93,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Test
     @DirtiesContext
-    public void testCustomSchemaConfig() {
+    void testCustomSchemaConfig() {
         setTestSubject(testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
                                                   EventSchema.builder()
                                                              .eventTable("CustomDomainEvent")
@@ -107,7 +109,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Test
     @DirtiesContext
-    public void testCustomSchemaConfigTimestampColumn() {
+    void testCustomSchemaConfigTimestampColumn() {
         setTestSubject(testSubject = createTimestampEngine(new HsqlEventTableFactory() {
             @Override
             protected String timestampType() {
@@ -118,7 +120,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testGapsForVeryOldEventsAreNotIncluded() throws SQLException {
+    void testGapsForVeryOldEventsAreNotIncluded() throws SQLException {
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-1), createEvent(0));
@@ -145,7 +147,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @DirtiesContext
     @Test
-    public void testOldGapsAreRemovedFromProvidedTrackingToken() throws SQLException {
+    void testOldGapsAreRemovedFromProvidedTrackingToken() throws SQLException {
         testSubject.setGapTimeout(50001);
         testSubject.setGapCleaningThreshold(50);
         Instant now = Clock.systemUTC().instant();
@@ -173,7 +175,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testEventsWithUnknownPayloadTypeDoNotResultInError() throws SQLException, InterruptedException {
+    void testEventsWithUnknownPayloadTypeDoNotResultInError() throws SQLException, InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
 
@@ -206,7 +208,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testStreamCrossesConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
+    void testStreamCrossesConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
         testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
         testSubject.appendEvents(createEvents(100));
 
@@ -221,7 +223,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testStreamDoesNotCrossExtendedGapWhenDisabled() throws SQLException {
+    void testStreamDoesNotCrossExtendedGapWhenDisabled() throws SQLException {
         testSubject = JdbcEventStorageEngine.builder().upcasterChain(NoOpEventUpcaster.INSTANCE)
                                             .batchSize(10)
                                             .connectionProvider(dataSource::getConnection)
@@ -253,7 +255,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testStreamCrossesInitialConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
+    void testStreamCrossesInitialConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
         testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
         testSubject.appendEvents(createEvents(100));
 
@@ -268,8 +270,8 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testLoadSnapshotIfMatchesPredicate() {
-        Predicate<DomainEventData<?>> acceptAll = i -> true;
+    void testLoadSnapshotIfMatchesPredicate() {
+        SnapshotFilter acceptAll = i -> true;
 
         setTestSubject(testSubject = createEngine(acceptAll));
 
@@ -278,8 +280,8 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testDoNotLoadSnapshotIfNotMatchingPredicate() {
-        Predicate<DomainEventData<?>> rejectAll = i -> false;
+    void testDoNotLoadSnapshotIfNotMatchingPredicate() {
+        SnapshotFilter rejectAll = i -> false;
 
         setTestSubject(testSubject = createEngine(rejectAll));
 
@@ -288,7 +290,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventsForAggregateReturnsTheCompleteStream() {
+    void testReadEventsForAggregateReturnsTheCompleteStream() {
         testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
 
         DomainEventMessage<String> testEventOne = createEvent(0);
@@ -311,7 +313,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventsForAggregateWithGapsReturnsTheCompleteStream() {
+    void testReadEventsForAggregateWithGapsReturnsTheCompleteStream() {
         testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
 
         DomainEventMessage<String> testEventOne = createEvent(0);
@@ -333,7 +335,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventsForAggregateWithEventsExceedingOneBatchReturnsTheCompleteStream() {
+    void testReadEventsForAggregateWithEventsExceedingOneBatchReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
         int batchSize = 5;
         testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), batchSize);
@@ -367,7 +369,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testReadEventsForAggregateWithEventsExceedingOneBatchAndGapsReturnsTheCompleteStream() {
+    void testReadEventsForAggregateWithEventsExceedingOneBatchAndGapsReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
         int batchSize = 5;
         testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), batchSize);
@@ -440,7 +442,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                             batchSize);
     }
 
-    private JdbcEventStorageEngine createEngine(Predicate<? super DomainEventData<?>> snapshotFilter) {
+    private JdbcEventStorageEngine createEngine(SnapshotFilter snapshotFilter) {
         return createEngine(NoOpEventUpcaster.INSTANCE,
                             defaultPersistenceExceptionResolver,
                             snapshotFilter,
@@ -452,7 +454,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     private JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                 PersistenceExceptionResolver persistenceExceptionResolver,
-                                                Predicate<? super DomainEventData<?>> snapshotFilter,
+                                                SnapshotFilter snapshotFilter,
                                                 EventSchema eventSchema,
                                                 Class<?> dataType,
                                                 EventTableFactory tableFactory,

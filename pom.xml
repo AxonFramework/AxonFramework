@@ -70,11 +70,11 @@
         <log4j.version>2.14.0</log4j.version>
         <spring.version>5.3.1</spring.version>
         <spring-security.version>5.4.1</spring-security.version>
-        <spring.boot.version>2.3.5.RELEASE</spring.boot.version>
+        <spring.boot.version>2.4.0</spring.boot.version>
         <mockito.version>3.6.0</mockito.version>
         <projectreactor.version>3.3.10.RELEASE</projectreactor.version>
         <micrometer.version>1.6.1</micrometer.version>
-        <dropwizard.metrics.version>4.1.14</dropwizard.metrics.version>
+        <dropwizard.metrics.version>4.1.15</dropwizard.metrics.version>
         <jackson.version>2.11.3</jackson.version>
         <!--
             Please note that there are dependencies between the gRPC and Netty TcNative versions.

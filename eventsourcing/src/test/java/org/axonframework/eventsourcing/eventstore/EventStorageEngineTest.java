@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
@@ -28,6 +29,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
@@ -36,6 +38,8 @@ import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Base test class for {@link EventStorageEngine} implementations.
+ *
  * @author Rene de Waele
  */
 @Transactional
@@ -44,12 +48,12 @@ public abstract class EventStorageEngineTest {
     private EventStorageEngine testSubject;
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         GenericEventMessage.clock = Clock.systemUTC();
     }
 
     @Test
-    public void testStoreAndLoadEvents() {
+    protected void testStoreAndLoadEvents() {
         testSubject.appendEvents(createEvents(4));
         assertEquals(4, testSubject.readEvents(AGGREGATE).asStream().count());
 
@@ -68,7 +72,9 @@ public abstract class EventStorageEngineTest {
     void testStoreAndLoadApplicationEvent() {
         testSubject.appendEvents(new GenericEventMessage<>("application event", MetaData.with("key", "value")));
         assertEquals(1, testSubject.readEvents(null, false).count());
-        EventMessage<?> message = testSubject.readEvents(null, false).findFirst().get();
+        Optional<? extends TrackedEventMessage<?>> optionalFirst = testSubject.readEvents(null, false).findFirst();
+        assertTrue(optionalFirst.isPresent());
+        EventMessage<?> message = optionalFirst.get();
         assertEquals("application event", message.getPayload());
         assertEquals(MetaData.with("key", "value"), message.getMetaData());
     }
@@ -144,8 +150,7 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testCreateTailToken() {
-
+    void testCreateTailToken() {
         DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
         DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
         DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
@@ -161,8 +166,7 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testCreateHeadToken() {
-
+    void testCreateHeadToken() {
         DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
         DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
         DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
@@ -178,8 +182,7 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testCreateTokenAt() {
-
+    void testCreateTokenAt() {
         DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
         DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
         DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
@@ -195,8 +198,7 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testCreateTokenAtExactTime() {
-
+    void testCreateTokenAtExactTime() {
         DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
         DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
         DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
@@ -212,7 +214,7 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
-    public void testCreateTokenWithUnorderedEvents() {
+    void testCreateTokenWithUnorderedEvents() {
         DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
         DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
         DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:50.00Z"));

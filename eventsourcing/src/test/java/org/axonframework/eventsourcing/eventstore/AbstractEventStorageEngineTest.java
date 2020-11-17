@@ -36,6 +36,9 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Abstract test class used to create tests for the {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
+ * and {@link org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine}.
+ *
  * @author Rene de Waele
  */
 @Transactional
@@ -45,7 +48,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @DirtiesContext
     @Test
-    public void testUniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
+    void testUniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0))
@@ -54,7 +57,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @DirtiesContext
     @Test
-    public void testUniqueKeyConstraintOnEventIdentifier() {
+    void testUniqueKeyConstraintOnEventIdentifier() {
         assertThrows(
                 ConcurrencyException.class,
                 () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 1), createEvent("id", "otherAggregate", 1))
@@ -64,21 +67,21 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
     @Test
     @DirtiesContext
     @SuppressWarnings({"unchecked"})
-    public void testStoreAndLoadEventsWithUpcaster() {
+    void testStoreAndLoadEventsWithUpcaster() {
         EventUpcaster mockUpcasterChain = mock(EventUpcaster.class);
         when(mockUpcasterChain.upcast(isA(Stream.class))).thenAnswer(invocation -> {
-            Stream<?> inputStream = (Stream) invocation.getArguments()[0];
+            Stream<?> inputStream = (Stream<?>) invocation.getArguments()[0];
             return inputStream.flatMap(e -> Stream.of(e, e));
         });
         testSubject = createEngine(mockUpcasterChain);
 
         testSubject.appendEvents(createEvents(4));
-        List<DomainEventMessage> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
+        List<DomainEventMessage<?>> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(8, upcastedEvents.size());
 
-        Iterator<DomainEventMessage> iterator = upcastedEvents.iterator();
+        Iterator<DomainEventMessage<?>> iterator = upcastedEvents.iterator();
         while (iterator.hasNext()) {
-            DomainEventMessage event1 = iterator.next(), event2 = iterator.next();
+            DomainEventMessage<?> event1 = iterator.next(), event2 = iterator.next();
             assertEquals(event1.getAggregateIdentifier(), event2.getAggregateIdentifier());
             assertEquals(event1.getSequenceNumber(), event2.getSequenceNumber());
             assertEquals(event1.getPayload(), event2.getPayload());
@@ -88,7 +91,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @DirtiesContext
     @Test
-    public void testStoreDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
+    void testStoreDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent(0), createEvent(0))
@@ -97,7 +100,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @DirtiesContext
     @Test
-    public void testStoreDuplicateEventWithExceptionTranslator() {
+    void testStoreDuplicateEventWithExceptionTranslator() {
         assertThrows(
                 ConcurrencyException.class,
                 () -> testSubject.appendEvents(createEvent(1), createEvent(1))
@@ -106,7 +109,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @DirtiesContext
     @Test
-    public void testStoreDuplicateEventWithoutExceptionResolver() {
+    void testStoreDuplicateEventWithoutExceptionResolver() {
         testSubject = createEngine((PersistenceExceptionResolver) e -> false);
         assertThrows(
                 EventStoreException.class,
@@ -120,6 +123,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     protected abstract AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain);
 
-    protected abstract AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver);
-
+    protected abstract AbstractEventStorageEngine createEngine(
+            PersistenceExceptionResolver persistenceExceptionResolver
+    );
 }

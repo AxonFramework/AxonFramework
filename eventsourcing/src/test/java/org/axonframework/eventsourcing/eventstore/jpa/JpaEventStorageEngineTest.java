@@ -54,6 +54,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.LongStream;
 import javax.persistence.EntityManager;
@@ -75,7 +76,7 @@ import static org.mockito.Mockito.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
 @Transactional
-public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
+class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     private JpaEventStorageEngine testSubject;
 
@@ -88,7 +89,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
 
     @BeforeEach
-    public void setUp() throws SQLException {
+    void setUp() throws SQLException {
         entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
         setTestSubject(
@@ -100,14 +101,14 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testStoreAndLoadEventsFromDatastore() {
+    void testStoreAndLoadEventsFromDatastore() {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 
     @Test
-    public void testLoadLastSequenceNumber() {
+    void testLoadLastSequenceNumber() {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(AGGREGATE).orElse(-1L));
@@ -115,7 +116,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testGapsForVeryOldEventsAreNotIncluded() {
+    void testGapsForVeryOldEventsAreNotIncluded() {
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
 
         GenericEventMessage.clock =
@@ -143,7 +144,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @DirtiesContext
     @Test
-    public void testOldGapsAreRemovedFromProvidedTrackingToken() {
+    void testOldGapsAreRemovedFromProvidedTrackingToken() {
         testSubject.setGapCleaningThreshold(50);
         testSubject.setGapTimeout(50001);
         Instant now = Clock.systemUTC().instant();
@@ -168,8 +169,10 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
                 Long.class
         )
                                             .setParameter("aggregateIdentifier", "aggregateId").getResultList();
-        Long largestIndex = sequences.stream().max(Long::compareTo).get();
-        Long secondLastEventIndex = largestIndex - 2;
+        Optional<Long> maxResult = sequences.stream().max(Long::compareTo);
+        assertTrue(maxResult.isPresent());
+        long largestIndex = maxResult.get();
+        long secondLastEventIndex = largestIndex - 2;
         // create a lot of gaps most of them fake (< 0), but some of them real
         List<Long> gaps = LongStream.range(-50, largestIndex).boxed()
                                     .filter(g -> !sequences.contains(g))
@@ -190,14 +193,14 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testStoreTwoExactSameSnapshots() {
+    void testStoreTwoExactSameSnapshots() {
         testSubject.storeSnapshot(createEvent(1));
         entityManager.clear();
         testSubject.storeSnapshot(createEvent(1));
     }
 
     @Test
-    public void testUnknownSerializedTypeCausesException() {
+    void testUnknownSerializedTypeCausesException() {
         testSubject.appendEvents(createEvent());
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                      .executeUpdate();
@@ -208,7 +211,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Test
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
-    public void testStoreEventsWithCustomEntity() {
+    void testStoreEventsWithCustomEntity() {
         XStreamSerializer serializer = XStreamSerializer.builder().build();
         JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
                 JpaEventStorageEngine.builder()
@@ -253,7 +256,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testEventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
+    void testEventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
 
@@ -286,7 +289,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    public void testAppendEventsIsPerformedInATransaction() {
+    void testAppendEventsIsPerformedInATransaction() {
         testSubject.appendEvents(createEvents(2));
 
         verify(transactionManager).executeInTransaction(any());
@@ -324,7 +327,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     /**
      * A non-final {@link TransactionManager} implementation, so that it can be spied upon through Mockito.
      */
-    private class NoOpTransactionManager implements TransactionManager {
+    private static class NoOpTransactionManager implements TransactionManager {
 
         @Override
         public Transaction startTransaction() {
