@@ -22,15 +22,11 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.lang.reflect.Executable;
 import java.util.Optional;
-
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link EventMessageHandler}.
