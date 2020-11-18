@@ -26,7 +26,6 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -415,7 +414,7 @@ class DefaultConfigurerTest {
         AtomicBoolean filteredSecond = new AtomicBoolean(false);
         SnapshotFilter testFilterTwo = snapshotData -> {
             filteredSecond.set(true);
-            return true;
+            return false;
         };
         AggregateConfigurer<StubAggregate> aggregateConfigurerTwo =
                 AggregateConfigurer.defaultConfiguration(StubAggregate.class)
@@ -428,7 +427,7 @@ class DefaultConfigurerTest {
 
         SnapshotFilter snapshotFilter = resultConfig.snapshotFilter();
         boolean result = snapshotFilter.allow(mock(DomainEventData.class));
-        assertTrue(result);
+        assertFalse(result);
         assertTrue(filteredFirst.get());
         assertTrue(filteredSecond.get());
     }
