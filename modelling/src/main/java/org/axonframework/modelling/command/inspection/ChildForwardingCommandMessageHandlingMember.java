@@ -18,12 +18,12 @@ package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
-import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
  *
  * @param <P> the parent entity type
  * @param <C> the child entity type
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class ChildForwardingCommandMessageHandlingMember<P, C> implements CommandMessageHandlingMember<P> {
 
@@ -96,6 +98,12 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     @Override
     public boolean canHandle(Message<?> message) {
         return childHandler.canHandle(message);
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
+        return childHandler.canHandleMessageType(messageType);
     }
 
     @SuppressWarnings("unchecked")

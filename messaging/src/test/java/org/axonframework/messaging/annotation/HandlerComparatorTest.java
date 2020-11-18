@@ -100,6 +100,7 @@ class HandlerComparatorTest {
     }
 
     private static class StubMessageHandlingMember implements MessageHandlingMember<Object> {
+
         private final Class<?> payloadType;
         private final int priority;
 
@@ -122,6 +123,12 @@ class HandlerComparatorTest {
         @Override
         public boolean canHandle(Message<?> message) {
             throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public boolean canHandleMessageType(Class<? extends Message> messageType) {
+            throw new UnsupportedOperationException("Not implemented (yet)");
         }
 
         @Override
