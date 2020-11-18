@@ -32,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Rene de Waele
  */
 @Transactional
-public abstract class BatchingEventStorageEngineTest extends AbstractEventStorageEngineTest {
+public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStorageEngine, EB extends BatchingEventStorageEngine.Builder>
+        extends AbstractEventStorageEngineTest<E, EB> {
 
     private BatchingEventStorageEngine testSubject;
 

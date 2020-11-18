@@ -25,14 +25,10 @@ import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.UnknownSerializedType;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
@@ -48,6 +44,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -62,7 +59,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Rene de Waele
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
+class JdbcEventStorageEngineTest
+        extends BatchingEventStorageEngineTest<JdbcEventStorageEngine, JdbcEventStorageEngine.Builder> {
 
     private JDBCDataSource dataSource;
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
@@ -73,8 +71,7 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
-        setTestSubject(testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
-                                                  new EventSchema(), byte[].class, HsqlEventTableFactory.INSTANCE));
+        setTestSubject(testSubject = createEngine());
     }
 
     @Test
@@ -94,16 +91,20 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Test
     @DirtiesContext
     void testCustomSchemaConfig() {
-        setTestSubject(testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
-                                                  EventSchema.builder()
-                                                             .eventTable("CustomDomainEvent")
-                                                             .payloadColumn("eventData").build(), String.class,
-                                                  new HsqlEventTableFactory() {
-                                                      @Override
-                                                      protected String payloadType() {
-                                                          return "LONGVARCHAR";
-                                                      }
-                                                  }));
+        EventSchema testSchema = EventSchema.builder()
+                                            .eventTable("CustomDomainEvent")
+                                            .payloadColumn("eventData")
+                                            .build();
+        setTestSubject(testSubject = createEngine(
+                engineBuilder -> engineBuilder.schema(testSchema).dataType(String.class),
+                new HsqlEventTableFactory() {
+                    @Override
+                    protected String payloadType() {
+                        return "LONGVARCHAR";
+                    }
+                }
+        ));
+
         testStoreAndLoadEvents();
     }
 
@@ -148,8 +149,8 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @DirtiesContext
     @Test
     void testOldGapsAreRemovedFromProvidedTrackingToken() throws SQLException {
-        testSubject.setGapTimeout(50001);
-        testSubject.setGapCleaningThreshold(50);
+        testSubject = createEngine(engineBuilder -> engineBuilder.gapTimeout(50001).gapCleaningThreshold(50));
+
         Instant now = Clock.systemUTC().instant();
         GenericEventMessage.clock = Clock.fixed(now.minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-1), createEvent(0)); // index 0 and 1
@@ -180,7 +181,7 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         String expectedPayloadTwo = "Payload4";
 
         int testBatchSize = 2;
-        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), testBatchSize);
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
         EmbeddedEventStore testEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
 
         testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
@@ -209,7 +210,8 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Test
     void testStreamCrossesConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
-        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
+        int testBatchSize = 10;
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
         testSubject.appendEvents(createEvents(100));
 
         try (Connection conn = dataSource.getConnection()) {
@@ -224,14 +226,9 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Test
     void testStreamDoesNotCrossExtendedGapWhenDisabled() throws SQLException {
-        testSubject = JdbcEventStorageEngine.builder().upcasterChain(NoOpEventUpcaster.INSTANCE)
-                                            .batchSize(10)
-                                            .connectionProvider(dataSource::getConnection)
-                                            .transactionManager(NoTransactionManager.INSTANCE)
-                                            .schema(new EventSchema())
-                                            .dataType(byte[].class)
-                                            .extendedGapCheckEnabled(false)
-                                            .build();
+        int testBatchSize = 10;
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize)
+                                                                 .extendedGapCheckEnabled(false));
 
         try {
             Connection connection = dataSource.getConnection();
@@ -256,7 +253,9 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Test
     void testStreamCrossesInitialConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
-        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
+        int testBatchSize = 10;
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
+
         testSubject.appendEvents(createEvents(100));
 
         try (Connection conn = dataSource.getConnection()) {
@@ -270,28 +269,9 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
-    void testLoadSnapshotIfMatchesPredicate() {
-        SnapshotFilter acceptAll = i -> true;
-
-        setTestSubject(testSubject = createEngine(acceptAll));
-
-        testSubject.storeSnapshot(createEvent(1));
-        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
-    }
-
-    @Test
-    void testDoNotLoadSnapshotIfNotMatchingPredicate() {
-        SnapshotFilter rejectAll = i -> false;
-
-        setTestSubject(testSubject = createEngine(rejectAll));
-
-        testSubject.storeSnapshot(createEvent(1));
-        assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
-    }
-
-    @Test
     void testReadEventsForAggregateReturnsTheCompleteStream() {
-        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
+        int testBatchSize = 10;
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
         DomainEventMessage<String> testEventOne = createEvent(0);
         DomainEventMessage<String> testEventTwo = createEvent(1);
@@ -314,7 +294,8 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Test
     void testReadEventsForAggregateWithGapsReturnsTheCompleteStream() {
-        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), 10);
+        int testBatchSize = 10;
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
         DomainEventMessage<String> testEventOne = createEvent(0);
         DomainEventMessage<String> testEventTwo = createEvent(1);
@@ -337,8 +318,8 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Test
     void testReadEventsForAggregateWithEventsExceedingOneBatchReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
-        int batchSize = 5;
-        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), batchSize);
+        int testBatchSize = 5;
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
         DomainEventMessage<String> testEventOne = createEvent(0);
         DomainEventMessage<String> testEventTwo = createEvent(1);
@@ -371,8 +352,8 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Test
     void testReadEventsForAggregateWithEventsExceedingOneBatchAndGapsReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
-        int batchSize = 5;
-        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), batchSize);
+        int testBatchSize = 5;
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
         DomainEventMessage<String> testEventOne = createEvent(0);
         DomainEventMessage<String> testEventTwo = createEvent(1);
@@ -402,75 +383,22 @@ class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Override
-    protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
-        return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(), byte[].class,
-                            HsqlEventTableFactory.INSTANCE);
+    protected JdbcEventStorageEngine createEngine(UnaryOperator<JdbcEventStorageEngine.Builder> customization) {
+        return createEngine(customization, HsqlEventTableFactory.INSTANCE);
     }
 
-    @Override
-    protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return createEngine(NoOpEventUpcaster.INSTANCE,
-                            persistenceExceptionResolver,
-                            new EventSchema(),
-                            byte[].class,
-                            HsqlEventTableFactory.INSTANCE);
-    }
-
-    private JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                PersistenceExceptionResolver persistenceExceptionResolver,
-                                                EventSchema eventSchema,
-                                                Class<?> dataType,
-                                                EventTableFactory tableFactory) {
-        return createEngine(upcasterChain,
-                            persistenceExceptionResolver,
-                            snapshot -> true,
-                            eventSchema,
-                            dataType,
-                            tableFactory,
-                            100);
-    }
-
-    private JdbcEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver,
-                                                EventSchema eventSchema,
-                                                int batchSize) {
-        return createEngine(NoOpEventUpcaster.INSTANCE,
-                            persistenceExceptionResolver,
-                            snapshot -> true,
-                            eventSchema,
-                            byte[].class,
-                            HsqlEventTableFactory.INSTANCE,
-                            batchSize);
-    }
-
-    private JdbcEventStorageEngine createEngine(SnapshotFilter snapshotFilter) {
-        return createEngine(NoOpEventUpcaster.INSTANCE,
-                            defaultPersistenceExceptionResolver,
-                            snapshotFilter,
-                            new EventSchema(),
-                            byte[].class,
-                            HsqlEventTableFactory.INSTANCE,
-                            100);
-    }
-
-    private JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                PersistenceExceptionResolver persistenceExceptionResolver,
-                                                SnapshotFilter snapshotFilter,
-                                                EventSchema eventSchema,
-                                                Class<?> dataType,
-                                                EventTableFactory tableFactory,
-                                                int batchSize) {
-        JdbcEventStorageEngine result = JdbcEventStorageEngine.builder()
-                                                              .upcasterChain(upcasterChain)
-                                                              .persistenceExceptionResolver(persistenceExceptionResolver)
-                                                              .snapshotFilter(snapshotFilter)
-                                                              .batchSize(batchSize)
-                                                              .connectionProvider(dataSource::getConnection)
-                                                              .transactionManager(NoTransactionManager.INSTANCE)
-                                                              .schema(eventSchema)
-                                                              .dataType(dataType)
-                                                              .build();
-
-        return doCreateTables(tableFactory, result);
+    private JdbcEventStorageEngine createEngine(UnaryOperator<JdbcEventStorageEngine.Builder> customization,
+                                                EventTableFactory eventTableFactory) {
+        JdbcEventStorageEngine.Builder engineBuilder =
+                JdbcEventStorageEngine.builder()
+                                      .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
+                                      .batchSize(100)
+                                      .connectionProvider(dataSource::getConnection)
+                                      .transactionManager(NoTransactionManager.INSTANCE);
+        return doCreateTables(
+                eventTableFactory,
+                new JdbcEventStorageEngine(customization.apply(engineBuilder))
+        );
     }
 
     private JdbcEventStorageEngine createTimestampEngine(EventTableFactory eventTableFactory) {
