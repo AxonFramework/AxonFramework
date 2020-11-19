@@ -475,7 +475,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             EventChannel eventChannel = connectionManager.getConnection(context).eventChannel();
 
             AggregateEventStream aggregateStream;
-            if (firstSequenceNumber > 0) {
+            if (firstSequenceNumber >= 0) {
                 aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, firstSequenceNumber);
             } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && !snapshotFilterSet) {
                 aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, true);

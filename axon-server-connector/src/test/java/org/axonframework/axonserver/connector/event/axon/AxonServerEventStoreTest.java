@@ -227,5 +227,45 @@ class AxonServerEventStoreTest {
 
         assertFalse(resultStream.hasNext());
     }
+
+    @Test
+    void testReadEventsWithSequenceNumberIgnoresSnapshots() {
+        Map<String, String> testMetaData = Collections.singletonMap("key", "value");
+        testSubject.storeSnapshot(
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Snapshot1", testMetaData)
+        );
+        testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3", testMetaData));
+
+        // Snapshot storage is async, so we need to make sure the first event through "readEvents" is the snapshot
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            DomainEventStream snapshotValidationStream = testSubject.readEvents("aggregateId");
+            assertTrue(snapshotValidationStream.hasNext());
+            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+        });
+
+        DomainEventStream resultStream = testSubject.readEvents("aggregateId", 0);
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> firstResultEvent = resultStream.next();
+        assertEquals("Test1", firstResultEvent.getPayload());
+        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
+        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> secondResultEvent = resultStream.next();
+        assertEquals("Test2", secondResultEvent.getPayload());
+        assertTrue(secondResultEvent.getMetaData().containsKey("key"));
+        assertTrue(secondResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> thirdResultEvent = resultStream.next();
+        assertEquals("Test3", thirdResultEvent.getPayload());
+        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
+        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+
+        assertFalse(resultStream.hasNext());
+    }
 }
 

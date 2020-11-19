@@ -92,11 +92,12 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
     @Override
     public void listAggregateEvents(GetAggregateEventsRequest request, StreamObserver<Event> responseObserver) {
-        Event snapshot = snapshots.get(request.getAggregateId());
+        Event snapshot = request.getAllowSnapshots() ? snapshots.get(request.getAggregateId()) : null;
         if (snapshot != null) {
             responseObserver.onNext(snapshot);
         }
-        events.stream().filter(e -> e.getAggregateIdentifier().equals(request.getAggregateId()))
+        events.stream()
+              .filter(e -> e.getAggregateIdentifier().equals(request.getAggregateId()))
               .filter(e -> snapshot == null || snapshot.getAggregateSequenceNumber() < e.getAggregateSequenceNumber())
               .forEach(responseObserver::onNext);
         responseObserver.onCompleted();
