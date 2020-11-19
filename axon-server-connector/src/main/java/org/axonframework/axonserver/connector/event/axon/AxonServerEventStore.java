@@ -371,8 +371,8 @@ public class AxonServerEventStore extends AbstractEventStore {
             this.builder = builder;
             this.context = context;
 
-            this.snapshotSerializer = new GrpcMetaDataAwareSerializer(getSnapshotSerializer());
-            this.eventSerializer = new GrpcMetaDataAwareSerializer(getEventSerializer());
+            this.snapshotSerializer = new GrpcMetaDataAwareSerializer(super.getSnapshotSerializer());
+            this.eventSerializer = new GrpcMetaDataAwareSerializer(super.getEventSerializer());
         }
 
         /**
@@ -653,6 +653,16 @@ public class AxonServerEventStore extends AbstractEventStore {
                     return true;
                 }
             }, false);
+        }
+
+        @Override
+        public Serializer getSnapshotSerializer() {
+            return this.snapshotSerializer;
+        }
+
+        @Override
+        public Serializer getEventSerializer() {
+            return this.eventSerializer;
         }
 
         private static class Builder extends AbstractEventStorageEngine.Builder {
