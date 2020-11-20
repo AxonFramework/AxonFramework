@@ -21,6 +21,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventStoreGrpc;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
+import io.axoniq.axonserver.grpc.event.GetAggregateSnapshotsRequest;
 import io.axoniq.axonserver.grpc.event.GetEventsRequest;
 import io.axoniq.axonserver.grpc.event.QueryEventsRequest;
 import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
@@ -37,8 +38,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * EventStore implementation used fro testing purposes. It makes it easier to verify events, snapshots and requests
+ * EventStore implementation used for testing purposes. It makes it easier to verify events, snapshots and requests
  * within EventStore.
+ *
+ * @author Marc Gathier
  */
 public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
@@ -89,20 +92,31 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
     @Override
     public void listAggregateEvents(GetAggregateEventsRequest request, StreamObserver<Event> responseObserver) {
-        Event snapshot = snapshots.get(request.getAggregateId());
+        Event snapshot = request.getAllowSnapshots() ? snapshots.get(request.getAggregateId()) : null;
         if (snapshot != null) {
             responseObserver.onNext(snapshot);
         }
-        events.stream().filter(e -> e.getAggregateIdentifier().equals(request.getAggregateId()))
+        events.stream()
+              .filter(e -> e.getAggregateIdentifier().equals(request.getAggregateId()))
               .filter(e -> snapshot == null || snapshot.getAggregateSequenceNumber() < e.getAggregateSequenceNumber())
               .forEach(responseObserver::onNext);
         responseObserver.onCompleted();
     }
 
     @Override
+    public void listAggregateSnapshots(GetAggregateSnapshotsRequest request, StreamObserver<Event> responseObserver) {
+        Event snapshot = snapshots.get(request.getAggregateId());
+        if (snapshot != null) {
+            responseObserver.onNext(snapshot);
+        }
+        responseObserver.onCompleted();
+    }
+
+    @Override
     public StreamObserver<GetEventsRequest> listEvents(StreamObserver<EventWithToken> responseObserver) {
         return new StreamObserver<GetEventsRequest>() {
-            private AtomicLong permits = new AtomicLong();
+
+            private final AtomicLong permits = new AtomicLong();
             private Iterator<Event> eventsAtRead;
             private long token;
 
@@ -121,7 +135,9 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
                         }
                     }
                     do {
-                        responseObserver.onNext(EventWithToken.newBuilder().setEvent(eventsAtRead.next()).setToken(token++).build());
+                        responseObserver.onNext(EventWithToken.newBuilder()
+                                                              .setEvent(eventsAtRead.next())
+                                                              .setToken(token++).build());
                     } while (eventsAtRead.hasNext() && permits.decrementAndGet() > 0);
                 }
             }
@@ -159,7 +175,8 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
     }
 
     @Override
-    public void readHighestSequenceNr(ReadHighestSequenceNrRequest request, StreamObserver<ReadHighestSequenceNrResponse> responseObserver) {
+    public void readHighestSequenceNr(ReadHighestSequenceNrRequest request,
+                                      StreamObserver<ReadHighestSequenceNrResponse> responseObserver) {
         super.readHighestSequenceNr(request, responseObserver);
     }
 }
