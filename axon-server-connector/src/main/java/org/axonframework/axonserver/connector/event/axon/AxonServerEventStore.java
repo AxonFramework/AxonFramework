@@ -342,6 +342,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         private static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
+        private static final boolean WITHOUT_SNAPSHOTS = false;
 
         private final AxonServerConfiguration configuration;
         private final AxonServerConnectionManager connectionManager;
@@ -478,9 +479,9 @@ public class AxonServerEventStore extends AbstractEventStore {
             if (firstSequenceNumber >= 0) {
                 aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, firstSequenceNumber);
             } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && !snapshotFilterSet) {
-                aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, true);
-            } else {
                 aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier);
+            } else {
+                aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, WITHOUT_SNAPSHOTS);
             }
 
             return aggregateStream.asStream().map(GrpcBackedDomainEventData::new);
