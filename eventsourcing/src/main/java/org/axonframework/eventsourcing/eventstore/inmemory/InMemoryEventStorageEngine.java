@@ -154,7 +154,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                      .map(tt -> (GlobalSequenceTrackingToken) tt)
                      .map(tt -> new GlobalSequenceTrackingToken(tt.getGlobalIndex() - 1))
                      .map(tt -> (TrackingToken) tt)
-                     .orElse(createHeadToken());
+                     .orElseGet(this::createHeadToken);
     }
 
     /**
