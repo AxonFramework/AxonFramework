@@ -30,12 +30,10 @@ import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
@@ -56,6 +54,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 import java.util.stream.LongStream;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -76,7 +75,8 @@ import static org.mockito.Mockito.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
 @Transactional
-class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
+class JpaEventStorageEngineTest
+        extends BatchingEventStorageEngineTest<JpaEventStorageEngine, JpaEventStorageEngine.Builder> {
 
     private JpaEventStorageEngine testSubject;
 
@@ -92,8 +92,7 @@ class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     void setUp() throws SQLException {
         entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
-        setTestSubject(
-                testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver));
+        setTestSubject(testSubject = createEngine());
 
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
         entityManager.flush();
@@ -261,11 +260,10 @@ class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         String expectedPayloadTwo = "Payload4";
 
         int testBatchSize = 2;
-        testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, testBatchSize);
+        testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
         EmbeddedEventStore testEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
 
-        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
-                                 createEvent(AGGREGATE, 2, "Payload2"));
+        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"), createEvent(AGGREGATE, 2, "Payload2"));
         // Update events which will be part of the first batch to an unknown payload type
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                      .executeUpdate();
@@ -296,32 +294,17 @@ class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Override
-    protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
-        return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
-    }
-
-    @Override
-    protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return createEngine(NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver);
-    }
-
-    protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                 PersistenceExceptionResolver persistenceExceptionResolver) {
-        return createEngine(upcasterChain, persistenceExceptionResolver, 100);
-    }
-
-    protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                 PersistenceExceptionResolver persistenceExceptionResolver,
-                                                 int batchSize) {
-        return JpaEventStorageEngine.builder()
-                                    .upcasterChain(upcasterChain)
-                                    .persistenceExceptionResolver(persistenceExceptionResolver)
-                                    .batchSize(batchSize)
-                                    .entityManagerProvider(entityManagerProvider)
-                                    .transactionManager(transactionManager)
-                                    .eventSerializer(secureXStreamSerializer())
-                                    .snapshotSerializer(secureXStreamSerializer())
-                                    .build();
+    protected JpaEventStorageEngine createEngine(UnaryOperator<JpaEventStorageEngine.Builder> customization) {
+        JpaEventStorageEngine.Builder engineBuilder =
+                JpaEventStorageEngine.builder()
+                                     .upcasterChain(NoOpEventUpcaster.INSTANCE)
+                                     .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
+                                     .batchSize(100)
+                                     .entityManagerProvider(entityManagerProvider)
+                                     .transactionManager(transactionManager)
+                                     .eventSerializer(secureXStreamSerializer())
+                                     .snapshotSerializer(secureXStreamSerializer());
+        return new JpaEventStorageEngine(customization.apply(engineBuilder));
     }
 
     /**

@@ -325,27 +325,37 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createHeadToken() {
-        List<Long> results = entityManager().createQuery(
-                "SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class
-        ).getResultList();
-        return createToken(results);
+        return createToken(mostRecentIndex());
     }
 
     @Override
     public TrackingToken createTokenAt(Instant dateTime) {
-        List<Long> results = entityManager().createQuery(
-                "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName()
-                        + " e WHERE e.timeStamp >= :dateTime", Long.class
-        ).setParameter("dateTime", formatInstant(dateTime))
-                                            .getResultList();
-        return createToken(results);
+        List<Long> results = entityManager()
+                .createQuery(
+                        "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e "
+                                + "WHERE e.timeStamp >= :dateTime", Long.class
+                )
+                .setParameter("dateTime", formatInstant(dateTime))
+                .getResultList();
+
+        return noTokenFound(results) ? createToken(mostRecentIndex()) : createToken(results);
     }
 
-    private TrackingToken createToken(List<Long> results) {
-        if (results.size() == 0 || results.get(0) == null) {
+    private List<Long> mostRecentIndex() {
+        return entityManager()
+                .createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
+                .getResultList();
+    }
+
+    private TrackingToken createToken(List<Long> tokens) {
+        if (noTokenFound(tokens)) {
             return null;
         }
-        return GapAwareTrackingToken.newInstance(results.get(0), Collections.emptySet());
+        return GapAwareTrackingToken.newInstance(tokens.get(0), Collections.emptySet());
+    }
+
+    private boolean noTokenFound(List<Long> tokens) {
+        return tokens.isEmpty() || tokens.get(0) == null;
     }
 
     /**

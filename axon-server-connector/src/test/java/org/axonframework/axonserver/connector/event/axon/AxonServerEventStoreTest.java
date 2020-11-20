@@ -23,47 +23,49 @@ import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link AxonServerEventStore}
+ *
+ * @author Marc Gathier
+ */
 class AxonServerEventStoreTest {
 
-    private StubServer server;
-    private AxonServerEventStore testSubject;
-    private EventUpcaster upcasterChain;
-    private AxonServerConnectionManager axonServerConnectionManager;
     private EventStoreImpl eventStore;
+    private StubServer server;
+
+    private AxonServerConfiguration config;
+    private AxonServerConnectionManager axonServerConnectionManager;
+    private EventUpcaster upcasterChain;
+
+    private AxonServerEventStore testSubject;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -71,23 +73,26 @@ class AxonServerEventStoreTest {
         eventStore = spy(new EventStoreImpl());
         server = new StubServer(freePort, new PlatformService(freePort), eventStore);
         server.start();
+
+        config = AxonServerConfiguration.builder()
+                                        .forceReadFromLeader(false)
+                                        .servers("localhost:" + server.getPort())
+                                        .componentName("JUNIT")
+                                        .flowControl(2, 1, 1)
+                                        .build();
+        axonServerConnectionManager = AxonServerConnectionManager.builder()
+                                                                 .axonServerConfiguration(config)
+                                                                 .build();
         upcasterChain = mock(EventUpcaster.class);
         when(upcasterChain.upcast(any())).thenAnswer(i -> i.getArgument(0));
-        AxonServerConfiguration config = AxonServerConfiguration.builder()
-                                                                .forceReadFromLeader(false)
-                                                                .servers("localhost:" + server.getPort())
-                                                                .componentName("JUNIT")
-                                                                .flowControl(2, 1, 1)
-                                                                .build();
-        axonServerConnectionManager = AxonServerConnectionManager.builder()
-                                   .axonServerConfiguration(config)
-                                   .build();
+
         testSubject = AxonServerEventStore.builder()
                                           .configuration(config)
                                           .platformConnectionManager(axonServerConnectionManager)
                                           .upcasterChain(upcasterChain)
                                           .eventSerializer(JacksonSerializer.defaultSerializer())
                                           .snapshotSerializer(TestSerializer.secureXStreamSerializer())
+                                          .snapshotFilter(SnapshotFilter.allowAll())
                                           .build();
     }
 
@@ -139,7 +144,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testLoadSnapshotAndEventsWithMultiUpcaster() throws InterruptedException {
+    void testLoadSnapshotAndEventsWithMultiUpcaster() {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
             Stream<IntermediateEventRepresentation> si = invocation.getArgument(0);
@@ -159,7 +164,6 @@ class AxonServerEventStoreTest {
 
         DomainEventStream actual = testSubject.readEvents("aggregateId");
         assertTrue(actual.hasNext());
-        assertEquals("Snapshot1", actual.next().getPayload());
         assertEquals("Snapshot1", actual.next().getPayload());
         assertEquals("Test3", actual.next().getPayload());
         assertEquals("Test3", actual.next().getPayload());
@@ -193,4 +197,164 @@ class AxonServerEventStoreTest {
                      () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
         assertFalse(eventStore.getQueryEventsRequests().get(0).getForceReadFromLeader());
     }
+
+    @Test
+    void testReadEventsReturnsSnapshotsAndEventsWithMetaData() {
+        Map<String, String> testMetaData = Collections.singletonMap("key", "value");
+        testSubject.storeSnapshot(
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Snapshot1", testMetaData)
+        );
+        testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3", testMetaData));
+
+        // Snapshot storage is async, so we need to make sure the first event is the snapshot
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            DomainEventStream snapshotValidationStream = testSubject.readEvents("aggregateId");
+            assertTrue(snapshotValidationStream.hasNext());
+            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+        });
+
+        DomainEventStream resultStream = testSubject.readEvents("aggregateId");
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> resultSnapshot = resultStream.next();
+        assertEquals("Snapshot1", resultSnapshot.getPayload());
+        assertTrue(resultSnapshot.getMetaData().containsKey("key"));
+        assertTrue(resultSnapshot.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> resultEvent = resultStream.next();
+        assertEquals("Test3", resultEvent.getPayload());
+        assertTrue(resultEvent.getMetaData().containsKey("key"));
+        assertTrue(resultEvent.getMetaData().containsValue("value"));
+
+        assertFalse(resultStream.hasNext());
+    }
+
+    @Test
+    void testReadEventsWithSequenceNumberIgnoresSnapshots() {
+        Map<String, String> testMetaData = Collections.singletonMap("key", "value");
+        testSubject.storeSnapshot(
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Snapshot1", testMetaData)
+        );
+        testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3", testMetaData));
+
+        // Snapshot storage is async, so we need to make sure the first event through "readEvents" is the snapshot
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            DomainEventStream snapshotValidationStream = testSubject.readEvents("aggregateId");
+            assertTrue(snapshotValidationStream.hasNext());
+            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+        });
+
+        DomainEventStream resultStream = testSubject.readEvents("aggregateId", 0);
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> firstResultEvent = resultStream.next();
+        assertEquals("Test1", firstResultEvent.getPayload());
+        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
+        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> secondResultEvent = resultStream.next();
+        assertEquals("Test2", secondResultEvent.getPayload());
+        assertTrue(secondResultEvent.getMetaData().containsKey("key"));
+        assertTrue(secondResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> thirdResultEvent = resultStream.next();
+        assertEquals("Test3", thirdResultEvent.getPayload());
+        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
+        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+
+        assertFalse(resultStream.hasNext());
+    }
+
+    @Test
+    void testReadEventsWithMagicSequenceNumberAndNoSnapshotFilterIncludesSnapshots() {
+        AxonServerEventStore testSubjectWithoutSnapshotFilter =
+                AxonServerEventStore.builder()
+                                    .configuration(config)
+                                    .platformConnectionManager(axonServerConnectionManager)
+                                    .upcasterChain(upcasterChain)
+                                    .eventSerializer(JacksonSerializer.defaultSerializer())
+                                    .snapshotSerializer(JacksonSerializer.defaultSerializer())
+                                    .build();
+
+        Map<String, String> testMetaData = Collections.singletonMap("key", "value");
+        testSubjectWithoutSnapshotFilter.storeSnapshot(
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Snapshot1", testMetaData)
+        );
+        testSubjectWithoutSnapshotFilter.publish(
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1", testMetaData),
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2", testMetaData),
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3", testMetaData)
+        );
+
+        // Snapshot storage is async, so we need to make sure the first event through "readEvents" is the snapshot
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            DomainEventStream snapshotValidationStream = testSubjectWithoutSnapshotFilter.readEvents("aggregateId");
+            assertTrue(snapshotValidationStream.hasNext());
+            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+        });
+
+        DomainEventStream resultStream = testSubjectWithoutSnapshotFilter.readEvents("aggregateId", -42);
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> firstResultEvent = resultStream.next();
+        assertEquals("Snapshot1", firstResultEvent.getPayload());
+        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
+        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> thirdResultEvent = resultStream.next();
+        assertEquals("Test3", thirdResultEvent.getPayload());
+        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
+        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+
+        assertFalse(resultStream.hasNext());
+    }
+
+    @Test
+    void testReadEventsWithMagicSequenceNumberAndSnapshotFilterSetIgnoresSnapshots() {
+        Map<String, String> testMetaData = Collections.singletonMap("key", "value");
+        testSubject.storeSnapshot(
+                new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Snapshot1", testMetaData)
+        );
+        testSubject.publish(new GenericDomainEventMessage<>("aggregateType", "aggregateId", 0, "Test1", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 1, "Test2", testMetaData),
+                            new GenericDomainEventMessage<>("aggregateType", "aggregateId", 2, "Test3", testMetaData));
+
+        // Snapshot storage is async, so we need to make sure the first event through "readEvents" is the snapshot
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            DomainEventStream snapshotValidationStream = testSubject.readEvents("aggregateId");
+            assertTrue(snapshotValidationStream.hasNext());
+            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+        });
+
+        DomainEventStream resultStream = testSubject.readEvents("aggregateId", -42);
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> firstResultEvent = resultStream.next();
+        assertEquals("Test1", firstResultEvent.getPayload());
+        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
+        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> secondResultEvent = resultStream.next();
+        assertEquals("Test2", secondResultEvent.getPayload());
+        assertTrue(secondResultEvent.getMetaData().containsKey("key"));
+        assertTrue(secondResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> thirdResultEvent = resultStream.next();
+        assertEquals("Test3", thirdResultEvent.getPayload());
+        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
+        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+
+        assertFalse(resultStream.hasNext());
+    }
 }
+

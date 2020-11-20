@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -42,7 +43,8 @@ import static org.mockito.Mockito.*;
  * @author Rene de Waele
  */
 @Transactional
-public abstract class AbstractEventStorageEngineTest extends EventStorageEngineTest {
+public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStorageEngine, EB extends AbstractEventStorageEngine.Builder>
+        extends EventStorageEngineTest {
 
     private AbstractEventStorageEngine testSubject;
 
@@ -66,14 +68,15 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @Test
     @DirtiesContext
-    @SuppressWarnings({"unchecked"})
     void testStoreAndLoadEventsWithUpcaster() {
         EventUpcaster mockUpcasterChain = mock(EventUpcaster.class);
+        //noinspection unchecked
         when(mockUpcasterChain.upcast(isA(Stream.class))).thenAnswer(invocation -> {
             Stream<?> inputStream = (Stream<?>) invocation.getArguments()[0];
             return inputStream.flatMap(e -> Stream.of(e, e));
         });
-        testSubject = createEngine(mockUpcasterChain);
+        //noinspection unchecked
+        testSubject = createEngine(engineBuilder -> (EB) engineBuilder.upcasterChain(mockUpcasterChain));
 
         testSubject.appendEvents(createEvents(4));
         List<DomainEventMessage<?>> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
@@ -110,20 +113,54 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
     @DirtiesContext
     @Test
     void testStoreDuplicateEventWithoutExceptionResolver() {
-        testSubject = createEngine((PersistenceExceptionResolver) e -> false);
+        //noinspection unchecked
+        testSubject = createEngine(engineBuilder -> (EB) engineBuilder.persistenceExceptionResolver(e -> false));
         assertThrows(
                 EventStoreException.class,
                 () -> testSubject.appendEvents(createEvent(0), createEvent(0))
         );
     }
 
+    @Test
+    void testSnapshotFilterAllowsSnapshots() {
+        SnapshotFilter allowAll = SnapshotFilter.allowAll();
+
+        //noinspection unchecked
+        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(allowAll));
+
+        testSubject.storeSnapshot(createEvent(1));
+        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+    }
+
+    @Test
+    void testSnapshotFilterRejectsSnapshots() {
+        SnapshotFilter rejectAll = SnapshotFilter.rejectAll();
+
+        //noinspection unchecked
+        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(rejectAll));
+
+        testSubject.storeSnapshot(createEvent(1));
+        assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
+    }
+
+    @Test
+    void testSnapshotFilterRejectsSnapshotsOnCombinedFilter() {
+        SnapshotFilter combinedFilter = SnapshotFilter.allowAll().combine(SnapshotFilter.rejectAll());
+
+        //noinspection unchecked
+        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(combinedFilter));
+
+        testSubject.storeSnapshot(createEvent(1));
+        assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
+    }
+
     protected void setTestSubject(AbstractEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }
 
-    protected abstract AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain);
+    protected E createEngine() {
+        return createEngine(builder -> builder);
+    }
 
-    protected abstract AbstractEventStorageEngine createEngine(
-            PersistenceExceptionResolver persistenceExceptionResolver
-    );
+    protected abstract E createEngine(UnaryOperator<EB> customization);
 }
