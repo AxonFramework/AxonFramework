@@ -231,6 +231,44 @@ public abstract class EventStorageEngineTest {
         assertEventStreamsById(Arrays.asList(event3, event4, event5), readEvents);
     }
 
+    /**
+     * If the dateTime is after the last event in the store, the token should default to the position of the last event.
+     */
+    @Test
+    void testCreateTokenAtTimeAfterLastEvent() {
+        Instant dateTimeAfterLastEvent = Instant.parse("2008-12-03T10:15:30.00Z");
+
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        testSubject.appendEvents(event1, event2, event3);
+
+        TrackingToken result = testSubject.createTokenAt(dateTimeAfterLastEvent);
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(result, false).collect(toList());
+
+        assertTrue(readEvents.isEmpty());
+    }
+
+    /**
+     * If the dateTime is before the first event in the store, the token should default to the position of the first event.
+     */
+    @Test
+    void testCreateTokenAtTimeBeforeFirstEvent() {
+        Instant dateTimeBeforeFirstEvent = Instant.parse("2006-12-03T10:15:30.00Z");
+
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        testSubject.appendEvents(event1, event2, event3);
+
+        TrackingToken result = testSubject.createTokenAt(dateTimeBeforeFirstEvent);
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(result, false).collect(toList());
+
+        assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
+    }
+
     protected void setTestSubject(EventStorageEngine testSubject) {
         this.testSubject = testSubject;
     }

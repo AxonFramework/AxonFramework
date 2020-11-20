@@ -31,11 +31,24 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.jdbc.statements.*;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendEventsStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendSnapshotStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.CleanGapsStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateHeadTokenStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateTailTokenStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.CreateTokenAtStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.DeleteSnapshotsStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.FetchTrackedEventsStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.JdbcEventStorageEngineStatements;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.LastSequenceNumberForStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataForAggregateStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithGapsStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataWithoutGapsStatementBuilder;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadSnapshotDataStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.TimestampWriter;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -418,35 +431,38 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                 resultSet -> nextAndExtract(resultSet, 1, Long.class),
                 e -> new EventStoreException("Failed to get tail token", e)
         ));
-        return Optional.ofNullable(index)
-                       .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
-                       .orElse(null);
+        return createToken(index);
     }
 
     @Override
     public TrackingToken createHeadToken() {
+        return createToken(mostRecentIndex());
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
         Long index = transactionManager.fetchInTransaction(() -> executeQuery(
+                getConnection(),
+                connection -> createTokenAt(connection, dateTime),
+                resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                e -> new EventStoreException(format("Failed to get token at [%s]", dateTime), e)
+        ));
+        return index != null ? createToken(index) : createToken(mostRecentIndex());
+    }
+
+    private Long mostRecentIndex() {
+        return transactionManager.fetchInTransaction(() -> executeQuery(
                 getConnection(),
                 this::createHeadToken,
                 resultSet -> nextAndExtract(resultSet, 1, Long.class),
                 e -> new EventStoreException("Failed to get head token", e)
         ));
+    }
+
+    private TrackingToken createToken(Long index) {
         return Optional.ofNullable(index)
                        .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
                        .orElse(null);
-    }
-
-    @Override
-    public TrackingToken createTokenAt(Instant dateTime) {
-        Long index = transactionManager.fetchInTransaction(
-                () -> executeQuery(getConnection(),
-                                   connection -> createTokenAt(connection, dateTime),
-                                   resultSet -> nextAndExtract(resultSet, 1, Long.class),
-                                   e -> new EventStoreException(format("Failed to get token at [%s]", dateTime), e)));
-        if (index == null) {
-            return null;
-        }
-        return GapAwareTrackingToken.newInstance(index, Collections.emptySet());
     }
 
     @Override
