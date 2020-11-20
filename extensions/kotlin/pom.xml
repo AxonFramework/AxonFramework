@@ -33,7 +33,7 @@
   <properties>
     <axon.version>4.4.4</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <kotlin.version>1.4.10</kotlin.version>
+    <kotlin.version>1.4.20</kotlin.version>
     <kotlin-logging.version>2.0.3</kotlin-logging.version>
     <jackson-kotlin.version>2.11.3</jackson-kotlin.version>
     <mockk.version>1.10.2</mockk.version>
