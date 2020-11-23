@@ -39,6 +39,9 @@ import static org.mockito.Mockito.*;
 /**
  * Abstract test class used to create tests for the {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
  * and {@link org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine}.
+ * <p>
+ * Methods are public so they can be overridden by {@link EventStorageEngine} implementation test cases in different
+ * repository, like the [Mongo Extension](https://github.com/AxonFramework/extension-mongo).
  *
  * @author Rene de Waele
  */
@@ -50,7 +53,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
 
     @DirtiesContext
     @Test
-    void testUniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
+    public void testUniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0))
@@ -59,7 +62,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
 
     @DirtiesContext
     @Test
-    void testUniqueKeyConstraintOnEventIdentifier() {
+    public void testUniqueKeyConstraintOnEventIdentifier() {
         assertThrows(
                 ConcurrencyException.class,
                 () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 1), createEvent("id", "otherAggregate", 1))
@@ -68,7 +71,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
 
     @Test
     @DirtiesContext
-    void testStoreAndLoadEventsWithUpcaster() {
+    public void testStoreAndLoadEventsWithUpcaster() {
         EventUpcaster mockUpcasterChain = mock(EventUpcaster.class);
         //noinspection unchecked
         when(mockUpcasterChain.upcast(isA(Stream.class))).thenAnswer(invocation -> {
@@ -94,7 +97,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
 
     @DirtiesContext
     @Test
-    void testStoreDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
+    public void testStoreDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent(0), createEvent(0))
@@ -103,7 +106,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
 
     @DirtiesContext
     @Test
-    void testStoreDuplicateEventWithExceptionTranslator() {
+    public void testStoreDuplicateEventWithExceptionTranslator() {
         assertThrows(
                 ConcurrencyException.class,
                 () -> testSubject.appendEvents(createEvent(1), createEvent(1))
@@ -112,7 +115,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
 
     @DirtiesContext
     @Test
-    void testStoreDuplicateEventWithoutExceptionResolver() {
+    public void testStoreDuplicateEventWithoutExceptionResolver() {
         //noinspection unchecked
         testSubject = createEngine(engineBuilder -> (EB) engineBuilder.persistenceExceptionResolver(e -> false));
         assertThrows(
@@ -122,7 +125,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    void testSnapshotFilterAllowsSnapshots() {
+    public void testSnapshotFilterAllowsSnapshots() {
         SnapshotFilter allowAll = SnapshotFilter.allowAll();
 
         //noinspection unchecked
@@ -133,7 +136,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    void testSnapshotFilterRejectsSnapshots() {
+    public void testSnapshotFilterRejectsSnapshots() {
         SnapshotFilter rejectAll = SnapshotFilter.rejectAll();
 
         //noinspection unchecked
@@ -144,7 +147,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    void testSnapshotFilterRejectsSnapshotsOnCombinedFilter() {
+    public void testSnapshotFilterRejectsSnapshotsOnCombinedFilter() {
         SnapshotFilter combinedFilter = SnapshotFilter.allowAll().combine(SnapshotFilter.rejectAll());
 
         //noinspection unchecked
