@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <name>Axon Framework - Kotlin Extension - Test</name>
+  <description>Module for the Kotlin Test Extension of Axon Framework</description>
+
+  <parent>
+    <artifactId>axon-kotlin-parent</artifactId>
+    <groupId>org.axonframework.extensions.kotlin</groupId>
+    <version>0.2.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>axon-kotlin-test</artifactId>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.axonframework</groupId>
+      <artifactId>axon-test</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>javadoc-and-sources</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jetbrains.dokka</groupId>
+            <artifactId>dokka-maven-plugin</artifactId>
+          </plugin>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>
