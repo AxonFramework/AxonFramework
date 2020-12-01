@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class HandlerAttributes {
 
-    private final Map<String, Map<String, Object>> handlerAttributes;
+    private final Map<String, Map<String, Object>> attributes;
 
     /**
      * Constructs an empty handler attributes object.
@@ -27,11 +27,11 @@ public class HandlerAttributes {
     /**
      * Construct a handler attributes object based on the given {@code handlerAttributes} {@link Map}.
      *
-     * @param handlerAttributes a {@link Map} from handler type to attributes {@code Map} to base a {@link
+     * @param attributes a {@link Map} from handler type to attributes {@code Map} to base a {@link
      *                          HandlerAttributes} on
      */
-    public HandlerAttributes(Map<String, Map<String, Object>> handlerAttributes) {
-        this.handlerAttributes = handlerAttributes;
+    public HandlerAttributes(Map<String, Map<String, Object>> attributes) {
+        this.attributes = attributes;
     }
 
     /**
@@ -41,7 +41,7 @@ public class HandlerAttributes {
      * @param attributes  the {@link Map} of attribute information to add for the given {@code handlerType}
      */
     public void put(String handlerType, Map<String, Object> attributes) {
-        handlerAttributes.put(handlerType, attributes);
+        this.attributes.put(handlerType, attributes);
     }
 
     /**
@@ -52,7 +52,7 @@ public class HandlerAttributes {
      * @return the attributes for the given {@code handlerType}
      */
     public Map<String, Object> get(String handlerType) {
-        return Collections.unmodifiableMap(handlerAttributes.get(handlerType));
+        return Collections.unmodifiableMap(attributes.get(handlerType));
     }
 
     /**
@@ -62,7 +62,7 @@ public class HandlerAttributes {
      * @return all attributes for all handler types stored in this {@link HandlerAttributes} object
      */
     public Map<String, Map<String, Object>> getAll() {
-        return Collections.unmodifiableMap(handlerAttributes);
+        return Collections.unmodifiableMap(attributes);
     }
 
     /**
@@ -76,7 +76,7 @@ public class HandlerAttributes {
      */
     public Map<String, Object> getAllPrefixed() {
         Map<String, Object> allPrefixedAttributes = new HashMap<>();
-        for (Map.Entry<String, Map<String, Object>> attributeEntry : handlerAttributes.entrySet()) {
+        for (Map.Entry<String, Map<String, Object>> attributeEntry : attributes.entrySet()) {
             String handlerType = attributeEntry.getKey();
             Map<String, Object> prefixedAttributes =
                     attributeEntry.getValue().entrySet().stream()
@@ -100,7 +100,7 @@ public class HandlerAttributes {
      * @return {@code true} if there are attributes for the given {@code handlerType} present, {@code false} otherwise
      */
     public boolean containsAttributesFor(String handlerType) {
-        return handlerAttributes.containsKey(handlerType);
+        return attributes.containsKey(handlerType);
     }
 
     /**
@@ -109,7 +109,7 @@ public class HandlerAttributes {
      * @return {@code true} if there are no attributes present, {@code false} otherwise
      */
     public boolean isEmpty() {
-        return handlerAttributes.isEmpty();
+        return attributes.isEmpty();
     }
 
     @Override
@@ -121,18 +121,18 @@ public class HandlerAttributes {
             return false;
         }
         HandlerAttributes that = (HandlerAttributes) o;
-        return Objects.equals(handlerAttributes, that.handlerAttributes);
+        return Objects.equals(attributes, that.attributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(handlerAttributes);
+        return Objects.hash(attributes);
     }
 
     @Override
     public String toString() {
         return "HandlerAttributes{" +
-                "handlerAttributes=" + handlerAttributes +
+                "handlerAttributes=" + attributes +
                 '}';
     }
 }
