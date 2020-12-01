@@ -140,8 +140,25 @@ public interface MessageHandlingMember<T> {
      *
      * @param annotationType Annotation to check for on the target method
      * @return {@code true} if the annotation is present on the target method, {@code false} otherwise
+     * @deprecated in favor of {@link #isA(String)}
      */
+    @Deprecated
     boolean hasAnnotation(Class<? extends Annotation> annotationType);
+
+    /**
+     * Validates whether this {@link MessageHandlingMember} is an implementation of the given {@code handlerType}.
+     * <p>
+     * Note that a given message handling member can be several handler types at once. For example an Event Handler is
+     * also a Message Handler of type Event Message.
+     *
+     * @param handlerType the {@link MessageHandlingMember} type to validate whether this handler is an implementation
+     *                    of
+     * @return {@code true} if this {@link MessageHandlingMember} is an implementation of the given {@code handlerType},
+     * {@code false} otherwise
+     */
+    default boolean isA(String handlerType) {
+        return false;
+    }
 
     /**
      * Get the attributes of an annotation of given {@code annotationType} on the method of the target entity. If the
@@ -151,6 +168,24 @@ public interface MessageHandlingMember<T> {
      * @param annotationType The annotation to check for on the target method
      * @return An optional containing a map of the properties of the annotation, or an empty optional if the annotation
      * is missing on the method
+     * @deprecated in favor of {@link #attributes(String)}
      */
+    @Deprecated
     Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType);
+
+    /**
+     * Retrieve all the attributes for the given {@code handlerType}. If this {@link MessageHandlingMember} is not an
+     * implementation of the {@code handlerType}, an {@link Optional#empty()} is returned. Otherwise a non-empty {@link
+     * Optional} containing all the referenced {@code handlerType}'s attributes will be provided.
+     * <p>
+     * Note that a given message handling member can be several handler types at once. For example an Event Handler is
+     * also a Message Handler of type Event Message.
+     *
+     * @param handlerType the type of handler to retrieve the attributes for
+     * @return a non empty {@link Optional} of all attributes referencing the given {@code handlerType} if this handling
+     * member is an implementation of the type. Otherwise an {@link Optional#empty()} will be returned
+     */
+    default Optional<Map<String, Object>> attributes(String handlerType) {
+        return Optional.empty();
+    }
 }

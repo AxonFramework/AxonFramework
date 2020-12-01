@@ -2,9 +2,13 @@ package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -37,5 +41,28 @@ class ChildForwardingCommandMessageHandlingMemberTest {
         assertTrue(testSubject.canHandleMessageType(CommandMessage.class));
 
         verify(childMember).canHandleMessageType(CommandMessage.class);
+    }
+
+    @Test
+    void testIsAIsDelegatedToChildHandler() {
+        when(childMember.isA("EventSourcingHandler")).thenReturn(false);
+
+        assertFalse(testSubject.isA("EventSourcingHandler"));
+
+        verify(childMember).isA("EventSourcingHandler");
+    }
+
+    @Test
+    void testAttributesIsDelegatedToChildHandler() {
+        Map<String, Object> creationPolicyAttributes = new HashMap<>();
+        creationPolicyAttributes.put("creationPolicy", AggregateCreationPolicy.NEVER);
+        when(childMember.attributes("CreationPolicy")).thenReturn(Optional.of(creationPolicyAttributes));
+
+        Optional<Map<String, Object>> result = testSubject.attributes("CreationPolicy");
+
+        assertTrue(result.isPresent());
+        assertEquals(creationPolicyAttributes, result.get());
+
+        verify(childMember).attributes("CreationPolicy");
     }
 }

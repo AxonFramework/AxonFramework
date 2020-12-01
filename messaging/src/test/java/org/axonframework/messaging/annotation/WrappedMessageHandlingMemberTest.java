@@ -29,4 +29,16 @@ class WrappedMessageHandlingMemberTest {
         testSubject.canHandleMessageType(QueryMessage.class);
         verify(mockedHandlingMember).canHandleMessageType(QueryMessage.class);
     }
+
+    @Test
+    void testIsA() {
+        testSubject.isA("EventHandler");
+        verify(mockedHandlingMember).isA("EventHandler");
+    }
+
+    @Test
+    void testAttributes() {
+        testSubject.attributes("CommandHandler");
+        verify(mockedHandlingMember).attributes("CommandHandler");
+    }
 }
