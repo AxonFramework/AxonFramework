@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.interceptors;
 
+import org.axonframework.messaging.annotation.HasHandlerAttributes;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,12 +31,14 @@ import java.lang.annotation.Target;
  * The {@link #resultType()} can be used to limit the types of responses the handler should be invoked for.
  * <p>
  * This annotation is exclusively meant as a Meta-Annotation and cannot not be placed directly on a method.
+ *
  * @author Allard Buijze
- * @since 4.4
  * @see ExceptionHandler
+ * @since 4.4
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.ANNOTATION_TYPE})
+@HasHandlerAttributes
 public @interface ResultHandler {
 
     /**
