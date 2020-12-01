@@ -39,4 +39,11 @@ class ObjectUtilsTest {
         assertEquals(DEFAULT_VALUE, ObjectUtils.getOrDefault(NULL_INSTANCE, valueProvider, DEFAULT_VALUE));
         assertEquals(INSTANCE, ObjectUtils.getOrDefault(INSTANCE, valueProvider, DEFAULT_VALUE));
     }
+
+    @Test
+    void testNonEmptyOrNull() {
+        assertFalse(ObjectUtils.nonEmptyOrNull(""));
+        assertFalse(ObjectUtils.nonEmptyOrNull(null));
+        assertTrue(ObjectUtils.nonEmptyOrNull("some-string"));
+    }
 }

@@ -19,19 +19,36 @@ package org.axonframework.common.annotation;
 import org.axonframework.commandhandling.RoutingKey;
 import org.junit.jupiter.api.*;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
+import static org.axonframework.common.annotation.AnnotationUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link AnnotationUtils}
+ *
+ * @author Allard Buijze
+ */
 class AnnotationUtilsTest {
 
     @Test
     void testFindAttributesOnDirectAnnotation() throws NoSuchMethodException {
-        Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("directAnnotated"), TheTarget.class).get();
+        Optional<Map<String, Object>> optionalResult =
+                findAnnotationAttributes(getClass().getDeclaredMethod("directAnnotated"), TheTarget.class);
+        assertTrue(optionalResult.isPresent());
+        Map<String, Object> results = optionalResult.get();
 
         assertEquals("value", results.get("property"));
         assertFalse(results.containsKey("value"), "value property should use annotation Simple class name as key");
@@ -40,14 +57,20 @@ class AnnotationUtilsTest {
 
     @Test
     void testFindAttributesOnStaticMetaAnnotation() throws NoSuchMethodException {
-        Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("staticallyOverridden"), TheTarget.class).get();
+        Optional<Map<String, Object>> optionalResult =
+                findAnnotationAttributes(getClass().getDeclaredMethod("staticallyOverridden"), TheTarget.class);
+        assertTrue(optionalResult.isPresent());
+        Map<String, Object> results = optionalResult.get();
 
         assertEquals("overridden_statically", results.get("property"));
     }
 
     @Test
     void testFindAttributesOnDynamicMetaAnnotation() throws NoSuchMethodException {
-        Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class).get();
+        Optional<Map<String, Object>> optionalResult =
+                findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class);
+        assertTrue(optionalResult.isPresent());
+        Map<String, Object> results = optionalResult.get();
 
         assertEquals("dynamic-override", results.get("property"));
         assertEquals("extra", results.get("extraValue"));
@@ -55,7 +78,11 @@ class AnnotationUtilsTest {
 
     @Test
     void testFindAttributesOnDynamicMetaAnnotationUsingAnnotationName() throws NoSuchMethodException {
-        Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class.getName()).get();
+        Optional<Map<String, Object>> optionalResult = findAnnotationAttributes(
+                getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class.getName()
+        );
+        assertTrue(optionalResult.isPresent());
+        Map<String, Object> results = optionalResult.get();
 
         assertEquals("dynamic-override", results.get("property"));
         assertEquals("extra", results.get("extraValue"));
@@ -64,8 +91,86 @@ class AnnotationUtilsTest {
 
     @Test
     void testFindAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
-        assertFalse(AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class).isPresent(),
-                "Didn't expect attributes to be found for non-existent annotation");
+        Optional<Map<String, Object>> result =
+                findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class);
+        assertFalse(result.isPresent(), "Didn't expect attributes to be found for non-existent annotation");
+    }
+
+    @Test
+    void testFindAnnotationAttributesOnlyReturnsTargetAttributesAndOverridesForClassAnnotation()
+            throws NoSuchMethodException {
+        Method annotatedElement = getClass().getDeclaredMethod("dynamicallyOverridden");
+
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("property", "dynamic-override");
+        expected.put("theTarget", "otherValue");
+
+        Optional<Map<String, Object>> result =
+                findAnnotationAttributes(annotatedElement, TheTarget.class, OVERRIDE_ONLY);
+
+        assertTrue(result.isPresent());
+        assertEquals(expected, result.get());
+    }
+
+    @Test
+    void testFindAnnotationAttributesOnlyReturnsTargetAttributesAndOverridesForStringAnnotation()
+            throws NoSuchMethodException {
+        Method annotatedElement = getClass().getDeclaredMethod("someAnnotatedMethod");
+
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("property", "some-property");
+        expected.put("theTarget", "otherValue");
+
+        Optional<Map<String, Object>> result =
+                findAnnotationAttributes(annotatedElement, TheTarget.class.getName(), OVERRIDE_ONLY);
+
+        assertTrue(result.isPresent());
+        assertEquals(expected, result.get());
+    }
+
+    @Test
+    void testIsAnnotatedWithReturnsTrue() {
+        Set<Class<? extends Annotation>> expectedAnnotatedWithSubject = new HashSet<>();
+        expectedAnnotatedWithSubject.add(DynamicOverrideAnnotated.class);
+        expectedAnnotatedWithSubject.add(AnotherMetaAnnotation.class);
+        Set<Class<? extends Annotation>> expectedVisited = new HashSet<>();
+        expectedVisited.add(DynamicOverrideAnnotated.class);
+        expectedVisited.add(AnotherMetaAnnotation.class);
+        expectedVisited.add(TheTarget.class);
+        expectedVisited.add(Retention.class);
+        expectedVisited.add(Target.class);
+        expectedVisited.add(Documented.class);
+
+        Set<Class<? extends Annotation>> resultAnnotatedWithSubject = new HashSet<>();
+        Set<Class<? extends Annotation>> resultVisited = new HashSet<>();
+        boolean result = isAnnotatedWith(
+                AnotherMetaAnnotation.class, TheTarget.class, resultAnnotatedWithSubject, resultVisited
+        );
+
+        assertTrue(result);
+        assertEquals(expectedAnnotatedWithSubject, resultAnnotatedWithSubject);
+        assertEquals(expectedVisited, resultVisited);
+    }
+
+    @Test
+    void testIsAnnotatedWithReturnsFalse() {
+        Set<Class<? extends Annotation>> expectedAnnotatedWithSubject = Collections.emptySet();
+        Set<Class<? extends Annotation>> expectedVisited = new HashSet<>();
+        expectedVisited.add(NotMetaAnnotated.class);
+        expectedVisited.add(Documented.class);
+        // Retention and Target are added as those are meta-annotations on Documented
+        expectedVisited.add(Retention.class);
+        expectedVisited.add(Target.class);
+
+        Set<Class<? extends Annotation>> resultAnnotatedWithSubject = new HashSet<>();
+        Set<Class<? extends Annotation>> resultVisited = new HashSet<>();
+        boolean result = isAnnotatedWith(
+                NotMetaAnnotated.class, TheTarget.class, resultAnnotatedWithSubject, resultVisited
+        );
+
+        assertFalse(result);
+        assertEquals(expectedAnnotatedWithSubject, resultAnnotatedWithSubject);
+        assertEquals(expectedVisited, resultVisited);
     }
 
     @TheTarget
@@ -74,11 +179,14 @@ class AnnotationUtilsTest {
 
     @StaticOverrideAnnotated
     public void staticallyOverridden() {
-
     }
 
     @DynamicOverrideAnnotated(property = "dynamic-override")
     public void dynamicallyOverridden() {
+    }
+
+    @AnotherMetaAnnotation
+    public void someAnnotatedMethod() {
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -109,4 +217,15 @@ class AnnotationUtilsTest {
         String theTarget() default "otherValue";
     }
 
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    @DynamicOverrideAnnotated(property = "some-property")
+    public @interface AnotherMetaAnnotation {
+
+    }
+
+    @Documented
+    public @interface NotMetaAnnotated {
+
+    }
 }
