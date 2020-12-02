@@ -12,8 +12,11 @@ import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
 import org.junit.jupiter.api.*;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -31,7 +34,7 @@ class HandlerAttributesUtilsTest {
 
     @Test
     void testHandlerAttributesOnAnnotatedCommandHandler() throws NoSuchMethodException {
-        Method messageHandlingMember = AnnotatedCommandHandler.class.getMethod("handle", Object.class);
+        Method messageHandlingMember = getClass().getMethod("annotatedCommandHandler", Object.class);
 
         HandlerAttributes expected = new HandlerAttributes();
         Map<String, Object> expectedMessageHandlerAttributes = new HashMap<>();
@@ -49,7 +52,7 @@ class HandlerAttributesUtilsTest {
 
     @Test
     void testHandlerAttributesOnAnnotatedAllowReplayAndEventHandler() throws NoSuchMethodException {
-        Method messageHandlingMember = AnnotatedAllowReplayAndEventHandler.class.getMethod("handle", Object.class);
+        Method messageHandlingMember = getClass().getMethod("annotatedAllowReplayAndEventHandler", Object.class);
 
         HandlerAttributes expected = new HandlerAttributes();
         Map<String, Object> expectedAllowReplayAttributes = new HashMap<>();
@@ -75,7 +78,7 @@ class HandlerAttributesUtilsTest {
      */
     @Test
     void testHandlerAttributesOnAnnotatedExceptionHandler() throws NoSuchMethodException {
-        Method messageHandlingMember = AnnotatedExceptionHandler.class.getMethod("handle", Object.class);
+        Method messageHandlingMember = getClass().getMethod("annotatedExceptionHandler", Object.class);
 
         HandlerAttributes expected = new HandlerAttributes();
         Map<String, Object> expectedMessageHandlerAttributes = new HashMap<>();
@@ -100,7 +103,7 @@ class HandlerAttributesUtilsTest {
 
     @Test
     void testHandlerAttributesOnAnnotatedCustomCommandHandler() throws NoSuchMethodException {
-        Method messageHandlingMember = AnnotatedCustomCommandHandler.class.getMethod("handle", Object.class);
+        Method messageHandlingMember = getClass().getMethod("annotatedCustomCommandHandler", Object.class);
 
         HandlerAttributes expected = new HandlerAttributes();
         Map<String, Object> expectedMessageHandlerAttributes = new HashMap<>();
@@ -121,9 +124,9 @@ class HandlerAttributesUtilsTest {
     }
 
     @Test
-    void testHandlerAttributesOnAnnotatedAnnotatedCustomCombinedHandlerWithAttributes() throws NoSuchMethodException {
+    void testHandlerAttributesOnAnnotatedCustomCombinedHandlerWithAttributes() throws NoSuchMethodException {
         Method messageHandlingMember =
-                AnnotatedCustomCombinedHandlerWithAttributes.class.getMethod("handle", Object.class);
+                getClass().getMethod("annotatedCustomCombinedHandlerWithAttributes", Object.class);
 
         HandlerAttributes expected = new HandlerAttributes();
         Map<String, Object> expectedMessageHandlerAttributes = new HashMap<>();
@@ -138,73 +141,81 @@ class HandlerAttributesUtilsTest {
         assertEquals(expected, HandlerAttributesUtils.handlerAttributes(messageHandlingMember));
     }
 
-    private static class AnnotatedCommandHandler {
+    @Test
+    void testHandlerAttributesOnAnnotatedNonMessageHandler() throws NoSuchMethodException {
+        Method nonMessageHandlingMember = getClass().getMethod("annotatedNonMessageHandler", Object.class);
 
-        @SuppressWarnings("unused")
-        @CommandHandler(
-                commandName = "my-command",
-                routingKey = "my-routing-key",
-                payloadType = String.class
-        )
-        public void handle(Object command) {
-            // No-op
-        }
+        HandlerAttributes expected = new HandlerAttributes();
+
+        assertEquals(expected, HandlerAttributesUtils.handlerAttributes(nonMessageHandlingMember));
     }
 
-    private static class AnnotatedAllowReplayAndEventHandler {
-
-        @SuppressWarnings("unused")
-        @AllowReplay
-        @EventHandler(payloadType = Boolean.class)
-        public void handle(Object event) {
-            // No-op
-        }
+    @SuppressWarnings("unused")
+    @CommandHandler(
+            commandName = "my-command",
+            routingKey = "my-routing-key",
+            payloadType = String.class
+    )
+    public void annotatedCommandHandler(Object command) {
+        // No-op
     }
 
-    private static class AnnotatedExceptionHandler {
+    @SuppressWarnings("unused")
+    @AllowReplay
+    @EventHandler(payloadType = Boolean.class)
+    public void annotatedAllowReplayAndEventHandler(Object event) {
+        // No-op
+    }
 
-        @SuppressWarnings("unused")
-        @ExceptionHandler
-        public void handle(Object event) {
-            // No-op
-        }
+    @SuppressWarnings("unused")
+    @ExceptionHandler
+    public void annotatedExceptionHandler(Object exception) {
+        // No-op
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @CommandHandler(commandName = "custom-custom-name", routingKey = "custom-routing-key")
-    public @interface CustomCommandHandler {
+    protected @interface CustomCommandHandler {
 
         int additionalAttribute();
 
         Class<?> payloadType();
     }
 
-    private static class AnnotatedCustomCommandHandler {
-
-        @SuppressWarnings("unused")
-        @CustomCommandHandler(
-                additionalAttribute = 42,
-                payloadType = Long.class
-        )
-        public void handle(Object command) {
-            // No-op
-        }
+    @SuppressWarnings("unused")
+    @CustomCommandHandler(
+            additionalAttribute = 42,
+            payloadType = Long.class
+    )
+    public void annotatedCustomCommandHandler(Object command) {
+        // No-op
     }
 
     @HasHandlerAttributes
     @Retention(RetentionPolicy.RUNTIME)
     @MessageHandler(messageType = DeadlineMessage.class, payloadType = Float.class)
-    public @interface CustomCombinedHandlerWithAttributes {
+    protected @interface CustomCombinedHandlerWithAttributes {
 
         int additionalAttribute();
     }
 
-    private static class AnnotatedCustomCombinedHandlerWithAttributes {
+    @SuppressWarnings("unused")
+    @CustomCombinedHandlerWithAttributes(additionalAttribute = 42)
+    public void annotatedCustomCombinedHandlerWithAttributes(Object command) {
+        // No-op
+    }
 
-        @SuppressWarnings("unused")
-        @CustomCombinedHandlerWithAttributes(additionalAttribute = 42)
-        public void handle(Object command) {
-            // No-op
-        }
+    @Documented
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
+    protected @interface SomeOtherAnnotation {
+
+        long someAttribute();
+    }
+
+    @SuppressWarnings("unused")
+    @SomeOtherAnnotation(someAttribute = 9001L)
+    public void annotatedNonMessageHandler(Object regularParameter) {
+        // No-op
     }
 }
