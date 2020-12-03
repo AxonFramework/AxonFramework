@@ -519,14 +519,28 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                 queryBus.subscriptionQuery(queryMessage,
                                            100);
 
-        for (int i = 0; i < 201; i++) {
+        for (int i = 0; i <= 200; i++) {
             chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update" + i);
         }
         chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
 
         StepVerifier.create(result.updates())
-                .expectNextCount(100)
+                .recordWith(LinkedList::new)
+                .thenConsumeWhile(x -> true)
+                .expectRecordedMatches(AbstractSubscriptionQueryTestSuite::assertRecorded)
                 .verifyComplete();
+    }
+
+    private static boolean assertRecorded(Collection<SubscriptionQueryUpdateMessage<String>> elements) {
+        LinkedList<SubscriptionQueryUpdateMessage<String>> recordedMessages = new LinkedList<>(elements);
+
+        assert recordedMessages.peekFirst() != null;
+        boolean firstIs101 = recordedMessages.peekFirst().getPayload().equals("Update101");
+
+        assert recordedMessages.peekLast() != null;
+        boolean lastIs200 = recordedMessages.peekLast().getPayload().equals("Update200");
+
+        return elements.size() == 100 && firstIs101 && lastIs200;
     }
 
     @Test
