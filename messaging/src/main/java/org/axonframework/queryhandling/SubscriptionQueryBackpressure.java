@@ -25,6 +25,7 @@ import reactor.core.publisher.FluxSink;
  * @author Milan Savic
  * @since 3.3
  */
+@Deprecated
 public class SubscriptionQueryBackpressure {
 
     private final FluxSink.OverflowStrategy overflowStrategy;

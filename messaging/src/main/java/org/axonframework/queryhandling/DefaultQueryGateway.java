@@ -104,6 +104,7 @@ public class DefaultQueryGateway implements QueryGateway {
                        .map(QueryResponseMessage::getPayload);
     }
 
+    @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
                                                                      Q query,
@@ -111,20 +112,29 @@ public class DefaultQueryGateway implements QueryGateway {
                                                                      ResponseType<U> updateResponseType,
                                                                      SubscriptionQueryBackpressure backpressure,
                                                                      int updateBufferSize) {
+       return subscriptionQuery(queryName,query,initialResponseType,updateResponseType,updateBufferSize);
+    }
+
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
+                                                                     Q query,
+                                                                     ResponseType<I> initialResponseType,
+                                                                     ResponseType<U> updateResponseType,
+                                                                     int updateBufferSize) {
         SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage = new GenericSubscriptionQueryMessage<>(
                 asMessage(query), queryName, initialResponseType, updateResponseType
         );
         SubscriptionQueryMessage<?, I, U> interceptedQuery = processInterceptors(subscriptionQueryMessage);
         SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
-                queryBus.subscriptionQuery(interceptedQuery, backpressure, updateBufferSize);
+                queryBus.subscriptionQuery(interceptedQuery, updateBufferSize);
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
-                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
-                      .map(Message::getPayload)
-                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
+                        .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
+                        .map(Message::getPayload)
+                        .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
                 result.updates()
-                      .filter(update -> Objects.nonNull(update.getPayload()))
-                      .map(SubscriptionQueryUpdateMessage::getPayload),
+                        .filter(update -> Objects.nonNull(update.getPayload()))
+                        .map(SubscriptionQueryUpdateMessage::getPayload),
                 result
         );
     }

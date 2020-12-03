@@ -20,32 +20,19 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
+import reactor.test.StepVerifierOptions;
 import reactor.util.concurrent.Queues;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -227,7 +214,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
                 queryBus.subscriptionQuery(queryMessage,
-                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.IGNORE),
                                            Queues.SMALL_BUFFER_SIZE);
         Executors.newSingleThreadScheduledExecutor().schedule(() -> {
             chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
@@ -449,7 +435,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
                 queryBus.subscriptionQuery(queryMessage,
-                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR),
                                            8);
         List<String> initial1 = new ArrayList<>();
         List<String> initial2 = new ArrayList<>();
@@ -522,7 +507,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testBufferOverflow() {
+    void testReplayBufferOverflow() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
                 "chatMessages",
@@ -532,8 +517,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
                 queryBus.subscriptionQuery(queryMessage,
-                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR),
-                                           200);
+                                           100);
 
         for (int i = 0; i < 201; i++) {
             chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update" + i);
@@ -541,12 +525,39 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
 
         StepVerifier.create(result.updates())
-                    .expectErrorMatches(
-                            t -> "The receiver is overrun by more signals than expected (bounded queue...)".equals(
-                                    t.getMessage()
-                            )
-                    )
-                    .verify();
+                .expectNextCount(100)
+                .verifyComplete();
+    }
+
+    @Test
+    void testOnBackpressureError() {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                TEST_PAYLOAD,
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
+                queryBus.subscriptionQuery(queryMessage,
+                        100);
+
+        Flux<SubscriptionQueryUpdateMessage<String>> test1 = result.updates().onBackpressureBuffer(100);
+
+        StepVerifier.create(test1, StepVerifierOptions.create()
+                .initialRequest(0))
+                .expectSubscription()
+                .then(() -> {
+                    for (int i = 0; i < 200; i++) {
+                        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update" + i);
+                    }
+                    chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
+                })
+                .expectNoEvent(Duration.ofMillis(100))
+                .thenRequest(100)
+                .expectNextCount(100)
+                .expectErrorMatches(Exceptions::isOverflow)
+                .verify(Duration.ofSeconds(5));
     }
 
     @Test
@@ -727,7 +738,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         List<String> initialResult = new ArrayList<>();
         List<String> updates = new ArrayList<>();
-        queryBus.subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.DROP), 1)
+        queryBus.subscriptionQuery(queryMessage, 1)
                 .handle(initial -> initialResult.addAll(initial.getPayload()),
                         update -> {
                             updates.add(update.getPayload());
@@ -756,7 +767,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         List<String> initialResult = new ArrayList<>();
         List<String> updates = new ArrayList<>();
-        queryBus.subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.DROP), 1)
+        queryBus.subscriptionQuery(queryMessage,1)
                 .handle(initial -> {
                             // make sure the update is emitted before subscribing to updates
                             chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");

@@ -25,8 +25,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.EmitterProcessor;
-import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +44,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * Implementation of {@link QueryUpdateEmitter} that uses Project Reactor to implement Update Handlers.
  *
  * @author Milan Savic
+ * @author Stefan Dragisic
  * @since 4.0
  */
 public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
@@ -88,15 +88,25 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
     }
 
+    @Deprecated
     @Override
     public <U> UpdateHandlerRegistration<U> registerUpdateHandler(
             SubscriptionQueryMessage<?, ?, ?> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
-        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
-        FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
-        sink.onDispose(() -> updateHandlers.remove(query));
+        return registerUpdateHandler(query,updateBufferSize);
+    }
+
+    @Override
+    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(
+            SubscriptionQueryMessage<?, ?, ?> query,
+            int updateBufferSize) {
+        Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
+
+        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux().doFinally(signalType -> updateHandlers.remove(query));
+
         FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
+
         updateHandlers.put(query, fluxSinkWrapper);
 
         Registration registration = () -> {
@@ -105,7 +115,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         };
 
         return new UpdateHandlerRegistration<>(registration,
-                                               processor.replay(updateBufferSize).autoConnect());
+                updateMessageFlux);
     }
 
     @Override

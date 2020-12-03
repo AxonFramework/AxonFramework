@@ -215,10 +215,17 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @SuppressWarnings("unchecked")
+    @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure,
+            int updateBufferSize) {
+        return subscriptionQuery(query,updateBufferSize);
+    }
+
+    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize) {
 
         if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
@@ -229,17 +236,17 @@ public class SimpleQueryBus implements QueryBus {
                 .thenAccept(monoSink::success)
                 .exceptionally(t -> {
                     logger.error(format("An error happened while trying to report an initial result. Query: %s", query),
-                                 t);
+                            t);
                     monoSink.error(t.getCause());
                     return null;
                 }));
 
         UpdateHandlerRegistration<U> updateHandlerRegistration = queryUpdateEmitter
-                .registerUpdateHandler(query, backpressure, updateBufferSize);
+                .registerUpdateHandler(query, updateBufferSize);
 
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
-                                                    updateHandlerRegistration.getUpdates(),
-                                                    updateHandlerRegistration.getRegistration());
+                updateHandlerRegistration.getUpdates(),
+                updateHandlerRegistration.getRegistration());
     }
 
     @Override

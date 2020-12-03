@@ -154,7 +154,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
-     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, Class<I> initialResponseType,
                                                                       Class<U> updateResponseType) {
@@ -179,7 +179,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
-     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                                       Class<I> initialResponseType,
@@ -187,8 +187,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
         return subscriptionQuery(queryName,
                                  query,
                                  ResponseTypes.instanceOf(initialResponseType),
-                                 ResponseTypes.instanceOf(updateResponseType),
-                                 SubscriptionQueryBackpressure.defaultBackpressure());
+                                 ResponseTypes.instanceOf(updateResponseType));
     }
 
     /**
@@ -208,15 +207,14 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
-     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, ResponseType<I> initialResponseType,
                                                                       ResponseType<U> updateResponseType) {
         return subscriptionQuery(queryName(query),
                                  query,
                                  initialResponseType,
-                                 updateResponseType,
-                                 SubscriptionQueryBackpressure.defaultBackpressure());
+                                 updateResponseType);
     }
 
     /**
@@ -240,6 +238,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
+    @Deprecated
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                                       ResponseType<I> initialResponseType,
                                                                       ResponseType<U> updateResponseType,
@@ -248,8 +247,37 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
                                  query,
                                  initialResponseType,
                                  updateResponseType,
-                                 backpressure,
                                  Queues.SMALL_BUFFER_SIZE);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
+     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side).
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@link QueryBus} instead.
+     *
+     * @param queryName           A {@link String} describing query to be executed
+     * @param query               The {@code query} to be sent
+     * @param initialResponseType The initial response type used for this query
+     * @param updateResponseType  The update response type used for this query
+     * @param <Q>                 The type of the query
+     * @param <I>                 The type of the initial response
+     * @param <U>                 The type of the incremental update
+     * @return registration which can be used to cancel receiving updates
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
+     */
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+                                                                      ResponseType<I> initialResponseType,
+                                                                      ResponseType<U> updateResponseType) {
+        return subscriptionQuery(queryName,
+                query,
+                initialResponseType,
+                updateResponseType,
+                Queues.SMALL_BUFFER_SIZE);
     }
 
     /**
@@ -275,9 +303,37 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
+    @Deprecated
     <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                               ResponseType<I> initialResponseType,
                                                               ResponseType<U> updateResponseType,
                                                               SubscriptionQueryBackpressure backpressure,
+                                                              int updateBufferSize);
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
+     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side).
+     * <p>
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
+     * the {@link QueryBus} instead.
+     *
+     * @param queryName           A {@link String} describing query to be executed
+     * @param query               The {@code query} to be sent
+     * @param initialResponseType The initial response type used for this query
+     * @param updateResponseType  The update response type used for this query
+     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the {@code} flux
+     *                            is made
+     * @param <Q>                 The type of the query
+     * @param <I>                 The type of the initial response
+     * @param <U>                 The type of the incremental update
+     * @return registration which can be used to cancel receiving updates
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
+     */
+    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+                                                              ResponseType<I> initialResponseType,
+                                                              ResponseType<U> updateResponseType,
                                                               int updateBufferSize);
 }

@@ -105,8 +105,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * destination.
      * </p>
      * <p>
-     * Backpressure mechanism to be used is {@link SubscriptionQueryBackpressure#defaultBackpressure()}. The size of
-     * buffer which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
+     * The size of buffer which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
      * </p>
      *
      * @param query the query
@@ -117,7 +116,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      */
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query) {
-        return subscriptionQuery(query, SubscriptionQueryBackpressure.defaultBackpressure(), Queues.SMALL_BUFFER_SIZE);
+        return subscriptionQuery(query, Queues.SMALL_BUFFER_SIZE);
     }
 
     /**
@@ -147,8 +146,39 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param <U>              the incremental response types of the query
      * @return query result containing initial result and incremental updates
      */
+    @Deprecated
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure, int updateBufferSize) {
+        return subscriptionQuery(query,updateBufferSize);
+    }
+
+    /**
+     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
+     * queryName/initialResponseType/updateResponseType. The result is lazily created and there will be no execution of
+     * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
+     * bus will queue all updates which happen after the subscription query is done and once the subscription to the
+     * flux is made, these updates will be emitted.
+     * <p>
+     * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
+     * interrupted.
+     * </p>
+     * <p>
+     * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
+     * destination.
+     * </p>
+     * <p>
+     * </p>
+     *
+     * @param query            the query
+     * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
+     *                         made
+     * @param <Q>              the payload type of the query
+     * @param <I>              the response type of the query
+     * @param <U>              the incremental response types of the query
+     * @return query result containing initial result and incremental updates
+     */
+    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize) {
         return new SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>() {
 
             @Override

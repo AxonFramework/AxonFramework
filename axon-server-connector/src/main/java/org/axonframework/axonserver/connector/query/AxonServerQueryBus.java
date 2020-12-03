@@ -199,12 +199,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                SubscriptionQuery query,
                                                                UpdateHandler sendUpdate
                                                        ) {
-                                                           SubscriptionQueryBackpressure backpressure =
-                                                                   SubscriptionQueryBackpressure.defaultBackpressure();
+
                                                            UpdateHandlerRegistration<Object> updateHandler =
                                                                    updateEmitter.registerUpdateHandler(
                                                                            subscriptionSerializer.deserialize(query),
-                                                                           backpressure,
                                                                            1024
                                                                    );
 
@@ -308,10 +306,19 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
+    @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backPressure,
+            int updateBufferSize
+    ) {
+        return subscriptionQuery(query,updateBufferSize);
+    }
+
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
         shutdownLatch.ifShuttingDown(String.format(
@@ -326,13 +333,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
                 axonServerConnectionManager.getConnection(targetContext)
-                                           .queryChannel()
-                                           .subscriptionQuery(
-                                                   subscriptionSerializer.serializeQuery(interceptedQuery),
-                                                   subscriptionSerializer.serializeUpdateType(interceptedQuery),
-                                                   configuration.getQueryFlowControl().getInitialNrOfPermits(),
-                                                   configuration.getQueryFlowControl().getNrOfNewPermits()
-                                           );
+                        .queryChannel()
+                        .subscriptionQuery(
+                                subscriptionSerializer.serializeQuery(interceptedQuery),
+                                subscriptionSerializer.serializeUpdateType(interceptedQuery),
+                                configuration.getQueryFlowControl().getInitialNrOfPermits(),
+                                configuration.getQueryFlowControl().getNrOfNewPermits()
+                        );
         return new AxonServerSubscriptionQueryResult<>(result, subscriptionSerializer);
     }
 

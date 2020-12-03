@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * subscription to the publisher, nothing happens.
  *
  * @author Milan Savic
- * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+ * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
  * @since 3.3
  */
 public interface SubscriptionQueryResult<I, U> extends Registration {
