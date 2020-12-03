@@ -103,7 +103,10 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             int updateBufferSize) {
         Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
 
-        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux().doFinally(signalType -> updateHandlers.remove(query));
+        Runnable removeHandler = () -> updateHandlers.remove(query);
+        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
+                .doOnCancel(removeHandler)
+                .doOnTerminate(removeHandler);
 
         FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
 
