@@ -73,7 +73,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.Spliterator.*;
+import static java.util.Spliterator.CONCURRENT;
+import static java.util.Spliterator.DISTINCT;
+import static java.util.Spliterator.NONNULL;
+import static java.util.Spliterator.ORDERED;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -460,7 +463,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                                      logger.warn("Error occurred while creating a snapshot", e);
                                  } else if (c != null) {
                                      if (c.getSuccess()) {
-                                         logger.info("Snapshot created");
+                                         logger.debug("Snapshot created for aggregate type {}, identifier {}",
+                                                      snapshot.getType(), snapshot.getAggregateIdentifier());
                                      } else {
                                          logger.warn("Snapshot creation failed for unknown reason. "
                                                              + "Check server logs for details.");
