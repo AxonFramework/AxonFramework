@@ -306,6 +306,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
+    /**
+     * @deprecated in through use of {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
+     */
     @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
@@ -313,7 +316,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             SubscriptionQueryBackpressure backPressure,
             int updateBufferSize
     ) {
-        return subscriptionQuery(query,updateBufferSize);
+        return subscriptionQuery(query, updateBufferSize);
     }
 
     @Override
@@ -333,13 +336,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
                 axonServerConnectionManager.getConnection(targetContext)
-                        .queryChannel()
-                        .subscriptionQuery(
-                                subscriptionSerializer.serializeQuery(interceptedQuery),
-                                subscriptionSerializer.serializeUpdateType(interceptedQuery),
-                                configuration.getQueryFlowControl().getInitialNrOfPermits(),
-                                configuration.getQueryFlowControl().getNrOfNewPermits()
-                        );
+                                           .queryChannel()
+                                           .subscriptionQuery(
+                                                   subscriptionSerializer.serializeQuery(interceptedQuery),
+                                                   subscriptionSerializer.serializeUpdateType(interceptedQuery),
+                                                   configuration.getQueryFlowControl().getInitialNrOfPermits(),
+                                                   configuration.getQueryFlowControl().getNrOfNewPermits()
+                                           );
         return new AxonServerSubscriptionQueryResult<>(result, subscriptionSerializer);
     }
 

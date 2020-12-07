@@ -237,6 +237,9 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     * @deprecated in through use of {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType)}}
+     * To set backpressure strategy, use some of {@code onBackpressure..} operators directly on updates flux
+     * Example: {@code result.updates().onBackpressureBuffer(100)}
      */
     @Deprecated
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
@@ -302,6 +305,9 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     * @deprecated in through use of {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType, int)}}
+     * To set backpressure strategy, use some of {@code onBackpressure..} operators directly on updates flux
+     * Example: {@code result.updates().onBackpressureBuffer(100)}
      */
     @Deprecated
     <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,

@@ -104,6 +104,9 @@ public class DefaultQueryGateway implements QueryGateway {
                        .map(QueryResponseMessage::getPayload);
     }
 
+    /**
+     * @deprecated in through use of the {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType, int)}}
+     */
     @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
@@ -112,7 +115,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                                                      ResponseType<U> updateResponseType,
                                                                      SubscriptionQueryBackpressure backpressure,
                                                                      int updateBufferSize) {
-       return subscriptionQuery(queryName,query,initialResponseType,updateResponseType,updateBufferSize);
+        return subscriptionQuery(queryName, query, initialResponseType, updateResponseType, updateBufferSize);
     }
 
     @Override
@@ -129,12 +132,12 @@ public class DefaultQueryGateway implements QueryGateway {
                 queryBus.subscriptionQuery(interceptedQuery, updateBufferSize);
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
-                        .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
-                        .map(Message::getPayload)
-                        .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
+                      .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
+                      .map(Message::getPayload)
+                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
                 result.updates()
-                        .filter(update -> Objects.nonNull(update.getPayload()))
-                        .map(SubscriptionQueryUpdateMessage::getPayload),
+                      .filter(update -> Objects.nonNull(update.getPayload()))
+                      .map(SubscriptionQueryUpdateMessage::getPayload),
                 result
         );
     }
@@ -182,8 +185,8 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s.
-         * Are invoked when a query is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked when a
+         * query is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a query is being dispatched
          * @return the current Builder instance, for fluent interfacing
@@ -194,8 +197,8 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s.
-         * Are invoked when a query is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked when a
+         * query is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a query is being dispatched
          * @return the current Builder instance, for fluent interfacing

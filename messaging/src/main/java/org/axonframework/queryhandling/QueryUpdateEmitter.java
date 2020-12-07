@@ -161,6 +161,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      *                         made
      * @param <U>              the incremental response types of the query
      * @return the object which contains updates and a registration which can be used to cancel them
+     * @deprecated deprecated in through use of {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
      */
     @Deprecated
     <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
@@ -168,7 +169,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
                                                            int updateBufferSize);
 
     /**
-     * Registers an Update Handler for given {@code query} with given {@code backpressure} and {@code
+     * Registers an Update Handler for given {@code query} with given {@code
      * updateBufferSize}.
      *
      * @param query            the subscription query for which we register an Update Handler

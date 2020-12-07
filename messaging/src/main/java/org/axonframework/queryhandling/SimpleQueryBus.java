@@ -214,6 +214,9 @@ public class SimpleQueryBus implements QueryBus {
                        }).filter(Objects::nonNull);
     }
 
+    /***
+     * @deprecated in through use of {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}
+     */
     @SuppressWarnings("unchecked")
     @Deprecated
     @Override
@@ -221,7 +224,7 @@ public class SimpleQueryBus implements QueryBus {
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
-        return subscriptionQuery(query,updateBufferSize);
+        return subscriptionQuery(query, updateBufferSize);
     }
 
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
@@ -236,7 +239,7 @@ public class SimpleQueryBus implements QueryBus {
                 .thenAccept(monoSink::success)
                 .exceptionally(t -> {
                     logger.error(format("An error happened while trying to report an initial result. Query: %s", query),
-                            t);
+                                 t);
                     monoSink.error(t.getCause());
                     return null;
                 }));
@@ -245,8 +248,8 @@ public class SimpleQueryBus implements QueryBus {
                 .registerUpdateHandler(query, updateBufferSize);
 
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
-                updateHandlerRegistration.getUpdates(),
-                updateHandlerRegistration.getRegistration());
+                                                    updateHandlerRegistration.getUpdates(),
+                                                    updateHandlerRegistration.getRegistration());
     }
 
     @Override
@@ -306,9 +309,8 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     /**
-     * Registers an interceptor that is used to intercept Queries before they are passed to their
-     * respective handlers. The interceptor is invoked separately for each handler instance (in a separate unit of
-     * work).
+     * Registers an interceptor that is used to intercept Queries before they are passed to their respective handlers.
+     * The interceptor is invoked separately for each handler instance (in a separate unit of work).
      *
      * @param interceptor the interceptor to invoke before passing a Query to the handler
      * @return handle to unregister the interceptor
@@ -320,8 +322,8 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     /**
-     * Registers an interceptor that intercepts Queries as they are sent. Each interceptor is called
-     * once, regardless of the type of query (point-to-point or scatter-gather) executed.
+     * Registers an interceptor that intercepts Queries as they are sent. Each interceptor is called once, regardless of
+     * the type of query (point-to-point or scatter-gather) executed.
      *
      * @param interceptor the interceptor to invoke when sending a Query
      * @return handle to unregister the interceptor
@@ -374,8 +376,8 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the {@link TransactionManager} used to manage the query handling transactions. Defaults to a
-         * {@link NoTransactionManager}.
+         * Sets the {@link TransactionManager} used to manage the query handling transactions. Defaults to a {@link
+         * NoTransactionManager}.
          *
          * @param transactionManager a {@link TransactionManager} used to manage the query handling transactions
          * @return the current Builder instance, for fluent interfacing
@@ -401,11 +403,11 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the {@link QueryUpdateEmitter} used to emits updates for the
-         * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}. Defaults to a {@link SimpleQueryUpdateEmitter}.
+         * Sets the {@link QueryUpdateEmitter} used to emits updates for the {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}.
+         * Defaults to a {@link SimpleQueryUpdateEmitter}.
          *
-         * @param queryUpdateEmitter the {@link QueryUpdateEmitter} used to emits updates for the
-         *                           {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
+         * @param queryUpdateEmitter the {@link QueryUpdateEmitter} used to emits updates for the {@link
+         *                           QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder queryUpdateEmitter(QueryUpdateEmitter queryUpdateEmitter) {

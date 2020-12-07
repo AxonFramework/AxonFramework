@@ -25,7 +25,8 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,13 +89,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
     }
 
+    /**
+     * @deprecated in through use of the {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
+     */
     @Deprecated
     @Override
     public <U> UpdateHandlerRegistration<U> registerUpdateHandler(
             SubscriptionQueryMessage<?, ?, ?> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
-        return registerUpdateHandler(query,updateBufferSize);
+        return registerUpdateHandler(query, updateBufferSize);
     }
 
     @Override
@@ -105,8 +109,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
         Runnable removeHandler = () -> updateHandlers.remove(query);
         Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
-                .doOnCancel(removeHandler)
-                .doOnTerminate(removeHandler);
+                                                                        .doOnCancel(removeHandler)
+                                                                        .doOnTerminate(removeHandler);
 
         FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
 
@@ -118,7 +122,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         };
 
         return new UpdateHandlerRegistration<>(registration,
-                updateMessageFlux);
+                                               updateMessageFlux);
     }
 
     @Override
