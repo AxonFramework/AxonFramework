@@ -258,7 +258,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
      * <p>
-     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, wil lbe filtered out by the
+     * <b>Note</b>: Any {@code null} results, on the initial result or the updates, will be filtered out by the
      * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
      * the {@link QueryBus} instead.
      *
@@ -329,7 +329,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
      * @param updateResponseType  The update response type used for this query
-     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the {@code} flux
+     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the flux
      *                            is made
      * @param <Q>                 The type of the query
      * @param <I>                 The type of the initial response
