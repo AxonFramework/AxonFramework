@@ -323,7 +323,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
      * @param updateResponseType  The update response type used for this query
-     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the {@code} flux
+     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the flux
      *                            is made
      * @param <Q>                 The type of the query
      * @param <I>                 The type of the initial response
