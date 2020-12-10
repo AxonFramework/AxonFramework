@@ -17,53 +17,49 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract implementation of the RoutingStrategy interface that uses a policy to prescribe what happens when a routing
- * cannot be resolved.
+ * Abstract implementation of the {@link RoutingStrategy} interface that includes a fallback {@code RoutingStrategy}
+ * which prescribes what happens when routing cannot be resolved by this implementation.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public abstract class AbstractRoutingStrategy implements RoutingStrategy {
+public abstract class AbstractRoutingStrategy<B extends RoutingStrategy> implements RoutingStrategy {
 
-    private static final String STATIC_ROUTING_KEY = "unresolved";
-
-    private final UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy;
-    private final AtomicLong counter = new AtomicLong(0);
+    private final RoutingStrategy fallbackRoutingStrategy;
 
     /**
-     * Initializes the strategy using given {@code unresolvedRoutingKeyPolicy} prescribing what happens when a
-     * routing key cannot be resolved.
+     * Instantiate a {@link AbstractRoutingStrategy} based on the fields contained in the given {@code builder}
      *
-     * @param unresolvedRoutingKeyPolicy The policy for unresolved routing keys.
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractRoutingStrategy} instance
      */
-    public AbstractRoutingStrategy(UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
-        Assert.notNull(unresolvedRoutingKeyPolicy, () -> "unresolvedRoutingKeyPolicy may not be null");
-        this.unresolvedRoutingKeyPolicy = unresolvedRoutingKeyPolicy;
+    protected AbstractRoutingStrategy(Builder<B> builder) {
+        builder.validate();
+        this.fallbackRoutingStrategy = builder.fallbackRoutingStrategy;
+    }
+
+    /**
+     * Initializes the strategy using given {@link UnresolvedRoutingKeyPolicy} prescribing the fallback approach when
+     * this implementation cannot resolve a routing key.
+     *
+     * @param fallbackRoutingStrategy the fallback routing to use whenever this {@link RoutingStrategy} doesn't succeed
+     * @deprecated in favor of the {@link #AbstractRoutingStrategy(Builder)}
+     */
+    @Deprecated
+    public AbstractRoutingStrategy(UnresolvedRoutingKeyPolicy fallbackRoutingStrategy) {
+        assertNonNull(fallbackRoutingStrategy, "Fallback RoutingStrategy may not be null");
+        this.fallbackRoutingStrategy = fallbackRoutingStrategy;
     }
 
     @Override
     public String getRoutingKey(CommandMessage<?> command) {
         String routingKey = doResolveRoutingKey(command);
         if (routingKey == null) {
-            switch (unresolvedRoutingKeyPolicy) {
-                case ERROR:
-                    throw new CommandDispatchException(format("The command [%s] does not contain a routing key.",
-                                                              command.getCommandName()));
-                case RANDOM_KEY:
-                    return Long.toHexString(counter.getAndIncrement());
-                case STATIC_KEY:
-                    return STATIC_ROUTING_KEY;
-                default:
-                    throw new IllegalStateException("The configured UnresolvedRoutingPolicy of "
-                                                            + unresolvedRoutingKeyPolicy.name() + " is not supported.");
-            }
+            routingKey = fallbackRoutingStrategy.getRoutingKey(command);
         }
         return routingKey;
     }
@@ -71,8 +67,49 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
     /**
      * Resolve the Routing Key for the given {@code command}.
      *
-     * @param command The command to resolve the routing key for
-     * @return the String representing the Routing Key, or {@code null} if unresolved.
+     * @param command the command to resolve the routing key for
+     * @return the String representing the Routing Key, or {@code null} if unresolved
      */
     protected abstract String doResolveRoutingKey(CommandMessage<?> command);
+
+    /**
+     * Builder class to instantiate a {@link AbstractRoutingStrategy}.
+     * <p>
+     * The fallback {@link RoutingStrategy} is defaulted to a {@link UnresolvedRoutingKeyPolicy#RANDOM_KEY}.
+     *
+     * @param <B> generic defining the type of {@link RoutingStrategy} this builder will create
+     */
+    protected static abstract class Builder<B extends RoutingStrategy> {
+
+        private RoutingStrategy fallbackRoutingStrategy = UnresolvedRoutingKeyPolicy.RANDOM_KEY;
+
+        /**
+         * Sets the fallback {@link RoutingStrategy} to use when the intended routing key resolution was unsuccessful.
+         * Defaults to a {@link UnresolvedRoutingKeyPolicy#RANDOM_KEY}
+         *
+         * @param fallbackRoutingStrategy a {@link RoutingStrategy} used as the fallback whenever the intended routing
+         *                                key resolution was unsuccessful
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<B> fallbackRoutingStrategy(RoutingStrategy fallbackRoutingStrategy) {
+            assertNonNull(fallbackRoutingStrategy, "Fallback RoutingStrategy may not be null");
+            this.fallbackRoutingStrategy = fallbackRoutingStrategy;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link RoutingStrategy} implementation as specified through this Builder.
+         *
+         * @return a {@link RoutingStrategy} implementation as specified through this Builder
+         */
+        public abstract B build();
+
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected abstract void validate();
+    }
 }

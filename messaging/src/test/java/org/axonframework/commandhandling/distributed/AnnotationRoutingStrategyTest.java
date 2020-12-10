@@ -16,49 +16,113 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.RoutingKey;
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link AnnotationRoutingStrategy}.
+ *
+ * @author Allard Buijze
+ */
 class AnnotationRoutingStrategyTest {
 
     private AnnotationRoutingStrategy testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new AnnotationRoutingStrategy();
+        testSubject = AnnotationRoutingStrategy.defaultStrategy();
     }
 
     @Test
     void testGetRoutingKeyFromField() {
-        assertEquals("Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeFieldAnnotatedCommand())));
-        assertEquals(
-                "Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeOtherFieldAnnotatedCommand()))
-        );
+        CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(new SomeFieldAnnotatedCommand());
+        assertEquals("Target", testSubject.getRoutingKey(testCommand));
+
+        CommandMessage<SomeOtherFieldAnnotatedCommand> otherTestCommand =
+                new GenericCommandMessage<>(new SomeOtherFieldAnnotatedCommand());
+        assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
     }
 
     @Test
     void testGetRoutingKeyFromMethod() {
-        assertEquals(
-                "Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeMethodAnnotatedCommand()))
-        );
-        assertEquals(
-                "Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeOtherMethodAnnotatedCommand()))
-        );
+        CommandMessage<SomeMethodAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(new SomeMethodAnnotatedCommand());
+        assertEquals("Target", testSubject.getRoutingKey(testCommand));
+
+        CommandMessage<SomeOtherMethodAnnotatedCommand> otherTestCommand =
+                new GenericCommandMessage<>(new SomeOtherMethodAnnotatedCommand());
+        assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
     }
 
     @Test
     void testNullRoutingKeyOnFieldThrowsCommandDispatchException() {
-        assertThrows(CommandDispatchException.class,
-                () -> testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand())));
+        AnnotationRoutingStrategy errorFallbackRoutingStrategy =
+                AnnotationRoutingStrategy.builder()
+                                         .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.ERROR)
+                                         .build();
+
+        CommandMessage<SomeNullMethodAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand());
+
+        assertThrows(CommandDispatchException.class, () -> errorFallbackRoutingStrategy.getRoutingKey(testCommand));
     }
 
     @Test
     void testNullRoutingKeyOnMethodThrowsCommandDispatchException() {
-        assertThrows(CommandDispatchException.class,
-                () -> testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand())));
+        AnnotationRoutingStrategy errorFallbackRoutingStrategy =
+                AnnotationRoutingStrategy.builder()
+                                         .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.ERROR)
+                                         .build();
+
+        CommandMessage<SomeNullMethodAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(new SomeNullMethodAnnotatedCommand());
+
+        assertThrows(CommandDispatchException.class, () -> errorFallbackRoutingStrategy.getRoutingKey(testCommand));
+    }
+
+    @Test
+    void testResolvesRoutingKeyFromAnnotationDoesNotInvokeFallbackStrategy() {
+        RoutingStrategy fallbackRoutingStrategy = mock(RoutingStrategy.class);
+
+        AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
+                AnnotationRoutingStrategy.builder()
+                                         .fallbackRoutingStrategy(fallbackRoutingStrategy)
+                                         .build();
+
+        CommandMessage<SomeFieldAnnotatedCommand> testCommand =
+                new GenericCommandMessage<>(new SomeFieldAnnotatedCommand());
+
+        assertEquals("Target", testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
+        verifyNoInteractions(fallbackRoutingStrategy);
+    }
+
+    @Test
+    void testResolvesRoutingKeyFromFallbackStrategy() {
+        String expectedRoutingKey = "some-routing-key";
+        RoutingStrategy fallbackRoutingStrategy = mock(RoutingStrategy.class);
+        when(fallbackRoutingStrategy.getRoutingKey(any())).thenReturn(expectedRoutingKey);
+
+        AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
+                AnnotationRoutingStrategy.builder()
+                                         .fallbackRoutingStrategy(fallbackRoutingStrategy)
+                                         .build();
+
+        CommandMessage<SomeCommandWithoutTheRoutingAnnotation> testCommand =
+                new GenericCommandMessage<>(new SomeCommandWithoutTheRoutingAnnotation("target"));
+
+        assertEquals(expectedRoutingKey, testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
+        verify(fallbackRoutingStrategy).getRoutingKey(testCommand);
+    }
+
+    @Test
+    void testBuildAnnotationRoutingStrategyFailsForNullAnnotationType() {
+        assertThrows(AxonConfigurationException.class, () -> AnnotationRoutingStrategy.builder().annotationType(null));
     }
 
     public static class SomeFieldAnnotatedCommand {
@@ -75,15 +139,9 @@ class AnnotationRoutingStrategyTest {
         private final SomeObject target = new SomeObject("Target");
     }
 
-    public static class SomeNullFieldAnnotatedCommand {
-
-        @SuppressWarnings("unused")
-        @RoutingKey
-        private final String target = null;
-    }
-
     public static class SomeMethodAnnotatedCommand {
 
+        @SuppressWarnings("FieldCanBeLocal")
         private final String target = "Target";
 
         @RoutingKey
@@ -121,6 +179,20 @@ class AnnotationRoutingStrategyTest {
         private final String target = null;
 
         @RoutingKey
+        public String getTarget() {
+            //noinspection ConstantConditions
+            return target;
+        }
+    }
+
+    public static class SomeCommandWithoutTheRoutingAnnotation {
+
+        private final String target;
+
+        public SomeCommandWithoutTheRoutingAnnotation(String target) {
+            this.target = target;
+        }
+
         public String getTarget() {
             return target;
         }
