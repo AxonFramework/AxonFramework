@@ -104,3 +104,13 @@ inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(
 inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(stubImplementation: I): I =
         this.registerCommandGateway(I::class.java, stubImplementation)
 
+/**
+ * Expect a KClass exception for aggregate [T].
+ * @param T aggregate type
+ * @param E exception type
+ * @param expectedException kotlin class of the exception
+ * @return this
+ * @since 0.2.0
+ */
+fun <T : Any, E : KClass<out Throwable>> ResultValidator<T>.expectException(expectedException: E): ResultValidator<T> =
+        this.expectException(expectedException.java)
