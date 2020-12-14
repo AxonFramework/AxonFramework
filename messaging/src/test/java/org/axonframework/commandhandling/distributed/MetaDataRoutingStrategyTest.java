@@ -56,22 +56,19 @@ class MetaDataRoutingStrategyTest {
 
     @Test
     void testBuildMetaDataRoutingStrategyFailsForNullFallbackRoutingStrategy() {
-        assertThrows(
-                AxonConfigurationException.class, () -> MetaDataRoutingStrategy.builder().fallbackRoutingStrategy(null)
-        );
+        MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.fallbackRoutingStrategy(null));
     }
 
     @Test
     void testBuildMetaDataRoutingStrategyFailsForNullMetaDataKey() {
-        assertThrows(
-                AxonConfigurationException.class, () -> MetaDataRoutingStrategy.builder().metaDataKey(null)
-        );
+        MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.metaDataKey(null));
     }
 
     @Test
     void testBuildMetaDataRoutingStrategyFailsForEmptyMetaDataKey() {
-        assertThrows(
-                AxonConfigurationException.class, () -> MetaDataRoutingStrategy.builder().metaDataKey("")
-        );
+        MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.metaDataKey(""));
     }
 }

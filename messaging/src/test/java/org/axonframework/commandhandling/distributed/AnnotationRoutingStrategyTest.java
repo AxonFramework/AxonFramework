@@ -122,15 +122,14 @@ class AnnotationRoutingStrategyTest {
 
     @Test
     void testBuildAnnotationRoutingStrategyFailsForNullFallbackRoutingStrategy() {
-        assertThrows(
-                AxonConfigurationException.class,
-                () -> AnnotationRoutingStrategy.builder().fallbackRoutingStrategy(null)
-        );
+        AnnotationRoutingStrategy.Builder builderTestSubject = AnnotationRoutingStrategy.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.fallbackRoutingStrategy(null));
     }
 
     @Test
     void testBuildAnnotationRoutingStrategyFailsForNullAnnotationType() {
-        assertThrows(AxonConfigurationException.class, () -> AnnotationRoutingStrategy.builder().annotationType(null));
+        AnnotationRoutingStrategy.Builder builderTestSubject = AnnotationRoutingStrategy.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.annotationType(null));
     }
 
     public static class SomeFieldAnnotatedCommand {
