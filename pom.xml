@@ -70,7 +70,7 @@
         <log4j.version>2.14.0</log4j.version>
         <spring.version>5.3.2</spring.version>
         <spring-security.version>5.4.2</spring-security.version>
-        <spring.boot.version>2.4.0</spring.boot.version>
+        <spring.boot.version>2.4.1</spring.boot.version>
         <mockito.version>3.6.28</mockito.version>
         <projectreactor.version>3.3.10.RELEASE</projectreactor.version>
         <micrometer.version>1.6.1</micrometer.version>
