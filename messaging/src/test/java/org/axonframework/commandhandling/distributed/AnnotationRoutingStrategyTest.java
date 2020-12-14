@@ -121,6 +121,14 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
+    void testBuildAnnotationRoutingStrategyFailsForNullFallbackRoutingStrategy() {
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> AnnotationRoutingStrategy.builder().fallbackRoutingStrategy(null)
+        );
+    }
+
+    @Test
     void testBuildAnnotationRoutingStrategyFailsForNullAnnotationType() {
         assertThrows(AxonConfigurationException.class, () -> AnnotationRoutingStrategy.builder().annotationType(null));
     }

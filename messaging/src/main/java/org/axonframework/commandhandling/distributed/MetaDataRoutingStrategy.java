@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * RoutingStrategy implementation that uses the value in the {@link org.axonframework.messaging.MetaData} of a {@link
@@ -29,7 +30,7 @@ import static org.axonframework.common.BuilderUtils.assertNonEmpty;
  * @author Allard Buijze
  * @since 2.0
  */
-public class MetaDataRoutingStrategy extends AbstractRoutingStrategy<MetaDataRoutingStrategy> {
+public class MetaDataRoutingStrategy extends AbstractRoutingStrategy {
 
     private final String metaDataKey;
 
@@ -54,7 +55,8 @@ public class MetaDataRoutingStrategy extends AbstractRoutingStrategy<MetaDataRou
      * @param builder the {@link Builder} used to instantiate a {@link MetaDataRoutingStrategy} instance
      */
     protected MetaDataRoutingStrategy(Builder builder) {
-        super(builder);
+        super(builder.fallbackRoutingStrategy);
+        builder.validate();
         this.metaDataKey = builder.metaDataKey;
     }
 
@@ -97,9 +99,24 @@ public class MetaDataRoutingStrategy extends AbstractRoutingStrategy<MetaDataRou
      * The {@code fallbackRoutingStrategy} to {@link UnresolvedRoutingKeyPolicy#RANDOM_KEY}. The {@code metaDataKey} is
      * a <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder extends AbstractRoutingStrategy.Builder<MetaDataRoutingStrategy> {
+    public static class Builder {
 
         private String metaDataKey;
+        private RoutingStrategy fallbackRoutingStrategy = UnresolvedRoutingKeyPolicy.RANDOM_KEY;
+
+        /**
+         * Sets the fallback {@link RoutingStrategy} to use when the intended routing key resolution was unsuccessful.
+         * Defaults to a {@link UnresolvedRoutingKeyPolicy#RANDOM_KEY}
+         *
+         * @param fallbackRoutingStrategy a {@link RoutingStrategy} used as the fallback whenever the intended routing
+         *                                key resolution was unsuccessful
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder fallbackRoutingStrategy(RoutingStrategy fallbackRoutingStrategy) {
+            assertNonNull(fallbackRoutingStrategy, "Fallback RoutingStrategy may not be null");
+            this.fallbackRoutingStrategy = fallbackRoutingStrategy;
+            return this;
+        }
 
         /**
          * Sets the {@code metaDataKey} searched for by this routing strategy on a {@link CommandMessage}'s {@link
@@ -115,12 +132,21 @@ public class MetaDataRoutingStrategy extends AbstractRoutingStrategy<MetaDataRou
             return this;
         }
 
-        @Override
+        /**
+         * Initializes a {@link MetaDataRoutingStrategy} implementation as specified through this Builder.
+         *
+         * @return a {@link MetaDataRoutingStrategy} implementation as specified through this Builder
+         */
         public MetaDataRoutingStrategy build() {
             return new MetaDataRoutingStrategy(this);
         }
 
-        @Override
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
         protected void validate() {
             assertNonEmpty(metaDataKey, "The metaDataKey is a hard requirement and should be provided");
         }

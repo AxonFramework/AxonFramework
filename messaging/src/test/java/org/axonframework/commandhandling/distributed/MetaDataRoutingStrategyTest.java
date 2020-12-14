@@ -2,6 +2,7 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
@@ -51,5 +52,26 @@ class MetaDataRoutingStrategyTest {
 
         assertEquals(expectedRoutingKey, testSubject.getRoutingKey(testCommand));
         verify(fallbackRoutingStrategy).getRoutingKey(testCommand);
+    }
+
+    @Test
+    void testBuildMetaDataRoutingStrategyFailsForNullFallbackRoutingStrategy() {
+        assertThrows(
+                AxonConfigurationException.class, () -> MetaDataRoutingStrategy.builder().fallbackRoutingStrategy(null)
+        );
+    }
+
+    @Test
+    void testBuildMetaDataRoutingStrategyFailsForNullMetaDataKey() {
+        assertThrows(
+                AxonConfigurationException.class, () -> MetaDataRoutingStrategy.builder().metaDataKey(null)
+        );
+    }
+
+    @Test
+    void testBuildMetaDataRoutingStrategyFailsForEmptyMetaDataKey() {
+        assertThrows(
+                AxonConfigurationException.class, () -> MetaDataRoutingStrategy.builder().metaDataKey("")
+        );
     }
 }

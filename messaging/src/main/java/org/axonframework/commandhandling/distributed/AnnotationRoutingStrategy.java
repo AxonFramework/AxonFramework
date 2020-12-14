@@ -49,7 +49,7 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @see DistributedCommandBus
  * @since 2.0
  */
-public class AnnotationRoutingStrategy extends AbstractRoutingStrategy<AnnotationRoutingStrategy> {
+public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
     private static final RoutingKeyResolver NO_RESOLVE = new RoutingKeyResolver((Method) null);
     private static final String NULL_DEFAULT = null;
@@ -87,7 +87,8 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy<Annotatio
      * @param builder the {@link Builder} used to instantiate a {@link AnnotationRoutingStrategy} instance
      */
     protected AnnotationRoutingStrategy(Builder builder) {
-        super(builder);
+        super(builder.fallbackRoutingStrategy);
+        builder.validate();
         this.annotationType = builder.annotationType;
     }
 
@@ -214,9 +215,24 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy<Annotatio
      * The {@code annotationType} is defaulted to {@link RoutingKey} and the {@code fallbackRoutingStrategy} to {@link
      * UnresolvedRoutingKeyPolicy#RANDOM_KEY}.
      */
-    public static class Builder extends AbstractRoutingStrategy.Builder<AnnotationRoutingStrategy> {
+    public static class Builder {
 
         private Class<? extends Annotation> annotationType = RoutingKey.class;
+        private RoutingStrategy fallbackRoutingStrategy = UnresolvedRoutingKeyPolicy.RANDOM_KEY;
+
+        /**
+         * Sets the fallback {@link RoutingStrategy} to use when the intended routing key resolution was unsuccessful.
+         * Defaults to a {@link UnresolvedRoutingKeyPolicy#RANDOM_KEY}
+         *
+         * @param fallbackRoutingStrategy a {@link RoutingStrategy} used as the fallback whenever the intended routing
+         *                                key resolution was unsuccessful
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder fallbackRoutingStrategy(RoutingStrategy fallbackRoutingStrategy) {
+            assertNonNull(fallbackRoutingStrategy, "Fallback RoutingStrategy may not be null");
+            this.fallbackRoutingStrategy = fallbackRoutingStrategy;
+            return this;
+        }
 
         /**
          * Sets the {@code annotationType} {@link Class} searched for by this routing strategy on a {@link
@@ -232,14 +248,23 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy<Annotatio
             return this;
         }
 
-        @Override
+        /**
+         * Initializes a {@link AnnotationRoutingStrategy} implementation as specified through this Builder.
+         *
+         * @return a {@link AnnotationRoutingStrategy} implementation as specified through this Builder
+         */
         public AnnotationRoutingStrategy build() {
             return new AnnotationRoutingStrategy(this);
         }
 
-        @Override
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
         protected void validate() {
-            // Nothing to validate due to defaults
+            // Nothing to validate due to defaults; kept for overriding
         }
     }
 }
